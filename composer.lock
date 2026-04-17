@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c032be70d4c54eb5c2ab411f403b0439",
+    "content-hash": "42e83915f7a1b6cbd8eb530637be20ca",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -575,10 +575,16 @@
         {
             "name": "callcocam/laravel-raptor-plannerate",
             "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:callcocam/laravel-raptor-plannerate.git",
+                "reference": "fc5439e941f9d61bbce0d284468522c188418a0c"
+            },
             "dist": {
-                "type": "path",
-                "url": "./packages/callcocam/laravel-raptor-plannerate",
-                "reference": "f2e999a98a08934f6c50cd7681f6be8dafb31e8b"
+                "type": "zip",
+                "url": "https://api.github.com/repos/callcocam/laravel-raptor-plannerate/zipball/fc5439e941f9d61bbce0d284468522c188418a0c",
+                "reference": "fc5439e941f9d61bbce0d284468522c188418a0c",
+                "shasum": ""
             },
             "require": {
                 "illuminate/contracts": "^12.0|^13.0",
@@ -586,6 +592,7 @@
                 "php": "^8.2",
                 "spatie/laravel-package-tools": "^1.16"
             },
+            "default-branch": true,
             "type": "library",
             "extra": {
                 "laravel": {
@@ -603,9 +610,11 @@
                 "proprietary"
             ],
             "description": "Private Plannerate package for planogram editor frontend and backend domain.",
-            "transport-options": {
-                "relative": true
-            }
+            "support": {
+                "source": "https://github.com/callcocam/laravel-raptor-plannerate/tree/main",
+                "issues": "https://github.com/callcocam/laravel-raptor-plannerate/issues"
+            },
+            "time": "2026-04-14T16:46:31+00:00"
         },
         {
             "name": "carbonphp/carbon-doctrine-types",
@@ -13825,5 +13834,5 @@
         "php": "^8.2"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.6.0"
 }
