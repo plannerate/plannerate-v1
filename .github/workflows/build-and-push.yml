@@ -57,7 +57,7 @@ jobs:
             vite_pusher_app_key=${{ secrets.VITE_PUSHER_APP_KEY }}
             composer_github_token=${{ secrets.COMPOSER_GITHUB_TOKEN }}
 
-            - name: ✅ Imagem publicada
+      - name: ✅ Imagem publicada
         run: |
           echo "::notice::Imagem Docker publicada com sucesso!"
           echo "Tags: ${{ steps.meta.outputs.tags }}"
