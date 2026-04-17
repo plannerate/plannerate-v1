@@ -143,9 +143,9 @@ RUN chown -R laravel:laravel /var/www/public/build \
 RUN php artisan wayfinder:generate --with-form --no-interaction 2>&1 || (echo "⚠️  Wayfinder generation failed, continuing build..." && true)
 
 # Instalar dependências NPM e buildar assets com variáveis VITE (Pusher)
-RUN --mount=type=secret,id=vite_pusher_app_key,mode=0444 \
+RUN --mount=type=secret,id=vite_pusher_app_key,mode=0444,required=false \
     npm ci --production=false \
-    && VITE_PUSHER_APP_KEY="$(cat /run/secrets/vite_pusher_app_key)" \
+    && VITE_PUSHER_APP_KEY="$([ -f /run/secrets/vite_pusher_app_key ] && [ -s /run/secrets/vite_pusher_app_key ] && cat /run/secrets/vite_pusher_app_key || echo '')" \
        VITE_PUSHER_APP_CLUSTER=${VITE_PUSHER_APP_CLUSTER} \
        VITE_PUSHER_HOST=${VITE_PUSHER_HOST} \
        VITE_PUSHER_PORT=${VITE_PUSHER_PORT} \
