@@ -1,0 +1,158 @@
+groups:
+  - name: infrastructure_alerts
+    interval: 30s
+    rules:
+      # PostgreSQL Alerts
+      - alert: PostgreSQLDown
+        expr: up{job="postgres-exporter-master"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "PostgreSQL Master está offline"
+          description: "PostgreSQL Master ({{ $labels.instance }}) não responde há {{ $value }} minutos"
+
+      - alert: PostgreSQLTooManyConnections
+        expr: sum(pg_stat_activity_count) > 80
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "PostgreSQL com muitas conexões"
+          description: "PostgreSQL tem {{ $value }} conexões ativas (limite recomendado: 80)"
+
+      - alert: PostgreSQLReplicationLag
+        expr: pg_replication_lag > 10000000
+        for: 5m
+        labels:
+          severity: warning
+          component: replication
+        annotations:
+          summary: "Replicação PostgreSQL com lag alto"
+          description: "Replicação está {{ $value }} bytes atrasada (> 10MB)"
+
+      - alert: PostgreSQLDeadlocks
+        expr: rate(pg_stat_database_deadlocks[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Deadlocks detectados no PostgreSQL"
+          description: "Database {{ $labels.datname }} teve {{ $value }} deadlocks/s nos últimos 5 minutos"
+
+      # PgBouncer Alerts
+      - alert: PgBouncerDown
+        expr: up{job="pgbouncer-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: pgbouncer
+        annotations:
+          summary: "PgBouncer está offline"
+          description: "PgBouncer não responde há {{ $value }} minutos"
+
+      - alert: PgBouncerWaitingClients
+        expr: pgbouncer_pools_cl_waiting > 10
+        for: 2m
+        labels:
+          severity: warning
+          component: pgbouncer
+        annotations:
+          summary: "Muitos clientes aguardando conexão no PgBouncer"
+          description: "{{ $value }} clientes estão aguardando conexão (limite: 10)"
+
+      # Redis Alerts
+      - alert: RedisDown
+        expr: up{job="redis-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: cache
+        annotations:
+          summary: "Redis está offline"
+          description: "Redis não responde há {{ $value }} minutos"
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Redis usando muita memória"
+          description: "Redis está usando {{ $value | humanizePercentage }} da memória (limite: 90%)"
+
+      # Node/System Alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "CPU usage alto em {{ $labels.instance }}"
+          description: "CPU está em {{ $value }}% nos últimos 5 minutos (limite: 80%)"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "Memória alta em {{ $labels.instance }}"
+          description: "Memória está em {{ $value }}% (limite: 90%)"
+
+      - alert: DiskSpaceRunningOut
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 5m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "Disco quase cheio em {{ $labels.instance }}"
+          description: "Apenas {{ $value }}% de espaço disponível no disco /"
+
+      - alert: HighDiskIO
+        expr: rate(node_disk_io_time_seconds_total[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "I/O de disco alto em {{ $labels.instance }}"
+          description: "Disco está em {{ $value | humanizePercentage }} de utilização I/O"
+
+      # Container Alerts
+      - alert: ContainerDown
+        expr: up{job="cadvisor"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          component: containers
+        annotations:
+          summary: "Container monitoring offline"
+          description: "cAdvisor não responde - monitoramento de containers indisponível"
+
+      - alert: ContainerHighMemory
+        expr: container_memory_usage_bytes{name=~".+"} / container_spec_memory_limit_bytes{name=~".+"} > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: containers
+        annotations:
+          summary: "Container {{ $labels.name }} usando muita memória"
+          description: "Container está usando {{ $value | humanizePercentage }} da memória alocada"
+
+      - alert: ContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total{name=~".+"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: containers
+        annotations:
+          summary: "Container {{ $labels.name }} com CPU alta"
+          description: "Container está usando {{ $value | humanizePercentage }} de CPU"

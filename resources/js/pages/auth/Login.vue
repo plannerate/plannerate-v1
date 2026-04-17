@@ -1,0 +1,113 @@
+<script setup lang="ts">
+import InputError from '@/components/InputError.vue';
+import TextLink from '@/components/TextLink.vue';
+import { Button } from '~/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import AuthBase from '@/layouts/AuthLayout.vue';
+import { store } from '@/routes/login/index';
+import { request } from '@/routes/password/index';
+import SocialLoginButtons from '~/components/SocialLoginButtons.vue';
+import { Form, Head, usePage } from '@inertiajs/vue3';
+
+const page = usePage<{ socialProviders?: { provider: string; label: string; url: string; icon: string }[] }>();
+
+console.log('Login page props:', page.props);
+
+defineProps<{
+    status?: string;
+    canResetPassword: boolean;
+    canRegister: boolean;
+}>();
+</script>
+
+<template>
+    <AuthBase
+        title="Acesse sua conta"
+        description="Digite seu email e senha abaixo para entrar"
+    >
+        <Head title="Entrar" />
+
+        <div
+            v-if="status"
+            class="mb-4 text-center text-sm font-medium text-green-600 dark:text-green-400"
+        >
+            {{ status }}
+        </div>
+
+        <Form
+            v-bind="store.form()"
+            :reset-on-success="['password']"
+            v-slot="{ errors, processing }"
+            class="flex flex-col gap-6"
+        >
+            <div class="grid gap-6">
+                <div class="grid gap-2">
+                    <Label for="email">Endereço de email</Label>
+                    <Input
+                        id="email"
+                        type="email"
+                        name="email"
+                        required
+                        autofocus
+                        :tabindex="1"
+                        autocomplete="email"
+                        placeholder="email@example.com"
+                    />
+                    <InputError :message="errors.email" />
+                </div>
+
+                <div class="grid gap-2">
+                    <div class="flex items-center justify-between">
+                        <Label for="password">Senha</Label>
+                        <TextLink
+                            v-if="canResetPassword"
+                            :href="request()"
+                            class="text-sm"
+                            :tabindex="5"
+                        >
+                            Esqueceu a senha?
+                        </TextLink>
+                    </div>
+                    <Input
+                        id="password"
+                        type="password"
+                        name="password"
+                        required
+                        :tabindex="2"
+                        autocomplete="current-password"
+                        placeholder="Senha"
+                    />
+                    <InputError :message="errors.password" />
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <Label for="remember" class="flex items-center space-x-3">
+                        <Checkbox id="remember" name="remember" :tabindex="3" />
+                        <span>Lembrar-me</span>
+                    </Label>
+                </div>
+
+                <Button
+                    type="submit"
+                    class="mt-4 w-full btn-gradient"
+                    :tabindex="4"
+                    :disabled="processing"
+                    data-test="login-button"
+                >
+                    <Spinner v-if="processing" class="h-4 w-4 animate-spin" />
+                    Entrar
+                </Button>
+            </div>
+
+            <!-- <div class="text-center text-sm text-muted-foreground">
+                Não tem uma conta?
+                <TextLink :href="route('register')" :tabindex="5">Cadastre-se</TextLink>
+            </div> -->
+        </Form>
+
+        <SocialLoginButtons :providers="page.props.socialProviders ?? []" />
+    </AuthBase>
+</template>

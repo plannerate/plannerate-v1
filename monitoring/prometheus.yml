@@ -1,0 +1,104 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'plannerate-production'
+    environment: 'production'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+rule_files:
+  - '/etc/prometheus/alerts.yml'
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # Node Exporter - Docker VM
+  - job_name: 'node-exporter-docker'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          instance: 'docker-vm'
+          hostname: '148.230.78.184'
+          role: 'docker-host'
+
+  # Node Exporter - PostgreSQL Master
+  - job_name: 'node-exporter-postgres-master'
+    static_configs:
+      - targets: ['72.62.139.43:9100']
+        labels:
+          instance: 'postgres-master'
+          hostname: '72.62.139.43'
+          role: 'master'
+
+  # Node Exporter - PostgreSQL Replica
+  - job_name: 'node-exporter-postgres-replica'
+    static_configs:
+      - targets: ['72.60.240.151:9100']
+        labels:
+          instance: 'postgres-replica'
+          hostname: '72.60.240.151'
+          role: 'replica'
+
+  # PostgreSQL Exporter - Master
+  - job_name: 'postgres-exporter-master'
+    static_configs:
+      - targets: ['72.62.139.43:9187']
+        labels:
+          instance: 'postgres-master'
+          hostname: '72.62.139.43'
+          role: 'master'
+          database: 'postgresql'
+
+  # PostgreSQL Exporter - Replica
+  - job_name: 'postgres-exporter-replica'
+    static_configs:
+      - targets: ['72.60.240.151:9187']
+        labels:
+          instance: 'postgres-replica'
+          hostname: '72.60.240.151'
+          role: 'replica'
+          database: 'postgresql'
+
+  # PgBouncer Exporter
+  - job_name: 'pgbouncer-exporter'
+    static_configs:
+      - targets: ['72.62.139.43:9127']
+        labels:
+          instance: 'pgbouncer'
+          hostname: '72.62.139.43'
+          role: 'connection-pool'
+
+  # Redis Exporter
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          instance: 'redis'
+          service: 'cache'
+
+  # cAdvisor - Container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          instance: 'docker-vm'
+          service: 'containers'
+
+  # Docker daemon metrics (if enabled)
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['148.230.78.184:9323']
+        labels:
+          instance: 'docker-daemon'
+          service: 'docker'
+    scrape_interval: 30s

@@ -1,0 +1,87 @@
+<h2>Como devem ser os campos de entrada?</h2>
+<p class="subtitle">Escolha o estilo que combina com o tema B (Plannerate Signature)</p>
+
+<div class="cards">
+
+  <!-- OPÇÃO A: Bordered Clean -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)" style="padding:0;overflow:hidden;">
+    <div class="card-image" style="background:#f8fafc;padding:20px;min-height:180px;">
+      <div style="max-width:260px;display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;letter-spacing:0.05em;">NOME DO PRODUTO</div>
+          <div style="height:38px;background:white;border-radius:8px;border:1.5px solid #cbd5e1;display:flex;align-items:center;padding:0 12px;">
+            <div style="width:100px;height:5px;background:#94a3b8;border-radius:3px;opacity:0.4;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;letter-spacing:0.05em;">CATEGORIA</div>
+          <div style="height:38px;background:white;border-radius:8px;border:1.5px solid #1e293b;display:flex;align-items:center;padding:0 12px;box-shadow:0 0 0 3px rgba(30,41,59,0.08);">
+            <div style="width:80px;height:5px;background:#1e293b;border-radius:3px;opacity:0.5;"></div>
+          </div>
+        </div>
+        <div style="height:36px;background:linear-gradient(135deg,#1e293b,#a8ff3e);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+          <div style="width:60px;height:5px;background:white;border-radius:3px;opacity:0.8;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Bordered Limpo</h3>
+      <p>Borda fina sutil, focus com ring verde-escuro. Labels uppercase pequenas. Estilo SaaS moderno — Notion, Linear.</p>
+    </div>
+  </div>
+
+  <!-- OPÇÃO B: Filled / Surface -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)" style="padding:0;overflow:hidden;">
+    <div class="card-image" style="background:#f8fafc;padding:20px;min-height:180px;">
+      <div style="max-width:260px;display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <div style="font-size:11px;font-weight:500;color:#64748b;margin-bottom:4px;">Nome do produto</div>
+          <div style="height:40px;background:#f1f5f9;border-radius:8px;border:1.5px solid transparent;display:flex;align-items:center;padding:0 12px;">
+            <div style="width:110px;height:5px;background:#94a3b8;border-radius:3px;opacity:0.5;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:500;color:#64748b;margin-bottom:4px;">Categoria</div>
+          <div style="height:40px;background:#e8f5e1;border-radius:8px;border:1.5px solid #a8ff3e;display:flex;align-items:center;padding:0 12px;">
+            <div style="width:80px;height:5px;background:#1e293b;border-radius:3px;opacity:0.6;"></div>
+          </div>
+        </div>
+        <div style="height:38px;background:linear-gradient(135deg,#1e293b,#a8ff3e);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+          <div style="width:60px;height:5px;background:white;border-radius:3px;opacity:0.8;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Filled / Surface</h3>
+      <p>Fundo cinza suave, sem borda visível. Focus com fundo esverdeado + borda lime. Leve, acolhedor, modern SaaS.</p>
+    </div>
+  </div>
+
+  <!-- OPÇÃO C: Floating Label -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)" style="padding:0;overflow:hidden;">
+    <div class="card-image" style="background:#f8fafc;padding:20px;min-height:180px;">
+      <div style="max-width:260px;display:flex;flex-direction:column;gap:12px;">
+        <!-- Normal state -->
+        <div style="position:relative;">
+          <div style="height:46px;background:white;border-radius:8px;border:1.5px solid #cbd5e1;display:flex;align-items:flex-end;padding:0 12px 8px;"></div>
+          <div style="position:absolute;top:50%;left:12px;transform:translateY(-50%);font-size:12px;font-weight:500;color:#94a3b8;">Nome do produto</div>
+        </div>
+        <!-- Focus state -->
+        <div style="position:relative;">
+          <div style="height:46px;background:white;border-radius:8px;border:1.5px solid #1e293b;display:flex;align-items:flex-end;padding:0 12px 6px;box-shadow:0 0 0 3px rgba(168,255,62,0.2);">
+            <div style="width:80px;height:5px;background:#334155;border-radius:3px;opacity:0.5;"></div>
+          </div>
+          <div style="position:absolute;top:8px;left:10px;font-size:9px;font-weight:700;color:#1e293b;background:white;padding:0 4px;letter-spacing:0.05em;">CATEGORIA</div>
+        </div>
+        <div style="height:38px;background:linear-gradient(135deg,#1e293b,#a8ff3e);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+          <div style="width:60px;height:5px;background:white;border-radius:3px;opacity:0.8;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Floating Label</h3>
+      <p>Label flutua para cima ao focar. Compacto, sofisticado. Economiza espaço vertical. Estilo Material/Stripe.</p>
+    </div>
+  </div>
+
+</div>

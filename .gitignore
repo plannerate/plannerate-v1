@@ -1,0 +1,103 @@
+/.phpunit.cache
+/bootstrap/ssr
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/resources/js/actions
+/resources/js/routes
+/resources/js/wayfinder
+/vendor
+.DS_Store
+.env
+.env.backup
+.env.production
+.phpactor.json
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+/auth.json
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+
+
+# ============================================
+# Laravel
+# ============================================
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+/.idea
+/.vscode
+
+# ============================================
+# Docker
+# ============================================
+/letsencrypt/acme.json
+/storage/app/*
+!/storage/app/.gitkeep
+/storage/framework/cache/*
+!/storage/framework/cache/.gitkeep
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitkeep
+/storage/framework/views/*
+!/storage/framework/views/.gitkeep
+/storage/logs/*
+!/storage/logs/.gitkeep
+
+# ============================================
+# Backups
+# ============================================
+/backups/*.sql
+/backups/*.tar.gz
+*.backup
+*.sql.gz
+
+# ============================================
+# Sistema
+# ============================================
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*.swo
+*~
+
+# ============================================
+# Certificados SSL (gerados automaticamente)
+# ============================================
+/traefik/letsencrypt/
+
+# ============================================
+# Arquivos temporários
+# ============================================
+/tmp/
+/temp/
+
+
+Credenciais.md
+.env.staging
+.env.production
+
+/postgres-replicas
+/vps-deployment-packagevps-deployment-package/
+/packages/ 
+
+/packages/callcocam/laravel-raptor-plannerate/

@@ -1,0 +1,113 @@
+name: Build and Deploy Production
+
+on:
+  push:
+    branches:
+      - main 
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=main
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VITE_PUSHER_HOST=ws-us2.pusher.com
+            VITE_PUSHER_APP_CLUSTER=${{ secrets.VITE_PUSHER_APP_CLUSTER }}
+            VITE_PUSHER_PORT=443
+            VITE_PUSHER_SCHEME=https
+          secrets: |
+            vite_pusher_app_key=${{ secrets.VITE_PUSHER_APP_KEY }}
+            composer_github_token=${{ secrets.COMPOSER_GITHUB_TOKEN }}
+
+      - name: Image digest
+        run: echo "Image pushed with digest ${{ steps.meta.outputs.digest }}"
+
+  deploy:
+    name: Deploy to Production VPS
+    runs-on: ubuntu-latest
+    needs: build
+    
+    environment:
+      name: production
+      url: https://plannerate.com.br
+    
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PRODUCTION_VPS_HOST }}
+          username: ${{ secrets.PRODUCTION_VPS_USER }}
+          key: ${{ secrets.PRODUCTION_VPS_SSH_KEY }}
+          port: ${{ secrets.PRODUCTION_VPS_PORT }}
+          script: |
+            # Navegar para o diretório do projeto
+            cd /opt/plannerate/production
+            
+            # Login no GitHub Container Registry
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Exportar variável de ambiente necessária
+            export GITHUB_REPO=${{ secrets.PRODUCTION_GITHUB_REPO }}
+            
+            # Pull das novas imagens
+            docker compose -f docker-compose.production.yml pull
+            
+            # Subir os containers (só recria se a imagem mudou)
+            docker compose -f docker-compose.production.yml up -d --no-build --remove-orphans
+            
+            # Aguardar containers iniciarem
+            sleep 15
+            
+            # Limpar todos os caches antes de recriar
+            docker exec plannerate-app-prod php artisan config:clear
+            docker exec plannerate-app-prod php artisan cache:clear
+            docker exec plannerate-app-prod php artisan route:clear
+            docker exec plannerate-app-prod php artisan view:clear
+            
+            # Executar migrations
+            docker exec plannerate-app-prod php artisan migrate --force
+            
+            # Recriar cache de configuração (resolve erro de APP_KEY)
+            docker exec plannerate-app-prod php artisan config:cache
+            docker exec plannerate-app-prod php artisan route:cache
+            docker exec plannerate-app-prod php artisan view:cache
+            
+            # Reiniciar queue workers (para pegar novo código)
+            docker restart plannerate-queue-prod
+            
+            # Limpar imagens antigas (economizar espaço)
+            docker image prune -f
+            
+            echo "✅ Deploy em PRODUÇÃO concluído com sucesso!"

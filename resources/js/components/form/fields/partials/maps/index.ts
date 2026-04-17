@@ -1,0 +1,5 @@
+export { default as MapUploadArea } from './MapUploadArea.vue'
+export { default as MapToolbar } from './MapToolbar.vue'
+export { default as MapCanvas } from './MapCanvas.vue'
+export { default as MapRegionsList } from './MapRegionsList.vue'
+export { default as MapRegionDialog } from './MapRegionDialog.vue'
