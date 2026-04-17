@@ -3,8 +3,7 @@ name: Build and Deploy Staging
 on:
   push:
     branches:
-      - dev
-      - feature/pkg-laravel-raptor-plannerate
+      - dev 
   workflow_dispatch:
 
 jobs:
