@@ -14,12 +14,15 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
+const { t } = useT();
+
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: t('app.navigation.dashboard'),
         href: dashboard(),
         icon: LayoutGrid,
     },
@@ -27,12 +30,12 @@ const mainNavItems: NavItem[] = [
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
+        title: t('app.navigation.repository'),
         href: 'https://github.com/laravel/vue-starter-kit',
         icon: FolderGit2,
     },
     {
-        title: 'Documentation',
+        title: t('app.navigation.documentation'),
         href: 'https://laravel.com/docs/starter-kits#vue',
         icon: BookOpen,
     },

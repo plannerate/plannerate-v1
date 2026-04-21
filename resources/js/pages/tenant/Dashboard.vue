@@ -1,22 +1,23 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, setLayoutProps } from '@inertiajs/vue3';
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
+import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Dashboard',
-                href: dashboard(),
-            },
-        ],
-    },
+const { t } = useT();
+
+setLayoutProps({
+    breadcrumbs: [
+        {
+            title: t('app.navigation.dashboard'),
+            href: dashboard(),
+        },
+    ],
 });
 </script>
 
 <template>
-    <Head title="Dashboard" />
+    <Head :title="t('app.navigation.dashboard')" />
 
     <div
         class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4"

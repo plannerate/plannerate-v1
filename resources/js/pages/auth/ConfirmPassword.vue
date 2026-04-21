@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useT } from '@/composables/useT';
 import { store } from '@/routes/password/confirm';
 
-defineOptions({
-    layout: {
-        title: 'Confirm your password',
-        description:
-            'This is a secure area of the application. Please confirm your password before continuing.',
-    },
+const { t } = useT();
+
+setLayoutProps({
+    title: t('app.auth.confirm_your_password'),
+    description: t('app.auth.confirm_your_password_description'),
 });
 </script>
 
 <template>
-    <Head title="Confirm password" />
+    <Head :title="t('app.auth.confirm_password')" />
 
     <Form
         v-bind="store.form()"
@@ -26,7 +26,7 @@ defineOptions({
     >
         <div class="space-y-6">
             <div class="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{{ t('app.password') }}</Label>
                 <PasswordInput
                     id="password"
                     name="password"
@@ -46,7 +46,7 @@ defineOptions({
                     data-test="confirm-password-button"
                 >
                     <Spinner v-if="processing" />
-                    Confirm password
+                    {{ t('app.auth.confirm_password') }}
                 </Button>
             </div>
         </div>

@@ -1,0 +1,158 @@
+<?php
+
+return [
+    'welcome' => 'Bem-vindo',
+    'dashboard' => 'Painel',
+
+    'settings' => 'Configuracoes',
+    'settings_description' => 'Gerencie seu perfil e configuracoes da conta',
+
+    'appearance_settings' => 'Configuracoes de aparencia',
+    'appearance_settings_description' => 'Atualize as configuracoes de aparencia da sua conta',
+
+    'profile' => 'Perfil',
+    'profile_settings' => 'Configuracoes de perfil',
+    'profile_information' => 'Informacoes do perfil',
+    'profile_information_description' => 'Atualize seu nome e endereco de e-mail',
+
+    'security_settings' => 'Configuracoes de seguranca',
+    'update_password' => 'Atualizar senha',
+    'update_password_description' => 'Garanta que sua conta esteja usando uma senha longa e aleatoria para permanecer segura',
+
+    'delete_account' => 'Excluir conta',
+    'delete_account_description' => 'Exclua sua conta e todos os seus recursos',
+
+    'toggle_sidebar' => 'Alternar barra lateral',
+    'loading' => 'Carregando...',
+
+    'full_name' => 'Nome completo',
+    'email' => 'E-mail',
+    'password' => 'Senha',
+
+    'updated_success' => ':resource atualizado com sucesso!',
+    'created_success' => ':resource criado com sucesso!',
+    'deleted_success' => ':resource excluido com sucesso!',
+
+    'actions' => [
+        'save' => 'Salvar',
+        'cancel' => 'Cancelar',
+        'delete' => 'Excluir',
+        'back' => 'Voltar',
+        'close' => 'Fechar',
+        'continue' => 'Continuar',
+        'confirm' => 'Confirmar',
+    ],
+
+    'messages' => [
+        'profile_updated' => 'Perfil atualizado com sucesso.',
+        'password_updated' => 'Senha atualizada com sucesso.',
+        'generic_error' => 'Algo deu errado.',
+    ],
+
+    'navigation' => [
+        'dashboard' => 'Painel',
+        'repository' => 'Repositorio',
+        'documentation' => 'Documentacao',
+        'navigation_menu' => 'Menu de navegacao',
+    ],
+
+    'welcome_page' => [
+        'get_started' => 'Vamos comecar',
+        'description' => 'O Laravel tem um ecossistema extremamente rico. Sugerimos comecar pelo seguinte.',
+        'read_the' => 'Leia a',
+        'watch_tutorials' => 'Assista a tutoriais em video no',
+        'deploy_now' => 'Implantar agora',
+    ],
+
+    'labels' => [
+        'name' => 'Nome',
+        'remember_me' => 'Lembrar de mim',
+        'email_address' => 'Endereco de e-mail',
+    ],
+
+    'settings_nav' => [
+        'profile' => 'Perfil',
+        'security' => 'Seguranca',
+        'appearance' => 'Aparencia',
+    ],
+
+    'settings_messages' => [
+        'email_unverified' => 'Seu endereco de e-mail nao foi verificado.',
+        'resend_verification' => 'Clique aqui para reenviar o e-mail de verificacao.',
+        'verification_link_sent' => 'Um novo link de verificacao foi enviado para o seu endereco de e-mail.',
+        'save_password' => 'Salvar senha',
+    ],
+
+    'danger_zone' => [
+        'warning_title' => 'Atencao',
+        'warning_description' => 'Prossiga com cuidado, esta acao nao pode ser desfeita.',
+        'confirm_delete_title' => 'Tem certeza de que deseja excluir sua conta?',
+        'confirm_delete_description' => 'Quando sua conta for excluida, todos os recursos e dados dela tambem serao removidos permanentemente. Informe sua senha para confirmar que deseja excluir sua conta permanentemente.',
+    ],
+
+    'auth' => [
+        'login' => 'Entrar',
+        'login_short' => 'Login',
+        'login_title' => 'Entre na sua conta',
+        'login_description' => 'Informe seu e-mail e senha para entrar',
+        'dont_have_account' => 'Nao tem uma conta?',
+        'sign_up' => 'Criar conta',
+        'register' => 'Cadastrar',
+        'register_title' => 'Criar conta',
+        'register_description' => 'Informe seus dados para criar sua conta',
+        'create_account' => 'Criar conta',
+        'already_have_account' => 'Ja tem uma conta?',
+        'forgot_password' => 'Esqueci minha senha',
+        'forgot_password_title' => 'Esqueci minha senha',
+        'forgot_password_description' => 'Informe seu e-mail para receber um link de redefinicao de senha',
+        'forgot_password_link' => 'Esqueceu sua senha?',
+        'email_reset_link' => 'Enviar link de redefinicao por e-mail',
+        'or_return_to' => 'Ou volte para',
+        'or_you_can' => 'ou voce pode',
+        'verify_email' => 'Verificacao de e-mail',
+        'verify_email_title' => 'Verificar e-mail',
+        'verify_email_description' => 'Verifique seu endereco de e-mail clicando no link que acabamos de enviar.',
+        'verify_email_notice' => 'Um novo link de verificacao foi enviado para o endereco de e-mail informado durante o cadastro.',
+        'resend_verification_email' => 'Reenviar e-mail de verificacao',
+        'logout' => 'Sair',
+        'two_factor_authentication' => 'Autenticacao de dois fatores',
+        'two_factor_description' => 'Gerencie as configuracoes da autenticacao de dois fatores',
+        'two_factor_enable_description' => 'Ao ativar a autenticacao de dois fatores, sera solicitado um pin seguro durante o login. Esse pin pode ser obtido em um aplicativo compativel com TOTP no seu celular.',
+        'two_factor_enabled_description_short' => 'Durante o login, sera solicitado um pin seguro e aleatorio, que voce pode obter no aplicativo compativel com TOTP do seu celular.',
+        'continue_setup' => 'Continuar configuracao',
+        'enable_2fa' => 'Ativar 2FA',
+        'disable_2fa' => 'Desativar 2FA',
+        'recovery_code_title' => 'Codigo de recuperacao',
+        'recovery_code_description' => 'Confirme o acesso a sua conta informando um dos codigos de recuperacao de emergencia.',
+        'authentication_code_title' => 'Codigo de autenticacao',
+        'authentication_code_description' => 'Informe o codigo de autenticacao fornecido pelo seu aplicativo autenticador.',
+        'login_using_authentication_code' => 'entrar usando um codigo de autenticacao',
+        'login_using_recovery_code' => 'entrar usando um codigo de recuperacao',
+        'enter_recovery_code' => 'Digite o codigo de recuperacao',
+        'reset_password' => 'Redefinir senha',
+        'reset_password_description' => 'Informe sua nova senha abaixo',
+        'confirm_your_password' => 'Confirme sua senha',
+        'confirm_your_password_description' => 'Esta e uma area segura da aplicacao. Confirme sua senha antes de continuar.',
+        'confirm_password' => 'Confirmar senha',
+        'current_password' => 'Senha atual',
+        'new_password' => 'Nova senha',
+        'confirm_password_placeholder' => 'Confirme a senha',
+        'show_password' => 'Mostrar senha',
+        'hide_password' => 'Ocultar senha',
+        'two_factor_enabled_title' => 'Autenticacao de dois fatores ativada',
+        'two_factor_enabled_description' => 'A autenticacao de dois fatores foi ativada. Escaneie o QR code ou informe a chave de configuracao no seu aplicativo autenticador.',
+        'verify_authentication_code_title' => 'Verificar codigo de autenticacao',
+        'verify_authentication_code_description' => 'Informe o codigo de 6 digitos do seu aplicativo autenticador',
+        'enable_two_factor_title' => 'Ativar autenticacao de dois fatores',
+        'enable_two_factor_description' => 'Para concluir a ativacao da autenticacao de dois fatores, escaneie o QR code ou informe a chave de configuracao no seu aplicativo autenticador.',
+        'or_enter_code_manually' => 'ou informe o codigo manualmente',
+        'recovery_codes_title' => 'Codigos de recuperacao 2FA',
+        'recovery_codes_description' => 'Os codigos de recuperacao permitem recuperar o acesso se voce perder seu dispositivo 2FA. Guarde-os em um gerenciador de senhas seguro.',
+        'view_recovery_codes' => 'Ver codigos de recuperacao',
+        'hide_recovery_codes' => 'Ocultar codigos de recuperacao',
+        'regenerate_codes' => 'Gerar novos codigos',
+        'recovery_codes_hint_prefix' => 'Cada codigo de recuperacao pode ser usado uma unica vez para acessar sua conta e sera removido apos o uso. Se precisar de mais, clique em',
+        'recovery_codes_hint_highlight' => 'Gerar novos codigos',
+        'recovery_codes_hint_suffix' => 'acima.',
+    ],
+];

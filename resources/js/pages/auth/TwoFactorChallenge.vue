@@ -9,24 +9,25 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import { useT } from '@/composables/useT';
 import { store } from '@/routes/two-factor/login';
 import type { TwoFactorConfigContent } from '@/types';
+
+const { t } = useT();
 
 const authConfigContent = computed<TwoFactorConfigContent>(() => {
     if (showRecoveryInput.value) {
         return {
-            title: 'Recovery code',
-            description:
-                'Please confirm access to your account by entering one of your emergency recovery codes.',
-            buttonText: 'login using an authentication code',
+            title: t('app.auth.recovery_code_title'),
+            description: t('app.auth.recovery_code_description'),
+            buttonText: t('app.auth.login_using_authentication_code'),
         };
     }
 
     return {
-        title: 'Authentication code',
-        description:
-            'Enter the authentication code provided by your authenticator application.',
-        buttonText: 'login using a recovery code',
+        title: t('app.auth.authentication_code_title'),
+        description: t('app.auth.authentication_code_description'),
+        buttonText: t('app.auth.login_using_recovery_code'),
     };
 });
 
@@ -49,7 +50,7 @@ const code = ref<string>('');
 </script>
 
 <template>
-    <Head title="Two-factor authentication" />
+    <Head :title="t('app.auth.two_factor_authentication')" />
 
     <div class="space-y-6">
         <template v-if="!showRecoveryInput">
@@ -84,10 +85,10 @@ const code = ref<string>('');
                     <InputError :message="errors.code" />
                 </div>
                 <Button type="submit" class="w-full" :disabled="processing"
-                    >Continue</Button
+                    >{{ t('app.actions.continue') }}</Button
                 >
                 <div class="text-center text-sm text-muted-foreground">
-                    <span>or you can </span>
+                    <span>{{ t('app.auth.or_you_can') }} </span>
                     <button
                         type="button"
                         class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
@@ -109,17 +110,17 @@ const code = ref<string>('');
                 <Input
                     name="recovery_code"
                     type="text"
-                    placeholder="Enter recovery code"
+                    :placeholder="t('app.auth.enter_recovery_code')"
                     :autofocus="showRecoveryInput"
                     required
                 />
                 <InputError :message="errors.recovery_code" />
                 <Button type="submit" class="w-full" :disabled="processing"
-                    >Continue</Button
+                    >{{ t('app.actions.continue') }}</Button
                 >
 
                 <div class="text-center text-sm text-muted-foreground">
-                    <span>or you can </span>
+                    <span>{{ t('app.auth.or_you_can') }} </span>
                     <button
                         type="button"
                         class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"

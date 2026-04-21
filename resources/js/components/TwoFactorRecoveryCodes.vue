@@ -11,9 +11,11 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useT } from '@/composables/useT';
 import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
 import { regenerateRecoveryCodes } from '@/routes/two-factor';
 
+const { t } = useT();
 const { recoveryCodesList, fetchRecoveryCodes, errors } = useTwoFactorAuth();
 const isRecoveryCodesVisible = ref<boolean>(false);
 const recoveryCodeSectionRef = useTemplateRef('recoveryCodeSectionRef');
@@ -42,11 +44,10 @@ onMounted(async () => {
     <Card class="w-full">
         <CardHeader>
             <CardTitle class="flex gap-3">
-                <LockKeyhole class="size-4" />2FA recovery codes
+                <LockKeyhole class="size-4" />{{ t('app.auth.recovery_codes_title') }}
             </CardTitle>
             <CardDescription>
-                Recovery codes let you regain access if you lose your 2FA
-                device. Store them in a secure password manager.
+                {{ t('app.auth.recovery_codes_description') }}
             </CardDescription>
         </CardHeader>
         <CardContent>
@@ -58,8 +59,7 @@ onMounted(async () => {
                         :is="isRecoveryCodesVisible ? EyeOff : Eye"
                         class="size-4"
                     />
-                    {{ isRecoveryCodesVisible ? 'Hide' : 'View' }} recovery
-                    codes
+                    {{ isRecoveryCodesVisible ? t('app.auth.hide_recovery_codes') : t('app.auth.view_recovery_codes') }}
                 </Button>
 
                 <Form
@@ -75,7 +75,7 @@ onMounted(async () => {
                         type="submit"
                         :disabled="processing"
                     >
-                        <RefreshCw /> Regenerate codes
+                        <RefreshCw /> {{ t('app.auth.regenerate_codes') }}
                     </Button>
                 </Form>
             </div>
@@ -111,10 +111,9 @@ onMounted(async () => {
                         </div>
                     </div>
                     <p class="text-xs text-muted-foreground select-none">
-                        Each recovery code can be used once to access your
-                        account and will be removed after use. If you need more,
-                        click
-                        <span class="font-bold">Regenerate codes</span> above.
+                        {{ t('app.auth.recovery_codes_hint_prefix') }}
+                        <span class="font-bold">{{ t('app.auth.recovery_codes_hint_highlight') }}</span>
+                        {{ t('app.auth.recovery_codes_hint_suffix') }}
                     </p>
                 </div>
             </div>
