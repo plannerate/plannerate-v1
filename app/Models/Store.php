@@ -35,6 +35,7 @@ class Store extends AbstractModel
         'description',
         'map_image_path',
         'map_regions',
+        'cluster_id',
     ];
 
     protected $with = ['address', 'client'];

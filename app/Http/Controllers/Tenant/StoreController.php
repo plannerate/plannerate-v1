@@ -8,6 +8,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Models\Cluster;
 use App\Models\Store;
 use Callcocam\LaravelRaptor\Http\Controllers\AbstractController;
 use Callcocam\LaravelRaptor\Support\Form\Form;
@@ -73,14 +74,6 @@ class StoreController extends AbstractController
 
             \Callcocam\LaravelRaptor\Support\Form\Columns\Types\HiddenField::make('client_id')
                 ->default(config('app.current_client_id')),
-            \Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('name')
-                ->label('Nome')
-                ->required()
-                ->rules(['required', 'string', 'max:255'])
-                ->placeholder('Digite o nome')
-                ->columnSpanFull(),
-            // document
-
             \Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('code')
                 ->label('Código Loja')
                 ->required()
@@ -102,25 +95,36 @@ class StoreController extends AbstractController
                 })
                 ->placeholder('Digite o código interno')
                 ->columnSpanTwo(),
+            \Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('name')
+                ->label('Nome')
+                ->required()
+                ->rules(['required', 'string', 'max:255'])
+                ->placeholder('Digite o nome')
+                ->columnSpanSix(),
+            // document
+
+            \Callcocam\LaravelRaptor\Support\Form\Columns\Types\SelectField::make('cluster_id')
+                ->label('Cluster')
+                ->options(Cluster::pluck('name', 'id')->toArray())
+                ->columnSpanFour(),
+            \Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('document')
+                ->label('CNPJ')
+                ->required()
+                ->placeholder('Digite o CNPJ')
+                ->columnSpanFour(),
+
+            \Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('email')
+                ->label('Email')
+                ->required()
+                ->placeholder('Digite o email')
+                ->columnSpanFour(),
             \Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('phone')
                 ->label('Telefone')
                 ->required()
                 ->phone()
                 ->placeholder('Digite o telefone')
-                ->columnSpanThree(),
-
-            \Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('email')
-                ->label('Email')
-                ->required() 
-                ->placeholder('Digite o email')
-                ->columnSpanThree(),
-        ]);
-
-        $form->column(\Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('document')
-            ->label('CNPJ')
-            ->required()
-            ->placeholder('Digite o CNPJ')
-            ->columnSpanFour());
+                ->columnSpanFour(),
+        ]);;
 
         $form->column(
             \Callcocam\LaravelRaptor\Support\Form\Columns\Types\BuscaCepField::make('address')
