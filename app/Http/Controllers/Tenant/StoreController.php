@@ -153,19 +153,31 @@ class StoreController extends AbstractController
     protected function table(TableBuilder $table): TableBuilder
     {
         $table
-            ->component('table-row')->columns([
+            ->columns([
 
                 \Callcocam\LaravelRaptor\Support\Table\Columns\Types\StatusColumn::make('status')
                     ->label('Status')
                     ->editable()
                     ->executeUrl(route('tenant.stores.execute'))
-                    ->columnSpanTwo(),
+                    ->columnSpanOne(),
                 \Callcocam\LaravelRaptor\Support\Table\Columns\Types\TextColumn::make('name')
                     ->label('Nome')
                     ->searchable()
-                    ->sortable()->columnSpanSix(),
+                    ->sortable()->columnSpanTwo(),
+                \Callcocam\LaravelRaptor\Support\Table\Columns\Types\TextColumn::make('document')
+                    ->label('CNPJ')
+                    ->searchable()
+                    ->sortable()->columnSpanTwo(),
+                \Callcocam\LaravelRaptor\Support\Table\Columns\Types\TextColumn::make('email')
+                    ->label('Email')
+                    ->searchable()
+                    ->sortable()->columnSpanThree(),
+                \Callcocam\LaravelRaptor\Support\Table\Columns\Types\TextColumn::make('phone')
+                    ->label('Telefone')
+                    ->searchable()
+                    ->sortable()->columnSpanTwo(),
                 \Callcocam\LaravelRaptor\Support\Table\Columns\Types\DateColumn::make('created_at')
-                    ->label('Data de Criação')->columnSpanFour(),
+                    ->label('Data de Criação')->columnSpanTwo(),
             ]);
 
         $table->filters([
