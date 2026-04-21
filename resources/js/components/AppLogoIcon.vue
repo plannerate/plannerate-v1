@@ -14,12 +14,7 @@ withDefaults(
         <img
             src="/img/marcadark.png"
             :alt="alt"
-            class="h-full w-auto max-w-none object-contain dark:hidden"
-        />
-        <img
-            src="/img/marcadark.png"
-            :alt="alt"
-            class="hidden h-full w-auto max-w-none object-contain dark:block"
+            class="h-full w-auto max-w-none object-contain"
         />
     </span>
 </template>
