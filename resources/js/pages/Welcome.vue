@@ -4,6 +4,7 @@ import { useT } from '@/composables/useT';
 import { dashboard, login, register } from '@/routes';
 
 const { t } = useT();
+const dashboardPath = dashboard.url().replace(/^\/\/[^/]+/, '');
 
 withDefaults(
     defineProps<{
@@ -29,7 +30,7 @@ withDefaults(
             <nav class="flex items-center justify-end gap-4">
                 <Link
                     v-if="$page.props.auth.user"
-                    :href="dashboard()"
+                    :href="dashboardPath"
                     class="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
                 >
                     {{ t('app.navigation.dashboard') }}

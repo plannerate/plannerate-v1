@@ -19,11 +19,12 @@ import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
 const { t } = useT();
+const dashboardPath = dashboard.url().replace(/^\/\/[^/]+/, '');
 
 const mainNavItems: NavItem[] = [
     {
         title: t('app.navigation.dashboard'),
-        href: dashboard(),
+        href: dashboardPath,
         icon: LayoutGrid,
     },
 ];
@@ -48,7 +49,7 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
+                        <Link :href="dashboardPath">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>

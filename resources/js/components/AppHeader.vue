@@ -51,6 +51,7 @@ const page = usePage();
 const auth = computed(() => page.props.auth);
 const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
 const { t } = useT();
+const dashboardPath = dashboard.url().replace(/^\/\/[^/]+/, '');
 
 const activeItemStyles =
     'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
@@ -58,7 +59,7 @@ const activeItemStyles =
 const mainNavItems: NavItem[] = [
     {
         title: t('app.navigation.dashboard'),
-        href: dashboard(),
+        href: dashboardPath,
         icon: LayoutGrid,
     },
 ];
@@ -148,7 +149,7 @@ const rightNavItems: NavItem[] = [
                     </Sheet>
                 </div>
 
-                <Link :href="dashboard()" class="flex items-center gap-x-2">
+                <Link :href="dashboardPath" class="flex items-center gap-x-2">
                     <AppLogo />
                 </Link>
 

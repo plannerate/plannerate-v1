@@ -5,12 +5,13 @@ import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
 
 const { t } = useT();
+const dashboardPath = dashboard.url().replace(/^\/\/[^/]+/, '');
 
 setLayoutProps({
     breadcrumbs: [
         {
             title: t('app.navigation.dashboard'),
-            href: dashboard(),
+            href: dashboardPath,
         },
     ],
 });
