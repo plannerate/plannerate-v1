@@ -117,7 +117,6 @@ class StoreController extends AbstractController
                 ->columnSpanFour(),
         ]);
 
-        if ($form->getModel()->exists) {
             $form->column(\Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('document')
                 ->label('CNPJ')
                 ->required()
@@ -132,6 +131,7 @@ class StoreController extends AbstractController
                     ->columnSpanFull()
             );
 
+        if ($form->getModel()->exists) {
             $form->column(\App\Form\Fields\MapsField::make('maps_integration')
                 ->label('Integração com Google Maps')
                 ->columnSpanFull());
