@@ -101,20 +101,19 @@ class StoreController extends AbstractController
                     return $rules;
                 })
                 ->placeholder('Digite o código interno')
-                ->columnSpanFour(),
+                ->columnSpanTwo(),
             \Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('phone')
                 ->label('Telefone')
                 ->required()
                 ->phone()
                 ->placeholder('Digite o telefone')
-                ->columnSpanFour(),
+                ->columnSpanThree(),
 
             \Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('email')
                 ->label('Email')
-                ->required()
-                ->email()
+                ->required() 
                 ->placeholder('Digite o email')
-                ->columnSpanFour(),
+                ->columnSpanThree(),
         ]);
 
         $form->column(\Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('document')
