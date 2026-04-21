@@ -1,0 +1,4 @@
+[mcp_servers.laravel-boost]
+command = "wsl.exe"
+args = ["/home/call/.config/herd-lite/bin/php", "/home/call/projects/plannerate-v1/artisan", "boost:mcp"]
+cwd = "/home/call/projects/plannerate-v1"
