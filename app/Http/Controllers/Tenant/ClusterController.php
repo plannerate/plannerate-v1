@@ -100,8 +100,7 @@ class ClusterController extends AbstractController
 
     protected function table(TableBuilder $table): TableBuilder
     {
-        $table
-            ->component('table-row')->columns([
+        $table ->columns([
                 \Callcocam\LaravelRaptor\Support\Table\Columns\Types\StatusColumn::make('status')
                     ->label('Status')
                     ->editable()
@@ -111,7 +110,7 @@ class ClusterController extends AbstractController
                 \Callcocam\LaravelRaptor\Support\Table\Columns\Types\TextColumn::make('name')
                     ->label('Nome')
                     ->searchable()
-                    ->sortable()->columnSpanFour()
+                    ->sortable()->columnSpanSix()
                     ->columns([
                         \Callcocam\LaravelRaptor\Support\Table\Columns\Types\TextColumn::make('slug')
                             ->label('Slug')
@@ -119,7 +118,7 @@ class ClusterController extends AbstractController
                             ->sortable()->columnSpanTwo(),
                     ]),
                 \Callcocam\LaravelRaptor\Support\Table\Columns\Types\DateColumn::make('created_at')
-                    ->label('Data de Criação'),
+                    ->label('Data de Criação')->columnSpanTwo(),
             ]);
 
         $table->filters([
