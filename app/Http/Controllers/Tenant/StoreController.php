@@ -108,7 +108,7 @@ class StoreController extends AbstractController
                 ->phone()
                 ->placeholder('Digite o telefone')
                 ->columnSpanFour(),
-                
+
             \Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('email')
                 ->label('Email')
                 ->required()
@@ -117,19 +117,19 @@ class StoreController extends AbstractController
                 ->columnSpanFour(),
         ]);
 
-            $form->column(\Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('document')
-                ->label('CNPJ')
-                ->required()
-                ->placeholder('Digite o CNPJ')
-                ->columnSpanFour());
+        $form->column(\Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('document')
+            ->label('CNPJ')
+            ->required()
+            ->placeholder('Digite o CNPJ')
+            ->columnSpanFour());
 
-            $form->column(
-                \Callcocam\LaravelRaptor\Support\Form\Columns\Types\BuscaCepField::make('address')
-                    ->relationship('address')
-                    ->label('Endereço')
-                    ->placeholder('Digite o endereço')
-                    ->columnSpanFull()
-            );
+        $form->column(
+            \Callcocam\LaravelRaptor\Support\Form\Columns\Types\BuscaCepField::make('address')
+                ->relationship('address')
+                ->label('Endereço')
+                ->placeholder('Digite o endereço')
+                ->columnSpanFull()
+        );
 
         if ($form->getModel()->exists) {
             $form->column(\App\Form\Fields\MapsField::make('maps_integration')
