@@ -11,22 +11,17 @@ defineProps<{
 
 <template>
     <div
-        class="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10"
+        class="relative flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10"
     >
-        <div class="w-full max-w-sm">
+        <div class="pointer-events-none absolute inset-x-0 top-0 h-56 bg-linear-to-b from-primary/10 to-transparent" />
+        <div class="relative w-full max-w-sm rounded-2xl border border-border/70 bg-card/90 p-6 shadow-sm backdrop-blur-sm md:p-8">
             <div class="flex flex-col gap-8">
                 <div class="flex flex-col items-center gap-4">
                     <Link
                         :href="home()"
                         class="flex flex-col items-center gap-2 font-medium"
                     >
-                        <div
-                            class="mb-1 flex h-9 w-9 items-center justify-center rounded-md"
-                        >
-                            <AppLogoIcon
-                                class="size-9 fill-current text-[var(--foreground)] dark:text-white"
-                            />
-                        </div>
+                        <AppLogoIcon class="h-9 w-auto" />
                         <span class="sr-only">{{ title }}</span>
                     </Link>
                     <div class="space-y-2 text-center">
