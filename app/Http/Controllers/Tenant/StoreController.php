@@ -82,7 +82,7 @@ class StoreController extends AbstractController
             // document
 
             \Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('code')
-                ->label('Código Interno')
+                ->label('Código Loja')
                 ->required()
                 ->rules(function ($record) {
                     $clientId = config('app.current_client_id');
@@ -107,6 +107,13 @@ class StoreController extends AbstractController
                 ->required()
                 ->phone()
                 ->placeholder('Digite o telefone')
+                ->columnSpanFour(),
+                
+            \Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField::make('email')
+                ->label('Email')
+                ->required()
+                ->email()
+                ->placeholder('Digite o email')
                 ->columnSpanFour(),
         ]);
 
