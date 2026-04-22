@@ -64,6 +64,11 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
     ->group(function (): void {
         Route::get('/dashboard', [TenantDashboardController::class, 'index'])->name('dashboard');
 
+        Route::get('categories/cascade/children', [CategoryController::class, 'cascadeChildren'])
+            ->name('categories.cascade.children');
+        Route::get('categories/cascade/path', [CategoryController::class, 'cascadePath'])
+            ->name('categories.cascade.path');
+
         Route::resource('categories', CategoryController::class)
             ->except(['show'])
             ->names('categories');

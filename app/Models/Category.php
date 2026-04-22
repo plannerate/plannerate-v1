@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasCategory;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 
 class Category extends Model
 {
@@ -74,5 +76,36 @@ class Category extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    /**
+     * Cadeia da raiz até este nó (inclusive), na ordem nível 1 → folha.
+     * Usado pelo mercadológico em cascata e pelo trait {@see HasCategory}.
+     */
+    public function getFullHierarchy(): Collection
+    {
+        $chain = collect();
+        $current = $this;
+        $guard = 32;
+
+        while ($current instanceof self && $guard-- > 0) {
+            $chain->prepend($current);
+            if ($current->category_id === null) {
+                break;
+            }
+            $current = $current->relationLoaded('parent')
+                ? $current->parent
+                : self::query()->whereKey($current->category_id)->first();
+        }
+
+        return $chain->values();
+    }
+
+    /**
+     * Profundidade mercadológica (1 = raiz do tenant).
+     */
+    public function getMercadologicoDepth(): int
+    {
+        return $this->getFullHierarchy()->count();
     }
 }

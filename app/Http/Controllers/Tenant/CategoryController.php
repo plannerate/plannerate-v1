@@ -7,6 +7,7 @@ use App\Http\Requests\Tenant\StoreCategoryRequest;
 use App\Http\Requests\Tenant\UpdateCategoryRequest;
 use App\Models\Category;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,6 +16,74 @@ use Inertia\Response;
 class CategoryController extends Controller
 {
     use InteractsWithTenantContext;
+
+    private const MERCADOLOGICO_UI_LEVELS = 7;
+
+    public function cascadeChildren(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Category::class);
+
+        $tenantId = $this->tenantId();
+        $parentId = $request->query('parent_id');
+
+        if ($parentId !== null && $parentId !== '') {
+            $parent = Category::query()
+                ->where('tenant_id', $tenantId)
+                ->whereKey($parentId)
+                ->first();
+
+            if ($parent === null) {
+                abort(404);
+            }
+
+            if ($parent->getMercadologicoDepth() >= self::MERCADOLOGICO_UI_LEVELS) {
+                return response()->json([]);
+            }
+        }
+
+        $query = Category::query()
+            ->where('tenant_id', $tenantId)
+            ->orderBy('name');
+
+        if ($parentId !== null && $parentId !== '') {
+            $query->where('category_id', $parentId);
+        } else {
+            $query->whereNull('category_id');
+        }
+
+        return response()->json(
+            $query->get(['id', 'name'])->map(fn (Category $category): array => [
+                'id' => $category->id,
+                'name' => $category->name,
+            ])->values()->all()
+        );
+    }
+
+    public function cascadePath(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Category::class);
+
+        $id = $request->query('id');
+        if (! is_string($id) || $id === '') {
+            return response()->json(['path' => []]);
+        }
+
+        $category = Category::query()
+            ->where('tenant_id', $this->tenantId())
+            ->whereKey($id)
+            ->first();
+
+        if ($category === null) {
+            return response()->json(['path' => []]);
+        }
+
+        $path = $category->getFullHierarchy()->map(fn (Category $node): array => [
+            'id' => $node->id,
+            'name' => $node->name,
+        ])->values()->all();
+
+        return response()->json(['path' => $path]);
+    }
 
     public function index(Request $request): Response
     {

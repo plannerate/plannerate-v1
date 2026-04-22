@@ -75,7 +75,6 @@ class ProductController extends Controller
         return Inertia::render('tenant/products/Form', [
             'subdomain' => $this->tenantSubdomain(),
             'product' => null,
-            'categories' => $this->categoriesForSelect(),
         ]);
     }
 
@@ -105,9 +104,10 @@ class ProductController extends Controller
         return to_route('tenant.products.index', $this->tenantRouteParameters());
     }
 
-    public function edit(string $subdomain, Product $product): Response
+    public function edit(string $subdomain, string $product): Response
     {
         unset($subdomain);
+        $product = $this->tenantProductOrFail($product);
         $this->ensureTenantOwnership($product);
         $this->authorize('update', $product);
 
@@ -157,13 +157,13 @@ class ProductController extends Controller
                 'dimensions_status' => $product->dimensions_status,
                 'dimensions_description' => $product->dimensions_description,
             ],
-            'categories' => $this->categoriesForSelect(),
         ]);
     }
 
-    public function update(UpdateProductRequest $request, string $subdomain, Product $product): RedirectResponse
+    public function update(UpdateProductRequest $request, string $subdomain, string $product): RedirectResponse
     {
         unset($subdomain);
+        $product = $this->tenantProductOrFail($product);
         $this->ensureTenantOwnership($product);
         $this->authorize('update', $product);
 
@@ -187,9 +187,10 @@ class ProductController extends Controller
         return to_route('tenant.products.index', $this->tenantRouteParameters());
     }
 
-    public function destroy(string $subdomain, Product $product): RedirectResponse
+    public function destroy(string $subdomain, string $product): RedirectResponse
     {
         unset($subdomain);
+        $product = $this->tenantProductOrFail($product);
         $this->ensureTenantOwnership($product);
         $this->authorize('delete', $product);
 
@@ -222,5 +223,10 @@ class ProductController extends Controller
     private function ensureTenantOwnership(Product $product): void
     {
         $this->ensureBelongsToCurrentTenant($product);
+    }
+
+    private function tenantProductOrFail(string $id): Product
+    {
+        return Product::query()->whereKey($id)->firstOrFail();
     }
 }

@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasCategory;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
-    use HasFactory, HasUlids, SoftDeletes;
+    use HasCategory, HasFactory, HasUlids, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -87,13 +87,5 @@ class Product extends Model
             'weight' => 'decimal:2',
             'sync_at' => 'datetime',
         ];
-    }
-
-    /**
-     * Get category relation.
-     */
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(Category::class);
     }
 }

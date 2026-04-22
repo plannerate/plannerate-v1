@@ -12,12 +12,13 @@ class UpdateProductRequest extends FormRequest
 {
     use InteractsWithTenantContext;
 
+    private ?Product $routeProduct = null;
+
     public function authorize(): bool
     {
-        /** @var Product|null $product */
-        $product = $this->route('product');
+        $product = $this->resolvedRouteProduct();
 
-        return $product && ($this->user()?->can('update', $product) ?? false);
+        return $this->user()?->can('update', $product) ?? false;
     }
 
     /**
@@ -25,8 +26,7 @@ class UpdateProductRequest extends FormRequest
      */
     public function rules(): array
     {
-        /** @var Product $product */
-        $product = $this->route('product');
+        $product = $this->resolvedRouteProduct();
         $tenantId = $this->tenantId();
 
         return [
@@ -72,5 +72,21 @@ class UpdateProductRequest extends FormRequest
             'dimensions_status' => ['required', Rule::in(['draft', 'published'])],
             'dimensions_description' => ['nullable', 'string', 'max:255'],
         ];
+    }
+
+    private function resolvedRouteProduct(): Product
+    {
+        return $this->routeProduct ??= $this->resolveRouteProduct();
+    }
+
+    private function resolveRouteProduct(): Product
+    {
+        $product = $this->route('product');
+
+        if ($product instanceof Product) {
+            return $product;
+        }
+
+        return Product::query()->whereKey((string) $product)->firstOrFail();
     }
 }
