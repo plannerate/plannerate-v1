@@ -22,6 +22,10 @@ type Paginator<T> = {
 
 defineProps<{
     plans: Paginator<PlanRow>;
+    filters: {
+        search: string;
+        is_active: string;
+    };
 }>();
 
 const { t } = useT();
@@ -57,6 +61,32 @@ function formatPrice(cents: number): string {
                 </Link>
             </Button>
         </div>
+
+        <form :action="plansIndexPath" method="get" class="grid gap-3 rounded-xl border border-sidebar-border/70 p-4 md:grid-cols-4 dark:border-sidebar-border">
+            <input
+                name="search"
+                :value="filters.search"
+                type="text"
+                :placeholder="t('app.landlord.common.search')"
+                class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            />
+
+            <select
+                name="is_active"
+                :value="filters.is_active"
+                class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            >
+                <option value="">{{ t('app.landlord.common.all') }}</option>
+                <option value="1">{{ t('app.landlord.common.active') }}</option>
+                <option value="0">{{ t('app.landlord.common.inactive') }}</option>
+            </select>
+
+            <Button type="submit">{{ t('app.landlord.common.filter') }}</Button>
+
+            <Button variant="outline" as-child>
+                <Link :href="plansIndexPath">{{ t('app.landlord.common.clear_filters') }}</Link>
+            </Button>
+        </form>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
             <table class="w-full text-sm">

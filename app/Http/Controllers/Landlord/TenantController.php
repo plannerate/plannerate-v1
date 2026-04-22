@@ -8,6 +8,7 @@ use App\Http\Requests\Landlord\UpdateTenantRequest;
 use App\Models\Plan;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -23,11 +24,28 @@ class TenantController extends Controller
     /**
      * Display a listing of tenants.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $this->authorize('viewAny', Tenant::class);
 
+        $search = trim((string) $request->string('search'));
+        $status = (string) $request->string('status');
+        $planId = trim((string) $request->string('plan_id'));
+        $hasStatusFilter = in_array($status, self::AVAILABLE_STATUSES, true);
+        $hasPlanFilter = $planId !== '';
+
         $tenants = Tenant::query()
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($where) use ($search): void {
+                    $where
+                        ->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('slug', 'like', '%'.$search.'%')
+                        ->orWhere('database', 'like', '%'.$search.'%')
+                        ->orWhereHas('primaryDomain', fn ($domainQuery) => $domainQuery->where('host', 'like', '%'.$search.'%'));
+                });
+            })
+            ->when($hasStatusFilter, fn ($query) => $query->where('status', $status))
+            ->when($hasPlanFilter, fn ($query) => $query->where('plan_id', $planId))
             ->with(['plan:id,name', 'primaryDomain:id,tenant_id,host,is_active'])
             ->latest()
             ->paginate(10)
@@ -53,6 +71,22 @@ class TenantController extends Controller
 
         return Inertia::render('landlord/tenants/Index', [
             'tenants' => $tenants,
+            'filters' => [
+                'search' => $search,
+                'status' => $hasStatusFilter ? $status : '',
+                'plan_id' => $hasPlanFilter ? $planId : '',
+            ],
+            'filter_options' => [
+                'statuses' => $this->statusesForSelect(),
+                'plans' => Plan::query()
+                    ->orderBy('name')
+                    ->get(['id', 'name'])
+                    ->map(fn (Plan $plan): array => [
+                        'id' => $plan->id,
+                        'name' => $plan->name,
+                    ])
+                    ->all(),
+            ],
         ]);
     }
 

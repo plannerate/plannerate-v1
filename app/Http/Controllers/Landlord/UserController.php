@@ -9,6 +9,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Support\Authorization\RbacType;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,11 +19,34 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $this->authorize('viewAny', User::class);
 
+        $search = trim((string) $request->string('search'));
+        $isActive = $request->query('is_active');
+        $roleId = trim((string) $request->string('role_id'));
+        $hasIsActiveFilter = in_array($isActive, ['0', '1'], true);
+        $hasRoleFilter = $roleId !== '';
+
         $users = User::query()
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($where) use ($search): void {
+                    $where
+                        ->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('email', 'like', '%'.$search.'%');
+                });
+            })
+            ->when($hasIsActiveFilter, fn ($query) => $query->where('is_active', $isActive === '1'))
+            ->when($hasRoleFilter, function ($query) use ($roleId): void {
+                $query->whereHas('roles', function ($rolesQuery) use ($roleId): void {
+                    $rolesQuery
+                        ->where('roles.id', $roleId)
+                        ->whereNull('roles.tenant_id')
+                        ->where('roles.guard_name', 'web')
+                        ->where('roles.type', RbacType::LANDLORD);
+                });
+            })
             ->with(['roles' => fn ($query) => $query
                 ->whereNull('roles.tenant_id')
                 ->where('roles.guard_name', 'web')
@@ -42,6 +66,14 @@ class UserController extends Controller
 
         return Inertia::render('landlord/users/Index', [
             'users' => $users,
+            'filters' => [
+                'search' => $search,
+                'is_active' => $hasIsActiveFilter ? $isActive : '',
+                'role_id' => $hasRoleFilter ? $roleId : '',
+            ],
+            'filter_options' => [
+                'roles' => $this->rolesForSelect(),
+            ],
         ]);
     }
 

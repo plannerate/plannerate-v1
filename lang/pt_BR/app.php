@@ -65,6 +65,7 @@ return [
         'common' => [
             'actions' => 'Acoes',
             'empty' => 'Nenhum registro encontrado.',
+            'all' => 'Todos',
             'yes' => 'Sim',
             'no' => 'Nao',
             'active' => 'Ativo',
@@ -74,6 +75,9 @@ return [
             'create' => 'Criar',
             'access' => 'Acessos',
             'registries' => 'Cadastros',
+            'search' => 'Buscar por nome, slug, email...',
+            'filter' => 'Filtrar',
+            'clear_filters' => 'Limpar filtros',
         ],
         'plans' => [
             'navigation' => 'Planos',

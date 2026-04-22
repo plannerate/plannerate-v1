@@ -7,6 +7,7 @@ use App\Http\Requests\Landlord\StorePlanRequest;
 use App\Http\Requests\Landlord\UpdatePlanRequest;
 use App\Models\Plan;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,11 +16,23 @@ class PlanController extends Controller
     /**
      * Display a listing of plans.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $this->authorize('viewAny', Plan::class);
 
+        $search = trim((string) $request->string('search'));
+        $isActive = $request->query('is_active');
+        $hasIsActiveFilter = in_array($isActive, ['0', '1'], true);
+
         $plans = Plan::query()
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($where) use ($search): void {
+                    $where
+                        ->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('slug', 'like', '%'.$search.'%');
+                });
+            })
+            ->when($hasIsActiveFilter, fn ($query) => $query->where('is_active', $isActive === '1'))
             ->withCount('tenants')
             ->latest()
             ->paginate(10)
@@ -38,6 +51,10 @@ class PlanController extends Controller
 
         return Inertia::render('landlord/plans/Index', [
             'plans' => $plans,
+            'filters' => [
+                'search' => $search,
+                'is_active' => $hasIsActiveFilter ? $isActive : '',
+            ],
         ]);
     }
 

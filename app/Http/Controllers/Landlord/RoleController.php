@@ -9,6 +9,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Support\Authorization\RbacType;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -22,13 +23,19 @@ class RoleController extends Controller
     /**
      * Display a listing of roles.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $this->authorize('viewAny', Role::class);
+
+        $search = trim((string) $request->string('search'));
+        $type = (string) $request->string('type');
+        $hasTypeFilter = in_array($type, RbacType::all(), true);
 
         $roles = Role::query()
             ->whereNull('tenant_id')
             ->where('guard_name', 'web')
+            ->when($search !== '', fn ($query) => $query->where('name', 'like', '%'.$search.'%'))
+            ->when($hasTypeFilter, fn ($query) => $query->where('type', $type))
             ->withCount('permissions')
             ->latest()
             ->paginate(10)
@@ -44,6 +51,13 @@ class RoleController extends Controller
 
         return Inertia::render('landlord/roles/Index', [
             'roles' => $roles,
+            'filters' => [
+                'search' => $search,
+                'type' => $hasTypeFilter ? $type : '',
+            ],
+            'filter_options' => [
+                'types' => $this->typesForSelect(),
+            ],
         ]);
     }
 

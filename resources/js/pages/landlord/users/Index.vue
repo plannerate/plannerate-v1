@@ -19,6 +19,14 @@ type Paginator<T> = {
 
 defineProps<{
     users: Paginator<UserRow>;
+    filters: {
+        search: string;
+        is_active: string;
+        role_id: string;
+    };
+    filter_options: {
+        roles: Array<{ id: string; name: string }>;
+    };
 }>();
 
 const { t } = useT();
@@ -47,6 +55,43 @@ setLayoutProps({
                 </Link>
             </Button>
         </div>
+
+        <form :action="usersIndexPath" method="get" class="grid gap-3 rounded-xl border border-sidebar-border/70 p-4 md:grid-cols-5 dark:border-sidebar-border">
+            <input
+                name="search"
+                :value="filters.search"
+                type="text"
+                :placeholder="t('app.landlord.common.search')"
+                class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            />
+
+            <select
+                name="is_active"
+                :value="filters.is_active"
+                class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            >
+                <option value="">{{ t('app.landlord.common.all') }}</option>
+                <option value="1">{{ t('app.landlord.common.active') }}</option>
+                <option value="0">{{ t('app.landlord.common.inactive') }}</option>
+            </select>
+
+            <select
+                name="role_id"
+                :value="filters.role_id"
+                class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            >
+                <option value="">{{ t('app.landlord.common.all') }}</option>
+                <option v-for="role in filter_options.roles" :key="role.id" :value="role.id">
+                    {{ role.name }}
+                </option>
+            </select>
+
+            <Button type="submit">{{ t('app.landlord.common.filter') }}</Button>
+
+            <Button variant="outline" as-child>
+                <Link :href="usersIndexPath">{{ t('app.landlord.common.clear_filters') }}</Link>
+            </Button>
+        </form>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
             <table class="w-full text-sm">

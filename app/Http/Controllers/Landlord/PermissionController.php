@@ -8,6 +8,7 @@ use App\Http\Requests\Landlord\UpdatePermissionRequest;
 use App\Models\Permission;
 use App\Support\Authorization\RbacType;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,12 +26,18 @@ class PermissionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $this->authorize('viewAny', Permission::class);
 
+        $search = trim((string) $request->string('search'));
+        $type = (string) $request->string('type');
+        $hasTypeFilter = in_array($type, RbacType::all(), true);
+
         $permissions = Permission::query()
             ->where('guard_name', 'web')
+            ->when($search !== '', fn ($query) => $query->where('name', 'like', '%'.$search.'%'))
+            ->when($hasTypeFilter, fn ($query) => $query->where('type', $type))
             ->latest()
             ->paginate(15)
             ->withQueryString()
@@ -44,6 +51,13 @@ class PermissionController extends Controller
 
         return Inertia::render('landlord/permissions/Index', [
             'permissions' => $permissions,
+            'filters' => [
+                'search' => $search,
+                'type' => $hasTypeFilter ? $type : '',
+            ],
+            'filter_options' => [
+                'types' => $this->typesForSelect(),
+            ],
         ]);
     }
 

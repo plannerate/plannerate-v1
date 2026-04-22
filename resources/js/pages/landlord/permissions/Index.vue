@@ -18,6 +18,13 @@ type Paginator<T> = {
 
 defineProps<{
     permissions: Paginator<PermissionRow>;
+    filters: {
+        search: string;
+        type: string;
+    };
+    filter_options: {
+        types: Array<{ value: string; label: string }>;
+    };
 }>();
 
 const { t } = useT();
@@ -46,6 +53,33 @@ setLayoutProps({
                 </Link>
             </Button>
         </div>
+
+        <form :action="permissionsIndexPath" method="get" class="grid gap-3 rounded-xl border border-sidebar-border/70 p-4 md:grid-cols-4 dark:border-sidebar-border">
+            <input
+                name="search"
+                :value="filters.search"
+                type="text"
+                :placeholder="t('app.landlord.common.search')"
+                class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            />
+
+            <select
+                name="type"
+                :value="filters.type"
+                class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            >
+                <option value="">{{ t('app.landlord.common.all') }}</option>
+                <option v-for="type in filter_options.types" :key="type.value" :value="type.value">
+                    {{ type.label }}
+                </option>
+            </select>
+
+            <Button type="submit">{{ t('app.landlord.common.filter') }}</Button>
+
+            <Button variant="outline" as-child>
+                <Link :href="permissionsIndexPath">{{ t('app.landlord.common.clear_filters') }}</Link>
+            </Button>
+        </form>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
             <table class="w-full text-sm">
