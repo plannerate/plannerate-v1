@@ -3,12 +3,15 @@
 namespace App\Http\Requests\Tenant;
 
 use App\Models\Product;
+use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
 {
+    use InteractsWithTenantContext;
+
     public function authorize(): bool
     {
         return $this->user()?->can('create', Product::class) ?? false;
@@ -64,16 +67,5 @@ class StoreProductRequest extends FormRequest
             'dimensions_status' => ['required', Rule::in(['draft', 'published'])],
             'dimensions_description' => ['nullable', 'string', 'max:255'],
         ];
-    }
-
-    private function tenantId(): ?string
-    {
-        $containerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
-
-        if (! app()->bound($containerKey)) {
-            return null;
-        }
-
-        return app($containerKey)?->getKey();
     }
 }

@@ -3,12 +3,15 @@
 namespace App\Http\Requests\Tenant;
 
 use App\Models\Category;
+use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreCategoryRequest extends FormRequest
 {
+    use InteractsWithTenantContext;
+
     public function authorize(): bool
     {
         return $this->user()?->can('create', Category::class) ?? false;
@@ -35,16 +38,5 @@ class StoreCategoryRequest extends FormRequest
             'hierarchy_path' => ['nullable', 'array'],
             'is_placeholder' => ['sometimes', 'boolean'],
         ];
-    }
-
-    private function tenantId(): ?string
-    {
-        $containerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
-
-        if (! app()->bound($containerKey)) {
-            return null;
-        }
-
-        return app($containerKey)?->getKey();
     }
 }

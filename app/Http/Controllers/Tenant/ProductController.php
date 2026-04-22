@@ -7,6 +7,7 @@ use App\Http\Requests\Tenant\StoreProductRequest;
 use App\Http\Requests\Tenant\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,6 +15,8 @@ use Inertia\Response;
 
 class ProductController extends Controller
 {
+    use InteractsWithTenantContext;
+
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', Product::class);
@@ -52,7 +55,7 @@ class ProductController extends Controller
             ]);
 
         return Inertia::render('tenant/products/Index', [
-            'subdomain' => (string) $request->route('subdomain'),
+            'subdomain' => $this->tenantSubdomain(),
             'products' => $products,
             'filters' => [
                 'search' => $search,
@@ -70,7 +73,7 @@ class ProductController extends Controller
         $this->authorize('create', Product::class);
 
         return Inertia::render('tenant/products/Form', [
-            'subdomain' => (string) request()->route('subdomain'),
+            'subdomain' => $this->tenantSubdomain(),
             'product' => null,
             'categories' => $this->categoriesForSelect(),
         ]);
@@ -99,16 +102,17 @@ class ProductController extends Controller
             'message' => __('app.tenant.products.messages.created'),
         ]);
 
-        return to_route('tenant.products.index');
+        return to_route('tenant.products.index', $this->tenantRouteParameters());
     }
 
-    public function edit(Product $product): Response
+    public function edit(string $subdomain, Product $product): Response
     {
+        unset($subdomain);
         $this->ensureTenantOwnership($product);
         $this->authorize('update', $product);
 
         return Inertia::render('tenant/products/Form', [
-            'subdomain' => (string) request()->route('subdomain'),
+            'subdomain' => $this->tenantSubdomain(),
             'product' => [
                 'id' => $product->id,
                 'category_id' => $product->category_id,
@@ -157,8 +161,9 @@ class ProductController extends Controller
         ]);
     }
 
-    public function update(UpdateProductRequest $request, Product $product): RedirectResponse
+    public function update(UpdateProductRequest $request, string $subdomain, Product $product): RedirectResponse
     {
+        unset($subdomain);
         $this->ensureTenantOwnership($product);
         $this->authorize('update', $product);
 
@@ -179,11 +184,12 @@ class ProductController extends Controller
             'message' => __('app.tenant.products.messages.updated'),
         ]);
 
-        return to_route('tenant.products.index');
+        return to_route('tenant.products.index', $this->tenantRouteParameters());
     }
 
-    public function destroy(Product $product): RedirectResponse
+    public function destroy(string $subdomain, Product $product): RedirectResponse
     {
+        unset($subdomain);
         $this->ensureTenantOwnership($product);
         $this->authorize('delete', $product);
 
@@ -194,7 +200,7 @@ class ProductController extends Controller
             'message' => __('app.tenant.products.messages.deleted'),
         ]);
 
-        return to_route('tenant.products.index');
+        return to_route('tenant.products.index', $this->tenantRouteParameters());
     }
 
     /**
@@ -215,17 +221,6 @@ class ProductController extends Controller
 
     private function ensureTenantOwnership(Product $product): void
     {
-        abort_if($product->tenant_id !== $this->tenantId(), 404);
-    }
-
-    private function tenantId(): ?string
-    {
-        $containerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
-
-        if (! app()->bound($containerKey)) {
-            return null;
-        }
-
-        return app($containerKey)?->getKey();
+        $this->ensureBelongsToCurrentTenant($product);
     }
 }

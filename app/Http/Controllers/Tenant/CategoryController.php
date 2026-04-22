@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\StoreCategoryRequest;
 use App\Http\Requests\Tenant\UpdateCategoryRequest;
 use App\Models\Category;
+use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -13,6 +14,8 @@ use Inertia\Response;
 
 class CategoryController extends Controller
 {
+    use InteractsWithTenantContext;
+
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', Category::class);
@@ -46,7 +49,7 @@ class CategoryController extends Controller
             ]);
 
         return Inertia::render('tenant/categories/Index', [
-            'subdomain' => (string) $request->route('subdomain'),
+            'subdomain' => $this->tenantSubdomain(),
             'categories' => $categories,
             'filters' => [
                 'search' => $search,
@@ -60,7 +63,7 @@ class CategoryController extends Controller
         $this->authorize('create', Category::class);
 
         return Inertia::render('tenant/categories/Form', [
-            'subdomain' => (string) request()->route('subdomain'),
+            'subdomain' => $this->tenantSubdomain(),
             'category' => null,
             'parent_categories' => $this->parentCategoriesForSelect(),
         ]);
@@ -84,16 +87,17 @@ class CategoryController extends Controller
             'message' => __('app.tenant.categories.messages.created'),
         ]);
 
-        return to_route('tenant.categories.index');
+        return to_route('tenant.categories.index', $this->tenantRouteParameters());
     }
 
-    public function edit(Category $category): Response
+    public function edit(string $subdomain, Category $category): Response
     {
+        unset($subdomain);
         $this->ensureTenantOwnership($category);
         $this->authorize('update', $category);
 
         return Inertia::render('tenant/categories/Form', [
-            'subdomain' => (string) request()->route('subdomain'),
+            'subdomain' => $this->tenantSubdomain(),
             'category' => [
                 'id' => $category->id,
                 'category_id' => $category->category_id,
@@ -113,8 +117,9 @@ class CategoryController extends Controller
         ]);
     }
 
-    public function update(UpdateCategoryRequest $request, Category $category): RedirectResponse
+    public function update(UpdateCategoryRequest $request, string $subdomain, Category $category): RedirectResponse
     {
+        unset($subdomain);
         $this->ensureTenantOwnership($category);
         $this->authorize('update', $category);
 
@@ -130,11 +135,12 @@ class CategoryController extends Controller
             'message' => __('app.tenant.categories.messages.updated'),
         ]);
 
-        return to_route('tenant.categories.index');
+        return to_route('tenant.categories.index', $this->tenantRouteParameters());
     }
 
-    public function destroy(Category $category): RedirectResponse
+    public function destroy(string $subdomain, Category $category): RedirectResponse
     {
+        unset($subdomain);
         $this->ensureTenantOwnership($category);
         $this->authorize('delete', $category);
 
@@ -145,7 +151,7 @@ class CategoryController extends Controller
             'message' => __('app.tenant.categories.messages.deleted'),
         ]);
 
-        return to_route('tenant.categories.index');
+        return to_route('tenant.categories.index', $this->tenantRouteParameters());
     }
 
     /**
@@ -167,17 +173,6 @@ class CategoryController extends Controller
 
     private function ensureTenantOwnership(Category $category): void
     {
-        abort_if($category->tenant_id !== $this->tenantId(), 404);
-    }
-
-    private function tenantId(): ?string
-    {
-        $containerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
-
-        if (! app()->bound($containerKey)) {
-            return null;
-        }
-
-        return app($containerKey)?->getKey();
+        $this->ensureBelongsToCurrentTenant($category);
     }
 }
