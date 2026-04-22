@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Landlord;
 
 use App\Models\Tenant;
+use App\Support\Authorization\RbacType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -36,6 +37,7 @@ class UpdateTenantUserAccessRequest extends FormRequest
                 Rule::exists('landlord.roles', 'name')
                     ->where(static fn ($query) => $query
                         ->where('guard_name', 'web')
+                        ->where('type', RbacType::TENANT)
                         ->whereNull('tenant_id')),
             ],
         ];

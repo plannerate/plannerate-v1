@@ -4,6 +4,26 @@ namespace App\Support\Authorization;
 
 final class PermissionName
 {
+    public const LANDLORD_USERS_VIEW_ANY = 'landlord.users.viewAny';
+
+    public const LANDLORD_USERS_VIEW = 'landlord.users.view';
+
+    public const LANDLORD_USERS_CREATE = 'landlord.users.create';
+
+    public const LANDLORD_USERS_UPDATE = 'landlord.users.update';
+
+    public const LANDLORD_USERS_DELETE = 'landlord.users.delete';
+
+    public const LANDLORD_PERMISSIONS_VIEW_ANY = 'landlord.permissions.viewAny';
+
+    public const LANDLORD_PERMISSIONS_VIEW = 'landlord.permissions.view';
+
+    public const LANDLORD_PERMISSIONS_CREATE = 'landlord.permissions.create';
+
+    public const LANDLORD_PERMISSIONS_UPDATE = 'landlord.permissions.update';
+
+    public const LANDLORD_PERMISSIONS_DELETE = 'landlord.permissions.delete';
+
     public const LANDLORD_PLANS_VIEW_ANY = 'landlord.plans.viewAny';
 
     public const LANDLORD_PLANS_VIEW = 'landlord.plans.view';
@@ -42,6 +62,16 @@ final class PermissionName
     public static function all(): array
     {
         return [
+            self::LANDLORD_USERS_VIEW_ANY,
+            self::LANDLORD_USERS_VIEW,
+            self::LANDLORD_USERS_CREATE,
+            self::LANDLORD_USERS_UPDATE,
+            self::LANDLORD_USERS_DELETE,
+            self::LANDLORD_PERMISSIONS_VIEW_ANY,
+            self::LANDLORD_PERMISSIONS_VIEW,
+            self::LANDLORD_PERMISSIONS_CREATE,
+            self::LANDLORD_PERMISSIONS_UPDATE,
+            self::LANDLORD_PERMISSIONS_DELETE,
             self::LANDLORD_PLANS_VIEW_ANY,
             self::LANDLORD_PLANS_VIEW,
             self::LANDLORD_PLANS_CREATE,
@@ -59,5 +89,10 @@ final class PermissionName
             self::LANDLORD_ROLES_DELETE,
             self::TENANT_DASHBOARD_VIEW,
         ];
+    }
+
+    public static function typeFor(string $permissionName): ?string
+    {
+        return RbacType::fromName($permissionName);
     }
 }

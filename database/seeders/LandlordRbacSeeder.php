@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Support\Authorization\PermissionName;
+use App\Support\Authorization\RbacType;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -21,15 +22,38 @@ class LandlordRbacSeeder extends Seeder
             Permission::query()->firstOrCreate([
                 'name' => $permissionName,
                 'guard_name' => 'web',
+                'type' => PermissionName::typeFor($permissionName) ?? RbacType::LANDLORD,
             ]);
         }
 
         $currentTeamId = getPermissionsTeamId();
         setPermissionsTeamId(null);
 
-        $landlordAdminRole = Role::findOrCreate('landlord-admin', 'web');
-        $tenantAdminRole = Role::findOrCreate('tenant-admin', 'web');
+        $superAdminRole = Role::query()->firstOrCreate([
+            'name' => 'Super Admin',
+            'system_name' => 'super-admin',
+            'guard_name' => 'web',
+            'tenant_id' => null,
+            'type' => RbacType::LANDLORD,
+        ]);
 
+        $landlordAdminRole = Role::query()->firstOrCreate([
+            'name' => 'Landlord Admin',
+            'system_name' => 'landlord-admin',
+            'guard_name' => 'web',
+            'tenant_id' => null,
+            'type' => RbacType::LANDLORD,
+        ]);
+
+        $tenantAdminRole = Role::query()->firstOrCreate([
+            'name' => 'Tenant Admin',
+            'system_name' => 'tenant-admin',
+            'guard_name' => 'web',
+            'tenant_id' => null,
+            'type' => RbacType::TENANT,
+        ]);
+
+        $superAdminRole->syncPermissions(PermissionName::all());
         $landlordAdminRole->syncPermissions(PermissionName::all());
         $tenantAdminRole->syncPermissions([PermissionName::TENANT_DASHBOARD_VIEW]);
 

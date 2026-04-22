@@ -23,23 +23,25 @@ return new class extends Migration
 
         Schema::connection($this->connection)->create($tableNames['permissions'], static function (Blueprint $table) {
             $table->ulid('id')->primary();
+            $table->string('type');
             $table->string('name');
             $table->string('guard_name');
             $table->timestamps();
-            $table->unique(['name', 'guard_name']);
+            $table->unique(['guard_name', 'name', 'type'], 'permissions_guard_name_type_unique');
         });
 
         Schema::connection($this->connection)->create($tableNames['roles'], static function (Blueprint $table) use ($teamForeignKey) {
             $table->ulid('id')->primary();
             $table->ulid($teamForeignKey)->nullable()->index();
+            $table->string('type');
+            $table->string('system_name')->nullable()->unique();
             $table->string('name');
             $table->string('guard_name');
             $table->timestamps();
-            $table->unique([$teamForeignKey, 'name', 'guard_name'], 'roles_team_name_guard_unique');
+            $table->unique([$teamForeignKey, 'guard_name', 'name', 'type'], 'roles_team_name_guard_type_unique');
         });
 
         Schema::connection($this->connection)->create($tableNames['model_has_permissions'], static function (Blueprint $table) use ($tableNames, $teamForeignKey, $pivotPermission) {
-            $table->ulid('id')->primary();
             $table->ulid($pivotPermission);
             $table->ulid($teamForeignKey)->nullable()->index();
             $table->string('model_type');
@@ -50,7 +52,6 @@ return new class extends Migration
         });
 
         Schema::connection($this->connection)->create($tableNames['model_has_roles'], static function (Blueprint $table) use ($tableNames, $teamForeignKey, $pivotRole) {
-            $table->ulid('id')->primary();
             $table->ulid($pivotRole);
             $table->ulid($teamForeignKey)->nullable()->index();
             $table->string('model_type');

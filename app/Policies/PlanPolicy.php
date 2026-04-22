@@ -4,10 +4,13 @@ namespace App\Policies;
 
 use App\Models\Plan;
 use App\Models\User;
+use App\Policies\Concerns\ChecksRbacPermission;
 use App\Support\Authorization\PermissionName;
 
 class PlanPolicy
 {
+    use ChecksRbacPermission;
+
     /**
      * Determine whether the user can view any models.
      */
@@ -46,25 +49,5 @@ class PlanPolicy
     public function delete(User $user, Plan $plan): bool
     {
         return $this->allowByContext($user, PermissionName::LANDLORD_PLANS_DELETE);
-    }
-
-    private function allowByContext(User $user, string $permission): bool
-    {
-        if (! config('permission.rbac_enabled', false)) {
-            return true;
-        }
-
-        if ($this->isLandlordContext()) {
-            return true;
-        }
-
-        return $user->can($permission);
-    }
-
-    private function isLandlordContext(): bool
-    {
-        $containerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
-
-        return ! app()->bound($containerKey) || app($containerKey) === null;
     }
 }

@@ -3,11 +3,15 @@
 namespace App\Providers;
 
 use App\Models\Plan;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Tenant;
+use App\Models\User;
+use App\Policies\PermissionPolicy;
 use App\Policies\PlanPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\TenantPolicy;
+use App\Policies\UserPolicy;
 use App\Support\Navigation\Menu\Contracts\ResolvesMenuAuthorization;
 use App\Support\Navigation\Menu\MenuAuthorizationResolver;
 use Carbon\CarbonImmutable;
@@ -41,9 +45,19 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function registerPolicies(): void
     {
+        Gate::before(function (User $user): ?bool {
+            return $user->roles()
+                ->where('system_name', 'super-admin')
+                ->exists()
+                ? true
+                : null;
+        });
+
         Gate::policy(Plan::class, PlanPolicy::class);
+        Gate::policy(Permission::class, PermissionPolicy::class);
         Gate::policy(Tenant::class, TenantPolicy::class);
         Gate::policy(Role::class, RolePolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
     }
 
     /**

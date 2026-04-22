@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Landlord;
 
 use App\Models\Role;
+use App\Support\Authorization\RbacType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -28,8 +29,10 @@ class UpdateRoleRequest extends FormRequest
     {
         /** @var Role|null $role */
         $role = $this->route('role');
+        $type = (string) $this->input('type', (string) $role?->type);
 
         return [
+            'type' => ['required', 'string', Rule::in(RbacType::all())],
             'name' => [
                 'required',
                 'string',
@@ -38,6 +41,7 @@ class UpdateRoleRequest extends FormRequest
                     ->ignore($role?->id)
                     ->where(static fn ($query) => $query
                         ->where('guard_name', 'web')
+                        ->where('type', $type)
                         ->whereNull('tenant_id')),
             ],
             'permissions' => ['nullable', 'array'],
@@ -45,7 +49,9 @@ class UpdateRoleRequest extends FormRequest
                 'string',
                 'distinct',
                 Rule::exists('landlord.permissions', 'name')
-                    ->where(static fn ($query) => $query->where('guard_name', 'web')),
+                    ->where(static fn ($query) => $query
+                        ->where('guard_name', 'web')
+                        ->where('type', $type)),
             ],
         ];
     }
