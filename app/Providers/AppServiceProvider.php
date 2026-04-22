@@ -2,13 +2,17 @@
 
 namespace App\Providers;
 
-use App\Models\Plan;
+use App\Models\Category;
 use App\Models\Permission;
+use App\Models\Plan;
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Policies\CategoryPolicy;
 use App\Policies\PermissionPolicy;
 use App\Policies\PlanPolicy;
+use App\Policies\ProductPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\TenantPolicy;
 use App\Policies\UserPolicy;
@@ -58,6 +62,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Tenant::class, TenantPolicy::class);
         Gate::policy(Role::class, RolePolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Category::class, CategoryPolicy::class);
+        Gate::policy(Product::class, ProductPolicy::class);
     }
 
     /**

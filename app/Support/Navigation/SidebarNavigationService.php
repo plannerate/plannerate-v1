@@ -2,8 +2,10 @@
 
 namespace App\Support\Navigation;
 
+use App\Models\Category;
 use App\Models\Permission;
 use App\Models\Plan;
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
@@ -115,6 +117,37 @@ class SidebarNavigationService
                     ->icon('layout-grid')
                     ->authorize('viewAny', Tenant::class)
                     ->setOrder(10);
+            })
+            ->submenu('tenant.registries', function ($submenu) use ($subdomain): void {
+                $submenu
+                    ->label(__('app.tenant.common.registries'))
+                    ->icon('folder-kanban')
+                    ->authorize('viewAny', Category::class)
+                    ->setOrder(20)
+                    ->item('tenant.categories', function ($item) use ($subdomain): void {
+                        $categoriesHref = $subdomain === null
+                            ? '/categories'
+                            : route('tenant.categories.index', ['subdomain' => $subdomain], false);
+
+                        $item
+                            ->label(__('app.tenant.categories.navigation'))
+                            ->href($categoriesHref)
+                            ->icon('folder-tree')
+                            ->authorize('viewAny', Category::class)
+                            ->setOrder(10);
+                    })
+                    ->item('tenant.products', function ($item) use ($subdomain): void {
+                        $productsHref = $subdomain === null
+                            ? '/products'
+                            : route('tenant.products.index', ['subdomain' => $subdomain], false);
+
+                        $item
+                            ->label(__('app.tenant.products.navigation'))
+                            ->href($productsHref)
+                            ->icon('package')
+                            ->authorize('viewAny', Product::class)
+                            ->setOrder(20);
+                    });
             });
     }
 

@@ -55,7 +55,19 @@ class LandlordRbacSeeder extends Seeder
 
         $superAdminRole->syncPermissions(PermissionName::all());
         $landlordAdminRole->syncPermissions(PermissionName::all());
-        $tenantAdminRole->syncPermissions([PermissionName::TENANT_DASHBOARD_VIEW]);
+        $tenantAdminRole->syncPermissions([
+            PermissionName::TENANT_DASHBOARD_VIEW,
+            PermissionName::TENANT_CATEGORIES_VIEW_ANY,
+            PermissionName::TENANT_CATEGORIES_VIEW,
+            PermissionName::TENANT_CATEGORIES_CREATE,
+            PermissionName::TENANT_CATEGORIES_UPDATE,
+            PermissionName::TENANT_CATEGORIES_DELETE,
+            PermissionName::TENANT_PRODUCTS_VIEW_ANY,
+            PermissionName::TENANT_PRODUCTS_VIEW,
+            PermissionName::TENANT_PRODUCTS_CREATE,
+            PermissionName::TENANT_PRODUCTS_UPDATE,
+            PermissionName::TENANT_PRODUCTS_DELETE,
+        ]);
 
         setPermissionsTeamId($currentTeamId);
         app(PermissionRegistrar::class)->forgetCachedPermissions();

@@ -56,6 +56,26 @@ final class PermissionName
 
     public const TENANT_DASHBOARD_VIEW = 'tenant.dashboard.view';
 
+    public const TENANT_CATEGORIES_VIEW_ANY = 'tenant.categories.viewAny';
+
+    public const TENANT_CATEGORIES_VIEW = 'tenant.categories.view';
+
+    public const TENANT_CATEGORIES_CREATE = 'tenant.categories.create';
+
+    public const TENANT_CATEGORIES_UPDATE = 'tenant.categories.update';
+
+    public const TENANT_CATEGORIES_DELETE = 'tenant.categories.delete';
+
+    public const TENANT_PRODUCTS_VIEW_ANY = 'tenant.products.viewAny';
+
+    public const TENANT_PRODUCTS_VIEW = 'tenant.products.view';
+
+    public const TENANT_PRODUCTS_CREATE = 'tenant.products.create';
+
+    public const TENANT_PRODUCTS_UPDATE = 'tenant.products.update';
+
+    public const TENANT_PRODUCTS_DELETE = 'tenant.products.delete';
+
     /**
      * @return list<string>
      */
@@ -88,6 +108,16 @@ final class PermissionName
             self::LANDLORD_ROLES_UPDATE,
             self::LANDLORD_ROLES_DELETE,
             self::TENANT_DASHBOARD_VIEW,
+            self::TENANT_CATEGORIES_VIEW_ANY,
+            self::TENANT_CATEGORIES_VIEW,
+            self::TENANT_CATEGORIES_CREATE,
+            self::TENANT_CATEGORIES_UPDATE,
+            self::TENANT_CATEGORIES_DELETE,
+            self::TENANT_PRODUCTS_VIEW_ANY,
+            self::TENANT_PRODUCTS_VIEW,
+            self::TENANT_PRODUCTS_CREATE,
+            self::TENANT_PRODUCTS_UPDATE,
+            self::TENANT_PRODUCTS_DELETE,
         ];
     }
 

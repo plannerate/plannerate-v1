@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -10,7 +12,8 @@ use Spatie\Multitenancy\Models\Tenant as ModelsTenant;
 
 class Tenant extends ModelsTenant
 {
-    use HasUlids;
+    /** @use HasFactory<TenantFactory> */
+    use HasFactory, HasUlids;
 
     /**
      * The database connection used by the model.

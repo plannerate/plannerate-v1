@@ -7,7 +7,9 @@ use App\Http\Controllers\Landlord\RoleController;
 use App\Http\Controllers\Landlord\TenantController as LandlordTenantController;
 use App\Http\Controllers\Landlord\TenantUserAccessController;
 use App\Http\Controllers\Landlord\UserController;
+use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboardController;
+use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -61,6 +63,14 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
     ->name('tenant.')
     ->group(function (): void {
         Route::get('/dashboard', [TenantDashboardController::class, 'index'])->name('dashboard');
+
+        Route::resource('categories', CategoryController::class)
+            ->except(['show'])
+            ->names('categories');
+
+        Route::resource('products', ProductController::class)
+            ->except(['show'])
+            ->names('products');
     });
 
 require __DIR__.'/settings.php';
