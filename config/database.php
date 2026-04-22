@@ -82,6 +82,15 @@ return [
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
+        'mysql_legacy' => [
+            'driver' => 'mysql',
+            'url' => env('DB_URL'),
+            'host' => env('DB_LEGACY_HOST', '127.0.0.1'),
+            'port' => env('DB_LEGACY_PORT', '3306'),
+            'database' => env('DB_LEGACY_DATABASE', 'base'),
+            'username' => env('DB_LEGACY_USERNAME', 'sail'),
+            'password' => env('DB_LEGACY_PASSWORD', 'password'),
+        ],
 
         'mariadb' => [
             'driver' => 'mariadb',

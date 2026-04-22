@@ -58,6 +58,7 @@ services:
             PMA_HOST: mysql
             PMA_USER: '${DB_USERNAME}'
             PMA_PASSWORD: '${DB_PASSWORD}'
+            UPLOAD_LIMIT: '${PHPMYADMIN_UPLOAD_LIMIT:-256M}'
         networks:
             - sail
         depends_on:
