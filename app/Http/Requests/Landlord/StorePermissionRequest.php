@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests\Landlord;
 
+use App\Models\Permission;
+use App\Support\Authorization\RbacType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StorePermissionRequest extends FormRequest
 {
@@ -12,7 +15,7 @@ class StorePermissionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return $this->user()?->can('create', Permission::class) ?? false;
     }
 
     /**
@@ -22,8 +25,19 @@ class StorePermissionRequest extends FormRequest
      */
     public function rules(): array
     {
+        $type = (string) $this->input('type', '');
+
         return [
-            //
+            'type' => ['required', 'string', Rule::in(RbacType::all())],
+            'name' => [
+                'required',
+                'string',
+                'max:150',
+                Rule::unique('landlord.permissions', 'name')
+                    ->where(static fn ($query) => $query
+                        ->where('guard_name', 'web')
+                        ->where('type', $type)),
+            ],
         ];
     }
 }

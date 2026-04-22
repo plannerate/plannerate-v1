@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Landlord\DashboardController as LandlordDashboardController;
+use App\Http\Controllers\Landlord\PermissionController;
 use App\Http\Controllers\Landlord\PlanController;
 use App\Http\Controllers\Landlord\RoleController;
 use App\Http\Controllers\Landlord\TenantController as LandlordTenantController;
@@ -35,6 +36,10 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::resource('users', UserController::class)
         ->except(['show'])
         ->names('landlord.users');
+
+    Route::resource('permissions', PermissionController::class)
+        ->except(['show'])
+        ->names('landlord.permissions');
 
     Route::get('tenants/{tenant}/access', [TenantUserAccessController::class, 'edit'])
         ->name('landlord.tenants.access.edit');

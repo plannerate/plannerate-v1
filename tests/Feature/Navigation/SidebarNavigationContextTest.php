@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Permission;
 use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Tenant;
@@ -16,18 +17,18 @@ test('landlord dashboard shares landlord navigation context', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('navigation.context', 'landlord')
-            ->where('navigation.main.0.type', 'group')
-            ->where('navigation.main.0.children.0.type', 'item')
-            ->where('navigation.main.0.children.0.href', route('dashboard', absolute: false))
-            ->where('navigation.main.1.type', 'separator')
-            ->where('navigation.main.2.type', 'submenu')
-            ->where('navigation.main.2.children.0.href', route('landlord.plans.index', absolute: false))
-            ->where('navigation.main.2.children.0.subject', Plan::class)
-            ->where('navigation.main.2.children.1.href', route('landlord.tenants.index', absolute: false))
-            ->where('navigation.main.2.children.2.href', route('landlord.roles.index', absolute: false))
-            ->where('navigation.main.2.children.2.subject', Role::class)
-            ->where('navigation.main.2.children.3.href', route('landlord.users.index', absolute: false))
-            ->where('navigation.main.2.children.3.subject', User::class)
+            ->where('navigation.main.0.type', 'item')
+            ->where('navigation.main.0.href', route('dashboard', absolute: false))
+            ->where('navigation.main.1.type', 'submenu')
+            ->where('navigation.main.1.children.0.href', route('landlord.plans.index', absolute: false))
+            ->where('navigation.main.1.children.0.subject', Plan::class)
+            ->where('navigation.main.1.children.1.href', route('landlord.tenants.index', absolute: false))
+            ->where('navigation.main.1.children.2.href', route('landlord.roles.index', absolute: false))
+            ->where('navigation.main.1.children.2.subject', Role::class)
+            ->where('navigation.main.1.children.3.href', route('landlord.users.index', absolute: false))
+            ->where('navigation.main.1.children.3.subject', User::class)
+            ->where('navigation.main.1.children.4.href', route('landlord.permissions.index', absolute: false))
+            ->where('navigation.main.1.children.4.subject', Permission::class)
         );
 });
 
@@ -64,7 +65,7 @@ test('tenant dashboard shares tenant navigation context', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->where('navigation.context', 'tenant')
             ->has('navigation.main', 1)
-            ->where('navigation.main.0.type', 'group')
-            ->where('navigation.main.0.children.0.href', route('tenant.dashboard', ['subdomain' => 'alfa'], false))
+            ->where('navigation.main.0.type', 'item')
+            ->where('navigation.main.0.href', route('tenant.dashboard', ['subdomain' => 'alfa'], false))
         );
 });

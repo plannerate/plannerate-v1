@@ -2,6 +2,7 @@
 
 namespace App\Support\Navigation;
 
+use App\Models\Permission;
 use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Tenant;
@@ -86,6 +87,14 @@ class SidebarNavigationService
                             ->icon('users')
                             ->authorize('viewAny', User::class)
                             ->setOrder(40);
+                    })
+                    ->item('landlord.permissions', function ($item): void {
+                        $item
+                            ->label(__('app.landlord.permissions.navigation'))
+                            ->href(route('landlord.permissions.index', absolute: false))
+                            ->icon('key-round')
+                            ->authorize('viewAny', Permission::class)
+                            ->setOrder(50);
                     });
             });
     }

@@ -93,3 +93,18 @@ test('role cannot be deleted when role is assigned to users', function () {
         'id' => $role->id,
     ], 'landlord');
 });
+
+test('role cannot receive permissions from another type', function () {
+    $response = $this->post(route('landlord.roles.store'), [
+        'type' => 'tenant',
+        'name' => 'tenant-operator',
+        'permissions' => [PermissionName::LANDLORD_TENANTS_VIEW_ANY],
+    ]);
+
+    $response->assertSessionHasErrors(['permissions.0']);
+
+    $this->assertDatabaseMissing('roles', [
+        'name' => 'tenant-operator',
+        'type' => 'tenant',
+    ], 'landlord');
+});
