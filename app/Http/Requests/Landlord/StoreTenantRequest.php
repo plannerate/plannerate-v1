@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Landlord;
 
+use App\Models\Tenant;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -19,7 +20,7 @@ class StoreTenantRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('create', Tenant::class) ?? false;
     }
 
     /**

@@ -25,6 +25,8 @@ class TenantController extends Controller
      */
     public function index(): Response
     {
+        $this->authorize('viewAny', Tenant::class);
+
         $tenants = Tenant::query()
             ->with(['plan:id,name', 'primaryDomain:id,tenant_id,host,is_active'])
             ->latest()
@@ -59,6 +61,8 @@ class TenantController extends Controller
      */
     public function create(): Response
     {
+        $this->authorize('create', Tenant::class);
+
         return Inertia::render('landlord/tenants/Form', [
             'tenant' => null,
             'plans' => $this->plansForSelect(),
@@ -71,6 +75,8 @@ class TenantController extends Controller
      */
     public function store(StoreTenantRequest $request): RedirectResponse
     {
+        $this->authorize('create', Tenant::class);
+
         $validated = $request->validated();
 
         DB::connection('landlord')->transaction(function () use ($validated): void {
@@ -98,6 +104,8 @@ class TenantController extends Controller
      */
     public function edit(Tenant $tenant): Response
     {
+        $this->authorize('update', $tenant);
+
         $tenant->load(['primaryDomain:id,tenant_id,host,is_active']);
 
         return Inertia::render('landlord/tenants/Form', [
@@ -122,6 +130,8 @@ class TenantController extends Controller
      */
     public function update(UpdateTenantRequest $request, Tenant $tenant): RedirectResponse
     {
+        $this->authorize('update', $tenant);
+
         $validated = $request->validated();
 
         DB::connection('landlord')->transaction(function () use ($tenant, $validated): void {
@@ -151,6 +161,8 @@ class TenantController extends Controller
      */
     public function destroy(Tenant $tenant): RedirectResponse
     {
+        $this->authorize('delete', $tenant);
+
         $tenant->delete();
 
         Inertia::flash('toast', [

@@ -2,62 +2,77 @@
 
 namespace App\Support\Navigation;
 
+use App\Models\Plan;
+use App\Models\Tenant;
+use App\Support\Navigation\Menu\Menu;
+use App\Support\Navigation\Menu\MenuPayloadAdapter;
 use Illuminate\Http\Request;
 
 class SidebarNavigationService
 {
+    public function __construct(
+        private MenuPayloadAdapter $menuPayloadAdapter,
+    ) {}
+
     /**
-     * Build sidebar navigation payload for the current request context.
-     *
-     * @return array{context: 'landlord'|'tenant', main: array<int, array{title: string, href: string, icon?: string, can: bool}>}
+     * @return array{context: string, main: array<int, array<string, mixed>>}
      */
     public function build(Request $request): array
+    {
+        $menu = $this->resolveContextMenu($request);
+
+        return $this->menuPayloadAdapter->toNavigation($menu, $request->user());
+    }
+
+    private function resolveContextMenu(Request $request): Menu
     {
         $landlordDomain = (string) config('app.landlord_domain');
         $currentTenantContainerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
         $hasCurrentTenant = app()->bound($currentTenantContainerKey) && app($currentTenantContainerKey) !== null;
-
         $isTenantContext = $hasCurrentTenant && strtolower($request->getHost()) !== strtolower($landlordDomain);
 
-        return [
-            'context' => $isTenantContext ? 'tenant' : 'landlord',
-            'main' => $isTenantContext
-                ? $this->tenantItems($request, $landlordDomain)
-                : $this->landlordItems(),
-        ];
+        return $isTenantContext
+            ? $this->tenantMenu($request, $landlordDomain)
+            : $this->landlordMenu();
     }
 
-    /**
-     * @return array<int, array{title: string, href: string, icon?: string, can: bool}>
-     */
-    private function landlordItems(): array
+    private function landlordMenu(): Menu
     {
-        return [
-            [
-                'title' => __('app.navigation.dashboard'),
-                'href' => route('dashboard', absolute: false),
-                'icon' => 'layout-grid',
-                'can' => true,
-            ],
-            [
-                'title' => __('app.landlord.plans.navigation'),
-                'href' => route('landlord.plans.index', absolute: false),
-                'icon' => 'package-open',
-                'can' => true,
-            ],
-            [
-                'title' => __('app.landlord.tenants.navigation'),
-                'href' => route('landlord.tenants.index', absolute: false),
-                'icon' => 'building-2',
-                'can' => true,
-            ],
-        ];
+        return Menu::make('landlord')
+            ->item('landlord.dashboard', function ($item): void {
+                $item
+                    ->label(__('app.navigation.dashboard'))
+                    ->href(route('dashboard', absolute: false))
+                    ->icon('layout-grid')
+                    ->authorize('viewAny', Tenant::class)
+                    ->setOrder(10);
+            })
+            ->submenu('landlord.registries', function ($submenu): void {
+                $submenu
+                    ->label(__('app.landlord.common.registries'))
+                    ->icon('folder-kanban')
+                    ->authorize('viewAny', Tenant::class)
+                    ->setOrder(30)
+                    ->item('landlord.plans', function ($item): void {
+                        $item
+                            ->label(__('app.landlord.plans.navigation'))
+                            ->href(route('landlord.plans.index', absolute: false))
+                            ->icon('package-open')
+                            ->authorize('viewAny', Plan::class)
+                            ->setOrder(10);
+                    })
+                    ->item('landlord.tenants', function ($item): void {
+                        $item
+                            ->label(__('app.landlord.tenants.navigation'))
+                            ->href(route('landlord.tenants.index', absolute: false))
+                            ->icon('building-2')
+                            ->authorize('viewAny', Tenant::class)
+                            ->setOrder(20);
+                    });
+            });
     }
 
-    /**
-     * @return array<int, array{title: string, href: string, icon?: string, can: bool}>
-     */
-    private function tenantItems(Request $request, string $landlordDomain): array
+    private function tenantMenu(Request $request, string $landlordDomain): Menu
     {
         $subdomain = $this->resolveSubdomain($request, $landlordDomain);
 
@@ -65,14 +80,15 @@ class SidebarNavigationService
             ? '/dashboard'
             : route('tenant.dashboard', ['subdomain' => $subdomain], false);
 
-        return [
-            [
-                'title' => __('app.navigation.dashboard'),
-                'href' => $dashboardHref,
-                'icon' => 'layout-grid',
-                'can' => true,
-            ],
-        ];
+        return Menu::make('tenant')
+            ->item('tenant.dashboard', function ($item) use ($dashboardHref): void {
+                $item
+                    ->label(__('app.navigation.dashboard'))
+                    ->href($dashboardHref)
+                    ->icon('layout-grid')
+                    ->authorize('viewAny', Tenant::class)
+                    ->setOrder(10);
+            });
     }
 
     private function resolveSubdomain(Request $request, string $landlordDomain): ?string

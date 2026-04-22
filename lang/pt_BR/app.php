@@ -69,6 +69,7 @@ return [
             'edit' => 'Editar',
             'delete' => 'Excluir',
             'create' => 'Criar',
+            'registries' => 'Cadastros',
         ],
         'plans' => [
             'navigation' => 'Planos',

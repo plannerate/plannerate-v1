@@ -17,6 +17,8 @@ class PlanController extends Controller
      */
     public function index(): Response
     {
+        $this->authorize('viewAny', Plan::class);
+
         $plans = Plan::query()
             ->withCount('tenants')
             ->latest()
@@ -44,6 +46,8 @@ class PlanController extends Controller
      */
     public function create(): Response
     {
+        $this->authorize('create', Plan::class);
+
         return Inertia::render('landlord/plans/Form', [
             'plan' => null,
         ]);
@@ -54,6 +58,8 @@ class PlanController extends Controller
      */
     public function store(StorePlanRequest $request): RedirectResponse
     {
+        $this->authorize('create', Plan::class);
+
         $validated = $request->validated();
         $validated['is_active'] = $request->boolean('is_active');
 
@@ -72,6 +78,8 @@ class PlanController extends Controller
      */
     public function edit(Plan $plan): Response
     {
+        $this->authorize('update', $plan);
+
         return Inertia::render('landlord/plans/Form', [
             'plan' => [
                 'id' => $plan->id,
@@ -90,6 +98,8 @@ class PlanController extends Controller
      */
     public function update(UpdatePlanRequest $request, Plan $plan): RedirectResponse
     {
+        $this->authorize('update', $plan);
+
         $validated = $request->validated();
         $validated['is_active'] = $request->boolean('is_active');
 
@@ -108,6 +118,8 @@ class PlanController extends Controller
      */
     public function destroy(Plan $plan): RedirectResponse
     {
+        $this->authorize('delete', $plan);
+
         if ($plan->tenants()->exists()) {
             Inertia::flash('toast', [
                 'type' => 'error',

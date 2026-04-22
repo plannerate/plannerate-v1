@@ -16,13 +16,52 @@ export type NavItem = {
 export type NavigationContext = 'landlord' | 'tenant';
 
 export type SharedNavigationItem = {
+    type: 'item';
+    key: string;
     title: string;
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: string;
     can: boolean;
+    ability?: string;
+    subject?: string;
+    order?: number;
 };
+
+export type SharedNavigationSeparator = {
+    type: 'separator';
+    key: string;
+    can: boolean;
+    order?: number;
+};
+
+export type SharedNavigationSubmenu = {
+    type: 'submenu';
+    key: string;
+    title: string;
+    icon?: string;
+    can: boolean;
+    ability?: string;
+    subject?: string;
+    order?: number;
+    children: SharedNavigationNode[];
+};
+
+export type SharedNavigationGroup = {
+    type: 'group';
+    key: string;
+    title: string;
+    can: boolean;
+    order?: number;
+    children: SharedNavigationNode[];
+};
+
+export type SharedNavigationNode =
+    | SharedNavigationItem
+    | SharedNavigationSeparator
+    | SharedNavigationSubmenu
+    | SharedNavigationGroup;
 
 export type SharedNavigation = {
     context: NavigationContext;
-    main: SharedNavigationItem[];
+    main: SharedNavigationNode[];
 };

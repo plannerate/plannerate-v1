@@ -14,7 +14,10 @@ class UpdatePlanRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        /** @var Plan|null $plan */
+        $plan = $this->route('plan');
+
+        return $plan && ($this->user()?->can('update', $plan) ?? false);
     }
 
     /**

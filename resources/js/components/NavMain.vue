@@ -1,36 +1,35 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
 import {
     SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
     SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { useCurrentUrl } from '@/composables/useCurrentUrl';
-import type { NavItem } from '@/types';
+import NavMenuEntry from '@/components/NavMenuEntry.vue';
+import type { SharedNavigationGroup, SharedNavigationNode } from '@/types';
+import { computed } from 'vue';
 
-defineProps<{
-    items: NavItem[];
+const props = defineProps<{
+    nodes: SharedNavigationNode[];
 }>();
 
-const { isCurrentUrl } = useCurrentUrl();
+const rootNodes = computed(() => props.nodes.filter((node) => node.type !== 'group'));
+const groups = computed(() => props.nodes.filter((node): node is SharedNavigationGroup => node.type === 'group'));
 </script>
 
 <template>
-    <SidebarGroup class="px-2 py-0">
+    <SidebarGroup v-if="rootNodes.length > 0" class="px-2 py-0">
         <SidebarMenu>
-            <SidebarMenuItem v-for="item in items" :key="item.title">
-                <SidebarMenuButton
-                    as-child
-                    :is-active="isCurrentUrl(item.href)"
-                    :tooltip="item.title"
-                >
-                    <Link :href="item.href">
-                        <component :is="item.icon" />
-                        <span>{{ item.title }}</span>
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
+            <NavMenuEntry v-for="node in rootNodes" :key="node.key" :node="node" />
         </SidebarMenu>
+    </SidebarGroup>
+
+    <SidebarGroup v-for="group in groups" :key="group.key" class="px-2 py-0">
+        <SidebarGroupLabel>{{ group.title }}</SidebarGroupLabel>
+        <SidebarGroupContent>
+            <SidebarMenu>
+                <NavMenuEntry v-for="node in group.children" :key="node.key" :node="node" />
+            </SidebarMenu>
+        </SidebarGroupContent>
     </SidebarGroup>
 </template>

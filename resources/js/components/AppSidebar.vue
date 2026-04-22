@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { Building2, LayoutGrid, PackageOpen } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -14,15 +13,9 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import type { NavItem, SharedNavigation, SharedNavigationItem } from '@/types';
+import type { SharedNavigation, SharedNavigationNode } from '@/types';
 
 const page = usePage();
-
-const iconMap = {
-    'layout-grid': LayoutGrid,
-    'package-open': PackageOpen,
-    'building-2': Building2,
-} as const;
 
 const navigation = computed<SharedNavigation>(() => {
     return (page.props.navigation as SharedNavigation | undefined) ?? {
@@ -31,20 +24,26 @@ const navigation = computed<SharedNavigation>(() => {
     };
 });
 
-const mainNavItems = computed<NavItem[]>(() => {
-    return navigation.value.main
-        .filter((item: SharedNavigationItem) => item.can)
-        .map((item: SharedNavigationItem) => ({
-            title: item.title,
-            href: item.href,
-            icon: item.icon ? iconMap[item.icon as keyof typeof iconMap] : undefined,
-        }));
-});
+function firstHref(nodes: SharedNavigationNode[]): string | null {
+    for (const node of nodes) {
+        if (node.type === 'item') {
+            return String(node.href);
+        }
+
+        if (node.type === 'group' || node.type === 'submenu') {
+            const nestedHref = firstHref(node.children);
+
+            if (nestedHref) {
+                return nestedHref;
+            }
+        }
+    }
+
+    return null;
+}
 
 const homePath = computed<string>(() => {
-    const firstItem = mainNavItems.value[0];
-
-    return firstItem ? String(firstItem.href) : '/dashboard';
+    return firstHref(navigation.value.main) ?? '/dashboard';
 });
 </script>
 
@@ -63,7 +62,7 @@ const homePath = computed<string>(() => {
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <NavMain :nodes="navigation.main" />
         </SidebarContent>
 
         <SidebarFooter>
