@@ -70,6 +70,7 @@ return [
             'edit' => 'Editar',
             'delete' => 'Excluir',
             'create' => 'Criar',
+            'access' => 'Acessos',
             'registries' => 'Cadastros',
         ],
         'plans' => [
@@ -145,6 +146,7 @@ return [
             'select_user' => 'Selecionar usuario',
             'no_user' => 'Nenhum usuario disponivel para gerenciamento.',
             'current_roles' => 'Perfis atuais',
+            'roles' => 'Perfis disponiveis',
             'none' => 'Nenhum perfil',
             'messages' => [
                 'updated' => 'Acesso do usuario atualizado com sucesso.',

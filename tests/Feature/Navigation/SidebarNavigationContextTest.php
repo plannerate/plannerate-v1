@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Plan;
+use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
@@ -23,6 +24,8 @@ test('landlord dashboard shares landlord navigation context', function () {
             ->where('navigation.main.2.children.0.href', route('landlord.plans.index', absolute: false))
             ->where('navigation.main.2.children.0.subject', Plan::class)
             ->where('navigation.main.2.children.1.href', route('landlord.tenants.index', absolute: false))
+            ->where('navigation.main.2.children.2.href', route('landlord.roles.index', absolute: false))
+            ->where('navigation.main.2.children.2.subject', Role::class)
         );
 });
 

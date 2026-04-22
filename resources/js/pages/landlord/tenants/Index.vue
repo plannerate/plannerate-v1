@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
+import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
@@ -89,6 +90,11 @@ setLayoutProps({
                         <td class="px-4 py-3">{{ tenant.plan?.name ?? '-' }}</td>
                         <td class="px-4 py-3 text-right">
                             <div class="inline-flex items-center gap-2">
+                                <Button variant="secondary" size="sm" as-child>
+                                    <Link :href="TenantUserAccessController.edit.url(tenant.id)">
+                                        {{ t('app.landlord.common.access') }}
+                                    </Link>
+                                </Button>
                                 <Button variant="outline" size="sm" as-child>
                                     <Link :href="TenantController.edit.url(tenant.id)">
                                         {{ t('app.landlord.common.edit') }}
