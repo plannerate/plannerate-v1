@@ -56,6 +56,7 @@ return [
         'navigation_menu' => 'Menu de navegacao',
         'plans' => 'Planos',
         'tenants' => 'Tenants',
+        'roles' => 'Perfis de acesso',
     ],
 
     'landlord' => [
@@ -115,6 +116,38 @@ return [
                 'created' => 'Tenant criado com sucesso.',
                 'updated' => 'Tenant atualizado com sucesso.',
                 'deleted' => 'Tenant removido com sucesso.',
+            ],
+        ],
+        'roles' => [
+            'navigation' => 'Perfis de acesso',
+            'title' => 'Perfis de acesso',
+            'description' => 'Gerencie os perfis globais e suas permissoes.',
+            'actions' => [
+                'new' => 'Novo perfil',
+                'edit' => 'Editar perfil',
+            ],
+            'fields' => [
+                'name' => 'Nome',
+                'permissions' => 'Permissoes',
+                'permissions_count' => 'Permissoes',
+            ],
+            'messages' => [
+                'created' => 'Perfil criado com sucesso.',
+                'updated' => 'Perfil atualizado com sucesso.',
+                'deleted' => 'Perfil removido com sucesso.',
+                'in_use' => 'Nao e possivel excluir um perfil com usuarios vinculados.',
+                'protected' => 'Este perfil e protegido e nao pode ser alterado.',
+            ],
+        ],
+        'tenant_access' => [
+            'title' => 'Acessos do tenant',
+            'description' => 'Defina os perfis de acesso de usuarios para este tenant.',
+            'select_user' => 'Selecionar usuario',
+            'no_user' => 'Nenhum usuario disponivel para gerenciamento.',
+            'current_roles' => 'Perfis atuais',
+            'none' => 'Nenhum perfil',
+            'messages' => [
+                'updated' => 'Acesso do usuario atualizado com sucesso.',
             ],
         ],
         'tenant_statuses' => [

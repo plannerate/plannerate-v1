@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Landlord;
 
+use App\Models\Tenant;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateTenantUserAccessRequest extends FormRequest
 {
@@ -12,7 +14,10 @@ class UpdateTenantUserAccessRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        /** @var Tenant|null $tenant */
+        $tenant = $this->route('tenant');
+
+        return $tenant && ($this->user()?->can('update', $tenant) ?? false);
     }
 
     /**
@@ -23,7 +28,16 @@ class UpdateTenantUserAccessRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'user_id' => ['required', 'string', Rule::exists('landlord.users', 'id')],
+            'roles' => ['nullable', 'array'],
+            'roles.*' => [
+                'string',
+                'distinct',
+                Rule::exists('landlord.roles', 'name')
+                    ->where(static fn ($query) => $query
+                        ->where('guard_name', 'web')
+                        ->whereNull('tenant_id')),
+            ],
         ];
     }
 }

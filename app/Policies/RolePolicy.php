@@ -4,7 +4,7 @@ namespace App\Policies;
 
 use App\Models\Role;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use App\Support\Authorization\PermissionName;
 
 class RolePolicy
 {
@@ -13,7 +13,7 @@ class RolePolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $this->allowByContext($user, PermissionName::LANDLORD_ROLES_VIEW_ANY);
     }
 
     /**
@@ -21,7 +21,7 @@ class RolePolicy
      */
     public function view(User $user, Role $role): bool
     {
-        return false;
+        return $this->allowByContext($user, PermissionName::LANDLORD_ROLES_VIEW);
     }
 
     /**
@@ -29,7 +29,7 @@ class RolePolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $this->allowByContext($user, PermissionName::LANDLORD_ROLES_CREATE);
     }
 
     /**
@@ -37,7 +37,7 @@ class RolePolicy
      */
     public function update(User $user, Role $role): bool
     {
-        return false;
+        return $this->allowByContext($user, PermissionName::LANDLORD_ROLES_UPDATE);
     }
 
     /**
@@ -45,22 +45,26 @@ class RolePolicy
      */
     public function delete(User $user, Role $role): bool
     {
-        return false;
+        return $this->allowByContext($user, PermissionName::LANDLORD_ROLES_DELETE);
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, Role $role): bool
+    private function allowByContext(User $user, string $permission): bool
     {
-        return false;
+        if (! config('permission.rbac_enabled', false)) {
+            return true;
+        }
+
+        if ($this->isLandlordContext()) {
+            return true;
+        }
+
+        return $user->can($permission);
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, Role $role): bool
+    private function isLandlordContext(): bool
     {
-        return false;
+        $containerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
+
+        return ! app()->bound($containerKey) || app($containerKey) === null;
     }
 }

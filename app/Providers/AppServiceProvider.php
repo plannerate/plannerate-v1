@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Models\Plan;
+use App\Models\Role;
 use App\Models\Tenant;
 use App\Policies\PlanPolicy;
+use App\Policies\RolePolicy;
 use App\Policies\TenantPolicy;
 use App\Support\Navigation\Menu\Contracts\ResolvesMenuAuthorization;
 use App\Support\Navigation\Menu\MenuAuthorizationResolver;
@@ -41,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(Plan::class, PlanPolicy::class);
         Gate::policy(Tenant::class, TenantPolicy::class);
+        Gate::policy(Role::class, RolePolicy::class);
     }
 
     /**

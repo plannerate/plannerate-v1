@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Landlord;
 
+use App\Models\Role;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreRoleRequest extends FormRequest
 {
@@ -12,7 +14,7 @@ class StoreRoleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return $this->user()?->can('create', Role::class) ?? false;
     }
 
     /**
@@ -23,7 +25,22 @@ class StoreRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('landlord.roles', 'name')
+                    ->where(static fn ($query) => $query
+                        ->where('guard_name', 'web')
+                        ->whereNull('tenant_id')),
+            ],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => [
+                'string',
+                'distinct',
+                Rule::exists('landlord.permissions', 'name')
+                    ->where(static fn ($query) => $query->where('guard_name', 'web')),
+            ],
         ];
     }
 }

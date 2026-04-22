@@ -11,7 +11,7 @@ import {
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import type { SharedNavigationItem, SharedNavigationNode, SharedNavigationSubmenu } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { Building2, ChevronRight, FolderKanban, LayoutGrid, PackageOpen } from 'lucide-vue-next';
+import { Building2, ChevronRight, FolderKanban, LayoutGrid, PackageOpen, ShieldCheck } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{
@@ -25,6 +25,7 @@ const iconMap = {
     'package-open': PackageOpen,
     'building-2': Building2,
     'folder-kanban': FolderKanban,
+    'shield-check': ShieldCheck,
 } as const;
 
 const isItemNode = computed(() => props.node.type === 'item');

@@ -3,6 +3,7 @@
 namespace App\Support\Navigation;
 
 use App\Models\Plan;
+use App\Models\Role;
 use App\Models\Tenant;
 use App\Support\Navigation\Menu\Menu;
 use App\Support\Navigation\Menu\MenuPayloadAdapter;
@@ -68,6 +69,14 @@ class SidebarNavigationService
                             ->icon('building-2')
                             ->authorize('viewAny', Tenant::class)
                             ->setOrder(20);
+                    })
+                    ->item('landlord.roles', function ($item): void {
+                        $item
+                            ->label(__('app.landlord.roles.navigation'))
+                            ->href(route('landlord.roles.index', absolute: false))
+                            ->icon('shield-check')
+                            ->authorize('viewAny', Role::class)
+                            ->setOrder(30);
                     });
             });
     }
