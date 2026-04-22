@@ -2,6 +2,7 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import PermissionController from '@/actions/App/Http/Controllers/Landlord/PermissionController';
 import Heading from '@/components/Heading.vue';
+import NewActionButton from '@/components/NewActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
 
@@ -47,11 +48,9 @@ setLayoutProps({
         <div class="flex items-center justify-between gap-4">
             <Heading :title="t('app.landlord.permissions.title')" :description="t('app.landlord.permissions.description')" />
 
-            <Button as-child>
-                <Link :href="PermissionController.create.url()">
-                    {{ t('app.landlord.permissions.actions.new') }}
-                </Link>
-            </Button>
+            <NewActionButton :href="PermissionController.create.url()">
+                {{ t('app.landlord.permissions.actions.new') }}
+            </NewActionButton>
         </div>
 
         <form :action="permissionsIndexPath" method="get" class="grid gap-3 rounded-xl border border-sidebar-border/70 p-4 md:grid-cols-4 dark:border-sidebar-border">
@@ -74,10 +73,7 @@ setLayoutProps({
                 </option>
             </select>
 
-            <Button
-                type="submit"
-                class="h-10 rounded-xl border-0 bg-linear-to-r from-emerald-950 via-emerald-800 to-lime-500 text-white shadow-md shadow-lime-500/30 hover:brightness-105"
-            >
+            <Button type="submit" variant="gradient" size="pill-sm">
                 {{ t('app.landlord.common.filter') }}
             </Button>
 

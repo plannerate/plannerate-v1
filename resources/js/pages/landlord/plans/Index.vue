@@ -2,6 +2,7 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import PlanController from '@/actions/App/Http/Controllers/Landlord/PlanController';
 import Heading from '@/components/Heading.vue';
+import NewActionButton from '@/components/NewActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
 
@@ -55,11 +56,9 @@ function formatPrice(cents: number): string {
         <div class="flex items-center justify-between gap-4">
             <Heading :title="t('app.landlord.plans.title')" :description="t('app.landlord.plans.description')" />
 
-            <Button as-child>
-                <Link :href="PlanController.create.url()">
-                    {{ t('app.landlord.plans.actions.new') }}
-                </Link>
-            </Button>
+            <NewActionButton :href="PlanController.create.url()">
+                {{ t('app.landlord.plans.actions.new') }}
+            </NewActionButton>
         </div>
 
         <form :action="plansIndexPath" method="get" class="grid gap-3 rounded-xl border border-sidebar-border/70 p-4 md:grid-cols-4 dark:border-sidebar-border">
@@ -81,10 +80,7 @@ function formatPrice(cents: number): string {
                 <option value="0">{{ t('app.landlord.common.inactive') }}</option>
             </select>
 
-            <Button
-                type="submit"
-                class="h-10 rounded-xl border-0 bg-linear-to-r from-emerald-950 via-emerald-800 to-lime-500 text-white shadow-md shadow-lime-500/30 hover:brightness-105"
-            >
+            <Button type="submit" variant="gradient" size="pill-sm">
                 {{ t('app.landlord.common.filter') }}
             </Button>
 
