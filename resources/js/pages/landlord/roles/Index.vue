@@ -2,6 +2,7 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import RoleController from '@/actions/App/Http/Controllers/Landlord/RoleController';
 import Heading from '@/components/Heading.vue';
+import ListFiltersBar from '@/components/ListFiltersBar.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
@@ -54,34 +55,26 @@ setLayoutProps({
             </NewActionButton>
         </div>
 
-        <form :action="rolesIndexPath" method="get" class="grid gap-3 rounded-xl border border-sidebar-border/70 p-4 md:grid-cols-4 dark:border-sidebar-border">
-            <input
-                name="search"
-                :value="filters.search"
-                type="text"
-                :placeholder="t('app.landlord.common.search')"
-                class="h-10 rounded-md border border-input bg-background px-3 text-sm"
-            />
-
+        <ListFiltersBar
+            :action="rolesIndexPath"
+            :clear-href="rolesIndexPath"
+            search-name="search"
+            :search-value="filters.search"
+            :search-placeholder="t('app.landlord.common.search')"
+            :filter-label="t('app.landlord.common.filter')"
+            :clear-label="t('app.landlord.common.clear_filters')"
+        >
             <select
                 name="type"
                 :value="filters.type"
-                class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
             >
                 <option value="">{{ t('app.landlord.common.all') }}</option>
                 <option v-for="type in filter_options.types" :key="type.value" :value="type.value">
                     {{ type.label }}
                 </option>
             </select>
-
-            <Button type="submit" variant="gradient" size="pill-sm">
-                {{ t('app.landlord.common.filter') }}
-            </Button>
-
-            <Button variant="outline" as-child>
-                <Link :href="rolesIndexPath">{{ t('app.landlord.common.clear_filters') }}</Link>
-            </Button>
-        </form>
+        </ListFiltersBar>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
             <table class="w-full text-sm">

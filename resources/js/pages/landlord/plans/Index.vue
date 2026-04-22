@@ -2,6 +2,7 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import PlanController from '@/actions/App/Http/Controllers/Landlord/PlanController';
 import Heading from '@/components/Heading.vue';
+import ListFiltersBar from '@/components/ListFiltersBar.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
@@ -61,33 +62,25 @@ function formatPrice(cents: number): string {
             </NewActionButton>
         </div>
 
-        <form :action="plansIndexPath" method="get" class="grid gap-3 rounded-xl border border-sidebar-border/70 p-4 md:grid-cols-4 dark:border-sidebar-border">
-            <input
-                name="search"
-                :value="filters.search"
-                type="text"
-                :placeholder="t('app.landlord.common.search')"
-                class="h-10 rounded-md border border-input bg-background px-3 text-sm"
-            />
-
+        <ListFiltersBar
+            :action="plansIndexPath"
+            :clear-href="plansIndexPath"
+            search-name="search"
+            :search-value="filters.search"
+            :search-placeholder="t('app.landlord.common.search')"
+            :filter-label="t('app.landlord.common.filter')"
+            :clear-label="t('app.landlord.common.clear_filters')"
+        >
             <select
                 name="is_active"
                 :value="filters.is_active"
-                class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
             >
                 <option value="">{{ t('app.landlord.common.all') }}</option>
                 <option value="1">{{ t('app.landlord.common.active') }}</option>
                 <option value="0">{{ t('app.landlord.common.inactive') }}</option>
             </select>
-
-            <Button type="submit" variant="gradient" size="pill-sm">
-                {{ t('app.landlord.common.filter') }}
-            </Button>
-
-            <Button variant="outline" as-child>
-                <Link :href="plansIndexPath">{{ t('app.landlord.common.clear_filters') }}</Link>
-            </Button>
-        </form>
+        </ListFiltersBar>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
             <table class="w-full text-sm">
