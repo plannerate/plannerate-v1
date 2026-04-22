@@ -43,8 +43,16 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
 
     Route::get('tenants/{tenant}/access', [TenantUserAccessController::class, 'edit'])
         ->name('landlord.tenants.access.edit');
-    Route::put('tenants/{tenant}/access', [TenantUserAccessController::class, 'update'])
-        ->name('landlord.tenants.access.update');
+    Route::post('tenants/{tenant}/access/users', [TenantUserAccessController::class, 'store'])
+        ->name('landlord.tenants.access.users.store');
+    Route::put('tenants/{tenant}/access/users/{userId}', [TenantUserAccessController::class, 'update'])
+        ->name('landlord.tenants.access.users.update');
+    Route::patch('tenants/{tenant}/access/users/{userId}/toggle-active', [TenantUserAccessController::class, 'toggleActive'])
+        ->name('landlord.tenants.access.users.toggle-active');
+    Route::delete('tenants/{tenant}/access/users/{userId}', [TenantUserAccessController::class, 'destroy'])
+        ->name('landlord.tenants.access.users.destroy');
+    Route::patch('tenants/{tenant}/access/users/{userId}/restore', [TenantUserAccessController::class, 'restore'])
+        ->name('landlord.tenants.access.users.restore');
 });
 
 // ── TENANT (rotas que exigem tenant ativo) ────────────────────
