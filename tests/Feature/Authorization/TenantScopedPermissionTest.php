@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\LandlordRbacSeeder;
@@ -55,7 +56,8 @@ test('tenant route access is scoped by tenant_id role assignment', function () {
     ]);
 
     setPermissionsTeamId($tenantA->id);
-    $user->assignRole('tenant-admin');
+    $tenantAdminRole = Role::query()->where('system_name', 'tenant-admin')->firstOrFail();
+    $user->assignRole($tenantAdminRole);
 
     $tenantAResponse = $this
         ->withServerVariables(['HTTP_HOST' => 'alfa.'.config('app.landlord_domain')])

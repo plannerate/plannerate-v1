@@ -36,6 +36,7 @@ test('authenticated user can list roles', function () {
 
 test('authenticated user can create update and delete a role', function () {
     $createResponse = $this->post(route('landlord.roles.store'), [
+        'type' => 'landlord',
         'name' => 'manager',
         'permissions' => [PermissionName::LANDLORD_TENANTS_VIEW_ANY],
     ]);
@@ -49,12 +50,14 @@ test('authenticated user can create update and delete a role', function () {
 
     $this->assertDatabaseHas('roles', [
         'id' => $role->id,
+        'type' => 'landlord',
         'name' => 'manager',
         'guard_name' => 'web',
         'tenant_id' => null,
     ], 'landlord');
 
     $updateResponse = $this->put(route('landlord.roles.update', $role), [
+        'type' => 'landlord',
         'name' => 'operator',
         'permissions' => [PermissionName::LANDLORD_TENANTS_UPDATE],
     ]);
@@ -76,7 +79,7 @@ test('authenticated user can create update and delete a role', function () {
 });
 
 test('role cannot be deleted when role is assigned to users', function () {
-    $role = Role::query()->where('name', 'tenant-admin')->firstOrFail();
+    $role = Role::query()->where('system_name', 'tenant-admin')->firstOrFail();
 
     $targetUser = User::factory()->create();
     setPermissionsTeamId(null);

@@ -7,6 +7,7 @@ use App\Http\Requests\Landlord\StoreRoleRequest;
 use App\Http\Requests\Landlord\UpdateRoleRequest;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Support\Authorization\RbacType;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -16,7 +17,7 @@ class RoleController extends Controller
     /**
      * @var list<string>
      */
-    private const PROTECTED_ROLES = ['landlord-admin', 'tenant-admin'];
+    private const PROTECTED_ROLES = ['super-admin', 'landlord-admin', 'tenant-admin'];
 
     /**
      * Display a listing of roles.
@@ -35,8 +36,9 @@ class RoleController extends Controller
             ->through(fn (Role $role): array => [
                 'id' => $role->id,
                 'name' => $role->name,
+                'type' => $role->type,
                 'permissions_count' => $role->permissions_count,
-                'is_protected' => in_array($role->name, self::PROTECTED_ROLES, true),
+                'is_protected' => in_array((string) $role->system_name, self::PROTECTED_ROLES, true),
                 'created_at' => $role->created_at?->toDateTimeString(),
             ]);
 
@@ -54,6 +56,7 @@ class RoleController extends Controller
 
         return Inertia::render('landlord/roles/Form', [
             'role' => null,
+            'types' => $this->typesForSelect(),
             'permissions' => $this->availablePermissions(),
         ]);
     }
@@ -68,6 +71,7 @@ class RoleController extends Controller
         $validated = $request->validated();
 
         $role = Role::query()->create([
+            'type' => $validated['type'],
             'name' => $validated['name'],
             'guard_name' => 'web',
             'tenant_id' => null,
@@ -98,9 +102,11 @@ class RoleController extends Controller
             'role' => [
                 'id' => $role->id,
                 'name' => $role->name,
+                'type' => $role->type,
                 'permissions' => $role->permissions->pluck('name')->values()->all(),
-                'is_protected' => in_array($role->name, self::PROTECTED_ROLES, true),
+                'is_protected' => in_array((string) $role->system_name, self::PROTECTED_ROLES, true),
             ],
+            'types' => $this->typesForSelect(),
             'permissions' => $this->availablePermissions(),
         ]);
     }
@@ -116,7 +122,7 @@ class RoleController extends Controller
 
         $validated = $request->validated();
 
-        if (in_array($role->name, self::PROTECTED_ROLES, true)) {
+        if (in_array((string) $role->system_name, self::PROTECTED_ROLES, true)) {
             Inertia::flash('toast', [
                 'type' => 'error',
                 'message' => __('app.landlord.roles.messages.protected'),
@@ -126,6 +132,7 @@ class RoleController extends Controller
         }
 
         $role->update([
+            'type' => $validated['type'],
             'name' => $validated['name'],
         ]);
 
@@ -148,7 +155,7 @@ class RoleController extends Controller
 
         $this->authorize('delete', $role);
 
-        if (in_array($role->name, self::PROTECTED_ROLES, true)) {
+        if (in_array((string) $role->system_name, self::PROTECTED_ROLES, true)) {
             Inertia::flash('toast', [
                 'type' => 'error',
                 'message' => __('app.landlord.roles.messages.protected'),
@@ -182,18 +189,37 @@ class RoleController extends Controller
     }
 
     /**
-     * @return array<int, array{name: string}>
+     * @return array<int, array<array-key, string>>
      */
     private function availablePermissions(): array
     {
         return Permission::query()
             ->where('guard_name', 'web')
+            ->orderBy('type')
             ->orderBy('name')
-            ->get(['name'])
+            ->get(['name', 'type'])
             ->map(fn (Permission $permission): array => [
                 'name' => $permission->name,
+                'type' => (string) $permission->type,
             ])
             ->all();
+    }
+
+    /**
+     * @return array<int, array{value: string, label: string}>
+     */
+    private function typesForSelect(): array
+    {
+        return [
+            [
+                'value' => RbacType::LANDLORD,
+                'label' => __('app.landlord.roles.types.landlord'),
+            ],
+            [
+                'value' => RbacType::TENANT,
+                'label' => __('app.landlord.roles.types.tenant'),
+            ],
+        ];
     }
 
     private function guardGlobalRole(Role $role): Role

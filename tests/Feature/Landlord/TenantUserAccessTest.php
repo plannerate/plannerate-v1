@@ -66,7 +66,7 @@ test('authenticated user can update tenant scoped user roles', function () {
     ]);
 
     $targetUser = User::factory()->create();
-    $tenantAdminRole = Role::query()->where('name', 'tenant-admin')->firstOrFail();
+    $tenantAdminRole = Role::query()->where('system_name', 'tenant-admin')->firstOrFail();
 
     $response = $this->put(route('landlord.tenants.access.update', $tenant), [
         'user_id' => $targetUser->id,

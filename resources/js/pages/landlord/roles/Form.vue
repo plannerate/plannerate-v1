@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import RoleController from '@/actions/App/Http/Controllers/Landlord/RoleController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -11,6 +11,7 @@ import { useT } from '@/composables/useT';
 
 type RolePayload = {
     id: string;
+    type: string;
     name: string;
     permissions: string[];
     is_protected: boolean;
@@ -18,10 +19,17 @@ type RolePayload = {
 
 type PermissionOption = {
     name: string;
+    type: string;
+};
+
+type TypeOption = {
+    value: string;
+    label: string;
 };
 
 const props = defineProps<{
     role: RolePayload | null;
+    types: TypeOption[];
     permissions: PermissionOption[];
 }>();
 
@@ -29,6 +37,10 @@ const { t } = useT();
 const isEdit = computed(() => props.role !== null);
 const isProtected = computed(() => props.role?.is_protected ?? false);
 const rolesIndexPath = RoleController.index.url().replace(/^\/\/[^/]+/, '');
+const selectedType = ref(props.role?.type ?? props.types[0]?.value ?? 'landlord');
+const filteredPermissions = computed(() => {
+    return props.permissions.filter((permission) => permission.type === selectedType.value);
+});
 
 setLayoutProps({
     breadcrumbs: [
@@ -59,6 +71,23 @@ setLayoutProps({
             v-slot="{ errors, processing }"
         >
             <div class="grid gap-2">
+                <Label for="type">{{ t('app.landlord.roles.fields.type') }}</Label>
+                <select
+                    id="type"
+                    name="type"
+                    v-model="selectedType"
+                    class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                    :disabled="isProtected"
+                    required
+                >
+                    <option v-for="type in props.types" :key="type.value" :value="type.value">
+                        {{ type.label }}
+                    </option>
+                </select>
+                <InputError :message="errors.type" />
+            </div>
+
+            <div class="grid gap-2">
                 <Label for="name">{{ t('app.landlord.roles.fields.name') }}</Label>
                 <Input id="name" name="name" :default-value="props.role?.name ?? ''" required :disabled="isProtected" />
                 <InputError :message="errors.name" />
@@ -68,7 +97,7 @@ setLayoutProps({
                 <Label>{{ t('app.landlord.roles.fields.permissions') }}</Label>
                 <div class="grid gap-2 md:grid-cols-2">
                     <label
-                        v-for="permission in props.permissions"
+                        v-for="permission in filteredPermissions"
                         :key="permission.name"
                         class="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm"
                     >

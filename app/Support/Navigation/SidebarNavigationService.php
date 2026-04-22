@@ -5,6 +5,7 @@ namespace App\Support\Navigation;
 use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Support\Navigation\Menu\Menu;
 use App\Support\Navigation\Menu\MenuPayloadAdapter;
 use Illuminate\Http\Request;
@@ -77,6 +78,14 @@ class SidebarNavigationService
                             ->icon('shield-check')
                             ->authorize('viewAny', Role::class)
                             ->setOrder(30);
+                    })
+                    ->item('landlord.users', function ($item): void {
+                        $item
+                            ->label(__('app.landlord.users.navigation'))
+                            ->href(route('landlord.users.index', absolute: false))
+                            ->icon('users')
+                            ->authorize('viewAny', User::class)
+                            ->setOrder(40);
                     });
             });
     }

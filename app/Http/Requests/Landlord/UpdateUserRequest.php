@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests\Landlord;
 
+use App\Models\User;
+use App\Support\Authorization\RbacType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateUserRequest extends FormRequest
 {
@@ -12,7 +15,10 @@ class UpdateUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        /** @var User|null $user */
+        $user = $this->route('user');
+
+        return $user && ($this->user()?->can('update', $user) ?? false);
     }
 
     /**
@@ -22,8 +28,24 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
+        /** @var User $user */
+        $user = $this->route('user');
+
         return [
-            //
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('landlord.users', 'email')->ignore($user)],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'is_active' => ['sometimes', 'boolean'],
+            'role_ids' => ['nullable', 'array'],
+            'role_ids.*' => [
+                'string',
+                'distinct',
+                Rule::exists('landlord.roles', 'id')
+                    ->where(static fn ($query) => $query
+                        ->where('guard_name', 'web')
+                        ->where('type', RbacType::LANDLORD)
+                        ->whereNull('tenant_id')),
+            ],
         ];
     }
 }

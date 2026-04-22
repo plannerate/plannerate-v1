@@ -7,6 +7,7 @@ use App\Http\Requests\Landlord\UpdateTenantUserAccessRequest;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Authorization\RbacType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -24,6 +25,7 @@ class TenantUserAccessController extends Controller
         $roles = Role::query()
             ->whereNull('tenant_id')
             ->where('guard_name', 'web')
+            ->where('type', RbacType::TENANT)
             ->orderBy('name')
             ->get(['id', 'name'])
             ->map(fn (Role $role): array => [

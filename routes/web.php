@@ -5,6 +5,7 @@ use App\Http\Controllers\Landlord\PlanController;
 use App\Http\Controllers\Landlord\RoleController;
 use App\Http\Controllers\Landlord\TenantController as LandlordTenantController;
 use App\Http\Controllers\Landlord\TenantUserAccessController;
+use App\Http\Controllers\Landlord\UserController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboardController;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Route;
@@ -30,6 +31,10 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::resource('roles', RoleController::class)
         ->except(['show'])
         ->names('landlord.roles');
+
+    Route::resource('users', UserController::class)
+        ->except(['show'])
+        ->names('landlord.users');
 
     Route::get('tenants/{tenant}/access', [TenantUserAccessController::class, 'edit'])
         ->name('landlord.tenants.access.edit');

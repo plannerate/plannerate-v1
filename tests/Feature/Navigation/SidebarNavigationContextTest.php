@@ -26,6 +26,8 @@ test('landlord dashboard shares landlord navigation context', function () {
             ->where('navigation.main.2.children.1.href', route('landlord.tenants.index', absolute: false))
             ->where('navigation.main.2.children.2.href', route('landlord.roles.index', absolute: false))
             ->where('navigation.main.2.children.2.subject', Role::class)
+            ->where('navigation.main.2.children.3.href', route('landlord.users.index', absolute: false))
+            ->where('navigation.main.2.children.3.subject', User::class)
         );
 });
 

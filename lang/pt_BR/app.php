@@ -57,6 +57,7 @@ return [
         'plans' => 'Planos',
         'tenants' => 'Tenants',
         'roles' => 'Perfis de acesso',
+        'users' => 'Usuarios',
     ],
 
     'landlord' => [
@@ -123,12 +124,17 @@ return [
             'navigation' => 'Perfis de acesso',
             'title' => 'Perfis de acesso',
             'description' => 'Gerencie os perfis globais e suas permissoes.',
+            'types' => [
+                'landlord' => 'Landlord',
+                'tenant' => 'Tenant',
+            ],
             'actions' => [
                 'new' => 'Novo perfil',
                 'edit' => 'Editar perfil',
             ],
             'fields' => [
                 'name' => 'Nome',
+                'type' => 'Tipo',
                 'permissions' => 'Permissoes',
                 'permissions_count' => 'Permissoes',
             ],
@@ -138,6 +144,29 @@ return [
                 'deleted' => 'Perfil removido com sucesso.',
                 'in_use' => 'Nao e possivel excluir um perfil com usuarios vinculados.',
                 'protected' => 'Este perfil e protegido e nao pode ser alterado.',
+            ],
+        ],
+        'users' => [
+            'navigation' => 'Usuarios',
+            'title' => 'Usuarios',
+            'description' => 'Gerencie os usuarios globais do landlord e seus perfis de acesso.',
+            'actions' => [
+                'new' => 'Novo usuario',
+                'edit' => 'Editar usuario',
+            ],
+            'fields' => [
+                'name' => 'Nome',
+                'email' => 'E-mail',
+                'password' => 'Senha',
+                'password_confirmation' => 'Confirmacao de senha',
+                'password_hint' => 'Preencha apenas para alterar a senha.',
+                'roles' => 'Perfis de acesso',
+                'is_active' => 'Ativo',
+            ],
+            'messages' => [
+                'created' => 'Usuario criado com sucesso.',
+                'updated' => 'Usuario atualizado com sucesso.',
+                'deleted' => 'Usuario removido com sucesso.',
             ],
         ],
         'tenant_access' => [
