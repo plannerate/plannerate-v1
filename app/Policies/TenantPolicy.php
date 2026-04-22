@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Authorization\PermissionName;
 
 class TenantPolicy
 {
@@ -12,7 +13,15 @@ class TenantPolicy
      */
     public function viewAny(User $user): bool
     {
-        return true;
+        if (! config('permission.rbac_enabled', false)) {
+            return true;
+        }
+
+        if ($this->isLandlordContext()) {
+            return true;
+        }
+
+        return $user->can(PermissionName::TENANT_DASHBOARD_VIEW);
     }
 
     /**
@@ -20,7 +29,7 @@ class TenantPolicy
      */
     public function view(User $user, Tenant $tenant): bool
     {
-        return true;
+        return $this->allowLandlordAction($user, PermissionName::LANDLORD_TENANTS_VIEW);
     }
 
     /**
@@ -28,7 +37,7 @@ class TenantPolicy
      */
     public function create(User $user): bool
     {
-        return true;
+        return $this->allowLandlordAction($user, PermissionName::LANDLORD_TENANTS_CREATE);
     }
 
     /**
@@ -36,7 +45,7 @@ class TenantPolicy
      */
     public function update(User $user, Tenant $tenant): bool
     {
-        return true;
+        return $this->allowLandlordAction($user, PermissionName::LANDLORD_TENANTS_UPDATE);
     }
 
     /**
@@ -44,6 +53,26 @@ class TenantPolicy
      */
     public function delete(User $user, Tenant $tenant): bool
     {
-        return true;
+        return $this->allowLandlordAction($user, PermissionName::LANDLORD_TENANTS_DELETE);
+    }
+
+    private function allowLandlordAction(User $user, string $permission): bool
+    {
+        if (! config('permission.rbac_enabled', false)) {
+            return true;
+        }
+
+        if ($this->isLandlordContext()) {
+            return true;
+        }
+
+        return $user->can($permission);
+    }
+
+    private function isLandlordContext(): bool
+    {
+        $containerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
+
+        return ! app()->bound($containerKey) || app($containerKey) === null;
     }
 }

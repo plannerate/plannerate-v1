@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call(LandlordRbacSeeder::class);
         $this->call(TenantDomainsSeeder::class);
 
         // User::factory(10)->create();
