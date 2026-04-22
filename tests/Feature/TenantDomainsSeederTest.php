@@ -29,17 +29,19 @@ test('tenant domains seeder creates two tenants and one admin user in each tenan
         '--no-interaction' => true,
     ]);
 
-    $tenants = Tenant::query()->orderBy('domain')->get();
+    $tenants = Tenant::query()->with('primaryDomain')->orderBy('slug')->get();
 
     expect($tenants)->toHaveCount(2);
-    expect($tenants->pluck('domain')->all())->toBe([
+    expect($tenants->pluck('primaryDomain.host')->all())->toBe([
         'alfa.plannerate-v1.test',
         'coperdia.plannerate-v1.test',
     ]);
 
     foreach ($tenants as $tenant) {
         $tenant->execute(function (Tenant $currentTenant): void {
-            expect(User::query()->where('email', 'admin@'.$currentTenant->domain)->count())->toBe(1);
+            $host = $currentTenant->primaryDomain()->value('host');
+
+            expect(User::query()->where('email', 'admin@'.$host)->count())->toBe(1);
         });
     }
 });

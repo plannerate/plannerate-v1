@@ -54,6 +54,74 @@ return [
         'repository' => 'Repositorio',
         'documentation' => 'Documentacao',
         'navigation_menu' => 'Menu de navegacao',
+        'plans' => 'Planos',
+        'tenants' => 'Tenants',
+    ],
+
+    'landlord' => [
+        'common' => [
+            'actions' => 'Acoes',
+            'empty' => 'Nenhum registro encontrado.',
+            'yes' => 'Sim',
+            'no' => 'Nao',
+            'active' => 'Ativo',
+            'inactive' => 'Inativo',
+            'edit' => 'Editar',
+            'delete' => 'Excluir',
+            'create' => 'Criar',
+        ],
+        'plans' => [
+            'navigation' => 'Planos',
+            'title' => 'Planos',
+            'description' => 'Gerencie os planos disponiveis para os tenants.',
+            'actions' => [
+                'new' => 'Novo plano',
+                'edit' => 'Editar plano',
+            ],
+            'fields' => [
+                'name' => 'Nome',
+                'description' => 'Descricao',
+                'price_cents' => 'Preco',
+                'user_limit' => 'Limite de usuarios',
+                'is_active' => 'Ativo',
+                'tenants_count' => 'Tenants',
+            ],
+            'messages' => [
+                'created' => 'Plano criado com sucesso.',
+                'updated' => 'Plano atualizado com sucesso.',
+                'deleted' => 'Plano removido com sucesso.',
+                'in_use' => 'Nao e possivel excluir um plano que possui tenants vinculados.',
+            ],
+        ],
+        'tenants' => [
+            'navigation' => 'Tenants',
+            'title' => 'Tenants',
+            'description' => 'Gerencie tenants e seus dominios primarios.',
+            'actions' => [
+                'new' => 'Novo tenant',
+                'edit' => 'Editar tenant',
+            ],
+            'fields' => [
+                'name' => 'Nome',
+                'database' => 'Banco de dados',
+                'status' => 'Status',
+                'host' => 'Dominio primario',
+                'plan' => 'Plano',
+                'user_limit' => 'Limite de usuarios',
+                'domain_is_active' => 'Dominio primario ativo',
+            ],
+            'messages' => [
+                'created' => 'Tenant criado com sucesso.',
+                'updated' => 'Tenant atualizado com sucesso.',
+                'deleted' => 'Tenant removido com sucesso.',
+            ],
+        ],
+        'tenant_statuses' => [
+            'provisioning' => 'Provisionando',
+            'active' => 'Ativo',
+            'suspended' => 'Suspenso',
+            'inactive' => 'Inativo',
+        ],
     ],
 
     'welcome_page' => [

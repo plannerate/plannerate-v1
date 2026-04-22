@@ -9,14 +9,32 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
+    public function up(): void
     {
-        Schema::create('tenants', function (Blueprint $table) {
+        if (Schema::connection('landlord')->hasTable('tenants')) {
+            return;
+        }
+
+        Schema::connection('landlord')->create('tenants', function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->string('name');
             $table->string('domain')->unique();
             $table->string('database')->unique();
             $table->timestamps();
         });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        if (! Schema::connection('landlord')->hasTable('tenants')) {
+            return;
+        }
+
+        if (Schema::connection('landlord')->hasColumn('tenants', 'domain')) {
+            Schema::connection('landlord')->dropIfExists('tenants');
+        }
     }
 };

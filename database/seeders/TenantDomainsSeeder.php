@@ -4,29 +4,31 @@ namespace Database\Seeders;
 
 use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use Illuminate\Database\Seeder;
 use InvalidArgumentException;
 
 class TenantDomainsSeeder extends Seeder
 {
     /**
-     * @var array<int, array{name: string, domain: string, database: string, admin_name: string, admin_email: string}>
+     * @var array<int, array{name: string, slug: string, host: string, database: string, admin_name: string, admin_email: string}>
      */
     private const TENANTS = [
         [
             'name' => 'Alfa',
-            'domain' => 'alfa.plannerate-v1.test',
+            'slug' => 'alfa',
+            'host' => 'alfa.plannerate-v1.test',
             'database' => 'tenant_alfa',
             'admin_name' => 'Administrador Alfa',
             'admin_email' => 'admin@alfa.plannerate-v1.test',
         ],
         [
             'name' => 'Coperdia',
-            'domain' => 'coperdia.plannerate-v1.test',
+            'slug' => 'coperdia',
+            'host' => 'coperdia.plannerate-v1.test',
             'database' => 'tenant_coperdia',
             'admin_name' => 'Administrador Coperdia',
             'admin_email' => 'admin@coperdia.plannerate-v1.test',
@@ -44,7 +46,7 @@ class TenantDomainsSeeder extends Seeder
     }
 
     /**
-     * @param array{name: string, domain: string, database: string, admin_name: string, admin_email: string} $tenantDefinition
+     * @param  array{name: string, slug: string, host: string, database: string, admin_name: string, admin_email: string}  $tenantDefinition
      */
     private function seedTenant(array $tenantDefinition): void
     {
@@ -57,10 +59,21 @@ class TenantDomainsSeeder extends Seeder
         DB::connection('landlord')->statement(sprintf('CREATE DATABASE IF NOT EXISTS `%s`', $database));
 
         $tenant = Tenant::query()->updateOrCreate(
-            ['domain' => $tenantDefinition['domain']],
+            ['slug' => $tenantDefinition['slug']],
             [
                 'name' => $tenantDefinition['name'],
                 'database' => $database,
+                'status' => 'active',
+            ],
+        );
+
+        $tenant->domains()->updateOrCreate(
+            ['tenant_id' => $tenant->id],
+            [
+                'host' => $tenantDefinition['host'],
+                'type' => 'subdomain',
+                'is_primary' => true,
+                'is_active' => true,
             ],
         );
 

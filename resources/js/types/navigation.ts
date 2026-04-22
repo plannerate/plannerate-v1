@@ -12,3 +12,17 @@ export type NavItem = {
     icon?: LucideIcon;
     isActive?: boolean;
 };
+
+export type NavigationContext = 'landlord' | 'tenant';
+
+export type SharedNavigationItem = {
+    title: string;
+    href: NonNullable<InertiaLinkProps['href']>;
+    icon?: string;
+    can: boolean;
+};
+
+export type SharedNavigation = {
+    context: NavigationContext;
+    main: SharedNavigationItem[];
+};

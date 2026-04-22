@@ -1,0 +1,117 @@
+<script setup lang="ts">
+import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
+import PlanController from '@/actions/App/Http/Controllers/Landlord/PlanController';
+import Heading from '@/components/Heading.vue';
+import { Button } from '@/components/ui/button';
+import { useT } from '@/composables/useT';
+
+type PlanRow = {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    price_cents: number;
+    user_limit: number | null;
+    is_active: boolean;
+    tenants_count: number;
+};
+
+type Paginator<T> = {
+    data: T[];
+};
+
+defineProps<{
+    plans: Paginator<PlanRow>;
+}>();
+
+const { t } = useT();
+const plansIndexPath = PlanController.index.url().replace(/^\/\/[^/]+/, '');
+
+setLayoutProps({
+    breadcrumbs: [
+        {
+            title: t('app.landlord.plans.navigation'),
+            href: plansIndexPath,
+        },
+    ],
+});
+
+function formatPrice(cents: number): string {
+    return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+    }).format(cents / 100);
+}
+</script>
+
+<template>
+    <Head :title="t('app.landlord.plans.title')" />
+
+    <div class="space-y-6 p-4">
+        <div class="flex items-center justify-between gap-4">
+            <Heading :title="t('app.landlord.plans.title')" :description="t('app.landlord.plans.description')" />
+
+            <Button as-child>
+                <Link :href="PlanController.create.url()">
+                    {{ t('app.landlord.plans.actions.new') }}
+                </Link>
+            </Button>
+        </div>
+
+        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
+            <table class="w-full text-sm">
+                <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <tr>
+                        <th class="px-4 py-3 font-medium">{{ t('app.landlord.plans.fields.name') }}</th>
+                        <th class="px-4 py-3 font-medium">Slug</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.landlord.plans.fields.price_cents') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.landlord.plans.fields.user_limit') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.landlord.plans.fields.is_active') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.landlord.plans.fields.tenants_count') }}</th>
+                        <th class="px-4 py-3 font-medium text-right">{{ t('app.landlord.common.actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-if="plans.data.length === 0">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="7">
+                            {{ t('app.landlord.common.empty') }}
+                        </td>
+                    </tr>
+                    <tr
+                        v-for="plan in plans.data"
+                        :key="plan.id"
+                        class="border-t border-sidebar-border/60 dark:border-sidebar-border"
+                    >
+                        <td class="px-4 py-3">
+                            <div class="font-medium">{{ plan.name }}</div>
+                            <div v-if="plan.description" class="text-xs text-muted-foreground">{{ plan.description }}</div>
+                        </td>
+                        <td class="px-4 py-3">{{ plan.slug }}</td>
+                        <td class="px-4 py-3">{{ formatPrice(plan.price_cents) }}</td>
+                        <td class="px-4 py-3">{{ plan.user_limit ?? '-' }}</td>
+                        <td class="px-4 py-3">{{ plan.is_active ? t('app.landlord.common.yes') : t('app.landlord.common.no') }}</td>
+                        <td class="px-4 py-3">{{ plan.tenants_count }}</td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="inline-flex items-center gap-2">
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link :href="PlanController.edit.url(plan.id)">
+                                        {{ t('app.landlord.common.edit') }}
+                                    </Link>
+                                </Button>
+                                <Button variant="destructive" size="sm" as-child>
+                                    <Link
+                                        :href="PlanController.destroy.url(plan.id)"
+                                        method="delete"
+                                        as="button"
+                                    >
+                                        {{ t('app.landlord.common.delete') }}
+                                    </Link>
+                                </Button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</template>
