@@ -25,7 +25,7 @@ class User extends Authenticatable
      *
      * @var string
      */
-    protected $connection = 'landlord';
+    // protected $connection = 'landlord';
 
     /**
      * Get the attributes that should be cast.
