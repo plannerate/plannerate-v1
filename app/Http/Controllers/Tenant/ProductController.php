@@ -100,7 +100,7 @@ class ProductController extends AbstractController
     {
         $infoList->columns([
             \Callcocam\LaravelRaptor\Support\Info\Columns\Types\CardColumn::make('product_info')
-                ->title('Informações do Produto')
+                ->label(__('product_info'))
                 ->helperText('Dados básicos do produto')
                 ->collapsible(true, true)
                 ->columns([
@@ -119,27 +119,14 @@ class ProductController extends AbstractController
                     \Callcocam\LaravelRaptor\Support\Info\Columns\Types\TextColumn::make('brand.name')
                         ->label('Marca')
                         ->icon('Tag'),
-                ]),
-
-            \Callcocam\LaravelRaptor\Support\Info\Columns\Types\CardColumn::make('pricing_info')
-                ->title('Informações de Preço')
-                ->collapsible(true, true)
-                ->columns([
-                    \Callcocam\LaravelRaptor\Support\Info\Columns\Types\TextColumn::make('price')
-                        ->label('Preço')
-                        ->prefix('R$')
-                        ->icon('DollarSign'),
-
-                    \Callcocam\LaravelRaptor\Support\Info\Columns\Types\StatusColumn::make('status')
-                        ->label('Status'),
-                ]),
+                ]), 
 
             \Callcocam\LaravelRaptor\Support\Info\Columns\Types\TextColumn::make('description')
                 ->label('Descrição')
                 ->icon('FileText'),
 
             \Callcocam\LaravelRaptor\Support\Info\Columns\Types\CardColumn::make('dimensions_info')
-                ->title('Dimensões')
+                ->label('Dimensões')
                 ->helperText('Dimensões físicas do produto')
                 ->collapsible(true, true)
                 ->columns([
@@ -173,7 +160,7 @@ class ProductController extends AbstractController
                 ]),
 
             \Callcocam\LaravelRaptor\Support\Info\Columns\Types\CardColumn::make('additional_data_info')
-                ->title('Dados Adicionais')
+                ->label('Dados Adicionais')
                 ->helperText('Informações adicionais sobre o produto')
                 ->collapsible(true, true)
                 ->columns([

@@ -254,5 +254,6 @@
     "results": "resultados",
     "to": "até",
     "Fill in the form to add a new :resource": "Preencha o formulário para adicionar :resource",
-    "View details of this :resource": "Visualizar detalhes de :resource"
+    "View details of this :resource": "Visualizar detalhes de :resource",
+    "product_info": "Informações do produto"
 }
