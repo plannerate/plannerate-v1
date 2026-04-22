@@ -125,25 +125,18 @@ class SidebarNavigationService
                     ->authorize('viewAny', Category::class)
                     ->setOrder(20)
                     ->item('tenant.categories', function ($item) use ($subdomain): void {
-                        $categoriesHref = $subdomain === null
-                            ? '/categories'
-                            : route('tenant.categories.index', ['subdomain' => $subdomain], false);
 
                         $item
                             ->label(__('app.tenant.categories.navigation'))
-                            ->href($categoriesHref)
+                            ->href(route('tenant.categories.index', ['subdomain' => $subdomain], false))
                             ->icon('folder-tree')
                             ->authorize('viewAny', Category::class)
                             ->setOrder(10);
                     })
-                    ->item('tenant.products', function ($item) use ($subdomain): void {
-                        $productsHref = $subdomain === null
-                            ? '/products'
-                            : route('tenant.products.index', ['subdomain' => $subdomain], false);
-
+                    ->item('tenant.products', function ($item) use ($subdomain): void { 
                         $item
                             ->label(__('app.tenant.products.navigation'))
-                            ->href($productsHref)
+                            ->href(route('tenant.products.index', ['subdomain' => $subdomain], false))
                             ->icon('package')
                             ->authorize('viewAny', Product::class)
                             ->setOrder(20);
@@ -162,7 +155,7 @@ class SidebarNavigationService
         $host = strtolower($request->getHost());
         $domain = strtolower($landlordDomain);
 
-        if ($host === '' || $domain === '' || ! str_ends_with($host, '.'.$domain)) {
+        if ($host === '' || $domain === '' || ! str_ends_with($host, '.' . $domain)) {
             return null;
         }
 
