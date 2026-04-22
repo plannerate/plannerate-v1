@@ -23,7 +23,7 @@ return new class extends Migration
 
         Schema::connection($this->connection)->create($tableNames['permissions'], static function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->string('type');
+            $table->string('type', 50);
             $table->string('name');
             $table->string('guard_name');
             $table->timestamps();
@@ -33,7 +33,7 @@ return new class extends Migration
         Schema::connection($this->connection)->create($tableNames['roles'], static function (Blueprint $table) use ($teamForeignKey) {
             $table->ulid('id')->primary();
             $table->ulid($teamForeignKey)->nullable()->index();
-            $table->string('type');
+            $table->string('type', 50);
             $table->string('system_name')->nullable()->unique();
             $table->string('name');
             $table->string('guard_name');

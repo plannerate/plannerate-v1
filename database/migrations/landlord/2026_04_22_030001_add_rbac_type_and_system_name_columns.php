@@ -20,13 +20,13 @@ return new class extends Migration
 
         if (! Schema::connection($this->connection)->hasColumn('permissions', 'type')) {
             Schema::connection($this->connection)->table('permissions', function (Blueprint $table): void {
-                $table->string('type')->nullable()->after('id');
+                $table->string('type', 50)->nullable()->after('id');
             });
         }
 
         if (! Schema::connection($this->connection)->hasColumn('roles', 'type')) {
             Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
-                $table->string('type')->nullable()->after('tenant_id');
+                $table->string('type', 50)->nullable()->after('tenant_id');
             });
         }
 
@@ -146,30 +146,30 @@ return new class extends Migration
                 ->update(['type' => RbacType::LANDLORD]);
         }
 
-        DB::connection($this->connection)->statement('ALTER TABLE `permissions` MODIFY `type` VARCHAR(255) NOT NULL');
-        DB::connection($this->connection)->statement('ALTER TABLE `roles` MODIFY `type` VARCHAR(255) NOT NULL');
+        DB::connection($this->connection)->statement('ALTER TABLE `permissions` MODIFY `type` VARCHAR(50) NOT NULL');
+        DB::connection($this->connection)->statement('ALTER TABLE `roles` MODIFY `type` VARCHAR(50) NOT NULL');
 
         try {
             DB::connection($this->connection)->statement('ALTER TABLE `permissions` DROP INDEX `permissions_name_guard_name_unique`');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // index does not exist in this environment
         }
 
         try {
             DB::connection($this->connection)->statement('ALTER TABLE `roles` DROP INDEX `roles_team_name_guard_unique`');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // index does not exist in this environment
         }
 
         try {
             DB::connection($this->connection)->statement('ALTER TABLE `permissions` DROP INDEX `permissions_guard_name_type_unique`');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // index already missing
         }
 
         try {
             DB::connection($this->connection)->statement('ALTER TABLE `roles` DROP INDEX `roles_team_name_guard_type_unique`');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // index already missing
         }
 
@@ -197,19 +197,19 @@ return new class extends Migration
 
         try {
             DB::connection($this->connection)->statement('ALTER TABLE `permissions` DROP INDEX `permissions_guard_name_type_unique`');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // no-op
         }
 
         try {
             DB::connection($this->connection)->statement('ALTER TABLE `roles` DROP INDEX `roles_team_name_guard_type_unique`');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // no-op
         }
 
         try {
             DB::connection($this->connection)->statement('ALTER TABLE `roles` DROP INDEX `roles_system_name_unique`');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // no-op
         }
 
