@@ -75,7 +75,12 @@ setLayoutProps({
                 </option>
             </select>
 
-            <Button type="submit">{{ t('app.landlord.common.filter') }}</Button>
+            <Button
+                type="submit"
+                class="h-10 rounded-xl border-0 bg-linear-to-r from-emerald-950 via-emerald-800 to-lime-500 text-white shadow-md shadow-lime-500/30 hover:brightness-105"
+            >
+                {{ t('app.landlord.common.filter') }}
+            </Button>
 
             <Button variant="outline" as-child>
                 <Link :href="rolesIndexPath">{{ t('app.landlord.common.clear_filters') }}</Link>
