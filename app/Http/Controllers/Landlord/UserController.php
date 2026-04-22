@@ -24,10 +24,10 @@ class UserController extends Controller
 
         $users = User::query()
             ->with(['roles' => fn ($query) => $query
-                ->whereNull('tenant_id')
-                ->where('guard_name', 'web')
-                ->where('type', RbacType::LANDLORD)
-                ->orderBy('name')])
+                ->whereNull('roles.tenant_id')
+                ->where('roles.guard_name', 'web')
+                ->where('roles.type', RbacType::LANDLORD)
+                ->orderBy('roles.name')])
             ->latest()
             ->paginate(10)
             ->withQueryString()
@@ -91,10 +91,10 @@ class UserController extends Controller
         $this->authorize('update', $user);
 
         $user->load(['roles' => fn ($query) => $query
-            ->whereNull('tenant_id')
-            ->where('guard_name', 'web')
-            ->where('type', RbacType::LANDLORD)
-            ->orderBy('name')]);
+            ->whereNull('roles.tenant_id')
+            ->where('roles.guard_name', 'web')
+            ->where('roles.type', RbacType::LANDLORD)
+            ->orderBy('roles.name')]);
 
         return Inertia::render('landlord/users/Form', [
             'user' => [
