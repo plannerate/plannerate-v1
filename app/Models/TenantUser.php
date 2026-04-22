@@ -20,6 +20,8 @@ class TenantUser extends Model
 
     protected $table = 'users';
 
+    protected string $guard_name = 'web';
+
     /**
      * Get the attributes that should be cast.
      *
