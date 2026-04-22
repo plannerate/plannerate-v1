@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#98da27",
+                    "secondary": "#c1c7d0",
+                    "surface-container-low": "#141c24",
+                    "error-container": "#93000a",
+                    "on-primary-fixed": "#121f00",
+                    "inverse-primary": "#446900",
+                    "on-background": "#dae3ee",
+                    "tertiary-container": "#ced2dc",
+                    "on-tertiary": "#2c3138",
+                    "on-tertiary-container": "#555a62",
+                    "primary-fixed-dim": "#98da27",
+                    "on-secondary-fixed-variant": "#41474f",
+                    "outline-variant": "#424936",
+                    "background": "#0b141c",
+                    "on-error": "#690005",
+                    "tertiary-fixed": "#dee2ec",
+                    "surface-variant": "#2d363e",
+                    "error": "#ffb4ab",
+                    "on-surface": "#dae3ee",
+                    "surface-container-highest": "#2d363e",
+                    "secondary-fixed-dim": "#c1c7d0",
+                    "on-primary-container": "#416400",
+                    "tertiary-fixed-dim": "#c2c7d0",
+                    "secondary-fixed": "#dde3ec",
+                    "inverse-on-surface": "#29313a",
+                    "on-tertiary-fixed": "#171c23",
+                    "secondary-container": "#41474f",
+                    "on-primary": "#213600",
+                    "on-error-container": "#ffdad6",
+                    "surface-container": "#182028",
+                    "primary-container": "#a3e635",
+                    "primary-fixed": "#b2f746",
+                    "on-tertiary-fixed-variant": "#42474f",
+                    "on-secondary": "#2b3138",
+                    "on-surface-variant": "#c2cab0",
+                    "surface-dim": "#0b141c",
+                    "inverse-surface": "#dae3ee",
+                    "tertiary": "#eaeef8",
+                    "on-secondary-fixed": "#161c23",
+                    "on-primary-fixed-variant": "#334f00",
+                    "on-secondary-container": "#b0b5be",
+                    "outline": "#8c947c",
+                    "surface-bright": "#313a43",
+                    "surface-container-high": "#222b33",
+                    "surface": "#0b141c",
+                    "surface-container-lowest": "#060f16",
+                    "primary": "#ccff80"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xl": "64px",
+                    "xs": "4px",
+                    "lg": "40px",
+                    "gutter": "24px",
+                    "sm": "12px",
+                    "base": "8px",
+                    "md": "24px",
+                    "margin": "32px"
+            },
+            "fontFamily": {
+                    "h2": ["Space Grotesk"],
+                    "body-sm": ["Inter"],
+                    "h3": ["Space Grotesk"],
+                    "label-caps": ["Inter"],
+                    "stat-value": ["Space Grotesk"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "h1": ["Space Grotesk"]
+            },
+            "fontSize": {
+                    "h2": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "h3": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "stat-value": ["48px", {"lineHeight": "1", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "h1": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0a0c10;
+        }
+        .user-card-border {
+            border: 1px solid #30363d;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top AppBar -->
+<header class="bg-[#0a0c10] border-b border-[#30363d] font-['Space_Grotesk'] tracking-tight flex justify-between items-center w-full px-6 h-16 fixed top-0 z-50">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#a3e635] cursor-pointer" data-icon="menu">menu</span>
+<h1 class="text-xl font-bold text-[#a3e635]">Network Users</h1>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-[#a3e635]/20 hover:border-[#a3e635] transition-all cursor-pointer">
+<img alt="Admin" class="w-full h-full object-cover" data-alt="professional portrait of a system administrator in a dark tech environment with soft cyan backlighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUMkUjhTE9J2jSFPsmLNw6SZN0lHmpJuvzf6a3u1N855G1XBHeR8HP_1d4Lfg_S1YdyID0MYrv0U6_SN3qsNiwxLJesvYN3u5_K3gb54rIo4DlgkoHMf5p8HMKiQsR6DKd5hggRFbzAopyzMaxHHEZjJJeeveO5gJVDsc5pPjEAUNne3twORAsw4dsPtQ2HrM0Ox4QOugLeNfM-5kvEq2SQJbS_-PAtXy7mSNZGC7si4UsNRVZSXfbrxRMtsuEEwCbEqIQHAFjFY6L"/>
+</div>
+</header>
+<main class="pt-20 pb-32 px-4 max-w-md mx-auto">
+<!-- Search & Filter Area -->
+<div class="mb-gutter space-y-4">
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-slate-500 group-focus-within:text-primary-container transition-colors" data-icon="search">search</span>
+</div>
+<input class="block w-full bg-[#0a0c10] border-[#30363d] border rounded-xl py-3 pl-10 pr-4 text-on-surface placeholder-slate-500 focus:ring-1 focus:ring-primary-container focus:border-primary-container font-body-sm transition-all" placeholder="Search users by name or email..." type="text"/>
+</div>
+<div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+<span class="bg-primary-container/15 text-[#a3e635] px-4 py-1.5 rounded-full font-label-caps text-xs border border-primary-container/20 whitespace-nowrap">All Users</span>
+<span class="bg-[#161b22] text-slate-400 px-4 py-1.5 rounded-full font-label-caps text-xs border border-[#30363d] whitespace-nowrap hover:text-white transition-colors">Active</span>
+<span class="bg-[#161b22] text-slate-400 px-4 py-1.5 rounded-full font-label-caps text-xs border border-[#30363d] whitespace-nowrap hover:text-white transition-colors">Inactive</span>
+<span class="bg-[#161b22] text-slate-400 px-4 py-1.5 rounded-full font-label-caps text-xs border border-[#30363d] whitespace-nowrap hover:text-white transition-colors">Admins</span>
+</div>
+</div>
+<!-- User List -->
+<div class="space-y-4">
+<!-- User Item 1 (Active) -->
+<div class="bg-[#161b22] user-card-border rounded-xl p-md flex items-center gap-4 relative overflow-hidden group">
+<div class="relative flex-shrink-0">
+<div class="w-14 h-14 rounded-full overflow-hidden border border-[#30363d]">
+<img alt="User" class="w-full h-full object-cover" data-alt="Close up portrait of a young man with glasses smiling gently, high key studio lighting, professional headshot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5odpkJd8bxGSrQfl7_tnhxmcb8j5olMFGnLft1wf0vOtgZuAGejLBVUoJdFf_pasOyYW79kcKRw3WlnYIPCXEMg9754sH5QCsQo8Dm99rnL-rrpZBF5Lz10ya2zY_oam5mexmR9b74qErUINZFyXx9fzMzXMxpgaKdkZ87Umxz3gbkyhMsnoCxGoq_u6UhYHtScil0CD4v1Dd75z4y8gU4K6VzuNKJWMmSlujV9UfO5D6XzZK4n3m6b_GHSn6WbEDrsfsclomsipC"/>
+</div>
+<span class="absolute bottom-0 right-0 w-4 h-4 bg-[#a3e635] border-2 border-[#161b22] rounded-full shadow-lg"></span>
+</div>
+<div class="flex-grow min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-h3 text-base text-on-surface truncate">Alex Rivera</h3>
+<span class="text-[10px] font-label-caps bg-primary-container/10 text-[#a3e635] px-2 py-0.5 rounded">ACTIVE</span>
+</div>
+<p class="text-body-sm text-slate-400 truncate">a.rivera@network.io</p>
+</div>
+<div class="flex gap-2">
+<button class="w-9 h-9 rounded-full bg-[#1c2128] border border-[#30363d] flex items-center justify-center text-slate-400 hover:text-[#a3e635] hover:border-[#a3e635] active:scale-90 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="edit">edit</span>
+</button>
+<button class="w-9 h-9 rounded-full bg-[#1c2128] border border-[#30363d] flex items-center justify-center text-slate-400 hover:text-error active:scale-90 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- User Item 2 (Inactive) -->
+<div class="bg-[#161b22] user-card-border rounded-xl p-md flex items-center gap-4 relative overflow-hidden group">
+<div class="relative flex-shrink-0">
+<div class="w-14 h-14 rounded-full overflow-hidden border border-[#30363d] grayscale">
+<img alt="User" class="w-full h-full object-cover" data-alt="Portrait of a woman with braided hair against a dark minimalist background, moody lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCobvUN9aplJOxxAYqgY2LZyw8U_TeVSIhCooTYsfNqVOHI57CBniLdIouAGU_zazKjTl8h6FEyiJ5Dij4p5_y4jycOnJMaH_VdvXhNM8i2BoRswJavJAX-BEwDX8IWHkiNuEzsw1ftq5yRS3WsgkH22VOUZg2ysnKHwwXZozgmyZVwKG16kAJrklaUJvHUXnSzSSJVxyKM0yzNG8ZK-WmY2grAfqSJYxrNLs0T5RuK9hKqVRDUdob6373p0hnzanZQoQkNK2Lbcar"/>
+</div>
+<span class="absolute bottom-0 right-0 w-4 h-4 bg-[#484f58] border-2 border-[#161b22] rounded-full shadow-lg"></span>
+</div>
+<div class="flex-grow min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-h3 text-base text-on-surface truncate">Sarah Jenkins</h3>
+<span class="text-[10px] font-label-caps bg-[#484f58]/20 text-slate-400 px-2 py-0.5 rounded">INACTIVE</span>
+</div>
+<p class="text-body-sm text-slate-400 truncate">s.jenkins@network.io</p>
+</div>
+<div class="flex gap-2">
+<button class="w-9 h-9 rounded-full bg-[#1c2128] border border-[#30363d] flex items-center justify-center text-slate-400 hover:text-[#a3e635] hover:border-[#a3e635] active:scale-90 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="edit">edit</span>
+</button>
+<button class="w-9 h-9 rounded-full bg-[#1c2128] border border-[#30363d] flex items-center justify-center text-slate-400 hover:text-error active:scale-90 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- User Item 3 (Active) -->
+<div class="bg-[#161b22] user-card-border rounded-xl p-md flex items-center gap-4 relative overflow-hidden group">
+<div class="relative flex-shrink-0">
+<div class="w-14 h-14 rounded-full overflow-hidden border border-[#30363d]">
+<img alt="User" class="w-full h-full object-cover" data-alt="Middle aged man with short beard and professional attire, soft natural window light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcmsFIyAzrYZSi0eFgMuLD62QPGNoLJgRrTi7fmcLv8d50xpyRygUn0ShV3qeRiJ141Fw9LxzBLq3KU19wilnab-S89IRK1Jwy_mxnWZrHV0v2gD21gKjiVMI7FvKWm85FXKKSDuuwPdRMkMLtqaOWtvCzJWRaNkY5TkcQOMyelkbyDUfUcaQU5Ukf_pNF7CNnOARhoWpFXVMCE4AVxmlsV78VIgyK0YG0b1YiulCkg_2Dyf5gIICGH6Q8VBMHnxQ7AtHjQXWwWzEJ"/>
+</div>
+<span class="absolute bottom-0 right-0 w-4 h-4 bg-[#a3e635] border-2 border-[#161b22] rounded-full shadow-lg"></span>
+</div>
+<div class="flex-grow min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-h3 text-base text-on-surface truncate">Marcus Chen</h3>
+<span class="text-[10px] font-label-caps bg-primary-container/10 text-[#a3e635] px-2 py-0.5 rounded">ACTIVE</span>
+</div>
+<p class="text-body-sm text-slate-400 truncate">m.chen@network.io</p>
+</div>
+<div class="flex gap-2">
+<button class="w-9 h-9 rounded-full bg-[#1c2128] border border-[#30363d] flex items-center justify-center text-slate-400 hover:text-[#a3e635] hover:border-[#a3e635] active:scale-90 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="edit">edit</span>
+</button>
+<button class="w-9 h-9 rounded-full bg-[#1c2128] border border-[#30363d] flex items-center justify-center text-slate-400 hover:text-error active:scale-90 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- User Item 4 (Active) -->
+<div class="bg-[#161b22] user-card-border rounded-xl p-md flex items-center gap-4 relative overflow-hidden group">
+<div class="relative flex-shrink-0">
+<div class="w-14 h-14 rounded-full overflow-hidden border border-[#30363d]">
+<img alt="User" class="w-full h-full object-cover" data-alt="Business professional woman in a dark blazer, confident expression, neutral professional lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvDbzAIipV4hTNFS6_257KgoroEhwfI-ZOfipMlMONrlBTS5JJ96cDbT3YihrRJu1kMKf2GDcM0d2RhIqGx0Ku4IiTE9BCwj0I6e-sg4hCRtac7rTlW1-tbIbUaPs9dMdyiEF70NJWwGv-X4O9x8RKqtDiX9ErKJ11gdMYUBYMaSpMVDCJCD29qV8o8vwcKhMvY1x68DX5GOsmZcDMKcQo5l9N2yTLf_l0iuf4hTW4u6K8B7JsdKyOljMNT0XEZTdJZh04kZPG4o4G"/>
+</div>
+<span class="absolute bottom-0 right-0 w-4 h-4 bg-[#a3e635] border-2 border-[#161b22] rounded-full shadow-lg"></span>
+</div>
+<div class="flex-grow min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-h3 text-base text-on-surface truncate">Elena Vance</h3>
+<span class="text-[10px] font-label-caps bg-primary-container/10 text-[#a3e635] px-2 py-0.5 rounded">ACTIVE</span>
+</div>
+<p class="text-body-sm text-slate-400 truncate">e.vance@network.io</p>
+</div>
+<div class="flex gap-2">
+<button class="w-9 h-9 rounded-full bg-[#1c2128] border border-[#30363d] flex items-center justify-center text-slate-400 hover:text-[#a3e635] hover:border-[#a3e635] active:scale-90 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="edit">edit</span>
+</button>
+<button class="w-9 h-9 rounded-full bg-[#1c2128] border border-[#30363d] flex items-center justify-center text-slate-400 hover:text-error active:scale-90 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- User Item 5 (Idle) -->
+<div class="bg-[#161b22] user-card-border rounded-xl p-md flex items-center gap-4 relative overflow-hidden group">
+<div class="relative flex-shrink-0">
+<div class="w-14 h-14 rounded-full overflow-hidden border border-[#30363d]">
+<img alt="User" class="w-full h-full object-cover" data-alt="Portrait of a young entrepreneur in a modern office setting with blurred technical equipment background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7-Ky9hzkmCOYrx2skqP6lHBb6ZYN4_Eckg-DHRx9dUZvL5QoLYysE0ue0JJiFFTtfdTvIvYxEmQOVZwSFADJHarqjC3Sm2GQomfrvsfiLdB9YJob4DPRYMwRoTYpzSh05NC4CanT6zg3vANwEw-4qbakyyoDGcM5pBSCjfZOqWQlp0lWJ54kdUruIb_ct8NhH9VpCq1EO9fF6VTeXi72_70g3jf819jzy3EOUcBxK124Zf82Rm90UvCMmTjXQxUDRunH3fFq4zvyc"/>
+</div>
+<span class="absolute bottom-0 right-0 w-4 h-4 bg-[#eab308] border-2 border-[#161b22] rounded-full shadow-lg"></span>
+</div>
+<div class="flex-grow min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-h3 text-base text-on-surface truncate">Tobias Weber</h3>
+<span class="text-[10px] font-label-caps bg-[#eab308]/10 text-[#eab308] px-2 py-0.5 rounded">IDLE</span>
+</div>
+<p class="text-body-sm text-slate-400 truncate">t.weber@network.io</p>
+</div>
+<div class="flex gap-2">
+<button class="w-9 h-9 rounded-full bg-[#1c2128] border border-[#30363d] flex items-center justify-center text-slate-400 hover:text-[#a3e635] hover:border-[#a3e635] active:scale-90 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="edit">edit</span>
+</button>
+<button class="w-9 h-9 rounded-full bg-[#1c2128] border border-[#30363d] flex items-center justify-center text-slate-400 hover:text-error active:scale-90 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB -->
+<button class="fixed right-6 bottom-24 w-14 h-14 bg-[#a3e635] text-[#121f00] rounded-full shadow-2xl flex items-center justify-center active:scale-90 duration-150 z-40 transition-transform">
+<span class="material-symbols-outlined font-bold" data-icon="person_add">person_add</span>
+</button>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-4 pb-safe bg-[#161b22] border-t border-[#30363d]">
+<a class="flex flex-col items-center justify-center text-slate-500 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#a3e635] bg-[#a3e635]/10 rounded-xl px-3 py-1" href="#">
+<span class="material-symbols-outlined" data-icon="group" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest mt-1">Users</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest mt-1">Logs</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest mt-1">Settings</span>
+</a>
+</nav>
+</body></html>
