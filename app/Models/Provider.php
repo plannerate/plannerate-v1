@@ -37,6 +37,7 @@ class Provider extends AbstractModel
         'status' => 'string',
     ];
 
+    protected $with = ['address'];
 
     public function products()
     {
@@ -45,6 +46,10 @@ class Provider extends AbstractModel
             ->withPivot('codigo_erp', 'principal');
     }
 
+    public function address()
+    {
+        return $this->morphOne(Address::class, 'addressable');
+    }
     /**
      * Define o atributo customizado para o slug.
      *

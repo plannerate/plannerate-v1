@@ -124,7 +124,7 @@ class StoreController extends AbstractController
                 ->phone()
                 ->placeholder('Digite o telefone')
                 ->columnSpanFour(),
-        ]);;
+        ]);
 
         $form->column(
             \Callcocam\LaravelRaptor\Support\Form\Columns\Types\BuscaCepField::make('address')
