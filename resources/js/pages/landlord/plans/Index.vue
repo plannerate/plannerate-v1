@@ -3,9 +3,11 @@ import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import PlanController from '@/actions/App/Http/Controllers/Landlord/PlanController';
 import Heading from '@/components/Heading.vue';
 import ListFiltersBar from '@/components/ListFiltersBar.vue';
+import ListPagination from '@/components/ListPagination.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
+import type { Paginator } from '@/types';
 
 type PlanRow = {
     id: string;
@@ -16,10 +18,6 @@ type PlanRow = {
     user_limit: number | null;
     is_active: boolean;
     tenants_count: number;
-};
-
-type Paginator<T> = {
-    data: T[];
 };
 
 defineProps<{
@@ -137,5 +135,7 @@ function formatPrice(cents: number): string {
                 </tbody>
             </table>
         </div>
+
+        <ListPagination :meta="plans" label="plano" />
     </div>
 </template>

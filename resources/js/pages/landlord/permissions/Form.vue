@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { Form, Head, Link, setLayoutProps } from '@inertiajs/vue3';
+import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import { ShieldCheck } from 'lucide-vue-next';
 import PermissionController from '@/actions/App/Http/Controllers/Landlord/PermissionController';
-import Heading from '@/components/Heading.vue';
+import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
@@ -50,45 +51,66 @@ setLayoutProps({
     <Head :title="isEdit ? t('app.landlord.permissions.actions.edit') : t('app.landlord.permissions.actions.new')" />
 
     <div class="space-y-6 p-4">
-        <Heading
-            :title="isEdit ? t('app.landlord.permissions.actions.edit') : t('app.landlord.permissions.actions.new')"
-            :description="t('app.landlord.permissions.description')"
-        />
-
         <Form
             v-bind="isEdit ? PermissionController.update.form(props.permission!.id) : PermissionController.store.form()"
-            class="space-y-6"
             v-slot="{ errors, processing }"
         >
-            <div class="grid gap-2">
-                <Label for="type">{{ t('app.landlord.permissions.fields.type') }}</Label>
-                <select
-                    id="type"
-                    name="type"
-                    v-model="selectedType"
-                    class="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                    :disabled="isProtected"
-                    required
-                >
-                    <option v-for="type in props.types" :key="type.value" :value="type.value">
-                        {{ type.label }}
-                    </option>
-                </select>
-                <InputError :message="errors.type" />
-            </div>
+            <FormCard
+                :title="isEdit ? t('app.landlord.permissions.actions.edit') : t('app.landlord.permissions.actions.new')"
+                :description="t('app.landlord.permissions.description')"
+                :processing="processing"
+                :disabled="isProtected"
+                :cancel-href="permissionsIndexPath"
+            >
+                <template #icon>
+                    <ShieldCheck class="size-5" />
+                </template>
 
-            <div class="grid gap-2">
-                <Label for="name">{{ t('app.landlord.permissions.fields.name') }}</Label>
-                <Input id="name" name="name" :default-value="props.permission?.name ?? ''" :disabled="isProtected" required />
-                <InputError :message="errors.name" />
-            </div>
+                <template v-if="isProtected" #header-extra>
+                    <Badge variant="secondary" class="gap-1.5 text-xs">
+                        <ShieldCheck class="size-3" />
+                        {{ t('app.landlord.common.protected') }}
+                    </Badge>
+                </template>
 
-            <div class="flex items-center gap-3">
-                <Button :disabled="processing || isProtected">{{ t('app.actions.save') }}</Button>
-                <Button variant="outline" as-child>
-                    <Link :href="permissionsIndexPath">{{ t('app.actions.cancel') }}</Link>
-                </Button>
-            </div>
+                <template v-if="isProtected" #before>
+                    <div class="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
+                        <ShieldCheck class="mt-0.5 size-4 shrink-0" />
+                        <span>{{ t('app.landlord.permissions.protected') }}</span>
+                    </div>
+                </template>
+
+                <!-- Type field -->
+                <div class="grid gap-2">
+                    <Label for="type">{{ t('app.landlord.permissions.fields.type') }}</Label>
+                    <select
+                        id="type"
+                        name="type"
+                        v-model="selectedType"
+                        :disabled="isProtected"
+                        class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                        required
+                    >
+                        <option v-for="type in props.types" :key="type.value" :value="type.value">
+                            {{ type.label }}
+                        </option>
+                    </select>
+                    <InputError :message="errors.type" />
+                </div>
+
+                <!-- Name field -->
+                <div class="grid gap-2">
+                    <Label for="name">{{ t('app.landlord.permissions.fields.name') }}</Label>
+                    <Input
+                        id="name"
+                        name="name"
+                        :default-value="props.permission?.name ?? ''"
+                        :disabled="isProtected"
+                        required
+                    />
+                    <InputError :message="errors.name" />
+                </div>
+            </FormCard>
         </Form>
     </div>
 </template>

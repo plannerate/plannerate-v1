@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
+import { Head, setLayoutProps } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { Plus, UserX } from 'lucide-vue-next';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import Heading from '@/components/Heading.vue';
+import ListPagination from '@/components/ListPagination.vue';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
+import type { Paginator } from '@/types';
 import AccessFiltersBar from './access/AccessFiltersBar.vue';
 import AccessStatsCards from './access/AccessStatsCards.vue';
 import AccessUserCard from './access/AccessUserCard.vue';
@@ -39,20 +41,6 @@ type RoleOption = {
 type FilterOption = {
     value: string;
     label: string;
-};
-
-type PaginatorLink = {
-    url: string | null;
-    label: string;
-    active: boolean;
-};
-
-type Paginator<T> = {
-    data: T[];
-    links: PaginatorLink[];
-    from: number | null;
-    to: number | null;
-    total: number;
 };
 
 const props = defineProps<{
@@ -190,24 +178,7 @@ setLayoutProps({
             </button>
         </div>
 
-        <!-- Pagination -->
-        <div v-if="props.users.links.length > 3" class="flex flex-wrap items-center gap-2 border-t border-border pt-5">
-            <p class="text-sm text-muted-foreground">
-                Mostrando {{ props.users.from }}–{{ props.users.to }} de {{ props.users.total }} usuários
-            </p>
-            <div class="ml-auto flex gap-2">
-                <template v-for="link in props.users.links" :key="link.label">
-                    <Button v-if="link.url" :variant="link.active ? 'secondary' : 'outline'" size="sm" as-child>
-                        <Link :href="link.url">
-                            <span v-html="link.label" />
-                        </Link>
-                    </Button>
-                    <Button v-else variant="outline" size="sm" disabled>
-                        <span v-html="link.label" />
-                    </Button>
-                </template>
-            </div>
-        </div>
+        <ListPagination :meta="props.users" label="usuário" />
     </div>
 
     <AccessUserSheet

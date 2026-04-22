@@ -79,6 +79,7 @@ return [
             'search' => 'Buscar por nome, slug, email...',
             'filter' => 'Filtrar',
             'clear_filters' => 'Limpar filtros',
+            'protected' => 'Protegido',
         ],
         'plans' => [
             'navigation' => 'Planos',

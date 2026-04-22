@@ -139,7 +139,7 @@ function getUserInitials(name: string): string {
                                     <label
                                         v-for="role in roles"
                                         :key="role.id"
-                                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-input px-3 py-2.5 text-sm transition-colors hover:bg-accent has-[:checked]:border-primary/60 has-[:checked]:bg-primary/5"
+                                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-input px-3 py-2.5 text-sm transition-colors hover:bg-accent has-checked:border-primary/60 has-checked:bg-primary/5"
                                     >
                                         <input type="checkbox" name="role_names[]" :value="role.name" class="accent-primary" />
                                         <span class="font-medium">{{ role.name }}</span>
@@ -154,7 +154,7 @@ function getUserInitials(name: string): string {
                                     <Separator />
                                 </div>
 
-                                <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-input px-3 py-2.5 text-sm transition-colors hover:bg-accent has-[:checked]:border-primary/60 has-[:checked]:bg-primary/5">
+                                <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-input px-3 py-2.5 text-sm transition-colors hover:bg-accent has-checked:border-primary/60 has-checked:bg-primary/5">
                                     <input type="hidden" name="is_active" value="0" />
                                     <input id="create_is_active" name="is_active" type="checkbox" value="1" checked class="accent-primary" />
                                     <span class="font-medium">{{ t('app.landlord.users.fields.is_active') }}</span>
@@ -229,7 +229,7 @@ function getUserInitials(name: string): string {
                                     <label
                                         v-for="role in roles"
                                         :key="role.id"
-                                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-input px-3 py-2.5 text-sm transition-colors hover:bg-accent has-[:checked]:border-primary/60 has-[:checked]:bg-primary/5"
+                                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-input px-3 py-2.5 text-sm transition-colors hover:bg-accent has-checked:border-primary/60 has-checked:bg-primary/5"
                                     >
                                         <input
                                             type="checkbox"
@@ -250,7 +250,7 @@ function getUserInitials(name: string): string {
                                     <Separator />
                                 </div>
 
-                                <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-input px-3 py-2.5 text-sm transition-colors hover:bg-accent has-[:checked]:border-primary/60 has-[:checked]:bg-primary/5">
+                                <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-input px-3 py-2.5 text-sm transition-colors hover:bg-accent has-checked:border-primary/60 has-checked:bg-primary/5">
                                     <input type="hidden" name="is_active" value="0" />
                                     <input
                                         id="edit_is_active"

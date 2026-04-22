@@ -3,9 +3,11 @@ import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import UserController from '@/actions/App/Http/Controllers/Landlord/UserController';
 import Heading from '@/components/Heading.vue';
 import ListFiltersBar from '@/components/ListFiltersBar.vue';
+import ListPagination from '@/components/ListPagination.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
+import type { Paginator } from '@/types';
 
 type UserRow = {
     id: string;
@@ -13,10 +15,6 @@ type UserRow = {
     email: string;
     is_active: boolean;
     roles: string[];
-};
-
-type Paginator<T> = {
-    data: T[];
 };
 
 defineProps<{
@@ -135,5 +133,7 @@ setLayoutProps({
                 </tbody>
             </table>
         </div>
+
+        <ListPagination :meta="users" label="usuário" />
     </div>
 </template>

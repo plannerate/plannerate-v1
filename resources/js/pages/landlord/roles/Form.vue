@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { Form, Head, Link, setLayoutProps } from '@inertiajs/vue3';
+import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import { ShieldCheck } from 'lucide-vue-next';
 import RoleController from '@/actions/App/Http/Controllers/Landlord/RoleController';
-import Heading from '@/components/Heading.vue';
+import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
@@ -38,9 +39,10 @@ const isEdit = computed(() => props.role !== null);
 const isProtected = computed(() => props.role?.is_protected ?? false);
 const rolesIndexPath = RoleController.index.url().replace(/^\/\/[^/]+/, '');
 const selectedType = ref(props.role?.type ?? props.types[0]?.value ?? 'landlord');
-const filteredPermissions = computed(() => {
-    return props.permissions.filter((permission) => permission.type === selectedType.value);
-});
+
+const filteredPermissions = computed(() =>
+    props.permissions.filter((p) => p.type === selectedType.value),
+);
 
 setLayoutProps({
     breadcrumbs: [
@@ -59,67 +61,87 @@ setLayoutProps({
 <template>
     <Head :title="isEdit ? t('app.landlord.roles.actions.edit') : t('app.landlord.roles.actions.new')" />
 
-    <div class="space-y-6 p-4">
-        <Heading
-            :title="isEdit ? t('app.landlord.roles.actions.edit') : t('app.landlord.roles.actions.new')"
-            :description="t('app.landlord.roles.description')"
-        />
-
+    <div class="p-4">
         <Form
             v-bind="isEdit ? RoleController.update.form(props.role!.id) : RoleController.store.form()"
-            class="space-y-6"
             v-slot="{ errors, processing }"
         >
-            <div class="grid gap-2">
-                <Label for="type">{{ t('app.landlord.roles.fields.type') }}</Label>
-                <select
-                    id="type"
-                    name="type"
-                    v-model="selectedType"
-                    class="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                    :disabled="isProtected"
-                    required
-                >
-                    <option v-for="type in props.types" :key="type.value" :value="type.value">
-                        {{ type.label }}
-                    </option>
-                </select>
-                <InputError :message="errors.type" />
-            </div>
+            <FormCard
+                :title="isEdit ? t('app.landlord.roles.actions.edit') : t('app.landlord.roles.actions.new')"
+                :description="t('app.landlord.roles.description')"
+                :processing="processing"
+                :disabled="isProtected"
+                :cancel-href="rolesIndexPath"
+            >
+                <template #icon>
+                    <ShieldCheck class="size-5" />
+                </template>
 
-            <div class="grid gap-2">
-                <Label for="name">{{ t('app.landlord.roles.fields.name') }}</Label>
-                <Input id="name" name="name" :default-value="props.role?.name ?? ''" required :disabled="isProtected" />
-                <InputError :message="errors.name" />
-            </div>
+                <template v-if="isProtected" #header-extra>
+                    <Badge variant="secondary" class="gap-1.5 text-xs">
+                        <ShieldCheck class="size-3" />
+                        {{ t('app.landlord.common.protected') }}
+                    </Badge>
+                </template>
 
-            <div class="space-y-3">
-                <Label>{{ t('app.landlord.roles.fields.permissions') }}</Label>
-                <div class="grid gap-2 md:grid-cols-2">
-                    <label
-                        v-for="permission in filteredPermissions"
-                        :key="permission.name"
-                        class="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm"
+                <template v-if="isProtected" #before>
+                    <div class="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
+                        <ShieldCheck class="mt-0.5 size-4 shrink-0" />
+                        <span>{{ t('app.landlord.roles.protected') }}</span>
+                    </div>
+                </template>
+
+                <!-- Type -->
+                <div class="grid gap-2">
+                    <Label for="type">{{ t('app.landlord.roles.fields.type') }}</Label>
+                    <select
+                        id="type"
+                        name="type"
+                        v-model="selectedType"
+                        :disabled="isProtected"
+                        class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                        required
                     >
-                        <input
-                            type="checkbox"
-                            name="permissions[]"
-                            :value="permission.name"
-                            :checked="props.role?.permissions.includes(permission.name) ?? false"
-                            :disabled="isProtected"
-                        />
-                        <span>{{ permission.name }}</span>
-                    </label>
+                        <option v-for="type in props.types" :key="type.value" :value="type.value">
+                            {{ type.label }}
+                        </option>
+                    </select>
+                    <InputError :message="errors.type" />
                 </div>
-                <InputError :message="errors.permissions" />
-            </div>
 
-            <div class="flex items-center gap-3">
-                <Button :disabled="processing || isProtected">{{ t('app.actions.save') }}</Button>
-                <Button variant="outline" as-child>
-                    <Link :href="rolesIndexPath">{{ t('app.actions.cancel') }}</Link>
-                </Button>
-            </div>
+                <!-- Name -->
+                <div class="grid gap-2">
+                    <Label for="name">{{ t('app.landlord.roles.fields.name') }}</Label>
+                    <Input id="name" name="name" :default-value="props.role?.name ?? ''" :disabled="isProtected" required />
+                    <InputError :message="errors.name" />
+                </div>
+
+                <!-- Permissions -->
+                <div class="space-y-3">
+                    <Label>{{ t('app.landlord.roles.fields.permissions') }}</Label>
+                    <div class="grid gap-2 md:grid-cols-2">
+                        <label
+                            v-for="permission in filteredPermissions"
+                            :key="permission.name"
+                            class="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/40 has-checked:border-primary/50 has-checked:bg-primary/5"
+                        >
+                            <input
+                                type="checkbox"
+                                name="permissions[]"
+                                :value="permission.name"
+                                :checked="props.role?.permissions.includes(permission.name) ?? false"
+                                :disabled="isProtected"
+                                class="accent-primary"
+                            />
+                            <span>{{ permission.name }}</span>
+                        </label>
+                    </div>
+                    <p v-if="filteredPermissions.length === 0" class="text-sm text-muted-foreground">
+                        Nenhuma permissão disponível para este tipo.
+                    </p>
+                    <InputError :message="errors.permissions" />
+                </div>
+            </FormCard>
         </Form>
     </div>
 </template>

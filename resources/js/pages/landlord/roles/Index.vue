@@ -3,9 +3,11 @@ import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import RoleController from '@/actions/App/Http/Controllers/Landlord/RoleController';
 import Heading from '@/components/Heading.vue';
 import ListFiltersBar from '@/components/ListFiltersBar.vue';
+import ListPagination from '@/components/ListPagination.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
+import type { Paginator } from '@/types';
 
 type RoleRow = {
     id: string;
@@ -13,10 +15,6 @@ type RoleRow = {
     type: string;
     permissions_count: number;
     is_protected: boolean;
-};
-
-type Paginator<T> = {
-    data: T[];
 };
 
 defineProps<{
@@ -124,5 +122,7 @@ setLayoutProps({
                 </tbody>
             </table>
         </div>
+
+        <ListPagination :meta="roles" label="função" />
     </div>
 </template>

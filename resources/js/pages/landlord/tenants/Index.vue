@@ -4,9 +4,11 @@ import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantCont
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import Heading from '@/components/Heading.vue';
 import ListFiltersBar from '@/components/ListFiltersBar.vue';
+import ListPagination from '@/components/ListPagination.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
+import type { Paginator } from '@/types';
 
 type TenantRow = {
     id: string;
@@ -17,10 +19,6 @@ type TenantRow = {
     user_limit: number | null;
     plan: { id: string; name: string } | null;
     primary_domain: { id: string; host: string; is_active: boolean } | null;
-};
-
-type Paginator<T> = {
-    data: T[];
 };
 
 defineProps<{
@@ -156,5 +154,7 @@ setLayoutProps({
                 </tbody>
             </table>
         </div>
+
+        <ListPagination :meta="tenants" label="tenant" />
     </div>
 </template>
