@@ -252,5 +252,7 @@
     "log in": "Entrar",
     "of": "de",
     "results": "resultados",
-    "to": "até"
+    "to": "até",
+    "Fill in the form to add a new :resource": "Preencha o formulário para adicionar :resource",
+    "View details of this :resource": "Visualizar detalhes de :resource"
 }

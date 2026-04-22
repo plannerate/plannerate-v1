@@ -26,12 +26,12 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.21 0.014 258);
   --sidebar-foreground: oklch(0.94 0 0);
-  --sidebar-primary: oklch(0.84 0.238 116);
+  --sidebar-primary: oklch(0.85 0.21 131.43);
   --sidebar-primary-foreground: oklch(0.14 0.012 258);
   --sidebar-accent: oklch(0.84 0.238 116 / 12%);
   --sidebar-accent-foreground: oklch(0.89 0.12 116);
   --sidebar-border: oklch(1 0 0 / 6%);
-  --sidebar-ring: oklch(0.84 0.238 116);
+  --sidebar-ring: oklch(0.85 0.21 131.43);
 }
 
 .dark {
@@ -64,7 +64,7 @@
 /* ── Input tokens — Plannerate Signature ───────────────────────────────── */
 :root {
   --color-input-surface: oklch(0.965 0.003 264);
-  --color-input-focus: oklch(0.84 0.238 116);
+  --color-input-focus: oklch(0.85 0.21 131.43);
 }
 .dark {
   --color-input-surface: oklch(0.274 0.006 286.033);
