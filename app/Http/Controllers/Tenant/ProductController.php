@@ -52,6 +52,7 @@ class ProductController extends Controller
             ]);
 
         return Inertia::render('tenant/products/Index', [
+            'subdomain' => (string) $request->route('subdomain'),
             'products' => $products,
             'filters' => [
                 'search' => $search,
@@ -69,6 +70,7 @@ class ProductController extends Controller
         $this->authorize('create', Product::class);
 
         return Inertia::render('tenant/products/Form', [
+            'subdomain' => (string) request()->route('subdomain'),
             'product' => null,
             'categories' => $this->categoriesForSelect(),
         ]);
@@ -106,6 +108,7 @@ class ProductController extends Controller
         $this->authorize('update', $product);
 
         return Inertia::render('tenant/products/Form', [
+            'subdomain' => (string) request()->route('subdomain'),
             'product' => [
                 'id' => $product->id,
                 'category_id' => $product->category_id,

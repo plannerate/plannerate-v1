@@ -46,6 +46,7 @@ class CategoryController extends Controller
             ]);
 
         return Inertia::render('tenant/categories/Index', [
+            'subdomain' => (string) $request->route('subdomain'),
             'categories' => $categories,
             'filters' => [
                 'search' => $search,
@@ -59,6 +60,7 @@ class CategoryController extends Controller
         $this->authorize('create', Category::class);
 
         return Inertia::render('tenant/categories/Form', [
+            'subdomain' => (string) request()->route('subdomain'),
             'category' => null,
             'parent_categories' => $this->parentCategoriesForSelect(),
         ]);
@@ -91,6 +93,7 @@ class CategoryController extends Controller
         $this->authorize('update', $category);
 
         return Inertia::render('tenant/categories/Form', [
+            'subdomain' => (string) request()->route('subdomain'),
             'category' => [
                 'id' => $category->id,
                 'category_id' => $category->category_id,

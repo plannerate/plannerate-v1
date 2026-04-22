@@ -19,7 +19,8 @@ type ProductRow = {
     category: string | null;
 };
 
-defineProps<{
+const props = defineProps<{
+    subdomain: string;
     products: Paginator<ProductRow>;
     filters: {
         search: string;
@@ -30,9 +31,8 @@ defineProps<{
         categories: Array<{ id: string; name: string }>;
     };
 }>();
-
 const { t } = useT();
-const productsIndexPath = ProductController.index.url().replace(/^\/\/[^/]+/, '');
+const productsIndexPath = ProductController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
 
 setLayoutProps({
     breadcrumbs: [
@@ -48,7 +48,7 @@ setLayoutProps({
     <div class="space-y-6 p-4">
         <div class="flex items-center justify-between gap-4">
             <Heading :title="t('app.tenant.products.title')" :description="t('app.tenant.products.description')" />
-            <NewActionButton :href="ProductController.create.url()">
+            <NewActionButton :href="ProductController.create.url(props.subdomain)">
                 {{ t('app.tenant.products.actions.new') }}
             </NewActionButton>
         </div>
@@ -57,12 +57,12 @@ setLayoutProps({
             :action="productsIndexPath"
             :clear-href="productsIndexPath"
             search-name="search"
-            :search-value="filters.search"
+            :search-value="props.filters.search"
             :search-placeholder="t('app.tenant.common.search')"
             :filter-label="t('app.tenant.common.filter')"
             :clear-label="t('app.tenant.common.clear_filters')"
         >
-            <select name="status" :value="filters.status" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
+            <select name="status" :value="props.filters.status" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
                 <option value="">{{ t('app.tenant.common.all') }}</option>
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
@@ -70,9 +70,9 @@ setLayoutProps({
                 <option value="error">Error</option>
             </select>
 
-            <select name="category_id" :value="filters.category_id" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
+            <select name="category_id" :value="props.filters.category_id" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
                 <option value="">{{ t('app.tenant.common.all') }}</option>
-                <option v-for="category in filter_options.categories" :key="category.id" :value="category.id">
+                <option v-for="category in props.filter_options.categories" :key="category.id" :value="category.id">
                     {{ category.name }}
                 </option>
             </select>
@@ -91,12 +91,12 @@ setLayoutProps({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="products.data.length === 0">
+                    <tr v-if="props.products.data.length === 0">
                         <td class="px-4 py-6 text-muted-foreground" colspan="6">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
-                    <tr v-for="product in products.data" :key="product.id" class="border-t border-sidebar-border/60 dark:border-sidebar-border">
+                    <tr v-for="product in props.products.data" :key="product.id" class="border-t border-sidebar-border/60 dark:border-sidebar-border">
                         <td class="px-4 py-3 font-medium">{{ product.name ?? '-' }}</td>
                         <td class="px-4 py-3">{{ product.slug ?? '-' }}</td>
                         <td class="px-4 py-3">{{ product.ean ?? '-' }}</td>
@@ -105,12 +105,12 @@ setLayoutProps({
                         <td class="px-4 py-3 text-right">
                             <div class="inline-flex items-center gap-2">
                                 <Button variant="outline" size="sm" as-child>
-                                    <Link :href="ProductController.edit.url(product.id)">
+                                    <Link :href="ProductController.edit.url({ subdomain: props.subdomain, product: product.id })">
                                         {{ t('app.tenant.common.edit') }}
                                     </Link>
                                 </Button>
                                 <Button variant="destructive" size="sm" as-child>
-                                    <Link :href="ProductController.destroy.url(product.id)" method="delete" as="button">
+                                    <Link :href="ProductController.destroy.url({ subdomain: props.subdomain, product: product.id })" method="delete" as="button">
                                         {{ t('app.tenant.common.delete') }}
                                     </Link>
                                 </Button>
@@ -121,6 +121,6 @@ setLayoutProps({
             </table>
         </div>
 
-        <ListPagination :meta="products" label="produto" />
+        <ListPagination :meta="props.products" label="produto" />
     </div>
 </template>

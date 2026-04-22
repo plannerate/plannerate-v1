@@ -56,13 +56,14 @@ type ProductPayload = {
 };
 
 const props = defineProps<{
+    subdomain: string;
     product: ProductPayload | null;
     categories: Array<{ id: string; name: string }>;
 }>();
 
 const { t } = useT();
 const isEdit = computed(() => props.product !== null);
-const productsIndexPath = ProductController.index.url().replace(/^\/\/[^/]+/, '');
+const productsIndexPath = ProductController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
 
 setLayoutProps({
     breadcrumbs: [
@@ -70,7 +71,9 @@ setLayoutProps({
         { title: t('app.tenant.products.navigation'), href: productsIndexPath },
         {
             title: isEdit.value ? t('app.tenant.products.actions.edit') : t('app.tenant.products.actions.new'),
-            href: isEdit.value ? ProductController.edit.url(props.product!.id) : ProductController.create.url(),
+            href: isEdit.value
+                ? ProductController.edit.url({ subdomain: props.subdomain, product: props.product!.id })
+                : ProductController.create.url(props.subdomain),
         },
     ],
 });
@@ -81,7 +84,9 @@ setLayoutProps({
 
     <div class="p-4">
         <Form
-            v-bind="isEdit ? ProductController.update.form(props.product!.id) : ProductController.store.form()"
+            v-bind="isEdit
+                ? ProductController.update.form({ subdomain: props.subdomain, product: props.product!.id })
+                : ProductController.store.form(props.subdomain)"
             v-slot="{ errors, processing }"
         >
             <FormCard

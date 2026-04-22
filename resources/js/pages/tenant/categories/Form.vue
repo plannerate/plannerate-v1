@@ -27,13 +27,14 @@ type CategoryPayload = {
 };
 
 const props = defineProps<{
+    subdomain: string;
     category: CategoryPayload | null;
     parent_categories: Array<{ id: string; name: string }>;
 }>();
 
 const { t } = useT();
 const isEdit = computed(() => props.category !== null);
-const categoriesIndexPath = CategoryController.index.url().replace(/^\/\/[^/]+/, '');
+const categoriesIndexPath = CategoryController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
 
 setLayoutProps({
     breadcrumbs: [
@@ -41,7 +42,9 @@ setLayoutProps({
         { title: t('app.tenant.categories.navigation'), href: categoriesIndexPath },
         {
             title: isEdit.value ? t('app.tenant.categories.actions.edit') : t('app.tenant.categories.actions.new'),
-            href: isEdit.value ? CategoryController.edit.url(props.category!.id) : CategoryController.create.url(),
+            href: isEdit.value
+                ? CategoryController.edit.url({ subdomain: props.subdomain, category: props.category!.id })
+                : CategoryController.create.url(props.subdomain),
         },
     ],
 });
@@ -52,7 +55,9 @@ setLayoutProps({
 
     <div class="p-4">
         <Form
-            v-bind="isEdit ? CategoryController.update.form(props.category!.id) : CategoryController.store.form()"
+            v-bind="isEdit
+                ? CategoryController.update.form({ subdomain: props.subdomain, category: props.category!.id })
+                : CategoryController.store.form(props.subdomain)"
             v-slot="{ errors, processing }"
         >
             <FormCard
