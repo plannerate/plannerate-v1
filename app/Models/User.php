@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -20,12 +21,37 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, HasUlids, Notifiable, TwoFactorAuthenticatable;
 
-    /**
-     * The database connection used by the model.
-     *
-     * @var string
-     */
-    // protected $connection = 'landlord';
+    public function getConnectionName(): ?string
+    {
+        $containerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
+
+        if (app()->bound($containerKey) && app($containerKey) !== null) {
+            return null;
+        }
+
+        $host = strtolower((string) request()->getHost());
+        $tenantModel = config('multitenancy.tenant_model');
+
+        if (is_string($tenantModel) && $tenantModel !== '' && $host !== '') {
+            /** @var class-string<Model> $tenantModel */
+            $tenant = $tenantModel::query()
+                ->whereHas('domains', function ($query) use ($host): void {
+                    $query
+                        ->where('host', $host)
+                        ->where('type', 'subdomain')
+                        ->where('is_active', true);
+                })
+                ->first();
+
+            if ($tenant !== null && method_exists($tenant, 'makeCurrent')) {
+                $tenant->makeCurrent();
+
+                return null;
+            }
+        }
+
+        return 'landlord';
+    }
 
     /**
      * Get the attributes that should be cast.
