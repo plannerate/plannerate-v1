@@ -47,6 +47,11 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->except(['show'])
         ->names('landlord.permissions');
 
+    Route::get('tenants/{tenant}/setup', [LandlordTenantController::class, 'setup'])
+        ->name('landlord.tenants.setup');
+    Route::post('tenants/{tenant}/provision', [LandlordTenantController::class, 'provision'])
+        ->name('landlord.tenants.provision');
+
     Route::get('tenants/{tenant}/access', [TenantUserAccessController::class, 'edit'])
         ->name('landlord.tenants.access.edit');
     Route::post('tenants/{tenant}/access/users', [TenantUserAccessController::class, 'store'])

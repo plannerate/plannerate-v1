@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Tall\Sluggable\HasSlug;
 use Tall\Sluggable\SlugOptions;
@@ -14,7 +15,7 @@ use Tall\Sluggable\SlugOptions;
 class Store extends Model
 {
     /** @use HasFactory<StoreFactory> */
-    use HasFactory, HasUlids, SoftDeletes, HasSlug;
+    use HasFactory, HasSlug, HasUlids, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -40,6 +41,14 @@ class Store extends Model
     public function clusters(): HasMany
     {
         return $this->hasMany(Cluster::class);
+    }
+
+    /**
+     * Get addresses associated to this store.
+     */
+    public function addresses(): MorphMany
+    {
+        return $this->morphMany(Address::class, 'addressable');
     }
 
     /**

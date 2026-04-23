@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { Truck } from 'lucide-vue-next';
 import ProviderController from '@/actions/App/Http/Controllers/Tenant/ProviderController';
+import AddressFields from '@/components/form/AddressFields.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
@@ -97,6 +98,8 @@ const providersIndexPath = ProviderController.index.url(props.subdomain).replace
                     </div>
                     <InputError :message="errors.is_default" />
                 </label>
+
+                <AddressFields :errors="errors" />
             </FormCard>
         </Form>
     </div>

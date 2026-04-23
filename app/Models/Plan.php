@@ -55,4 +55,20 @@ class Plan extends Model
     {
         return $this->hasMany(Tenant::class);
     }
+
+    /**
+     * Get the plan's feature/limit items ordered for display.
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(PlanItem::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Return the typed value of a plan item by key, or null if unlimited/not set.
+     */
+    public function getLimit(string $key): int|bool|string|null
+    {
+        return $this->items->firstWhere('key', $key)?->typedValue();
+    }
 }

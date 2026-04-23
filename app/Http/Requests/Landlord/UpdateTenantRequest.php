@@ -64,7 +64,6 @@ class UpdateTenantRequest extends FormRequest
             'database' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9_]+$/', Rule::unique('landlord.tenants', 'database')->ignore($tenant)],
             'status' => ['required', 'string', Rule::in(self::AVAILABLE_STATUSES)],
             'plan_id' => ['nullable', 'string', Rule::exists('landlord.plans', 'id')],
-            'user_limit' => ['nullable', 'integer', 'min:1'],
             'host' => ['required', 'string', 'max:255', Rule::unique('landlord.tenant_domains', 'host')->ignore($primaryDomainId)],
             'domain_is_active' => ['sometimes', 'boolean'],
         ];

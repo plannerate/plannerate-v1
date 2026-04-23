@@ -6,6 +6,7 @@ use Database\Factories\ProviderFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Provider extends Model
@@ -40,5 +41,13 @@ class Provider extends Model
         return [
             'is_default' => 'boolean',
         ];
+    }
+
+    /**
+     * Get addresses associated to this provider.
+     */
+    public function addresses(): MorphMany
+    {
+        return $this->morphMany(Address::class, 'addressable');
     }
 }

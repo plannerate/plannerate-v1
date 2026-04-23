@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { Store as StoreIcon } from 'lucide-vue-next';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
+import AddressFields from '@/components/form/AddressFields.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
@@ -105,6 +106,8 @@ const storesIndexPath = StoreController.index.url(props.subdomain).replace(/^\/\
                         <InputError :message="errors.description" />
                     </div>
                 </div>
+
+                <AddressFields :errors="errors" />
             </FormCard>
         </Form>
     </div>

@@ -1,13 +1,24 @@
 <script setup lang="ts">
 import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
-import { computed } from 'vue';
-import { Layers } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import { Layers, Plus, Trash2 } from 'lucide-vue-next';
 import PlanController from '@/actions/App/Http/Controllers/Landlord/PlanController';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
+
+type PlanItem = {
+    id: string | null;
+    key: string;
+    label: string;
+    value: string;
+    type: 'integer' | 'boolean' | 'string';
+    sort_order: number;
+    is_active: boolean;
+};
 
 type PlanPayload = {
     id: string;
@@ -17,6 +28,7 @@ type PlanPayload = {
     price_cents: number;
     user_limit: number | null;
     is_active: boolean;
+    items: PlanItem[];
 };
 
 const props = defineProps<{
@@ -26,6 +38,26 @@ const props = defineProps<{
 const { t } = useT();
 const isEdit = computed(() => props.plan !== null);
 const plansIndexPath = PlanController.index.url().replace(/^\/\/[^/]+/, '');
+
+const items = ref<PlanItem[]>(
+    props.plan?.items?.map((item) => ({ ...item })) ?? [],
+);
+
+function addItem(): void {
+    items.value.push({
+        id: null,
+        key: '',
+        label: '',
+        value: '',
+        type: 'string',
+        sort_order: items.value.length,
+        is_active: true,
+    });
+}
+
+function removeItem(index: number): void {
+    items.value.splice(index, 1);
+}
 
 setLayoutProps({
     breadcrumbs: [
@@ -124,6 +156,104 @@ setLayoutProps({
                     </div>
                     <InputError :message="errors.is_active" />
                 </label>
+
+                <!-- Plan Items -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-foreground">Itens do plano</p>
+                            <p class="text-xs text-muted-foreground">Features e limites configuráveis para este plano.</p>
+                        </div>
+                        <Button type="button" variant="outline" size="sm" @click="addItem">
+                            <Plus class="mr-1 size-4" />
+                            Adicionar item
+                        </Button>
+                    </div>
+
+                    <div
+                        v-if="items.length === 0"
+                        class="flex items-center justify-center rounded-lg border border-dashed border-border px-4 py-8 text-sm text-muted-foreground"
+                    >
+                        Nenhum item adicionado. Clique em "Adicionar item" para começar.
+                    </div>
+
+                    <div v-else class="divide-y divide-border rounded-lg border border-border">
+                        <div
+                            v-for="(item, index) in items"
+                            :key="index"
+                            class="grid grid-cols-[1fr_1fr_1fr_auto_auto] items-end gap-3 p-4"
+                        >
+                            <!-- Hidden id -->
+                            <input
+                                v-if="item.id"
+                                type="hidden"
+                                :name="`items[${index}][id]`"
+                                :value="item.id"
+                            />
+
+                            <!-- Label -->
+                            <div class="grid gap-1">
+                                <label :for="`item_label_${index}`" class="text-xs font-medium text-muted-foreground">Label</label>
+                                <Input
+                                    :id="`item_label_${index}`"
+                                    v-model="item.label"
+                                    :name="`items[${index}][label]`"
+                                    placeholder="Ex: Máximo de usuários"
+                                    required
+                                />
+                            </div>
+
+                            <!-- Key -->
+                            <div class="grid gap-1">
+                                <label :for="`item_key_${index}`" class="text-xs font-medium text-muted-foreground">Chave</label>
+                                <Input
+                                    :id="`item_key_${index}`"
+                                    v-model="item.key"
+                                    :name="`items[${index}][key]`"
+                                    placeholder="Ex: user_limit"
+                                    required
+                                />
+                            </div>
+
+                            <!-- Value -->
+                            <div class="grid gap-1">
+                                <label :for="`item_value_${index}`" class="text-xs font-medium text-muted-foreground">Valor</label>
+                                <Input
+                                    :id="`item_value_${index}`"
+                                    v-model="item.value"
+                                    :name="`items[${index}][value]`"
+                                    placeholder="Em branco = ilimitado"
+                                />
+                            </div>
+
+                            <!-- Type -->
+                            <div class="grid gap-1">
+                                <label :for="`item_type_${index}`" class="text-xs font-medium text-muted-foreground">Tipo</label>
+                                <select
+                                    :id="`item_type_${index}`"
+                                    v-model="item.type"
+                                    :name="`items[${index}][type]`"
+                                    class="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                                >
+                                    <option value="string">Texto</option>
+                                    <option value="integer">Inteiro</option>
+                                    <option value="boolean">Booleano</option>
+                                </select>
+                            </div>
+
+                            <!-- Remove -->
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                class="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                @click="removeItem(index)"
+                            >
+                                <Trash2 class="size-4" />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             </FormCard>
         </Form>
     </div>

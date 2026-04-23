@@ -16,7 +16,6 @@ type TenantPayload = {
     database: string;
     status: string;
     plan_id: string | null;
-    user_limit: number | null;
     host: string | null;
     domain_is_active: boolean;
 };
@@ -165,15 +164,8 @@ function onDatabaseInput(): void {
                     </div>
                 </div>
 
-                <!-- Limits & Domain -->
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label for="user_limit">{{ t('app.landlord.tenants.fields.user_limit') }}</Label>
-                        <Input id="user_limit" name="user_limit" type="number" min="1" :default-value="props.tenant?.user_limit ?? ''" />
-                        <p class="text-xs text-muted-foreground">Deixe em branco para usar o limite do plano.</p>
-                        <InputError :message="errors.user_limit" />
-                    </div>
-
+                <!-- Domain -->
+                <div class="grid gap-4">
                     <div class="grid gap-2">
                         <Label for="host">{{ t('app.landlord.tenants.fields.host') }}</Label>
                         <Input id="host" name="host" :default-value="props.tenant?.host ?? ''" required />

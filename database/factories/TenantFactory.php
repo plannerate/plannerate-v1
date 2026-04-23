@@ -24,7 +24,6 @@ class TenantFactory extends Factory
             'database' => 'tenant_'.Str::lower(Str::random(10)),
             'status' => fake()->randomElement(['active', 'inactive', 'suspended']),
             'plan_id' => Plan::factory(),
-            'user_limit' => fake()->numberBetween(1, 200),
             'provisioned_at' => now(),
             'provisioning_error' => null,
         ];

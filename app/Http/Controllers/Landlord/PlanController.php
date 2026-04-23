@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StorePlanRequest;
 use App\Http\Requests\Landlord\UpdatePlanRequest;
 use App\Models\Plan;
+use App\Models\PlanItem;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -79,8 +81,13 @@ class PlanController extends Controller
 
         $validated = $request->validated();
         $validated['is_active'] = $request->boolean('is_active');
+        $items = $validated['items'] ?? [];
+        unset($validated['items']);
 
-        Plan::query()->create($validated);
+        DB::connection('landlord')->transaction(function () use ($validated, $items): void {
+            $plan = Plan::query()->create($validated);
+            $this->syncPlanItems($plan, $items);
+        });
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -97,6 +104,8 @@ class PlanController extends Controller
     {
         $this->authorize('update', $plan);
 
+        $plan->load('items');
+
         return Inertia::render('landlord/plans/Form', [
             'plan' => [
                 'id' => $plan->id,
@@ -106,6 +115,15 @@ class PlanController extends Controller
                 'price_cents' => $plan->price_cents,
                 'user_limit' => $plan->user_limit,
                 'is_active' => $plan->is_active,
+                'items' => $plan->items->map(fn (PlanItem $item): array => [
+                    'id' => $item->id,
+                    'key' => $item->key,
+                    'label' => $item->label,
+                    'value' => $item->value,
+                    'type' => $item->type,
+                    'sort_order' => $item->sort_order,
+                    'is_active' => $item->is_active,
+                ])->values()->all(),
             ],
         ]);
     }
@@ -119,8 +137,13 @@ class PlanController extends Controller
 
         $validated = $request->validated();
         $validated['is_active'] = $request->boolean('is_active');
+        $items = $validated['items'] ?? [];
+        unset($validated['items']);
 
-        $plan->update($validated);
+        DB::connection('landlord')->transaction(function () use ($plan, $validated, $items): void {
+            $plan->update($validated);
+            $this->syncPlanItems($plan, $items);
+        });
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -128,6 +151,30 @@ class PlanController extends Controller
         ]);
 
         return to_route('landlord.plans.index');
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $items
+     */
+    private function syncPlanItems(Plan $plan, array $items): void
+    {
+        $submittedIds = collect($items)->pluck('id')->filter()->values()->all();
+
+        $plan->items()->whereNotIn('id', $submittedIds)->delete();
+
+        foreach ($items as $index => $data) {
+            $plan->items()->updateOrCreate(
+                ['id' => $data['id'] ?? ''],
+                [
+                    'key' => $data['key'],
+                    'label' => $data['label'],
+                    'value' => $data['value'] !== '' ? $data['value'] : null,
+                    'type' => $data['type'] ?? 'string',
+                    'sort_order' => $index,
+                    'is_active' => isset($data['is_active']) ? (bool) $data['is_active'] : true,
+                ],
+            );
+        }
     }
 
     /**

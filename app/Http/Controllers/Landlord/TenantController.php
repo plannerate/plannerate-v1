@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Landlord;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreTenantRequest;
 use App\Http\Requests\Landlord\UpdateTenantRequest;
+use App\Jobs\ProvisionTenantDatabaseJob;
 use App\Models\Plan;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
@@ -56,7 +57,6 @@ class TenantController extends Controller
                 'slug' => $tenant->slug,
                 'database' => $tenant->database,
                 'status' => $tenant->status,
-                'user_limit' => $tenant->user_limit,
                 'plan' => $tenant->plan ? [
                     'id' => $tenant->plan->id,
                     'name' => $tenant->plan->name,
@@ -130,7 +130,9 @@ class TenantController extends Controller
             'message' => __('app.landlord.tenants.messages.created'),
         ]);
 
-        return to_route('landlord.tenants.index');
+        $createdTenant = Tenant::query()->where('slug', $validated['slug'])->first();
+
+        return to_route('landlord.tenants.setup', $createdTenant);
     }
 
     /**
@@ -150,7 +152,6 @@ class TenantController extends Controller
                 'database' => $tenant->database,
                 'status' => $tenant->status,
                 'plan_id' => $tenant->plan_id,
-                'user_limit' => $tenant->user_limit,
                 'host' => $tenant->primaryDomain?->host,
                 'domain_is_active' => $tenant->primaryDomain?->is_active ?? true,
             ],
@@ -188,6 +189,52 @@ class TenantController extends Controller
         ]);
 
         return to_route('landlord.tenants.index');
+    }
+
+    /**
+     * Show the setup/provisioning status page for a tenant.
+     */
+    public function setup(Tenant $tenant): Response
+    {
+        $this->authorize('update', $tenant);
+
+        $tenant->load(['primaryDomain:id,tenant_id,host,is_active', 'plan:id,name']);
+
+        return Inertia::render('landlord/tenants/Setup', [
+            'tenant' => [
+                'id' => $tenant->id,
+                'name' => $tenant->name,
+                'slug' => $tenant->slug,
+                'database' => $tenant->database,
+                'status' => $tenant->status,
+                'provisioned_at' => $tenant->provisioned_at?->toDateTimeString(),
+                'provisioning_error' => $tenant->provisioning_error,
+                'plan' => $tenant->plan ? ['id' => $tenant->plan->id, 'name' => $tenant->plan->name] : null,
+                'primary_domain' => $tenant->primaryDomain ? [
+                    'host' => $tenant->primaryDomain->host,
+                    'is_active' => $tenant->primaryDomain->is_active,
+                ] : null,
+            ],
+        ]);
+    }
+
+    /**
+     * Trigger (or retry) provisioning for the given tenant.
+     */
+    public function provision(Tenant $tenant): RedirectResponse
+    {
+        $this->authorize('update', $tenant);
+
+        $tenant->update(['status' => 'provisioning', 'provisioning_error' => null]);
+
+        ProvisionTenantDatabaseJob::dispatch($tenant);
+
+        Inertia::flash('toast', [
+            'type' => 'info',
+            'message' => __('app.landlord.tenants.messages.provisioning_started'),
+        ]);
+
+        return to_route('landlord.tenants.setup', $tenant);
     }
 
     /**

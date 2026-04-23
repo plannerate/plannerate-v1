@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Spatie\Multitenancy\Models\Tenant as ModelsTenant;
 
 class Tenant extends ModelsTenant
@@ -33,7 +34,6 @@ class Tenant extends ModelsTenant
         'database',
         'status',
         'plan_id',
-        'user_limit',
         'provisioned_at',
         'provisioning_error',
     ];
@@ -46,7 +46,6 @@ class Tenant extends ModelsTenant
     protected function casts(): array
     {
         return [
-            'user_limit' => 'integer',
             'provisioned_at' => 'datetime',
         ];
     }
@@ -81,5 +80,13 @@ class Tenant extends ModelsTenant
     public function domain(): HasOne
     {
         return $this->hasOne(TenantDomain::class);
+    }
+
+    /**
+     * Get addresses associated to this tenant.
+     */
+    public function addresses(): MorphMany
+    {
+        return $this->morphMany(Address::class, 'addressable');
     }
 }

@@ -14,7 +14,6 @@ type TenantRow = {
     slug: string;
     database: string;
     status: string;
-    user_limit: number | null;
     plan: { id: string; name: string } | null;
     primary_domain: { id: string; host: string; is_active: boolean } | null;
 };
@@ -127,6 +126,16 @@ setLayoutProps({
                     <td class="px-4 py-3">{{ tenant.plan?.name ?? '-' }}</td>
                     <td class="px-4 py-3 text-right">
                         <div class="inline-flex items-center gap-2">
+                            <Button
+                                v-if="tenant.status !== 'active'"
+                                variant="outline"
+                                size="sm"
+                                as-child
+                            >
+                                <Link :href="TenantController.setup.url(tenant.id)">
+                                    {{ t('app.landlord.tenants.setup.title') }}
+                                </Link>
+                            </Button>
                             <Button variant="secondary" size="sm" as-child>
                                 <Link :href="TenantUserAccessController.edit.url(tenant.id)">
                                     {{ t('app.landlord.common.access') }}

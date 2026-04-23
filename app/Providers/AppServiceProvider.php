@@ -13,6 +13,7 @@ use App\Models\Role;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Observers\TenantObserver;
 use App\Policies\CategoryPolicy;
 use App\Policies\ClusterPolicy;
 use App\Policies\PermissionPolicy;
@@ -49,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Tenant::observe(TenantObserver::class);
         $this->registerPolicies();
         $this->configureDefaults();
     }
