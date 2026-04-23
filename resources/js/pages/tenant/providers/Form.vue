@@ -4,10 +4,10 @@ import { computed } from 'vue';
 import { Truck } from 'lucide-vue-next';
 import ProviderController from '@/actions/App/Http/Controllers/Tenant/ProviderController';
 import AddressFields from '@/components/form/AddressFields.vue';
+import FormTextField from '@/components/form/FormTextField.vue';
+import FormTextareaField from '@/components/form/FormTextareaField.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
 
 type ProviderPayload = {
@@ -51,43 +51,63 @@ const providersIndexPath = ProviderController.index.url(props.subdomain).replace
                     <Truck class="size-5" />
                 </template>
 
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label for="name">{{ t('app.tenant.providers.fields.name') }}</Label>
-                        <Input id="name" name="name" :default-value="props.provider?.name ?? ''" required />
-                        <InputError :message="errors.name" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="code">{{ t('app.tenant.providers.fields.code') }}</Label>
-                        <Input id="code" name="code" :default-value="props.provider?.code ?? ''" />
-                        <InputError :message="errors.code" />
-                    </div>
-                </div>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                    <FormTextField
+                        id="name"
+                        name="name"
+                        :label="t('app.tenant.providers.fields.name')"
+                        :default-value="props.provider?.name ?? ''"
+                        :error="errors.name"
+                        class="md:col-span-6"
+                        required
+                    />
 
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label for="cnpj">{{ t('app.tenant.providers.fields.cnpj') }}</Label>
-                        <Input id="cnpj" name="cnpj" :default-value="props.provider?.cnpj ?? ''" />
-                        <InputError :message="errors.cnpj" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="phone">{{ t('app.tenant.providers.fields.phone') }}</Label>
-                        <Input id="phone" name="phone" :default-value="props.provider?.phone ?? ''" />
-                        <InputError :message="errors.phone" />
-                    </div>
-                </div>
+                    <FormTextField
+                        id="code"
+                        name="code"
+                        :label="t('app.tenant.providers.fields.code')"
+                        :default-value="props.provider?.code ?? ''"
+                        :error="errors.code"
+                        class="md:col-span-3"
+                    />
 
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label for="email">{{ t('app.tenant.providers.fields.email') }}</Label>
-                        <Input id="email" name="email" type="email" :default-value="props.provider?.email ?? ''" />
-                        <InputError :message="errors.email" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="description">{{ t('app.tenant.providers.fields.description') }}</Label>
-                        <Input id="description" name="description" :default-value="props.provider?.description ?? ''" />
-                        <InputError :message="errors.description" />
-                    </div>
+                    <FormTextField
+                        id="cnpj"
+                        name="cnpj"
+                        :label="t('app.tenant.providers.fields.cnpj')"
+                        :default-value="props.provider?.cnpj ?? ''"
+                        :error="errors.cnpj"
+                        class="md:col-span-3"
+                    />
+
+                    <FormTextField
+                        id="phone"
+                        name="phone"
+                        :label="t('app.tenant.providers.fields.phone')"
+                        :default-value="props.provider?.phone ?? ''"
+                        :error="errors.phone"
+                        class="md:col-span-4"
+                    />
+
+                    <FormTextField
+                        id="email"
+                        name="email"
+                        type="email"
+                        :label="t('app.tenant.providers.fields.email')"
+                        :default-value="props.provider?.email ?? ''"
+                        :error="errors.email"
+                        class="md:col-span-4"
+                    />
+
+                    <FormTextareaField
+                        id="description"
+                        name="description"
+                        :label="t('app.tenant.providers.fields.description')"
+                        :default-value="props.provider?.description ?? ''"
+                        :error="errors.description"
+                        class="md:col-span-4"
+                        :rows="2"
+                    />
                 </div>
 
                 <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50 has-checked:border-primary/50 has-checked:bg-primary/5">

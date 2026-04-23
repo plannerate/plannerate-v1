@@ -4,10 +4,10 @@ import { computed } from 'vue';
 import { Store as StoreIcon } from 'lucide-vue-next';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
 import AddressFields from '@/components/form/AddressFields.vue';
+import FormSelectField from '@/components/form/FormSelectField.vue';
+import FormTextareaField from '@/components/form/FormTextareaField.vue';
+import FormTextField from '@/components/form/FormTextField.vue';
 import FormCard from '@/components/FormCard.vue';
-import InputError from '@/components/InputError.vue';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
 
 type StorePayload = {
@@ -52,59 +52,84 @@ const storesIndexPath = StoreController.index.url(props.subdomain).replace(/^\/\
                     <StoreIcon class="size-5" />
                 </template>
 
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label for="name">{{ t('app.tenant.stores.fields.name') }}</Label>
-                        <Input id="name" name="name" :default-value="props.store?.name ?? ''" required />
-                        <InputError :message="errors.name" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="document">{{ t('app.tenant.stores.fields.document') }}</Label>
-                        <Input id="document" name="document" :default-value="props.store?.document ?? ''" />
-                        <InputError :message="errors.document" />
-                    </div>
-                </div>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                    <FormTextField
+                        id="name"
+                        name="name"
+                        :label="t('app.tenant.stores.fields.name')"
+                        :default-value="props.store?.name ?? ''"
+                        :error="errors.name"
+                        class="md:col-span-6"
+                        required
+                    />
 
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label for="slug">Slug</Label>
-                        <Input id="slug" name="slug" :default-value="props.store?.slug ?? ''" />
-                        <InputError :message="errors.slug" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="code">{{ t('app.tenant.stores.fields.code') }}</Label>
-                        <Input id="code" name="code" :default-value="props.store?.code ?? ''" />
-                        <InputError :message="errors.code" />
-                    </div>
-                </div>
+                    <FormTextField
+                        id="document"
+                        name="document"
+                        :label="t('app.tenant.stores.fields.document')"
+                        :default-value="props.store?.document ?? ''"
+                        :error="errors.document"
+                        class="md:col-span-3"
+                    />
 
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label for="phone">{{ t('app.tenant.stores.fields.phone') }}</Label>
-                        <Input id="phone" name="phone" :default-value="props.store?.phone ?? ''" />
-                        <InputError :message="errors.phone" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="email">{{ t('app.tenant.stores.fields.email') }}</Label>
-                        <Input id="email" name="email" type="email" :default-value="props.store?.email ?? ''" />
-                        <InputError :message="errors.email" />
-                    </div>
-                </div>
+                    <FormTextField
+                        id="code"
+                        name="code"
+                        :label="t('app.tenant.stores.fields.code')"
+                        :default-value="props.store?.code ?? ''"
+                        :error="errors.code"
+                        class="md:col-span-3"
+                    />
 
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label for="status">{{ t('app.tenant.stores.fields.status') }}</Label>
-                        <select id="status" name="status" :value="props.store?.status ?? 'draft'" class="h-10 rounded-md border border-input bg-background px-3 text-sm">
-                            <option value="draft">Draft</option>
-                            <option value="published">Published</option>
-                        </select>
-                        <InputError :message="errors.status" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="description">{{ t('app.tenant.stores.fields.description') }}</Label>
-                        <Input id="description" name="description" :default-value="props.store?.description ?? ''" />
-                        <InputError :message="errors.description" />
-                    </div>
+                    <FormTextField
+                        id="slug"
+                        name="slug"
+                        label="Slug"
+                        :default-value="props.store?.slug ?? ''"
+                        :error="errors.slug"
+                        class="md:col-span-4"
+                    />
+
+                    <FormTextField
+                        id="phone"
+                        name="phone"
+                        :label="t('app.tenant.stores.fields.phone')"
+                        :default-value="props.store?.phone ?? ''"
+                        :error="errors.phone"
+                        class="md:col-span-4"
+                    />
+
+                    <FormTextField
+                        id="email"
+                        name="email"
+                        type="email"
+                        :label="t('app.tenant.stores.fields.email')"
+                        :default-value="props.store?.email ?? ''"
+                        :error="errors.email"
+                        class="md:col-span-4"
+                    />
+
+                    <FormSelectField
+                        id="status"
+                        name="status"
+                        :label="t('app.tenant.stores.fields.status')"
+                        :default-value="props.store?.status ?? 'draft'"
+                        :error="errors.status"
+                        class="md:col-span-3"
+                    >
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                    </FormSelectField>
+
+                    <FormTextareaField
+                        id="description"
+                        name="description"
+                        :label="t('app.tenant.stores.fields.description')"
+                        :default-value="props.store?.description ?? ''"
+                        :error="errors.description"
+                        class="md:col-span-12"
+                        :rows="2"
+                    />
                 </div>
 
                 <AddressFields :errors="errors" />

@@ -53,6 +53,17 @@ return [
     'addresses' => [
         'title' => 'Endereco',
         'description' => 'Campos de endereco compartilhados para cadastros.',
+        'actions' => [
+            'search_zip_code' => 'Buscar CEP',
+        ],
+        'hints' => [
+            'zip_code' => 'Informe o CEP e use a busca para preencher os demais campos.',
+        ],
+        'messages' => [
+            'invalid_zip_code' => 'Informe um CEP valido com 8 digitos.',
+            'zip_code_not_found' => 'CEP nao encontrado.',
+            'zip_code_lookup_failed' => 'Nao foi possivel consultar o CEP agora.',
+        ],
         'fields' => [
             'type' => 'Tipo',
             'name' => 'Nome do endereco',
@@ -68,6 +79,16 @@ return [
             'country' => 'Pais',
             'status' => 'Status',
             'is_default' => 'Endereco padrao',
+        ],
+        'statuses' => [
+            'draft' => 'Rascunho',
+            'published' => 'Publicado',
+        ],
+        'types' => [
+            'home' => 'Residencial',
+            'billing' => 'Cobranca',
+            'shipping' => 'Entrega',
+            'commercial' => 'Comercial',
         ],
     ],
 

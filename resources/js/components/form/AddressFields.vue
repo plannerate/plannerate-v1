@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+import CepLookupField from '@/components/form/CepLookupField.vue';
+import FormSelectField from '@/components/form/FormSelectField.vue';
+import FormTextareaField from '@/components/form/FormTextareaField.vue';
+import FormTextField from '@/components/form/FormTextField.vue';
 import InputError from '@/components/InputError.vue';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
 
 type AddressFormValue = {
@@ -53,122 +56,218 @@ function value(field: keyof AddressFormValue): string {
         return (props.modelValue?.[field] as string | undefined) ?? 'draft';
     }
 
+    if (field === 'type') {
+        return (props.modelValue?.[field] as string | undefined) ?? 'home';
+    }
+
     return (props.modelValue?.[field] as string | undefined) ?? '';
+}
+
+const type = ref(value('type'));
+const name = ref(value('name'));
+const zipCode = ref(value('zip_code'));
+const street = ref(value('street'));
+const number = ref(value('number'));
+const complement = ref(value('complement'));
+const reference = ref(value('reference'));
+const additionalInformation = ref(value('additional_information'));
+const district = ref(value('district'));
+const city = ref(value('city'));
+const state = ref(value('state'));
+const country = ref(value('country'));
+const status = ref(value('status'));
+const isDefault = ref(Boolean(props.modelValue?.is_default ?? false));
+
+function onCepResolved(payload: {
+    street: string;
+    district: string;
+    city: string;
+    state: string;
+    complement: string;
+}): void {
+    street.value = payload.street;
+    district.value = payload.district;
+    city.value = payload.city;
+    state.value = payload.state;
+
+    if (payload.complement !== '') {
+        complement.value = payload.complement;
+    }
 }
 </script>
 
 <template>
-    <div class="space-y-4 rounded-lg border border-border p-4">
+    <div
+        class="space-y-4 rounded-xl border border-border/70 bg-muted/20 p-4 md:p-5"
+    >
         <div>
-            <h3 class="text-base font-semibold">{{ t('app.addresses.title') }}</h3>
-            <p class="text-sm text-muted-foreground">{{ t('app.addresses.description') }}</p>
+            <h3 class="text-base font-semibold">
+                {{ t('app.addresses.title') }}
+            </h3>
+            <p class="text-sm text-muted-foreground">
+                {{ t('app.addresses.description') }}
+            </p>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2">
-            <div class="grid gap-2">
-                <Label :for="`${prefix}-type`">{{ t('app.addresses.fields.type') }}</Label>
-                <Input :id="`${prefix}-type`" :name="inputName('type')" :default-value="value('type')" />
-                <InputError :message="props.errors[errorKey('type')]" />
-            </div>
-            <div class="grid gap-2">
-                <Label :for="`${prefix}-name`">{{ t('app.addresses.fields.name') }}</Label>
-                <Input :id="`${prefix}-name`" :name="inputName('name')" :default-value="value('name')" />
-                <InputError :message="props.errors[errorKey('name')]" />
-            </div>
-        </div>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+            <FormSelectField
+                :id="`${prefix}-type`"
+                v-model="type"
+                :name="inputName('type')"
+                :label="t('app.addresses.fields.type')"
+                :error="props.errors[errorKey('type')]"
+                class="md:col-span-4"
+            >
+                <option value="">-</option>
+                <option value="home">
+                    {{ t('app.addresses.types.home') }}
+                </option>
+                <option value="billing">
+                    {{ t('app.addresses.types.billing') }}
+                </option>
+                <option value="shipping">
+                    {{ t('app.addresses.types.shipping') }}
+                </option>
+                <option value="commercial">
+                    {{ t('app.addresses.types.commercial') }}
+                </option>
+            </FormSelectField>
 
-        <div class="grid gap-4 md:grid-cols-2">
-            <div class="grid gap-2">
-                <Label :for="`${prefix}-zip_code`">{{ t('app.addresses.fields.zip_code') }}</Label>
-                <Input :id="`${prefix}-zip_code`" :name="inputName('zip_code')" :default-value="value('zip_code')" />
-                <InputError :message="props.errors[errorKey('zip_code')]" />
-            </div>
-            <div class="grid gap-2">
-                <Label :for="`${prefix}-street`">{{ t('app.addresses.fields.street') }}</Label>
-                <Input :id="`${prefix}-street`" :name="inputName('street')" :default-value="value('street')" />
-                <InputError :message="props.errors[errorKey('street')]" />
-            </div>
-        </div>
-
-        <div class="grid gap-4 md:grid-cols-3">
-            <div class="grid gap-2">
-                <Label :for="`${prefix}-number`">{{ t('app.addresses.fields.number') }}</Label>
-                <Input :id="`${prefix}-number`" :name="inputName('number')" :default-value="value('number')" />
-                <InputError :message="props.errors[errorKey('number')]" />
-            </div>
-            <div class="grid gap-2">
-                <Label :for="`${prefix}-complement`">{{ t('app.addresses.fields.complement') }}</Label>
-                <Input :id="`${prefix}-complement`" :name="inputName('complement')" :default-value="value('complement')" />
-                <InputError :message="props.errors[errorKey('complement')]" />
-            </div>
-            <div class="grid gap-2">
-                <Label :for="`${prefix}-reference`">{{ t('app.addresses.fields.reference') }}</Label>
-                <Input :id="`${prefix}-reference`" :name="inputName('reference')" :default-value="value('reference')" />
-                <InputError :message="props.errors[errorKey('reference')]" />
-            </div>
-        </div>
-
-        <div class="grid gap-4 md:grid-cols-2">
-            <div class="grid gap-2">
-                <Label :for="`${prefix}-district`">{{ t('app.addresses.fields.district') }}</Label>
-                <Input :id="`${prefix}-district`" :name="inputName('district')" :default-value="value('district')" />
-                <InputError :message="props.errors[errorKey('district')]" />
-            </div>
-            <div class="grid gap-2">
-                <Label :for="`${prefix}-city`">{{ t('app.addresses.fields.city') }}</Label>
-                <Input :id="`${prefix}-city`" :name="inputName('city')" :default-value="value('city')" />
-                <InputError :message="props.errors[errorKey('city')]" />
-            </div>
-        </div>
-
-        <div class="grid gap-4 md:grid-cols-3">
-            <div class="grid gap-2">
-                <Label :for="`${prefix}-state`">{{ t('app.addresses.fields.state') }}</Label>
-                <Input :id="`${prefix}-state`" :name="inputName('state')" :default-value="value('state')" maxlength="2" />
-                <InputError :message="props.errors[errorKey('state')]" />
-            </div>
-            <div class="grid gap-2">
-                <Label :for="`${prefix}-country`">{{ t('app.addresses.fields.country') }}</Label>
-                <Input :id="`${prefix}-country`" :name="inputName('country')" :default-value="value('country')" />
-                <InputError :message="props.errors[errorKey('country')]" />
-            </div>
-            <div class="grid gap-2">
-                <Label :for="`${prefix}-status`">{{ t('app.addresses.fields.status') }}</Label>
-                <select
-                    :id="`${prefix}-status`"
-                    :name="inputName('status')"
-                    :value="value('status')"
-                    class="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                >
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                </select>
-                <InputError :message="props.errors[errorKey('status')]" />
-            </div>
-        </div>
-
-        <div class="grid gap-2">
-            <Label :for="`${prefix}-additional_information`">{{ t('app.addresses.fields.additional_information') }}</Label>
-            <Input
-                :id="`${prefix}-additional_information`"
-                :name="inputName('additional_information')"
-                :default-value="value('additional_information')"
+            <FormTextField
+                :id="`${prefix}-name`"
+                v-model="name"
+                :name="inputName('name')"
+                :label="t('app.addresses.fields.name')"
+                :error="props.errors[errorKey('name')]"
+                class="md:col-span-8"
             />
-            <InputError :message="props.errors[errorKey('additional_information')]" />
+
+            <CepLookupField
+                :id="`${prefix}-zip_code`"
+                v-model="zipCode"
+                :name="inputName('zip_code')"
+                :label="t('app.addresses.fields.zip_code')"
+                :error="props.errors[errorKey('zip_code')]"
+                :hint="t('app.addresses.hints.zip_code')"
+                class="md:col-span-3"
+                @resolved="onCepResolved"
+            />
+
+            <FormTextField
+                :id="`${prefix}-street`"
+                v-model="street"
+                :name="inputName('street')"
+                :label="t('app.addresses.fields.street')"
+                :error="props.errors[errorKey('street')]"
+                class="md:col-span-7"
+            />
+
+            <FormTextField
+                :id="`${prefix}-number`"
+                v-model="number"
+                :name="inputName('number')"
+                :label="t('app.addresses.fields.number')"
+                :error="props.errors[errorKey('number')]"
+                class="md:col-span-2"
+            />
+
+            <FormTextField
+                :id="`${prefix}-district`"
+                v-model="district"
+                :name="inputName('district')"
+                :label="t('app.addresses.fields.district')"
+                :error="props.errors[errorKey('district')]"
+                class="md:col-span-4"
+            />
+
+            <FormTextField
+                :id="`${prefix}-city`"
+                v-model="city"
+                :name="inputName('city')"
+                :label="t('app.addresses.fields.city')"
+                :error="props.errors[errorKey('city')]"
+                class="md:col-span-4"
+            />
+
+            <FormTextField
+                :id="`${prefix}-state`"
+                v-model="state"
+                :name="inputName('state')"
+                :label="t('app.addresses.fields.state')"
+                :error="props.errors[errorKey('state')]"
+                class="md:col-span-2"
+            />
+
+            <FormTextField
+                :id="`${prefix}-country`"
+                v-model="country"
+                :name="inputName('country')"
+                :label="t('app.addresses.fields.country')"
+                :error="props.errors[errorKey('country')]"
+                class="md:col-span-2"
+            />
+
+            <FormTextField
+                :id="`${prefix}-complement`"
+                v-model="complement"
+                :name="inputName('complement')"
+                :label="t('app.addresses.fields.complement')"
+                :error="props.errors[errorKey('complement')]"
+                class="md:col-span-7"
+            />
+
+            <FormTextField
+                :id="`${prefix}-reference`"
+                v-model="reference"
+                :name="inputName('reference')"
+                :label="t('app.addresses.fields.reference')"
+                :error="props.errors[errorKey('reference')]"
+                class="md:col-span-5"
+            />
+
+            <FormSelectField
+                :id="`${prefix}-status`"
+                v-model="status"
+                :name="inputName('status')"
+                :label="t('app.addresses.fields.status')"
+                :error="props.errors[errorKey('status')]"
+                class="md:col-span-4"
+            >
+                <option value="draft">
+                    {{ t('app.addresses.statuses.draft') }}
+                </option>
+                <option value="published">
+                    {{ t('app.addresses.statuses.published') }}
+                </option>
+            </FormSelectField>
+
+            <FormTextareaField
+                :id="`${prefix}-additional_information`"
+                v-model="additionalInformation"
+                :name="inputName('additional_information')"
+                :label="t('app.addresses.fields.additional_information')"
+                :error="props.errors[errorKey('additional_information')]"
+                class="md:col-span-12"
+                :rows="2"
+            />
         </div>
 
-        <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50 has-checked:border-primary/50 has-checked:bg-primary/5">
+        <label
+            class="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50 has-checked:border-primary/50 has-checked:bg-primary/5"
+        >
             <input type="hidden" :name="inputName('is_default')" value="0" />
             <input
                 :id="`${prefix}-is_default`"
+                v-model="isDefault"
                 :name="inputName('is_default')"
                 type="checkbox"
                 value="1"
-                :checked="props.modelValue?.is_default ?? false"
                 class="accent-primary"
             />
             <div>
-                <span class="text-sm font-medium">{{ t('app.addresses.fields.is_default') }}</span>
+                <span class="text-sm font-medium">{{
+                    t('app.addresses.fields.is_default')
+                }}</span>
             </div>
             <InputError :message="props.errors[errorKey('is_default')]" />
         </label>
