@@ -8,6 +8,8 @@ import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
+import EditButton from '@/components/EditButton.vue';
+import DeleteButton from '@/components/DeleteButton.vue';
 
 type CategoryRow = {
     id: string;
@@ -27,14 +29,22 @@ const props = defineProps<{
     };
 }>();
 const { t } = useT();
-const categoriesIndexPath = CategoryController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const categoriesIndexPath = CategoryController.index
+    .url(props.subdomain)
+    .replace(/^\/\/[^/]+/, '');
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.categories.title'),
     title: t('app.tenant.categories.title'),
     description: t('app.tenant.categories.description'),
     breadcrumbs: [
-        { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
-        { title: t('app.tenant.categories.navigation'), href: categoriesIndexPath },
+        {
+            title: t('app.navigation.dashboard'),
+            href: dashboard.url().replace(/^\/\/[^/]+/, ''),
+        },
+        {
+            title: t('app.tenant.categories.navigation'),
+            href: categoriesIndexPath,
+        },
     ],
 });
 </script>
@@ -55,7 +65,9 @@ const pageMeta = useCrudPageMeta({
         :clear-label="t('app.tenant.common.clear_filters')"
     >
         <template #action>
-            <NewActionButton :href="CategoryController.create.url(props.subdomain)">
+            <NewActionButton
+                :href="CategoryController.create.url(props.subdomain)"
+            >
                 {{ t('app.tenant.categories.actions.new') }}
             </NewActionButton>
         </template>
@@ -64,7 +76,7 @@ const pageMeta = useCrudPageMeta({
             <select
                 name="status"
                 :value="props.filters.status"
-                class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
             >
                 <option value="">{{ t('app.tenant.common.all') }}</option>
                 <option value="draft">Draft</option>
@@ -76,12 +88,22 @@ const pageMeta = useCrudPageMeta({
         <table class="w-full text-sm">
             <thead class="bg-muted/30 text-left text-muted-foreground">
                 <tr>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.name') }}</th>
+                    <th class="px-4 py-3 font-medium">
+                        {{ t('app.tenant.categories.fields.name') }}
+                    </th>
                     <th class="px-4 py-3 font-medium">Slug</th>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.codigo') }}</th>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.status') }}</th>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.is_placeholder') }}</th>
-                    <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+                    <th class="px-4 py-3 font-medium">
+                        {{ t('app.tenant.categories.fields.codigo') }}
+                    </th>
+                    <th class="px-4 py-3 font-medium">
+                        {{ t('app.tenant.categories.fields.status') }}
+                    </th>
+                    <th class="px-4 py-3 font-medium">
+                        {{ t('app.tenant.categories.fields.is_placeholder') }}
+                    </th>
+                    <th class="px-4 py-3 text-right font-medium">
+                        {{ t('app.tenant.common.actions') }}
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -99,19 +121,33 @@ const pageMeta = useCrudPageMeta({
                     <td class="px-4 py-3">{{ category.slug ?? '-' }}</td>
                     <td class="px-4 py-3">{{ category.codigo ?? '-' }}</td>
                     <td class="px-4 py-3">{{ category.status }}</td>
-                    <td class="px-4 py-3">{{ category.is_placeholder ? t('app.tenant.common.yes') : t('app.tenant.common.no') }}</td>
+                    <td class="px-4 py-3">
+                        {{
+                            category.is_placeholder
+                                ? t('app.tenant.common.yes')
+                                : t('app.tenant.common.no')
+                        }}
+                    </td>
                     <td class="px-4 py-3 text-right">
                         <div class="inline-flex items-center gap-2">
-                            <Button variant="outline" size="sm" as-child>
-                                <Link :href="CategoryController.edit.url({ subdomain: props.subdomain, category: category.id })">
-                                    {{ t('app.tenant.common.edit') }}
-                                </Link>
-                            </Button>
-                            <Button variant="destructive" size="sm" as-child>
-                                <Link :href="CategoryController.destroy.url({ subdomain: props.subdomain, category: category.id })" method="delete" as="button">
-                                    {{ t('app.tenant.common.delete') }}
-                                </Link>
-                            </Button>
+                            <EditButton
+                                :href="
+                                    CategoryController.edit.url({
+                                        subdomain: props.subdomain,
+                                        category: category.id,
+                                    })
+                                "
+                            />
+                            <DeleteButton
+                                :href="
+                                    CategoryController.destroy.url({
+                                        subdomain: props.subdomain,
+                                        category: category.id,
+                                    })
+                                "
+                                :label="category.name ?? undefined"
+                                require-confirm-word
+                            />
                         </div>
                     </td>
                 </tr>
