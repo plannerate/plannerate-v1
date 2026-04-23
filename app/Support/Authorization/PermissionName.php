@@ -76,6 +76,36 @@ final class PermissionName
 
     public const TENANT_PRODUCTS_DELETE = 'tenant.products.delete';
 
+    public const TENANT_STORES_VIEW_ANY = 'tenant.stores.viewAny';
+
+    public const TENANT_STORES_VIEW = 'tenant.stores.view';
+
+    public const TENANT_STORES_CREATE = 'tenant.stores.create';
+
+    public const TENANT_STORES_UPDATE = 'tenant.stores.update';
+
+    public const TENANT_STORES_DELETE = 'tenant.stores.delete';
+
+    public const TENANT_CLUSTERS_VIEW_ANY = 'tenant.clusters.viewAny';
+
+    public const TENANT_CLUSTERS_VIEW = 'tenant.clusters.view';
+
+    public const TENANT_CLUSTERS_CREATE = 'tenant.clusters.create';
+
+    public const TENANT_CLUSTERS_UPDATE = 'tenant.clusters.update';
+
+    public const TENANT_CLUSTERS_DELETE = 'tenant.clusters.delete';
+
+    public const TENANT_PROVIDERS_VIEW_ANY = 'tenant.providers.viewAny';
+
+    public const TENANT_PROVIDERS_VIEW = 'tenant.providers.view';
+
+    public const TENANT_PROVIDERS_CREATE = 'tenant.providers.create';
+
+    public const TENANT_PROVIDERS_UPDATE = 'tenant.providers.update';
+
+    public const TENANT_PROVIDERS_DELETE = 'tenant.providers.delete';
+
     /**
      * @return list<string>
      */
@@ -118,6 +148,21 @@ final class PermissionName
             self::TENANT_PRODUCTS_CREATE,
             self::TENANT_PRODUCTS_UPDATE,
             self::TENANT_PRODUCTS_DELETE,
+            self::TENANT_STORES_VIEW_ANY,
+            self::TENANT_STORES_VIEW,
+            self::TENANT_STORES_CREATE,
+            self::TENANT_STORES_UPDATE,
+            self::TENANT_STORES_DELETE,
+            self::TENANT_CLUSTERS_VIEW_ANY,
+            self::TENANT_CLUSTERS_VIEW,
+            self::TENANT_CLUSTERS_CREATE,
+            self::TENANT_CLUSTERS_UPDATE,
+            self::TENANT_CLUSTERS_DELETE,
+            self::TENANT_PROVIDERS_VIEW_ANY,
+            self::TENANT_PROVIDERS_VIEW,
+            self::TENANT_PROVIDERS_CREATE,
+            self::TENANT_PROVIDERS_UPDATE,
+            self::TENANT_PROVIDERS_DELETE,
         ];
     }
 

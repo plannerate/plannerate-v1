@@ -67,6 +67,21 @@ class LandlordRbacSeeder extends Seeder
             PermissionName::TENANT_PRODUCTS_CREATE,
             PermissionName::TENANT_PRODUCTS_UPDATE,
             PermissionName::TENANT_PRODUCTS_DELETE,
+            PermissionName::TENANT_STORES_VIEW_ANY,
+            PermissionName::TENANT_STORES_VIEW,
+            PermissionName::TENANT_STORES_CREATE,
+            PermissionName::TENANT_STORES_UPDATE,
+            PermissionName::TENANT_STORES_DELETE,
+            PermissionName::TENANT_CLUSTERS_VIEW_ANY,
+            PermissionName::TENANT_CLUSTERS_VIEW,
+            PermissionName::TENANT_CLUSTERS_CREATE,
+            PermissionName::TENANT_CLUSTERS_UPDATE,
+            PermissionName::TENANT_CLUSTERS_DELETE,
+            PermissionName::TENANT_PROVIDERS_VIEW_ANY,
+            PermissionName::TENANT_PROVIDERS_VIEW,
+            PermissionName::TENANT_PROVIDERS_CREATE,
+            PermissionName::TENANT_PROVIDERS_UPDATE,
+            PermissionName::TENANT_PROVIDERS_DELETE,
         ]);
 
         setPermissionsTeamId($currentTeamId);

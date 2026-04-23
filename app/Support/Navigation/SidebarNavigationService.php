@@ -3,10 +3,13 @@
 namespace App\Support\Navigation;
 
 use App\Models\Category;
+use App\Models\Cluster;
 use App\Models\Permission;
 use App\Models\Plan;
 use App\Models\Product;
+use App\Models\Provider;
 use App\Models\Role;
+use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Navigation\Menu\Menu;
@@ -140,6 +143,30 @@ class SidebarNavigationService
                             ->icon('package')
                             ->authorize('viewAny', Product::class)
                             ->setOrder(20);
+                    })
+                    ->item('tenant.stores', function ($item) use ($subdomain): void {
+                        $item
+                            ->label(__('app.tenant.stores.navigation'))
+                            ->href(route('tenant.stores.index', ['subdomain' => $subdomain], false))
+                            ->icon('store')
+                            ->authorize('viewAny', Store::class)
+                            ->setOrder(30);
+                    })
+                    ->item('tenant.clusters', function ($item) use ($subdomain): void {
+                        $item
+                            ->label(__('app.tenant.clusters.navigation'))
+                            ->href(route('tenant.clusters.index', ['subdomain' => $subdomain], false))
+                            ->icon('blocks')
+                            ->authorize('viewAny', Cluster::class)
+                            ->setOrder(40);
+                    })
+                    ->item('tenant.providers', function ($item) use ($subdomain): void {
+                        $item
+                            ->label(__('app.tenant.providers.navigation'))
+                            ->href(route('tenant.providers.index', ['subdomain' => $subdomain], false))
+                            ->icon('truck')
+                            ->authorize('viewAny', Provider::class)
+                            ->setOrder(50);
                     });
             });
     }

@@ -8,9 +8,12 @@ use App\Http\Controllers\Landlord\TenantController as LandlordTenantController;
 use App\Http\Controllers\Landlord\TenantUserAccessController;
 use App\Http\Controllers\Landlord\UserController;
 use App\Http\Controllers\Tenant\CategoryController;
+use App\Http\Controllers\Tenant\ClusterController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboardController;
 use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductImageController;
+use App\Http\Controllers\Tenant\ProviderController;
+use App\Http\Controllers\Tenant\StoreController;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -77,6 +80,18 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::resource('products', ProductController::class)
             ->except(['show'])
             ->names('products');
+
+        Route::resource('stores', StoreController::class)
+            ->except(['show'])
+            ->names('stores');
+
+        Route::resource('clusters', ClusterController::class)
+            ->except(['show'])
+            ->names('clusters');
+
+        Route::resource('providers', ProviderController::class)
+            ->except(['show'])
+            ->names('providers');
 
         Route::post('products/image/upload', [ProductImageController::class, 'upload'])
             ->name('products.image.upload');

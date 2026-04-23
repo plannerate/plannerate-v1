@@ -4,17 +4,23 @@ namespace App\Providers;
 
 use App\Contracts\ProductImageAiEditor;
 use App\Models\Category;
+use App\Models\Cluster;
 use App\Models\Permission;
 use App\Models\Plan;
 use App\Models\Product;
+use App\Models\Provider;
 use App\Models\Role;
+use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Policies\CategoryPolicy;
+use App\Policies\ClusterPolicy;
 use App\Policies\PermissionPolicy;
 use App\Policies\PlanPolicy;
 use App\Policies\ProductPolicy;
+use App\Policies\ProviderPolicy;
 use App\Policies\RolePolicy;
+use App\Policies\StorePolicy;
 use App\Policies\TenantPolicy;
 use App\Policies\UserPolicy;
 use App\Services\OpenAiProductImageEditor;
@@ -67,6 +73,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Category::class, CategoryPolicy::class);
         Gate::policy(Product::class, ProductPolicy::class);
+        Gate::policy(Store::class, StorePolicy::class);
+        Gate::policy(Cluster::class, ClusterPolicy::class);
+        Gate::policy(Provider::class, ProviderPolicy::class);
     }
 
     /**
