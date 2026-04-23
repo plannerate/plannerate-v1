@@ -29,7 +29,7 @@ defineSlots<{
 
 <template>
     <div
-        class="overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md dark:shadow-black/20 dark:hover:shadow-black/40"
+        class="overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md dark:shadow-black/20 dark:hover:shadow-black/40 w-full md:max-w-7xl mx-auto"
     >
         <!-- Gradient accent bar -->
         <div class="h-0.5 bg-linear-to-r from-primary via-primary/60 to-transparent" />
