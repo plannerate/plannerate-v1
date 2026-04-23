@@ -39,10 +39,8 @@ test('tenant admin can execute category crud in tenant context', function (): vo
     $tenant = makeTenant('tenant-crud-a');
     assignTenantAdminRole($user, $tenant->id);
 
-    $host = 'tenant-crud-a.'.config('app.landlord_domain');
-
     $createResponse = $this
-        ->withServerVariables(['HTTP_HOST' => $host])
+        ->withServerVariables(['HTTP_HOST' => 'tenant-crud-a.'.config('app.landlord_domain')])
         ->post(route('tenant.categories.store', ['subdomain' => 'tenant-crud-a'], false), [
             'name' => 'Categoria Principal',
             'slug' => 'categoria-principal',
@@ -61,7 +59,7 @@ test('tenant admin can execute category crud in tenant context', function (): vo
     ]);
 
     $updateResponse = $this
-        ->withServerVariables(['HTTP_HOST' => $host])
+        ->withServerVariables(['HTTP_HOST' => 'tenant-crud-a.'.config('app.landlord_domain')])
         ->put(route('tenant.categories.update', ['subdomain' => 'tenant-crud-a', 'category' => $category->id], false), [
             'name' => 'Categoria Atualizada',
             'slug' => 'categoria-atualizada',
@@ -76,7 +74,7 @@ test('tenant admin can execute category crud in tenant context', function (): vo
     expect($category->is_placeholder)->toBeTrue();
 
     $deleteResponse = $this
-        ->withServerVariables(['HTTP_HOST' => $host])
+        ->withServerVariables(['HTTP_HOST' => 'tenant-crud-a.'.config('app.landlord_domain')])
         ->delete(route('tenant.categories.destroy', ['subdomain' => 'tenant-crud-a', 'category' => $category->id], false));
 
     $deleteResponse->assertRedirect(route('tenant.categories.index', ['subdomain' => 'tenant-crud-a'], false));
@@ -145,6 +143,24 @@ test('tenant index is isolated by tenant_id for products and categories', functi
             ->where('products.data.0.slug', 'produto-a'));
 });
 
+test('tenant product store validates required fields', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenant('tenant-product-validation');
+    assignTenantAdminRole($user, $tenant->id);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-product-validation.'.config('app.landlord_domain')])
+        ->post(route('tenant.products.store', ['subdomain' => 'tenant-product-validation'], false), [
+            'status' => 'draft',
+            'dimensions_status' => 'draft',
+        ]);
+
+    $response
+        ->assertSessionHasErrors(['name']);
+});
+
 /**
  * @return array<string, mixed>
  */
@@ -162,7 +178,7 @@ function makeTenant(string $subdomain): Tenant
     $tenant = Tenant::query()->create([
         'name' => strtoupper($subdomain),
         'slug' => $subdomain,
-        'database' => (string) ($databaseAttributes['database'] ?? 'database.sqlite'),
+        'database' => sprintf('%s_%s', (string) ($databaseAttributes['database'] ?? 'database'), $subdomain),
         'status' => 'active',
     ]);
 

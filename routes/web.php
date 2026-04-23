@@ -10,6 +10,7 @@ use App\Http\Controllers\Landlord\UserController;
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboardController;
 use App\Http\Controllers\Tenant\ProductController;
+use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -76,6 +77,13 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::resource('products', ProductController::class)
             ->except(['show'])
             ->names('products');
+
+        Route::post('products/image/upload', [ProductImageController::class, 'upload'])
+            ->name('products.image.upload');
+        Route::post('products/image/ai/process', [ProductImageController::class, 'process'])
+            ->name('products.image.ai.process');
+        Route::get('products/image/ai/operations/{operation}', [ProductImageController::class, 'status'])
+            ->name('products.image.ai.status');
     });
 
 require __DIR__.'/settings.php';

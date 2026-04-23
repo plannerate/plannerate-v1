@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Contracts\ProductImageAiEditor;
 use App\Models\Category;
 use App\Models\Permission;
 use App\Models\Plan;
@@ -16,6 +17,7 @@ use App\Policies\ProductPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\TenantPolicy;
 use App\Policies\UserPolicy;
+use App\Services\OpenAiProductImageEditor;
 use App\Support\Navigation\Menu\Contracts\ResolvesMenuAuthorization;
 use App\Support\Navigation\Menu\MenuAuthorizationResolver;
 use Carbon\CarbonImmutable;
@@ -33,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(ResolvesMenuAuthorization::class, MenuAuthorizationResolver::class);
+        $this->app->bind(ProductImageAiEditor::class, OpenAiProductImageEditor::class);
     }
 
     /**

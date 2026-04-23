@@ -335,6 +335,18 @@ return [
                 'deleted' => 'Produto removido com sucesso.',
             ],
             'form' => [
+                'tabs' => [
+                    'identification' => 'Identificacao',
+                    'market' => 'Mercadologico',
+                    'dimensions' => 'Dimensoes',
+                    'additional' => 'Dados adicionais',
+                ],
+                'tabs_validation' => [
+                    'name_required' => 'Informe o nome do produto antes de continuar.',
+                    'status_required' => 'Selecione o status do produto antes de continuar.',
+                    'dimensions_status_required' => 'Selecione o status das dimensoes antes de continuar.',
+                    'non_negative' => 'O campo :field deve ser maior ou igual a zero.',
+                ],
                 'sections' => [
                     'image' => 'Imagem do produto',
                     'image_help' => 'Envio de arquivo em breve. Informe uma URL de referencia se precisar.',
@@ -345,6 +357,21 @@ return [
                     'additional' => 'Dados adicionais',
                     'additional_lead' => 'Informacoes adicionais sobre o produto',
                     'advanced' => 'Slug, descricao e sincronizacao',
+                ],
+                'image_upload' => [
+                    'select' => 'Selecionar imagem',
+                    'empty' => 'Nenhuma imagem carregada.',
+                    'no_path' => 'Nenhum caminho salvo.',
+                    'too_large' => 'Arquivo maior que :size MB.',
+                    'upload_failed' => 'Nao foi possivel enviar a imagem.',
+                ],
+                'image_ai' => [
+                    'action' => 'Ajustar com IA',
+                    'invalid_source' => 'A imagem informada nao pode ser processada.',
+                    'start_failed' => 'Nao foi possivel iniciar o ajuste automatico.',
+                    'status_failed' => 'Nao foi possivel consultar o status do ajuste.',
+                    'failed' => 'Falha ao ajustar imagem com IA.',
+                    'timeout' => 'Processamento da imagem excedeu o tempo limite.',
                 ],
                 'hints' => [
                     'width' => 'Largura do produto em centimetros',
