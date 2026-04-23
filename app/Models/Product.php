@@ -9,11 +9,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
+use Tall\Sluggable\HasSlug;
+use Tall\Sluggable\SlugOptions;
 
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
-    use HasCategory, HasFactory, HasUlids, SoftDeletes;
+    use HasCategory, HasFactory, HasUlids, SoftDeletes, HasSlug;
 
     /**
      * The attributes that are mass assignable.
@@ -105,5 +107,17 @@ class Product extends Model
         }
 
         return Storage::disk('public')->url($this->url);
+    }
+
+    /**
+     * @return SlugOptions
+     */
+    public function getSlugOptions()
+    {
+        if (is_string($this->slugTo())) {
+            return SlugOptions::create()
+                ->generateSlugsFrom($this->slugFrom())
+                ->saveSlugsTo($this->slugTo());
+        }
     }
 }

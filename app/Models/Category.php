@@ -11,11 +11,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
+use Tall\Sluggable\HasSlug;
+use Tall\Sluggable\SlugOptions;
 
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
-    use HasFactory, HasUlids, SoftDeletes;
+    use HasFactory, HasUlids, SoftDeletes, HasSlug;
 
     /**
      * The attributes that are mass assignable.
@@ -107,5 +109,17 @@ class Category extends Model
     public function getMercadologicoDepth(): int
     {
         return $this->getFullHierarchy()->count();
+    }
+
+    /**
+     * @return SlugOptions
+     */
+    public function getSlugOptions()
+    {
+        if (is_string($this->slugTo())) {
+            return SlugOptions::create()
+                ->generateSlugsFrom($this->slugFrom())
+                ->saveSlugsTo($this->slugTo());
+        }
     }
 }

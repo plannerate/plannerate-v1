@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "628e6f4e673c3fac3029b0a3d82cd895",
+    "content-hash": "aea3d8caacec640760ff4289cd7b5c59",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -271,6 +271,55 @@
                 }
             ],
             "time": "2026-02-10T14:33:43+00:00"
+        },
+        {
+            "name": "callcocam/tall-sluggable",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/callcocam/tall-sluggable.git",
+                "reference": "506ccde0a33c9a79f7bd3ab527a0bc2df6211903"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/callcocam/tall-sluggable/zipball/506ccde0a33c9a79f7bd3ab527a0bc2df6211903",
+                "reference": "506ccde0a33c9a79f7bd3ab527a0bc2df6211903",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.3|^8.0"
+            },
+            "default-branch": true,
+            "type": "package",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Tall\\Sluggable\\SluggableServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Tall\\Sluggable\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "The packages auto slug laravel model.",
+            "keywords": [
+                "alpinejs",
+                "framework",
+                "laravel",
+                "livewire",
+                "tailwindcss"
+            ],
+            "support": {
+                "issues": "https://github.com/callcocam/tall-sluggable/issues",
+                "source": "https://github.com/callcocam/tall-sluggable/tree/main"
+            },
+            "time": "2022-07-08T14:06:57+00:00"
         },
         {
             "name": "carbonphp/carbon-doctrine-types",
@@ -10808,8 +10857,10 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "stable",
-    "stability-flags": {},
+    "minimum-stability": "dev",
+    "stability-flags": {
+        "callcocam/tall-sluggable": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
