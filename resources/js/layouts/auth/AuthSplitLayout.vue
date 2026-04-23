@@ -73,13 +73,13 @@ defineProps<{
         </div>
 
         <!-- Painel direito: formulário -->
-        <div class="flex flex-1 flex-col items-center justify-center bg-background px-2 py-12">
+        <div class="flex flex-1 flex-col items-center justify-center bg-background py-12">
             <!-- Logo mobile -->
             <Link :href="home()" class="mb-10 lg:hidden">
                 <AppLogoIcon class="h-8 w-auto" />
             </Link>
 
-            <div class="w-full max-w-xs">
+            <div class="w-full max-w-md px-5">
                 <div v-if="title || description" class="mb-8">
                     <h2 v-if="title" class="text-2xl font-bold tracking-tight text-foreground">
                         {{ title }}
