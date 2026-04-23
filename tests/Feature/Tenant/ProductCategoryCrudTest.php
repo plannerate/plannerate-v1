@@ -39,8 +39,10 @@ test('tenant admin can execute category crud in tenant context', function (): vo
     $tenant = makeTenant('tenant-crud-a');
     assignTenantAdminRole($user, $tenant->id);
 
+    $host = 'tenant-crud-a.'.config('app.landlord_domain');
+
     $createResponse = $this
-        ->withServerVariables(['HTTP_HOST' => 'tenant-crud-a.'.config('app.landlord_domain')])
+        ->withServerVariables(['HTTP_HOST' => $host])
         ->post(route('tenant.categories.store', ['subdomain' => 'tenant-crud-a'], false), [
             'name' => 'Categoria Principal',
             'slug' => 'categoria-principal',
@@ -59,7 +61,7 @@ test('tenant admin can execute category crud in tenant context', function (): vo
     ]);
 
     $updateResponse = $this
-        ->withServerVariables(['HTTP_HOST' => 'tenant-crud-a.'.config('app.landlord_domain')])
+        ->withServerVariables(['HTTP_HOST' => $host])
         ->put(route('tenant.categories.update', ['subdomain' => 'tenant-crud-a', 'category' => $category->id], false), [
             'name' => 'Categoria Atualizada',
             'slug' => 'categoria-atualizada',
@@ -74,7 +76,7 @@ test('tenant admin can execute category crud in tenant context', function (): vo
     expect($category->is_placeholder)->toBeTrue();
 
     $deleteResponse = $this
-        ->withServerVariables(['HTTP_HOST' => 'tenant-crud-a.'.config('app.landlord_domain')])
+        ->withServerVariables(['HTTP_HOST' => $host])
         ->delete(route('tenant.categories.destroy', ['subdomain' => 'tenant-crud-a', 'category' => $category->id], false));
 
     $deleteResponse->assertRedirect(route('tenant.categories.index', ['subdomain' => 'tenant-crud-a'], false));
@@ -178,7 +180,7 @@ function makeTenant(string $subdomain): Tenant
     $tenant = Tenant::query()->create([
         'name' => strtoupper($subdomain),
         'slug' => $subdomain,
-        'database' => sprintf('%s_%s', (string) ($databaseAttributes['database'] ?? 'database'), $subdomain),
+        'database' => (string) ($databaseAttributes['database'] ?? 'database.sqlite'),
         'status' => 'active',
     ]);
 

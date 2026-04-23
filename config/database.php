@@ -64,11 +64,11 @@ return [
             ]) : [],
         ],
         'tenant' => [
-            'driver' => 'mysql',
+            'driver' => env('DB_TENANT_CONNECTION', 'mysql'),
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'laravel'),
+            'database' => env('DB_TENANT_DATABASE', env('DB_DATABASE', 'laravel')),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
@@ -83,7 +83,7 @@ return [
             ]) : [],
         ],
         'landlord' => [
-            'driver' => 'mysql',
+            'driver' => env('DB_LANDLORD_CONNECTION', 'mysql'),
             'url' => env('DB_URL'),
             'host' => env('DB_LANDLORD_HOST', '127.0.0.1'),
             'port' => env('DB_LANDLORD_PORT', '3306'),

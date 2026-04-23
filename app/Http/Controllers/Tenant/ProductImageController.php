@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tenant\FetchRepositoryProductImageRequest;
 use App\Http\Requests\Tenant\ProcessProductImageRequest;
 use App\Http\Requests\Tenant\UploadProductImageRequest;
 use App\Jobs\ProcessProductImageWithAiJob;
 use App\Models\ProductImageAiOperation;
+use App\Services\ProductRepositoryImageResolver;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +18,10 @@ use Illuminate\Support\Str;
 class ProductImageController extends Controller
 {
     use InteractsWithTenantContext;
+
+    public function __construct(
+        protected ProductRepositoryImageResolver $repositoryImageResolver
+    ) {}
 
     public function upload(UploadProductImageRequest $request): JsonResponse
     {
@@ -33,9 +39,14 @@ class ProductImageController extends Controller
     {
         $tenantId = $this->tenantId();
         $path = (string) $request->string('path');
-        $expectedPrefix = "products/uploads/{$tenantId}/";
+        $allowedPrefixes = [
+            "products/uploads/{$tenantId}/",
+            'repositorioimagens/frente/',
+        ];
+        $isAllowedPath = collect($allowedPrefixes)
+            ->contains(fn (string $prefix): bool => Str::startsWith($path, $prefix));
 
-        if (! Str::startsWith($path, $expectedPrefix) || ! Storage::disk('public')->exists($path)) {
+        if (! $isAllowedPath || ! Storage::disk('public')->exists($path)) {
             return response()->json([
                 'message' => __('app.tenant.products.form.image_ai.invalid_source'),
             ], 422);
@@ -56,9 +67,27 @@ class ProductImageController extends Controller
         ], 202);
     }
 
-    public function status(Request $request, ProductImageAiOperation $operation): JsonResponse
+    public function status(Request $request, string $operation): JsonResponse
     {
-        if ($operation->tenant_id !== $this->tenantId()) {
+        $operationId = trim($operation);
+        $operation = ProductImageAiOperation::query()
+            ->where('id', $operationId)
+            ->orWhereRaw('LOWER(id) = ?', [Str::lower($operationId)])
+            ->first();
+
+        if (! $operation) {
+            return response()->json([
+                'id' => $operationId,
+                'status' => 'queued',
+                'path' => null,
+                'public_url' => null,
+                'error_message' => null,
+                'can_retry' => false,
+                'is_owner' => true,
+            ]);
+        }
+
+        if (Str::lower((string) $operation->tenant_id) !== Str::lower((string) $this->tenantId())) {
             abort(404);
         }
 
@@ -73,5 +102,19 @@ class ProductImageController extends Controller
             'can_retry' => $operation->status === 'failed',
             'is_owner' => $operation->user_id === $request->user()?->getAuthIdentifier(),
         ]);
+    }
+
+    public function fetchFromRepository(FetchRepositoryProductImageRequest $request): JsonResponse
+    {
+        $ean = (string) $request->string('ean');
+        $result = $this->repositoryImageResolver->resolveByEan($ean);
+
+        if ($result === null) {
+            return response()->json([
+                'message' => __('app.tenant.products.form.image_repository.not_found'),
+            ], 404);
+        }
+
+        return response()->json($result);
     }
 }

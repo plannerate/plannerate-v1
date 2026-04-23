@@ -10,6 +10,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
 beforeEach(function (): void {
     config()->set('permission.rbac_enabled', true);
@@ -36,15 +38,18 @@ beforeEach(function (): void {
 
 test('tenant can upload product image', function (): void {
     Storage::fake('public');
+    $this->withoutMiddleware(NeedsTenant::class);
 
     $user = User::factory()->create();
     $this->actingAs($user);
 
     $tenant = makeImageTenant('tenant-image-upload');
     assignImageTenantAdminRole($user, $tenant->id);
+    $tenant->makeCurrent();
 
     $response = $this
-        ->post(route('tenant.products.image.upload', ['subdomain' => 'tenant-image-upload']), [
+        ->withServerVariables(['HTTP_HOST' => 'tenant-image-upload.'.config('app.landlord_domain')])
+        ->post(route('tenant.products.image.upload', ['subdomain' => 'tenant-image-upload'], false), [
             'file' => UploadedFile::fake()->image('product.png', 600, 600),
         ]);
 
@@ -60,15 +65,18 @@ test('tenant can upload product image', function (): void {
 
 test('tenant upload rejects invalid file', function (): void {
     Storage::fake('public');
+    $this->withoutMiddleware(NeedsTenant::class);
 
     $user = User::factory()->create();
     $this->actingAs($user);
 
     $tenant = makeImageTenant('tenant-image-invalid');
     assignImageTenantAdminRole($user, $tenant->id);
+    $tenant->makeCurrent();
 
     $response = $this
-        ->post(route('tenant.products.image.upload', ['subdomain' => 'tenant-image-invalid']), [
+        ->withServerVariables(['HTTP_HOST' => 'tenant-image-invalid.'.config('app.landlord_domain')])
+        ->post(route('tenant.products.image.upload', ['subdomain' => 'tenant-image-invalid'], false), [
             'file' => UploadedFile::fake()->create('document.pdf', 200, 'application/pdf'),
         ]);
 
@@ -79,18 +87,21 @@ test('tenant upload rejects invalid file', function (): void {
 test('tenant can queue ai processing for uploaded image', function (): void {
     Storage::fake('public');
     Queue::fake();
+    $this->withoutMiddleware(NeedsTenant::class);
 
     $user = User::factory()->create();
     $this->actingAs($user);
 
     $tenant = makeImageTenant('tenant-image-ai');
     assignImageTenantAdminRole($user, $tenant->id);
+    $tenant->makeCurrent();
 
     $path = "products/uploads/{$tenant->id}/source.png";
     Storage::disk('public')->put($path, UploadedFile::fake()->image('source.png')->getContent());
 
     $response = $this
-        ->post(route('tenant.products.image.ai.process', ['subdomain' => 'tenant-image-ai']), [
+        ->withServerVariables(['HTTP_HOST' => 'tenant-image-ai.'.config('app.landlord_domain')])
+        ->post(route('tenant.products.image.ai.process', ['subdomain' => 'tenant-image-ai'], false), [
             'path' => $path,
         ]);
 
@@ -112,31 +123,118 @@ test('tenant can queue ai processing for uploaded image', function (): void {
     });
 });
 
-test('tenant cannot read ai status from another tenant operation', function (): void {
+test('tenant cannot read ai status from operation of another tenant id', function (): void {
     Storage::fake('public');
+    $this->withoutMiddleware(NeedsTenant::class);
 
     $user = User::factory()->create();
     $this->actingAs($user);
 
-    $tenantA = makeImageTenant('tenant-image-status-a');
-    $tenantB = makeImageTenant('tenant-image-status-b');
-    assignImageTenantAdminRole($user, $tenantA->id);
-    assignImageTenantAdminRole($user, $tenantB->id);
+    $tenant = makeImageTenant('tenant-image-status');
+    assignImageTenantAdminRole($user, $tenant->id);
+    $tenant->makeCurrent();
 
     $operation = ProductImageAiOperation::query()->create([
-        'tenant_id' => $tenantA->id,
+        'tenant_id' => (string) Str::ulid(),
         'user_id' => $user->id,
-        'source_path' => "products/uploads/{$tenantA->id}/source.png",
+        'source_path' => "products/uploads/{$tenant->id}/source.png",
         'status' => 'queued',
     ]);
 
     $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-image-status.'.config('app.landlord_domain')])
         ->get(route('tenant.products.image.ai.status', [
-            'subdomain' => 'tenant-image-status-b',
+            'subdomain' => 'tenant-image-status',
             'operation' => $operation->id,
-        ]));
+        ], false));
 
     $response->assertNotFound();
+});
+
+test('tenant can fetch product image from repository when webp exists', function (): void {
+    Storage::fake('public');
+    Storage::fake('do');
+    $this->withoutMiddleware(NeedsTenant::class);
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeImageTenant('tenant-image-repository-webp');
+    assignImageTenantAdminRole($user, $tenant->id);
+    $tenant->makeCurrent();
+
+    $ean = '7891234567890';
+    $expectedPath = "repositorioimagens/frente/{$ean}.webp";
+    Storage::disk('do')->put($expectedPath, 'binary-webp-content');
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-image-repository-webp.'.config('app.landlord_domain')])
+        ->post(route('tenant.products.image.repository.fetch', ['subdomain' => 'tenant-image-repository-webp'], false), [
+            'ean' => $ean,
+        ]);
+
+    $response
+        ->assertOk()
+        ->assertJson([
+            'path' => $expectedPath,
+        ]);
+
+    Storage::disk('public')->assertExists($expectedPath);
+});
+
+test('tenant can fetch product image from repository using png fallback', function (): void {
+    Storage::fake('public');
+    Storage::fake('do');
+    $this->withoutMiddleware(NeedsTenant::class);
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeImageTenant('tenant-image-repository-png');
+    assignImageTenantAdminRole($user, $tenant->id);
+    $tenant->makeCurrent();
+
+    $ean = '7891234567000';
+    $pngPath = "repositorioimagens/frente/{$ean}.png";
+    $webpPath = "repositorioimagens/frente/{$ean}.webp";
+    Storage::disk('do')->put($pngPath, UploadedFile::fake()->image('source.png', 300, 300)->getContent());
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-image-repository-png.'.config('app.landlord_domain')])
+        ->post(route('tenant.products.image.repository.fetch', ['subdomain' => 'tenant-image-repository-png'], false), [
+            'ean' => $ean,
+        ]);
+
+    $response
+        ->assertOk()
+        ->assertJson([
+            'path' => $webpPath,
+        ]);
+
+    Storage::disk('public')->assertExists($webpPath);
+});
+
+test('tenant repository fetch returns not found for missing ean image', function (): void {
+    Storage::fake('public');
+    Storage::fake('do');
+    $this->withoutMiddleware(NeedsTenant::class);
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeImageTenant('tenant-image-repository-missing');
+    assignImageTenantAdminRole($user, $tenant->id);
+    $tenant->makeCurrent();
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-image-repository-missing.'.config('app.landlord_domain')])
+        ->post(route('tenant.products.image.repository.fetch', ['subdomain' => 'tenant-image-repository-missing'], false), [
+            'ean' => '9999999999999',
+        ]);
+
+    $response
+        ->assertNotFound()
+        ->assertJsonStructure(['message']);
 });
 
 /**
@@ -156,7 +254,7 @@ function makeImageTenant(string $subdomain): Tenant
     $tenant = Tenant::query()->create([
         'name' => strtoupper($subdomain),
         'slug' => $subdomain,
-        'database' => sprintf('%s_%s', (string) ($databaseAttributes['database'] ?? 'database'), $subdomain),
+        'database' => (string) ($databaseAttributes['database'] ?? 'database.sqlite'),
         'status' => 'active',
     ]);
 

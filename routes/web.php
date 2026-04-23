@@ -84,6 +84,8 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('products.image.ai.process');
         Route::get('products/image/ai/operations/{operation}', [ProductImageController::class, 'status'])
             ->name('products.image.ai.status');
+        Route::post('products/image/repository/fetch', [ProductImageController::class, 'fetchFromRepository'])
+            ->name('products.image.repository.fetch');
     });
 
 require __DIR__.'/settings.php';

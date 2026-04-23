@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import type { UrlMethodPair } from '@inertiajs/core';
+import { useHttp } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import imageRoutes from '@/routes/tenant/products/image';
 import { useT } from '@/composables/useT';
 import { Label } from '@/components/ui/label';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 const props = withDefaults(defineProps<{
     subdomain: string;
     name: string;
     label: string;
+    ean?: string | null;
     initialUrl?: string | null;
     initialPath?: string | null;
     accept?: string;
@@ -24,6 +28,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
     uploaded: [value: string];
     aiProcessed: [value: string];
+    repositoryProcessed: [value: string];
     error: [value: string];
 }>();
 
@@ -34,18 +39,29 @@ const previewUrl = ref<string>(props.initialUrl ?? '');
 const storedPath = ref<string>(props.initialPath ?? '');
 const isUploading = ref(false);
 const isProcessingAi = ref(false);
+const isFetchingRepository = ref(false);
 
-const uploadUrl = computed(() => normalizeUrl(imageRoutes.upload.url(props.subdomain)));
-const aiProcessUrl = computed(() => normalizeUrl(imageRoutes.ai.process.url(props.subdomain)));
+const uploadHttp = useHttp<{ file: File | null }, { path?: string; public_url?: string }>({
+    file: null,
+});
+const aiProcessHttp = useHttp<{ path: string }, { id?: string; status?: string }>({
+    path: '',
+});
+const statusHttp = useHttp<{}, {
+    status?: string;
+    path?: string;
+    public_url?: string;
+    error_message?: string;
+}>({});
+const repositoryHttp = useHttp<{ ean: string }, { path?: string; public_url?: string }>({
+    ean: '',
+});
 
-function normalizeUrl(url: string): string {
-    return url.replace(/^\/\/[^/]+/, '');
-}
-
-function csrfToken(): string {
-    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-    return token ?? '';
+function toHttpRoute(route: { url: string; method: string }): UrlMethodPair {
+    return {
+        url: tenantWayfinderPath(route.url),
+        method: route.method as UrlMethodPair['method'],
+    };
 }
 
 function openPicker(): void {
@@ -80,23 +96,14 @@ async function uploadSelectedFile(): Promise<void> {
     isUploading.value = true;
 
     try {
-        const formData = new FormData();
-        formData.append('file', selectedFile.value);
+        uploadHttp.file = selectedFile.value;
 
-        const response = await fetch(uploadUrl.value, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken(),
-                Accept: 'application/json',
-            },
-            body: formData,
-            credentials: 'same-origin',
-        });
+        const payload = await uploadHttp.submit(
+            toHttpRoute(imageRoutes.upload(props.subdomain))
+        );
 
-        const payload = await response.json();
-
-        if (!response.ok || typeof payload.path !== 'string') {
-            throw new Error(payload.message ?? t('app.tenant.products.form.image_upload.upload_failed'));
+        if (typeof payload.path !== 'string') {
+            throw new Error(t('app.tenant.products.form.image_upload.upload_failed'));
         }
 
         storedPath.value = payload.path;
@@ -104,8 +111,8 @@ async function uploadSelectedFile(): Promise<void> {
             previewUrl.value = payload.public_url;
         }
         emit('uploaded', payload.path);
-    } catch (error) {
-        const message = error instanceof Error ? error.message : t('app.messages.generic_error');
+    } catch {
+        const message = t('app.tenant.products.form.image_upload.upload_failed');
         emit('error', message);
     } finally {
         isUploading.value = false;
@@ -120,28 +127,59 @@ async function processWithAi(): Promise<void> {
     isProcessingAi.value = true;
 
     try {
-        const response = await fetch(aiProcessUrl.value, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken(),
-                Accept: 'application/json',
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify({ path: storedPath.value }),
-        });
+        aiProcessHttp.path = storedPath.value;
 
-        const payload = await response.json();
+        const payload = await aiProcessHttp.submit(
+            toHttpRoute(imageRoutes.ai.process(props.subdomain))
+        );
 
-        if (!response.ok || typeof payload.id !== 'string') {
-            throw new Error(payload.message ?? t('app.tenant.products.form.image_ai.start_failed'));
+        if (typeof payload.id !== 'string') {
+            throw new Error(t('app.tenant.products.form.image_ai.start_failed'));
         }
 
         await pollAiStatus(payload.id);
     } catch (error) {
-        const message = error instanceof Error ? error.message : t('app.messages.generic_error');
+        const message = error instanceof Error
+            ? error.message
+            : t('app.tenant.products.form.image_ai.start_failed');
         emit('error', message);
         isProcessingAi.value = false;
+    }
+}
+
+async function fetchFromRepository(): Promise<void> {
+    if (isFetchingRepository.value) {
+        return;
+    }
+
+    const currentEan = (props.ean ?? '').trim();
+    if (currentEan === '') {
+        emit('error', t('app.tenant.products.form.image_repository.ean_required'));
+        return;
+    }
+
+    isFetchingRepository.value = true;
+    try {
+        repositoryHttp.ean = currentEan;
+
+        const payload = await repositoryHttp.submit(
+            toHttpRoute(imageRoutes.repository.fetch(props.subdomain))
+        );
+
+        if (typeof payload.path !== 'string') {
+            throw new Error(t('app.tenant.products.form.image_repository.not_found'));
+        }
+
+        storedPath.value = payload.path;
+        if (typeof payload.public_url === 'string') {
+            previewUrl.value = payload.public_url;
+        }
+
+        emit('repositoryProcessed', payload.path);
+    } catch {
+        emit('error', t('app.tenant.products.form.image_repository.fetch_failed'));
+    } finally {
+        isFetchingRepository.value = false;
     }
 }
 
@@ -152,25 +190,11 @@ async function pollAiStatus(operationId: string): Promise<void> {
         attempts += 1;
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        const statusUrl = normalizeUrl(imageRoutes.ai.status.url({
+        const statusRoute = imageRoutes.ai.status({
             subdomain: props.subdomain,
-            operation: operationId,
-        }));
-
-        const response = await fetch(statusUrl, {
-            method: 'GET',
-            headers: {
-                Accept: 'application/json',
-                'X-CSRF-TOKEN': csrfToken(),
-            },
-            credentials: 'same-origin',
+            operation: operationId
         });
-
-        const payload = await response.json();
-
-        if (!response.ok) {
-            throw new Error(payload.message ?? t('app.tenant.products.form.image_ai.status_failed'));
-        }
+        const payload = await statusHttp.submit(toHttpRoute(statusRoute));
 
         if (payload.status === 'completed' && typeof payload.path === 'string') {
             storedPath.value = payload.path;
@@ -216,6 +240,15 @@ async function pollAiStatus(operationId: string): Promise<void> {
                     @click="processWithAi"
                 >
                     {{ isProcessingAi ? t('app.loading') : t('app.tenant.products.form.image_ai.action') }}
+                </button>
+
+                <button
+                    type="button"
+                    class="inline-flex items-center rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+                    :disabled="isFetchingRepository || (ean ?? '').trim() === ''"
+                    @click="fetchFromRepository"
+                >
+                    {{ isFetchingRepository ? t('app.loading') : t('app.tenant.products.form.image_repository.action') }}
                 </button>
             </div>
 

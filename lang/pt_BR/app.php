@@ -373,6 +373,12 @@ return [
                     'failed' => 'Falha ao ajustar imagem com IA.',
                     'timeout' => 'Processamento da imagem excedeu o tempo limite.',
                 ],
+                'image_repository' => [
+                    'action' => 'Buscar por EAN',
+                    'ean_required' => 'Informe o EAN para buscar uma imagem no repositorio.',
+                    'not_found' => 'Nenhuma imagem encontrada no repositorio para este EAN.',
+                    'fetch_failed' => 'Nao foi possivel buscar a imagem no repositorio.',
+                ],
                 'hints' => [
                     'width' => 'Largura do produto em centimetros',
                     'height' => 'Altura do produto em centimetros',
