@@ -4,7 +4,7 @@ import { computed } from 'vue';
 import { Store as StoreIcon } from 'lucide-vue-next';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
 import AddressFields from '@/components/form/AddressFields.vue';
-import FormSelectField from '@/components/form/FormSelectField.vue';
+import FormStatusField from '@/components/form/FormStatusField.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import FormCard from '@/components/FormCard.vue';
@@ -109,17 +109,18 @@ const storesIndexPath = StoreController.index.url(props.subdomain).replace(/^\/\
                         class="md:col-span-4"
                     />
 
-                    <FormSelectField
+                    <FormStatusField
                         id="status"
                         name="status"
                         :label="t('app.tenant.stores.fields.status')"
                         :default-value="props.store?.status ?? 'draft'"
                         :error="errors.status"
                         class="md:col-span-3"
-                    >
-                        <option value="draft">Draft</option>
-                        <option value="published">Published</option>
-                    </FormSelectField>
+                        :options="[
+                            { value: 'draft', label: 'Draft' },
+                            { value: 'published', label: 'Published' },
+                        ]"
+                    />
 
                     <FormTextareaField
                         id="description"
@@ -127,7 +128,7 @@ const storesIndexPath = StoreController.index.url(props.subdomain).replace(/^\/\
                         :label="t('app.tenant.stores.fields.description')"
                         :default-value="props.store?.description ?? ''"
                         :error="errors.description"
-                        class="md:col-span-12"
+                        class="col-span-12"
                         :rows="2"
                     />
                 </div>

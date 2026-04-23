@@ -105,7 +105,7 @@ const providersIndexPath = ProviderController.index.url(props.subdomain).replace
                         :label="t('app.tenant.providers.fields.description')"
                         :default-value="props.provider?.description ?? ''"
                         :error="errors.description"
-                        class="md:col-span-4"
+                        class="md:col-span-12"
                         :rows="2"
                     />
                 </div>

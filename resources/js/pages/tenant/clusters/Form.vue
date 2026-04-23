@@ -6,6 +6,7 @@ import ClusterController from '@/actions/App/Http/Controllers/Tenant/ClusterCont
 import AddressFields from '@/components/form/AddressFields.vue';
 import FormCard from '@/components/FormCard.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
+import FormStatusField from '@/components/form/FormStatusField.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import { useT } from '@/composables/useT';
@@ -113,17 +114,18 @@ const clustersIndexPath = ClusterController.index.url(props.subdomain).replace(/
                         class="md:col-span-4"
                     />
 
-                    <FormSelectField
+                    <FormStatusField
                         id="status"
                         name="status"
                         :label="t('app.tenant.clusters.fields.status')"
                         :default-value="props.cluster?.status ?? 'draft'"
                         :error="errors.status"
                         class="md:col-span-3"
-                    >
-                        <option value="draft">Draft</option>
-                        <option value="published">Published</option>
-                    </FormSelectField>
+                        :options="[
+                            { value: 'draft', label: 'Draft' },
+                            { value: 'published', label: 'Published' },
+                        ]"
+                    />
 
                     <FormTextareaField
                         id="description"

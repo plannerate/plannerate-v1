@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import CepLookupField from '@/components/form/CepLookupField.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
+import FormStatusField from '@/components/form/FormStatusField.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import InputError from '@/components/InputError.vue';
@@ -225,21 +226,18 @@ function onCepResolved(payload: {
                 class="md:col-span-5"
             />
 
-            <FormSelectField
+            <FormStatusField
                 :id="`${prefix}-status`"
                 v-model="status"
                 :name="inputName('status')"
                 :label="t('app.addresses.fields.status')"
                 :error="props.errors[errorKey('status')]"
                 class="md:col-span-4"
-            >
-                <option value="draft">
-                    {{ t('app.addresses.statuses.draft') }}
-                </option>
-                <option value="published">
-                    {{ t('app.addresses.statuses.published') }}
-                </option>
-            </FormSelectField>
+                :options="[
+                    { value: 'draft', label: t('app.addresses.statuses.draft') },
+                    { value: 'published', label: t('app.addresses.statuses.published') },
+                ]"
+            />
 
             <FormTextareaField
                 :id="`${prefix}-additional_information`"
