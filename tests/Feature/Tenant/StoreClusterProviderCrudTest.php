@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Address;
 use App\Models\Cluster;
 use App\Models\Provider;
 use App\Models\Role;
@@ -51,11 +52,32 @@ test('tenant admin can execute stores clusters and providers crud in tenant cont
             'code' => 'STORE-001',
             'document' => '123',
             'status' => 'draft',
+            'address' => [
+                'type' => 'commercial',
+                'zip_code' => '01310-100',
+                'street' => 'Avenida Paulista',
+                'number' => '1000',
+                'district' => 'Bela Vista',
+                'city' => 'Sao Paulo',
+                'state' => 'SP',
+                'country' => 'Brasil',
+                'is_default' => '1',
+                'status' => 'published',
+            ],
         ]);
 
     $storeCreate->assertRedirect(route('tenant.stores.index', ['subdomain' => $subdomain], false));
 
     $store = Store::query()->where('tenant_id', $tenant->id)->where('slug', 'loja-central')->firstOrFail();
+    $storeAddress = Address::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('addressable_type', Store::class)
+        ->where('addressable_id', $store->id)
+        ->first();
+
+    expect($storeAddress)->not->toBeNull();
+    expect($storeAddress?->city)->toBe('Sao Paulo');
+    expect($storeAddress?->is_default)->toBeTrue();
 
     $storeUpdate = $this
         ->withServerVariables(['HTTP_HOST' => $host])
@@ -65,12 +87,28 @@ test('tenant admin can execute stores clusters and providers crud in tenant cont
             'code' => 'STORE-002',
             'document' => '456',
             'status' => 'published',
+            'address' => [
+                'id' => $storeAddress?->id,
+                'type' => 'commercial',
+                'zip_code' => '22041-001',
+                'street' => 'Avenida Atlantica',
+                'number' => '2000',
+                'district' => 'Copacabana',
+                'city' => 'Rio de Janeiro',
+                'state' => 'RJ',
+                'country' => 'Brasil',
+                'is_default' => '1',
+                'status' => 'published',
+            ],
         ]);
 
     $storeUpdate->assertRedirect(route('tenant.stores.index', ['subdomain' => $subdomain], false));
 
     $store->refresh();
     expect($store->name)->toBe('Loja Atualizada');
+    $storeAddress = $storeAddress?->fresh();
+    expect($storeAddress?->city)->toBe('Rio de Janeiro');
+    expect($storeAddress?->state)->toBe('RJ');
 
     $clusterCreate = $this
         ->withServerVariables(['HTTP_HOST' => $host])
@@ -105,11 +143,30 @@ test('tenant admin can execute stores clusters and providers crud in tenant cont
             'name' => 'Provider A',
             'code' => 'P-001',
             'is_default' => '1',
+            'address' => [
+                'type' => 'billing',
+                'zip_code' => '30112-000',
+                'street' => 'Rua da Bahia',
+                'number' => '300',
+                'district' => 'Centro',
+                'city' => 'Belo Horizonte',
+                'state' => 'MG',
+                'country' => 'Brasil',
+                'status' => 'draft',
+            ],
         ]);
 
     $providerCreate->assertRedirect(route('tenant.providers.index', ['subdomain' => $subdomain], false));
 
     $provider = Provider::query()->where('tenant_id', $tenant->id)->where('code', 'P-001')->firstOrFail();
+    $providerAddress = Address::query()
+        ->where('tenant_id', $tenant->id)
+        ->where('addressable_type', Provider::class)
+        ->where('addressable_id', $provider->id)
+        ->first();
+
+    expect($providerAddress)->not->toBeNull();
+    expect($providerAddress?->city)->toBe('Belo Horizonte');
 
     $providerUpdate = $this
         ->withServerVariables(['HTTP_HOST' => $host])
@@ -117,6 +174,18 @@ test('tenant admin can execute stores clusters and providers crud in tenant cont
             'name' => 'Provider B',
             'code' => 'P-002',
             'is_default' => '0',
+            'address' => [
+                'id' => $providerAddress?->id,
+                'type' => 'billing',
+                'zip_code' => '40015-000',
+                'street' => 'Avenida Sete de Setembro',
+                'number' => '777',
+                'district' => 'Centro',
+                'city' => 'Salvador',
+                'state' => 'BA',
+                'country' => 'Brasil',
+                'status' => 'published',
+            ],
         ]);
 
     $providerUpdate->assertRedirect(route('tenant.providers.index', ['subdomain' => $subdomain], false));
@@ -124,6 +193,9 @@ test('tenant admin can execute stores clusters and providers crud in tenant cont
     $provider->refresh();
     expect($provider->name)->toBe('Provider B');
     expect($provider->is_default)->toBeFalse();
+    $providerAddress = $providerAddress?->fresh();
+    expect($providerAddress?->city)->toBe('Salvador');
+    expect($providerAddress?->status)->toBe('published');
 
     $this
         ->withServerVariables(['HTTP_HOST' => $host])

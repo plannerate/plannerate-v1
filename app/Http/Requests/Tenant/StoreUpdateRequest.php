@@ -43,6 +43,22 @@ class StoreUpdateRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'status' => ['required', Rule::in(['draft', 'published'])],
             'description' => ['nullable', 'string', 'max:255'],
+            'address' => ['nullable', 'array'],
+            'address.id' => ['nullable', 'ulid'],
+            'address.type' => ['nullable', 'string', 'max:255'],
+            'address.name' => ['nullable', 'string', 'max:255'],
+            'address.zip_code' => ['nullable', 'string', 'max:15'],
+            'address.street' => ['nullable', 'string', 'max:255'],
+            'address.number' => ['nullable', 'string', 'max:255'],
+            'address.complement' => ['nullable', 'string', 'max:255'],
+            'address.reference' => ['nullable', 'string', 'max:255'],
+            'address.additional_information' => ['nullable', 'string', 'max:255'],
+            'address.district' => ['nullable', 'string', 'max:255'],
+            'address.city' => ['nullable', 'string', 'max:255'],
+            'address.country' => ['nullable', 'string', 'max:100'],
+            'address.state' => ['nullable', 'string', 'size:2'],
+            'address.status' => ['nullable', Rule::in(['draft', 'published'])],
+            'address.is_default' => ['sometimes', 'boolean'],
         ];
     }
 }

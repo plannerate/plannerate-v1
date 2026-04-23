@@ -30,9 +30,9 @@ test('store provider and cluster forms include shared address fields component',
     $clusterForm = file_get_contents(resource_path('js/pages/tenant/clusters/Form.vue'));
 
     expect($storeForm)->toContain("import AddressFields from '@/components/form/AddressFields.vue'");
-    expect($storeForm)->toContain('<AddressFields :errors="errors" />');
+    expect($storeForm)->toContain('<AddressFields :model-value="props.address" :errors="errors" />');
     expect($providerForm)->toContain("import AddressFields from '@/components/form/AddressFields.vue'");
-    expect($providerForm)->toContain('<AddressFields :errors="errors" />');
+    expect($providerForm)->toContain('<AddressFields :model-value="props.address" :errors="errors" />');
     expect($clusterForm)->toContain("import AddressFields from '@/components/form/AddressFields.vue'");
     expect($clusterForm)->toContain('<AddressFields :errors="errors" />');
 });

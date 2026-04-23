@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\ProviderStoreRequest;
 use App\Http\Requests\Tenant\ProviderUpdateRequest;
+use App\Models\Address;
 use App\Models\Provider;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -68,6 +70,7 @@ class ProviderController extends Controller
         return Inertia::render('tenant/providers/Form', [
             'subdomain' => $this->tenantSubdomain(),
             'provider' => null,
+            'address' => null,
         ]);
     }
 
@@ -75,12 +78,16 @@ class ProviderController extends Controller
     {
         $this->authorize('create', Provider::class);
 
-        Provider::query()->create([
-            ...$request->validated(),
+        $validated = $request->validated();
+
+        $provider = Provider::query()->create([
+            ...Arr::except($validated, ['address']),
             'tenant_id' => $this->tenantId(),
             'user_id' => $request->user()?->getAuthIdentifier(),
             'is_default' => $request->boolean('is_default', true),
         ]);
+
+        $this->syncAddress($provider, is_array($validated['address'] ?? null) ? $validated['address'] : null, $request);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -96,6 +103,8 @@ class ProviderController extends Controller
         $this->ensureTenantOwnership($provider);
         $this->authorize('update', $provider);
 
+        $address = $provider->addresses()->orderByDesc('is_default')->latest()->first();
+
         return Inertia::render('tenant/providers/Form', [
             'subdomain' => $this->tenantSubdomain(),
             'provider' => [
@@ -108,6 +117,7 @@ class ProviderController extends Controller
                 'is_default' => (bool) $provider->is_default,
                 'description' => $provider->description,
             ],
+            'address' => $address ? $this->addressPayload($address) : null,
         ]);
     }
 
@@ -117,10 +127,14 @@ class ProviderController extends Controller
         $this->ensureTenantOwnership($provider);
         $this->authorize('update', $provider);
 
+        $validated = $request->validated();
+
         $provider->update([
-            ...$request->validated(),
+            ...Arr::except($validated, ['address']),
             'is_default' => $request->boolean('is_default', true),
         ]);
+
+        $this->syncAddress($provider, is_array($validated['address'] ?? null) ? $validated['address'] : null, $request);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -149,5 +163,81 @@ class ProviderController extends Controller
     private function ensureTenantOwnership(Provider $provider): void
     {
         $this->ensureBelongsToCurrentTenant($provider);
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $addressData
+     */
+    private function syncAddress(Provider $provider, ?array $addressData, Request $request): void
+    {
+        if ($addressData === null || ! $this->hasAddressData($addressData)) {
+            return;
+        }
+
+        $address = null;
+        $addressId = $addressData['id'] ?? null;
+
+        if (is_string($addressId) && $addressId !== '') {
+            $address = $provider->addresses()->whereKey($addressId)->first();
+        }
+
+        if (! $address instanceof Address) {
+            $address = $provider->addresses()->orderByDesc('is_default')->latest()->first() ?? $provider->addresses()->make();
+        }
+
+        $address->fill([
+            'type' => (string) ($addressData['type'] ?? 'home'),
+            'tenant_id' => $this->tenantId(),
+            'user_id' => $request->user()?->getAuthIdentifier(),
+            'name' => $addressData['name'] ?? null,
+            'zip_code' => $addressData['zip_code'] ?? null,
+            'street' => $addressData['street'] ?? null,
+            'number' => $addressData['number'] ?? null,
+            'complement' => $addressData['complement'] ?? null,
+            'reference' => $addressData['reference'] ?? null,
+            'additional_information' => $addressData['additional_information'] ?? null,
+            'district' => $addressData['district'] ?? null,
+            'city' => $addressData['city'] ?? null,
+            'country' => $addressData['country'] ?? 'Brasil',
+            'state' => $addressData['state'] ?? null,
+            'is_default' => (bool) ($addressData['is_default'] ?? false),
+            'status' => (string) ($addressData['status'] ?? 'draft'),
+        ]);
+
+        $provider->addresses()->save($address);
+    }
+
+    /**
+     * @param  array<string, mixed>  $addressData
+     */
+    private function hasAddressData(array $addressData): bool
+    {
+        return collect($addressData)
+            ->except(['id', 'is_default', 'status', 'country'])
+            ->contains(fn ($value): bool => is_string($value) && trim($value) !== '');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function addressPayload(Address $address): array
+    {
+        return [
+            'id' => $address->id,
+            'type' => $address->type,
+            'name' => $address->name,
+            'zip_code' => $address->zip_code,
+            'street' => $address->street,
+            'number' => $address->number,
+            'complement' => $address->complement,
+            'reference' => $address->reference,
+            'additional_information' => $address->additional_information,
+            'district' => $address->district,
+            'city' => $address->city,
+            'country' => $address->country,
+            'state' => $address->state,
+            'is_default' => (bool) $address->is_default,
+            'status' => $address->status,
+        ];
     }
 }

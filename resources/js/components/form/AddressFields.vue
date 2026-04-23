@@ -9,6 +9,7 @@ import InputError from '@/components/InputError.vue';
 import { useT } from '@/composables/useT';
 
 type AddressFormValue = {
+    id?: string | null;
     type?: string | null;
     name?: string | null;
     zip_code?: string | null;
@@ -101,6 +102,8 @@ function onCepResolved(payload: {
     <div
         class="space-y-4 rounded-xl border border-border/70 bg-muted/20 p-4 md:p-5"
     >
+        <input type="hidden" :name="inputName('id')" :value="props.modelValue?.id ?? ''" />
+
         <div>
             <h3 class="text-base font-semibold">
                 {{ t('app.addresses.title') }}

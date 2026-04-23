@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\StoreStoreRequest;
 use App\Http\Requests\Tenant\StoreUpdateRequest;
+use App\Models\Address;
 use App\Models\Store;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -67,6 +69,7 @@ class StoreController extends Controller
         return Inertia::render('tenant/stores/Form', [
             'subdomain' => $this->tenantSubdomain(),
             'store' => null,
+            'address' => null,
         ]);
     }
 
@@ -74,11 +77,15 @@ class StoreController extends Controller
     {
         $this->authorize('create', Store::class);
 
-        Store::query()->create([
-            ...$request->validated(),
+        $validated = $request->validated();
+
+        $store = Store::query()->create([
+            ...Arr::except($validated, ['address']),
             'tenant_id' => $this->tenantId(),
             'user_id' => $request->user()?->getAuthIdentifier(),
         ]);
+
+        $this->syncAddress($store, is_array($validated['address'] ?? null) ? $validated['address'] : null, $request);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -94,6 +101,8 @@ class StoreController extends Controller
         $this->ensureTenantOwnership($store);
         $this->authorize('update', $store);
 
+        $address = $store->addresses()->orderByDesc('is_default')->latest()->first();
+
         return Inertia::render('tenant/stores/Form', [
             'subdomain' => $this->tenantSubdomain(),
             'store' => [
@@ -107,6 +116,7 @@ class StoreController extends Controller
                 'status' => $store->status,
                 'description' => $store->description,
             ],
+            'address' => $address ? $this->addressPayload($address) : null,
         ]);
     }
 
@@ -116,7 +126,11 @@ class StoreController extends Controller
         $this->ensureTenantOwnership($store);
         $this->authorize('update', $store);
 
-        $store->update($request->validated());
+        $validated = $request->validated();
+
+        $store->update(Arr::except($validated, ['address']));
+
+        $this->syncAddress($store, is_array($validated['address'] ?? null) ? $validated['address'] : null, $request);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -145,5 +159,81 @@ class StoreController extends Controller
     private function ensureTenantOwnership(Store $store): void
     {
         $this->ensureBelongsToCurrentTenant($store);
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $addressData
+     */
+    private function syncAddress(Store $store, ?array $addressData, Request $request): void
+    {
+        if ($addressData === null || ! $this->hasAddressData($addressData)) {
+            return;
+        }
+
+        $address = null;
+        $addressId = $addressData['id'] ?? null;
+
+        if (is_string($addressId) && $addressId !== '') {
+            $address = $store->addresses()->whereKey($addressId)->first();
+        }
+
+        if (! $address instanceof Address) {
+            $address = $store->addresses()->orderByDesc('is_default')->latest()->first() ?? $store->addresses()->make();
+        }
+
+        $address->fill([
+            'type' => (string) ($addressData['type'] ?? 'home'),
+            'tenant_id' => $this->tenantId(),
+            'user_id' => $request->user()?->getAuthIdentifier(),
+            'name' => $addressData['name'] ?? null,
+            'zip_code' => $addressData['zip_code'] ?? null,
+            'street' => $addressData['street'] ?? null,
+            'number' => $addressData['number'] ?? null,
+            'complement' => $addressData['complement'] ?? null,
+            'reference' => $addressData['reference'] ?? null,
+            'additional_information' => $addressData['additional_information'] ?? null,
+            'district' => $addressData['district'] ?? null,
+            'city' => $addressData['city'] ?? null,
+            'country' => $addressData['country'] ?? 'Brasil',
+            'state' => $addressData['state'] ?? null,
+            'is_default' => (bool) ($addressData['is_default'] ?? false),
+            'status' => (string) ($addressData['status'] ?? 'draft'),
+        ]);
+
+        $store->addresses()->save($address);
+    }
+
+    /**
+     * @param  array<string, mixed>  $addressData
+     */
+    private function hasAddressData(array $addressData): bool
+    {
+        return collect($addressData)
+            ->except(['id', 'is_default', 'status', 'country'])
+            ->contains(fn ($value): bool => is_string($value) && trim($value) !== '');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function addressPayload(Address $address): array
+    {
+        return [
+            'id' => $address->id,
+            'type' => $address->type,
+            'name' => $address->name,
+            'zip_code' => $address->zip_code,
+            'street' => $address->street,
+            'number' => $address->number,
+            'complement' => $address->complement,
+            'reference' => $address->reference,
+            'additional_information' => $address->additional_information,
+            'district' => $address->district,
+            'city' => $address->city,
+            'country' => $address->country,
+            'state' => $address->state,
+            'is_default' => (bool) $address->is_default,
+            'status' => $address->status,
+        ];
     }
 }

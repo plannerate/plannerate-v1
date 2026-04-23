@@ -21,9 +21,28 @@ type ProviderPayload = {
     description: string | null;
 };
 
+type AddressPayload = {
+    id: string;
+    type: string | null;
+    name: string | null;
+    zip_code: string | null;
+    street: string | null;
+    number: string | null;
+    complement: string | null;
+    reference: string | null;
+    additional_information: string | null;
+    district: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+    is_default: boolean;
+    status: 'draft' | 'published';
+};
+
 const props = defineProps<{
     subdomain: string;
     provider: ProviderPayload | null;
+    address: AddressPayload | null;
 }>();
 
 const { t } = useT();
@@ -119,7 +138,7 @@ const providersIndexPath = ProviderController.index.url(props.subdomain).replace
                     <InputError :message="errors.is_default" />
                 </label>
 
-                <AddressFields :errors="errors" />
+                <AddressFields :model-value="props.address" :errors="errors" />
             </FormCard>
         </Form>
     </div>

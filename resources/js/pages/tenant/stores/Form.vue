@@ -22,9 +22,28 @@ type StorePayload = {
     description: string | null;
 };
 
+type AddressPayload = {
+    id: string;
+    type: string | null;
+    name: string | null;
+    zip_code: string | null;
+    street: string | null;
+    number: string | null;
+    complement: string | null;
+    reference: string | null;
+    additional_information: string | null;
+    district: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+    is_default: boolean;
+    status: 'draft' | 'published';
+};
+
 const props = defineProps<{
     subdomain: string;
     store: StorePayload | null;
+    address: AddressPayload | null;
 }>();
 
 const { t } = useT();
@@ -133,7 +152,7 @@ const storesIndexPath = StoreController.index.url(props.subdomain).replace(/^\/\
                     />
                 </div>
 
-                <AddressFields :errors="errors" />
+                <AddressFields :model-value="props.address" :errors="errors" />
             </FormCard>
         </Form>
     </div>
