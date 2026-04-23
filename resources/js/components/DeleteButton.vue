@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { TriangleAlert } from 'lucide-vue-next';
+import { Trash2, TriangleAlert } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -60,7 +60,8 @@ function handleConfirm(): void {
 <template>
     <Dialog v-model:open="isOpen">
         <DialogTrigger as-child>
-            <Button variant="destructive" size="sm">
+            <Button variant="destructive" size="sm" class="inline-flex items-center gap-1.5">
+                <Trash2 class="size-3.5" />
                 <slot>Excluir</slot>
             </Button>
         </DialogTrigger>
