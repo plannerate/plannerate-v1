@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PlanoArchitect | Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#536200",
+                        "on-tertiary-fixed-variant": "#6b6900",
+                        "tertiary-dim": "#535200",
+                        "tertiary": "#605e00",
+                        "on-tertiary-container": "#605f00",
+                        "primary-container": "#99ff33",
+                        "surface-container": "#e8e9db",
+                        "primary": "#376700",
+                        "on-primary-container": "#325e00",
+                        "inverse-primary": "#99ff33",
+                        "primary-dim": "#2f5a00",
+                        "tertiary-fixed": "#fcfa66",
+                        "inverse-surface": "#0d0f08",
+                        "error-container": "#f95630",
+                        "error": "#b02500",
+                        "surface-container-low": "#f1f2e4",
+                        "on-background": "#2e3027",
+                        "outline-variant": "#adaea3",
+                        "outline": "#76786d",
+                        "on-secondary-container": "#4a5700",
+                        "on-primary-fixed-variant": "#386900",
+                        "secondary-fixed": "#d6ee67",
+                        "secondary-fixed-dim": "#c8df5a",
+                        "primary-fixed": "#99ff33",
+                        "surface-bright": "#f7f7eb",
+                        "on-error-container": "#520c00",
+                        "background": "#f7f7eb",
+                        "surface": "#f7f7eb",
+                        "on-surface-variant": "#5b5c53",
+                        "on-primary": "#d8ffb1",
+                        "surface-variant": "#dcdece",
+                        "surface-container-high": "#e2e4d4",
+                        "on-error": "#ffefec",
+                        "on-secondary": "#e6fe75",
+                        "on-tertiary-fixed": "#4d4c00",
+                        "tertiary-container": "#fcfa66",
+                        "surface-container-highest": "#dcdece",
+                        "inverse-on-surface": "#9d9e93",
+                        "error-dim": "#b92902",
+                        "on-secondary-fixed-variant": "#536200",
+                        "secondary-container": "#d6ee67",
+                        "on-primary-fixed": "#264a00",
+                        "secondary-dim": "#485500",
+                        "surface-tint": "#376700",
+                        "on-secondary-fixed": "#394400",
+                        "primary-fixed-dim": "#8bf020",
+                        "on-tertiary": "#fcf965",
+                        "surface-dim": "#d4d6c5",
+                        "tertiary-fixed-dim": "#eeeb59",
+                        "on-surface": "#2e3027"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Space Grotesk', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .text-glow {
+            text-shadow: 0 0 20px rgba(153, 255, 51, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen selection:bg-primary-container selection:text-on-primary-container">
+<main class="flex min-h-screen">
+<!-- Left Side: Dark Architectural Content -->
+<section class="hidden lg:flex w-7/12 bg-inverse-surface relative overflow-hidden flex-col p-16 justify-between border-r border-outline-variant/10">
+<!-- Architectural Background Texture (Blueprints style) -->
+<div class="absolute inset-0 opacity-10 pointer-events-none">
+<div class="absolute w-full h-full" style="background-image: radial-gradient(circle at 2px 2px, #99ff33 1px, transparent 0); background-size: 40px 40px;"></div>
+<div class="absolute top-0 left-0 w-full h-full border-[100px] border-transparent border-t-primary-container/20 rotate-12 -translate-y-1/2 -translate-x-1/2"></div>
+</div>
+<!-- Content -->
+<div class="relative z-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-fixed flex items-center justify-center rounded">
+<span class="material-symbols-outlined text-on-primary-fixed font-bold">architecture</span>
+</div>
+<span class="font-headline text-2xl font-bold tracking-tight text-surface-bright">PlanoArchitect</span>
+</div>
+</div>
+<div class="relative z-10 max-w-2xl">
+<div class="mb-6 inline-flex items-center gap-2 bg-primary-container/10 px-4 py-2 rounded-full">
+<span class="material-symbols-outlined text-primary-fixed text-sm">settings_suggest</span>
+<span class="text-primary-fixed text-xs font-bold tracking-widest uppercase">Retail Precision Engine v4.0</span>
+</div>
+<h1 class="font-headline text-5xl xl:text-6xl font-bold leading-tight text-white mb-8">
+                    Organize. Integre. Controle. <span class="text-primary-fixed text-glow italic">Onde quiser. Quando quiser.</span>
+</h1>
+<p class="text-surface-variant text-lg max-w-lg font-light leading-relaxed">
+                    Elevate your retail space with precision planogramming. Transform data into architectural excellence and drive conversion through strategic layouts.
+                </p>
+</div>
+<div class="relative z-10 flex gap-12 border-t border-outline-variant/20 pt-12">
+<div class="flex flex-col gap-1">
+<span class="text-primary-fixed font-headline text-3xl font-bold">99.8%</span>
+<span class="text-surface-variant text-xs uppercase tracking-widest">Inventory Accuracy</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-primary-fixed font-headline text-3xl font-bold">24/7</span>
+<span class="text-surface-variant text-xs uppercase tracking-widest">Cloud Syncing</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-primary-fixed font-headline text-3xl font-bold">15k+</span>
+<span class="text-surface-variant text-xs uppercase tracking-widest">Global Deployments</span>
+</div>
+</div>
+<!-- Image Overlay for visual depth -->
+<div class="absolute bottom-[-10%] right-[-5%] w-1/2 h-2/3 opacity-30 grayscale filter mix-blend-screen">
+<img alt="modern store interior" class="object-cover w-full h-full" data-alt="abstract top down architectural plan of a retail store with shelving units and traffic flow lines in minimalist style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgCA4IbIgOGZVdPCVrE0ub3Fv124p0wkmOmyZSfEPf8zfdm_LnJCLUKmo-y2leaZjPzsVqpC_t76UuljhO7mkURl3DGOwzU-Re9ChvNNXEWxFWmQ7e7svAo0qoOPoMnz1ZlGZG2xmjAG8zjK2Ey0T193RSm4HH8Om35XnLzktDjxVj8Pwdnz7aaHE0wGwTmdjnk7eMVjwcpJcp-ssBxxhbhucWssXpCbUjLVJ2lpQq-WStbFMHNV2dAFquJTJs4nWOdBWV41cT-8GW"/>
+</div>
+</section>
+<!-- Right Side: Clean Professional Login Form -->
+<section class="flex-1 bg-surface flex flex-col justify-center items-center px-8 sm:px-16 lg:px-24">
+<div class="w-full max-w-md">
+<!-- Mobile Logo (Hidden on Desktop) -->
+<div class="lg:hidden flex items-center gap-2 mb-12">
+<div class="w-8 h-8 bg-inverse-surface flex items-center justify-center rounded">
+<span class="material-symbols-outlined text-primary-fixed text-sm">architecture</span>
+</div>
+<span class="font-headline text-xl font-bold tracking-tight text-inverse-surface">PlanoArchitect</span>
+</div>
+<div class="mb-10">
+<h2 class="font-headline text-3xl font-bold text-inverse-surface mb-3 tracking-tight">System Login</h2>
+<p class="text-on-surface-variant font-medium">Access your architectural dashboard</p>
+</div>
+<form class="space-y-6">
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface/60 ml-1" for="email">Work Email</label>
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline-variant group-focus-within:text-primary transition-colors">alternate_email</span>
+</div>
+<input class="w-full pl-12 pr-4 py-4 bg-surface-container-low border-transparent focus:border-primary focus:ring-0 rounded-lg text-inverse-surface font-medium transition-all" id="email" placeholder="name@organization.com" type="email"/>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center px-1">
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface/60" for="password">Password</label>
+<a class="text-xs font-bold text-primary hover:text-primary-dim transition-colors" href="#">Forgot password?</a>
+</div>
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline-variant group-focus-within:text-primary transition-colors">lock</span>
+</div>
+<input class="w-full pl-12 pr-4 py-4 bg-surface-container-low border-transparent focus:border-primary focus:ring-0 rounded-lg text-inverse-surface font-medium transition-all" id="password" placeholder="••••••••" type="password"/>
+</div>
+</div>
+<div class="flex items-center gap-3 py-2">
+<input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary-container" id="remember" type="checkbox"/>
+<label class="text-sm text-on-surface-variant font-medium select-none" for="remember">Keep session active for 24 hours</label>
+</div>
+<button class="w-full bg-primary-container text-on-primary-container py-4 rounded-lg font-headline font-bold text-lg flex items-center justify-center gap-2 hover:shadow-[0_0_25px_rgba(153,255,51,0.4)] active:scale-[0.98] transition-all group" type="submit">
+                        Enter Workspace
+                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</form>
+<div class="mt-12">
+<div class="relative">
+<div class="absolute inset-0 flex items-center"><span class="w-full border-t border-surface-variant"></span></div>
+<div class="relative flex justify-center text-xs uppercase tracking-widest font-bold"><span class="bg-surface px-4 text-on-surface-variant">Identity Providers</span></div>
+</div>
+<div class="mt-8 flex flex-col gap-3">
+<button class="w-full flex items-center justify-center gap-3 px-4 py-3 border border-outline-variant/30 rounded-lg hover:bg-surface-container-low transition-colors group">
+<span class="material-symbols-outlined text-inverse-surface/60 group-hover:text-primary transition-colors">key</span>
+<span class="text-on-surface font-medium">Continue with SSO / Microsoft</span>
+</button>
+</div>
+</div>
+<div class="mt-16 pt-8 border-t border-surface-variant text-center">
+<p class="text-on-surface-variant text-sm font-medium">
+                        New to the platform? <a class="text-primary font-bold hover:underline" href="#">Contact Administration</a>
+</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Simplified Footer (as per JSON request) -->
+<footer class="absolute bottom-0 w-full lg:w-[41.666667%] right-0 py-6 px-12 bg-transparent">
+<div class="flex flex-col md:flex-row justify-between items-center gap-4">
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest text-on-surface/40">© 2024 PlanoArchitect. Precision by Design.</span>
+<div class="flex gap-6">
+<a class="font-['Inter'] text-[10px] uppercase tracking-widest text-on-surface/40 hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-['Inter'] text-[10px] uppercase tracking-widest text-on-surface/40 hover:text-primary transition-colors" href="#">Security</a>
+</div>
+</div>
+</footer>
+</body></html>

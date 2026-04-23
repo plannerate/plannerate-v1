@@ -186,7 +186,7 @@ async function fetchFromRepository(): Promise<void> {
 async function pollAiStatus(operationId: string): Promise<void> {
     let attempts = 0;
 
-    while (attempts < 30) {
+    while (attempts < 90) {
         attempts += 1;
         await new Promise((resolve) => setTimeout(resolve, 1500));
 

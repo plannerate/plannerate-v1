@@ -13,9 +13,10 @@ class ProcessProductImageWithAiJob implements ShouldQueue, TenantAware
 {
     use Queueable;
 
-    /**
-     * Create a new job instance.
-     */
+    public int $timeout = 150;
+
+    public int $tries = 1;
+
     public function __construct(
         public string $operationId
     ) {}
