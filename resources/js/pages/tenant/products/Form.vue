@@ -55,6 +55,7 @@ type ProductPayload = {
     unit: string | null;
     dimensions_status: 'draft' | 'published';
     dimensions_description: string | null;
+    image_url: string | null;
 };
 
 const props = defineProps<{
@@ -136,25 +137,23 @@ setLayoutProps({
                             </div>
                         </div>
                         <fieldset class="rounded-lg border border-border/80 p-3">
-                                <legend class="px-1 text-xs font-semibold text-foreground">
-                                    {{ t('app.tenant.products.form.sections.category') }}
-                                </legend>
-                                <div class="mt-2">
-                                    <CategoryCascadeSelect
-                                        :model-value="props.product?.category_id ?? null"
-                                        :error="errors.category_id"
-                                    />
-                                </div>
-                            </fieldset>
+                            <legend class="px-1 text-xs font-semibold text-foreground">
+                                {{ t('app.tenant.products.form.sections.category') }}
+                            </legend>
+                            <div class="mt-2">
+                                <CategoryCascadeSelect :model-value="props.product?.category_id ?? null"
+                                    :error="errors.category_id" />
+                            </div>
+                        </fieldset>
                         <!-- Dimensoes -->
-                        <div class="space-y-4">
-                            <div>
-                                <h4 class="text-sm font-semibold">{{ t('app.tenant.products.form.sections.dimensions')
-                                    }}</h4>
+                        <fieldset class="rounded-lg border border-border/80 p-3">
+                            <legend class="text-sm font-semibold">
+                                {{ t('app.tenant.products.form.sections.dimensions')
+                                }}
                                 <p class="text-sm text-muted-foreground">{{
                                     t('app.tenant.products.form.sections.dimensions_lead') }}
                                 </p>
-                            </div>
+                            </legend>
                             <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
                                 <div class="flex flex-col gap-y-1 md:col-span-2">
                                     <Label for="width">{{ t('app.tenant.products.fields.width') }} (cm)</Label>
@@ -204,17 +203,16 @@ setLayoutProps({
                                     <InputError :message="errors.dimensions_description" />
                                 </div>
                             </div>
-                        </div>
+                        </fieldset>
 
                         <!-- Dados adicionais (ordem do stitch) -->
-                        <div class="space-y-4">
-                            <div>
-                                <h4 class="text-sm font-semibold">{{ t('app.tenant.products.form.sections.additional')
-                                    }}</h4>
+                        <fieldset class="rounded-lg border border-border/80 p-3">
+                            <legend class="text-sm font-semibold">
+                                {{ t('app.tenant.products.form.sections.additional') }}
                                 <p class="text-sm text-muted-foreground">{{
                                     t('app.tenant.products.form.sections.additional_lead') }}
                                 </p>
-                            </div>
+                            </legend>
                             <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
                                 <div class="flex flex-col gap-y-1 md:col-span-3">
                                     <Label for="type">{{ t('app.tenant.products.fields.type') }}</Label>
@@ -322,95 +320,16 @@ setLayoutProps({
                                     <InputError :message="errors.additional_information" />
                                 </div>
                             </div>
-                        </div>
+                        </fieldset>
 
                         <!-- Slug, descricao, sincronizacao -->
-                        <details class="rounded-lg border border-border p-4">
-                            <summary class="cursor-pointer text-sm font-semibold text-foreground">
-                                {{ t('app.tenant.products.form.sections.advanced') }}
-                            </summary>
-                            <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-12">
-                                <div class="flex flex-col gap-y-1 md:col-span-6">
-                                    <Label for="slug">{{ t('app.tenant.products.form.slug') }}</Label>
-                                    <Input id="slug" name="slug" :default-value="props.product?.slug ?? ''" />
-                                    <InputError :message="errors.slug" />
-                                </div>
-                                <div class="flex flex-col gap-y-1 md:col-span-6">
-                                    <Label for="sales_status">{{ t('app.tenant.products.fields.sales_status') }}</Label>
-                                    <Input id="sales_status" name="sales_status"
-                                        :default-value="props.product?.sales_status ?? ''" />
-                                    <InputError :message="errors.sales_status" />
-                                </div>
-                                <div class="flex flex-col gap-y-1 md:col-span-6">
-                                    <Label for="sales_purchases">{{ t('app.tenant.products.fields.sales_purchases')
-                                        }}</Label>
-                                    <Input id="sales_purchases" name="sales_purchases"
-                                        :default-value="props.product?.sales_purchases ?? ''" />
-                                    <InputError :message="errors.sales_purchases" />
-                                </div>
-                                <div class="flex flex-col gap-y-1 md:col-span-6">
-                                    <Label for="sync_source">{{ t('app.tenant.products.fields.sync_source') }}</Label>
-                                    <Input id="sync_source" name="sync_source"
-                                        :default-value="props.product?.sync_source ?? ''" />
-                                    <InputError :message="errors.sync_source" />
-                                </div>
-                                <div class="flex flex-col gap-y-1 md:col-span-6">
-                                    <Label for="sync_at">{{ t('app.tenant.products.fields.sync_at') }}</Label>
-                                    <Input id="sync_at" name="sync_at" type="datetime-local"
-                                        :default-value="props.product?.sync_at ?? ''" />
-                                    <InputError :message="errors.sync_at" />
-                                </div>
-                                <div class="flex flex-col gap-y-1 md:col-span-12">
-                                    <Label for="description">{{ t('app.tenant.products.fields.description') }}</Label>
-                                    <textarea id="description" name="description" rows="4" :class="textareaClass">{{
-                                        props.product?.description ?? '' }}</textarea>
-                                    <InputError :message="errors.description" />
-                                </div>
-                            </div>
-                        </details>
-
-                        <!-- Logistica -->
-                        <div>
-                            <p class="mb-3 text-sm font-semibold">{{ t('app.tenant.products.form.logistics') }}</p>
-                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                <label class="flex items-center gap-2 text-sm">
-                                    <input type="hidden" name="stackable" value="0" />
-                                    <input type="checkbox" name="stackable" value="1"
-                                        :checked="props.product?.stackable ?? false" class="accent-primary" />
-                                    {{ t('app.tenant.products.fields.stackable') }}
-                                </label>
-                                <label class="flex items-center gap-2 text-sm">
-                                    <input type="hidden" name="perishable" value="0" />
-                                    <input type="checkbox" name="perishable" value="1"
-                                        :checked="props.product?.perishable ?? false" class="accent-primary" />
-                                    {{ t('app.tenant.products.fields.perishable') }}
-                                </label>
-                                <label class="flex items-center gap-2 text-sm">
-                                    <input type="hidden" name="flammable" value="0" />
-                                    <input type="checkbox" name="flammable" value="1"
-                                        :checked="props.product?.flammable ?? false" class="accent-primary" />
-                                    {{ t('app.tenant.products.fields.flammable') }}
-                                </label>
-                                <label class="flex items-center gap-2 text-sm">
-                                    <input type="hidden" name="hangable" value="0" />
-                                    <input type="checkbox" name="hangable" value="1"
-                                        :checked="props.product?.hangable ?? false" class="accent-primary" />
-                                    {{ t('app.tenant.products.fields.hangable') }}
-                                </label>
-                                <label class="flex items-center gap-2 text-sm">
-                                    <input type="hidden" name="no_sales" value="0" />
-                                    <input type="checkbox" name="no_sales" value="1"
-                                        :checked="props.product?.no_sales ?? false" class="accent-primary" />
-                                    {{ t('app.tenant.products.fields.no_sales') }}
-                                </label>
-                                <label class="flex items-center gap-2 text-sm">
-                                    <input type="hidden" name="no_purchases" value="0" />
-                                    <input type="checkbox" name="no_purchases" value="1"
-                                        :checked="props.product?.no_purchases ?? false" class="accent-primary" />
-                                    {{ t('app.tenant.products.fields.no_purchases') }}
-                                </label>
-                            </div>
+                        <div class="flex flex-col gap-y-1 md:col-span-12">
+                            <Label for="description">{{ t('app.tenant.products.fields.description') }}</Label>
+                            <textarea id="description" name="description" rows="4" :class="textareaClass">{{
+                                props.product?.description ?? '' }}</textarea>
+                            <InputError :message="errors.description" />
                         </div>
+
                     </div>
 
                     <aside class="flex flex-col gap-5 lg:sticky lg:top-4 lg:col-span-4 lg:self-start xl:col-span-3">
@@ -429,11 +348,11 @@ setLayoutProps({
                                         t('app.tenant.products.form.sections.image_drop') }}</p>
                                 </div>
                                 <Input id="url" name="url" type="url" :placeholder="'https://…'"
-                                    :default-value="props.product?.url ?? ''" />
+                                    :default-value="props.product?.image_url ?? ''" />
                                 <InputError :message="errors.url" />
                             </div>
 
-                          
+
 
                             <div class="flex flex-col gap-y-1">
                                 <Label for="status">{{ t('app.tenant.products.form.status_product') }} <span
@@ -465,12 +384,36 @@ setLayoutProps({
                                     </select>
                                     <InputError :message="errors.dimensions_status" />
                                 </div>
-                                <div class="flex flex-col gap-y-1">
-                                    <Label for="dimensions_ean">{{ t('app.tenant.products.fields.dimensions_ean')
-                                        }}</Label>
-                                    <Input id="dimensions_ean" name="dimensions_ean"
-                                        :default-value="props.product?.dimensions_ean ?? ''" />
-                                    <InputError :message="errors.dimensions_ean" />
+                            </div>
+
+                            <!-- Logistica -->
+                            <div>
+                                <p class="mb-3 text-sm font-semibold">{{ t('app.tenant.products.form.logistics') }}</p>
+                                <div class="grid grid-cols-1 gap-3 ">
+                                    <label class="flex items-center gap-2 text-sm">
+                                        <input type="hidden" name="stackable" value="0" />
+                                        <input type="checkbox" name="stackable" value="1"
+                                            :checked="props.product?.stackable ?? false" class="accent-primary" />
+                                        {{ t('app.tenant.products.fields.stackable') }}
+                                    </label>
+                                    <label class="flex items-center gap-2 text-sm">
+                                        <input type="hidden" name="perishable" value="0" />
+                                        <input type="checkbox" name="perishable" value="1"
+                                            :checked="props.product?.perishable ?? false" class="accent-primary" />
+                                        {{ t('app.tenant.products.fields.perishable') }}
+                                    </label>
+                                    <label class="flex items-center gap-2 text-sm">
+                                        <input type="hidden" name="flammable" value="0" />
+                                        <input type="checkbox" name="flammable" value="1"
+                                            :checked="props.product?.flammable ?? false" class="accent-primary" />
+                                        {{ t('app.tenant.products.fields.flammable') }}
+                                    </label>
+                                    <label class="flex items-center gap-2 text-sm">
+                                        <input type="hidden" name="hangable" value="0" />
+                                        <input type="checkbox" name="hangable" value="1"
+                                            :checked="props.product?.hangable ?? false" class="accent-primary" />
+                                        {{ t('app.tenant.products.fields.hangable') }}
+                                    </label>
                                 </div>
                             </div>
                         </div>

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
@@ -67,6 +68,10 @@ class Product extends Model
         'dimensions_description',
     ];
 
+    protected $appends = [
+        'image_url',
+    ];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -87,5 +92,18 @@ class Product extends Model
             'weight' => 'decimal:2',
             'sync_at' => 'datetime',
         ];
+    }
+
+    public function getImageUrlAttribute(): string
+    {
+        if (! $this->url) {
+            return '';
+        }
+
+        if ($domain = app('currentTenant')->domains->first()) {
+            return sprintf('%s://%s/storage/%s', request()->getScheme(), $domain->host, $this->url);
+        }
+
+        return Storage::disk('public')->url($this->url);
     }
 }

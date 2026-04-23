@@ -13,6 +13,7 @@ import type { Paginator } from '@/types';
 type ProductRow = {
     id: string;
     name: string | null;
+    image_url: string | null;
     slug: string | null;
     ean: string | null;
     status: 'draft' | 'published' | 'synced' | 'error';
@@ -82,6 +83,7 @@ setLayoutProps({
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.products.form.sections.image') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.products.fields.name') }}</th>
                         <th class="px-4 py-3 font-medium">Slug</th>
                         <th class="px-4 py-3 font-medium">EAN</th>
@@ -92,11 +94,21 @@ setLayoutProps({
                 </thead>
                 <tbody>
                     <tr v-if="props.products.data.length === 0">
-                        <td class="px-4 py-6 text-muted-foreground" colspan="6">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="7">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
                     <tr v-for="product in props.products.data" :key="product.id" class="border-t border-sidebar-border/60 dark:border-sidebar-border">
+                        <td class="px-4 py-3">
+                            <img
+                                v-if="product.image_url"
+                                :src="product.image_url"
+                                :alt="product.name ?? 'Produto'"
+                                class="h-10 w-10 rounded-md border border-border object-cover"
+                                loading="lazy"
+                            />
+                            <div v-else class="h-10 w-10 rounded-md border border-dashed border-border bg-muted/30" />
+                        </td>
                         <td class="px-4 py-3 font-medium">{{ product.name ?? '-' }}</td>
                         <td class="px-4 py-3">{{ product.slug ?? '-' }}</td>
                         <td class="px-4 py-3">{{ product.ean ?? '-' }}</td>

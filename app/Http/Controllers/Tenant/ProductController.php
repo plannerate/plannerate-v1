@@ -47,6 +47,7 @@ class ProductController extends Controller
             ->through(fn (Product $product): array => [
                 'id' => $product->id,
                 'name' => $product->name,
+                'image_url' => $product->image_url,
                 'slug' => $product->slug,
                 'ean' => $product->ean,
                 'status' => $product->status,
@@ -156,6 +157,7 @@ class ProductController extends Controller
                 'unit' => $product->unit,
                 'dimensions_status' => $product->dimensions_status,
                 'dimensions_description' => $product->dimensions_description,
+                'image_url' => $product->image_url,
             ],
         ]);
     }
