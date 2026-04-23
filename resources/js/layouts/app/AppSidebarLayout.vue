@@ -4,14 +4,16 @@ import AppShell from '@/components/AppShell.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
 import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
 import { Toaster } from '@/components/ui/sonner';
-import type { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, LayoutPageHeader } from '@/types';
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];
+    pageHeader?: LayoutPageHeader;
 };
 
 withDefaults(defineProps<Props>(), {
     breadcrumbs: () => [],
+    pageHeader: () => ({}),
 });
 </script>
 
@@ -19,7 +21,7 @@ withDefaults(defineProps<Props>(), {
     <AppShell variant="sidebar">
         <AppSidebar />
         <AppContent variant="sidebar" class="overflow-x-hidden">
-            <AppSidebarHeader :breadcrumbs="breadcrumbs" />
+            <AppSidebarHeader :breadcrumbs="breadcrumbs" :page-header="pageHeader" />
             <slot />
         </AppContent>
         <Toaster />

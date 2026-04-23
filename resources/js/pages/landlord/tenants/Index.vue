@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { Button } from '@/components/ui/button';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import type { Paginator } from '@/types';
 
@@ -33,8 +34,10 @@ const props = defineProps<{
 
 const { t } = useT();
 const tenantsIndexPath = TenantController.index.url().replace(/^\/\/[^/]+/, '');
-
-setLayoutProps({
+const pageMeta = useCrudPageMeta({
+    headTitle: t('app.landlord.tenants.title'),
+    title: t('app.landlord.tenants.title'),
+    description: t('app.landlord.tenants.description'),
     breadcrumbs: [
         {
             title: t('app.landlord.tenants.navigation'),
@@ -45,11 +48,11 @@ setLayoutProps({
 </script>
 
 <template>
-    <Head :title="t('app.landlord.tenants.title')" />
+    <Head :title="pageMeta.headTitle" />
 
     <ListPage
-        :title="t('app.landlord.tenants.title')"
-        :description="t('app.landlord.tenants.description')"
+        :title="pageMeta.title"
+        :description="pageMeta.description"
         :meta="props.tenants"
         label="tenant"
         :action="tenantsIndexPath"

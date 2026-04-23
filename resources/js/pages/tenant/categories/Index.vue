@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { Button } from '@/components/ui/button';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
@@ -27,8 +28,10 @@ const props = defineProps<{
 }>();
 const { t } = useT();
 const categoriesIndexPath = CategoryController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
-
-setLayoutProps({
+const pageMeta = useCrudPageMeta({
+    headTitle: t('app.tenant.categories.title'),
+    title: t('app.tenant.categories.title'),
+    description: t('app.tenant.categories.description'),
     breadcrumbs: [
         { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
         { title: t('app.tenant.categories.navigation'), href: categoriesIndexPath },
@@ -37,11 +40,11 @@ setLayoutProps({
 </script>
 
 <template>
-    <Head :title="t('app.tenant.categories.title')" />
+    <Head :title="pageMeta.headTitle" />
 
     <ListPage
-        :title="t('app.tenant.categories.title')"
-        :description="t('app.tenant.categories.description')"
+        :title="pageMeta.title"
+        :description="pageMeta.description"
         :meta="props.categories"
         label="categoria"
         :action="categoriesIndexPath"

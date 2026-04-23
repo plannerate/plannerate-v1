@@ -9,7 +9,9 @@ import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormStatusField from '@/components/form/FormStatusField.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import { dashboard } from '@/routes';
 
 type ClusterPayload = {
     id: string;
@@ -32,10 +34,25 @@ const props = defineProps<{
 const { t } = useT();
 const isEdit = computed(() => props.cluster !== null);
 const clustersIndexPath = ClusterController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const pageMeta = useCrudPageMeta({
+    headTitle: isEdit.value ? t('app.tenant.clusters.actions.edit') : t('app.tenant.clusters.actions.new'),
+    title: isEdit.value ? t('app.tenant.clusters.actions.edit') : t('app.tenant.clusters.actions.new'),
+    description: t('app.tenant.clusters.description'),
+    breadcrumbs: [
+        { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
+        { title: t('app.tenant.clusters.navigation'), href: clustersIndexPath },
+        {
+            title: isEdit.value ? t('app.tenant.clusters.actions.edit') : t('app.tenant.clusters.actions.new'),
+            href: isEdit.value
+                ? ClusterController.edit.url({ subdomain: props.subdomain, cluster: props.cluster!.id })
+                : ClusterController.create.url(props.subdomain),
+        },
+    ],
+});
 </script>
 
 <template>
-    <Head :title="isEdit ? t('app.tenant.clusters.actions.edit') : t('app.tenant.clusters.actions.new')" />
+    <Head :title="pageMeta.headTitle" />
 
     <div class="p-4">
         <Form
@@ -45,8 +62,8 @@ const clustersIndexPath = ClusterController.index.url(props.subdomain).replace(/
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="isEdit ? t('app.tenant.clusters.actions.edit') : t('app.tenant.clusters.actions.new')"
-                :description="t('app.tenant.clusters.description')"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
                 :processing="processing"
                 :cancel-href="clustersIndexPath"
             >

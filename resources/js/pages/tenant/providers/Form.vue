@@ -8,7 +8,9 @@ import FormTextField from '@/components/form/FormTextField.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import { dashboard } from '@/routes';
 
 type ProviderPayload = {
     id: string;
@@ -48,10 +50,25 @@ const props = defineProps<{
 const { t } = useT();
 const isEdit = computed(() => props.provider !== null);
 const providersIndexPath = ProviderController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const pageMeta = useCrudPageMeta({
+    headTitle: isEdit.value ? t('app.tenant.providers.actions.edit') : t('app.tenant.providers.actions.new'),
+    title: isEdit.value ? t('app.tenant.providers.actions.edit') : t('app.tenant.providers.actions.new'),
+    description: t('app.tenant.providers.description'),
+    breadcrumbs: [
+        { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
+        { title: t('app.tenant.providers.navigation'), href: providersIndexPath },
+        {
+            title: isEdit.value ? t('app.tenant.providers.actions.edit') : t('app.tenant.providers.actions.new'),
+            href: isEdit.value
+                ? ProviderController.edit.url({ subdomain: props.subdomain, provider: props.provider!.id })
+                : ProviderController.create.url(props.subdomain),
+        },
+    ],
+});
 </script>
 
 <template>
-    <Head :title="isEdit ? t('app.tenant.providers.actions.edit') : t('app.tenant.providers.actions.new')" />
+    <Head :title="pageMeta.headTitle" />
 
     <div class="p-4">
         <Form
@@ -61,8 +78,8 @@ const providersIndexPath = ProviderController.index.url(props.subdomain).replace
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="isEdit ? t('app.tenant.providers.actions.edit') : t('app.tenant.providers.actions.new')"
-                :description="t('app.tenant.providers.description')"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
                 :processing="processing"
                 :cancel-href="providersIndexPath"
             >

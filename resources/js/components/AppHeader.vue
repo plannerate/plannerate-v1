@@ -37,14 +37,16 @@ import { getInitials } from '@/composables/useInitials';
 import { useT } from '@/composables/useT';
 import { toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
-import type { BreadcrumbItem, NavItem } from '@/types';
+import type { BreadcrumbItem, LayoutPageHeader, NavItem } from '@/types';
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];
+    pageHeader?: LayoutPageHeader;
 };
 
 const props = withDefaults(defineProps<Props>(), {
     breadcrumbs: () => [],
+    pageHeader: () => ({}),
 });
 
 const page = usePage();
@@ -273,13 +275,21 @@ const rightNavItems: NavItem[] = [
         </div>
 
         <div
-            v-if="props.breadcrumbs.length > 1"
-            class="flex w-full border-b border-sidebar-border/70"
+            v-if="props.breadcrumbs.length > 1 || props.pageHeader.title || props.pageHeader.description"
+            class="w-full border-b border-sidebar-border/70"
         >
-            <div
-                class="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl"
-            >
-                <Breadcrumbs :breadcrumbs="breadcrumbs" />
+            <div class="mx-auto w-full px-4 py-3 text-neutral-500 md:max-w-7xl">
+                <div v-if="props.breadcrumbs.length > 1" class="flex items-center">
+                    <Breadcrumbs :breadcrumbs="breadcrumbs" />
+                </div>
+                <div v-if="props.pageHeader.title || props.pageHeader.description" class="mt-2">
+                    <p v-if="props.pageHeader.title" class="text-base font-semibold text-foreground">
+                        {{ props.pageHeader.title }}
+                    </p>
+                    <p v-if="props.pageHeader.description" class="text-sm text-muted-foreground">
+                        {{ props.pageHeader.description }}
+                    </p>
+                </div>
             </div>
         </div>
     </div>

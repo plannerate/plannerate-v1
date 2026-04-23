@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
+import { Form, Head } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { Layers, Plus, Trash2 } from 'lucide-vue-next';
 import PlanController from '@/actions/App/Http/Controllers/Landlord/PlanController';
@@ -8,6 +8,7 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 
 type PlanItem = {
@@ -59,7 +60,10 @@ function removeItem(index: number): void {
     items.value.splice(index, 1);
 }
 
-setLayoutProps({
+const pageMeta = useCrudPageMeta({
+    headTitle: isEdit.value ? t('app.landlord.plans.actions.edit') : t('app.landlord.plans.actions.new'),
+    title: isEdit.value ? t('app.landlord.plans.actions.edit') : t('app.landlord.plans.actions.new'),
+    description: t('app.landlord.plans.description'),
     breadcrumbs: [
         {
             title: t('app.landlord.plans.navigation'),
@@ -74,7 +78,7 @@ setLayoutProps({
 </script>
 
 <template>
-    <Head :title="isEdit ? t('app.landlord.plans.actions.edit') : t('app.landlord.plans.actions.new')" />
+    <Head :title="pageMeta.headTitle" />
 
     <div class="p-4">
         <Form
@@ -82,8 +86,8 @@ setLayoutProps({
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="isEdit ? t('app.landlord.plans.actions.edit') : t('app.landlord.plans.actions.new')"
-                :description="t('app.landlord.plans.description')"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
                 :processing="processing"
                 :cancel-href="plansIndexPath"
             >

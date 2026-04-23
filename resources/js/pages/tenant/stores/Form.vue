@@ -8,7 +8,9 @@ import FormStatusField from '@/components/form/FormStatusField.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import FormCard from '@/components/FormCard.vue';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import { dashboard } from '@/routes';
 
 type StorePayload = {
     id: string;
@@ -49,10 +51,27 @@ const props = defineProps<{
 const { t } = useT();
 const isEdit = computed(() => props.store !== null);
 const storesIndexPath = StoreController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const pageMeta = useCrudPageMeta(
+    {
+        headTitle: isEdit.value ? t('app.tenant.stores.actions.edit') : t('app.tenant.stores.actions.new'),
+        title: isEdit.value ? t('app.tenant.stores.actions.edit') : t('app.tenant.stores.actions.new'),
+        description: t('app.tenant.stores.description'),
+        breadcrumbs: [
+            { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
+            { title: t('app.tenant.stores.navigation'), href: storesIndexPath },
+            {
+                title: isEdit.value ? t('app.tenant.stores.actions.edit') : t('app.tenant.stores.actions.new'),
+                href: isEdit.value
+                    ? StoreController.edit.url({ subdomain: props.subdomain, store: props.store!.id })
+                    : StoreController.create.url(props.subdomain),
+            },
+        ],
+    },
+);
 </script>
 
 <template>
-    <Head :title="isEdit ? t('app.tenant.stores.actions.edit') : t('app.tenant.stores.actions.new')" />
+    <Head :title="pageMeta.headTitle" />
 
     <div class="p-4">
         <Form
@@ -62,8 +81,8 @@ const storesIndexPath = StoreController.index.url(props.subdomain).replace(/^\/\
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="isEdit ? t('app.tenant.stores.actions.edit') : t('app.tenant.stores.actions.new')"
-                :description="t('app.tenant.stores.description')"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
                 :processing="processing"
                 :cancel-href="storesIndexPath"
             >

@@ -5,7 +5,9 @@ import DeleteButton from '@/components/DeleteButton.vue';
 import EditButton from '@/components/EditButton.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
 
 type ClusterRow = {
@@ -33,14 +35,23 @@ const props = defineProps<{
 
 const { t } = useT();
 const clustersIndexPath = ClusterController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const pageMeta = useCrudPageMeta({
+    headTitle: t('app.tenant.clusters.title'),
+    title: t('app.tenant.clusters.title'),
+    description: t('app.tenant.clusters.description'),
+    breadcrumbs: [
+        { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
+        { title: t('app.tenant.clusters.navigation'), href: clustersIndexPath },
+    ],
+});
 </script>
 
 <template>
-    <Head :title="t('app.tenant.clusters.title')" />
+    <Head :title="pageMeta.headTitle" />
 
     <ListPage
-        :title="t('app.tenant.clusters.title')"
-        :description="t('app.tenant.clusters.description')"
+        :title="pageMeta.title"
+        :description="pageMeta.description"
         :meta="props.clusters"
         label="cluster"
         :action="clustersIndexPath"

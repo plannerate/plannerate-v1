@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, setLayoutProps, usePage } from '@inertiajs/vue3';
+import { Form, Head, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import { Package } from 'lucide-vue-next';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
@@ -11,6 +11,7 @@ import FormCard from '@/components/FormCard.vue';
 import ImageUploadField from '@/components/ImageUploadField.vue';
 import InputError from '@/components/InputError.vue';
 import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
@@ -296,7 +297,14 @@ function onImageError(message: string): void {
     imageError.value = message;
 }
 
-setLayoutProps({
+const pageMeta = useCrudPageMeta({
+    headTitle: isEdit.value
+        ? t('app.tenant.products.actions.edit')
+        : t('app.tenant.products.actions.new'),
+    title: isEdit.value
+        ? t('app.tenant.products.actions.edit')
+        : t('app.tenant.products.actions.new'),
+    description: t('app.tenant.products.description'),
     breadcrumbs: [
         {
             title: t('app.navigation.dashboard'),
@@ -323,13 +331,7 @@ setLayoutProps({
 </script>
 
 <template>
-    <Head
-        :title="
-            isEdit
-                ? t('app.tenant.products.actions.edit')
-                : t('app.tenant.products.actions.new')
-        "
-    />
+    <Head :title="pageMeta.headTitle" />
 
     <div class="p-4">
         <Form
@@ -338,12 +340,8 @@ setLayoutProps({
             @submit="onSubmit"
         >
             <FormCard
-                :title="
-                    isEdit
-                        ? t('app.tenant.products.actions.edit')
-                        : t('app.tenant.products.actions.new')
-                "
-                :description="t('app.tenant.products.description')"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
                 :processing="processing"
                 :cancel-href="productsIndexPath"
             >

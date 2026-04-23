@@ -5,7 +5,9 @@ import DeleteButton from '@/components/DeleteButton.vue';
 import EditButton from '@/components/EditButton.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
 
 type StoreRow = {
@@ -28,14 +30,23 @@ const props = defineProps<{
 
 const { t } = useT();
 const storesIndexPath = StoreController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const pageMeta = useCrudPageMeta({
+    headTitle: t('app.tenant.stores.title'),
+    title: t('app.tenant.stores.title'),
+    description: t('app.tenant.stores.description'),
+    breadcrumbs: [
+        { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
+        { title: t('app.tenant.stores.navigation'), href: storesIndexPath },
+    ],
+});
 </script>
 
 <template>
-    <Head :title="t('app.tenant.stores.title')" />
+    <Head :title="pageMeta.headTitle" />
 
     <ListPage
-        :title="t('app.tenant.stores.title')"
-        :description="t('app.tenant.stores.description')"
+        :title="pageMeta.title"
+        :description="pageMeta.description"
         :meta="props.stores"
         label="loja"
         :action="storesIndexPath"

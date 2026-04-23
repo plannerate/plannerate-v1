@@ -5,7 +5,9 @@ import DeleteButton from '@/components/DeleteButton.vue';
 import EditButton from '@/components/EditButton.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
 
 type ProviderRow = {
@@ -29,14 +31,23 @@ const props = defineProps<{
 
 const { t } = useT();
 const providersIndexPath = ProviderController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const pageMeta = useCrudPageMeta({
+    headTitle: t('app.tenant.providers.title'),
+    title: t('app.tenant.providers.title'),
+    description: t('app.tenant.providers.description'),
+    breadcrumbs: [
+        { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
+        { title: t('app.tenant.providers.navigation'), href: providersIndexPath },
+    ],
+});
 </script>
 
 <template>
-    <Head :title="t('app.tenant.providers.title')" />
+    <Head :title="pageMeta.headTitle" />
 
     <ListPage
-        :title="t('app.tenant.providers.title')"
-        :description="t('app.tenant.providers.description')"
+        :title="pageMeta.title"
+        :description="pageMeta.description"
         :meta="props.providers"
         label="provider"
         :action="providersIndexPath"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
+import { Form, Head } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { Building2 } from 'lucide-vue-next';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
@@ -7,6 +7,7 @@ import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 
 type TenantPayload = {
@@ -47,7 +48,10 @@ const databaseTouched = ref(props.tenant !== null);
 
 const tenantsIndexPath = TenantController.index.url().replace(/^\/\/[^/]+/, '');
 
-setLayoutProps({
+const pageMeta = useCrudPageMeta({
+    headTitle: isEdit.value ? t('app.landlord.tenants.actions.edit') : t('app.landlord.tenants.actions.new'),
+    title: isEdit.value ? t('app.landlord.tenants.actions.edit') : t('app.landlord.tenants.actions.new'),
+    description: t('app.landlord.tenants.description'),
     breadcrumbs: [
         {
             title: t('app.landlord.tenants.navigation'),
@@ -92,7 +96,7 @@ function onDatabaseInput(): void {
 </script>
 
 <template>
-    <Head :title="isEdit ? t('app.landlord.tenants.actions.edit') : t('app.landlord.tenants.actions.new')" />
+    <Head :title="pageMeta.headTitle" />
 
     <div class="p-4">
         <Form
@@ -100,8 +104,8 @@ function onDatabaseInput(): void {
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="isEdit ? t('app.landlord.tenants.actions.edit') : t('app.landlord.tenants.actions.new')"
-                :description="t('app.landlord.tenants.description')"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
                 :processing="processing"
                 :cancel-href="tenantsIndexPath"
             >

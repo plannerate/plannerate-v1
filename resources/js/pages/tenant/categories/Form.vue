@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
+import { Form, Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { FolderTree } from 'lucide-vue-next';
 import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryController';
@@ -7,6 +7,7 @@ import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
 
@@ -35,8 +36,10 @@ const props = defineProps<{
 const { t } = useT();
 const isEdit = computed(() => props.category !== null);
 const categoriesIndexPath = CategoryController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
-
-setLayoutProps({
+const pageMeta = useCrudPageMeta({
+    headTitle: isEdit.value ? t('app.tenant.categories.actions.edit') : t('app.tenant.categories.actions.new'),
+    title: isEdit.value ? t('app.tenant.categories.actions.edit') : t('app.tenant.categories.actions.new'),
+    description: t('app.tenant.categories.description'),
     breadcrumbs: [
         { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
         { title: t('app.tenant.categories.navigation'), href: categoriesIndexPath },
@@ -51,7 +54,7 @@ setLayoutProps({
 </script>
 
 <template>
-    <Head :title="isEdit ? t('app.tenant.categories.actions.edit') : t('app.tenant.categories.actions.new')" />
+    <Head :title="pageMeta.headTitle" />
 
     <div class="p-4">
         <Form
@@ -61,8 +64,8 @@ setLayoutProps({
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="isEdit ? t('app.tenant.categories.actions.edit') : t('app.tenant.categories.actions.new')"
-                :description="t('app.tenant.categories.description')"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
                 :processing="processing"
                 :cancel-href="categoriesIndexPath"
             >

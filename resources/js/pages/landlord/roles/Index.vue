@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import RoleController from '@/actions/App/Http/Controllers/Landlord/RoleController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { Button } from '@/components/ui/button';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import type { Paginator } from '@/types';
 
@@ -28,8 +29,10 @@ const props = defineProps<{
 
 const { t } = useT();
 const rolesIndexPath = RoleController.index.url().replace(/^\/\/[^/]+/, '');
-
-setLayoutProps({
+const pageMeta = useCrudPageMeta({
+    headTitle: t('app.landlord.roles.title'),
+    title: t('app.landlord.roles.title'),
+    description: t('app.landlord.roles.description'),
     breadcrumbs: [
         {
             title: t('app.landlord.roles.navigation'),
@@ -40,11 +43,11 @@ setLayoutProps({
 </script>
 
 <template>
-    <Head :title="t('app.landlord.roles.title')" />
+    <Head :title="pageMeta.headTitle" />
 
     <ListPage
-        :title="t('app.landlord.roles.title')"
-        :description="t('app.landlord.roles.description')"
+        :title="pageMeta.title"
+        :description="pageMeta.description"
         :meta="props.roles"
         label="função"
         :action="rolesIndexPath"

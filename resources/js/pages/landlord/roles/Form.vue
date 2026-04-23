@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
+import { Form, Head } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { ShieldCheck } from 'lucide-vue-next';
 import RoleController from '@/actions/App/Http/Controllers/Landlord/RoleController';
@@ -8,6 +8,7 @@ import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 
 type RolePayload = {
@@ -44,7 +45,10 @@ const filteredPermissions = computed(() =>
     props.permissions.filter((p) => p.type === selectedType.value),
 );
 
-setLayoutProps({
+const pageMeta = useCrudPageMeta({
+    headTitle: isEdit.value ? t('app.landlord.roles.actions.edit') : t('app.landlord.roles.actions.new'),
+    title: isEdit.value ? t('app.landlord.roles.actions.edit') : t('app.landlord.roles.actions.new'),
+    description: t('app.landlord.roles.description'),
     breadcrumbs: [
         {
             title: t('app.landlord.roles.navigation'),
@@ -59,7 +63,7 @@ setLayoutProps({
 </script>
 
 <template>
-    <Head :title="isEdit ? t('app.landlord.roles.actions.edit') : t('app.landlord.roles.actions.new')" />
+    <Head :title="pageMeta.headTitle" />
 
     <div class="p-4">
         <Form
@@ -67,8 +71,8 @@ setLayoutProps({
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="isEdit ? t('app.landlord.roles.actions.edit') : t('app.landlord.roles.actions.new')"
-                :description="t('app.landlord.roles.description')"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
                 :processing="processing"
                 :disabled="isProtected"
                 :cancel-href="rolesIndexPath"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
+import { Form, Head } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { ShieldCheck } from 'lucide-vue-next';
 import PermissionController from '@/actions/App/Http/Controllers/Landlord/PermissionController';
@@ -8,6 +8,7 @@ import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 
 type PermissionPayload = {
@@ -33,7 +34,10 @@ const isProtected = computed(() => props.permission?.is_protected ?? false);
 const permissionsIndexPath = PermissionController.index.url().replace(/^\/\/[^/]+/, '');
 const selectedType = ref(props.permission?.type ?? props.types[0]?.value ?? 'landlord');
 
-setLayoutProps({
+const pageMeta = useCrudPageMeta({
+    headTitle: isEdit.value ? t('app.landlord.permissions.actions.edit') : t('app.landlord.permissions.actions.new'),
+    title: isEdit.value ? t('app.landlord.permissions.actions.edit') : t('app.landlord.permissions.actions.new'),
+    description: t('app.landlord.permissions.description'),
     breadcrumbs: [
         {
             title: t('app.landlord.permissions.navigation'),
@@ -48,7 +52,7 @@ setLayoutProps({
 </script>
 
 <template>
-    <Head :title="isEdit ? t('app.landlord.permissions.actions.edit') : t('app.landlord.permissions.actions.new')" />
+    <Head :title="pageMeta.headTitle" />
 
     <div class="space-y-6 p-4">
         <Form
@@ -56,8 +60,8 @@ setLayoutProps({
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="isEdit ? t('app.landlord.permissions.actions.edit') : t('app.landlord.permissions.actions.new')"
-                :description="t('app.landlord.permissions.description')"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
                 :processing="processing"
                 :disabled="isProtected"
                 :cancel-href="permissionsIndexPath"

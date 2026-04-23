@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { CrudPageMeta } from '@/types/page-meta';
 import type { SharedNavigation } from '@/types/navigation';
 
 // Extend ImportMeta interface for Vite...
@@ -21,6 +22,8 @@ declare module '@inertiajs/core' {
             auth: Auth;
             sidebarOpen: boolean;
             navigation: SharedNavigation;
+            pageMeta?: CrudPageMeta;
+            page_meta?: CrudPageMeta;
             [key: string]: unknown;
         };
     }

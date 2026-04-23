@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import UserController from '@/actions/App/Http/Controllers/Landlord/UserController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { Button } from '@/components/ui/button';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import type { Paginator } from '@/types';
 
@@ -29,8 +30,10 @@ const props = defineProps<{
 
 const { t } = useT();
 const usersIndexPath = UserController.index.url().replace(/^\/\/[^/]+/, '');
-
-setLayoutProps({
+const pageMeta = useCrudPageMeta({
+    headTitle: t('app.landlord.users.title'),
+    title: t('app.landlord.users.title'),
+    description: t('app.landlord.users.description'),
     breadcrumbs: [
         {
             title: t('app.landlord.users.navigation'),
@@ -41,11 +44,11 @@ setLayoutProps({
 </script>
 
 <template>
-    <Head :title="t('app.landlord.users.title')" />
+    <Head :title="pageMeta.headTitle" />
 
     <ListPage
-        :title="t('app.landlord.users.title')"
-        :description="t('app.landlord.users.description')"
+        :title="pageMeta.title"
+        :description="pageMeta.description"
         :meta="props.users"
         label="usuário"
         :action="usersIndexPath"

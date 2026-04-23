@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import PermissionController from '@/actions/App/Http/Controllers/Landlord/PermissionController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { Button } from '@/components/ui/button';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import type { Paginator } from '@/types';
 
@@ -27,8 +28,10 @@ const props = defineProps<{
 
 const { t } = useT();
 const permissionsIndexPath = PermissionController.index.url().replace(/^\/\/[^/]+/, '');
-
-setLayoutProps({
+const pageMeta = useCrudPageMeta({
+    headTitle: t('app.landlord.permissions.title'),
+    title: t('app.landlord.permissions.title'),
+    description: t('app.landlord.permissions.description'),
     breadcrumbs: [
         {
             title: t('app.landlord.permissions.navigation'),
@@ -39,11 +42,11 @@ setLayoutProps({
 </script>
 
 <template>
-    <Head :title="t('app.landlord.permissions.title')" />
+    <Head :title="pageMeta.headTitle" />
 
     <ListPage
-        :title="t('app.landlord.permissions.title')"
-        :description="t('app.landlord.permissions.description')"
+        :title="pageMeta.title"
+        :description="pageMeta.description"
         :meta="props.permissions"
         label="permissão"
         :action="permissionsIndexPath"

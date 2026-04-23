@@ -2,6 +2,7 @@
 import Heading from '@/components/Heading.vue';
 import ListFiltersBar from '@/components/ListFiltersBar.vue';
 import ListPagination from '@/components/ListPagination.vue';
+import { Badge } from '@/components/ui/badge';
 import type { Paginator } from '@/types';
 
 withDefaults(
@@ -27,8 +28,16 @@ withDefaults(
 
 <template>
     <div class="space-y-6 p-4">
-        <div class="flex items-center justify-between gap-4">
-            <Heading :title="title" :description="description" />
+        <div class="flex items-start justify-between gap-4">
+            <div class="space-y-2">
+                <Heading :title="title" :description="description" />
+                <div class="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline">Total: {{ meta.total }}</Badge>
+                    <Badge v-if="meta.last_page > 1" variant="secondary">
+                        Pagina {{ meta.current_page }} de {{ meta.last_page }}
+                    </Badge>
+                </div>
+            </div>
             <slot name="action" />
         </div>
 
