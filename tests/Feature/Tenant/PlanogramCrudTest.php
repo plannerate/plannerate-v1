@@ -68,7 +68,7 @@ test('tenant admin can execute planogram crud in tenant context', function (): v
 
     $createResponse = $this
         ->withServerVariables(['HTTP_HOST' => $host])
-        ->post(route('tenant.catalog.planograms.store', ['subdomain' => $subdomain], false), [
+        ->post(route('tenant.planograms.store', ['subdomain' => $subdomain], false), [
             'name' => 'Planograma 1',
             'slug' => 'planograma-1',
             'type' => 'planograma',
@@ -81,7 +81,7 @@ test('tenant admin can execute planogram crud in tenant context', function (): v
             'status' => 'draft',
         ]);
 
-    $createResponse->assertRedirect(route('tenant.catalog.planograms.index', ['subdomain' => $subdomain], false));
+    $createResponse->assertRedirect(route('tenant.planograms.index', ['subdomain' => $subdomain], false));
 
     $planogram = Planogram::query()
         ->where('tenant_id', $tenant->id)
@@ -90,7 +90,7 @@ test('tenant admin can execute planogram crud in tenant context', function (): v
 
     $updateResponse = $this
         ->withServerVariables(['HTTP_HOST' => $host])
-        ->put(route('tenant.catalog.planograms.update', ['subdomain' => $subdomain, 'planogram' => $planogram->id], false), [
+        ->put(route('tenant.planograms.update', ['subdomain' => $subdomain, 'planogram' => $planogram->id], false), [
             'name' => 'Planograma 2',
             'slug' => 'planograma-2',
             'type' => 'realograma',
@@ -103,7 +103,7 @@ test('tenant admin can execute planogram crud in tenant context', function (): v
             'status' => 'published',
         ]);
 
-    $updateResponse->assertRedirect(route('tenant.catalog.planograms.index', ['subdomain' => $subdomain], false));
+    $updateResponse->assertRedirect(route('tenant.planograms.index', ['subdomain' => $subdomain], false));
 
     $planogram->refresh();
     expect($planogram->name)->toBe('Planograma 2');
@@ -112,9 +112,9 @@ test('tenant admin can execute planogram crud in tenant context', function (): v
 
     $deleteResponse = $this
         ->withServerVariables(['HTTP_HOST' => $host])
-        ->delete(route('tenant.catalog.planograms.destroy', ['subdomain' => $subdomain, 'planogram' => $planogram->id], false));
+        ->delete(route('tenant.planograms.destroy', ['subdomain' => $subdomain, 'planogram' => $planogram->id], false));
 
-    $deleteResponse->assertRedirect(route('tenant.catalog.planograms.index', ['subdomain' => $subdomain], false));
+    $deleteResponse->assertRedirect(route('tenant.planograms.index', ['subdomain' => $subdomain], false));
     expect($planogram->fresh())->toBeNull();
 });
 
@@ -144,7 +144,7 @@ test('tenant planograms index is isolated by tenant_id', function (): void {
 
     $response = $this
         ->withServerVariables(['HTTP_HOST' => 'tenant-planograms-a.'.config('app.landlord_domain')])
-        ->get(route('tenant.catalog.planograms.index', ['subdomain' => 'tenant-planograms-a'], false));
+        ->get(route('tenant.planograms.index', ['subdomain' => 'tenant-planograms-a'], false));
 
     $response
         ->assertOk()
@@ -171,7 +171,7 @@ test('planogram store validates related records ownership by tenant', function (
 
     $response = $this
         ->withServerVariables(['HTTP_HOST' => 'tenant-planograms-owner-a.'.config('app.landlord_domain')])
-        ->post(route('tenant.catalog.planograms.store', ['subdomain' => 'tenant-planograms-owner-a'], false), [
+        ->post(route('tenant.planograms.store', ['subdomain' => 'tenant-planograms-owner-a'], false), [
             'name' => 'Planograma invalido',
             'type' => 'planograma',
             'store_id' => $storeFromTenantB->id,
@@ -189,7 +189,7 @@ test('tenant planogram routes are forbidden without permissions', function (): v
 
     $response = $this
         ->withServerVariables(['HTTP_HOST' => 'tenant-planograms-no-role.'.config('app.landlord_domain')])
-        ->get(route('tenant.catalog.planograms.index', ['subdomain' => 'tenant-planograms-no-role'], false));
+        ->get(route('tenant.planograms.index', ['subdomain' => 'tenant-planograms-no-role'], false));
 
     $response->assertForbidden();
 });

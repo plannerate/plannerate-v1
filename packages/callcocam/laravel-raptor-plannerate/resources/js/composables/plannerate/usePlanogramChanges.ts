@@ -122,8 +122,13 @@ const autoSaveGondolaId = ref<string | null>(null);
  * Indica se auto-save está habilitado
  * Default: true (ou valor do localStorage)
  */
+const isBrowser = typeof window !== 'undefined';
+const AUTO_SAVE_STORAGE_KEY = 'planogram-auto-save-enabled';
+
 const autoSaveEnabled = ref(
-    localStorage.getItem('planogram-auto-save-enabled') !== 'false',
+    isBrowser
+        ? window.localStorage.getItem(AUTO_SAVE_STORAGE_KEY) !== 'false'
+        : true,
 );
 
 // ============================================================================
@@ -454,7 +459,9 @@ export function usePlanogramChanges() {
         autoSaveEnabled.value = enabled;
 
         // Salva no localStorage
-        localStorage.setItem('planogram-auto-save-enabled', String(enabled));
+        if (isBrowser) {
+            window.localStorage.setItem(AUTO_SAVE_STORAGE_KEY, String(enabled));
+        }
 
         if (enabled) {
             // Se há mudanças pendentes, agenda salvamento

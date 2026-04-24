@@ -172,7 +172,7 @@ class SidebarNavigationService
                     ->item('tenant.planograms', function ($item) use ($subdomain): void {
                         $item
                             ->label(__('app.tenant.planograms.navigation'))
-                            ->href(route('tenant.catalog.planograms.index', ['subdomain' => $subdomain], false))
+                            ->href(route('tenant.planograms.index', ['subdomain' => $subdomain], false))
                             ->icon('layout-template')
                             ->authorize('viewAny', Planogram::class)
                             ->setOrder(60);

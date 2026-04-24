@@ -25,19 +25,25 @@ Route::prefix('api')->name('api.')->group(function () {
     // Editor API Routes - Gondolas
     Route::post('editor/planograms/{planogram}/gondolas', [\Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::class, 'store'])
         ->name('editor.gondolas.store');
+
     Route::put('editor/gondolas/{gondola}', [\Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::class, 'update'])
         ->name('editor.gondolas.update');
+
     Route::delete('editor/gondolas/{gondola}', [\Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::class, 'destroy'])
         ->name('editor.gondolas.destroy');
+
     Route::get('editor/gondolas/{gondola}/sections', [\Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::class, 'sections'])
         ->name('editor.gondolas.sections');
+
     Route::get('plannograma/{planogram}/editor/gondolas/{gondola}/products', [\Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::class, 'products'])
         ->name('editor.gondolas.products');
+
     Route::post('editor/gondolas/{gondola}/update-images', [\Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::class, 'updateImages'])
         ->name('editor.gondolas.update-images');
 
     Route::get('editor/categories', [\Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\CategoryController::class, 'index'])
         ->name('editor.categories.index');
+        
     Route::get('editor/{categoryId}/categories', [\Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\CategoryController::class, 'index'])
         ->name('editor.categories.show');
 

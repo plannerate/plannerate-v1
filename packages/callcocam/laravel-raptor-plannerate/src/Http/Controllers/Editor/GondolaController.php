@@ -30,6 +30,17 @@ use Inertia\Inertia;
 
 class GondolaController extends Controller
 {
+
+    protected function getBackRoute(Gondola $gondola): string
+    {
+        return route('tenant.planograms.index', ['record' => $gondola->planogram_id], false);
+    }
+
+    protected function getSaveChangesRoute(Gondola $gondola): string
+    {
+        return route('api.editor.gondolas.save-changes', ['gondola' => $gondola->id], false);
+    }
+
     public function edit(string $subdomain, string $record)
     {
         $gondola = $this->findGondolaOrFail($record);
@@ -47,13 +58,13 @@ class GondolaController extends Controller
         $abcAnalysis = GondolaAnalysis::getLatestAbcAnalysis($gondola->id);
         $stockAnalysis = GondolaAnalysis::getLatestStockAnalysis($gondola->id);
 
-        return Inertia::render('tenant/editor/Index', [
+        return Inertia::render('tenant/editor/Plannerate', [
             'record' => $recordData,
             'availableUsers' => $availableUsers,
             'aiModelOptions' => $this->getAiModelOptions(),
             'strategyOptions' => $this->getStrategyOptions(),
-            'backRoute' => route('tenant.plannerates.index', ['record' => $gondola->planogram_id], false),
-            'saveChangesRoute' => route('api.editor.gondolas.save-changes', ['gondola' => $gondola->id], false),
+            'backRoute' => $this->getBackRoute($gondola),
+            'saveChangesRoute' => $this->getSaveChangesRoute($gondola),
             'analysis' => [
                 'abc' => $abcAnalysis?->toAbcFormattedArray(),
                 'stock' => $stockAnalysis?->toStockFormattedArray(),
@@ -67,39 +78,7 @@ class GondolaController extends Controller
             ],
         ]);
     }
-
-    public function show($planogram, $record)
-    {
-        $gondola = $this->findGondolaOrFail($record);
-        $gondola->load([
-            'planogram.gondolas',
-            'planogram.category',
-            'sections.gondola:id,scale_factor',
-            'sections.shelves.segments.layer.product',
-        ]);
-
-        $recordData = app(GondolaPayloadService::class)->buildEditorPayload($gondola);
-
-        // Carregar análises mais recentes
-        $abcAnalysis = GondolaAnalysis::getLatestAbcAnalysis($gondola->id);
-        $stockAnalysis = GondolaAnalysis::getLatestStockAnalysis($gondola->id);
-
-        return Inertia::render('tenant/editor/Index', [
-            'record' => $recordData,
-            'aiModelOptions' => $this->getAiModelOptions(),
-            'strategyOptions' => $this->getStrategyOptions(),
-            'backRoute' => route('tenant.plannerates.index', ['record' => $gondola->planogram_id], false),
-            'saveChangesRoute' => route('api.editor.gondolas.save-changes', ['gondola' => $gondola->id], false),
-            'analysis' => [
-                'abc' => $abcAnalysis?->toAbcFormattedArray(),
-                'stock' => $stockAnalysis?->toStockFormattedArray(),
-            ],
-            'permissions' => [
-                'can_create_gondola' => $this->canCreateGondola($gondola->planogram), // Pode ser ajustado para verificar permissões reais
-                'can_update_gondola' => true,
-            ],
-        ]);
-    }
+ 
 
     public function store(StoreGondolaRequest $request, $planogram)
     {
@@ -140,12 +119,12 @@ class GondolaController extends Controller
 
         // If no more gondolas exist, redirect to planogram list
         if (! $remainingGondola) {
-            return redirect()->route('tenant.planograms.index')
+            return redirect($this->getBackRoute($gondolaModel))
                 ->with('success', 'Gôndola removida com sucesso! O planograma não possui mais gôndolas.');
         }
 
         // Otherwise, redirect to the first remaining gondola
-        return redirect()->route('tenant.plannerates.editor.gondolas.edit', [
+        return redirect()->route('tenant.planograms.gondolas.editor', [
             'planogram' => $planogramId,
             'record' => $remainingGondola->id,
         ])->with('success', 'Gôndola removida com sucesso!');
@@ -211,12 +190,12 @@ class GondolaController extends Controller
         $gondola->loadMissing(['planogram']);
 
         // Parâmetros de filtro e paginação
-        $page = request()->get('page', 1);
-        $perPage = request()->get('per_page', 15);
-        $search = request()->get('search', '');
+        $page = request()->input('page', 1);
+        $perPage = request()->input('per_page', 15);
+        $search = request()->input('search', '');
         $showUsed = request()->boolean('show_used', false);
         $withDimensions = request()->boolean('with_dimensions', true);
-        $categoryId = request()->get('category', $gondola->planogram->category_id);
+        $categoryId = request()->input('category', $gondola->planogram->category_id);
 
         // Cache key único incluindo filtros
         // $cacheKey = sprintf(
@@ -268,12 +247,7 @@ class GondolaController extends Controller
         $query = Product::query()
             ->with(['category']);
 
-        // Filtro por cliente
-        // Usa client_id diretamente (campo direto na tabela products)
-        if ($clientId = $gondola->planogram->client_id) {
-            $query->where('client_id', $clientId);
-        }
-
+       
         // Filtro por categoria
         if (! empty($categoryIds)) {
             $query->whereIn('category_id', $categoryIds);
@@ -422,11 +396,11 @@ class GondolaController extends Controller
 
     public function getRouteGondolasAttribute()
     {
-        if (! Route::has('tenant.plannerates.editor.gondolas.edit')) {
+        if (! Route::has('tenant.planograms.gondolas.editor')) {
             return null;
         }
 
-        return route('tenant.plannerates.editor.gondolas.edit', ['planogram' => $this->id]);
+        return route('tenant.planograms.gondolas.editor', ['planogram' => $this->id]);
     }
 
     /**

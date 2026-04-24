@@ -103,7 +103,7 @@ class PlanogramController extends Controller
             'message' => __('app.tenant.planograms.messages.created'),
         ]);
 
-        return to_route('tenant.catalog.planograms.index', $this->tenantRouteParameters());
+        return to_route('tenant.planograms.index', $this->tenantRouteParameters());
     }
 
     public function edit(string $subdomain, Planogram $planogram): Response
@@ -146,7 +146,7 @@ class PlanogramController extends Controller
             'message' => __('app.tenant.planograms.messages.updated'),
         ]);
 
-        return to_route('tenant.catalog.planograms.index', $this->tenantRouteParameters());
+        return to_route('tenant.planograms.index', $this->tenantRouteParameters());
     }
 
     public function destroy(string $subdomain, Planogram $planogram): RedirectResponse
@@ -161,7 +161,7 @@ class PlanogramController extends Controller
             'message' => __('app.tenant.planograms.messages.deleted'),
         ]);
 
-        return to_route('tenant.catalog.planograms.index', $this->tenantRouteParameters());
+        return to_route('tenant.planograms.index', $this->tenantRouteParameters());
     }
 
     /**

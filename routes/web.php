@@ -103,14 +103,14 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
 
         Route::resource('planograms', PlanogramController::class)
             ->except(['show'])
-            ->names('catalog.planograms');
+            ->names('planograms');
 
         Route::resource('planograms/{planogram}/gondolas', GondolaController::class)
             ->except(['show'])
-            ->names('catalog.gondolas');
+            ->names('gondolas');
 
         Route::get('editor/planograms/{record}/gondolas', [EditorPlanogramController::class, 'edit'])
-            ->name('catalog.editor.planograms.gondolas');
+            ->name('planograms.gondolas.editor');
 
 
         Route::post('products/image/upload', [ProductImageController::class, 'upload'])
