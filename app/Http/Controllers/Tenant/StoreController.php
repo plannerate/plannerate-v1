@@ -23,13 +23,11 @@ class StoreController extends Controller
     {
         $this->authorize('viewAny', Store::class);
 
-        $tenantId = $this->tenantId();
         $search = trim((string) $request->string('search'));
         $status = trim((string) $request->string('status'));
         $hasStatusFilter = in_array($status, ['draft', 'published'], true);
 
         $stores = Store::query()
-            ->where('tenant_id', $tenantId)
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -82,7 +80,6 @@ class StoreController extends Controller
 
         $store = Store::query()->create([
             ...Arr::except($validated, ['address']),
-            'tenant_id' => $this->tenantId(),
             'user_id' => $request->user()?->getAuthIdentifier(),
         ]);
 
@@ -99,7 +96,6 @@ class StoreController extends Controller
     public function edit(string $subdomain, Store $store): Response
     {
         unset($subdomain);
-        $this->ensureTenantOwnership($store);
         $this->authorize('update', $store);
 
         $address = $store->addresses()->orderByDesc('is_default')->latest()->first();
@@ -124,7 +120,6 @@ class StoreController extends Controller
     public function update(StoreUpdateRequest $request, string $subdomain, Store $store): RedirectResponse
     {
         unset($subdomain);
-        $this->ensureTenantOwnership($store);
         $this->authorize('update', $store);
 
         $validated = $request->validated();
@@ -144,7 +139,6 @@ class StoreController extends Controller
     public function destroy(string $subdomain, Store $store): RedirectResponse
     {
         unset($subdomain);
-        $this->ensureTenantOwnership($store);
         $this->authorize('delete', $store);
 
         $store->delete();
@@ -155,10 +149,5 @@ class StoreController extends Controller
         ]);
 
         return to_route('tenant.stores.index', $this->tenantRouteParameters());
-    }
-
-    private function ensureTenantOwnership(Store $store): void
-    {
-        $this->ensureBelongsToCurrentTenant($store);
     }
 }

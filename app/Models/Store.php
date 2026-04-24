@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToTenant;
 use Database\Factories\StoreFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +16,7 @@ use Tall\Sluggable\SlugOptions;
 class Store extends Model
 {
     /** @use HasFactory<StoreFactory> */
-    use HasFactory, HasSlug, HasUlids, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasSlug, HasUlids, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.

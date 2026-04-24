@@ -21,7 +21,6 @@ class ClusterController extends Controller
     {
         $this->authorize('viewAny', Cluster::class);
 
-        $tenantId = $this->tenantId();
         $search = trim((string) $request->string('search'));
         $status = trim((string) $request->string('status'));
         $storeId = trim((string) $request->string('store_id'));
@@ -29,7 +28,6 @@ class ClusterController extends Controller
         $hasStoreFilter = $storeId !== '';
 
         $clusters = Cluster::query()
-            ->where('tenant_id', $tenantId)
             ->with(['store:id,name'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
@@ -88,7 +86,6 @@ class ClusterController extends Controller
 
         Cluster::query()->create([
             ...$request->validated(),
-            'tenant_id' => $this->tenantId(),
             'user_id' => $request->user()?->getAuthIdentifier(),
         ]);
 
@@ -103,7 +100,6 @@ class ClusterController extends Controller
     public function edit(string $subdomain, Cluster $cluster): Response
     {
         unset($subdomain);
-        $this->ensureTenantOwnership($cluster);
         $this->authorize('update', $cluster);
 
         return Inertia::render('tenant/clusters/Form', [
@@ -126,7 +122,6 @@ class ClusterController extends Controller
     public function update(ClusterUpdateRequest $request, string $subdomain, Cluster $cluster): RedirectResponse
     {
         unset($subdomain);
-        $this->ensureTenantOwnership($cluster);
         $this->authorize('update', $cluster);
 
         $cluster->update($request->validated());
@@ -142,7 +137,6 @@ class ClusterController extends Controller
     public function destroy(string $subdomain, Cluster $cluster): RedirectResponse
     {
         unset($subdomain);
-        $this->ensureTenantOwnership($cluster);
         $this->authorize('delete', $cluster);
 
         $cluster->delete();
@@ -161,7 +155,6 @@ class ClusterController extends Controller
     private function storesForSelect(): array
     {
         return Store::query()
-            ->where('tenant_id', $this->tenantId())
             ->orderBy('name')
             ->get(['id', 'name'])
             ->map(fn (Store $store): array => [
@@ -169,10 +162,5 @@ class ClusterController extends Controller
                 'name' => $store->name,
             ])
             ->all();
-    }
-
-    private function ensureTenantOwnership(Cluster $cluster): void
-    {
-        $this->ensureBelongsToCurrentTenant($cluster);
     }
 }

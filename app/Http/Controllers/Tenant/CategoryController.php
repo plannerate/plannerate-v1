@@ -23,12 +23,10 @@ class CategoryController extends Controller
     {
         $this->authorize('viewAny', Category::class);
 
-        $tenantId = $this->tenantId();
         $parentId = $request->query('parent_id');
 
         if ($parentId !== null && $parentId !== '') {
             $parent = Category::query()
-                ->where('tenant_id', $tenantId)
                 ->whereKey($parentId)
                 ->first();
 
@@ -41,9 +39,7 @@ class CategoryController extends Controller
             }
         }
 
-        $query = Category::query()
-            ->where('tenant_id', $tenantId)
-            ->orderBy('name');
+        $query = Category::query()->orderBy('name');
 
         if ($parentId !== null && $parentId !== '') {
             $query->where('category_id', $parentId);
@@ -68,10 +64,7 @@ class CategoryController extends Controller
             return response()->json(['path' => []]);
         }
 
-        $category = Category::query()
-            ->where('tenant_id', $this->tenantId())
-            ->whereKey($id)
-            ->first();
+        $category = Category::query()->whereKey($id)->first();
 
         if ($category === null) {
             return response()->json(['path' => []]);
@@ -89,13 +82,11 @@ class CategoryController extends Controller
     {
         $this->authorize('viewAny', Category::class);
 
-        $tenantId = $this->tenantId();
         $search = trim((string) $request->string('search'));
         $status = trim((string) $request->string('status'));
         $hasStatusFilter = in_array($status, ['draft', 'published', 'importer'], true);
 
         $categories = Category::query()
-            ->where('tenant_id', $tenantId)
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -146,7 +137,6 @@ class CategoryController extends Controller
 
         Category::query()->create([
             ...$validated,
-            'tenant_id' => $this->tenantId(),
             'user_id' => $request->user()?->getAuthIdentifier(),
             'is_placeholder' => $request->boolean('is_placeholder'),
         ]);
@@ -162,7 +152,6 @@ class CategoryController extends Controller
     public function edit(string $subdomain, Category $category): Response
     {
         unset($subdomain);
-        $this->ensureTenantOwnership($category);
         $this->authorize('update', $category);
 
         return Inertia::render('tenant/categories/Form', [
@@ -189,7 +178,6 @@ class CategoryController extends Controller
     public function update(UpdateCategoryRequest $request, string $subdomain, Category $category): RedirectResponse
     {
         unset($subdomain);
-        $this->ensureTenantOwnership($category);
         $this->authorize('update', $category);
 
         $validated = $request->validated();
@@ -210,7 +198,6 @@ class CategoryController extends Controller
     public function destroy(string $subdomain, Category $category): RedirectResponse
     {
         unset($subdomain);
-        $this->ensureTenantOwnership($category);
         $this->authorize('delete', $category);
 
         $category->delete();
@@ -229,7 +216,6 @@ class CategoryController extends Controller
     private function parentCategoriesForSelect(?string $ignoreId = null): array
     {
         return Category::query()
-            ->where('tenant_id', $this->tenantId())
             ->when($ignoreId !== null, fn ($query) => $query->where('id', '!=', $ignoreId))
             ->orderBy('name')
             ->get(['id', 'name'])
@@ -238,10 +224,5 @@ class CategoryController extends Controller
                 'name' => $category->name,
             ])
             ->all();
-    }
-
-    private function ensureTenantOwnership(Category $category): void
-    {
-        $this->ensureBelongsToCurrentTenant($category);
     }
 }

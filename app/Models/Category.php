@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\HasCategory;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -17,7 +18,7 @@ use Tall\Sluggable\SlugOptions;
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
-    use HasFactory, HasUlids, SoftDeletes, HasSlug;
+    use BelongsToTenant, HasFactory, HasSlug, HasUlids, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.

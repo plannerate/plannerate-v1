@@ -23,13 +23,11 @@ class ProviderController extends Controller
     {
         $this->authorize('viewAny', Provider::class);
 
-        $tenantId = $this->tenantId();
         $search = trim((string) $request->string('search'));
         $isDefault = trim((string) $request->string('is_default'));
         $hasDefaultFilter = in_array($isDefault, ['0', '1'], true);
 
         $providers = Provider::query()
-            ->where('tenant_id', $tenantId)
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -83,7 +81,6 @@ class ProviderController extends Controller
 
         $provider = Provider::query()->create([
             ...Arr::except($validated, ['address']),
-            'tenant_id' => $this->tenantId(),
             'user_id' => $request->user()?->getAuthIdentifier(),
             'is_default' => $request->boolean('is_default', true),
         ]);
@@ -101,7 +98,6 @@ class ProviderController extends Controller
     public function edit(string $subdomain, Provider $provider): Response
     {
         unset($subdomain);
-        $this->ensureTenantOwnership($provider);
         $this->authorize('update', $provider);
 
         $address = $provider->addresses()->orderByDesc('is_default')->latest()->first();
@@ -125,7 +121,6 @@ class ProviderController extends Controller
     public function update(ProviderUpdateRequest $request, string $subdomain, Provider $provider): RedirectResponse
     {
         unset($subdomain);
-        $this->ensureTenantOwnership($provider);
         $this->authorize('update', $provider);
 
         $validated = $request->validated();
@@ -148,7 +143,6 @@ class ProviderController extends Controller
     public function destroy(string $subdomain, Provider $provider): RedirectResponse
     {
         unset($subdomain);
-        $this->ensureTenantOwnership($provider);
         $this->authorize('delete', $provider);
 
         $provider->delete();
@@ -159,10 +153,5 @@ class ProviderController extends Controller
         ]);
 
         return to_route('tenant.providers.index', $this->tenantRouteParameters());
-    }
-
-    private function ensureTenantOwnership(Provider $provider): void
-    {
-        $this->ensureBelongsToCurrentTenant($provider);
     }
 }

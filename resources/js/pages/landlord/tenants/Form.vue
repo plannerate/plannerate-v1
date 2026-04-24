@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-import { Building2 } from 'lucide-vue-next';
+import { AlertCircle, Building2, ExternalLink, Loader2, RefreshCw } from 'lucide-vue-next';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
@@ -16,6 +16,7 @@ type TenantPayload = {
     slug: string;
     database: string;
     status: string;
+    provisioning_error: string | null;
     plan_id: string | null;
     host: string | null;
     domain_is_active: boolean;
@@ -63,6 +64,20 @@ const pageMeta = useCrudPageMeta({
         },
     ],
 });
+
+const needsSetup = computed(
+    () => isEdit.value && props.tenant!.status !== 'active',
+);
+
+const alreadyRunning = computed(
+    () => props.tenant?.status === 'provisioning' && !props.tenant?.provisioning_error,
+);
+
+const provisionForm = useForm({});
+
+function restartProvision(): void {
+    provisionForm.post(TenantController.provision.url(props.tenant!.id));
+}
 
 function toSlug(value: string): string {
     return value
@@ -112,6 +127,49 @@ function onDatabaseInput(): void {
                 <template #icon>
                     <Building2 class="size-5" />
                 </template>
+
+                <!-- Setup banner (edit mode only when not active) -->
+                <div
+                    v-if="needsSetup"
+                    class="flex items-start gap-3 rounded-lg border px-4 py-3"
+                    :class="tenant!.provisioning_error
+                        ? 'border-destructive/30 bg-destructive/5'
+                        : 'border-yellow-400/30 bg-yellow-50 dark:bg-yellow-950/20'"
+                >
+                    <AlertCircle
+                        class="mt-0.5 size-4 shrink-0"
+                        :class="tenant!.provisioning_error ? 'text-destructive' : 'text-yellow-500'"
+                    />
+                    <div class="flex-1 text-sm">
+                        <span v-if="tenant!.provisioning_error" class="font-medium text-destructive">
+                            Erro no provisionamento:
+                            <span class="font-normal">{{ tenant!.provisioning_error }}</span>
+                        </span>
+                        <span v-else class="text-yellow-700 dark:text-yellow-400">
+                            Este tenant ainda não foi provisionado (status: <strong>{{ tenant!.status }}</strong>).
+                        </span>
+                    </div>
+                    <div class="flex shrink-0 items-center gap-2">
+                        <button
+                            v-if="!alreadyRunning"
+                            type="button"
+                            class="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-60"
+                            :disabled="provisionForm.processing"
+                            @click="restartProvision"
+                        >
+                            <Loader2 v-if="provisionForm.processing" class="size-3 animate-spin" />
+                            <RefreshCw v-else class="size-3" />
+                            Reiniciar
+                        </button>
+                        <Link
+                            :href="TenantController.setup.url(tenant!.id)"
+                            class="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
+                        >
+                            <ExternalLink class="size-3" />
+                            Ver setup
+                        </Link>
+                    </div>
+                </div>
 
                 <!-- Identity -->
                 <div class="grid gap-4 md:grid-cols-2">

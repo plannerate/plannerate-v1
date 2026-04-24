@@ -151,6 +151,7 @@ class TenantController extends Controller
                 'slug' => $tenant->slug,
                 'database' => $tenant->database,
                 'status' => $tenant->status,
+                'provisioning_error' => $tenant->provisioning_error,
                 'plan_id' => $tenant->plan_id,
                 'host' => $tenant->primaryDomain?->host,
                 'domain_is_active' => $tenant->primaryDomain?->is_active ?? true,
@@ -220,14 +221,18 @@ class TenantController extends Controller
 
     /**
      * Trigger (or retry) provisioning for the given tenant.
+     * Skips if already provisioning with no error (job likely still running).
      */
     public function provision(Tenant $tenant): RedirectResponse
     {
         $this->authorize('update', $tenant);
 
-        $tenant->update(['status' => 'provisioning', 'provisioning_error' => null]);
+        $alreadyRunning = $tenant->status === 'provisioning' && $tenant->provisioning_error === null;
 
-        ProvisionTenantDatabaseJob::dispatch($tenant);
+        if (! $alreadyRunning) {
+            $tenant->update(['status' => 'provisioning', 'provisioning_error' => null]);
+            ProvisionTenantDatabaseJob::dispatch($tenant);
+        }
 
         Inertia::flash('toast', [
             'type' => 'info',

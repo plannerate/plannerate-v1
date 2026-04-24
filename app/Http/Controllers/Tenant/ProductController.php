@@ -21,7 +21,6 @@ class ProductController extends Controller
     {
         $this->authorize('viewAny', Product::class);
 
-        $tenantId = $this->tenantId();
         $search = trim((string) $request->string('search'));
         $status = trim((string) $request->string('status'));
         $categoryId = trim((string) $request->string('category_id'));
@@ -29,7 +28,6 @@ class ProductController extends Controller
         $hasCategoryFilter = $categoryId !== '';
 
         $products = Product::query()
-            ->where('tenant_id', $tenantId)
             ->with(['category:id,name'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
@@ -87,7 +85,6 @@ class ProductController extends Controller
 
         Product::query()->create([
             ...$validated,
-            'tenant_id' => $this->tenantId(),
             'user_id' => $request->user()?->getAuthIdentifier(),
             'stackable' => $request->boolean('stackable'),
             'perishable' => $request->boolean('perishable'),
@@ -108,8 +105,7 @@ class ProductController extends Controller
     public function edit(string $subdomain, string $product): Response
     {
         unset($subdomain);
-        $product = $this->tenantProductOrFail($product);
-        $this->ensureTenantOwnership($product);
+        $product = Product::query()->whereKey($product)->firstOrFail();
         $this->authorize('update', $product);
 
         return Inertia::render('tenant/products/Form', [
@@ -165,8 +161,7 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, string $subdomain, string $product): RedirectResponse
     {
         unset($subdomain);
-        $product = $this->tenantProductOrFail($product);
-        $this->ensureTenantOwnership($product);
+        $product = Product::query()->whereKey($product)->firstOrFail();
         $this->authorize('update', $product);
 
         $validated = $request->validated();
@@ -192,8 +187,7 @@ class ProductController extends Controller
     public function destroy(string $subdomain, string $product): RedirectResponse
     {
         unset($subdomain);
-        $product = $this->tenantProductOrFail($product);
-        $this->ensureTenantOwnership($product);
+        $product = Product::query()->whereKey($product)->firstOrFail();
         $this->authorize('delete', $product);
 
         $product->delete();
@@ -212,7 +206,6 @@ class ProductController extends Controller
     private function categoriesForSelect(): array
     {
         return Category::query()
-            ->where('tenant_id', $this->tenantId())
             ->orderBy('name')
             ->get(['id', 'name'])
             ->map(fn (Category $category): array => [
@@ -220,15 +213,5 @@ class ProductController extends Controller
                 'name' => $category->name,
             ])
             ->all();
-    }
-
-    private function ensureTenantOwnership(Product $product): void
-    {
-        $this->ensureBelongsToCurrentTenant($product);
-    }
-
-    private function tenantProductOrFail(string $id): Product
-    {
-        return Product::query()->whereKey($id)->firstOrFail();
     }
 }
