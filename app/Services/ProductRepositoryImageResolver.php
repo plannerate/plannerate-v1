@@ -52,7 +52,7 @@ class ProductRepositoryImageResolver
         ];
     }
 
-    public function resolveForProduct(Product $product): ?string
+    public function resolveForProduct(\Illuminate\Database\Eloquent\Model $product): ?string
     {
         if (! $product->ean) {
             return null;
