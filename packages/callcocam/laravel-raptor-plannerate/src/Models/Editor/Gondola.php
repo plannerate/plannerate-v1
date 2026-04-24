@@ -20,7 +20,8 @@ class Gondola extends Model
 {
     use BelongsToTenant, HasFactory, HasUlids, SoftDeletes;
 
-    protected $appends = ['route_gondolas'];
+    // Não em $appends para evitar execução automática em cada instância carregada
+    // O accessor ainda funciona ao ser acessado explicitamente
 
     protected function casts(): array
     {

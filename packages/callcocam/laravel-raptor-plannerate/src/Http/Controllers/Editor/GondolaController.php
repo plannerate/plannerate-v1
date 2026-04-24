@@ -45,11 +45,21 @@ class GondolaController extends Controller
     {
         $gondola = $this->findGondolaOrFail($record);
         $gondola->load([
-            'planogram.gondolas',
+            'planogram.gondolas:id,planogram_id,name,slug',
             'planogram.category',
             'sections.gondola:id,scale_factor',
-            'sections.shelves.segments.layer.product',
+            'sections.shelves.segments.layer.product:id,name,ean,codigo_erp,url,width,height,depth,weight,brand,status',
         ]);
+
+        // Desabilita appends automáticos nos produtos para evitar N+1 queries (ex: category_full_path)
+        $gondola->sections->each(function ($section) {
+            $section->shelves->each(function ($shelf) {
+                $shelf->segments->each(function ($segment) {
+                    $segment->layer?->product?->setAppends([]);
+                });
+            });
+        });
+        
         // Até aqui vai bem rapido
         $availableUsers = $this->getAvailableUsers($gondola->tenant_id);
         $recordData = app(GondolaPayloadService::class)->buildEditorPayload($gondola);
