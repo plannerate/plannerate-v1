@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/sheet';
 import { ArrowLeft, Edit, Plus, RefreshCcw, Upload } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { Link } from "@inertiajs/vue3";
 
 interface Props {
     title?: string;
@@ -199,12 +200,14 @@ function cancelUpdateGondolaImages() {
 
                 <div class="mx-2 h-6 w-px bg-border" />
 
-                <Button   size="sm" v-if="backRoute" as-child>
-                    <a :href="backRoute"  class="flex items-center gap-2">
-                        <ArrowLeft class="size-4" />
-                        Voltar
-                    </a>
-                </Button>
+                <Link 
+                    v-if="backRoute"
+                    :href="backRoute"
+                    class="flex items-center gap-2 text-sm text-muted-foreground hover:text-muted-foreground/80 cursor-pointer"
+                >
+                    <ArrowLeft class="size-4" />
+                    Voltar
+                </Link>
             </div>
         </div>
     </div>

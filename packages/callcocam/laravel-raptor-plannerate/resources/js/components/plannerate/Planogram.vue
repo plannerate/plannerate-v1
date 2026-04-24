@@ -50,17 +50,8 @@ const keyboard = usePlanogramKeyboard();
 const headerAndToolbar = ref<HTMLElement | null>(null);
 
 const containerHeight = ref<number>(0);
-// Restaura painéis (produtos e propriedades) do localStorage
-const storedProductsPanel = ref(
-    isBrowser &&
-        window.localStorage.getItem('planogram-products-manual-open') ===
-            'true',
-);
-const storedPropertiesPanel = ref(
-    isBrowser &&
-        window.localStorage.getItem('planogram-properties-manual-open') ===
-            'true',
-);
+const storedProductsPanel = ref(false);
+const storedPropertiesPanel = ref(false);
 
 // Ref para armazenar a função de reload vinda do PanelLeft
 const reloadProductsListFn = ref<(() => Promise<void>) | null>(null);
@@ -163,6 +154,16 @@ const toggleProducts = () => {
 };
 
 onMounted(() => {
+    // Restaura painéis do localStorage somente após hidratação
+    if (isBrowser) {
+        storedProductsPanel.value =
+            window.localStorage.getItem('planogram-products-manual-open') ===
+            'true';
+        storedPropertiesPanel.value =
+            window.localStorage.getItem('planogram-properties-manual-open') ===
+            'true';
+    }
+
     if (props.record) {
         editor.initializeEditor(props.record);
         editor.setSaveChangesRoute(props.saveChangesRoute || '');
