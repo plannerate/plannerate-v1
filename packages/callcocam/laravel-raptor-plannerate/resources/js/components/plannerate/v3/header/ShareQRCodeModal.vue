@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useNotifications } from '~/composables/useNotifications';
+import { toast } from 'vue-sonner';
 import { generateQrCode } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Export/GondolaExportController';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Tenant/Plannerate/GondolaPdfPreviewController';
 import {
@@ -36,7 +36,8 @@ const emit = defineEmits<{
 }>();
 
 // Composables
-const { success, error: showError } = useNotifications();
+const success = (msg: string) => toast.success(msg);
+const showError = (msg: string) => toast.error(msg);
 
 // State
 const qrCodeDataUri = ref<string>('');

@@ -36,7 +36,7 @@ import {
     Ruler,
 } from 'lucide-vue-next';
 import ActionIconBox from '~/components/ui/ActionIconBox.vue';
-import { Button } from '~/components/ui/button';
+import { Button } from '@/components/ui/button';
 
 interface Props {
     gondolas: Gondola[];

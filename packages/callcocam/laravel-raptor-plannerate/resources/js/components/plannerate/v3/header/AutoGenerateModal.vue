@@ -6,8 +6,7 @@ import FacingsSettingsSection from '@/components/plannerate/v3/header/partials/F
 import GenerationModeSettings from '@/components/plannerate/v3/header/partials/GenerationModeSettings.vue';
 import SalesDataSection from '@/components/plannerate/v3/header/partials/SalesDataSection.vue';
 import StrategySelectionSection from '@/components/plannerate/v3/header/partials/StrategySelectionSection.vue';
-import { Button } from '~/components/ui/button';
-import ActionIconBox from '~/components/ui/ActionIconBox.vue';
+import { Button } from '@/components/ui/button'; 
 import {
     Dialog,
     DialogContent,
@@ -220,13 +219,9 @@ function handleGenerate() {
                     class="gap-2"
                     :disabled="!isFormValid || form.processing"
                     @click="handleGenerate"
-                >
-                    <ActionIconBox v-if="form.processing" variant="default">
-                        <Loader2 class="animate-spin" />
-                    </ActionIconBox>
-                    <ActionIconBox v-else variant="default">
-                        <Sparkles />
-                    </ActionIconBox>
+                > 
+                        <Loader2 class="animate-spin" />  
+                        <Sparkles /> 
                     {{ form.processing ? 'Gerando...' : 'Gerar Planograma' }}
                 </Button>
             </DialogFooter>

@@ -15,7 +15,7 @@ export const validate = (data: {
 </script>
 
 <script setup lang="ts">
-import { Button } from '~/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {

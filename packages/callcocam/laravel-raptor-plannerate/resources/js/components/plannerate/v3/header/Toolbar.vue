@@ -414,7 +414,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
                 <Link
                     v-for="gondola in gondolas"
                     :key="gondola.id"
-                    :href="gondola.route_gondolas"
+                    :href="gondola.route_gondolas ?? ''"
                     :class="[
                         'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all',
                         'hover:bg-accent hover:text-accent-foreground',

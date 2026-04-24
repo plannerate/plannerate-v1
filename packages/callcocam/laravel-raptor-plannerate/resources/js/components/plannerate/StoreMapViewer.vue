@@ -3,7 +3,7 @@ import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '~/components/ui/button';
+import { Button } from '@/components/ui/button';
 import ActionIconBox from '~/components/ui/ActionIconBox.vue';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import StoreMapDetailsModal from './StoreMapDetailsModal.vue';

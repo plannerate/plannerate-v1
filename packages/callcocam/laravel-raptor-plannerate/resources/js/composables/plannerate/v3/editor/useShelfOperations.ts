@@ -40,7 +40,7 @@
             });
         });
     }
-import { validateShelfWidth } from '@/lib/validation';
+import { validateShelfWidth } from '@plannerate/libs/validation';
 import { Layer, Segment, Shelf } from '@/types/planogram';
 import { ulid } from 'ulid';
 import { toast } from 'vue-sonner';

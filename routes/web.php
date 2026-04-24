@@ -10,13 +10,14 @@ use App\Http\Controllers\Landlord\UserController;
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\ClusterController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboardController;
+use App\Http\Controllers\Tenant\Editor\EditorPlanogramController;
 use App\Http\Controllers\Tenant\GondolaController;
 use App\Http\Controllers\Tenant\PlanogramController;
 use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\ProviderController;
 use App\Http\Controllers\Tenant\StoreController;
-use App\Http\Middleware\SetPermissionTeamContext;
+use App\Http\Middleware\SetPermissionTeamContext; 
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
@@ -108,6 +109,10 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->except(['show'])
             ->names('catalog.gondolas');
 
+        Route::get('editor/planograms/{record}/gondolas', [EditorPlanogramController::class, 'edit'])
+            ->name('catalog.editor.planograms.gondolas');
+
+
         Route::post('products/image/upload', [ProductImageController::class, 'upload'])
             ->name('products.image.upload');
         Route::post('products/image/ai/process', [ProductImageController::class, 'process'])
@@ -118,4 +123,4 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('products.image.repository.fetch');
     });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';

@@ -12,8 +12,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import ActionIconBox from '~/components/ui/ActionIconBox.vue';
+import { Button } from '@/components/ui/button'; 
 import {
     Sheet,
     SheetContent,
@@ -124,24 +123,18 @@ function cancelUpdateGondolaImages() {
 
             <!-- Right: Actions -->
             <div class="flex items-center gap-2">
-                <Button variant="outline" size="sm" class="gap-2" @click="emit('importData')">
-                    <ActionIconBox variant="outline">
-                        <Upload />
-                    </ActionIconBox>
+                <Button variant="outline" size="sm" class="gap-2" @click="emit('importData')"> 
+                        <Upload /> 
                     Importar Dados
                 </Button>
 
-                <Button variant="outline" size="sm" class="gap-2" @click="openGondolaCreate" v-if="permissions.can_create_gondola">
-                    <ActionIconBox variant="default">
-                        <Plus />
-                    </ActionIconBox>
+                <Button variant="outline" size="sm" class="gap-2" @click="openGondolaCreate" v-if="permissions.can_create_gondola"> 
+                        <Plus /> 
                     Adicionar Gôndola
                 </Button>
 
-                <Button variant="outline" size="sm" class="gap-2" @click="openGondolaEdit" v-if="permissions.can_update_gondola">
-                    <ActionIconBox variant="outline">
-                        <Edit />
-                    </ActionIconBox>
+                <Button variant="outline" size="sm" class="gap-2" @click="openGondolaEdit" v-if="permissions.can_update_gondola"> 
+                        <Edit /> 
                     Editar Gôndola
                 </Button>
                 <!-- Atualizar imagens da gôndola -->
@@ -150,10 +143,8 @@ function cancelUpdateGondolaImages() {
                     size="sm"
                     class="gap-2"
                     @click="handleUpdateGondolaImages"
-                >
-                    <ActionIconBox variant="outline">
-                        <RefreshCcw />
-                    </ActionIconBox>
+                > 
+                        <RefreshCcw /> 
                     Atualizar Imagens
                 </Button>
 

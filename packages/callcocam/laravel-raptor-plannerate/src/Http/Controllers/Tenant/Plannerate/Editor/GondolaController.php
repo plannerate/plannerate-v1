@@ -36,8 +36,8 @@ class GondolaController extends Controller
 {
     use HasWorkflowToggle;
 
-    public function edit($planogram, $record)
-    {
+    public function edit(string $subdomain, string $record)
+    { 
         $gondola = $this->findGondolaOrFail($record);
         $gondola->load([
             'planogram.gondolas',
@@ -58,7 +58,7 @@ class GondolaController extends Controller
         $abcAnalysis = GondolaAnalysis::getLatestAbcAnalysis($gondola->id);
         $stockAnalysis = GondolaAnalysis::getLatestStockAnalysis($gondola->id);
 
-        return Inertia::render('tenant/plannerates/gondolas/EditV3', [
+        return Inertia::render('tenant/editor/Index', [
             'record' => $recordData,
             'availableUsers' => $availableUsers,
             'aiModelOptions' => $this->getAiModelOptions(),
@@ -95,7 +95,7 @@ class GondolaController extends Controller
         $abcAnalysis = GondolaAnalysis::getLatestAbcAnalysis($gondola->id);
         $stockAnalysis = GondolaAnalysis::getLatestStockAnalysis($gondola->id);
 
-        return Inertia::render('tenant/plannerates/gondolas/EditV3', [
+        return Inertia::render('tenant/editor/Index', [
             'record' => $recordData,
             'aiModelOptions' => $this->getAiModelOptions(),
             'strategyOptions' => $this->getStrategyOptions(),
@@ -229,8 +229,7 @@ class GondolaController extends Controller
     protected function getAvailableUsers(string $tenantId): array
     {
         return Cache::remember("tenant_{$tenantId}_users_v2", now()->addMinutes(30), function () use ($tenantId) {
-            return User::select('id', 'name')
-                ->where('tenant_id', $tenantId)
+            return User::select('id', 'name') 
                 ->orderBy('name')
                 ->get()
                 ->map(static fn ($user): array => [

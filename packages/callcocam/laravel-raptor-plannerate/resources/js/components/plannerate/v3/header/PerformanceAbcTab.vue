@@ -89,10 +89,8 @@
                         size="sm"
                         class="ml-auto h-7 px-2.5 gap-2"
                         @click="openParametersModal"
-                    >
-                        <ActionIconBox variant="outline" class="[&_svg]:size-3.5">
-                            <Settings />
-                        </ActionIconBox>
+                    > 
+                            <Settings /> 
                         <span class="text-[11px]">Configurar</span>
                     </Button>
                 </div>
@@ -116,10 +114,8 @@
                         <p class="text-sm font-medium">Nenhuma análise calculada</p>
                         <p class="mt-1 text-xs text-muted-foreground">Configure os parâmetros e execute a análise ABC.</p>
                     </div>
-                    <Button type="button" size="sm" class="gap-2" @click="openParametersModal">
-                        <ActionIconBox variant="outline" class="[&_svg]:size-3.5">
-                            <Settings />
-                        </ActionIconBox>
+                    <Button type="button" size="sm" class="gap-2" @click="openParametersModal"> 
+                            <Settings /> 
                         Configurar e Calcular
                     </Button>
                 </div>
@@ -129,8 +125,7 @@
 </template> 
 
 <script setup lang="ts">
-import { Button } from '~/components/ui/button';
-import ActionIconBox from '~/components/ui/ActionIconBox.vue';
+import { Button } from '@/components/ui/button'; 
 import {
     Card,
     CardContent,

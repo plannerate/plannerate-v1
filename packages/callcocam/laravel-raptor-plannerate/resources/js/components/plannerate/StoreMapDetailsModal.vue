@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '~/components/ui/button';
+import { Button } from '@/components/ui/button';
 import ActionIconBox from '~/components/ui/ActionIconBox.vue';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Edit, Maximize2, Settings, ZoomIn, ZoomOut } from 'lucide-vue-next';

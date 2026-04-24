@@ -2,10 +2,8 @@
     <!-- Dropdown Performance -->
     <DropdownMenu>
         <DropdownMenuTrigger as-child>
-            <Button variant="destructive" size="sm" class="gap-2 rounded-lg">
-                <ActionIconBox variant="destructive">
-                    <Gauge class="size-4 text-destructive-foreground" />
-                </ActionIconBox>
+            <Button variant="destructive" size="sm" class="gap-2 rounded-lg"> 
+                    <Gauge class="size-4 text-destructive-foreground" /> 
                 Performance
                 <ChevronDown class="size-3" />
             </Button>
@@ -93,8 +91,7 @@
 </template>
 <script setup lang="ts">
 import Performance from '@/components/plannerate/v3/header/Performance.vue';
-import { Button } from '~/components/ui/button';
-import ActionIconBox from '~/components/ui/ActionIconBox.vue';
+import { Button } from '@/components/ui/button'; 
 import {
     DropdownMenu,
     DropdownMenuContent,

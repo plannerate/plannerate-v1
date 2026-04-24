@@ -1,4 +1,4 @@
-import { validateShelfWidth } from '@/lib/validation';
+import { validateShelfWidth } from '@plannerate/libs/validation';
 import type { Layer, Section, Segment, Shelf } from '@/types/planogram';
 import { ulid } from 'ulid';
 import { onBeforeUnmount, onMounted, ref } from 'vue';

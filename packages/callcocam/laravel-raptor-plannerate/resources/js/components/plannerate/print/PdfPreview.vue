@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { Button } from '~/components/ui/button'
+import { Button } from '@/components/ui/button'
 import PdfSection from './partials/PdfSection.vue'
 import Indicador from '../v3/Indicador.vue'
 import { usePlanogramEditor } from '@/composables/plannerate/v3/usePlanogramEditor'

@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
+import path from 'path';
 
 export default defineConfig({
     plugins: [
@@ -25,4 +26,19 @@ export default defineConfig({
             formVariants: true,
         }),
     ],
+    optimizeDeps: {
+        include: [ 
+            'vendor/callcocam/laravel-raptor-flow/resources/js/**/*.vue',
+            'vendor/callcocam/laravel-raptor-plannerate/resources/js/**/*.vue',
+        ],
+    },
+    resolve: {
+        alias: {
+            '@/components/plannerate': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js/components/plannerate'),
+            '@/composables/plannerate': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js/composables/plannerate'),
+            '@/types/planogram': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js/types/planogram.ts'),
+            '@plannerate': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js'), 
+            '@': path.resolve(__dirname, './resources/js'),
+        },
+    },
 });

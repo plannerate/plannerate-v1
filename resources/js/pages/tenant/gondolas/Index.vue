@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
+import { gondolas as tenantEditorPlanogramGondolas } from '@/routes/tenant/catalog/editor/planograms';
 import type { Paginator } from '@/types';
 
 type GondolaRow = {
@@ -129,6 +130,17 @@ const pageMeta = useCrudPageMeta({
                     <td class="px-4 py-3">{{ gondola.status }}</td>
                     <td class="px-4 py-3 text-right">
                         <div class="inline-flex items-center gap-2">
+                            <!-- editor.planograms.gondolas -->
+                            <Button variant="outline" size="sm" as-child>
+                                <Link
+                                    :href="tenantEditorPlanogramGondolas.url({
+                                        subdomain: props.subdomain,
+                                        record:gondola.id,
+                                    })"
+                                >
+                                    {{ t('app.tenant.planograms.actions.view_gondolas') }}
+                                </Link>
+                            </Button>
                             <EditButton
                                 :href="GondolaController.edit.url({
                                     subdomain: props.subdomain,

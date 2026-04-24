@@ -3,7 +3,7 @@ import AbcSelectionPanel from '@/components/plannerate/analysis/abc/AbcSelection
 import type { AbcResult } from '@/components/plannerate/analysis/abc/types';
 import TableHeadAnalysis from '@/components/plannerate/analysis/TableHeadAnalysis.vue';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '~/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {

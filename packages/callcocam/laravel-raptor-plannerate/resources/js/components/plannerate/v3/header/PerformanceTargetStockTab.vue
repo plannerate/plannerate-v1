@@ -94,10 +94,8 @@
                         size="sm"
                         class="ml-auto h-7 px-2.5 gap-2"
                         @click="openParametersModal"
-                    >
-                        <ActionIconBox variant="outline" class="[&_svg]:size-3.5">
-                            <Settings />
-                        </ActionIconBox>
+                    > 
+                            <Settings /> 
                         <span class="text-[11px]">Configurar</span>
                     </Button>
                 </div>
@@ -141,8 +139,7 @@ import { router } from '@inertiajs/vue3';
 import { calculateTargetStockApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Tenant/GondolaAnalysisController';
 import TargetStockParamsModal from '@/components/plannerate/analysis/TargetStockParamsModal.vue';
 import TargetStockResultsList from '@/components/plannerate/analysis/TargetStockResultsList.vue';
-import { Button } from '~/components/ui/button';
-import ActionIconBox from '~/components/ui/ActionIconBox.vue';
+import { Button } from '@/components/ui/button'; 
 import {
     Card,
     CardContent,
