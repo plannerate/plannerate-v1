@@ -96,7 +96,8 @@ return [
     ],
 
     'navigation' => [
-        'dashboard' => 'Painel',
+        'dashboard' => 'Painel de controle',
+        'dashboard_description' => 'Visão geral das métricas e atividades recentes',
         'repository' => 'Repositorio',
         'documentation' => 'Documentacao',
         'navigation_menu' => 'Menu de navegacao',

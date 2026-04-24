@@ -1,12 +1,10 @@
 <script setup lang="ts">
+import { useHttp } from '@inertiajs/vue3';
 import { X } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
-
-const CASCADE_LEVELS = 7;
 
 type Option = { id: string; name: string };
 
@@ -16,11 +14,16 @@ const props = withDefaults(
         error?: string;
         inputName?: string;
         disabled?: boolean;
+        cascadeLevels?: number;
+        levelLabels?: string[];
+        cols?: number;
     }>(),
     {
         error: '',
         inputName: 'category_id',
         disabled: false,
+        cascadeLevels: 7,
+        cols: 3,
     },
 );
 
@@ -30,59 +33,42 @@ const emit = defineEmits<{
 
 const { t } = useT();
 
-const selections = ref<string[]>(Array.from({ length: CASCADE_LEVELS }, () => ''));
-const options = ref<Option[][]>(Array.from({ length: CASCADE_LEVELS }, () => []));
+const childrenHttp = useHttp<Record<string, string>, Option[]>();
+const pathHttp = useHttp<Record<string, string>, { path?: Option[] }>();
+
+const selections = ref<string[]>(Array.from({ length: props.cascadeLevels }, () => ''));
+const options = ref<Option[][]>(Array.from({ length: props.cascadeLevels }, () => []));
 const loadError = ref(false);
 
 const selectClass =
     'flex h-9 min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50';
 
 function levelLabel(index: number): string {
-    const key = `app.tenant.categories.cascade.level_${index + 1}` as const;
-
-    return t(key);
-}
-
-function xsrfToken(): string {
-    const m = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/);
-
-    return m ? decodeURIComponent(m[1]) : '';
-}
-
-async function jsonFetch(url: string): Promise<unknown> {
-    const res = await fetch(url, {
-        credentials: 'same-origin',
-        headers: {
-            Accept: 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-XSRF-TOKEN': xsrfToken(),
-        },
-    });
-
-    if (! res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+    if (props.levelLabels && props.levelLabels[index]) {
+        return props.levelLabels[index];
     }
 
-    return res.json();
+    return t(`app.tenant.categories.cascade.level_${index + 1}`);
 }
 
 async function loadChildren(parentId: string | null): Promise<Option[]> {
-    const u = new URL('/categories/cascade/children', window.location.origin);
+    const url = new URL('/categories/cascade/children', window.location.origin);
     if (parentId) {
-        u.searchParams.set('parent_id', parentId);
+        url.searchParams.set('parent_id', parentId);
     }
 
-    const data = (await jsonFetch(u.toString())) as Option[];
+    await childrenHttp.get(url.toString());
 
-    return Array.isArray(data) ? data : [];
+    return Array.isArray(childrenHttp.response) ? childrenHttp.response : [];
 }
 
 async function loadPath(categoryId: string): Promise<Option[]> {
-    const u = new URL('/categories/cascade/path', window.location.origin);
-    u.searchParams.set('id', categoryId);
-    const data = (await jsonFetch(u.toString())) as { path?: Option[] };
+    const url = new URL('/categories/cascade/path', window.location.origin);
+    url.searchParams.set('id', categoryId);
 
-    return Array.isArray(data.path) ? data.path : [];
+    await pathHttp.get(url.toString());
+
+    return Array.isArray(pathHttp.response?.path) ? pathHttp.response!.path! : [];
 }
 
 const leafCategoryId = computed((): string | null => {
@@ -109,12 +95,12 @@ function isLevelDisabled(level: number): boolean {
 
 async function hydrateFromModel(): Promise<void> {
     const id = props.modelValue;
-    selections.value = Array.from({ length: CASCADE_LEVELS }, () => '');
-    options.value = Array.from({ length: CASCADE_LEVELS }, () => []);
+    selections.value = Array.from({ length: props.cascadeLevels }, () => '');
+    options.value = Array.from({ length: props.cascadeLevels }, () => []);
 
     options.value[0] = await loadChildren(null);
 
-    if (! id) {
+    if (!id) {
         emitLeaf();
 
         return;
@@ -122,11 +108,11 @@ async function hydrateFromModel(): Promise<void> {
 
     try {
         const path = await loadPath(id);
-        for (let i = 0; i < path.length && i < CASCADE_LEVELS; i++) {
+        for (let i = 0; i < path.length && i < props.cascadeLevels; i++) {
             selections.value[i] = path[i].id;
         }
 
-        for (let i = 0; i < path.length && i + 1 < CASCADE_LEVELS; i++) {
+        for (let i = 0; i < path.length && i + 1 < props.cascadeLevels; i++) {
             options.value[i + 1] = await loadChildren(path[i].id);
         }
     } catch {
@@ -142,12 +128,12 @@ function emitLeaf(): void {
 
 async function onLevelChange(level: number, value: string): Promise<void> {
     selections.value[level] = value;
-    for (let j = level + 1; j < CASCADE_LEVELS; j++) {
+    for (let j = level + 1; j < props.cascadeLevels; j++) {
         selections.value[j] = '';
         options.value[j] = [];
     }
 
-    if (value !== '' && level + 1 < CASCADE_LEVELS) {
+    if (value !== '' && level + 1 < props.cascadeLevels) {
         try {
             options.value[level + 1] = await loadChildren(value);
             loadError.value = false;
@@ -160,7 +146,7 @@ async function onLevelChange(level: number, value: string): Promise<void> {
 }
 
 async function clearFrom(level: number): Promise<void> {
-    for (let j = level; j < CASCADE_LEVELS; j++) {
+    for (let j = level; j < props.cascadeLevels; j++) {
         selections.value[j] = '';
         if (j > level) {
             options.value[j] = [];
@@ -214,89 +200,28 @@ watch(
 
         <p v-if="loadError" class="text-xs text-destructive">{{ t('app.tenant.categories.cascade.load_error') }}</p>
 
-        <!-- Linha 1: níveis 1–3 -->
-        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div v-for="level in [0, 1, 2]" :key="`cascade-${level}`" class="flex flex-col gap-y-1">
-                <Label :for="`category_cascade_${level}`" class="text-xs font-medium">{{ levelLabel(level) }}</Label>
-                <div class="flex items-stretch gap-1 relative">
+        <div class="grid gap-3" :style="{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }">
+            <div v-for="level in cascadeLevels" :key="`cascade-${level - 1}`" class="flex flex-col gap-y-1">
+                <Label :for="`category_cascade_${level - 1}`" class="text-xs font-medium">{{ levelLabel(level - 1) }}</Label>
+                <div class="relative flex items-stretch gap-1">
                     <select
-                        :id="`category_cascade_${level}`"
+                        :id="`category_cascade_${level - 1}`"
                         :class="selectClass"
-                        :disabled="isLevelDisabled(level)"
-                        :value="selections[level]"
-                        @change="onLevelChange(level, ($event.target as HTMLSelectElement).value)"
+                        :disabled="isLevelDisabled(level - 1)"
+                        :value="selections[level - 1]"
+                        @change="onLevelChange(level - 1, ($event.target as HTMLSelectElement).value)"
                     >
                         <option value="">{{ t('app.tenant.categories.cascade.placeholder') }}</option>
-                        <option v-for="opt in options[level]" :key="opt.id" :value="opt.id">
+                        <option v-for="opt in options[level - 1]" :key="opt.id" :value="opt.id">
                             {{ opt.name }}
                         </option>
                     </select>
                     <button
                         type="button"
-                        class="size-9 shrink-0 absolute right-2 top-1/2 -translate-y-1/2"
-                        :disabled="disabled || selections[level] === ''"
+                        class="absolute right-2 top-1/2 size-9 shrink-0 -translate-y-1/2"
+                        :disabled="disabled || selections[level - 1] === ''"
                         :aria-label="t('app.tenant.categories.cascade.clear')"
-                        @click="clearFrom(level)"
-                    >
-                        <X class="size-4 opacity-50" />
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Linha 2: níveis 4–5 (4 mais largo) -->
-        <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
-            <div v-for="(level, idx) in [3, 4]" :key="`cascade-${level}`" class="flex flex-col gap-y-1" :class="idx === 0 ? 'md:col-span-7' : 'md:col-span-5'">
-                <Label :for="`category_cascade_${level}`" class="text-xs font-medium">{{ levelLabel(level) }}</Label>
-                <div class="flex items-stretch gap-1 relative">
-                    <select
-                        :id="`category_cascade_${level}`"
-                        :class="selectClass"
-                        :disabled="isLevelDisabled(level)"
-                        :value="selections[level]"
-                        @change="onLevelChange(level, ($event.target as HTMLSelectElement).value)"
-                    >
-                        <option value="">{{ t('app.tenant.categories.cascade.placeholder') }}</option>
-                        <option v-for="opt in options[level]" :key="opt.id" :value="opt.id">
-                            {{ opt.name }}
-                        </option>
-                    </select>
-                    <button
-                        type="button" 
-                        class="size-9 shrink-0 absolute right-2 top-1/2 -translate-y-1/2"
-                        :disabled="disabled || selections[level] === ''"
-                        :aria-label="t('app.tenant.categories.cascade.clear')"
-                        @click="clearFrom(level)"
-                    >
-                        <X class="size-4 opacity-50" />
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Linha 3: níveis 6–7 -->
-        <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
-            <div v-for="(level, idx) in [5, 6]" :key="`cascade-${level}`" class="flex flex-col gap-y-1" :class="idx === 0 ? 'md:col-span-7' : 'md:col-span-5'">
-                <Label :for="`category_cascade_${level}`" class="text-xs font-medium">{{ levelLabel(level) }}</Label>
-                <div class="flex items-stretch gap-1 relative">
-                    <select
-                        :id="`category_cascade_${level}`"
-                        :class="selectClass"
-                        :disabled="isLevelDisabled(level)"
-                        :value="selections[level]"
-                        @change="onLevelChange(level, ($event.target as HTMLSelectElement).value)"
-                    >
-                        <option value="">{{ t('app.tenant.categories.cascade.placeholder') }}</option>
-                        <option v-for="opt in options[level]" :key="opt.id" :value="opt.id">
-                            {{ opt.name }}
-                        </option>
-                    </select>
-                    <button
-                        type="button"
-                        class="size-9 shrink-0 absolute right-2 top-1/2 -translate-y-1/2"
-                        :disabled="disabled || selections[level] === ''"
-                        :aria-label="t('app.tenant.categories.cascade.clear')"
-                        @click="clearFrom(level)"
+                        @click="clearFrom(level - 1)"
                     >
                         <X class="size-4 opacity-50" />
                     </button>
