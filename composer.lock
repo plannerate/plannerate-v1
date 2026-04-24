@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "aea3d8caacec640760ff4289cd7b5c59",
+    "content-hash": "41c46b68d3c00929393aadd79c354f75",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -271,6 +271,139 @@
                 }
             ],
             "time": "2026-02-10T14:33:43+00:00"
+        },
+        {
+            "name": "callcocam/laravel-raptor-flow",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "./packages/callcocam/laravel-raptor-flow",
+                "reference": "0d545246012722ba6612e8ce4c1efbee6affe77b"
+            },
+            "require": {
+                "illuminate/contracts": "^12.0|^13.0",
+                "php": "^8.4",
+                "spatie/laravel-package-tools": "^1.16"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.18",
+                "nunomaduro/collision": "^8.6",
+                "orchestra/testbench": "^9.0.0||^8.22.0",
+                "pestphp/pest": "^2.34",
+                "pestphp/pest-plugin-arch": "^2.7",
+                "pestphp/pest-plugin-laravel": "^2.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Callcocam\\LaravelRaptorFlow\\LaravelRaptorFlowServiceProvider"
+                    ],
+                    "aliases": {
+                        "LaravelRaptorFlow": "Callcocam\\LaravelRaptorFlow\\Facades\\LaravelRaptorFlow"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Callcocam\\LaravelRaptorFlow\\": "src/",
+                    "Callcocam\\LaravelRaptorFlow\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Callcocam\\LaravelRaptorFlow\\Tests\\": "tests/",
+                    "Workbench\\App\\": "workbench/app/"
+                }
+            },
+            "scripts": {
+                "post-autoload-dump": [
+                    "@composer run prepare"
+                ],
+                "clear": [
+                    "@php vendor/bin/testbench package:purge-laravel-raptor-flow --ansi"
+                ],
+                "prepare": [
+                    "@php vendor/bin/testbench package:discover --ansi"
+                ],
+                "build": [
+                    "@composer run prepare",
+                    "@php vendor/bin/testbench workbench:build --ansi"
+                ],
+                "start": [
+                    "Composer\\Config::disableProcessTimeout",
+                    "@composer run build",
+                    "@php vendor/bin/testbench serve"
+                ],
+                "analyse": [
+                    "vendor/bin/phpstan analyse"
+                ],
+                "test": [
+                    "vendor/bin/pest"
+                ],
+                "test-coverage": [
+                    "vendor/bin/pest --coverage"
+                ],
+                "format": [
+                    "vendor/bin/pint"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Claudio Campos",
+                    "email": "contato@sigasmar.com.br",
+                    "role": "Developer"
+                }
+            ],
+            "description": "This is my package laravel-raptor-flow",
+            "homepage": "https://github.com/callcocam/laravel-raptor-flow",
+            "keywords": [
+                "Claudio Campos",
+                "laravel",
+                "laravel-raptor-flow"
+            ],
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "callcocam/laravel-raptor-plannerate",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "./packages/callcocam/laravel-raptor-plannerate",
+                "reference": "246954b18360ae49a71b8836aea5b1d0dfd74d21"
+            },
+            "require": {
+                "callcocam/laravel-raptor-flow": "dev-main",
+                "illuminate/contracts": "^12.0|^13.0",
+                "inertiajs/inertia-laravel": "^3.0",
+                "php": "^8.2",
+                "spatie/laravel-package-tools": "^1.16"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Callcocam\\LaravelRaptorPlannerate\\LaravelRaptorPlannerateServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Callcocam\\LaravelRaptorPlannerate\\": "src/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Private Plannerate package for planogram editor frontend and backend domain.",
+            "transport-options": {
+                "relative": true
+            }
         },
         {
             "name": "callcocam/tall-sluggable",
@@ -10859,6 +10992,8 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
+        "callcocam/laravel-raptor-flow": 20,
+        "callcocam/laravel-raptor-plannerate": 20,
         "callcocam/tall-sluggable": 20
     },
     "prefer-stable": false,
@@ -10867,5 +11002,5 @@
         "php": "^8.3"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.6.0"
 }
