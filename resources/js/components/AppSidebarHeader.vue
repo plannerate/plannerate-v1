@@ -27,18 +27,18 @@ withDefaults(
         </div>
 
         <div
-            v-if="pageHeader.title || pageHeader.description || $slots.default"
-            class="flex items-center justify-between gap-4 px-6 py-3 md:px-4"
+            v-if="pageHeader.title || pageHeader.description || $slots.actions || $slots.default"
+            class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
         >
-            <div class="flex items-start gap-3">
+            <div class="flex min-w-0 items-start gap-3">
                 <div
                     v-if="pageHeader.title || pageHeader.description"
-                    class="mt-0.5 h-6 w-0.5 shrink-0 rounded-full bg-primary/60"
+                    class="mt-0.5 h-9 w-1 shrink-0 rounded-full bg-primary/60"
                 />
-                <div>
+                <div class="min-w-0">
                     <h1
                         v-if="pageHeader.title"
-                        class="text-xl font-semibold leading-tight tracking-tight text-foreground"
+                        class="truncate text-lg font-semibold leading-tight tracking-tight text-foreground md:text-xl"
                     >
                         {{ pageHeader.title }}
                     </h1>
@@ -51,8 +51,17 @@ withDefaults(
                 </div>
             </div>
 
-            <div v-if="$slots.default" class="flex shrink-0 items-center gap-2">
-                <slot />
+            <div
+                v-if="$slots.actions || $slots.default"
+                class="flex w-full shrink-0 items-center justify-start sm:w-auto sm:justify-end"
+            >
+                <div
+                    class="inline-flex flex-wrap items-center gap-2 rounded-lg border border-border/70 bg-background/90 p-1 shadow-xs [&>*]:inline-flex [&>*]:shrink-0 [&>*]:items-center"
+                >
+                    <slot name="actions">
+                        <slot />
+                    </slot>
+                </div>
             </div>
         </div>
     </header>

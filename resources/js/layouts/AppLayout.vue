@@ -10,6 +10,9 @@ const { breadcrumbs = [], pageHeader = {} } = defineProps<{
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs" :page-header="pageHeader">
+        <slot name="header-actions">
+            <slot name="header-action" />
+        </slot>
         <slot />
     </AppLayout>
 </template>
