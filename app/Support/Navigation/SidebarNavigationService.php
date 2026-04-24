@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Cluster;
 use App\Models\Permission;
 use App\Models\Plan;
+use App\Models\Planogram;
 use App\Models\Product;
 use App\Models\Provider;
 use App\Models\Role;
@@ -136,7 +137,7 @@ class SidebarNavigationService
                             ->authorize('viewAny', Category::class)
                             ->setOrder(10);
                     })
-                    ->item('tenant.products', function ($item) use ($subdomain): void { 
+                    ->item('tenant.products', function ($item) use ($subdomain): void {
                         $item
                             ->label(__('app.tenant.products.navigation'))
                             ->href(route('tenant.products.index', ['subdomain' => $subdomain], false))
@@ -167,6 +168,14 @@ class SidebarNavigationService
                             ->icon('truck')
                             ->authorize('viewAny', Provider::class)
                             ->setOrder(50);
+                    })
+                    ->item('tenant.planograms', function ($item) use ($subdomain): void {
+                        $item
+                            ->label(__('app.tenant.planograms.navigation'))
+                            ->href(route('tenant.catalog.planograms.index', ['subdomain' => $subdomain], false))
+                            ->icon('layout-template')
+                            ->authorize('viewAny', Planogram::class)
+                            ->setOrder(60);
                     });
             });
     }
@@ -182,7 +191,7 @@ class SidebarNavigationService
         $host = strtolower($request->getHost());
         $domain = strtolower($landlordDomain);
 
-        if ($host === '' || $domain === '' || ! str_ends_with($host, '.' . $domain)) {
+        if ($host === '' || $domain === '' || ! str_ends_with($host, '.'.$domain)) {
             return null;
         }
 

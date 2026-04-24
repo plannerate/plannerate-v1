@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignUlid('store_id')->nullable();
             $table->foreignUlid('cluster_id')->nullable();
             $table->string('name')->nullable()->comment('Nome do planograma');
-            $table->string('slug')->unique()->comment('Slug do planograma');
+            $table->string('slug')->comment('Slug do planograma');
             $table->enum('type', ['realograma', 'planograma'])->default('planograma')->comment('Tipo do planograma (Ex: Realograma ou planograma)');
             $table->foreignUlid('category_id')->nullable();
             $table->date('start_date')->nullable()->comment('Data de início do planograma');
@@ -31,7 +31,10 @@ return new class extends Migration
             $table->enum('status', ['draft', 'published'])->default('draft');
             $table->timestamps();
             $table->softDeletes();
-        }); 
+            $table->unique(['tenant_id', 'slug']);
+            $table->index(['tenant_id', 'status']);
+            $table->index(['tenant_id', 'name']);
+        });
     }
 
     /**

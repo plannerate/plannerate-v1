@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignUlid('linked_map_gondola_id')->nullable();
             $table->string('linked_map_gondola_category')->nullable();
             $table->string('name');
-            $table->string('slug')->nullable()->unique();
+            $table->string('slug')->nullable();
             $table->integer('num_modulos')->default(1);
             $table->string('location')->nullable();
             $table->string('side')->nullable();
@@ -29,6 +29,9 @@ return new class extends Migration
             $table->enum('status', ['draft', 'published'])->default('draft');
             $table->timestamps();
             $table->softDeletes();
+            $table->unique(['tenant_id', 'slug']);
+            $table->index(['tenant_id', 'status']);
+            $table->index(['tenant_id', 'planogram_id']);
         });
     }
 

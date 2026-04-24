@@ -5,8 +5,10 @@ namespace App\Providers;
 use App\Contracts\ProductImageAiEditor;
 use App\Models\Category;
 use App\Models\Cluster;
+use App\Models\Gondola;
 use App\Models\Permission;
 use App\Models\Plan;
+use App\Models\Planogram;
 use App\Models\Product;
 use App\Models\Provider;
 use App\Models\Role;
@@ -16,7 +18,9 @@ use App\Models\User;
 use App\Observers\TenantObserver;
 use App\Policies\CategoryPolicy;
 use App\Policies\ClusterPolicy;
+use App\Policies\GondolaPolicy;
 use App\Policies\PermissionPolicy;
+use App\Policies\PlanogramPolicy;
 use App\Policies\PlanPolicy;
 use App\Policies\ProductPolicy;
 use App\Policies\ProviderPolicy;
@@ -78,6 +82,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Store::class, StorePolicy::class);
         Gate::policy(Cluster::class, ClusterPolicy::class);
         Gate::policy(Provider::class, ProviderPolicy::class);
+        Gate::policy(Planogram::class, PlanogramPolicy::class);
+        Gate::policy(Gondola::class, GondolaPolicy::class);
     }
 
     /**

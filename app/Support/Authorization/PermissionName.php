@@ -106,6 +106,26 @@ final class PermissionName
 
     public const TENANT_PROVIDERS_DELETE = 'tenant.providers.delete';
 
+    public const TENANT_PLANOGRAMS_VIEW_ANY = 'tenant.planograms.viewAny';
+
+    public const TENANT_PLANOGRAMS_VIEW = 'tenant.planograms.view';
+
+    public const TENANT_PLANOGRAMS_CREATE = 'tenant.planograms.create';
+
+    public const TENANT_PLANOGRAMS_UPDATE = 'tenant.planograms.update';
+
+    public const TENANT_PLANOGRAMS_DELETE = 'tenant.planograms.delete';
+
+    public const TENANT_GONDOLAS_VIEW_ANY = 'tenant.gondolas.viewAny';
+
+    public const TENANT_GONDOLAS_VIEW = 'tenant.gondolas.view';
+
+    public const TENANT_GONDOLAS_CREATE = 'tenant.gondolas.create';
+
+    public const TENANT_GONDOLAS_UPDATE = 'tenant.gondolas.update';
+
+    public const TENANT_GONDOLAS_DELETE = 'tenant.gondolas.delete';
+
     /**
      * @return list<string>
      */
@@ -163,6 +183,16 @@ final class PermissionName
             self::TENANT_PROVIDERS_CREATE,
             self::TENANT_PROVIDERS_UPDATE,
             self::TENANT_PROVIDERS_DELETE,
+            self::TENANT_PLANOGRAMS_VIEW_ANY,
+            self::TENANT_PLANOGRAMS_VIEW,
+            self::TENANT_PLANOGRAMS_CREATE,
+            self::TENANT_PLANOGRAMS_UPDATE,
+            self::TENANT_PLANOGRAMS_DELETE,
+            self::TENANT_GONDOLAS_VIEW_ANY,
+            self::TENANT_GONDOLAS_VIEW,
+            self::TENANT_GONDOLAS_CREATE,
+            self::TENANT_GONDOLAS_UPDATE,
+            self::TENANT_GONDOLAS_DELETE,
         ];
     }
 

@@ -15,7 +15,7 @@ defineProps<{
         <div class="relative hidden lg:flex lg:w-[58%] xl:w-[80%] flex-col overflow-hidden">
             <!-- Imagem de fundo com overlay -->
             <div class="absolute inset-0">
-                <img src="/img/auth.png" alt="" class="h-full w-full scale-110 object-cover object-center blur" />
+                <img src="/img/auth.png" alt="" class="h-full w-full scale-110 object-cover object-center blur-in" />
                 <div class="absolute inset-0" style="background: oklch(0.21 0.014 258 / 0.82)" />
                 <!-- Padrão de pontos -->
                 <div class="absolute inset-0 opacity-[0.13]" style="background-image: radial-gradient(circle at 1.5px 1.5px, hsl(87 82% 56%) 1px, transparent 0); background-size: 36px 36px;" />

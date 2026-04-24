@@ -10,6 +10,8 @@ use App\Http\Controllers\Landlord\UserController;
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\ClusterController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboardController;
+use App\Http\Controllers\Tenant\GondolaController;
+use App\Http\Controllers\Tenant\PlanogramController;
 use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\ProviderController;
@@ -97,6 +99,14 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::resource('providers', ProviderController::class)
             ->except(['show'])
             ->names('providers');
+
+        Route::resource('planograms', PlanogramController::class)
+            ->except(['show'])
+            ->names('catalog.planograms');
+
+        Route::resource('planograms/{planogram}/gondolas', GondolaController::class)
+            ->except(['show'])
+            ->names('catalog.gondolas');
 
         Route::post('products/image/upload', [ProductImageController::class, 'upload'])
             ->name('products.image.upload');
