@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import AppLayout from '@/layouts/AppLayout.vue';
 import UserController from '@/actions/App/Http/Controllers/Landlord/UserController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
@@ -44,12 +45,18 @@ const pageMeta = useCrudPageMeta({
 </script>
 
 <template>
-    <Head :title="pageMeta.headTitle" />
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <Head :title="pageMeta.headTitle" />
+        <template #header-actions>
+            <div class="flex items-center justify-end gap-2">
+                <NewActionButton :href="UserController.create.url()">
+                    {{ t('app.landlord.users.actions.new') }}
+                </NewActionButton>
+            </div>
+        </template>
 
-    <ListPage
-        :title="pageMeta.title"
-        :description="pageMeta.description"
-        :meta="props.users"
+        <ListPage
+            :meta="props.users"
         label="usuário"
         :action="usersIndexPath"
         :clear-href="usersIndexPath"
@@ -58,12 +65,6 @@ const pageMeta = useCrudPageMeta({
         :filter-label="t('app.landlord.common.filter')"
         :clear-label="t('app.landlord.common.clear_filters')"
     >
-        <template #action>
-            <NewActionButton :href="UserController.create.url()">
-                {{ t('app.landlord.users.actions.new') }}
-            </NewActionButton>
-        </template>
-
         <template #filters>
             <select
                 name="is_active"
@@ -133,5 +134,6 @@ const pageMeta = useCrudPageMeta({
                 </tr>
             </tbody>
         </table>
-    </ListPage>
+        </ListPage>
+    </AppLayout>
 </template>

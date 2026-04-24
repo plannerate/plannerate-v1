@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { UserCog } from 'lucide-vue-next';
 import UserController from '@/actions/App/Http/Controllers/Landlord/UserController';
+import AppLayout from '@/layouts/AppLayout.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
@@ -50,15 +51,13 @@ const pageMeta = useCrudPageMeta({
 
 <template>
     <Head :title="pageMeta.headTitle" />
-
-    <div class="p-4">
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <div class="p-4">
         <Form
             v-bind="isEdit ? UserController.update.form(props.user!.id) : UserController.store.form()"
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="pageMeta.title"
-                :description="pageMeta.description"
                 :processing="processing"
                 :cancel-href="usersIndexPath"
             >
@@ -137,5 +136,6 @@ const pageMeta = useCrudPageMeta({
                 </label>
             </FormCard>
         </Form>
-    </div>
+        </div>
+    </AppLayout>
 </template>

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useT } from '@/composables/useT';
 import { update } from '@/routes/password';
+import AuthLayout from '@/layouts/AuthLayout.vue';
 
 const { t } = useT();
 
@@ -27,62 +28,70 @@ const inputEmail = ref(props.email);
 
 <template>
     <Head :title="t('app.auth.reset_password')" />
-
-    <Form
-        v-bind="update.form()"
-        :transform="(data) => ({ ...data, token, email })"
-        :reset-on-success="['password', 'password_confirmation']"
-        v-slot="{ errors, processing }"
+    <AuthLayout
+        :title="t('app.auth.reset_password')"
+        :description="t('app.auth.reset_password_description')"
     >
-        <div class="grid gap-6">
-            <div class="grid gap-2">
-                <Label for="email">{{ t('app.email') }}</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    name="email"
-                    autocomplete="email"
-                    v-model="inputEmail"
-                    class="mt-1 block w-full"
-                    readonly
-                />
-                <InputError :message="errors.email" class="mt-2" />
-            </div>
+        <Form
+            v-bind="update.form()"
+            :transform="(data) => ({ ...data, token, email })"
+            :reset-on-success="['password', 'password_confirmation']"
+            v-slot="{ errors, processing }"
+        >
+            <div class="grid gap-6">
+                <div class="grid gap-2">
+                    <Label for="email">{{ t('app.email') }}</Label>
+                    <Input
+                        id="email"
+                        type="email"
+                        name="email"
+                        autocomplete="email"
+                        v-model="inputEmail"
+                        class="mt-1 block w-full"
+                        readonly
+                    />
+                    <InputError :message="errors.email" class="mt-2" />
+                </div>
 
-            <div class="grid gap-2">
-                <Label for="password">{{ t('app.password') }}</Label>
-                <PasswordInput
-                    id="password"
-                    name="password"
-                    autocomplete="new-password"
-                    class="mt-1 block w-full"
-                    autofocus
-                    :placeholder="t('app.password')"
-                />
-                <InputError :message="errors.password" />
-            </div>
+                <div class="grid gap-2">
+                    <Label for="password">{{ t('app.password') }}</Label>
+                    <PasswordInput
+                        id="password"
+                        name="password"
+                        autocomplete="new-password"
+                        class="mt-1 block w-full"
+                        autofocus
+                        :placeholder="t('app.password')"
+                    />
+                    <InputError :message="errors.password" />
+                </div>
 
-            <div class="grid gap-2">
-                <Label for="password_confirmation"> {{ t('app.auth.confirm_password') }} </Label>
-                <PasswordInput
-                    id="password_confirmation"
-                    name="password_confirmation"
-                    autocomplete="new-password"
-                    class="mt-1 block w-full"
-                    :placeholder="t('app.auth.confirm_password_placeholder')"
-                />
-                <InputError :message="errors.password_confirmation" />
-            </div>
+                <div class="grid gap-2">
+                    <Label for="password_confirmation">
+                        {{ t('app.auth.confirm_password') }}
+                    </Label>
+                    <PasswordInput
+                        id="password_confirmation"
+                        name="password_confirmation"
+                        autocomplete="new-password"
+                        class="mt-1 block w-full"
+                        :placeholder="
+                            t('app.auth.confirm_password_placeholder')
+                        "
+                    />
+                    <InputError :message="errors.password_confirmation" />
+                </div>
 
-            <Button
-                type="submit"
-                class="mt-4 w-full"
-                :disabled="processing"
-                data-test="reset-password-button"
-            >
-                <Spinner v-if="processing" />
-                {{ t('app.auth.reset_password') }}
-            </Button>
-        </div>
-    </Form>
+                <Button
+                    type="submit"
+                    class="mt-4 w-full"
+                    :disabled="processing"
+                    data-test="reset-password-button"
+                >
+                    <Spinner v-if="processing" />
+                    {{ t('app.auth.reset_password') }}
+                </Button>
+            </div>
+        </Form>
+    </AuthLayout>
 </template>

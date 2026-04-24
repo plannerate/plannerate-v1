@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { Layers, Plus, Trash2 } from 'lucide-vue-next';
 import PlanController from '@/actions/App/Http/Controllers/Landlord/PlanController';
+import AppLayout from '@/layouts/AppLayout.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -79,15 +80,13 @@ const pageMeta = useCrudPageMeta({
 
 <template>
     <Head :title="pageMeta.headTitle" />
-
-    <div class="p-4">
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <div class="p-4">
         <Form
             v-bind="isEdit ? PlanController.update.form(props.plan!.id) : PlanController.store.form()"
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="pageMeta.title"
-                :description="pageMeta.description"
                 :processing="processing"
                 :cancel-href="plansIndexPath"
             >
@@ -260,5 +259,6 @@ const pageMeta = useCrudPageMeta({
                 </div>
             </FormCard>
         </Form>
-    </div>
+        </div>
+    </AppLayout>
 </template>

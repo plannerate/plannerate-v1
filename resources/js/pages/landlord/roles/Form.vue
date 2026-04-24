@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { ShieldCheck } from 'lucide-vue-next';
 import RoleController from '@/actions/App/Http/Controllers/Landlord/RoleController';
+import AppLayout from '@/layouts/AppLayout.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
@@ -64,15 +65,13 @@ const pageMeta = useCrudPageMeta({
 
 <template>
     <Head :title="pageMeta.headTitle" />
-
-    <div class="p-4">
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <div class="p-4">
         <Form
             v-bind="isEdit ? RoleController.update.form(props.role!.id) : RoleController.store.form()"
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="pageMeta.title"
-                :description="pageMeta.description"
                 :processing="processing"
                 :disabled="isProtected"
                 :cancel-href="rolesIndexPath"
@@ -147,5 +146,6 @@ const pageMeta = useCrudPageMeta({
                 </div>
             </FormCard>
         </Form>
-    </div>
+        </div>
+    </AppLayout>
 </template>

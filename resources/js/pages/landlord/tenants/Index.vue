@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import AppLayout from '@/layouts/AppLayout.vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import ListPage from '@/components/ListPage.vue';
@@ -48,12 +49,18 @@ const pageMeta = useCrudPageMeta({
 </script>
 
 <template>
-    <Head :title="pageMeta.headTitle" />
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <Head :title="pageMeta.headTitle" />
+        <template #header-actions>
+            <div class="flex items-center justify-end gap-2">
+                <NewActionButton :href="TenantController.create.url()">
+                    {{ t('app.landlord.tenants.actions.new') }}
+                </NewActionButton>
+            </div>
+        </template>
 
-    <ListPage
-        :title="pageMeta.title"
-        :description="pageMeta.description"
-        :meta="props.tenants"
+        <ListPage
+            :meta="props.tenants"
         label="tenant"
         :action="tenantsIndexPath"
         :clear-href="tenantsIndexPath"
@@ -62,12 +69,6 @@ const pageMeta = useCrudPageMeta({
         :filter-label="t('app.landlord.common.filter')"
         :clear-label="t('app.landlord.common.clear_filters')"
     >
-        <template #action>
-            <NewActionButton :href="TenantController.create.url()">
-                {{ t('app.landlord.tenants.actions.new') }}
-            </NewActionButton>
-        </template>
-
         <template #filters>
             <select
                 name="status"
@@ -163,5 +164,6 @@ const pageMeta = useCrudPageMeta({
                 </tr>
             </tbody>
         </table>
-    </ListPage>
+        </ListPage>
+    </AppLayout>
 </template>

@@ -3,6 +3,7 @@ import { Form, Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { AlertCircle, Building2, ExternalLink, Loader2, RefreshCw } from 'lucide-vue-next';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
+import AppLayout from '@/layouts/AppLayout.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
@@ -112,15 +113,13 @@ function onDatabaseInput(): void {
 
 <template>
     <Head :title="pageMeta.headTitle" />
-
-    <div class="p-4">
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <div class="p-4">
         <Form
             v-bind="isEdit ? TenantController.update.form(props.tenant!.id) : TenantController.store.form()"
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="pageMeta.title"
-                :description="pageMeta.description"
                 :processing="processing"
                 :cancel-href="tenantsIndexPath"
             >
@@ -254,5 +253,6 @@ function onDatabaseInput(): void {
                 </label>
             </FormCard>
         </Form>
-    </div>
+        </div>
+    </AppLayout>
 </template>

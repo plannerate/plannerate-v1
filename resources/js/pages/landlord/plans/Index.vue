@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import AppLayout from '@/layouts/AppLayout.vue';
 import PlanController from '@/actions/App/Http/Controllers/Landlord/PlanController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
@@ -50,12 +51,18 @@ function formatPrice(cents: number): string {
 </script>
 
 <template>
-    <Head :title="pageMeta.headTitle" />
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <Head :title="pageMeta.headTitle" />
+        <template #header-actions>
+            <div class="flex items-center justify-end gap-2">
+                <NewActionButton :href="PlanController.create.url()">
+                    {{ t('app.landlord.plans.actions.new') }}
+                </NewActionButton>
+            </div>
+        </template>
 
-    <ListPage
-        :title="pageMeta.title"
-        :description="pageMeta.description"
-        :meta="props.plans"
+        <ListPage
+            :meta="props.plans"
         label="plano"
         :action="plansIndexPath"
         :clear-href="plansIndexPath"
@@ -64,12 +71,6 @@ function formatPrice(cents: number): string {
         :filter-label="t('app.landlord.common.filter')"
         :clear-label="t('app.landlord.common.clear_filters')"
     >
-        <template #action>
-            <NewActionButton :href="PlanController.create.url()">
-                {{ t('app.landlord.plans.actions.new') }}
-            </NewActionButton>
-        </template>
-
         <template #filters>
             <select
                 name="is_active"
@@ -135,5 +136,6 @@ function formatPrice(cents: number): string {
                 </tr>
             </tbody>
         </table>
-    </ListPage>
+        </ListPage>
+    </AppLayout>
 </template>

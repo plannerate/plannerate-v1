@@ -2,7 +2,9 @@
 
 return [
     'welcome' => 'Bem-vindo',
-    'dashboard' => 'Painel',
+    'dashboard' => 'Painel de controle',
+    'dashboard_title' => 'Visão geral',
+    'dashboard_description' => 'Visão geral das métricas e atividades recentes',
 
     'settings' => 'Configuracoes',
     'settings_description' => 'Gerencie seu perfil e configuracoes da conta',

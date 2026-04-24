@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import AppLayout from '@/layouts/AppLayout.vue';
 import PermissionController from '@/actions/App/Http/Controllers/Landlord/PermissionController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
@@ -42,12 +43,18 @@ const pageMeta = useCrudPageMeta({
 </script>
 
 <template>
-    <Head :title="pageMeta.headTitle" />
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <Head :title="pageMeta.headTitle" />
+        <template #header-actions>
+            <div class="flex items-center justify-end gap-2">
+                <NewActionButton :href="PermissionController.create.url()">
+                    {{ t('app.landlord.permissions.actions.new') }}
+                </NewActionButton>
+            </div>
+        </template>
 
-    <ListPage
-        :title="pageMeta.title"
-        :description="pageMeta.description"
-        :meta="props.permissions"
+        <ListPage
+            :meta="props.permissions"
         label="permissão"
         :action="permissionsIndexPath"
         :clear-href="permissionsIndexPath"
@@ -56,12 +63,6 @@ const pageMeta = useCrudPageMeta({
         :filter-label="t('app.landlord.common.filter')"
         :clear-label="t('app.landlord.common.clear_filters')"
     >
-        <template #action>
-            <NewActionButton :href="PermissionController.create.url()">
-                {{ t('app.landlord.permissions.actions.new') }}
-            </NewActionButton>
-        </template>
-
         <template #filters>
             <select
                 name="type"
@@ -117,5 +118,6 @@ const pageMeta = useCrudPageMeta({
                 </tr>
             </tbody>
         </table>
-    </ListPage>
+        </ListPage>
+    </AppLayout>
 </template>

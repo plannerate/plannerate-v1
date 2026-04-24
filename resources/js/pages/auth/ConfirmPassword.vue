@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useT } from '@/composables/useT';
 import { store } from '@/routes/password/confirm';
+import AuthLayout from '@/layouts/AuthLayout.vue';
 
 const { t } = useT();
 
@@ -18,37 +19,41 @@ setLayoutProps({
 
 <template>
     <Head :title="t('app.auth.confirm_password')" />
-
-    <Form
-        v-bind="store.form()"
-        reset-on-success
-        v-slot="{ errors, processing }"
+    <AuthLayout
+        :title="t('app.auth.confirm_your_password')"
+        :description="t('app.auth.confirm_your_password_description')"
     >
-        <div class="space-y-6">
-            <div class="grid gap-2">
-                <Label htmlFor="password">{{ t('app.password') }}</Label>
-                <PasswordInput
-                    id="password"
-                    name="password"
-                    class="mt-1 block w-full"
-                    required
-                    autocomplete="current-password"
-                    autofocus
-                />
+        <Form
+            v-bind="store.form()"
+            reset-on-success
+            v-slot="{ errors, processing }"
+        >
+            <div class="space-y-6">
+                <div class="grid gap-2">
+                    <Label htmlFor="password">{{ t('app.password') }}</Label>
+                    <PasswordInput
+                        id="password"
+                        name="password"
+                        class="mt-1 block w-full"
+                        required
+                        autocomplete="current-password"
+                        autofocus
+                    />
 
-                <InputError :message="errors.password" />
-            </div>
+                    <InputError :message="errors.password" />
+                </div>
 
-            <div class="flex items-center">
-                <Button
-                    class="w-full"
-                    :disabled="processing"
-                    data-test="confirm-password-button"
-                >
-                    <Spinner v-if="processing" />
-                    {{ t('app.auth.confirm_password') }}
-                </Button>
+                <div class="flex items-center">
+                    <Button
+                        class="w-full"
+                        :disabled="processing"
+                        data-test="confirm-password-button"
+                    >
+                        <Spinner v-if="processing" />
+                        {{ t('app.auth.confirm_password') }}
+                    </Button>
+                </div>
             </div>
-        </div>
-    </Form>
+        </Form>
+    </AuthLayout>
 </template>
