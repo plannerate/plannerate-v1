@@ -59,14 +59,19 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<Emits>();
+const isBrowser = typeof window !== 'undefined';
 
 // Current step
 const currentStep = ref(1);
 
 // Helper functions for localStorage
 const loadScaleFromLocalStorage = (): number | null => {
+    if (!isBrowser) {
+        return null;
+    }
+
     try {
-        const savedScale = localStorage.getItem('plannerate-scale-factor');
+        const savedScale = window.localStorage.getItem('plannerate-scale-factor');
         if (savedScale) {
             const scale = parseFloat(savedScale);
             if (!isNaN(scale) && scale >= 1) {
@@ -80,8 +85,12 @@ const loadScaleFromLocalStorage = (): number | null => {
 };
 
 const saveScaleToLocalStorage = (scale: number) => {
+    if (!isBrowser) {
+        return;
+    }
+
     try {
-        localStorage.setItem('plannerate-scale-factor', scale.toString());
+        window.localStorage.setItem('plannerate-scale-factor', scale.toString());
     } catch (error) {
         console.warn('Erro ao salvar escala no localStorage:', error);
     }

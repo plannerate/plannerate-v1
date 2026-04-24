@@ -31,6 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<Emits>();
+const isBrowser = typeof window !== 'undefined';
 
 const dontAskAgain = ref(false);
 
@@ -48,10 +49,12 @@ function handleConfirm() {
     // Salva preferência no localStorage se marcado
     if (dontAskAgain.value) {
         const expiryTime = Date.now() + 5 * 60 * 1000; // 5 minutos
-        localStorage.setItem(
-            `planogram-delete-confirm-${props.type}`,
-            expiryTime.toString(),
-        );
+        if (isBrowser) {
+            window.localStorage.setItem(
+                `planogram-delete-confirm-${props.type}`,
+                expiryTime.toString(),
+            );
+        }
     }
 
     emit('confirm');

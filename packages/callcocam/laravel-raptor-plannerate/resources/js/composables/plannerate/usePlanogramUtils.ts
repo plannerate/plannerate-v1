@@ -13,8 +13,12 @@
  * @returns true se deve mostrar o modal, false caso contrário
  */
 export function shouldShowDeleteConfirm(itemType: string = 'section'): boolean {
+    if (typeof window === 'undefined') {
+        return true;
+    }
+
     const storageKey = `planogram-delete-confirm-${itemType}`;
-    const expiryTime = localStorage.getItem(storageKey);
+    const expiryTime = window.localStorage.getItem(storageKey);
 
     if (!expiryTime) {
         return true; // Sem preferência salva, mostra modal
@@ -25,7 +29,7 @@ export function shouldShowDeleteConfirm(itemType: string = 'section'): boolean {
 
     if (now > expiry) {
         // Expirou, remove e mostra modal
-        localStorage.removeItem(storageKey);
+        window.localStorage.removeItem(storageKey);
         return true;
     }
 

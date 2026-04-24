@@ -16,6 +16,7 @@ export interface ProductFilters {
 }
 
 const STORAGE_KEY_FILTERS = 'plannerate_product_filters';
+const isBrowser = typeof window !== 'undefined';
 
 let didMount = false;
 
@@ -127,7 +128,9 @@ export function useProductsPanel(options: UseProductsPanelOptions) {
 
     onMounted(() => {
         // Carrega filtros do localStorage (migra withDimensions -> hasDimensions se existir)
-        const stored = localStorage.getItem(STORAGE_KEY_FILTERS);
+        const stored = isBrowser
+            ? window.localStorage.getItem(STORAGE_KEY_FILTERS)
+            : null;
         if (stored) {
             try {
                 const parsed = JSON.parse(stored) as Record<string, unknown>;
@@ -147,7 +150,12 @@ export function useProductsPanel(options: UseProductsPanelOptions) {
     // Função para atualizar filtros
     const updateFilters = (newFilters: ProductFilters) => {
         Object.assign(filters, newFilters);
-        localStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(filters));
+        if (isBrowser) {
+            window.localStorage.setItem(
+                STORAGE_KEY_FILTERS,
+                JSON.stringify(filters),
+            );
+        }
         resetAndLoad();
     };
 
@@ -156,7 +164,12 @@ export function useProductsPanel(options: UseProductsPanelOptions) {
         () => ({ ...filters }),
         () => {
             if (didMount) {
-                localStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(filters));
+                if (isBrowser) {
+                    window.localStorage.setItem(
+                        STORAGE_KEY_FILTERS,
+                        JSON.stringify(filters),
+                    );
+                }
             }
         },
         { deep: true },

@@ -12,7 +12,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button'; 
+import { Button } from '@/components/ui/button';
 import {
     Sheet,
     SheetContent,
@@ -36,6 +36,7 @@ interface Props {
         can_create_gondola: boolean;
         can_update_gondola: boolean;
     };
+    backRoute?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
     title: 'Planograma',
@@ -43,6 +44,7 @@ const props = withDefaults(defineProps<Props>(), {
     planogramId: '',
     tenant: {},
     availableUsers: () => [],
+    backRoute: '',
 });
 const emit = defineEmits<{
     closeProducts: [];
@@ -123,18 +125,35 @@ function cancelUpdateGondolaImages() {
 
             <!-- Right: Actions -->
             <div class="flex items-center gap-2">
-                <Button variant="outline" size="sm" class="gap-2" @click="emit('importData')"> 
-                        <Upload /> 
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="gap-2"
+                    @click="emit('importData')"
+                >
+                    <Upload />
                     Importar Dados
                 </Button>
 
-                <Button variant="outline" size="sm" class="gap-2" @click="openGondolaCreate" v-if="permissions.can_create_gondola"> 
-                        <Plus /> 
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="gap-2"
+                    @click="openGondolaCreate"
+                    v-if="permissions.can_create_gondola"
+                >
+                    <Plus />
                     Adicionar Gôndola
                 </Button>
 
-                <Button variant="outline" size="sm" class="gap-2" @click="openGondolaEdit" v-if="permissions.can_update_gondola"> 
-                        <Edit /> 
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="gap-2"
+                    @click="openGondolaEdit"
+                    v-if="permissions.can_update_gondola"
+                >
+                    <Edit />
                     Editar Gôndola
                 </Button>
                 <!-- Atualizar imagens da gôndola -->
@@ -143,8 +162,8 @@ function cancelUpdateGondolaImages() {
                     size="sm"
                     class="gap-2"
                     @click="handleUpdateGondolaImages"
-                > 
-                        <RefreshCcw /> 
+                >
+                    <RefreshCcw />
                     Atualizar Imagens
                 </Button>
 
@@ -180,9 +199,11 @@ function cancelUpdateGondolaImages() {
 
                 <div class="mx-2 h-6 w-px bg-border" />
 
-                <Button variant="ghost" size="sm" @click="emit('goBack')">
-                    <ArrowLeft class="mr-2 size-4" />
-                    Voltar
+                <Button   size="sm" v-if="backRoute" as-child>
+                    <a :href="backRoute"  class="flex items-center gap-2">
+                        <ArrowLeft class="size-4" />
+                        Voltar
+                    </a>
                 </Button>
             </div>
         </div>

@@ -22,6 +22,7 @@ const props = withDefaults(defineProps<Props>(), {
     openProducts: false,
     openProperties: false,
 });
+const isBrowser = typeof window !== 'undefined';
 const emit = defineEmits<{
     closeProducts: [];
     openProducts: [];
@@ -84,7 +85,9 @@ function handleCanvasClick(event: MouseEvent) {
 }
 
 onMounted(() => {
-    const manualOpen = localStorage.getItem('planogram-properties-manual-open');
+    const manualOpen = isBrowser
+        ? window.localStorage.getItem('planogram-properties-manual-open')
+        : null;
     if (manualOpen === 'true' && !props.openProperties) {
         emit('openProperties');
     }
@@ -96,7 +99,12 @@ watch(
         // Abre painel quando há item selecionado (nunca fecha automaticamente)
         if (newSelection?.type) {
             emit('openProperties');
-            localStorage.setItem('planogram-properties-manual-open', 'true');
+            if (isBrowser) {
+                window.localStorage.setItem(
+                    'planogram-properties-manual-open',
+                    'true',
+                );
+            }
         }
     },
 );

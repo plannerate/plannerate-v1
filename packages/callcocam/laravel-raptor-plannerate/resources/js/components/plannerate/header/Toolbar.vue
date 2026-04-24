@@ -151,6 +151,14 @@ const isSaving = computed(() => editor.isSaving.value);
  */
 const autoSaveEnabled = computed(() => changes.autoSaveEnabled.value);
 
+/**
+ * Fallback estável para links das gôndolas durante SSR/hidratação
+ */
+const currentPageUrl = computed(() => {
+    const url = page.url || '/';
+    return url.startsWith('/') ? url : `/${url}`;
+});
+
 // ============================================================================
 // LOCAL STATE
 // ============================================================================
@@ -383,6 +391,10 @@ const currentMapRegionId = computed(() => {
     return currentGondola.value?.linked_map_gondola_id || null;
 });
 
+function gondolaHref(gondola: Gondola): string {
+    return gondola.route_gondolas || currentPageUrl.value;
+}
+
 /**
  * Handler para quando uma região é selecionada
  */
@@ -414,7 +426,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
                 <Link
                     v-for="gondola in gondolas"
                     :key="gondola.id"
-                    :href="gondola.route_gondolas ?? ''"
+                    :href="gondolaHref(gondola)"
                     :class="[
                         'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all',
                         'hover:bg-accent hover:text-accent-foreground',

@@ -50,6 +50,8 @@ import { useShelfOperations } from './editor/useShelfOperations';
 // COMPOSABLE
 // ============================================================================
 
+const isBrowser = typeof window !== 'undefined';
+
 export function usePlanogramEditor() {
     const history = usePlanogramHistory();
     const changes = usePlanogramChanges();
@@ -570,7 +572,9 @@ export function usePlanogramEditor() {
         currentGondola.value = sanitizeGondola(gondola);
 
         // Carrega scale do localStorage ou usa padrão
-        const savedScale = localStorage.getItem(`gondola_${gondola.id}_scale`);
+        const savedScale = isBrowser
+            ? window.localStorage.getItem(`gondola_${gondola.id}_scale`)
+            : null;
         if (savedScale) {
             const scale = parseFloat(savedScale);
             scaleFactor.value =
@@ -1089,8 +1093,8 @@ export function usePlanogramEditor() {
 
     // Salva zoom no localStorage
     function saveScaleToLocalStorage() {
-        if (currentGondola.value?.id) {
-            localStorage.setItem(
+        if (isBrowser && currentGondola.value?.id) {
+            window.localStorage.setItem(
                 `gondola_${currentGondola.value.id}_scale`,
                 scaleFactor.value.toString(),
             );

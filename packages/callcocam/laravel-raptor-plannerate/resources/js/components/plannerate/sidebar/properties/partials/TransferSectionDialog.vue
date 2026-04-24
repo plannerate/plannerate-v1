@@ -402,6 +402,7 @@ const revertingOperationId = ref<string | null>(null);
 
 // Chave para localStorage
 const STORAGE_KEY = 'transfer_section_history';
+const isBrowser = typeof window !== 'undefined';
 
 // Histórico de operações (carrega do localStorage)
 const operationHistory = ref<OperationHistory[]>(loadHistoryFromStorage());
@@ -410,8 +411,12 @@ const operationHistory = ref<OperationHistory[]>(loadHistoryFromStorage());
  * Carrega histórico do localStorage
  */
 function loadHistoryFromStorage(): OperationHistory[] {
+    if (!isBrowser) {
+        return [];
+    }
+
     try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = window.localStorage.getItem(STORAGE_KEY);
         if (stored) {
             const parsed = JSON.parse(stored) as OperationHistory[];
             // Filtra operações muito antigas (mais de 7 dias)
@@ -419,7 +424,7 @@ function loadHistoryFromStorage(): OperationHistory[] {
             const filtered = parsed.filter(op => op.timestamp > sevenDaysAgo);
             // Se houve filtragem, salva novamente
             if (filtered.length !== parsed.length) {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+                window.localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
             }
             return filtered;
         }
@@ -427,7 +432,7 @@ function loadHistoryFromStorage(): OperationHistory[] {
         console.warn('Erro ao carregar histórico do localStorage:', error);
         // Se houver erro, limpa o localStorage corrompido
         try {
-            localStorage.removeItem(STORAGE_KEY);
+            window.localStorage.removeItem(STORAGE_KEY);
         } catch (cleanError) {
             console.error('Erro ao limpar localStorage corrompido:', cleanError);
         }
@@ -439,10 +444,14 @@ function loadHistoryFromStorage(): OperationHistory[] {
  * Salva histórico no localStorage
  */
 function saveHistoryToStorage() {
+    if (!isBrowser) {
+        return;
+    }
+
     try {
         // Limita a 50 operações mais recentes para evitar localStorage cheio
         const historyToSave = operationHistory.value.slice(0, 50);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(historyToSave));
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(historyToSave));
         // Se foi limitado, atualiza o ref
         if (historyToSave.length < operationHistory.value.length) {
             operationHistory.value = historyToSave;
@@ -456,12 +465,12 @@ function saveHistoryToStorage() {
             const reduced = sorted.slice(Math.floor(sorted.length / 2));
             operationHistory.value = reduced;
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(reduced));
+                window.localStorage.setItem(STORAGE_KEY, JSON.stringify(reduced));
             } catch (retryError) {
                 console.error('Erro ao salvar histórico após limpeza:', retryError);
                 // Se ainda falhar, limpa tudo
                 operationHistory.value = [];
-                localStorage.removeItem(STORAGE_KEY);
+                window.localStorage.removeItem(STORAGE_KEY);
             }
         }
     }
@@ -912,7 +921,9 @@ function handleClearHistory() {
         operationHistory.value = [];
         // Remove do localStorage
         try {
-            localStorage.removeItem(STORAGE_KEY);
+            if (isBrowser) {
+                window.localStorage.removeItem(STORAGE_KEY);
+            }
         } catch (error) {
             console.warn('Erro ao remover histórico do localStorage:', error);
         }

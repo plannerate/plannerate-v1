@@ -35,6 +35,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const isBrowser = typeof window !== 'undefined';
 // Usa o composable para gerenciar o estado
 const editor = usePlanogramEditor();
 
@@ -51,10 +52,14 @@ const headerAndToolbar = ref<HTMLElement | null>(null);
 const containerHeight = ref<number>(0);
 // Restaura painéis (produtos e propriedades) do localStorage
 const storedProductsPanel = ref(
-    localStorage.getItem('planogram-products-manual-open') === 'true',
+    isBrowser &&
+        window.localStorage.getItem('planogram-products-manual-open') ===
+            'true',
 );
 const storedPropertiesPanel = ref(
-    localStorage.getItem('planogram-properties-manual-open') === 'true',
+    isBrowser &&
+        window.localStorage.getItem('planogram-properties-manual-open') ===
+            'true',
 );
 
 // Ref para armazenar a função de reload vinda do PanelLeft
@@ -108,38 +113,53 @@ const handleUpdateGondolaImages = () => {
 // Funções separadas para abrir/fechar (não toggle)
 const openProperties = () => {
     storedPropertiesPanel.value = true;
-    localStorage.setItem('planogram-properties-manual-open', 'true');
+    if (isBrowser) {
+        window.localStorage.setItem('planogram-properties-manual-open', 'true');
+    }
 };
 
 const closeProperties = () => {
     storedPropertiesPanel.value = false;
-    localStorage.setItem('planogram-properties-manual-open', 'false');
+    if (isBrowser) {
+        window.localStorage.setItem(
+            'planogram-properties-manual-open',
+            'false',
+        );
+    }
 };
 
 const toggleProperties = () => {
     storedPropertiesPanel.value = !storedPropertiesPanel.value;
-    localStorage.setItem(
-        'planogram-properties-manual-open',
-        storedPropertiesPanel.value ? 'true' : 'false',
-    );
+    if (isBrowser) {
+        window.localStorage.setItem(
+            'planogram-properties-manual-open',
+            storedPropertiesPanel.value ? 'true' : 'false',
+        );
+    }
 };
 
 const openProducts = () => {
     storedProductsPanel.value = true;
-    localStorage.setItem('planogram-products-manual-open', 'true');
+    if (isBrowser) {
+        window.localStorage.setItem('planogram-products-manual-open', 'true');
+    }
 };
 
 const closeProducts = () => {
     storedProductsPanel.value = false;
-    localStorage.setItem('planogram-products-manual-open', 'false');
+    if (isBrowser) {
+        window.localStorage.setItem('planogram-products-manual-open', 'false');
+    }
 };
 
 const toggleProducts = () => {
     storedProductsPanel.value = !storedProductsPanel.value;
-    localStorage.setItem(
-        'planogram-products-manual-open',
-        storedProductsPanel.value ? 'true' : 'false',
-    );
+    if (isBrowser) {
+        window.localStorage.setItem(
+            'planogram-products-manual-open',
+            storedProductsPanel.value ? 'true' : 'false',
+        );
+    }
 };
 
 onMounted(() => {
@@ -179,6 +199,7 @@ const category = computed(() => {
                 :tenant="record.tenant"
                 :planogram-id="record.planogram_id"
                 :available-users="availableUsers || []"
+                :back-route="props.backRoute"
                 @go-back="goBack"
                 @update-gondola-images="handleUpdateGondolaImages"
                 :permissions="permissions"

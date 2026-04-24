@@ -20,6 +20,7 @@ const currentIndex = ref(-1);
 const maxHistory = 20; // Reduzido de 50 para 20 para ser mais seguro
 const localStorageKey = 'plannerate_history';
 const localStorageMaxSize = 15; // Máximo de 15 itens no localStorage (mais seguro)
+const isBrowser = typeof window !== 'undefined';
 
 export function usePlanogramHistory() {
     // Flags computadas baseadas no estado global
@@ -33,6 +34,10 @@ export function usePlanogramHistory() {
      * Limita a 15 itens para evitar exceder quota do localStorage
      */
     function saveToLocalStorage() {
+        if (!isBrowser) {
+            return;
+        }
+
         try {
             // Pega apenas os últimos N itens para não exceder quota
             const itemsToSave = historyStack.value.slice(-localStorageMaxSize);
@@ -47,7 +52,7 @@ export function usePlanogramHistory() {
                 savedAt: Date.now(),
             };
             
-            localStorage.setItem(localStorageKey, JSON.stringify(data));
+            window.localStorage.setItem(localStorageKey, JSON.stringify(data));
           
         } catch {
             // Se exceder quota, limpa e tenta novamente com menos itens
@@ -62,7 +67,7 @@ export function usePlanogramHistory() {
                     savedAt: Date.now(),
                 };
                 
-                localStorage.setItem(localStorageKey, JSON.stringify(data));
+                window.localStorage.setItem(localStorageKey, JSON.stringify(data));
               } catch {
                 console.error('❌ Falha ao salvar histórico mesmo no modo reduzido');
             }
@@ -73,8 +78,12 @@ export function usePlanogramHistory() {
      * Carrega histórico do localStorage
      */
     function loadFromLocalStorage() {
+        if (!isBrowser) {
+            return false;
+        }
+
         try {
-            const saved = localStorage.getItem(localStorageKey);
+            const saved = window.localStorage.getItem(localStorageKey);
             if (!saved) return false;
             
             const data = JSON.parse(saved);
@@ -91,7 +100,7 @@ export function usePlanogramHistory() {
             const maxAge = 24 * 60 * 60 * 1000; // 24 horas
             
             if (age > maxAge) {
-                localStorage.removeItem(localStorageKey);
+                window.localStorage.removeItem(localStorageKey);
                 return false;
             }
             
@@ -105,7 +114,7 @@ export function usePlanogramHistory() {
             return true;
         } catch (error) {
             console.warn('⚠️ Erro ao carregar histórico do localStorage:', error);
-            localStorage.removeItem(localStorageKey);
+            window.localStorage.removeItem(localStorageKey);
             return false;
         }
     }
@@ -114,8 +123,12 @@ export function usePlanogramHistory() {
      * Limpa histórico do localStorage
      */
     function clearLocalStorage() {
+        if (!isBrowser) {
+            return;
+        }
+
         try {
-            localStorage.removeItem(localStorageKey);
+            window.localStorage.removeItem(localStorageKey);
         } catch (error) {
             console.warn('⚠️ Erro ao limpar localStorage:', error);
         }
