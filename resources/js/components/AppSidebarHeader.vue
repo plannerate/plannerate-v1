@@ -17,7 +17,7 @@ withDefaults(
 
 <template>
     <header
-        class="shrink-0 border-b bg-muted/15 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:py-2 mb-6"
+        class="shrink-0 border-b border-sidebar-border/70 bg-muted/15 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:py-2"
     >
         <div class="flex h-12 items-center gap-2 border-b border-border/60 px-4">
             <SidebarTrigger class="-ml-1" />
@@ -27,21 +27,33 @@ withDefaults(
         </div>
 
         <div
-            v-if="pageHeader.title || pageHeader.description"
-            class=" px-4 py-3"
+            v-if="pageHeader.title || pageHeader.description || $slots.default"
+            class="flex items-center justify-between gap-4 px-6 py-3 md:px-4"
         >
-            <p
-                v-if="pageHeader.title"
-                class="text-2xl leading-tight font-semibold tracking-tight text-foreground"
-            >
-                {{ pageHeader.title }}
-            </p>
-            <p
-                v-if="pageHeader.description"
-                class="mt-1 text-sm text-muted-foreground mb-2"
-            >
-                {{ pageHeader.description }}
-            </p>
+            <div class="flex items-start gap-3">
+                <div
+                    v-if="pageHeader.title || pageHeader.description"
+                    class="mt-0.5 h-6 w-0.5 shrink-0 rounded-full bg-primary/60"
+                />
+                <div>
+                    <h1
+                        v-if="pageHeader.title"
+                        class="text-xl font-semibold leading-tight tracking-tight text-foreground"
+                    >
+                        {{ pageHeader.title }}
+                    </h1>
+                    <p
+                        v-if="pageHeader.description"
+                        class="mt-0.5 text-sm leading-snug text-muted-foreground"
+                    >
+                        {{ pageHeader.description }}
+                    </p>
+                </div>
+            </div>
+
+            <div v-if="$slots.default" class="flex shrink-0 items-center gap-2">
+                <slot />
+            </div>
         </div>
     </header>
 </template>

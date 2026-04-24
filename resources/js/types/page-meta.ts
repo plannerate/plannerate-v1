@@ -3,6 +3,8 @@ import type { BreadcrumbItem } from '@/types/navigation';
 export type LayoutPageHeader = {
     title?: string;
     description?: string;
+    createRoute?: string;
+    createLabel?: string;
 };
 
 export type CrudPageMeta = {
@@ -10,6 +12,8 @@ export type CrudPageMeta = {
     title?: string;
     description?: string;
     breadcrumbs?: BreadcrumbItem[];
+    createRoute?: string;
+    createLabel?: string;
 };
 
 export type CrudPageMetaDefaults = {
@@ -17,4 +21,6 @@ export type CrudPageMetaDefaults = {
     title: string;
     description?: string;
     breadcrumbs: BreadcrumbItem[];
+    createRoute?: string;
+    createLabel?: string;
 };

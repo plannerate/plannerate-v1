@@ -34,6 +34,7 @@ return [
     'deleted_success' => ':resource excluido com sucesso!',
 
     'actions' => [
+        'new' => 'Novo',
         'save' => 'Salvar',
         'cancel' => 'Cancelar',
         'delete' => 'Excluir',
@@ -319,6 +320,11 @@ return [
                 'full_path' => 'Caminho completo',
                 'description' => 'Descricao',
                 'is_placeholder' => 'Categoria placeholder',
+            ],
+            'status_options' => [
+                'draft' => 'Rascunho',
+                'published' => 'Publicado',
+                'importer' => 'Importado',
             ],
             'messages' => [
                 'created' => 'Categoria criada com sucesso.',

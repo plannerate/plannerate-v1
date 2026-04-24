@@ -31,6 +31,14 @@ export function useCrudPageMeta(
                 localMeta.breadcrumbs ??
                 sharedMeta.breadcrumbs ??
                 defaults.breadcrumbs,
+            createRoute:
+                localMeta.createRoute ??
+                sharedMeta.createRoute ??
+                defaults.createRoute,
+            createLabel:
+                localMeta.createLabel ??
+                sharedMeta.createLabel ??
+                defaults.createLabel,
         };
     });
 
@@ -40,6 +48,8 @@ export function useCrudPageMeta(
             pageHeader: {
                 title: resolved.value.title,
                 description: resolved.value.description,
+                createRoute: resolved.value.createRoute,
+                createLabel: resolved.value.createLabel,
             },
         });
     });
