@@ -31,16 +31,16 @@ class ProductSalesController extends Controller
             ->first();
 
         // Vendas por mês (últimos 12 meses)
+        $driver = Sale::getModel()->getConnection()->getDriverName();
+        $monthExpr = $driver === 'pgsql'
+            ? "TO_CHAR(sale_date, 'YYYY-MM')"
+            : "DATE_FORMAT(sale_date, '%Y-%m')";
+
         $salesByMonth = Sale::where('product_id', $product->id)
             ->where('sale_date', '>=', now()->subMonths(12))
-            ->selectRaw("
-                TO_CHAR(sale_date, 'YYYY-MM') as month,
-                COUNT(*) as sales_count,
-                SUM(total_sale_quantity) as quantity,
-                SUM(total_sale_value) as revenue
-            ")
-            ->groupBy('month')
-            ->orderBy('month')
+            ->selectRaw("{$monthExpr} as month, COUNT(*) as sales_count, SUM(total_sale_quantity) as quantity, SUM(total_sale_value) as revenue")
+            ->groupByRaw($monthExpr)
+            ->orderByRaw($monthExpr)
             ->get();
 
         // Top 5 lojas com mais vendas
