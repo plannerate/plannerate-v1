@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletes; 
 use Illuminate\Support\Facades\Route;
 
 class Gondola extends Model
@@ -42,11 +42,11 @@ class Gondola extends Model
 
     public function getRouteGondolasAttribute()
     {
-        if (! Route::has('tenant.plannerates.editor.gondolas.edit')) {
+        if (! Route::has('tenant.planograms.gondolas.editor')) {
             return null;
         }
-
-        return route('tenant.plannerates.editor.gondolas.edit', ['planogram' => $this->planogram_id, 'record' => $this->id]);
+        $subdomain = str(request()->getHost())->before('.')->toString();  
+        return route('tenant.planograms.gondolas.editor', ['planogram' => $this->planogram_id, 'record' => $this->id, 'subdomain' => $subdomain], false);
     }
 
     protected function applyDomainContext(Builder $query): Builder
