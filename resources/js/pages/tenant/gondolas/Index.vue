@@ -132,14 +132,15 @@ const pageMeta = useCrudPageMeta({
                         <div class="inline-flex items-center gap-2">
                             <!-- editor.planograms.gondolas -->
                             <Button variant="outline" size="sm" as-child>
-                                <Link
+                                <a
+                                    target="_blank"
                                     :href="tenantEditorPlanogramGondolas.url({
                                         subdomain: props.subdomain,
                                         record:gondola.id,
                                     })"
                                 >
                                     {{ t('app.tenant.planograms.actions.view_gondolas') }}
-                                </Link>
+                                </a>
                             </Button>
                             <EditButton
                                 :href="GondolaController.edit.url({

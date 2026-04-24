@@ -50,9 +50,8 @@ class ProductRepository
             $height = data_get($data, 'height', $product->height);
             $depth = data_get($data, 'depth', $product->depth);
             Log::info('✅ Dimensões do produto atualizadas', ['product_id' => $product->id, 'updates' => $data]);
-            $data['has_dimensions'] = $this->isDimensionValid($width)
-                && $this->isDimensionValid($height)
-                && $this->isDimensionValid($depth);
+            // has_dimensions não existe como coluna; é derivado de width/height/depth
+            unset($data['has_dimensions']);
 
             return DB::connection(config('database.default'))
                 ->table('products')

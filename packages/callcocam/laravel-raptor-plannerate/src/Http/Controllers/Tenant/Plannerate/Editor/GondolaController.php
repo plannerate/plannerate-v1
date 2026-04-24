@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use App\Models\Tenant;
 
 class GondolaController extends Controller
 {
@@ -333,8 +334,16 @@ class GondolaController extends Controller
             $query->whereNotIn('id', $usedProductIds);
         }
 
-        // Filtro por produtos com/sem dimensões (has_dimensions). Default: apenas com dimensão
-        $query->where('has_dimensions', $withDimensions);
+        // Filtro por produtos com/sem dimensões (calculado de width/height/depth). Default: apenas com dimensão
+        if ($withDimensions) {
+            $query->where('width', '>', 0)->where('height', '>', 0)->where('depth', '>', 0);
+        } else {
+            $query->where(function ($q) {
+                $q->where('width', '<=', 0)->orWhereNull('width')
+                  ->orWhere('height', '<=', 0)->orWhereNull('height')
+                  ->orWhere('depth', '<=', 0)->orWhereNull('depth');
+            });
+        }
 
         // Paginação
         $paginator = $query->orderBy('name')->paginate($perPage, ['*'], 'page', $page);
@@ -371,7 +380,7 @@ class GondolaController extends Controller
                 'category_id' => $product->category_id,
                 'category_name' => $product->category?->name,
                 'status' => $product->status,
-                'has_dimensions' => (bool) $product->has_dimensions,
+                'has_dimensions' => ($product->width > 0 && $product->height > 0 && $product->depth > 0),
                 // 'sales' => $product->sales,
                 'is_used' => false, // Já filtrado no backend se showUsed=false
             ];
@@ -418,10 +427,10 @@ class GondolaController extends Controller
             ->values()
             ->toArray();
 
-        $client = $planogram->client;
-        $database = $client->database ?? config('database.connections.tenant.database');
+        $tenant = Tenant::current();
+        $database = $tenant?->database ?? config('database.connections.tenant.database');
         if (! $database) {
-            return redirect()->back()->with('error', 'Database do cliente não configurado.');
+            return redirect()->back()->with('error', 'Database do tenant não configurado.');
         }
 
         ProcessProductImagesByEansJob::dispatch($eans, $database);

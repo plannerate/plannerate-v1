@@ -166,26 +166,12 @@ class MonthlySalesSummary extends Model
         });
     }
 
-    public function getClientAttribute()
-    {
-        if (! $this->client_id) {
-            return null;
-        }
-
-        return cache()->remember("client:{$this->client_id}", 3600, function () {
-            return DB::connection(config('raptor.database.landlord_connection_name', 'landlord'))
-                ->table('clients')
-                ->where('id', $this->client_id)
-                ->first();
-        });
-    }
-
     /**
-     * Relacionamento com Tenant
+     * Relacionamento com Tenant (substitui client - cada tenant tem seu próprio banco)
      */
     public function tenant()
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(\App\Models\Tenant::class);
     }
 
     /**

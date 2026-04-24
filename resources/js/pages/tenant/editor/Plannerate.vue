@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Planogram from '@/components/plannerate/v3/Planogram.vue';
+import Planogram from '@/components/plannerate/Planogram.vue';
 // @ts-expect-error - BackendBreadcrumb type definition may not be available
 import { type BackendBreadcrumb } from '@/composables/useBreadcrumbs';
 import SimpleLayout from '@/layouts/SimpleLayout.vue';

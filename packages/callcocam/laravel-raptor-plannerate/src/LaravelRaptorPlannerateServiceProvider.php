@@ -84,7 +84,7 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
             return;
         }
 
-        Route::middleware(['web', 'auth', 'tenant'])
+        Route::middleware(['web', 'auth' ])
             ->group($editorRouteFile);
     }
 
@@ -101,15 +101,6 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
 
     protected function registerEditorPageRoutes(): void
     {
-        Route::middleware(['web', 'auth', 'tenant'])
-            ->prefix('{subdomain}')
-            ->name('tenant.')
-            ->group(function () {
-                Route::resource('gondolas', GondolaController::class)
-                    ->names('gondolas');
-
-                Route::resource('planograms', PlanogramController::class)
-                    ->names('planograms');
-            });
+        
     }
 }

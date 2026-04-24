@@ -44,7 +44,7 @@ class ProductDimensionController extends Controller
             $product->depth = $validated['depth'];
             $product->weight = $validated['weight'] ?? $product->weight;
             $product->unit = $validated['unit'] ?? $product->unit ?? 'cm';
-            $product->has_dimensions = $validated['width'] > 0 && $validated['height'] > 0 && $validated['depth'] > 0;
+            // has_dimensions não existe como coluna; é derivado de width/height/depth
 
             // Handle image upload
             if ($request->hasFile('image')) {

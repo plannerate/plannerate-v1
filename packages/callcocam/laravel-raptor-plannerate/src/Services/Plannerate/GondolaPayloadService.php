@@ -115,7 +115,7 @@ class GondolaPayloadService
                                             'brand' => $segment->layer->product->brand,
                                             'price' => $segment->layer->product->price,
                                             'status' => $segment->layer->product->status,
-                                            'has_dimensions' => $segment->layer->product->has_dimensions,
+                                            'has_dimensions' => ($segment->layer->product->width > 0 && $segment->layer->product->height > 0 && $segment->layer->product->depth > 0),
                                         ] : null,
                                     ] : null,
                                 ];
