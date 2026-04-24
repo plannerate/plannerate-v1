@@ -153,35 +153,35 @@ const extraHeight = 0; // Sem espaço extra — seção usa altura real igual ao
 </script>
 
 <template>
-    <div class="bg-transparent">
+    <div class="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-[#010912] dark:text-slate-100">
         <!-- Toolbar fixo -->
-        <div class="fixed top-0 left-0 right-0 z-[500] bg-white/95 border-b border-slate-200 shadow-sm">
+        <div class="fixed top-0 left-0 right-0 z-[500] border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 dark:shadow-black/30">
             <div class="max-w-screen-2xl mx-auto flex h-auto min-h-16 items-center justify-between gap-4 px-4 py-2">
                 <!-- Info do planograma + gôndola -->
                 <div class="flex min-w-0 flex-col gap-0.5">
                     <p v-if="gondola.planogram?.name" class="truncate text-xs font-medium text-primary">
                         {{ gondola.planogram.name }}
                     </p>
-                    <h1 class="truncate text-base font-semibold text-slate-800">{{ gondola.name }}</h1>
+                    <h1 class="truncate text-base font-semibold text-slate-800 dark:text-slate-100">{{ gondola.name }}</h1>
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                        <span class="flex items-center gap-1 text-xs text-slate-500">
-                            <span class="text-slate-400">⊞</span>
+                        <span class="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-300">
+                            <span class="text-slate-400 dark:text-slate-500">⊞</span>
                             {{ sections.length }} módulo{{ sections.length !== 1 ? 's' : '' }}
                         </span>
-                        <span v-if="gondola.location" class="flex items-center gap-1 text-xs text-slate-500">
-                            <span class="text-slate-400">📍</span>
+                        <span v-if="gondola.location" class="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-300">
+                            <span class="text-slate-400 dark:text-slate-500">📍</span>
                             {{ gondola.location }}
                         </span>
-                        <span v-if="gondola.side" class="flex items-center gap-1 text-xs text-slate-500">
-                            <span class="text-slate-400">◧</span>
+                        <span v-if="gondola.side" class="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-300">
+                            <span class="text-slate-400 dark:text-slate-500">◧</span>
                             {{ gondola.side }}
                         </span>
-                        <span class="flex items-center gap-1 text-xs text-slate-500">
-                            <span class="text-slate-400">→</span>
+                        <span class="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-300">
+                            <span class="text-slate-400 dark:text-slate-500">→</span>
                             {{ gondola.flow === 'right_to_left' ? 'Direita → Esquerda' : 'Esquerda → Direita' }}
                         </span>
-                        <span class="flex items-center gap-1 text-xs text-slate-500">
-                            <span class="text-slate-400">⊡</span>
+                        <span class="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-300">
+                            <span class="text-slate-400 dark:text-slate-500">⊡</span>
                             Scale {{ gondola.scale_factor ?? 1 }}×
                         </span>
                     </div>
@@ -189,7 +189,7 @@ const extraHeight = 0; // Sem espaço extra — seção usa altura real igual ao
 
                 <div class="flex items-center gap-2">
                     <!-- Controle de zoom -->
-                    <div class="flex items-center gap-1 rounded-md border bg-background p-1">
+                    <div class="flex items-center gap-1 rounded-md border border-slate-200 bg-background p-1 dark:border-slate-700">
                         <Button variant="ghost" size="icon" class="size-7" :disabled="localScale <= SCALE_MIN" @click="decreaseScale">
                             <Minus class="size-3.5" />
                         </Button>

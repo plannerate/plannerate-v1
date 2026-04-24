@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Encoders\WebpEncoder;
 use Intervention\Image\Laravel\Facades\Image;
 
 class DOProcessProductImageJob implements ShouldQueue
@@ -105,7 +106,7 @@ class DOProcessProductImageJob implements ShouldQueue
                 return null;
             }
             // Log::info("Processando imagem para EAN {$product->ean} a partir de {$url}");
-            $image = Image::read($imageFile);
+            $image = Image::decodeBinary($imageFile);
 
             if (! is_numeric($width) || $width <= 0) {
                 $width = $image->width() / $pixelMultiplier; // Largura padrão em cm
@@ -121,12 +122,12 @@ class DOProcessProductImageJob implements ShouldQueue
             $image->resize($targetWidth, $targetHeight);
 
             // Codifica para WebP com alta qualidade
-            $encodedImage = $image->toWebp(quality: $quality);
+            $encodedImage = $image->encode(new WebpEncoder($quality));
 
             $newFileName = sprintf('%s.webp', $product->ean);
             $newPath = sprintf('repositorioimagens/frente/%s', $newFileName);
 
-            Storage::disk('public')->put($newPath, $encodedImage);
+            Storage::disk('public')->put($newPath, (string) $encodedImage);
 
             $url = Storage::disk('public')->url($newPath);
             // Log::info("Imagem processada para EAN {$product->ean}, salva em {$url}");

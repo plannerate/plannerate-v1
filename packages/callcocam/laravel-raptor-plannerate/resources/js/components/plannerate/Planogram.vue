@@ -90,6 +90,7 @@ const goBack = () => {
 
 const handleUpdateGondolaImages = () => {
     const gondolaId = props.record?.id;
+    console.log('Updating gondola images for gondola ID:', gondolaId);
     if (!gondolaId) return;
 
     router.post(
@@ -200,8 +201,7 @@ const category = computed(() => {
                 :tenant="record.tenant"
                 :planogram-id="record.planogram_id"
                 :available-users="availableUsers || []"
-                :back-route="props.backRoute"
-                @go-back="goBack"
+                :back-route="props.backRoute" 
                 @update-gondola-images="handleUpdateGondolaImages"
                 :permissions="permissions"
             />

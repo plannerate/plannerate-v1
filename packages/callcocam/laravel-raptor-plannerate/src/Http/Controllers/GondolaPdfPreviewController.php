@@ -24,7 +24,7 @@ class GondolaPdfPreviewController extends Controller
         $abcAnalysis = GondolaAnalysis::getLatestAbcAnalysis($gondolaId);
         $stockAnalysis = GondolaAnalysis::getLatestStockAnalysis($gondolaId);
 
-        return Inertia::render('tenant/plannerates/pdfPrintview', [
+        return Inertia::render('tenant/editor/pdfPrintview', [
             'gondola' => $data['gondola'],
             'sections' => $data['sections'],
             'analysis' => [
