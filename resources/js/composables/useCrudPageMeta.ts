@@ -39,6 +39,10 @@ export function useCrudPageMeta(
                 localMeta.createLabel ??
                 sharedMeta.createLabel ??
                 defaults.createLabel,
+            headerActions:
+                localMeta.headerActions ??
+                sharedMeta.headerActions ??
+                defaults.headerActions,
         };
     });
 
@@ -50,6 +54,7 @@ export function useCrudPageMeta(
                 description: resolved.value.description,
                 createRoute: resolved.value.createRoute,
                 createLabel: resolved.value.createLabel,
+                actions: resolved.value.headerActions,
             },
         });
     });
