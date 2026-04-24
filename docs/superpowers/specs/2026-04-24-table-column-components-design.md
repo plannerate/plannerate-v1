@@ -23,10 +23,11 @@ O diretório `resources/js/components/table/columns/` existe mas está vazio. O 
 ```
 resources/js/components/table/columns/
 ├── ColumnStatusBadge.vue    ← Badge com lógica statusVariant centralizada
-├── ColumnActions.vue        ← EditButton + DeleteButton
+├── ColumnActions.vue        ← EditButton + DeleteButton + slot para extras
 ├── ColumnImage.vue          ← thumbnail com fallback (ImageIcon)
 ├── ColumnDate.vue           ← Calendar icon + data formatada (única ou intervalo)
-└── index.ts                 ← barrel export de todos os 4 componentes
+├── ColumnLabel.vue          ← texto principal + texto secundário muted abaixo
+└── index.ts                 ← barrel export de todos os 5 componentes
 ```
 
 ## APIs dos Componentes
@@ -89,6 +90,20 @@ props: {
 - Intervalo: `formatDate(from) – formatDate(to)`
 - Se todos os valores forem null/undefined: exibe `—`
 
+### ColumnLabel.vue
+
+```typescript
+props: {
+    label: string            // texto principal (ex: nome do produto)
+    description?: string | null  // texto secundário abaixo (ex: slug)
+}
+```
+
+- Linha 1: `<span class="font-medium text-sm">{{ label }}</span>`
+- Linha 2 (se `description`): `<span class="text-xs text-muted-foreground">{{ description }}</span>`
+- Estrutura: `flex flex-col gap-0.5`
+- Uso típico: `<ColumnLabel :label="product.name" :description="product.slug" />`
+
 ### index.ts (barrel)
 
 ```typescript
@@ -96,6 +111,7 @@ export { default as ColumnStatusBadge } from './ColumnStatusBadge.vue'
 export { default as ColumnActions } from './ColumnActions.vue'
 export { default as ColumnImage } from './ColumnImage.vue'
 export { default as ColumnDate } from './ColumnDate.vue'
+export { default as ColumnLabel } from './ColumnLabel.vue'
 ```
 
 ## Migração das Páginas
@@ -104,13 +120,13 @@ Todas as 7 páginas de lista serão atualizadas para substituir o markup inline 
 
 | Página | Colunas migradas |
 |--------|-----------------|
-| planograms/Index.vue | ColumnStatusBadge, ColumnActions, ColumnDate |
-| products/Index.vue | ColumnImage, ColumnActions |
-| categories/Index.vue | ColumnStatusBadge, ColumnActions |
-| gondolas/Index.vue | ColumnActions |
-| stores/Index.vue | ColumnActions |
-| providers/Index.vue | ColumnActions |
-| clusters/Index.vue | ColumnActions |
+| planograms/Index.vue | ColumnStatusBadge, ColumnActions, ColumnDate, ColumnLabel |
+| products/Index.vue | ColumnImage, ColumnActions, ColumnLabel |
+| categories/Index.vue | ColumnStatusBadge, ColumnActions, ColumnLabel |
+| gondolas/Index.vue | ColumnActions, ColumnLabel |
+| stores/Index.vue | ColumnActions, ColumnLabel |
+| providers/Index.vue | ColumnActions, ColumnLabel |
+| clusters/Index.vue | ColumnActions, ColumnLabel |
 
 Em cada página migrada:
 - Substituir markup inline pelo componente correspondente
