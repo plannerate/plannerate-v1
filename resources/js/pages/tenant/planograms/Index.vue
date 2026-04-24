@@ -98,8 +98,7 @@ const pageMeta = useCrudPageMeta({
         <table class="w-full text-sm">
             <thead class="bg-muted/30 text-left text-muted-foreground">
                 <tr>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.name') }}</th>
-                    <th class="px-4 py-3 font-medium">Slug</th>
+                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.name') }}</th> 
                     <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.type') }}</th>
                     <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.store') }}</th>
                     <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.period') }}</th>
@@ -114,8 +113,7 @@ const pageMeta = useCrudPageMeta({
                     </td>
                 </tr>
                 <tr v-for="planogram in props.planograms.data" :key="planogram.id" class="border-t border-sidebar-border/60 dark:border-sidebar-border">
-                    <td class="px-4 py-3 font-medium">{{ planogram.name ?? '-' }}</td>
-                    <td class="px-4 py-3">{{ planogram.slug ?? '-' }}</td>
+                    <td class="px-4 py-3 font-medium">{{ planogram.name ?? '-' }}</td> 
                     <td class="px-4 py-3">{{ planogram.type }}</td>
                     <td class="px-4 py-3">{{ planogram.store ?? '-' }}</td>
                     <td class="px-4 py-3">{{ planogram.start_date ?? '-' }} - {{ planogram.end_date ?? '-' }}</td>

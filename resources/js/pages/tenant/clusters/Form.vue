@@ -175,7 +175,7 @@ const pageMeta = useCrudPageMeta({
                             :label="t('app.tenant.clusters.fields.status')"
                             :default-value="props.cluster?.status ?? 'draft'"
                             :error="errors.status"
-                            class="md:col-span-3"
+                            class="md:col-span-12"
                             :options="[
                                 { value: 'draft', label: 'Draft' },
                                 { value: 'published', label: 'Published' },
@@ -188,12 +188,10 @@ const pageMeta = useCrudPageMeta({
                             :label="t('app.tenant.clusters.fields.description')"
                             :default-value="props.cluster?.description ?? ''"
                             :error="errors.description"
-                            class="md:col-span-9"
+                            class="md:col-span-12"
                             :rows="2"
                         />
-                    </div>
-
-                    <AddressFields :errors="errors" />
+                    </div> 
                 </FormCard>
             </Form>
         </div>
