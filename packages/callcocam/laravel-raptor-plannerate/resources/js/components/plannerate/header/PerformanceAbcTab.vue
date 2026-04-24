@@ -133,10 +133,10 @@ import {
 import { BarChart3, Calendar, Settings } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
-import { calculateAbcApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Tenant/GondolaAnalysisController';
+import { calculateAbcApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 import AbcParamsModal from '@/components/plannerate/analysis/AbcParamsModal.vue';
 import AbcResultsList from '@/components/plannerate/analysis/AbcResultsList.vue';
-import { useAbcClassification } from '@/composables/plannerate/v3/useAbcClassification';
+import { useAbcClassification } from '@/composables/plannerate/useAbcClassification';
 
 interface Planogram {
     id: string;

@@ -10,12 +10,9 @@ class GondolaPayloadService
     /**
      * Monta payload otimizado para o editor da gôndola.
      *
-     * Quando $workflowEnabled = false, carrega todas as gôndolas do planograma
-     * sem filtrar por execução de workflow ou responsável atual.
-     *
      * @return array<string, mixed>
      */
-    public function buildEditorPayload(Gondola $gondola, bool $workflowEnabled = true): array
+    public function buildEditorPayload(Gondola $gondola): array
     {
         $recordData = [
             'id' => $gondola->id,
@@ -146,33 +143,14 @@ class GondolaPayloadService
                 'updated_at' => $planogram->updated_at?->toISOString(),
             ];
 
-            if ($workflowEnabled) {
-                $gondolas = $planogram->gondolasStarted
-                    ->map(function ($relatedGondola) {
-                        $execution = $relatedGondola->workflowExecution;
-                        if ($execution && $execution->current_responsible_id === auth()->id()) {
-                            return [
-                                'id' => $relatedGondola->id,
-                                'name' => $relatedGondola->name,
-                                'route_gondolas' => $relatedGondola->route_gondolas,
-                            ];
-                        }
-
-                        return null;
-                    })
-                    ->filter()
-                    ->values()
-                    ->all();
-            } else {
-                $gondolas = $planogram->gondolas
-                    ->map(fn ($relatedGondola) => [
-                        'id' => $relatedGondola->id,
-                        'name' => $relatedGondola->name,
-                        'route_gondolas' => $relatedGondola->route_gondolas,
-                    ])
-                    ->values()
-                    ->all();
-            }
+            $gondolas = $planogram->gondolas
+                ->map(fn ($relatedGondola) => [
+                    'id' => $relatedGondola->id,
+                    'name' => $relatedGondola->name,
+                    'route_gondolas' => $relatedGondola->route_gondolas,
+                ])
+                ->values()
+                ->all();
 
             $recordData['planogram']['gondolas'] = $gondolas;
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { usePlanogramEditor } from '@/composables/plannerate/v3/usePlanogramEditor';
-import { usePlanogramSelection } from '@/composables/plannerate/v3/usePlanogramSelection';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import type { Gondola } from '@/types/planogram';
 import { onClickOutside } from '@vueuse/core';
 import { Package } from 'lucide-vue-next';

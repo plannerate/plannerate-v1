@@ -1,5 +1,5 @@
 <script lang="ts">
-import { validateGondolaFields } from '@/composables/plannerate/v3/useGondolaFields';
+import { validateGondolaFields } from '@/composables/plannerate/useGondolaFields';
 
 export const validate = (data: {
     gondolaName: string;

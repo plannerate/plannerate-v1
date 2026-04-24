@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { updateImages } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Tenant/Plannerate/Editor/GondolaController';
-import { usePlanogramEditor } from '@/composables/plannerate/v3/usePlanogramEditor';
-import { usePlanogramKeyboard } from '@/composables/plannerate/v3/usePlanogramKeyboard';
+import { updateImages } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { usePlanogramKeyboard } from '@/composables/plannerate/usePlanogramKeyboard';
 import { router } from '@inertiajs/vue3';
 import { PanelLeftOpen, PanelRightOpen } from 'lucide-vue-next';
 import { computed, onMounted, provide, ref } from 'vue';

@@ -44,13 +44,6 @@ class StoreGondolaRequest extends FormRequest
             'shelfDepth' => ['required', 'numeric', 'min:1'],
             'numShelves' => ['required', 'integer', 'min:0'],
             'productType' => ['required', 'in:normal,hook'],
-
-            // Step 6: Workflow Configuration
-            'autoStartWorkflow' => ['nullable', 'boolean'],
-            'assignToCurrentUser' => ['nullable', 'boolean'],
-            'assignedUserId' => ['nullable', 'string', 'exists:users,id'],
-            'startDate' => ['nullable', 'date'],
-            'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
 

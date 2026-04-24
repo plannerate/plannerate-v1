@@ -1,8 +1,7 @@
 <?php
 
-namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Tenant\Plannerate;
-
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
+namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
+ 
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\GondolaAnalysis;
 use Callcocam\LaravelRaptorPlannerate\Services\Printing\GondolaPrintService;
 use Inertia\Inertia;

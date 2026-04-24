@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import { update } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Tenant/Plannerate/Api/ProductImageController';
+import { update } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 
 export function useProductImage() {
     const isDownloading = ref(false);

@@ -1,7 +1,7 @@
 <?php
 
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaExportController;
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Tenant\Plannerate\GondolaPdfPreviewController;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaExportController;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaPdfPreviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('export/gondola')

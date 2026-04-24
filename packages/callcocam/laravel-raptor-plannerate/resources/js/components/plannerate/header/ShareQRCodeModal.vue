@@ -12,8 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'vue-sonner';
-import { generateQrCode } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Export/GondolaExportController';
-import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Tenant/Plannerate/GondolaPdfPreviewController';
+import { generateQrCode } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaExportController';
+import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
 import {
     Download,
     Copy,

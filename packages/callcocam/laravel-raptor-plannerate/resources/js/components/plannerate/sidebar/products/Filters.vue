@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ProductFilters } from '@/composables/plannerate/v3/useProductsPanel'; 
+import type { ProductFilters } from '@/composables/plannerate/useProductsPanel'; 
 
 // Re-exporta o tipo para uso em outros componentes
 export type { ProductFilters };

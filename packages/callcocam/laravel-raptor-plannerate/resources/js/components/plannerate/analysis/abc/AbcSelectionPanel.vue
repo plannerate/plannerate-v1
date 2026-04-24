@@ -183,7 +183,7 @@ import {
 } from '@/components/ui/card';
 import { Trash2 } from 'lucide-vue-next';
 import type { AbcResult } from './types';
-import ProductSalesSummary from '../../v3/sidebar/properties/partials/ProductSalesSummary.vue';
+import ProductSalesSummary from '../../sidebar/properties/partials/ProductSalesSummary.vue';
 
 defineProps<{
     selected: AbcResult | null;

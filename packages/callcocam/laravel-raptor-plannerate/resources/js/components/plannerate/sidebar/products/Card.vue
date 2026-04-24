@@ -66,8 +66,8 @@
     </div>
 </template>
 <script setup lang="ts">
-import { usePlanogramEditor } from '@/composables/plannerate/v3/usePlanogramEditor';
-import { usePlanogramSelection } from '@/composables/plannerate/v3/usePlanogramSelection';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { Product } from '@/types/planogram';
 import { computed, inject, onMounted, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';

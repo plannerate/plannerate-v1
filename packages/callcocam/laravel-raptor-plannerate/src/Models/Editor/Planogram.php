@@ -9,17 +9,12 @@
 namespace Callcocam\LaravelRaptorPlannerate\Models\Editor;
 
 use App\Models\Traits\BelongsToTenant;
-use Callcocam\LaravelRaptorFlow\Models\FlowConfigStep;
-use Callcocam\LaravelRaptorPlannerate\Enums\GondolaWorkflowStatus;
 use Callcocam\LaravelRaptorPlannerate\Models\Traits\HasCategory;
-use Callcocam\LaravelRaptorPlannerate\Models\Workflow\PlanogramWorkflow;
-use Callcocam\LaravelRaptorPlannerate\Support\WorkflowMorphMap;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 
 class Planogram extends Model
 {
@@ -30,12 +25,6 @@ class Planogram extends Model
     public function gondolas()
     {
         return $this->hasMany(Gondola::class);
-    }
-
-    public function gondolasStarted()
-    {
-        return $this->hasMany(Gondola::class)
-            ->whereHas('workflowExecution', fn ($q) => $q->where('status', GondolaWorkflowStatus::InProgress->value));
     }
 
     public function getClientCascadingAttribute()
@@ -111,52 +100,5 @@ class Planogram extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
-    }
-
-    /**
-     * Etapas de workflow do planograma (FlowConfigStep com configurável = PlanogramWorkflow + este id).
-     */
-    public function flowConfigSteps()
-    {
-        return $this->hasMany(FlowConfigStep::class, 'configurable_id')
-            ->whereIn('configurable_type', WorkflowMorphMap::planogramWorkflowTypes())
-            ->orderBy('order');
-    }
-
-    /**
-     * Payload compatível com RepeaterField::make('configs') no PlanogramController.
-     *
-     * RepeaterField espera Collection/Model para resolver defaults internos.
-     *
-     * @return Collection<int, array{
-     *   id: string,
-     *   workflow_step_template_id: string|null,
-     *   responsible_role_id: string|null,
-     *   estimated_duration_days: int,
-     *   users: array<int, string>
-     * }>
-     */
-    public function getConfigsAttribute(): Collection
-    {
-        return $this->flowConfigSteps()
-            ->with(['participants', 'stepTemplate:id,estimated_duration_days'])
-            ->get()
-            ->map(function (FlowConfigStep $step): array {
-                $users = $step->participants
-                    ->pluck('user_id')
-                    ->filter(fn ($id) => ! is_null($id) && $id !== '')
-                    ->map(fn ($id) => (string) $id)
-                    ->values()
-                    ->all();
-
-                return [
-                    'id' => (string) $step->id,
-                    'workflow_step_template_id' => $step->flow_step_template_id ? (string) $step->flow_step_template_id : null,
-                    'responsible_role_id' => $step->default_role_id ? (string) $step->default_role_id : null,
-                    'estimated_duration_days' => (int) ($step->estimated_duration_days ?? $step->stepTemplate?->estimated_duration_days ?? 2),
-                    'users' => $users,
-                ];
-            })
-            ->values();
     }
 }

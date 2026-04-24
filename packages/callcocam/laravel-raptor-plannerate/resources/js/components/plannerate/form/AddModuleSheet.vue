@@ -20,11 +20,11 @@ import {
 import {
     getInitialSectionFields,
     toSnakeCase as sectionToSnakeCase,
-} from '@/composables/plannerate/v3/useSectionFields';
+} from '@/composables/plannerate/useSectionFields';
 import {
     getInitialShelfFields,
     toSnakeCase as shelfToSnakeCase,
-} from '@/composables/plannerate/v3/useShelfFields';
+} from '@/composables/plannerate/useShelfFields';
 import type { Section } from '@/types/planogram';
 import { useForm } from '@inertiajs/vue3';
 import { computed, watch } from 'vue';

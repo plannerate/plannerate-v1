@@ -39,18 +39,18 @@ import {
     draggingShelfId,
     draggingShelfOffset,
     draggingShelfSectionId,
-} from '../../../composables/plannerate/v3/editor/useGondolaState';
-import { findShelfById } from '../../../composables/plannerate/v3/editor/useLookupHelpers';
-import { usePlanogramEditor } from '../../../composables/plannerate/v3/usePlanogramEditor';
-import { usePlanogramSelection } from '../../../composables/plannerate/v3/usePlanogramSelection';
+} from '../../../composables/plannerate/editor/useGondolaState';
+import { findShelfById } from '../../../composables/plannerate/editor/useLookupHelpers';
+import { usePlanogramEditor } from '../../../composables/plannerate/usePlanogramEditor';
+import { usePlanogramSelection } from '../../../composables/plannerate/usePlanogramSelection';
 import {
     DEFAULT_SECTION_FIELDS,
     toCamelCase,
-} from '../../../composables/plannerate/v3/useSectionFields';
+} from '../../../composables/plannerate/useSectionFields';
 import {
     calculateHoles,
     findNearestHole,
-} from '../../../composables/plannerate/v3/useSectionHoles';
+} from '../../../composables/plannerate/useSectionHoles';
 import type { Section as SectionType } from '../../../types/planogram';
 import { ulid } from 'ulid';
 import { computed, ref } from 'vue';

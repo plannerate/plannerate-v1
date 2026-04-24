@@ -69,7 +69,7 @@
     </Transition>
 </template>
 <script setup lang="ts">
-import { useProductsPanel } from '@/composables/plannerate/v3/useProductsPanel';
+import { useProductsPanel } from '@/composables/plannerate/useProductsPanel';
 import { onMounted, provide, ref, useTemplateRef } from 'vue';
 import ProductFilters from './Filters.vue';
 import ProductList from './ProductList.vue';

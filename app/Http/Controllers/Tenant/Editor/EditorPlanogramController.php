@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Gondola;
 use App\Models\User;
 use App\Support\Tenancy\InteractsWithTenantContext;
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Concerns\HasWorkflowToggle;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\GondolaAnalysis;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\GondolaPayloadService;
 use Illuminate\Support\Facades\Cache;
@@ -14,7 +13,7 @@ use Inertia\Inertia;
 
 class EditorPlanogramController extends Controller
 {
-    use InteractsWithTenantContext, HasWorkflowToggle;
+    use InteractsWithTenantContext;
 
     public function edit(string $subdomain, Gondola $record)
     {
@@ -28,14 +27,8 @@ class EditorPlanogramController extends Controller
         ]);
         // Até aqui vai bem rapido
         $availableUsers = $this->getAvailableUsers($record->tenant_id);
-        $recordData = app(GondolaPayloadService::class)->buildEditorPayload($record, $this->isWorkflowEnabled());
-
-        if (
-            $this->isWorkflowEnabled() &&
-            (! data_get($recordData, 'planogram.gondolas') || data_get($recordData, 'planogram.gondolas') === [])
-        ) {
-            abort(403, 'Planograma sem gôndolas. Não existe nenhuma gôndola associada a esta etapa do planograma.');
-        }
+        $recordData = app(GondolaPayloadService::class)->buildEditorPayload($record, false); // false para não incluir produtos nas gôndolas, otimizando a consulta
+ 
 
         // Carregar análises mais recentes
         $abcAnalysis = GondolaAnalysis::getLatestAbcAnalysis($record->id);
@@ -137,10 +130,7 @@ class EditorPlanogramController extends Controller
     
     protected function canCreateGondola($model): bool
     {
-        if (! $this->isWorkflowEnabled()) {
-            return auth()->user()->can('tenant.gondolas.create');
-        }
-
+        
         
 
         return false;

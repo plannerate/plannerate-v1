@@ -3,8 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from '@/components/ui/badge'
 import { computed } from 'vue'
 import type { Product } from '@/types/planogram'
-import { useAbcClassification } from '@/composables/plannerate/v3/useAbcClassification'
-import { useTargetStockAnalysis } from '@/composables/plannerate/v3/useTargetStockAnalysis'
+import { useAbcClassification } from '@/composables/plannerate/useAbcClassification'
+import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis'
 
 interface Props {
   open: boolean

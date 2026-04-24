@@ -1,8 +1,7 @@
 <?php
 
-namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Client;
-
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
+namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
+ 
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Inertia\Inertia;
 use Inertia\Response;

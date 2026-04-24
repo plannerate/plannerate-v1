@@ -26,30 +26,17 @@ class GondolaService
 
     /**
      * Cria uma gôndola com módulos (seções) e prateleiras em uma transação.
-     * Pode opcionalmente iniciar o workflow da gôndola.
      *
      * @param  array<string, mixed>  $data  Dados no formato do StoreGondolaRequest (camelCase): gondolaName, location, side, scaleFactor, flow, status, height, width, baseDepth, numModules, baseHeight, baseWidth, rackWidth, holeHeight, holeWidth, holeSpacing, numShelves, shelfWidth, shelfHeight, shelfDepth, productType
-     * @param  array{auto_start_workflow?: bool, start_date?: string|null, notes?: string|null, responsible_user_id?: string|null}  $options
      */
-    public function createGondolaWithStructure(Planogram $planogram, array $data, array $options = []): Gondola
+    public function createGondolaWithStructure(Planogram $planogram, array $data): Gondola
     {
-        $gondola = DB::transaction(function () use ($planogram, $data) {
+        return DB::transaction(function () use ($planogram, $data) {
             $gondola = $this->createGondola($planogram, $data);
             $this->createSectionsWithShelves($gondola, $data);
 
             return $gondola;
         });
-
-        if (! empty($options['auto_start_workflow'])) {
-            $this->startWorkflow(
-                $gondola,
-                $options['start_date'] ?? null,
-                $options['notes'] ?? null,
-                $options['responsible_user_id'] ?? null
-            );
-        }
-
-        return $gondola;
     }
 
     /**

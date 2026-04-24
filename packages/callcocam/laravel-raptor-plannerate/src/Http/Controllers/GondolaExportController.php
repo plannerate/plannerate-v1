@@ -1,8 +1,7 @@
 <?php
 
-namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export;
-
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
+namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
+ 
 use Callcocam\LaravelRaptorPlannerate\Services\Printing\GondolaPrintService;
 use Callcocam\LaravelRaptorPlannerate\Services\QRCode\QRCodeService;
 use Illuminate\Http\JsonResponse;

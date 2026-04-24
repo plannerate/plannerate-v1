@@ -6,7 +6,7 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Tenant\Plannerate\Api;
+namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Api;
 
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\UploadProductImageRequest;

@@ -2,8 +2,8 @@
 import PdfSegment from './PdfSegment.vue'
 import type { Section, Shelf } from '@/types/planogram'
 import { useShelfAreaCalculation } from '@/composables/plannerate/useShelfAreaCalculation'
-import { calculateHolePositions } from '@/composables/plannerate/v3/useSectionHoles'
-import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/v3/useSectionFields'
+import { calculateHolePositions } from '@/composables/plannerate/useSectionHoles'
+import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/useSectionFields'
 import { computed } from 'vue'
 
 interface Props {

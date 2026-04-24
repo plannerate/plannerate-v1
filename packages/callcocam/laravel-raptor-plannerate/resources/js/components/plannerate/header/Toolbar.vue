@@ -20,10 +20,10 @@ import {
     currentGondola,
     eanSearchQuery,
     showPerformanceModal,
-} from '@/composables/plannerate/v3/editor/useGondolaState';
-import { usePlanogramChanges } from '@/composables/plannerate/v3/usePlanogramChanges';
-import { usePlanogramEditor } from '@/composables/plannerate/v3/usePlanogramEditor';
-import { usePlanogramSelection } from '@/composables/plannerate/v3/usePlanogramSelection';
+} from '@/composables/plannerate/editor/useGondolaState';
+import { usePlanogramChanges } from '@/composables/plannerate/usePlanogramChanges';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 
 // Types
 

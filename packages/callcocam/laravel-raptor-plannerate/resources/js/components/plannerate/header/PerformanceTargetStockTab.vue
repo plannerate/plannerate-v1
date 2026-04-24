@@ -136,7 +136,7 @@
 
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { calculateTargetStockApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Tenant/GondolaAnalysisController';
+import { calculateTargetStockApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 import TargetStockParamsModal from '@/components/plannerate/analysis/TargetStockParamsModal.vue';
 import TargetStockResultsList from '@/components/plannerate/analysis/TargetStockResultsList.vue';
 import { Button } from '@/components/ui/button'; 
@@ -144,7 +144,7 @@ import {
     Card,
     CardContent,
 } from '@/components/ui/card';
-import { useTargetStockAnalysis } from '@/composables/plannerate/v3/useTargetStockAnalysis';
+import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis';
 import { Calendar, Package, Settings } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 

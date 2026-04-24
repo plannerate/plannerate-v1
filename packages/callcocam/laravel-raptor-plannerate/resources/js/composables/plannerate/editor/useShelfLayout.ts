@@ -1,6 +1,6 @@
 import { useShelfAreaCalculation } from '@/composables/plannerate/useShelfAreaCalculation';
-import { calculateHolePositions } from '@/composables/plannerate/v3/useSectionHoles';
-import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/v3/useSectionFields';
+import { calculateHolePositions } from '@/composables/plannerate/useSectionHoles';
+import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/useSectionFields';
 import type { Section, Shelf as ShelfType } from '@/types/planogram';
 import { computed, type Ref } from 'vue';
 

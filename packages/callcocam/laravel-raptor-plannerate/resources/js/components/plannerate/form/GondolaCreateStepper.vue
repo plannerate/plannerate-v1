@@ -19,9 +19,9 @@ import {
     DEFAULT_GONDOLA_FIELDS,
     generateGondolaCode,
     getInitialGondolaFields,
-} from '@/composables/plannerate/v3/useGondolaFields';
-import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/v3/useSectionFields';
-import { DEFAULT_SHELF_FIELDS } from '@/composables/plannerate/v3/useShelfFields';
+} from '@/composables/plannerate/useGondolaFields';
+import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/useSectionFields';
+import { DEFAULT_SHELF_FIELDS } from '@/composables/plannerate/useShelfFields';
 import { useForm } from '@inertiajs/vue3';
 import { Check, ChevronLeft, ChevronRight, Circle, Dot } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';

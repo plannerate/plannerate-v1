@@ -1,4 +1,4 @@
-import { usePlanogramEditor } from '@/composables/plannerate/v3/usePlanogramEditor';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { Layer, Product, Section, Segment, Shelf } from '@/types/planogram';
 import { computed, readonly, ref } from 'vue';
 

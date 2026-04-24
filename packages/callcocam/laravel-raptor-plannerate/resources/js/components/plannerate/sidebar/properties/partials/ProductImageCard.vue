@@ -82,7 +82,7 @@
 <script setup lang="ts">
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useProductImage } from '@/composables/plannerate/v3/useProductImage';
+import { useProductImage } from '@/composables/plannerate/useProductImage';
 import type { Product } from '@/types/planogram';
 import { Download, Loader2, Trash2, Upload } from 'lucide-vue-next';
 

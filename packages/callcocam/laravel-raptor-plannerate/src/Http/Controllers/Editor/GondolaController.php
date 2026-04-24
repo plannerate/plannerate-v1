@@ -6,11 +6,9 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Tenant\Plannerate\Editor;
+namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
-use Callcocam\LaravelRaptorFlow\Models\FlowExecution;
-use Callcocam\LaravelRaptorFlow\Services\FlowManager;
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Concerns\HasWorkflowToggle;
+use App\Models\Tenant;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\Editor\StoreGondolaRequest;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\Editor\UpdateGondolaRequest;
@@ -25,20 +23,15 @@ use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\User;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\GondolaPayloadService;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\GondolaService;
-use Callcocam\LaravelRaptorPlannerate\Support\WorkflowMorphMap;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
-use App\Models\Tenant;
 
 class GondolaController extends Controller
 {
-    use HasWorkflowToggle;
-
     public function edit(string $subdomain, string $record)
-    { 
+    {
         $gondola = $this->findGondolaOrFail($record);
         $gondola->load([
             'planogram.gondolas',
@@ -48,12 +41,7 @@ class GondolaController extends Controller
         ]);
         // Até aqui vai bem rapido
         $availableUsers = $this->getAvailableUsers($gondola->tenant_id);
-        $recordData = app(GondolaPayloadService::class)->buildEditorPayload($gondola, $this->isWorkflowEnabled());
-
-        if ($this->isWorkflowEnabled() &&
-            (! data_get($recordData, 'planogram.gondolas') || data_get($recordData, 'planogram.gondolas') === [])) {
-            abort(403, 'Planograma sem gôndolas. Não existe nenhuma gôndola associada a esta etapa do planograma.');
-        }
+        $recordData = app(GondolaPayloadService::class)->buildEditorPayload($gondola);
 
         // Carregar análises mais recentes
         $abcAnalysis = GondolaAnalysis::getLatestAbcAnalysis($gondola->id);
@@ -90,7 +78,7 @@ class GondolaController extends Controller
             'sections.shelves.segments.layer.product',
         ]);
 
-        $recordData = app(GondolaPayloadService::class)->buildEditorPayload($gondola, $this->isWorkflowEnabled());
+        $recordData = app(GondolaPayloadService::class)->buildEditorPayload($gondola);
 
         // Carregar análises mais recentes
         $abcAnalysis = GondolaAnalysis::getLatestAbcAnalysis($gondola->id);
@@ -116,32 +104,9 @@ class GondolaController extends Controller
     public function store(StoreGondolaRequest $request, $planogram)
     {
         $planogramModel = Planogram::findOrFail($planogram);
-        $shouldAutoStartWorkflow = $request->boolean('autoStartWorkflow');
 
         // Cria a gôndola sempre
-        $gondola = app(GondolaService::class)->createGondolaWithStructure($planogramModel, $request->validated(), [
-            'auto_start_workflow' => false, // Não auto-inicia aqui
-        ]);
-
-        if ($shouldAutoStartWorkflow && $this->isWorkflowEnabled()) {
-            $flowExecution = FlowExecution::query()
-                ->whereIn('workable_type', WorkflowMorphMap::gondolaWorkflowTypes())
-                ->where('workable_id', $gondola->id)
-                ->first();
-
-            if ($flowExecution) {
-                try {
-                    app(FlowManager::class)->startPendingExecution(
-                        $flowExecution,
-                        (string) $request->user()->id
-                    );
-
-                    return redirect()->back()->with('success', 'Gôndola criada e workflow iniciado com sucesso!');
-                } catch (ValidationException $e) {
-                    return redirect()->back()->with('info', 'Gôndola criada! O workflow pode ser iniciado posteriormente no kanban.');
-                }
-            }
-        }
+        $gondola = app(GondolaService::class)->createGondolaWithStructure($planogramModel, $request->validated());
 
         return redirect()->back()->with('success', 'Gôndola criada com sucesso!');
     }
@@ -169,13 +134,6 @@ class GondolaController extends Controller
 
         // Soft delete the gondola (cascade will handle sections, shelves, etc.)
         $gondolaModel->delete();
-
-        if ($this->isWorkflowEnabled()) {
-            FlowExecution::query()
-                ->whereIn('workable_type', WorkflowMorphMap::gondolaWorkflowTypes())
-                ->where('workable_id', $gondolaModel->id)
-                ->forceDelete();
-        }
 
         // Check if there are other gondolas in the planogram
         $remainingGondola = Gondola::where('planogram_id', $planogramId)->first();
@@ -229,8 +187,8 @@ class GondolaController extends Controller
 
     protected function getAvailableUsers(string $tenantId): array
     {
-        return Cache::remember("tenant_{$tenantId}_users_v2", now()->addMinutes(30), function () use ($tenantId) {
-            return User::select('id', 'name') 
+        return Cache::remember("tenant_{$tenantId}_users_v2", now()->addMinutes(30), function () {
+            return User::select('id', 'name')
                 ->orderBy('name')
                 ->get()
                 ->map(static fn ($user): array => [
@@ -340,8 +298,8 @@ class GondolaController extends Controller
         } else {
             $query->where(function ($q) {
                 $q->where('width', '<=', 0)->orWhereNull('width')
-                  ->orWhere('height', '<=', 0)->orWhereNull('height')
-                  ->orWhere('depth', '<=', 0)->orWhereNull('depth');
+                    ->orWhere('height', '<=', 0)->orWhereNull('height')
+                    ->orWhere('depth', '<=', 0)->orWhereNull('depth');
             });
         }
 
@@ -526,16 +484,6 @@ class GondolaController extends Controller
 
     protected function canCreateGondola($model): bool
     {
-        if (! $this->isWorkflowEnabled()) {
-            return auth()->user()->can('tenant.gondolas.create');
-        }
-
-        if ($model && $model->flowConfigSteps()->exists()) {
-            if ($model->flowConfigSteps()->count() > 0) {
-                return auth()->user()->can('tenant.gondolas.create');
-            }
-        }
-
-        return false;
+        return auth()->user()->can('tenant.gondolas.create');
     }
 }

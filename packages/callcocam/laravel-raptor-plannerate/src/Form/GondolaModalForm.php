@@ -8,7 +8,6 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Form;
 
-use Callcocam\LaravelRaptor\Support\Form\Columns\Types\CheckboxField;
 use Callcocam\LaravelRaptor\Support\Form\Columns\Types\NumberField;
 use Callcocam\LaravelRaptor\Support\Form\Columns\Types\SelectField;
 use Callcocam\LaravelRaptor\Support\Form\Columns\Types\TextField;
@@ -140,13 +139,6 @@ class GondolaModalForm
                 ->placeholder('Digite o número de prateleiras da gôndola')
                 ->default(data_get($config, 'numShelves', config('plannerate.defaults.gondola.numShelves', 0)))
                 ->columnSpanFour(),
-            CheckboxField::make('auto_start_workflow')
-                ->label('Iniciar workflow automaticamente')
-                ->visibleWhen(function () use ($canCreate) {
-                    return $canCreate;
-                })
-                ->helperText('Se marcado, o workflow será iniciado automaticamente após a criação da gôndola. e vc será o responsavel')
-                ->columnSpanFull(),
         ];
     }
 }

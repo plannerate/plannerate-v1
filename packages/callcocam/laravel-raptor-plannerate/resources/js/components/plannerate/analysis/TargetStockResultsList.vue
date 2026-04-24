@@ -18,9 +18,9 @@ import type { TargetStockResult } from '@/components/plannerate/analysis/target-
 import { Search } from 'lucide-vue-next';
 import TableHeadAnalysis from '@/components/plannerate/analysis/TableHeadAnalysis.vue';
 import { useAnalysisFilters } from '@/composables/plannerate/analysis/useAnalysisFilters';
-import { usePlanogramEditor } from '@/composables/plannerate/v3/usePlanogramEditor';
-import { usePlanogramSelection } from '@/composables/plannerate/v3/usePlanogramSelection';
-import { useTargetStockAnalysis } from '@/composables/plannerate/v3/useTargetStockAnalysis';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
+import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis';
 import { computed, ref, useSlots, watch } from 'vue';
 
 interface Props {

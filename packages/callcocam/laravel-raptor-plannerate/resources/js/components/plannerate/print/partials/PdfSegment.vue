@@ -5,7 +5,7 @@ import PdfAbcBadge from './PdfAbcBadge.vue'
 import PdfStockIndicator from './PdfStockIndicator.vue'
 import type { Segment } from '@/types/planogram'
 import PdfLayer from './PdfLayer.vue'
-import { useAbcClassification } from '@/composables/plannerate/v3/useAbcClassification'
+import { useAbcClassification } from '@/composables/plannerate/useAbcClassification'
 
 interface Props {
   segment: Segment

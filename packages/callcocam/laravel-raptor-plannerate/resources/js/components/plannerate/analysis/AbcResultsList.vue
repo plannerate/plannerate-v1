@@ -14,8 +14,8 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { useAnalysisFilters } from '@/composables/plannerate/analysis/useAnalysisFilters';
-import { usePlanogramEditor } from '@/composables/plannerate/v3/usePlanogramEditor';
-import { usePlanogramSelection } from '@/composables/plannerate/v3/usePlanogramSelection';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { Search } from 'lucide-vue-next';
 import { computed, ref, useSlots, watch } from 'vue';
 

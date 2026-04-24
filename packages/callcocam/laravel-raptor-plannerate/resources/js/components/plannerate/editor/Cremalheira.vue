@@ -40,8 +40,8 @@
 import {
     DEFAULT_SECTION_FIELDS,
     toCamelCase,
-} from '../../../composables/plannerate/v3/useSectionFields';
-import { calculateHolePositions } from '../../../composables/plannerate/v3/useSectionHoles';
+} from '../../../composables/plannerate/useSectionFields';
+import { calculateHolePositions } from '../../../composables/plannerate/useSectionHoles';
 import { Section } from '../../../types/planogram';
 import { computed } from 'vue';
 

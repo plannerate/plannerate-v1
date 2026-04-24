@@ -6,11 +6,10 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Tenant\Plannerate;
+namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
 
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\AutoGenerateConfigDTO;
-use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\IAGenerate\IAGenerateConfigDTO;
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
+use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\IAGenerate\IAGenerateConfigDTO; 
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\AutoGeneratePlanogramRequest;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\IAGeneratePlanogramRequest;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AutoGenerate\AutoPlanogramService;

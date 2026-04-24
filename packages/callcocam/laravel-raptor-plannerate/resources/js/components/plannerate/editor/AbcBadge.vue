@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useAbcClassification } from '@/composables/plannerate/v3/useAbcClassification';
+import { useAbcClassification } from '@/composables/plannerate/useAbcClassification';
 
 interface Props {
     classification?: 'A' | 'B' | 'C';

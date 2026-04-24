@@ -2,20 +2,13 @@
 
 namespace Callcocam\LaravelRaptorPlannerate;
 
-use Callcocam\LaravelRaptorFlow\Models\FlowExecution;
 use Callcocam\LaravelRaptorPlannerate\Commands\Plannerate\TestAutoGenerateCommand;
 use Callcocam\LaravelRaptorPlannerate\Commands\SyncPlannerateMigrationsCommand;
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Tenant\GondolaController;
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Tenant\PlanogramController;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
-use Callcocam\LaravelRaptorPlannerate\Observers\GondolaObserver;
-use Callcocam\LaravelRaptorPlannerate\Policies\FlowExecutionPolicy;
 use Callcocam\LaravelRaptorPlannerate\Policies\GondolaPolicy;
 use Callcocam\LaravelRaptorPlannerate\Policies\PlanogramPolicy;
 use Callcocam\LaravelRaptorPlannerate\Providers\AutoPlanogramServiceProvider;
-use Callcocam\LaravelRaptorPlannerate\Support\WorkflowMorphMap;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Spatie\LaravelPackageTools\Package;
@@ -39,9 +32,7 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
-        $this->registerMorphCompatibilityMap();
         $this->registerPolicyBindings();
-        $this->registerObservers();
         $this->registerPlannerateRoutes();
         $this->registerExportRoutes();
         $this->registerEditorApiRoutes();
@@ -50,19 +41,8 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
 
     protected function registerPolicyBindings(): void
     {
-        Gate::policy(FlowExecution::class, FlowExecutionPolicy::class);
         Gate::policy(Planogram::class, PlanogramPolicy::class);
         Gate::policy(Gondola::class, GondolaPolicy::class);
-    }
-
-    protected function registerObservers(): void
-    {
-        Gondola::observe(GondolaObserver::class);
-    }
-
-    protected function registerMorphCompatibilityMap(): void
-    {
-        Relation::morphMap(WorkflowMorphMap::morphAliases());
     }
 
     protected function registerPlannerateRoutes(): void
@@ -84,7 +64,7 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
             return;
         }
 
-        Route::middleware(['web', 'auth' ])
+        Route::middleware(['web', 'auth'])
             ->group($editorRouteFile);
     }
 
@@ -99,8 +79,5 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
         Route::middleware('web')->group($exportRouteFile);
     }
 
-    protected function registerEditorPageRoutes(): void
-    {
-        
-    }
+    protected function registerEditorPageRoutes(): void {}
 }

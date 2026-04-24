@@ -67,7 +67,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useTargetStockAnalysis } from '@/composables/plannerate/v3/useTargetStockAnalysis';
+import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis';
 import type { Segment } from '@/types/planogram';
 
 interface Props {

@@ -121,7 +121,7 @@ import {
 import { computed } from 'vue';
 import type { TargetStockResult } from './types';
 import TargetStockQuickActions from './TargetStockQuickActions.vue';
-import ProductSalesSummary from '../../v3/sidebar/properties/partials/ProductSalesSummary.vue';
+import ProductSalesSummary from '../../sidebar/properties/partials/ProductSalesSummary.vue';
 
 interface Props {
     selected: TargetStockResult | null;

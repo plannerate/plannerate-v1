@@ -13,8 +13,8 @@ import { Separator } from '@/components/ui/separator';
 import {
     DEFAULT_GONDOLA_FIELDS,
     toSnakeCase,
-} from '@/composables/plannerate/v3/useGondolaFields';
-import { usePlanogramEditor } from '@/composables/plannerate/v3/usePlanogramEditor';
+} from '@/composables/plannerate/useGondolaFields';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import type { Gondola } from '@/types/planogram';
 import { Check, X } from 'lucide-vue-next';
 import { computed, reactive, watch } from 'vue';

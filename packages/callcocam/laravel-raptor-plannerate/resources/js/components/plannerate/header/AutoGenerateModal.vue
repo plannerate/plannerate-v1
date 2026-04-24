@@ -127,7 +127,7 @@ function handleGenerate() {
           : 'auto-generate';
 
     form.post(
-        `/api/tenant/plannerate/gondolas/${props.gondolaId}/${endpoint}`,
+        `/api/gondolas/${props.gondolaId}/${endpoint}`,
         {
             preserveScroll: true,
             preserveState: false,

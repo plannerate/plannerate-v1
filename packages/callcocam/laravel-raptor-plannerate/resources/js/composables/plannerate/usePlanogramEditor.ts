@@ -2,9 +2,9 @@
 // IMPORTS
 // ============================================================================
 
-import { usePlanogramChanges } from '@/composables/plannerate/v3/usePlanogramChanges';
-import { usePlanogramHistory } from '@/composables/plannerate/v3/usePlanogramHistory';
-import { findNearestHole } from '@/composables/plannerate/v3/useSectionHoles';
+import { usePlanogramChanges } from '@/composables/plannerate/usePlanogramChanges';
+import { usePlanogramHistory } from '@/composables/plannerate/usePlanogramHistory';
+import { findNearestHole } from '@/composables/plannerate/useSectionHoles';
 import { Gondola, Product, Section, Shelf } from '@/types/planogram';
 import { router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -22,8 +22,8 @@ import {
     showPropertiesPanel,
 } from './editor/useGondolaState';
 
-import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Tenant/Plannerate/GondolaPdfPreviewController';
-import { calculateAbc } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Tenant/GondolaAnalysisController';
+import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
+import { calculateAbc } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 
 import {
     findSectionById,

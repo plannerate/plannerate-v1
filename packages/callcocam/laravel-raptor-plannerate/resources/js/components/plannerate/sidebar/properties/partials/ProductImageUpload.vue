@@ -106,7 +106,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { uploadImage, deleteImage } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Tenant/Plannerate/Api/ProductImageController';
+import { uploadImage, deleteImage } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 import type { Product } from '@/types/planogram';
 import { router } from '@inertiajs/vue3';
 import { ImageIcon, Loader2, Trash2, Upload, X } from 'lucide-vue-next';

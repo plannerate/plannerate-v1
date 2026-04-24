@@ -9,20 +9,20 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { usePlanogramEditor } from '@/composables/plannerate/v3/usePlanogramEditor';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import {
     calculateUsableHeight,
     DEFAULT_SECTION_FIELDS,
     toCamelCase as sectionToCamelCase,
     toSnakeCase as sectionToSnakeCase,
-} from '@/composables/plannerate/v3/useSectionFields';
+} from '@/composables/plannerate/useSectionFields';
 import {
     calculateShelfSpacing,
     calculateTotalDisplayArea,
     DEFAULT_SHELF_FIELDS,
     toCamelCase as shelfToCamelCase,
     toSnakeCase as shelfToSnakeCase,
-} from '@/composables/plannerate/v3/useShelfFields';
+} from '@/composables/plannerate/useShelfFields';
 import {
     BoxIcon,
     GripVerticalIcon,

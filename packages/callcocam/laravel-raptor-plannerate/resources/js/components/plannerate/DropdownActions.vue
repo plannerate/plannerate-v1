@@ -36,7 +36,7 @@
 
 </template>
 <script setup lang="ts">
-import { usePlanogramEditor } from '@/composables/plannerate/v3/usePlanogramEditor';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { ChevronDown, Download, Eye, FileText, MoreVertical, Share2 } from 'lucide-vue-next';
 
 import { Button } from '@/components/ui/button';
@@ -47,8 +47,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { currentGondola } from '@/composables/plannerate/v3/editor/useGondolaState';
-import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Tenant/Plannerate/GondolaPdfPreviewController';
+import { currentGondola } from '@/composables/plannerate/editor/useGondolaState';
+import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
 import { ref } from 'vue';
 import ShareQRCodeModal from './header/ShareQRCodeModal.vue';
 

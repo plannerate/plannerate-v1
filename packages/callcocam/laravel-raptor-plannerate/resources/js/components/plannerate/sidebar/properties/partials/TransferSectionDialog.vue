@@ -325,7 +325,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usePlanogramEditor } from '@/composables/plannerate/v3/usePlanogramEditor';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import type { Section } from '@/types/planogram';
 import { router } from '@inertiajs/vue3';
 import axios from 'axios';

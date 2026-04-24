@@ -66,11 +66,11 @@
 </template>
 
 <script setup lang="ts">
-import { useShelfDrag } from '../../../composables/plannerate/v3/editor/useShelfDrag';
-import { useShelfDragDrop } from '../../../composables/plannerate/v3/editor/useShelfDragDrop';
-import { useShelfLayout } from '../../../composables/plannerate/v3/editor/useShelfLayout';
-import { usePlanogramEditor } from '../../../composables/plannerate/v3/usePlanogramEditor';
-import { usePlanogramSelection } from '../../../composables/plannerate/v3/usePlanogramSelection';
+import { useShelfDrag } from '../../../composables/plannerate/editor/useShelfDrag';
+import { useShelfDragDrop } from '../../../composables/plannerate/editor/useShelfDragDrop';
+import { useShelfLayout } from '../../../composables/plannerate/editor/useShelfLayout';
+import { usePlanogramEditor } from '../../../composables/plannerate/usePlanogramEditor';
+import { usePlanogramSelection } from '../../../composables/plannerate/usePlanogramSelection';
 import type { Section, Shelf as ShelfType } from '../../../types/planogram';
 import { computed, toRef } from 'vue';
 import Segment from './Segment.vue';

@@ -335,7 +335,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useTargetStockAnalysis } from '../../../composables/plannerate/v3/useTargetStockAnalysis';
+import { useTargetStockAnalysis } from '../../../composables/plannerate/useTargetStockAnalysis';
 import type { Segment } from '../../../types/planogram';
 import { CheckCircle, TrendingDown, TrendingUp } from 'lucide-vue-next';
 import { computed } from 'vue';

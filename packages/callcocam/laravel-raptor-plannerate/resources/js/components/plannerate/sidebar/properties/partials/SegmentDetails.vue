@@ -137,14 +137,14 @@
 </template>
 
 <script setup lang="ts">
-import { deleteImage } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Tenant/Plannerate/Api/ProductImageController';
+import { deleteImage } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { usePlanogramEditor } from '@/composables/plannerate/v3/usePlanogramEditor';
-import { usePlanogramSelection } from '@/composables/plannerate/v3/usePlanogramSelection';
-import { useSegmentActions } from '@/composables/plannerate/v3/useSegmentActions';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
+import { useSegmentActions } from '@/composables/plannerate/useSegmentActions';
 import type { Segment } from '@/types/planogram';
 import { router } from '@inertiajs/vue3';
 import { ArrowLeft, ArrowRight, Box, Trash2 } from 'lucide-vue-next';

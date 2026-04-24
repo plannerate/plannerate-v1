@@ -1,5 +1,5 @@
 <script lang="ts">
-import { validateShelfFields } from '@/composables/plannerate/v3/useShelfFields';
+import { validateShelfFields } from '@/composables/plannerate/useShelfFields';
 
 export const validate = (data: {
     shelfHeight: number;
@@ -24,11 +24,11 @@ export const validate = (data: {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { calculateUsableHeight } from '@/composables/plannerate/v3/useSectionFields';
+import { calculateUsableHeight } from '@/composables/plannerate/useSectionFields';
 import {
     calculateShelfSpacing,
     calculateTotalDisplayArea,
-} from '@/composables/plannerate/v3/useShelfFields';
+} from '@/composables/plannerate/useShelfFields';
 import { RulerIcon } from 'lucide-vue-next';
 import { computed } from 'vue';
 

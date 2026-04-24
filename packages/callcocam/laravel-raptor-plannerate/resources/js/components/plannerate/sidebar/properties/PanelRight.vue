@@ -38,7 +38,7 @@
     </Transition>
 </template>
 <script setup lang="ts">
-import { usePlanogramSelection } from '@/composables/plannerate/v3/usePlanogramSelection';
+import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { X } from 'lucide-vue-next';
 import { computed } from 'vue';
 import NoSelection from './partials/NoSelection.vue';

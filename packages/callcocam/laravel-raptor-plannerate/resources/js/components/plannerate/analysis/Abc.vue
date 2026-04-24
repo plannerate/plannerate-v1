@@ -14,7 +14,7 @@ import {
     Settings,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import { calculateAbc } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Tenant/GondolaAnalysisController';
+import { calculateAbc } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 import AbcParamsModal from './AbcParamsModal.vue';
 import AbcResultsList from './AbcResultsList.vue';
 import type { AbcResult } from '@/components/plannerate/analysis/abc/types';

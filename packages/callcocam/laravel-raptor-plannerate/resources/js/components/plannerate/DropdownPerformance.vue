@@ -100,7 +100,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-import { usePerformanceIndicators } from '@/composables/plannerate/v3/usePerformanceIndicators';
+import { usePerformanceIndicators } from '@/composables/plannerate/usePerformanceIndicators';
 import type { AbcAnalysis, Gondola, StockAnalysis } from '@/types/planogram';
 import { ChevronDown, Eye, EyeOff, Gauge, Trash2 } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
