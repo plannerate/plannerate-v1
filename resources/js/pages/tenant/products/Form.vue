@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
-import { Package } from 'lucide-vue-next';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import FormDecimalField from '@/components/form/FormDecimalField.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
@@ -333,21 +332,16 @@ const pageMeta = useCrudPageMeta({
 <template>
     <Head :title="pageMeta.headTitle" />
 
-    <div class="p-4">
+    <div class="px-6 py-6">
         <Form
             v-bind="isEdit ? updateFormAttrs : storeFormAttrs"
             v-slot="{ errors, processing }"
             @submit="onSubmit"
         >
             <FormCard
-                :title="pageMeta.title"
-                :description="pageMeta.description"
                 :processing="processing"
                 :cancel-href="productsIndexPath"
             >
-                <template #icon>
-                    <Package class="size-5" />
-                </template>
 
                 <div
                     class="mb-6 flex flex-wrap gap-2 rounded-lg border border-border p-2"

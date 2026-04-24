@@ -276,17 +276,17 @@ const rightNavItems: NavItem[] = [
 
         <div
             v-if="props.breadcrumbs.length > 1 || props.pageHeader.title || props.pageHeader.description"
-            class="w-full border-b border-sidebar-border/70"
+            class="w-full border-b border-sidebar-border/70 bg-muted/15"
         >
-            <div class="mx-auto w-full px-4 py-3 text-neutral-500 md:max-w-7xl">
+            <div class="mx-auto w-full px-4 py-4 text-neutral-500 md:max-w-7xl">
                 <div v-if="props.breadcrumbs.length > 1" class="flex items-center">
                     <Breadcrumbs :breadcrumbs="breadcrumbs" />
                 </div>
-                <div v-if="props.pageHeader.title || props.pageHeader.description" class="mt-2">
-                    <p v-if="props.pageHeader.title" class="text-base font-semibold text-foreground">
+                <div v-if="props.pageHeader.title || props.pageHeader.description" class="mt-3 border-l-2 border-primary/40 pl-4">
+                    <p v-if="props.pageHeader.title" class="text-3xl font-semibold leading-tight tracking-tight text-foreground">
                         {{ props.pageHeader.title }}
                     </p>
-                    <p v-if="props.pageHeader.description" class="text-sm text-muted-foreground">
+                    <p v-if="props.pageHeader.description" class="mt-1 text-base text-muted-foreground">
                         {{ props.pageHeader.description }}
                     </p>
                 </div>

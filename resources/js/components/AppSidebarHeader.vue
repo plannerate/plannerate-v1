@@ -17,20 +17,29 @@ withDefaults(
 
 <template>
     <header
-        class="shrink-0 border-b border-sidebar-border/70 px-6 py-3 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:py-2 md:px-4"
+        class="shrink-0 border-b bg-muted/15 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:py-2 mb-6"
     >
-        <div class="flex items-center gap-2">
+        <div class="flex h-12 items-center gap-2 border-b border-border/60 px-4">
             <SidebarTrigger class="-ml-1" />
             <template v-if="breadcrumbs && breadcrumbs.length > 0">
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />
             </template>
         </div>
 
-        <div v-if="pageHeader.title || pageHeader.description" class="mt-2 pl-8">
-            <p v-if="pageHeader.title" class="text-base font-semibold leading-6 text-foreground">
+        <div
+            v-if="pageHeader.title || pageHeader.description"
+            class=" px-4 py-3"
+        >
+            <p
+                v-if="pageHeader.title"
+                class="text-2xl leading-tight font-semibold tracking-tight text-foreground"
+            >
                 {{ pageHeader.title }}
             </p>
-            <p v-if="pageHeader.description" class="text-sm text-muted-foreground">
+            <p
+                v-if="pageHeader.description"
+                class="mt-1 text-sm text-muted-foreground mb-2"
+            >
                 {{ pageHeader.description }}
             </p>
         </div>

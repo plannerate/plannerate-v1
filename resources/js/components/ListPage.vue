@@ -9,6 +9,7 @@ withDefaults(
     defineProps<{
         title: string;
         description?: string;
+        showHeading?: boolean;
         action: string;
         clearHref: string;
         searchName?: string;
@@ -18,23 +19,26 @@ withDefaults(
         clearLabel?: string;
         meta: Omit<Paginator<unknown>, 'data'>;
         label?: string;
+        maxWidth?: string;
     }>(),
     {
+        showHeading: false,
         searchName: 'search',
         searchValue: '',
+        maxWidth: 'md:max-w-7xl',
     },
-);
+); 
 </script>
 
 <template>
-    <div class="space-y-6 p-4">
+    <div  :class="['mx-auto w-full overflow-hidden rounded border border-border/50 bg-card p-4', maxWidth]">
         <div class="flex items-start justify-between gap-4">
             <div class="space-y-2">
-                <Heading :title="title" :description="description" />
+                <Heading v-if="showHeading" :title="title" :description="description" />
                 <div class="flex flex-wrap items-center gap-2">
                     <Badge variant="outline">Total: {{ meta.total }}</Badge>
                     <Badge v-if="meta.last_page > 1" variant="secondary">
-                        Pagina {{ meta.current_page }} de {{ meta.last_page }}
+                        Pagina {{ meta.current_page }} de {{ meta.last_page }} {{  maxWidth }}
                     </Badge>
                 </div>
             </div>
