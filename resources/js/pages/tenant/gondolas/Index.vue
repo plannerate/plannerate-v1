@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
-import { gondolas as tenantEditorPlanogramGondolas } from '@/routes/tenant/catalog/editor/planograms';
+import { editor as tenantEditorPlanogramGondolas } from '@/routes/tenant/planograms/gondolas';
 import type { Paginator } from '@/types';
 
 type GondolaRow = {
