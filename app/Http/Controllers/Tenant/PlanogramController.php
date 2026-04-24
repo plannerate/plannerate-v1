@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\PlanogramStoreRequest;
 use App\Http\Requests\Tenant\PlanogramUpdateRequest;
-use App\Models\Category;
 use App\Models\Cluster;
 use App\Models\Planogram;
 use App\Models\Store;
@@ -85,7 +84,6 @@ class PlanogramController extends Controller
             'planogram' => null,
             'stores' => $this->storesForSelect(),
             'clusters' => $this->clustersForSelect(),
-            'categories' => $this->categoriesForSelect(),
         ]);
     }
 
@@ -130,7 +128,6 @@ class PlanogramController extends Controller
             ],
             'stores' => $this->storesForSelect(),
             'clusters' => $this->clustersForSelect(),
-            'categories' => $this->categoriesForSelect(),
         ]);
     }
 
@@ -190,21 +187,6 @@ class PlanogramController extends Controller
             ->map(fn (Cluster $cluster): array => [
                 'id' => $cluster->id,
                 'name' => $cluster->name,
-            ])
-            ->all();
-    }
-
-    /**
-     * @return array<int, array{id: string, name: string}>
-     */
-    private function categoriesForSelect(): array
-    {
-        return Category::query()
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(fn (Category $category): array => [
-                'id' => $category->id,
-                'name' => $category->name,
             ])
             ->all();
     }

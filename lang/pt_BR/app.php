@@ -419,6 +419,11 @@ return [
             'navigation' => 'Planogramas',
             'title' => 'Planogramas',
             'description' => 'Gerencie os planogramas do tenant.',
+            'tabs' => [
+                'identificacao' => 'Identificação',
+                'mercadologico' => 'Mercadológico',
+                'workflow' => 'Workflow',
+            ],
             'actions' => [
                 'new' => 'Novo planograma',
                 'edit' => 'Editar planograma',
@@ -431,8 +436,8 @@ return [
                 'store' => 'Loja',
                 'cluster' => 'Cluster',
                 'category' => 'Categoria',
-                'start_date' => 'Data inicial',
-                'end_date' => 'Data final',
+                'start_date' => 'Período inicial de vendas',
+                'end_date' => 'Período final de vendas',
                 'period' => 'Periodo',
                 'order' => 'Ordem',
                 'status' => 'Status',

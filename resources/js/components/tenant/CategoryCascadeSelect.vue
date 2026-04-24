@@ -218,7 +218,7 @@ watch(
         <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div v-for="level in [0, 1, 2]" :key="`cascade-${level}`" class="flex flex-col gap-y-1">
                 <Label :for="`category_cascade_${level}`" class="text-xs font-medium">{{ levelLabel(level) }}</Label>
-                <div class="flex items-stretch gap-1">
+                <div class="flex items-stretch gap-1 relative">
                     <select
                         :id="`category_cascade_${level}`"
                         :class="selectClass"
@@ -231,17 +231,15 @@ watch(
                             {{ opt.name }}
                         </option>
                     </select>
-                    <Button
+                    <button
                         type="button"
-                        variant="outline"
-                        size="icon"
-                        class="size-9 shrink-0"
+                        class="size-9 shrink-0 absolute right-2 top-1/2 -translate-y-1/2"
                         :disabled="disabled || selections[level] === ''"
                         :aria-label="t('app.tenant.categories.cascade.clear')"
                         @click="clearFrom(level)"
                     >
-                        <X class="size-4" />
-                    </Button>
+                        <X class="size-4 opacity-50" />
+                    </button>
                 </div>
             </div>
         </div>
@@ -250,7 +248,7 @@ watch(
         <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
             <div v-for="(level, idx) in [3, 4]" :key="`cascade-${level}`" class="flex flex-col gap-y-1" :class="idx === 0 ? 'md:col-span-7' : 'md:col-span-5'">
                 <Label :for="`category_cascade_${level}`" class="text-xs font-medium">{{ levelLabel(level) }}</Label>
-                <div class="flex items-stretch gap-1">
+                <div class="flex items-stretch gap-1 relative">
                     <select
                         :id="`category_cascade_${level}`"
                         :class="selectClass"
@@ -263,17 +261,15 @@ watch(
                             {{ opt.name }}
                         </option>
                     </select>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        class="size-9 shrink-0"
+                    <button
+                        type="button" 
+                        class="size-9 shrink-0 absolute right-2 top-1/2 -translate-y-1/2"
                         :disabled="disabled || selections[level] === ''"
                         :aria-label="t('app.tenant.categories.cascade.clear')"
                         @click="clearFrom(level)"
                     >
-                        <X class="size-4" />
-                    </Button>
+                        <X class="size-4 opacity-50" />
+                    </button>
                 </div>
             </div>
         </div>
@@ -282,7 +278,7 @@ watch(
         <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
             <div v-for="(level, idx) in [5, 6]" :key="`cascade-${level}`" class="flex flex-col gap-y-1" :class="idx === 0 ? 'md:col-span-7' : 'md:col-span-5'">
                 <Label :for="`category_cascade_${level}`" class="text-xs font-medium">{{ levelLabel(level) }}</Label>
-                <div class="flex items-stretch gap-1">
+                <div class="flex items-stretch gap-1 relative">
                     <select
                         :id="`category_cascade_${level}`"
                         :class="selectClass"
@@ -295,17 +291,15 @@ watch(
                             {{ opt.name }}
                         </option>
                     </select>
-                    <Button
+                    <button
                         type="button"
-                        variant="outline"
-                        size="icon"
-                        class="size-9 shrink-0"
+                        class="size-9 shrink-0 absolute right-2 top-1/2 -translate-y-1/2"
                         :disabled="disabled || selections[level] === ''"
                         :aria-label="t('app.tenant.categories.cascade.clear')"
                         @click="clearFrom(level)"
                     >
-                        <X class="size-4" />
-                    </Button>
+                        <X class="size-4 opacity-50" />
+                    </button>
                 </div>
             </div>
         </div>

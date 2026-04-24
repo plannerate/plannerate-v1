@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import { CalendarDays, LayoutTemplate, Store } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
@@ -7,6 +8,7 @@ import DeleteButton from '@/components/DeleteButton.vue';
 import EditButton from '@/components/EditButton.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
@@ -42,6 +44,16 @@ const props = defineProps<{
 
 const { t } = useT();
 const planogramsIndexPath = PlanogramController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+
+function formatDate(date: string | null): string {
+    if (!date) return '-';
+    return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(date + 'T00:00:00'));
+}
+
+function statusVariant(status: PlanogramRow['status']): 'default' | 'outline' {
+    return status === 'published' ? 'default' : 'outline';
+}
+
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.planograms.title'),
     title: t('app.tenant.planograms.title'),
@@ -98,7 +110,7 @@ const pageMeta = useCrudPageMeta({
         <table class="w-full text-sm">
             <thead class="bg-muted/30 text-left text-muted-foreground">
                 <tr>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.name') }}</th> 
+                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.name') }}</th>
                     <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.type') }}</th>
                     <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.store') }}</th>
                     <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.period') }}</th>
@@ -108,22 +120,66 @@ const pageMeta = useCrudPageMeta({
             </thead>
             <tbody>
                 <tr v-if="props.planograms.data.length === 0">
-                    <td class="px-4 py-6 text-muted-foreground" colspan="7">
+                    <td class="px-4 py-10 text-center text-muted-foreground" colspan="6">
                         {{ t('app.tenant.common.empty') }}
                     </td>
                 </tr>
-                <tr v-for="planogram in props.planograms.data" :key="planogram.id" class="border-t border-sidebar-border/60 dark:border-sidebar-border">
-                    <td class="px-4 py-3 font-medium">{{ planogram.name ?? '-' }}</td> 
-                    <td class="px-4 py-3">{{ planogram.type }}</td>
-                    <td class="px-4 py-3">{{ planogram.store ?? '-' }}</td>
-                    <td class="px-4 py-3">{{ planogram.start_date ?? '-' }} - {{ planogram.end_date ?? '-' }}</td>
-                    <td class="px-4 py-3">{{ planogram.status }}</td>
+                <tr
+                    v-for="planogram in props.planograms.data"
+                    :key="planogram.id"
+                    class="border-t border-sidebar-border/60 transition-colors hover:bg-muted/20 dark:border-sidebar-border"
+                >
+                    <!-- Nome + slug -->
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <LayoutTemplate class="size-4 shrink-0 text-muted-foreground" />
+                            <div>
+                                <p class="font-medium leading-tight">{{ planogram.name ?? '-' }}</p>
+                                <p v-if="planogram.category" class="mt-0.5 text-xs text-muted-foreground">{{ planogram.category }}</p>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- Tipo -->
+                    <td class="px-4 py-3">
+                        <Badge variant="secondary" class="capitalize">
+                            {{ planogram.type }}
+                        </Badge>
+                    </td>
+
+                    <!-- Loja -->
+                    <td class="px-4 py-3">
+                        <div v-if="planogram.store" class="flex items-center gap-1.5 text-muted-foreground">
+                            <Store class="size-3.5 shrink-0" />
+                            <span>{{ planogram.store }}</span>
+                        </div>
+                        <span v-else class="text-muted-foreground">—</span>
+                    </td>
+
+                    <!-- Período -->
+                    <td class="px-4 py-3">
+                        <div class="flex items-start gap-1.5 text-muted-foreground">
+                            <CalendarDays class="mt-0.5 size-3.5 shrink-0" />
+                            <div class="leading-snug">
+                                <span>{{ formatDate(planogram.start_date) }}</span>
+                                <span class="mx-1 text-muted-foreground/50">→</span>
+                                <span>{{ formatDate(planogram.end_date) }}</span>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- Status -->
+                    <td class="px-4 py-3">
+                        <Badge :variant="statusVariant(planogram.status)" class="capitalize">
+                            {{ planogram.status }}
+                        </Badge>
+                    </td>
+
+                    <!-- Ações -->
                     <td class="px-4 py-3 text-right">
                         <div class="inline-flex items-center gap-2">
                             <Button variant="outline" size="sm" as-child>
-                                <Link
-                                    :href="GondolaController.index.url({ subdomain: props.subdomain, planogram: planogram.id })"
-                                >
+                                <Link :href="GondolaController.index.url({ subdomain: props.subdomain, planogram: planogram.id })">
                                     {{ t('app.tenant.planograms.actions.view_gondolas') }}
                                 </Link>
                             </Button>

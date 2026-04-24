@@ -2,6 +2,7 @@
 import { Form, Head, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import FormTabsBar from '@/components/form/FormTabsBar.vue';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import FormDecimalField from '@/components/form/FormDecimalField.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
@@ -344,24 +345,7 @@ const pageMeta = useCrudPageMeta({
                 :cancel-href="productsIndexPath"
             >
 
-                <div
-                    class="mb-6 flex flex-wrap gap-2 rounded-lg border border-border p-2"
-                >
-                    <button
-                        v-for="tab in tabs"
-                        :key="tab.key"
-                        type="button"
-                        class="rounded-md px-3 py-2 text-sm font-medium transition"
-                        :class="
-                            activeTab === tab.key
-                                ? 'bg-primary text-primary-foreground'
-                                : 'hover:bg-muted'
-                        "
-                        @click="setTab(tab.key)"
-                    >
-                        {{ tab.label }}
-                    </button>
-                </div>
+                <FormTabsBar v-model="activeTab" :tabs="tabs" @update:model-value="setTab($event as TabKey)" />
 
                 <div
                     v-show="activeTab === 'identification'"

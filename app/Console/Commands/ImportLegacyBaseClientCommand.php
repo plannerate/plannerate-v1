@@ -25,6 +25,7 @@ class ImportLegacyBaseClientCommand extends Command
     protected $description = 'Importa dados de um cliente da base legada para o banco de um tenant';
 
     private array $tables = [
+        'stores',
         'categories',
         'products',
         'planograms',
