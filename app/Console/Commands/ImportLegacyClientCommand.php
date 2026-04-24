@@ -17,7 +17,7 @@ class ImportLegacyClientCommand extends Command
         {--to= : Nome da conexao de destino (padrao: conexao default do .env)}
         {--tenant= : ULID, slug ou host (tenant_domains) do tenant: importa no banco definido em tenants.database}';
 
-    protected $aliases = ['import:legacy-client', 'import:source-client'];
+    protected $aliases = [];
 
     protected $description = 'Importa a tabela products de mysql_legacy para o banco de destino local';
 
