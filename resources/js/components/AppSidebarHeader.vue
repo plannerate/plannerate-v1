@@ -17,7 +17,7 @@ const props = withDefaults(
 
 <template>
     <header
-        class="shrink-0 w-full border-b border-sidebar-border/70 bg-muted/15 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:py-2">
+        class="w-full border-b  bg-muted/15  ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:py-2 mb-6">
         <div class="flex h-12 w-full items-center gap-2 border-b border-border/60 px-4">
             <SidebarTrigger class="-ml-1" />
             <template v-if="props.breadcrumbs && props.breadcrumbs.length > 0">
@@ -25,8 +25,8 @@ const props = withDefaults(
             </template>
         </div>
 
-        <div class="flex w-full items-center py-3">
-            <div class="">
+        <div class="flex w-full items-center px-4 py-3">
+            <div>
                 <h1 v-if="props.pageHeader.title"
                     class="truncate text-lg font-semibold leading-tight tracking-tight text-foreground md:text-xl">
                     {{ props.pageHeader.title }}
@@ -35,7 +35,7 @@ const props = withDefaults(
                     {{ props.pageHeader.description }}
                 </p>
             </div> 
-            <div class="ml-auto flex shrink-0 items-center justify-end gap-2 [&>*]:shrink-0">
+            <div class="ml-auto flex  items-center justify-end gap-2">
                 <slot name="actions" />
             </div>
         </div>

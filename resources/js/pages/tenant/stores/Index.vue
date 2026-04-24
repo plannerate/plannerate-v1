@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import AppLayout from '@/layouts/AppLayout.vue';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
 import DeleteButton from '@/components/DeleteButton.vue';
 import EditButton from '@/components/EditButton.vue';
@@ -42,12 +43,18 @@ const pageMeta = useCrudPageMeta({
 </script>
 
 <template>
-    <Head :title="pageMeta.headTitle" />
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <Head :title="pageMeta.headTitle" />
+        <template #header-actions>
+            <div class="flex items-center justify-end gap-2">
+                <NewActionButton :href="StoreController.create.url(props.subdomain)">
+                    {{ t('app.tenant.stores.actions.new') }}
+                </NewActionButton>
+            </div>
+        </template>
 
-    <ListPage
-        :title="pageMeta.title"
-        :description="pageMeta.description"
-        :meta="props.stores"
+        <ListPage
+            :meta="props.stores"
         label="loja"
         :action="storesIndexPath"
         :clear-href="storesIndexPath"
@@ -56,12 +63,6 @@ const pageMeta = useCrudPageMeta({
         :filter-label="t('app.tenant.common.filter')"
         :clear-label="t('app.tenant.common.clear_filters')"
     >
-        <template #action>
-            <NewActionButton :href="StoreController.create.url(props.subdomain)">
-                {{ t('app.tenant.stores.actions.new') }}
-            </NewActionButton>
-        </template>
-
         <template #filters>
             <select name="status" :value="props.filters.status" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
                 <option value="">{{ t('app.tenant.common.all') }}</option>
@@ -106,5 +107,6 @@ const pageMeta = useCrudPageMeta({
                 </tr>
             </tbody>
         </table>
-    </ListPage>
+        </ListPage>
+    </AppLayout>
 </template>

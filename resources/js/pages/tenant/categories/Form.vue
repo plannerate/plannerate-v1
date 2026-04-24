@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryController';
-import AppSidebarLayout from '@/layouts/app/AppSidebarLayout.vue';
+import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryController'; 
+import AppLayout from '@/layouts/AppLayout.vue';
 
-defineOptions({ layout: AppSidebarLayout });
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
@@ -65,6 +64,7 @@ const statusOptions = computed(() => [
 
 <template>
     <Head :title="pageMeta.headTitle" />
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
 
     <div class="px-6 py-6">
         <Form
@@ -191,4 +191,5 @@ const statusOptions = computed(() => [
             </FormCard>
         </Form>
     </div>
+    </AppLayout>
 </template>

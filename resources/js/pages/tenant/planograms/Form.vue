@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { LayoutTemplate } from 'lucide-vue-next';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
+import AppLayout from '@/layouts/AppLayout.vue';
 import FormCard from '@/components/FormCard.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormStatusField from '@/components/form/FormStatusField.vue';
@@ -58,8 +59,8 @@ const pageMeta = useCrudPageMeta({
 
 <template>
     <Head :title="pageMeta.headTitle" />
-
-    <div class="p-4">
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <div class="p-4">
         <Form
             v-bind="isEdit
                 ? PlanogramController.update.form({ subdomain: props.subdomain, planogram: props.planogram!.id })
@@ -67,8 +68,6 @@ const pageMeta = useCrudPageMeta({
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="pageMeta.title"
-                :description="pageMeta.description"
                 :processing="processing"
                 :cancel-href="planogramsIndexPath"
             >
@@ -209,5 +208,6 @@ const pageMeta = useCrudPageMeta({
                 </div>
             </FormCard>
         </Form>
-    </div>
+        </div>
+    </AppLayout>
 </template>

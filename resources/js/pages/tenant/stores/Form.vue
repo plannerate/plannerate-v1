@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { Store as StoreIcon } from 'lucide-vue-next';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
+import AppLayout from '@/layouts/AppLayout.vue';
 import AddressFields from '@/components/form/AddressFields.vue';
 import FormStatusField from '@/components/form/FormStatusField.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
@@ -72,8 +73,8 @@ const pageMeta = useCrudPageMeta(
 
 <template>
     <Head :title="pageMeta.headTitle" />
-
-    <div class="p-4">
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <div class="p-4">
         <Form
             v-bind="isEdit
                 ? StoreController.update.form({ subdomain: props.subdomain, store: props.store!.id })
@@ -81,8 +82,6 @@ const pageMeta = useCrudPageMeta(
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="pageMeta.title"
-                :description="pageMeta.description"
                 :processing="processing"
                 :cancel-href="storesIndexPath"
             >
@@ -174,5 +173,6 @@ const pageMeta = useCrudPageMeta(
                 <AddressFields :model-value="props.address" :errors="errors" />
             </FormCard>
         </Form>
-    </div>
+        </div>
+    </AppLayout>
 </template>

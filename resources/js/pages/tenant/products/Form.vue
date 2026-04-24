@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import AppLayout from '@/layouts/AppLayout.vue';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import FormDecimalField from '@/components/form/FormDecimalField.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
@@ -331,8 +332,8 @@ const pageMeta = useCrudPageMeta({
 
 <template>
     <Head :title="pageMeta.headTitle" />
-
-    <div class="px-6 py-6">
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <div class="px-6 py-6">
         <Form
             v-bind="isEdit ? updateFormAttrs : storeFormAttrs"
             v-slot="{ errors, processing }"
@@ -758,5 +759,6 @@ const pageMeta = useCrudPageMeta({
                 </div>
             </FormCard>
         </Form>
-    </div>
+        </div>
+    </AppLayout>
 </template>

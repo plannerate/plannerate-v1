@@ -40,13 +40,7 @@ const categoriesIndexPath = CategoryController.index
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.categories.title'),
     title: t('app.tenant.categories.title'),
-    description: t('app.tenant.categories.description'),
-    createRoute: CategoryController.create.url(props.subdomain),
-    createLabel: t('app.tenant.categories.actions.new'),
-    headerActions: [
-        { label: 'Importar', href: '#', variant: 'outline' },
-        { label: 'Exportar', href: '#', variant: 'outline' },
-    ],
+    description: t('app.tenant.categories.description'), 
     breadcrumbs: [
         {
             title: t('app.navigation.dashboard'),
@@ -71,13 +65,7 @@ const statusVariant = (status: CategoryRow['status']) => {
 
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
-            <div class="flex items-center justify-end gap-2 whitespace-nowrap">
-                <Button variant="outline" size="sm" type="button" class="px-3">
-                    Importar
-                </Button>
-                <Button variant="outline" size="sm" type="button" class="px-3">
-                    Exportar
-                </Button>
+            <div class="flex items-center justify-end gap-2 "> 
                 <NewActionButton :href="CategoryController.create.url(props.subdomain)">
                     {{ t('app.tenant.categories.actions.new') }}
                 </NewActionButton>

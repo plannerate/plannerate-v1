@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { PanelTop } from 'lucide-vue-next';
+import AppLayout from '@/layouts/AppLayout.vue';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import DeleteButton from '@/components/DeleteButton.vue';
@@ -60,21 +61,9 @@ const pageMeta = useCrudPageMeta({
 </script>
 
 <template>
-    <Head :title="pageMeta.headTitle" />
-
-    <ListPage
-        :title="pageMeta.title"
-        :description="`${pageMeta.description} ${t('app.tenant.gondolas.planogram_prefix')}: ${props.planogram.name ?? '-'}`"
-        :meta="props.gondolas"
-        label="gôndola"
-        :action="gondolasIndexPath"
-        :clear-href="gondolasIndexPath"
-        :search-value="props.filters.search"
-        :search-placeholder="t('app.tenant.common.search')"
-        :filter-label="t('app.tenant.common.filter')"
-        :clear-label="t('app.tenant.common.clear_filters')"
-    >
-        <template #action>
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <Head :title="pageMeta.headTitle" />
+        <template #header-actions>
             <div class="flex items-center gap-2">
                 <Button variant="outline" size="sm" as-child>
                     <Link :href="planogramsIndexPath">{{ t('app.actions.back') }}</Link>
@@ -90,6 +79,16 @@ const pageMeta = useCrudPageMeta({
             </div>
         </template>
 
+        <ListPage
+            :meta="props.gondolas"
+        label="gôndola"
+        :action="gondolasIndexPath"
+        :clear-href="gondolasIndexPath"
+        :search-value="props.filters.search"
+        :search-placeholder="t('app.tenant.common.search')"
+        :filter-label="t('app.tenant.common.filter')"
+        :clear-label="t('app.tenant.common.clear_filters')"
+    >
         <template #filters>
             <select name="status" :value="props.filters.status" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
                 <option value="">{{ t('app.tenant.common.all') }}</option>
@@ -163,5 +162,6 @@ const pageMeta = useCrudPageMeta({
                 </tr>
             </tbody>
         </table>
-    </ListPage>
+        </ListPage>
+    </AppLayout>
 </template>

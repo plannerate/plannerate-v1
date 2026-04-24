@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { PanelTop } from 'lucide-vue-next';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
+import AppLayout from '@/layouts/AppLayout.vue';
 import FormCard from '@/components/FormCard.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormStatusField from '@/components/form/FormStatusField.vue';
@@ -45,7 +46,7 @@ const gondolasIndexPath = GondolaController.index.url({
 const pageMeta = useCrudPageMeta({
     headTitle: isEdit.value ? t('app.tenant.gondolas.actions.edit') : t('app.tenant.gondolas.actions.new'),
     title: isEdit.value ? t('app.tenant.gondolas.actions.edit') : t('app.tenant.gondolas.actions.new'),
-    description: t('app.tenant.gondolas.description'),
+    description: `${t('app.tenant.gondolas.description')} ${t('app.tenant.gondolas.planogram_prefix')}: ${props.planogram.name ?? '-'}`,
     breadcrumbs: [
         { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
         { title: t('app.tenant.gondolas.navigation'), href: gondolasIndexPath },
@@ -68,8 +69,8 @@ const pageMeta = useCrudPageMeta({
 
 <template>
     <Head :title="pageMeta.headTitle" />
-
-    <div class="p-4">
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <div class="p-4">
         <Form
             v-bind="isEdit
                 ? GondolaController.update.form({
@@ -86,8 +87,6 @@ const pageMeta = useCrudPageMeta({
             <input type="hidden" name="planogram_id" :value="props.planogram.id" />
 
             <FormCard
-                :title="pageMeta.title"
-                :description="`${pageMeta.description} ${t('app.tenant.gondolas.planogram_prefix')}: ${props.planogram.name ?? '-'}`"
                 :processing="processing"
                 :cancel-href="gondolasIndexPath"
             >
@@ -199,5 +198,6 @@ const pageMeta = useCrudPageMeta({
                 </div>
             </FormCard>
         </Form>
-    </div>
+        </div>
+    </AppLayout>
 </template>

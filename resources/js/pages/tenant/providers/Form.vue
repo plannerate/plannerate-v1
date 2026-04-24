@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { Truck } from 'lucide-vue-next';
 import ProviderController from '@/actions/App/Http/Controllers/Tenant/ProviderController';
+import AppLayout from '@/layouts/AppLayout.vue';
 import AddressFields from '@/components/form/AddressFields.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
@@ -69,8 +70,8 @@ const pageMeta = useCrudPageMeta({
 
 <template>
     <Head :title="pageMeta.headTitle" />
-
-    <div class="p-4">
+    <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <div class="p-4">
         <Form
             v-bind="isEdit
                 ? ProviderController.update.form({ subdomain: props.subdomain, provider: props.provider!.id })
@@ -78,8 +79,6 @@ const pageMeta = useCrudPageMeta({
             v-slot="{ errors, processing }"
         >
             <FormCard
-                :title="pageMeta.title"
-                :description="pageMeta.description"
                 :processing="processing"
                 :cancel-href="providersIndexPath"
             >
@@ -158,5 +157,6 @@ const pageMeta = useCrudPageMeta({
                 <AddressFields :model-value="props.address" :errors="errors" />
             </FormCard>
         </Form>
-    </div>
+        </div>
+    </AppLayout>
 </template>
