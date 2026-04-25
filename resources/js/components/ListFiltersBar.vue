@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
 import { SlidersHorizontal, Search } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
@@ -26,10 +27,16 @@ withDefaults(
         totalLabel: undefined,
     },
 );
+
+function onSubmit(event: Event): void {
+    const form = event.currentTarget as HTMLFormElement;
+    const data = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
+    router.get(form.action, data, { preserveState: true, preserveScroll: true });
+}
 </script>
 
 <template>
-    <form :action="action" method="get" class="rounded-xl border border-border bg-card p-3">
+    <form :action="action" method="get" class="rounded-xl border border-border bg-card p-3" @submit.prevent="onSubmit">
         <div class="flex flex-wrap items-center gap-3">
             <!-- Search input -->
             <div class="relative min-w-48 flex-1">

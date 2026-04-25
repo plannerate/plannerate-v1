@@ -6,7 +6,7 @@ import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaCont
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
-import { ColumnActions, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
+import { ColumnActions, ColumnHeader, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
@@ -99,11 +99,11 @@ const pageMeta = useCrudPageMeta({
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.name') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.modules') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.flow') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.alignment') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.status') }}</th>
+                        <ColumnHeader field="name">{{ t('app.tenant.gondolas.fields.name') }}</ColumnHeader>
+                        <ColumnHeader field="num_modulos">{{ t('app.tenant.gondolas.fields.modules') }}</ColumnHeader>
+                        <ColumnHeader field="flow">{{ t('app.tenant.gondolas.fields.flow') }}</ColumnHeader>
+                        <ColumnHeader field="alignment">{{ t('app.tenant.gondolas.fields.alignment') }}</ColumnHeader>
+                        <ColumnHeader field="status">{{ t('app.tenant.gondolas.fields.status') }}</ColumnHeader>
                         <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>

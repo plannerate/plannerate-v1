@@ -484,7 +484,9 @@ return [
                 'edit' => 'Editar produto',
             ],
             'fields' => [
+                'image' => 'Imagem',
                 'name' => 'Nome',
+                'ean' => 'EAN',
                 'category' => 'Categoria',
                 'codigo_erp' => 'Codigo ERP',
                 'status' => 'Status',
