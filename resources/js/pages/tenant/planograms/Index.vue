@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { CalendarDays, LayoutTemplate, Store } from 'lucide-vue-next';
+import { LayoutTemplate, Store } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
-import DeleteButton from '@/components/DeleteButton.vue';
-import EditButton from '@/components/EditButton.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import { ColumnActions, ColumnDate, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
@@ -45,15 +44,6 @@ const props = defineProps<{
 const { t } = useT();
 const planogramsIndexPath = PlanogramController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
 
-function formatDate(date: string | null): string {
-    if (!date) return '-';
-    return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(date + 'T00:00:00'));
-}
-
-function statusVariant(status: PlanogramRow['status']): 'default' | 'outline' {
-    return status === 'published' ? 'default' : 'outline';
-}
-
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.planograms.title'),
     title: t('app.tenant.planograms.title'),
@@ -78,122 +68,109 @@ const pageMeta = useCrudPageMeta({
 
         <ListPage
             :meta="props.planograms"
-        label="planograma"
-        :action="planogramsIndexPath"
-        :clear-href="planogramsIndexPath"
-        :search-value="props.filters.search"
-        :search-placeholder="t('app.tenant.common.search')"
-        :filter-label="t('app.tenant.common.filter')"
-        :clear-label="t('app.tenant.common.clear_filters')"
-    >
-        <template #filters>
-            <select name="status" :value="props.filters.status" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
-                <option value="">{{ t('app.tenant.common.all') }}</option>
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-            </select>
+            label="planograma"
+            :action="planogramsIndexPath"
+            :clear-href="planogramsIndexPath"
+            :search-value="props.filters.search"
+            :search-placeholder="t('app.tenant.common.search')"
+            :filter-label="t('app.tenant.common.filter')"
+            :clear-label="t('app.tenant.common.clear_filters')"
+        >
+            <template #filters>
+                <select name="status" :value="props.filters.status" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
+                    <option value="">{{ t('app.tenant.common.all') }}</option>
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                </select>
 
-            <select name="type" :value="props.filters.type" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
-                <option value="">{{ t('app.tenant.common.all') }}</option>
-                <option value="planograma">Planograma</option>
-                <option value="realograma">Realograma</option>
-            </select>
+                <select name="type" :value="props.filters.type" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
+                    <option value="">{{ t('app.tenant.common.all') }}</option>
+                    <option value="planograma">Planograma</option>
+                    <option value="realograma">Realograma</option>
+                </select>
 
-            <select name="store_id" :value="props.filters.store_id" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
-                <option value="">{{ t('app.tenant.common.all') }}</option>
-                <option v-for="store in props.filter_options.stores" :key="store.id" :value="store.id">
-                    {{ store.name }}
-                </option>
-            </select>
-        </template>
+                <select name="store_id" :value="props.filters.store_id" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
+                    <option value="">{{ t('app.tenant.common.all') }}</option>
+                    <option v-for="store in props.filter_options.stores" :key="store.id" :value="store.id">
+                        {{ store.name }}
+                    </option>
+                </select>
+            </template>
 
-        <table class="w-full text-sm">
-            <thead class="bg-muted/30 text-left text-muted-foreground">
-                <tr>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.name') }}</th>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.type') }}</th>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.store') }}</th>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.period') }}</th>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.status') }}</th>
-                    <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-if="props.planograms.data.length === 0">
-                    <td class="px-4 py-10 text-center text-muted-foreground" colspan="6">
-                        {{ t('app.tenant.common.empty') }}
-                    </td>
-                </tr>
-                <tr
-                    v-for="planogram in props.planograms.data"
-                    :key="planogram.id"
-                    class="border-t border-sidebar-border/60 transition-colors hover:bg-muted/20 dark:border-sidebar-border"
-                >
-                    <!-- Nome + slug -->
-                    <td class="px-4 py-3">
-                        <div class="flex items-center gap-2">
-                            <LayoutTemplate class="size-4 shrink-0 text-muted-foreground" />
-                            <div>
-                                <p class="font-medium leading-tight">{{ planogram.name ?? '-' }}</p>
-                                <p v-if="planogram.category" class="mt-0.5 text-xs text-muted-foreground">{{ planogram.category }}</p>
+            <table class="w-full text-sm">
+                <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <tr>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.name') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.type') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.store') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.period') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.status') }}</th>
+                        <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-if="props.planograms.data.length === 0">
+                        <td class="px-4 py-10 text-center text-muted-foreground" colspan="6">
+                            {{ t('app.tenant.common.empty') }}
+                        </td>
+                    </tr>
+                    <tr
+                        v-for="planogram in props.planograms.data"
+                        :key="planogram.id"
+                        class="border-t border-sidebar-border/60 transition-colors hover:bg-muted/20 dark:border-sidebar-border"
+                    >
+                        <!-- Nome + categoria -->
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-2">
+                                <LayoutTemplate class="size-4 shrink-0 text-muted-foreground" />
+                                <ColumnLabel :label="planogram.name ?? '-'" :description="planogram.category" />
                             </div>
-                        </div>
-                    </td>
+                        </td>
 
-                    <!-- Tipo -->
-                    <td class="px-4 py-3">
-                        <Badge variant="secondary" class="capitalize">
-                            {{ planogram.type }}
-                        </Badge>
-                    </td>
+                        <!-- Tipo -->
+                        <td class="px-4 py-3">
+                            <Badge variant="secondary" class="capitalize">
+                                {{ planogram.type }}
+                            </Badge>
+                        </td>
 
-                    <!-- Loja -->
-                    <td class="px-4 py-3">
-                        <div v-if="planogram.store" class="flex items-center gap-1.5 text-muted-foreground">
-                            <Store class="size-3.5 shrink-0" />
-                            <span>{{ planogram.store }}</span>
-                        </div>
-                        <span v-else class="text-muted-foreground">—</span>
-                    </td>
-
-                    <!-- Período -->
-                    <td class="px-4 py-3">
-                        <div class="flex items-start gap-1.5 text-muted-foreground">
-                            <CalendarDays class="mt-0.5 size-3.5 shrink-0" />
-                            <div class="leading-snug">
-                                <span>{{ formatDate(planogram.start_date) }}</span>
-                                <span class="mx-1 text-muted-foreground/50">→</span>
-                                <span>{{ formatDate(planogram.end_date) }}</span>
+                        <!-- Loja -->
+                        <td class="px-4 py-3">
+                            <div v-if="planogram.store" class="flex items-center gap-1.5 text-muted-foreground">
+                                <Store class="size-3.5 shrink-0" />
+                                <span>{{ planogram.store }}</span>
                             </div>
-                        </div>
-                    </td>
+                            <span v-else class="text-muted-foreground">—</span>
+                        </td>
 
-                    <!-- Status -->
-                    <td class="px-4 py-3">
-                        <Badge :variant="statusVariant(planogram.status)" class="capitalize">
-                            {{ planogram.status }}
-                        </Badge>
-                    </td>
+                        <!-- Período -->
+                        <td class="px-4 py-3">
+                            <ColumnDate :from="planogram.start_date" :to="planogram.end_date" />
+                        </td>
 
-                    <!-- Ações -->
-                    <td class="px-4 py-3 text-right">
-                        <div class="inline-flex items-center gap-2">
-                            <Button variant="outline" size="sm" as-child>
-                                <Link :href="GondolaController.index.url({ subdomain: props.subdomain, planogram: planogram.id })">
-                                    {{ t('app.tenant.planograms.actions.view_gondolas') }}
-                                </Link>
-                            </Button>
-                            <EditButton :href="PlanogramController.edit.url({ subdomain: props.subdomain, planogram: planogram.id })" />
-                            <DeleteButton
-                                :href="PlanogramController.destroy.url({ subdomain: props.subdomain, planogram: planogram.id })"
-                                :label="planogram.name ?? undefined"
-                                require-confirm-word
-                            />
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+                        <!-- Status -->
+                        <td class="px-4 py-3">
+                            <ColumnStatusBadge :status="planogram.status" />
+                        </td>
+
+                        <!-- Ações -->
+                        <td class="px-4 py-3 text-right">
+                            <ColumnActions
+                                :edit-href="PlanogramController.edit.url({ subdomain: props.subdomain, planogram: planogram.id })"
+                                :delete-href="PlanogramController.destroy.url({ subdomain: props.subdomain, planogram: planogram.id })"
+                                :delete-label="planogram.name ?? undefined"
+                                :require-confirm-word="true"
+                            >
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link :href="GondolaController.index.url({ subdomain: props.subdomain, planogram: planogram.id })">
+                                        {{ t('app.tenant.planograms.actions.view_gondolas') }}
+                                    </Link>
+                                </Button>
+                            </ColumnActions>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </ListPage>
     </AppLayout>
 </template>

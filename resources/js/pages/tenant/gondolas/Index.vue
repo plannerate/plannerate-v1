@@ -4,10 +4,9 @@ import { PanelTop } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
-import DeleteButton from '@/components/DeleteButton.vue';
-import EditButton from '@/components/EditButton.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import { ColumnActions, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
@@ -81,87 +80,76 @@ const pageMeta = useCrudPageMeta({
 
         <ListPage
             :meta="props.gondolas"
-        label="gôndola"
-        :action="gondolasIndexPath"
-        :clear-href="gondolasIndexPath"
-        :search-value="props.filters.search"
-        :search-placeholder="t('app.tenant.common.search')"
-        :filter-label="t('app.tenant.common.filter')"
-        :clear-label="t('app.tenant.common.clear_filters')"
-    >
-        <template #filters>
-            <select name="status" :value="props.filters.status" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
-                <option value="">{{ t('app.tenant.common.all') }}</option>
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-            </select>
-        </template>
+            label="gôndola"
+            :action="gondolasIndexPath"
+            :clear-href="gondolasIndexPath"
+            :search-value="props.filters.search"
+            :search-placeholder="t('app.tenant.common.search')"
+            :filter-label="t('app.tenant.common.filter')"
+            :clear-label="t('app.tenant.common.clear_filters')"
+        >
+            <template #filters>
+                <select name="status" :value="props.filters.status" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
+                    <option value="">{{ t('app.tenant.common.all') }}</option>
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                </select>
+            </template>
 
-        <table class="w-full text-sm">
-            <thead class="bg-muted/30 text-left text-muted-foreground">
-                <tr>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.name') }}</th>
-                    <th class="px-4 py-3 font-medium">Slug</th>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.modules') }}</th>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.flow') }}</th>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.alignment') }}</th>
-                    <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.status') }}</th>
-                    <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-if="props.gondolas.data.length === 0">
-                    <td class="px-4 py-6 text-muted-foreground" colspan="7">
-                        {{ t('app.tenant.common.empty') }}
-                    </td>
-                </tr>
-                <tr v-for="gondola in props.gondolas.data" :key="gondola.id" class="border-t border-sidebar-border/60 dark:border-sidebar-border">
-                    <td class="px-4 py-3 font-medium">
-                        <div class="inline-flex items-center gap-2">
-                            <PanelTop class="size-4 text-muted-foreground" />
-                            {{ gondola.name }}
-                        </div>
-                    </td>
-                    <td class="px-4 py-3">{{ gondola.slug ?? '-' }}</td>
-                    <td class="px-4 py-3">{{ gondola.num_modulos }}</td>
-                    <td class="px-4 py-3">{{ gondola.flow }}</td>
-                    <td class="px-4 py-3">{{ gondola.alignment }}</td>
-                    <td class="px-4 py-3">{{ gondola.status }}</td>
-                    <td class="px-4 py-3 text-right">
-                        <div class="inline-flex items-center gap-2">
-                            <!-- editor.planograms.gondolas -->
-                            <Button variant="outline" size="sm" as-child>
-                                <a
-                                    target="_blank"
-                                    :href="tenantEditorPlanogramGondolas.url({
-                                        subdomain: props.subdomain,
-                                        record:gondola.id,
-                                    })"
-                                >
-                                    {{ t('app.tenant.planograms.actions.view_gondolas') }}
-                                </a>
-                            </Button>
-                            <EditButton
-                                :href="GondolaController.edit.url({
-                                    subdomain: props.subdomain,
-                                    planogram: props.planogram.id,
-                                    gondola: gondola.id,
-                                })"
-                            />
-                            <DeleteButton
-                                :href="GondolaController.destroy.url({
-                                    subdomain: props.subdomain,
-                                    planogram: props.planogram.id,
-                                    gondola: gondola.id,
-                                })"
-                                :label="gondola.name"
-                                require-confirm-word
-                            />
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+            <table class="w-full text-sm">
+                <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <tr>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.name') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.modules') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.flow') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.alignment') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.status') }}</th>
+                        <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-if="props.gondolas.data.length === 0">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="6">
+                            {{ t('app.tenant.common.empty') }}
+                        </td>
+                    </tr>
+                    <tr
+                        v-for="gondola in props.gondolas.data"
+                        :key="gondola.id"
+                        class="border-t border-sidebar-border/60 transition-colors hover:bg-muted/20 dark:border-sidebar-border"
+                    >
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-2">
+                                <PanelTop class="size-4 shrink-0 text-muted-foreground" />
+                                <ColumnLabel :label="gondola.name" :description="gondola.slug" />
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">{{ gondola.num_modulos }}</td>
+                        <td class="px-4 py-3">{{ gondola.flow }}</td>
+                        <td class="px-4 py-3">{{ gondola.alignment }}</td>
+                        <td class="px-4 py-3">
+                            <ColumnStatusBadge :status="gondola.status" />
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <ColumnActions
+                                :edit-href="GondolaController.edit.url({ subdomain: props.subdomain, planogram: props.planogram.id, gondola: gondola.id })"
+                                :delete-href="GondolaController.destroy.url({ subdomain: props.subdomain, planogram: props.planogram.id, gondola: gondola.id })"
+                                :delete-label="gondola.name"
+                                :require-confirm-word="true"
+                            >
+                                <Button variant="outline" size="sm" as-child>
+                                    <a
+                                        target="_blank"
+                                        :href="tenantEditorPlanogramGondolas.url({ subdomain: props.subdomain, record: gondola.id })"
+                                    >
+                                        {{ t('app.tenant.planograms.actions.view_gondolas') }}
+                                    </a>
+                                </Button>
+                            </ColumnActions>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </ListPage>
     </AppLayout>
 </template>
