@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { LayoutTemplate, Store } from 'lucide-vue-next';
+import { ChevronDown, LayoutTemplate, SlidersHorizontal, Store } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
@@ -13,6 +13,10 @@ import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
+import Popover from '@/components/ui/popover/Popover.vue';
+import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
+import { computed, ref } from 'vue';
 
 type PlanogramRow = {
     id: string;
@@ -35,6 +39,7 @@ const props = defineProps<{
         status: string;
         type: string;
         store_id: string;
+        category_id: string;
     };
     filter_options: {
         stores: Array<{ id: string; name: string }>;
@@ -42,6 +47,17 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
+
+const categoryId = ref<string | null>(props.filters.category_id ?? null);
+const categoryPopoverOpen = ref(false);
+
+const categoryLabel = computed(() => {
+    if (!categoryId.value) {
+        return t('app.tenant.products.fields.category');
+    }
+
+    return t('app.tenant.products.fields.category') + ' ✓';
+});
 const planogramsIndexPath = PlanogramController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
 
 const pageMeta = useCrudPageMeta({
@@ -77,6 +93,51 @@ const pageMeta = useCrudPageMeta({
             :clear-label="t('app.tenant.common.clear_filters')"
         >
             <template #filters>
+                <input type="hidden" name="category_id" :value="categoryId ?? ''" />
+
+                <Popover v-model:open="categoryPopoverOpen">
+                    <PopoverTrigger as-child>
+                        <button
+                            type="button"
+                            class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted"
+                            :class="categoryId ? 'border-primary/60 text-primary' : ''"
+                        >
+                            <SlidersHorizontal class="size-3.5 shrink-0" />
+                            <span>{{ categoryLabel }}</span>
+                            <button
+                                v-if="categoryId"
+                                type="button"
+                                class="ml-1 rounded-sm opacity-60 hover:opacity-100"
+                                @click.stop="categoryId = null"
+                            >
+                                <X class="size-3" />
+                            </button>
+                            <ChevronDown v-else class="size-3.5 shrink-0 opacity-50" />
+                        </button>
+                    </PopoverTrigger>
+                    <PopoverContent class="w-170 p-4" align="start">
+                        <p class="mb-3 text-sm font-medium">{{ t('app.tenant.products.form.sections.category') }}</p>
+                        <CategoryCascadeSelect
+                            v-model="categoryId"
+                        />
+                        <div class="mt-4 flex justify-end gap-2">
+                            <button
+                                type="button"
+                                class="rounded-md px-3 py-1.5 text-sm hover:bg-muted"
+                                @click="categoryId = null; categoryPopoverOpen = false"
+                            >
+                                {{ t('app.tenant.common.clear_filters') }}
+                            </button>
+                            <button
+                                type="submit"
+                                class="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
+                                @click="categoryPopoverOpen = false"
+                            >
+                                {{ t('app.tenant.common.filter') }}
+                            </button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
                 <select name="status" :value="props.filters.status" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
                     <option value="">{{ t('app.tenant.common.all') }}</option>
                     <option value="draft">Draft</option>

@@ -8,6 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Models\Editor;
 
+use App\Models\Address;
 use App\Models\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;

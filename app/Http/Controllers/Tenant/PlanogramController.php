@@ -26,9 +26,11 @@ class PlanogramController extends Controller
         $status = trim((string) $request->string('status'));
         $type = trim((string) $request->string('type'));
         $storeId = trim((string) $request->string('store_id'));
+        $categoryId = trim((string) $request->string('category_id'));
         $hasStatusFilter = in_array($status, ['draft', 'published'], true);
         $hasTypeFilter = in_array($type, ['realograma', 'planograma'], true);
         $hasStoreFilter = $storeId !== '';
+        $hasCategoryFilter = $categoryId !== '';
 
         $planograms = Planogram::query()
             ->with(['store:id,name', 'cluster:id,name', 'category:id,name'])
@@ -43,6 +45,7 @@ class PlanogramController extends Controller
             ->when($hasStatusFilter, fn ($query) => $query->where('status', $status))
             ->when($hasTypeFilter, fn ($query) => $query->where('type', $type))
             ->when($hasStoreFilter, fn ($query) => $query->where('store_id', $storeId))
+            ->when($hasCategoryFilter, fn ($query) => $query->where('category_id', $categoryId))
             ->latest()
             ->paginate(10)
             ->withQueryString()
@@ -68,6 +71,7 @@ class PlanogramController extends Controller
                 'status' => $hasStatusFilter ? $status : '',
                 'type' => $hasTypeFilter ? $type : '',
                 'store_id' => $hasStoreFilter ? $storeId : '',
+                'category_id' => $hasCategoryFilter ? $categoryId : '',
             ],
             'filter_options' => [
                 'stores' => $this->storesForSelect(),
