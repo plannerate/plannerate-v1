@@ -30,7 +30,6 @@ use Inertia\Inertia;
 
 class GondolaController extends Controller
 {
-
     protected function getBackRoute(Gondola $gondola): string
     {
         return route('tenant.planograms.index', ['record' => $gondola->planogram_id], false);
@@ -59,7 +58,7 @@ class GondolaController extends Controller
                 });
             });
         });
-        
+
         // Até aqui vai bem rapido
         $availableUsers = $this->getAvailableUsers($gondola->tenant_id);
         $recordData = app(GondolaPayloadService::class)->buildEditorPayload($gondola);
@@ -88,7 +87,6 @@ class GondolaController extends Controller
             ],
         ]);
     }
- 
 
     public function store(StoreGondolaRequest $request, $planogram)
     {
@@ -239,25 +237,29 @@ class GondolaController extends Controller
             );
         }
 
-        // Obter IDs de produtos já usados
-
-        $usedProductIds = DB::table('layers')
-            ->join('segments', 'segments.id', '=', 'layers.segment_id')
-            ->join('shelves', 'shelves.id', '=', 'segments.shelf_id')
-            ->join('sections', 'sections.id', '=', 'shelves.section_id')
-            ->join('gondolas', 'gondolas.id', '=', 'sections.gondola_id')
-            ->where('gondolas.id', $gondola->id)
-            ->whereNotNull('layers.product_id')
-            ->whereNull('layers.deleted_at')
-            ->distinct()
-            ->pluck('layers.product_id')
-            ->toArray();
+        // Obter IDs de produtos já usados — gondola_id direto na tabela layers (sem JOINs)
+        // Cacheado por 2 min: muda apenas quando usuário move produtos no editor
+        $gondolaId = $gondola->id;
+        $usedProductIds = Cache::remember(
+            "used_product_ids_gondola_{$gondolaId}",
+            now()->addMinutes(2),
+            static function () use ($gondolaId): array {
+                return DB::table('layers')
+                    ->where('gondola_id', $gondolaId)
+                    ->whereNotNull('product_id')
+                    ->whereNull('deleted_at')
+                    ->distinct()
+                    ->pluck('product_id')
+                    ->toArray();
+            }
+        );
 
         // Query de produtos
+        // Carrega a cadeia de pais (até 6 níveis) para que getFullHierarchy() não faça
+        // queries extras por nível — elimina N×depth queries por página
         $query = Product::query()
-            ->with(['category']);
+            ->with(['category.parent.parent.parent.parent.parent']);
 
-       
         // Filtro por categoria
         if (! empty($categoryIds)) {
             $query->whereIn('category_id', $categoryIds);
@@ -271,9 +273,16 @@ class GondolaController extends Controller
             });
         }
 
-        // Filtro de produtos usados
-        if (! $showUsed && ! empty($usedProductIds)) {
-            $query->whereNotIn('id', $usedProductIds);
+        // Filtro de produtos usados — whereNotExists é muito mais rápido que whereNotIn
+        // com arrays grandes: MySQL usa o índice de gondola_id+product_id diretamente
+        if (! $showUsed) {
+            $query->whereNotExists(function ($sub) use ($gondolaId): void {
+                $sub->select(DB::raw(1))
+                    ->from('layers')
+                    ->whereColumn('layers.product_id', 'products.id')
+                    ->where('layers.gondola_id', $gondolaId)
+                    ->whereNull('layers.deleted_at');
+            });
         }
 
         // Filtro por produtos com/sem dimensões (calculado de width/height/depth). Default: apenas com dimensão
@@ -290,10 +299,12 @@ class GondolaController extends Controller
         // Paginação
         $paginator = $query->orderBy('name')->paginate($perPage, ['*'], 'page', $page);
 
-        // Desabilita $appends automáticos — evita N×15 queries recursivas de full_path/formatted_*
+        // Desabilita $appends automáticos — evita queries recursivas de full_path/formatted_*
         // Os valores necessários são extraídos manualmente no array_map abaixo
         foreach ($paginator->items() as $item) {
             $item->setAppends([]);
+            // Desabilita também os appends da categoria (mercadologico_cascading, hierarchy_path)
+            $item->category?->setAppends([]);
         }
 
         $result = [
