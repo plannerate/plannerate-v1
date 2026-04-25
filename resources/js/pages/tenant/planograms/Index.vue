@@ -139,19 +139,19 @@ const pageMeta = useCrudPageMeta({
                     </PopoverContent>
                 </Popover>
                 <select name="status" :value="props.filters.status" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
-                    <option value="">{{ t('app.tenant.common.all') }}</option>
+                    <option value="">{{ t('app.tenant.common.status') }}</option>
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>
                 </select>
 
                 <select name="type" :value="props.filters.type" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
-                    <option value="">{{ t('app.tenant.common.all') }}</option>
+                    <option value="">{{ t('app.tenant.common.type') }}</option>
                     <option value="planograma">Planograma</option>
                     <option value="realograma">Realograma</option>
                 </select>
 
                 <select name="store_id" :value="props.filters.store_id" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
-                    <option value="">{{ t('app.tenant.common.all') }}</option>
+                    <option value="">{{ t('app.tenant.common.store') }}</option>
                     <option v-for="store in props.filter_options.stores" :key="store.id" :value="store.id">
                         {{ store.name }}
                     </option>
