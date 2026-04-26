@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
+import { useDebounceFn } from '@vueuse/core';
 import { SlidersHorizontal, Search } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
@@ -28,15 +30,30 @@ withDefaults(
     },
 );
 
+const formRef = ref<HTMLFormElement | null>(null);
+
+function submitForm(): void {
+    if (!formRef.value) return;
+    const data = Object.fromEntries(new FormData(formRef.value).entries()) as Record<string, string>;
+    router.get(formRef.value.action, data, { preserveState: true, preserveScroll: true });
+}
+
 function onSubmit(event: Event): void {
-    const form = event.currentTarget as HTMLFormElement;
-    const data = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
-    router.get(form.action, data, { preserveState: true, preserveScroll: true });
+    event.preventDefault();
+    submitForm();
+}
+
+const onDebouncedSearchInput = useDebounceFn(submitForm, 400);
+
+function onFormChange(event: Event): void {
+    if ((event.target as HTMLElement).tagName === 'SELECT') {
+        submitForm();
+    }
 }
 </script>
 
 <template>
-    <form :action="action" method="get" class="rounded-xl border border-border bg-card p-3" @submit.prevent="onSubmit">
+    <form ref="formRef" :action="action" method="get" class="rounded-xl border border-border bg-card p-3" @submit.prevent="onSubmit" @change="onFormChange">
         <div class="flex flex-wrap items-center gap-3">
             <!-- Search input -->
             <div class="relative min-w-48 flex-1">
@@ -46,6 +63,7 @@ function onSubmit(event: Event): void {
                     :default-value="searchValue"
                     :placeholder="searchPlaceholder"
                     class="h-9 w-full rounded-lg border-border bg-background pl-9 text-sm focus-visible:border-primary/60 focus-visible:ring-primary/20"
+                    @input="onDebouncedSearchInput"
                 />
             </div>
 

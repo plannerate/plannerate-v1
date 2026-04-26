@@ -122,7 +122,10 @@ async function hydrateFromModel(): Promise<void> {
     emitLeaf();
 }
 
+const _suppressWatch = ref(false);
+
 function emitLeaf(): void {
+    _suppressWatch.value = true;
     emit('update:modelValue', leafCategoryId.value);
 }
 
@@ -183,6 +186,10 @@ watch(
     () => props.modelValue,
     async (next, prev) => {
         if (next === prev) {
+            return;
+        }
+        if (_suppressWatch.value) {
+            _suppressWatch.value = false;
             return;
         }
         try {
