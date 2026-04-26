@@ -7,6 +7,7 @@ use App\Http\Controllers\Landlord\RoleController;
 use App\Http\Controllers\Landlord\TenantController as LandlordTenantController;
 use App\Http\Controllers\Landlord\TenantUserAccessController;
 use App\Http\Controllers\Landlord\UserController;
+use App\Http\Controllers\Landlord\WorkflowTemplateController as LandlordWorkflowTemplateController;
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\ClusterController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboardController;
@@ -21,7 +22,6 @@ use App\Http\Controllers\Tenant\ReverbTestController;
 use App\Http\Controllers\Tenant\StoreController;
 use App\Http\Controllers\Tenant\WorkflowExecutionController;
 use App\Http\Controllers\Tenant\WorkflowKanbanController;
-use App\Http\Controllers\Tenant\WorkflowTemplateController;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -73,6 +73,19 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->name('landlord.tenants.access.users.destroy');
     Route::patch('tenants/{tenant}/access/users/{userId}/restore', [TenantUserAccessController::class, 'restore'])
         ->name('landlord.tenants.access.users.restore');
+
+    Route::get('tenants/{tenant}/kanban/templates', [LandlordWorkflowTemplateController::class, 'index'])
+        ->name('landlord.tenants.kanban.templates.index');
+    Route::get('tenants/{tenant}/kanban/templates/create', [LandlordWorkflowTemplateController::class, 'create'])
+        ->name('landlord.tenants.kanban.templates.create');
+    Route::post('tenants/{tenant}/kanban/templates', [LandlordWorkflowTemplateController::class, 'store'])
+        ->name('landlord.tenants.kanban.templates.store');
+    Route::get('tenants/{tenant}/kanban/templates/{template}/edit', [LandlordWorkflowTemplateController::class, 'edit'])
+        ->name('landlord.tenants.kanban.templates.edit');
+    Route::put('tenants/{tenant}/kanban/templates/{template}', [LandlordWorkflowTemplateController::class, 'update'])
+        ->name('landlord.tenants.kanban.templates.update');
+    Route::delete('tenants/{tenant}/kanban/templates/{template}', [LandlordWorkflowTemplateController::class, 'destroy'])
+        ->name('landlord.tenants.kanban.templates.destroy');
 });
 
 // ── TENANT (rotas que exigem tenant ativo) ────────────────────
@@ -144,10 +157,6 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         // ── KANBAN ────────────────────────────────────────────────
         Route::get('kanban', [WorkflowKanbanController::class, 'index'])->name('kanban.index');
         Route::get('kanban/{planogram}', [WorkflowKanbanController::class, 'show'])->name('kanban.show');
-
-        Route::resource('kanban/templates', WorkflowTemplateController::class)
-            ->except(['show'])
-            ->names('kanban.templates');
 
         Route::post('kanban/{planogram}/executions', [WorkflowExecutionController::class, 'store'])
             ->name('kanban.executions.store');

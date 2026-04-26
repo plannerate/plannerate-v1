@@ -126,15 +126,15 @@ final class PermissionName
 
     public const TENANT_GONDOLAS_DELETE = 'tenant.gondolas.delete';
 
+    public const LANDLORD_KANBAN_TEMPLATES_VIEW_ANY = 'landlord.kanban.templates.viewAny';
+
+    public const LANDLORD_KANBAN_TEMPLATES_CREATE = 'landlord.kanban.templates.create';
+
+    public const LANDLORD_KANBAN_TEMPLATES_UPDATE = 'landlord.kanban.templates.update';
+
+    public const LANDLORD_KANBAN_TEMPLATES_DELETE = 'landlord.kanban.templates.delete';
+
     public const TENANT_KANBAN_VIEW_ANY = 'tenant.kanban.viewAny';
-
-    public const TENANT_KANBAN_TEMPLATES_VIEW_ANY = 'tenant.kanban.templates.viewAny';
-
-    public const TENANT_KANBAN_TEMPLATES_CREATE = 'tenant.kanban.templates.create';
-
-    public const TENANT_KANBAN_TEMPLATES_UPDATE = 'tenant.kanban.templates.update';
-
-    public const TENANT_KANBAN_TEMPLATES_DELETE = 'tenant.kanban.templates.delete';
 
     public const TENANT_KANBAN_EXECUTIONS_START = 'tenant.kanban.executions.start';
 
@@ -211,11 +211,11 @@ final class PermissionName
             self::TENANT_GONDOLAS_CREATE,
             self::TENANT_GONDOLAS_UPDATE,
             self::TENANT_GONDOLAS_DELETE,
+            self::LANDLORD_KANBAN_TEMPLATES_VIEW_ANY,
+            self::LANDLORD_KANBAN_TEMPLATES_CREATE,
+            self::LANDLORD_KANBAN_TEMPLATES_UPDATE,
+            self::LANDLORD_KANBAN_TEMPLATES_DELETE,
             self::TENANT_KANBAN_VIEW_ANY,
-            self::TENANT_KANBAN_TEMPLATES_VIEW_ANY,
-            self::TENANT_KANBAN_TEMPLATES_CREATE,
-            self::TENANT_KANBAN_TEMPLATES_UPDATE,
-            self::TENANT_KANBAN_TEMPLATES_DELETE,
             self::TENANT_KANBAN_EXECUTIONS_START,
             self::TENANT_KANBAN_EXECUTIONS_MOVE,
             self::TENANT_KANBAN_EXECUTIONS_MANAGE,

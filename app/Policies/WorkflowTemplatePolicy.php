@@ -13,26 +13,26 @@ class WorkflowTemplatePolicy
 
     public function viewAny(User $user): bool
     {
-        return $this->allowByContext($user, PermissionName::TENANT_KANBAN_TEMPLATES_VIEW_ANY);
+        return $this->allowByContext($user, PermissionName::LANDLORD_KANBAN_TEMPLATES_VIEW_ANY);
     }
 
     public function view(User $user, WorkflowTemplate $template): bool
     {
-        return $this->allowByContext($user, PermissionName::TENANT_KANBAN_TEMPLATES_VIEW_ANY);
+        return $this->allowByContext($user, PermissionName::LANDLORD_KANBAN_TEMPLATES_VIEW_ANY);
     }
 
     public function create(User $user): bool
     {
-        return $this->allowByContext($user, PermissionName::TENANT_KANBAN_TEMPLATES_CREATE);
+        return $this->allowByContext($user, PermissionName::LANDLORD_KANBAN_TEMPLATES_CREATE);
     }
 
     public function update(User $user, WorkflowTemplate $template): bool
     {
-        return $this->allowByContext($user, PermissionName::TENANT_KANBAN_TEMPLATES_UPDATE);
+        return $this->allowByContext($user, PermissionName::LANDLORD_KANBAN_TEMPLATES_UPDATE);
     }
 
     public function delete(User $user, WorkflowTemplate $template): bool
     {
-        return $this->allowByContext($user, PermissionName::TENANT_KANBAN_TEMPLATES_DELETE);
+        return $this->allowByContext($user, PermissionName::LANDLORD_KANBAN_TEMPLATES_DELETE);
     }
 }

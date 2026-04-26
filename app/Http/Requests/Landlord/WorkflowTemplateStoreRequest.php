@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Tenant;
+namespace App\Http\Requests\Landlord;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -27,8 +27,8 @@ class WorkflowTemplateStoreRequest extends FormRequest
             'color' => ['nullable', 'string', 'max:20'],
             'icon' => ['nullable', 'string', 'max:80'],
             'is_required_by_default' => ['boolean'],
-            'template_next_step_id' => ['nullable', 'string', Rule::exists('workflow_templates', 'id')],
-            'template_previous_step_id' => ['nullable', 'string', Rule::exists('workflow_templates', 'id')],
+            'template_next_step_id' => ['nullable', 'string'],
+            'template_previous_step_id' => ['nullable', 'string'],
             'status' => ['required', Rule::in(['draft', 'published'])],
             'user_ids' => ['nullable', 'array'],
             'user_ids.*' => ['string'],
