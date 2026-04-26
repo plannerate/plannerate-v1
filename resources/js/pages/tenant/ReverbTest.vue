@@ -50,7 +50,7 @@ useEchoNotification<NotificationData>(
             data: {
                 title: payload.title,
                 message: payload.message,
-                type: payload.type,
+                notification_type: payload.notification_type,
                 action_url: payload.action_url,
                 download_url: payload.download_url,
                 download_name: payload.download_name,
@@ -64,7 +64,7 @@ useEchoNotification<NotificationData>(
 const form = useForm({
     title: '',
     message: '',
-    type: 'info' as NotificationData['type'],
+    type: 'info' as NotificationData['notification_type'],
     download_url: '',
     download_name: '',
 });
@@ -267,8 +267,8 @@ const typeColorMap = {
                                 class="flex animate-in fade-in-0 slide-in-from-top-2 gap-3 rounded-[var(--radius)] border border-border bg-background p-3 duration-300"
                             >
                                 <component
-                                    :is="typeIconMap[n.data.type] ?? Info"
-                                    :class="['mt-0.5 size-4 shrink-0', typeColorMap[n.data.type] ?? 'text-blue-500']"
+                                    :is="typeIconMap[n.data.notification_type] ?? Info"
+                                    :class="['mt-0.5 size-4 shrink-0', typeColorMap[n.data.notification_type] ?? 'text-blue-500']"
                                 />
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-start justify-between gap-2">

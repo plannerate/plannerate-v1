@@ -24,9 +24,12 @@ const props = withDefaults(
             <template v-if="props.breadcrumbs && props.breadcrumbs.length > 0">
                 <Breadcrumbs :breadcrumbs="props.breadcrumbs" />
             </template>
+            <div class="ml-auto flex items-center gap-1">
+                <NotificationsDropdown />
+            </div>
         </div>
 
-        <div class="flex w-full items-center px-4 py-3">
+        <div v-if="props.pageHeader.title || props.pageHeader.description" class="flex w-full items-center px-4 py-3">
             <div>
                 <h1 v-if="props.pageHeader.title"
                     class="truncate text-lg font-semibold leading-tight tracking-tight text-foreground md:text-xl">
@@ -35,9 +38,8 @@ const props = withDefaults(
                 <p v-if="props.pageHeader.description" class="mt-0.5 text-sm leading-snug text-muted-foreground">
                     {{ props.pageHeader.description }}
                 </p>
-            </div> 
+            </div>
             <div class="ml-auto flex items-center justify-end gap-2">
-                <NotificationsDropdown />
                 <slot name="actions" />
             </div>
         </div>

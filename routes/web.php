@@ -129,6 +129,8 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
 
         Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])
             ->name('notifications.read-all');
+        Route::delete('notifications', [NotificationController::class, 'destroyAll'])
+            ->name('notifications.destroy-all');
         Route::patch('notifications/{id}/read', [NotificationController::class, 'markRead'])
             ->name('notifications.read');
         Route::get('notifications/{id}/download', [NotificationController::class, 'download'])

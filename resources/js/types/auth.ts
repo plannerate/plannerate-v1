@@ -12,7 +12,7 @@ export type User = {
 export type NotificationData = {
     title: string;
     message: string;
-    type: 'info' | 'success' | 'warning' | 'error';
+    notification_type: 'info' | 'success' | 'warning' | 'error';
     action_url?: string | null;
     download_url?: string | null;
     download_name?: string | null;

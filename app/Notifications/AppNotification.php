@@ -6,8 +6,9 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Spatie\Multitenancy\Jobs\TenantAware;
 
-class AppNotification extends Notification implements ShouldQueue
+class AppNotification extends Notification implements ShouldQueue, TenantAware
 {
     use Queueable;
 
@@ -30,7 +31,7 @@ class AppNotification extends Notification implements ShouldQueue
         return [
             'title' => $this->title,
             'message' => $this->message,
-            'type' => $this->type,
+            'notification_type' => $this->type,
             'action_url' => $this->actionUrl,
             'download_url' => $this->downloadUrl,
             'download_name' => $this->downloadName,
