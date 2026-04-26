@@ -19,6 +19,9 @@ use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\ProviderController;
 use App\Http\Controllers\Tenant\ReverbTestController;
 use App\Http\Controllers\Tenant\StoreController;
+use App\Http\Controllers\Tenant\WorkflowExecutionController;
+use App\Http\Controllers\Tenant\WorkflowKanbanController;
+use App\Http\Controllers\Tenant\WorkflowTemplateController;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -137,6 +140,31 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('notifications.download');
         Route::delete('notifications/{id}', [NotificationController::class, 'destroy'])
             ->name('notifications.destroy');
+
+        // ── KANBAN ────────────────────────────────────────────────
+        Route::get('kanban', [WorkflowKanbanController::class, 'index'])->name('kanban.index');
+        Route::get('kanban/{planogram}', [WorkflowKanbanController::class, 'show'])->name('kanban.show');
+
+        Route::resource('kanban/templates', WorkflowTemplateController::class)
+            ->except(['show'])
+            ->names('kanban.templates');
+
+        Route::post('kanban/{planogram}/executions', [WorkflowExecutionController::class, 'store'])
+            ->name('kanban.executions.store');
+        Route::patch('kanban/executions/{execution}/move', [WorkflowExecutionController::class, 'move'])
+            ->name('kanban.executions.move');
+        Route::patch('kanban/executions/{execution}/pause', [WorkflowExecutionController::class, 'pause'])
+            ->name('kanban.executions.pause');
+        Route::patch('kanban/executions/{execution}/resume', [WorkflowExecutionController::class, 'resume'])
+            ->name('kanban.executions.resume');
+        Route::patch('kanban/executions/{execution}/complete', [WorkflowExecutionController::class, 'complete'])
+            ->name('kanban.executions.complete');
+        Route::patch('kanban/executions/{execution}/assign', [WorkflowExecutionController::class, 'assign'])
+            ->name('kanban.executions.assign');
+        Route::get('kanban/executions/{execution}/history', [WorkflowExecutionController::class, 'history'])
+            ->name('kanban.executions.history');
+        Route::post('kanban/histories/{history}/restore', [WorkflowExecutionController::class, 'restore'])
+            ->name('kanban.histories.restore');
     });
 
 // Broadcasting auth precisa rodar no contexto do tenant para autenticar canais privados

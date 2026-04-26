@@ -15,6 +15,8 @@ use App\Models\Role;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\WorkflowGondolaExecution;
+use App\Models\WorkflowTemplate;
 use App\Observers\TenantObserver;
 use App\Policies\CategoryPolicy;
 use App\Policies\ClusterPolicy;
@@ -28,6 +30,8 @@ use App\Policies\RolePolicy;
 use App\Policies\StorePolicy;
 use App\Policies\TenantPolicy;
 use App\Policies\UserPolicy;
+use App\Policies\WorkflowExecutionPolicy;
+use App\Policies\WorkflowTemplatePolicy;
 use App\Services\OpenAiProductImageEditor;
 use App\Support\Navigation\Menu\Contracts\ResolvesMenuAuthorization;
 use App\Support\Navigation\Menu\MenuAuthorizationResolver;
@@ -84,6 +88,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Provider::class, ProviderPolicy::class);
         Gate::policy(Planogram::class, PlanogramPolicy::class);
         Gate::policy(Gondola::class, GondolaPolicy::class);
+        Gate::policy(WorkflowTemplate::class, WorkflowTemplatePolicy::class);
+        Gate::policy(WorkflowGondolaExecution::class, WorkflowExecutionPolicy::class);
     }
 
     /**

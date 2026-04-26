@@ -605,6 +605,52 @@ return [
         ],
     ],
 
+    'kanban' => [
+        'navigation' => 'Kanban',
+        'title' => 'Kanban',
+        'description' => 'Acompanhe o estado das gondolas em cada planograma.',
+        'select_planogram' => 'Selecione um planograma para visualizar o board.',
+        'empty_board' => 'Nenhuma execucao encontrada para este planograma.',
+        'empty_steps' => 'Nenhuma etapa configurada para este planograma.',
+        'executions' => [
+            'status' => [
+                'pending' => 'Pendente',
+                'active' => 'Em andamento',
+                'paused' => 'Pausado',
+                'completed' => 'Concluido',
+                'cancelled' => 'Cancelado',
+            ],
+        ],
+        'templates' => [
+            'navigation' => 'Templates de etapa',
+            'title' => 'Templates de etapa',
+            'description' => 'Gerencie as etapas globais do workflow.',
+            'actions' => [
+                'new' => 'Nova etapa',
+                'edit' => 'Editar etapa',
+            ],
+            'fields' => [
+                'name' => 'Nome',
+                'slug' => 'Slug',
+                'description' => 'Descricao',
+                'suggested_order' => 'Ordem sugerida',
+                'estimated_duration_days' => 'Duracao estimada (dias)',
+                'color' => 'Cor',
+                'icon' => 'Icone',
+                'is_required_by_default' => 'Obrigatoria por padrao',
+                'status' => 'Status',
+                'next_step' => 'Proxima etapa',
+                'previous_step' => 'Etapa anterior',
+                'suggested_users' => 'Usuarios sugeridos',
+            ],
+            'messages' => [
+                'created' => 'Etapa criada com sucesso.',
+                'updated' => 'Etapa atualizada com sucesso.',
+                'deleted' => 'Etapa removida com sucesso.',
+            ],
+        ],
+    ],
+
     'welcome_page' => [
         'get_started' => 'Vamos comecar',
         'description' => 'O Laravel tem um ecossistema extremamente rico. Sugerimos comecar pelo seguinte.',

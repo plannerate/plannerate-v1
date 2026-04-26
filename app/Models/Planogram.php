@@ -7,8 +7,8 @@ use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram as EditorPlanogram
 use Database\Factories\PlanogramFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Tall\Sluggable\HasSlug;
 use Tall\Sluggable\SlugOptions;
@@ -79,6 +79,11 @@ class Planogram extends EditorPlanogram
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function workflowSteps(): HasMany
+    {
+        return $this->hasMany(WorkflowPlanogramStep::class);
     }
 
     /**
