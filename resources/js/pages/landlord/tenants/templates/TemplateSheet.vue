@@ -35,8 +35,15 @@ const { t } = useT();
 
 // Track form key to force re-mount when switching create <-> edit
 const formKey = ref(0);
+const colorValue = ref(props.template?.color ?? '#6366f1');
+
 watch(() => [props.open, props.template?.id], () => {
     formKey.value++;
+    colorValue.value = props.template?.color ?? '#6366f1';
+});
+
+watch(() => props.template?.color, (newColor) => {
+    if (newColor) colorValue.value = newColor;
 });
 
 const statusOptions = [
@@ -99,14 +106,14 @@ const templatesForNextPrev = computed(() =>
                                             id="tpl_name"
                                             name="name"
                                             required
-                                            :value="template?.name"
+                                            :default-value="template?.name ?? ''"
                                         />
                                         <InputError :message="errors.name" />
                                     </div>
 
                                     <div class="grid gap-2">
                                         <Label for="tpl_slug">{{ t('app.landlord.kanban.templates.fields.slug') }}</Label>
-                                        <Input id="tpl_slug" name="slug" :value="template?.slug" />
+                                        <Input id="tpl_slug" name="slug" :default-value="template?.slug ?? ''" />
                                         <InputError :message="errors.slug" />
                                     </div>
 
@@ -138,7 +145,7 @@ const templatesForNextPrev = computed(() =>
                                             name="suggested_order"
                                             type="number"
                                             min="1"
-                                            :value="template?.suggested_order ?? 1"
+                                            :default-value="template?.suggested_order ?? 1"
                                         />
                                         <InputError :message="errors.suggested_order" />
                                     </div>
@@ -150,7 +157,7 @@ const templatesForNextPrev = computed(() =>
                                             name="estimated_duration_days"
                                             type="number"
                                             min="1"
-                                            :value="template?.estimated_duration_days ?? ''"
+                                            :default-value="template?.estimated_duration_days ?? ''"
                                         />
                                         <InputError :message="errors.estimated_duration_days" />
                                     </div>
@@ -159,17 +166,15 @@ const templatesForNextPrev = computed(() =>
                                         <Label for="tpl_color">{{ t('app.landlord.kanban.templates.fields.color') }}</Label>
                                         <div class="flex items-center gap-2">
                                             <input
-                                                id="tpl_color"
-                                                name="color"
                                                 type="color"
                                                 class="size-9 cursor-pointer rounded-md border border-input bg-background p-1"
-                                                :value="template?.color ?? '#6366f1'"
+                                                v-model="colorValue"
                                             />
                                             <Input
                                                 name="color"
                                                 class="flex-1"
                                                 placeholder="#6366f1"
-                                                :value="template?.color ?? ''"
+                                                v-model="colorValue"
                                             />
                                         </div>
                                         <InputError :message="errors.color" />
@@ -177,7 +182,7 @@ const templatesForNextPrev = computed(() =>
 
                                     <div class="grid gap-2">
                                         <Label for="tpl_icon">{{ t('app.landlord.kanban.templates.fields.icon') }}</Label>
-                                        <Input id="tpl_icon" name="icon" :value="template?.icon ?? ''" placeholder="lucide:layers" />
+                                        <Input id="tpl_icon" name="icon" :default-value="template?.icon ?? ''" placeholder="lucide:layers" />
                                         <InputError :message="errors.icon" />
                                     </div>
 
