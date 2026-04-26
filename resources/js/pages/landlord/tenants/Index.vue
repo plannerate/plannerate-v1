@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import { Users, Layers } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
@@ -213,6 +214,7 @@ const pageMeta = useCrudPageMeta({
                                                 )
                                             "
                                         >
+                                            <Users class="size-4" />
                                             {{
                                                 t('app.landlord.common.access')
                                             }}
@@ -233,6 +235,7 @@ const pageMeta = useCrudPageMeta({
                                                     )
                                             "
                                         >
+                                            <Layers class="size-4" />
                                             Kanban
                                         </Link>
                                     </Button>
