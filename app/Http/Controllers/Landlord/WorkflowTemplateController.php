@@ -64,7 +64,7 @@ class WorkflowTemplateController extends Controller
             ];
         });
 
-        return Inertia::render('landlord/kanban/templates/Index', [
+        return Inertia::render('landlord/tenants/templates/Index', [
             'tenant' => [
                 'id' => $tenant->id,
                 'name' => $tenant->name,
@@ -91,7 +91,7 @@ class WorkflowTemplateController extends Controller
             ];
         });
 
-        return Inertia::render('landlord/kanban/templates/Form', [
+        return Inertia::render('landlord/tenants/templates/Form', [
             'tenant' => [
                 'id' => $tenant->id,
                 'name' => $tenant->name,
@@ -158,7 +158,7 @@ class WorkflowTemplateController extends Controller
             ];
         });
 
-        return Inertia::render('landlord/kanban/templates/Form', [
+        return Inertia::render('landlord/tenants/templates/Form', [
             'tenant' => [
                 'id' => $tenant->id,
                 'name' => $tenant->name,
