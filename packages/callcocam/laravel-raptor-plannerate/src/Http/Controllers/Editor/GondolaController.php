@@ -240,19 +240,13 @@ class GondolaController extends Controller
         // Obter IDs de produtos já usados — gondola_id direto na tabela layers (sem JOINs)
         // Cacheado por 2 min: muda apenas quando usuário move produtos no editor
         $gondolaId = $gondola->id;
-        $usedProductIds = Cache::remember(
-            "used_product_ids_gondola_{$gondolaId}",
-            now()->addMinutes(2),
-            static function () use ($gondolaId): array {
-                return DB::table('layers')
+        $usedProductIds = DB::table('layers')
                     ->where('gondola_id', $gondolaId)
                     ->whereNotNull('product_id')
                     ->whereNull('deleted_at')
                     ->distinct()
                     ->pluck('product_id')
-                    ->toArray();
-            }
-        );
+                    ->toArray(); 
 
         // Query de produtos
         // Carrega a cadeia de pais (até 6 níveis) para que getFullHierarchy() não faça
