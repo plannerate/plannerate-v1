@@ -17,6 +17,7 @@ use App\Http\Controllers\Tenant\PlanogramController;
 use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\ProviderController;
+use App\Http\Controllers\Tenant\ReverbTestController;
 use App\Http\Controllers\Tenant\StoreController;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Support\Facades\Broadcast;
@@ -122,6 +123,9 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('products.image.ai.status');
         Route::post('products/image/repository/fetch', [ProductImageController::class, 'fetchFromRepository'])
             ->name('products.image.repository.fetch');
+
+        Route::get('reverb-test', [ReverbTestController::class, 'index'])->name('reverb-test.index');
+        Route::post('reverb-test/notify', [ReverbTestController::class, 'notify'])->name('reverb-test.notify');
 
         Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])
             ->name('notifications.read-all');
