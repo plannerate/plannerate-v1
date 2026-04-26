@@ -180,7 +180,7 @@ const pageMeta = useCrudPageMeta({
                                 :delete-label="tenant.name ?? undefined"
                                 :require-confirm-word="true"
                             >
-                                <div class="flex items-center space-x-2">
+                                <div class="flex items-center gap-2">
                                     <Button
                                         v-if="tenant.status !== 'active'"
                                         variant="outline"
@@ -216,24 +216,24 @@ const pageMeta = useCrudPageMeta({
                                             {{
                                                 t('app.landlord.common.access')
                                             }}
-                                            <Button
-                                                variant="secondary"
-                                                size="sm"
-                                                as-child
-                                            >
-                                                <Link
-                                                    :href="
-                                                        WorkflowTemplateController.index
-                                                            .url(tenant.id)
-                                                            .replace(
-                                                                /^\/\/[^/]+/,
-                                                                '',
-                                                            )
-                                                    "
-                                                >
-                                                    Kanban
-                                                </Link>
-                                            </Button>
+                                        </Link>
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="
+                                                WorkflowTemplateController.index
+                                                    .url(tenant.id)
+                                                    .replace(
+                                                        /^\/\/[^/]+/,
+                                                        '',
+                                                    )
+                                            "
+                                        >
+                                            Kanban
                                         </Link>
                                     </Button>
                                 </div>

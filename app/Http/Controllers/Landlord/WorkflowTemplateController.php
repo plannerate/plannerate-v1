@@ -214,10 +214,13 @@ class WorkflowTemplateController extends Controller
 
         $this->runInTenantContext($tenant, function (): void {
             $defaults = WorkflowTemplate::getDefaultTemplates();
+            $createdTemplates = [];
 
+            // Create all templates first
             foreach ($defaults as $default) {
-                WorkflowTemplate::create([
-                    'name' => $default['name'], 
+                $template = WorkflowTemplate::create([
+                    'name' => $default['name'],
+                    'slug' => Str::slug($default['name']),
                     'description' => $default['description'],
                     'suggested_order' => $default['suggested_order'],
                     'estimated_duration_days' => $default['estimated_duration_days'],
@@ -225,6 +228,18 @@ class WorkflowTemplateController extends Controller
                     'color' => $default['color'],
                     'icon' => $default['icon'],
                     'status' => 'published',
+                ]);
+                $createdTemplates[] = $template;
+            }
+
+            // Link templates in sequence
+            foreach ($createdTemplates as $index => $template) {
+                $previousTemplate = $index > 0 ? $createdTemplates[$index - 1] : null;
+                $nextTemplate = $index < count($createdTemplates) - 1 ? $createdTemplates[$index + 1] : null;
+
+                $template->update([
+                    'template_previous_step_id' => $previousTemplate?->id,
+                    'template_next_step_id' => $nextTemplate?->id,
                 ]);
             }
         });
