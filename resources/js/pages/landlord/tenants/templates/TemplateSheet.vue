@@ -79,8 +79,8 @@ const templatesForNextPrev = computed(() =>
                         :key="formKey"
                         v-bind="
                             mode === 'create'
-                                ? WorkflowTemplateController.store.form(tenant.id)
-                                : WorkflowTemplateController.update.form(tenant.id, template!.id)
+                                ? WorkflowTemplateController.store.form({ tenant: tenant.id })
+                                : WorkflowTemplateController.update.form({ tenant: tenant.id, template: template!.id })
                         "
                         class="flex min-h-full flex-col"
                         v-slot="{ errors, processing }"

@@ -80,6 +80,8 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->name('landlord.tenants.kanban.templates.create');
     Route::post('tenants/{tenant}/kanban/templates', [LandlordWorkflowTemplateController::class, 'store'])
         ->name('landlord.tenants.kanban.templates.store');
+    Route::post('tenants/{tenant}/kanban/templates/seed-defaults', [LandlordWorkflowTemplateController::class, 'seedDefaultTemplates'])
+        ->name('landlord.tenants.kanban.templates.seed-defaults');
     Route::get('tenants/{tenant}/kanban/templates/{template}/edit', [LandlordWorkflowTemplateController::class, 'edit'])
         ->name('landlord.tenants.kanban.templates.edit');
     Route::put('tenants/{tenant}/kanban/templates/{template}', [LandlordWorkflowTemplateController::class, 'update'])

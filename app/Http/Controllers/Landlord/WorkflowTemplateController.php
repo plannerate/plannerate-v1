@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Multitenancy\Models\Tenant as CurrentTenantModel;
@@ -202,6 +203,35 @@ class WorkflowTemplateController extends Controller
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.landlord.kanban.templates.messages.deleted'),
+        ]);
+
+        return to_route('landlord.tenants.kanban.templates.index', $tenant);
+    }
+
+    public function seedDefaultTemplates(Tenant $tenant): RedirectResponse
+    {
+        $this->authorize('update', $tenant);
+
+        $this->runInTenantContext($tenant, function (): void {
+            $defaults = WorkflowTemplate::getDefaultTemplates();
+
+            foreach ($defaults as $default) {
+                WorkflowTemplate::create([
+                    'name' => $default['name'], 
+                    'description' => $default['description'],
+                    'suggested_order' => $default['suggested_order'],
+                    'estimated_duration_days' => $default['estimated_duration_days'],
+                    'is_required_by_default' => $default['is_required_by_default'],
+                    'color' => $default['color'],
+                    'icon' => $default['icon'],
+                    'status' => 'published',
+                ]);
+            }
+        });
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.kanban.templates.messages.seeded'),
         ]);
 
         return to_route('landlord.tenants.kanban.templates.index', $tenant);

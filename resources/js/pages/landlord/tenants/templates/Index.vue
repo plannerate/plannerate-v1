@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import { Plus, Layers } from 'lucide-vue-next';
+import { Plus, Layers, Sparkles } from 'lucide-vue-next';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -78,6 +78,7 @@ const pageMeta = useCrudPageMeta({
 const isDrawerOpen = ref(false);
 const drawerMode = ref<'create' | 'edit'>('create');
 const selectedTemplate = ref<TemplateRow | null>(null);
+const isSeedingLoading = ref(false);
 
 function openCreateDrawer(): void {
     drawerMode.value = 'create';
@@ -89,6 +90,19 @@ function openEditDrawer(template: TemplateRow): void {
     drawerMode.value = 'edit';
     selectedTemplate.value = template;
     isDrawerOpen.value = true;
+}
+
+function seedDefaultTemplates(): void {
+    isSeedingLoading.value = true;
+    router.post(
+        `/tenants/${props.tenant.id}/kanban/templates/seed-defaults`,
+        {},
+        {
+            onFinish: () => {
+                isSeedingLoading.value = false;
+            },
+        },
+    );
 }
 </script>
 
@@ -111,7 +125,7 @@ function openEditDrawer(template: TemplateRow): void {
                 :total="props.templates.total"
             />
 
-            <!-- Empty state -->
+            <!-- Empty state with seed option -->
             <div
                 v-if="props.templates.data.length === 0"
                 class="flex flex-col items-center justify-center rounded-xl border border-dashed border-border p-16 text-center"
@@ -120,7 +134,28 @@ function openEditDrawer(template: TemplateRow): void {
                     <Layers class="size-8 text-muted-foreground" />
                 </div>
                 <p class="font-semibold text-muted-foreground">{{ t('app.landlord.kanban.templates.no_template') }}</p>
-                <p class="mt-1 text-sm text-muted-foreground/70">Crie a primeira etapa do workflow para este tenant.</p>
+                <p class="mt-1 text-sm text-muted-foreground/70">{{ t('app.landlord.kanban.templates.empty_state_description') }}</p>
+
+                <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="isSeedingLoading"
+                        @click="seedDefaultTemplates"
+                    >
+                        <Sparkles class="size-4" />
+                        {{ t('app.landlord.kanban.templates.seed_default_templates') }}
+                    </Button>
+                    <Button
+                        variant="gradient"
+                        size="sm"
+                        :disabled="isSeedingLoading"
+                        @click="openCreateDrawer"
+                    >
+                        <Plus class="size-4" />
+                        {{ t('app.landlord.kanban.templates.create_template') }}
+                    </Button>
+                </div>
             </div>
 
             <!-- Cards grid -->

@@ -9,10 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Tall\Sluggable\HasSlug;
+use Tall\Sluggable\SlugOptions;
 
 class WorkflowTemplate extends Model
 {
-    use BelongsToTenant, HasUlids, SoftDeletes;
+    use BelongsToTenant, HasUlids, SoftDeletes, HasSlug;
 
     protected $fillable = [
         'user_id',
@@ -59,6 +61,19 @@ class WorkflowTemplate extends Model
     public function configSteps(): HasMany
     {
         return $this->hasMany(WorkflowPlanogramStep::class);
+    }
+
+
+    /**
+     * @return SlugOptions
+     */
+    public function getSlugOptions()
+    {
+        if (is_string($this->slugTo())) {
+            return SlugOptions::create()
+                ->generateSlugsFrom($this->slugFrom())
+                ->saveSlugsTo($this->slugTo());
+        }
     }
 
     /**
@@ -148,10 +163,7 @@ class WorkflowTemplate extends Model
                 'tags' => ['revisao', 'periodica'],
             ],
         ];
-
-        foreach ($defaults as $index => $row) {
-            $defaults[$index]['slug'] = Str::slug($row['name']);
-        }
+ 
 
         return $defaults;
     }

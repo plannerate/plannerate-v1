@@ -295,6 +295,8 @@ return [
                 'create_template' => 'Nova etapa',
                 'edit_template' => 'Editar etapa',
                 'no_template' => 'Nenhuma etapa encontrada para este tenant.',
+                'empty_state_description' => 'Crie a primeira etapa do workflow para este tenant.',
+                'seed_default_templates' => 'Criar templates padrão',
                 'search' => 'Buscar por nome...',
                 'statuses' => [
                     'all' => 'Todos',
@@ -319,6 +321,7 @@ return [
                     'created' => 'Etapa criada com sucesso.',
                     'updated' => 'Etapa atualizada com sucesso.',
                     'deleted' => 'Etapa removida com sucesso.',
+                    'seeded' => 'Templates padrão criados com sucesso.',
                 ],
             ],
         ],
