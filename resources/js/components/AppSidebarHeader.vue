@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
+import NotificationsDropdown from '@/components/NotificationsDropdown.vue';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import type { BreadcrumbItem, LayoutPageHeader } from '@/types';
 
@@ -35,7 +36,8 @@ const props = withDefaults(
                     {{ props.pageHeader.description }}
                 </p>
             </div> 
-            <div class="ml-auto flex  items-center justify-end gap-2">
+            <div class="ml-auto flex items-center justify-end gap-2">
+                <NotificationsDropdown />
                 <slot name="actions" />
             </div>
         </div>

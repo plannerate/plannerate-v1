@@ -12,12 +12,14 @@ use App\Http\Controllers\Tenant\ClusterController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboardController;
 use App\Http\Controllers\Tenant\Editor\EditorPlanogramController;
 use App\Http\Controllers\Tenant\GondolaController;
+use App\Http\Controllers\Tenant\NotificationController;
 use App\Http\Controllers\Tenant\PlanogramController;
 use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\ProviderController;
 use App\Http\Controllers\Tenant\StoreController;
-use App\Http\Middleware\SetPermissionTeamContext; 
+use App\Http\Middleware\SetPermissionTeamContext;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
@@ -112,7 +114,6 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::get('editor/planograms/{record}/gondolas', [EditorPlanogramController::class, 'edit'])
             ->name('planograms.gondolas.editor');
 
-
         Route::post('products/image/upload', [ProductImageController::class, 'upload'])
             ->name('products.image.upload');
         Route::post('products/image/ai/process', [ProductImageController::class, 'process'])
@@ -121,6 +122,22 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('products.image.ai.status');
         Route::post('products/image/repository/fetch', [ProductImageController::class, 'fetchFromRepository'])
             ->name('products.image.repository.fetch');
+
+        Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])
+            ->name('notifications.read-all');
+        Route::patch('notifications/{id}/read', [NotificationController::class, 'markRead'])
+            ->name('notifications.read');
+        Route::get('notifications/{id}/download', [NotificationController::class, 'download'])
+            ->name('notifications.download');
+        Route::delete('notifications/{id}', [NotificationController::class, 'destroy'])
+            ->name('notifications.destroy');
     });
 
-require __DIR__ . '/settings.php';
+// Broadcasting auth precisa rodar no contexto do tenant para autenticar canais privados
+Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
+    ->middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
+    ->group(function (): void {
+        Broadcast::routes();
+    });
+
+require __DIR__.'/settings.php';

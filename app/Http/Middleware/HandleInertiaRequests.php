@@ -49,6 +49,18 @@ class HandleInertiaRequests extends Middleware
             'locale' => app()->getLocale(),
             'auth' => [
                 'user' => $request->user(),
+                'notifications' => fn (): ?array => $request->user()?->notifications()
+                    ->latest()
+                    ->take(15)
+                    ->get()
+                    ->map(fn ($n) => [
+                        'id' => $n->id,
+                        'read_at' => $n->read_at,
+                        'data' => $n->data,
+                        'created_at' => $n->created_at->diffForHumans(),
+                    ])
+                    ->all(),
+                'unread_count' => fn (): int => $request->user()?->unreadNotifications()->count() ?? 0,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'navigation' => app(SidebarNavigationService::class)->build($request),
