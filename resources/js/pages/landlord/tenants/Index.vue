@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
+import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { Button } from '@/components/ui/button';
@@ -129,7 +130,7 @@ const pageMeta = useCrudPageMeta({
                     </td>
                     <td class="px-4 py-3">{{ tenant.plan?.name ?? '-' }}</td>
                     <td class="px-4 py-3 text-right">
-                        <div class="inline-flex items-center gap-2">
+                        <div class="flex items-center  space-x-2">
                             <Button
                                 v-if="tenant.status !== 'active'"
                                 variant="outline"
@@ -143,6 +144,11 @@ const pageMeta = useCrudPageMeta({
                             <Button variant="secondary" size="sm" as-child>
                                 <Link :href="TenantUserAccessController.edit.url(tenant.id)">
                                     {{ t('app.landlord.common.access') }}
+                                                            <Button variant="secondary" size="sm" as-child>
+                                                                <Link :href="WorkflowTemplateController.index.url(tenant.id).replace(/^\/\/[^/]+/, '')">
+                                                                    Kanban
+                                                                </Link>
+                                                            </Button>
                                 </Link>
                             </Button>
                             <Button variant="outline" size="sm" as-child>

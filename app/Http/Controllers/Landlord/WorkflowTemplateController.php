@@ -35,6 +35,7 @@ class WorkflowTemplateController extends Controller
             $templates = WorkflowTemplate::query()
                 ->when($search !== '', fn ($q) => $q->where('name', 'like', '%'.$search.'%'))
                 ->when($hasStatusFilter, fn ($q) => $q->where('status', $status))
+                ->with('suggestedUsers:id,name')
                 ->orderBy('suggested_order')
                 ->paginate(15)
                 ->withQueryString()
@@ -42,14 +43,25 @@ class WorkflowTemplateController extends Controller
                     'id' => $t->id,
                     'name' => $t->name,
                     'slug' => $t->slug,
+                    'description' => $t->description,
+                    'suggested_order' => $t->suggested_order,
+                    'estimated_duration_days' => $t->estimated_duration_days,
+                    'default_role_id' => $t->default_role_id,
                     'color' => $t->color,
                     'icon' => $t->icon,
-                    'suggested_order' => $t->suggested_order,
+                    'is_required_by_default' => $t->is_required_by_default,
+                    'template_next_step_id' => $t->template_next_step_id,
+                    'template_previous_step_id' => $t->template_previous_step_id,
                     'status' => $t->status,
+                    'user_ids' => $t->suggestedUsers->pluck('id')->all(),
                     'created_at' => $t->created_at?->toDateTimeString(),
                 ]);
 
-            return ['templates' => $templates];
+            return [
+                'templates' => $templates,
+                'users' => $this->usersForSelect(),
+                'existing_templates' => $this->templatesForSelect(),
+            ];
         });
 
         return Inertia::render('landlord/kanban/templates/Index', [
@@ -59,6 +71,8 @@ class WorkflowTemplateController extends Controller
                 'slug' => $tenant->slug,
             ],
             'templates' => $data['templates'],
+            'users' => $data['users'],
+            'existing_templates' => $data['existing_templates'],
             'filters' => [
                 'search' => $search,
                 'status' => $hasStatusFilter ? $status : '',

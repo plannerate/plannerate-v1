@@ -3,7 +3,6 @@ import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { Clock, GripVertical, Kanban, MoreHorizontal, Pause, Play, SkipForward, User } from 'lucide-vue-next';
 import WorkflowKanbanController from '@/actions/App/Http/Controllers/Tenant/WorkflowKanbanController';
-import WorkflowTemplateController from '@/actions/App/Http/Controllers/Tenant/WorkflowTemplateController';
 import WorkflowExecutionController from '@/actions/App/Http/Controllers/Tenant/WorkflowExecutionController';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Badge } from '@/components/ui/badge';
@@ -170,11 +169,6 @@ const isSlaOverdue = computed(() => (slaDate: string | null): boolean => {
         <Head :title="pageMeta.headTitle" />
 
         <template #header-actions>
-            <Button variant="outline" size="sm" as-child>
-                <a :href="WorkflowTemplateController.index.url(props.subdomain)">
-                    {{ t('app.kanban.templates.navigation') }}
-                </a>
-            </Button>
         </template>
 
         <div class="flex flex-col gap-4 p-4">
