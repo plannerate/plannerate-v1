@@ -2,6 +2,7 @@
 import { useHttp } from '@inertiajs/vue3';
 import { X } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
+
 import InputError from '@/components/InputError.vue';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
@@ -101,8 +102,6 @@ async function hydrateFromModel(): Promise<void> {
     options.value[0] = await loadChildren(null);
 
     if (!id) {
-        emitLeaf();
-
         return;
     }
 
@@ -118,15 +117,6 @@ async function hydrateFromModel(): Promise<void> {
     } catch {
         loadError.value = true;
     }
-
-    emitLeaf();
-}
-
-const _suppressWatch = ref(false);
-
-function emitLeaf(): void {
-    _suppressWatch.value = true;
-    emit('update:modelValue', leafCategoryId.value);
 }
 
 async function onLevelChange(level: number, value: string): Promise<void> {
@@ -144,8 +134,6 @@ async function onLevelChange(level: number, value: string): Promise<void> {
             loadError.value = true;
         }
     }
-
-    emitLeaf();
 }
 
 async function clearFrom(level: number): Promise<void> {
@@ -169,8 +157,6 @@ async function clearFrom(level: number): Promise<void> {
             loadError.value = true;
         }
     }
-
-    emitLeaf();
 }
 
 onMounted(async () => {
@@ -182,14 +168,16 @@ onMounted(async () => {
     }
 });
 
+// Emite sempre que o leaf muda internamente (seleção ou limpeza)
+watch(leafCategoryId, (value) => { 
+    emit('update:modelValue', value);
+});
+
+// Re-hidrata apenas quando o pai altera o valor externamente
 watch(
     () => props.modelValue,
-    async (next, prev) => {
-        if (next === prev) {
-            return;
-        }
-        if (_suppressWatch.value) {
-            _suppressWatch.value = false;
+    async (next) => {
+        if (next === leafCategoryId.value) {
             return;
         }
         try {

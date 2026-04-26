@@ -1,8 +1,15 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import ListFiltersBar from '@/components/ListFiltersBar.vue';
 import ListPagination from '@/components/ListPagination.vue';
 import { Badge } from '@/components/ui/badge';
 import type { Paginator } from '@/types';
+
+const filtersBarRef = ref<InstanceType<typeof ListFiltersBar> | null>(null);
+
+defineExpose({
+    submitForm: () => filtersBarRef.value?.submitForm(),
+});
 
 withDefaults(
     defineProps<{
@@ -38,6 +45,7 @@ withDefaults(
         </div>
 
         <ListFiltersBar
+            ref="filtersBarRef"
             :action="action"
             :clear-href="clearHref"
             :search-name="searchName"

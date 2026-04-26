@@ -4,7 +4,7 @@ import { ChevronDown, LayoutTemplate, SlidersHorizontal, Store, X } from 'lucide
 import AppLayout from '@/layouts/AppLayout.vue';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
-import ListPage from '@/components/ListPage.vue';
+import ListTablePage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { ColumnActions, ColumnDate, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +16,8 @@ import type { Paginator } from '@/types';
 import Popover from '@/components/ui/popover/Popover.vue';
 import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
+import type ListPage from '@/components/ListPage.vue';
 
 type PlanogramRow = {
     id: string;
@@ -48,8 +49,16 @@ const props = defineProps<{
 
 const { t } = useT();
 
+const listPageRef = ref<InstanceType<typeof ListPage> | null>(null);
 const categoryId = ref<string | null>(props.filters.category_id ?? null);
 const categoryPopoverOpen = ref(false);
+
+watch(categoryId, (value, prev) => {
+    if (value !== prev) {
+        categoryPopoverOpen.value = false;
+        nextTick(() => listPageRef.value?.submitForm());
+    }
+});
 
 const categoryLabel = computed(() => {
     if (!categoryId.value) {
@@ -82,7 +91,8 @@ const pageMeta = useCrudPageMeta({
             </div>
         </template>
 
-        <ListPage
+        <ListTablePage
+            ref="listPageRef"
             :meta="props.planograms"
             label="planograma"
             :action="planogramsIndexPath"
@@ -129,7 +139,7 @@ const pageMeta = useCrudPageMeta({
                                 {{ t('app.tenant.common.clear_filters') }}
                             </button>
                             <button
-                                type="submit"
+                                type="button"
                                 class="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
                                 @click="categoryPopoverOpen = false"
                             >
@@ -232,6 +242,6 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </tbody>
             </table>
-        </ListPage>
+        </ListTablePage>
     </AppLayout>
 </template>
