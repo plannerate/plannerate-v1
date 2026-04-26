@@ -218,12 +218,12 @@ watch(
                     </select>
                     <button
                         type="button"
-                        class="absolute right-2 top-1/2 size-9 shrink-0 -translate-y-1/2"
+                        class="absolute right-0 top-1/2 size-9 shrink-0 -translate-y-1/2"
                         :disabled="disabled || selections[level - 1] === ''"
                         :aria-label="t('app.tenant.categories.cascade.clear')"
                         @click="clearFrom(level - 1)"
                     >
-                        <X class="size-4 opacity-50" />
+                        <X class="size-3 opacity-50" />
                     </button>
                 </div>
             </div>

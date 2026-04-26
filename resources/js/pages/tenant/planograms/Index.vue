@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ChevronDown, LayoutTemplate, SlidersHorizontal, Store } from 'lucide-vue-next';
+import { ChevronDown, LayoutTemplate, SlidersHorizontal, Store, X } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
