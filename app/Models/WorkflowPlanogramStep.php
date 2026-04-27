@@ -24,6 +24,7 @@ class WorkflowPlanogramStep extends Model
         'estimated_duration_days',
         'role_id',
         'is_required',
+        'is_skipped',
         'status',
     ];
 
@@ -32,6 +33,7 @@ class WorkflowPlanogramStep extends Model
         return [
             'estimated_duration_days' => 'integer',
             'is_required' => 'boolean',
+            'is_skipped' => 'boolean',
         ];
     }
 

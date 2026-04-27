@@ -186,6 +186,7 @@ class WorkflowKanbanService
     {
         $steps = $planogram->workflowSteps()
             ->with(['template', 'executions.gondola', 'executions.currentResponsible'])
+            ->where('is_skipped', false)
             ->get()
             ->sortBy('suggested_order');
 

@@ -23,6 +23,7 @@ use App\Http\Controllers\Tenant\ReverbTestController;
 use App\Http\Controllers\Tenant\StoreController;
 use App\Http\Controllers\Tenant\WorkflowExecutionController;
 use App\Http\Controllers\Tenant\WorkflowKanbanController;
+use App\Http\Controllers\Tenant\WorkflowPlanogramStepController;
 use App\Http\Middleware\SetPermissionTeamContext;
 use App\Support\Modules\ModuleSlug;
 use Illuminate\Support\Facades\Broadcast;
@@ -178,6 +179,8 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
 
             Route::post('kanban/{planogram}/executions', [WorkflowExecutionController::class, 'store'])
                 ->name('kanban.executions.store');
+            Route::get('kanban/executions/{execution}/details', [WorkflowExecutionController::class, 'details'])
+                ->name('kanban.executions.details');
             Route::patch('kanban/executions/{execution}/move', [WorkflowExecutionController::class, 'move'])
                 ->name('kanban.executions.move');
             Route::patch('kanban/executions/{execution}/pause', [WorkflowExecutionController::class, 'pause'])
@@ -192,6 +195,13 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
                 ->name('kanban.executions.history');
             Route::post('kanban/histories/{history}/restore', [WorkflowExecutionController::class, 'restore'])
                 ->name('kanban.histories.restore');
+
+            Route::get('planograms/{planogram}/workflow-settings', [WorkflowPlanogramStepController::class, 'index'])
+                ->name('planograms.workflow-settings.index');
+            Route::put('planograms/{planogram}/workflow-settings', [WorkflowPlanogramStepController::class, 'update'])
+                ->name('planograms.workflow-settings.update');
+            Route::post('planograms/{planogram}/workflow-settings/load-defaults', [WorkflowPlanogramStepController::class, 'loadDefaults'])
+                ->name('planograms.workflow-settings.load-defaults');
         });
     });
 

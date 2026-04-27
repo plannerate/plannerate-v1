@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tenant\WorkflowExecutionAssignRequest;
 use App\Models\Gondola;
 use App\Models\Planogram;
 use App\Models\User;
@@ -34,6 +35,10 @@ class WorkflowExecutionController extends Controller
         $gondola = Gondola::findOrFail($request->string('gondola_id'));
         $step = WorkflowPlanogramStep::findOrFail($request->string('step_id'));
 
+        abort_if((string) $gondola->planogram_id !== (string) $planogram->id, 422, 'A gôndola não pertence ao planograma informado.');
+        abort_if((string) $step->planogram_id !== (string) $planogram->id, 422, 'A etapa não pertence ao planograma informado.');
+        abort_if((bool) $step->is_skipped, 422, 'A etapa está desativada para este planograma.');
+
         $execution = $this->kanbanService->startExecution(
             $gondola,
             $step,
@@ -55,6 +60,11 @@ class WorkflowExecutionController extends Controller
         ]);
 
         $targetStep = WorkflowPlanogramStep::findOrFail($request->string('target_step_id'));
+        $currentStep = $execution->step()->first();
+
+        abort_if($currentStep === null, 422, 'A execução não possui etapa atual válida.');
+        abort_if((string) $targetStep->planogram_id !== (string) $currentStep->planogram_id, 422, 'A etapa de destino não pertence ao mesmo planograma.');
+        abort_if((bool) $targetStep->is_skipped, 422, 'A etapa de destino está desativada para este planograma.');
 
         $execution = $this->kanbanService->moveToStep(
             $execution,
@@ -114,18 +124,70 @@ class WorkflowExecutionController extends Controller
         return response()->json(['execution' => $execution->toArray()]);
     }
 
-    public function assign(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    public function assign(WorkflowExecutionAssignRequest $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
     {
         unset($subdomain);
         $this->authorize('manage', $execution);
 
-        $request->validate(['user_id' => ['required', 'string']]);
+        $validated = $request->validated();
 
-        $assignee = User::findOrFail($request->string('user_id'));
+        $assignee = User::findOrFail((string) data_get($validated, 'user_id'));
+
+        $isAllowedUser = $execution->step()
+            ->firstOrFail()
+            ->availableUsers()
+            ->whereKey($assignee->id)
+            ->exists();
+
+        abort_unless($isAllowedUser, 422, 'O usuário selecionado não está permitido para esta etapa.');
 
         $execution = $this->kanbanService->assignTo($execution, $assignee, $request->user());
 
         return response()->json(['execution' => $execution->toArray()]);
+    }
+
+    public function details(string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    {
+        unset($subdomain);
+        $this->authorize('viewAny', WorkflowGondolaExecution::class);
+
+        $execution->load([
+            'gondola:id,name,location',
+            'step:id,name,description,workflow_template_id',
+            'step.template:id,name,description',
+            'step.availableUsers:id,name',
+            'currentResponsible:id,name',
+        ]);
+
+        return response()->json([
+            'execution' => [
+                'id' => $execution->id,
+                'status' => $execution->status?->value,
+                'gondola' => $execution->gondola ? [
+                    'id' => $execution->gondola->id,
+                    'name' => $execution->gondola->name,
+                    'location' => $execution->gondola->location,
+                ] : null,
+                'step' => $execution->step ? [
+                    'id' => $execution->step->id,
+                    'name' => $execution->step->name,
+                    'description' => $execution->step->description,
+                ] : null,
+                'assigned_to_user' => $execution->currentResponsible ? [
+                    'id' => $execution->currentResponsible->id,
+                    'name' => $execution->currentResponsible->name,
+                ] : null,
+                'started_at' => $execution->started_at?->toIso8601String(),
+                'sla_date' => $execution->sla_date?->toIso8601String(),
+            ],
+            'allowed_users' => $execution->step?->availableUsers
+                ?->map(fn (User $user): array => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                ])
+                ->values()
+                ->all() ?? [],
+        ]);
     }
 
     public function history(string $subdomain, WorkflowGondolaExecution $execution): JsonResponse

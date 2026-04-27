@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { Clock, GripVertical, Kanban, MoreHorizontal, Pause, Play, SkipForward, User } from 'lucide-vue-next';
+import { Clock, GripVertical, Kanban, Pause, Play, SkipForward, User } from 'lucide-vue-next';
 import WorkflowKanbanController from '@/actions/App/Http/Controllers/Tenant/WorkflowKanbanController';
 import WorkflowExecutionController from '@/actions/App/Http/Controllers/Tenant/WorkflowExecutionController';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
@@ -31,6 +37,27 @@ type Execution = {
     assigned_to_user: AssignedUser | null;
     started_at: string | null;
     sla_date: string | null;
+};
+
+type ExecutionDetails = {
+    execution: {
+        id: string;
+        status: Execution['status'];
+        gondola: {
+            id: string;
+            name: string | null;
+            location: string | null;
+        } | null;
+        step: {
+            id: string;
+            name: string;
+            description: string | null;
+        } | null;
+        assigned_to_user: AssignedUser | null;
+        started_at: string | null;
+        sla_date: string | null;
+    };
+    allowed_users: AssignedUser[];
 };
 
 type BoardColumn = {
@@ -162,6 +189,81 @@ const isSlaOverdue = computed(() => (slaDate: string | null): boolean => {
     if (!slaDate) { return false; }
     return new Date(slaDate) < new Date();
 });
+
+const detailsOpen = ref(false);
+const detailsLoading = ref(false);
+const detailsError = ref<string | null>(null);
+const detailsPayload = ref<ExecutionDetails | null>(null);
+const selectedAssigneeId = ref<string>('');
+const assigning = ref(false);
+
+async function openExecutionDetails(executionId: string): Promise<void> {
+    detailsOpen.value = true;
+    detailsLoading.value = true;
+    detailsError.value = null;
+    detailsPayload.value = null;
+    selectedAssigneeId.value = '';
+
+    try {
+        const response = await fetch(
+            WorkflowExecutionController.details.url({ subdomain: props.subdomain, execution: executionId }),
+            {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            },
+        );
+
+        if (!response.ok) {
+            throw new Error('Falha ao carregar os detalhes da execução.');
+        }
+
+        const payload: ExecutionDetails = await response.json();
+        detailsPayload.value = payload;
+        selectedAssigneeId.value = payload.execution.assigned_to_user?.id ?? '';
+    } catch (error) {
+        console.error(error);
+        detailsError.value = 'Não foi possível carregar os detalhes desta execução.';
+    } finally {
+        detailsLoading.value = false;
+    }
+}
+
+function assignFromDetails(): void {
+    if (!detailsPayload.value || selectedAssigneeId.value === '') {
+        return;
+    }
+
+    assigning.value = true;
+    detailsError.value = null;
+
+    router.patch(
+        WorkflowExecutionController.assign.url({
+            subdomain: props.subdomain,
+            execution: detailsPayload.value.execution.id,
+        }),
+        {
+            user_id: selectedAssigneeId.value,
+        },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                detailsOpen.value = false;
+                assigning.value = false;
+            },
+            onError: () => {
+                assigning.value = false;
+                detailsError.value = 'Não foi possível atribuir o responsável selecionado.';
+            },
+            onFinish: () => {
+                assigning.value = false;
+            },
+        },
+    );
+}
 </script>
 
 <template>
@@ -284,6 +386,14 @@ const isSlaOverdue = computed(() => (slaDate: string | null): boolean => {
                             <!-- Ações rápidas -->
                             <div class="mt-3 flex items-center justify-end gap-1">
                                 <button
+                                    type="button"
+                                    class="rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                    :title="'Detalhes'"
+                                    @click="openExecutionDetails(exec.id)"
+                                >
+                                    <User class="size-3.5" />
+                                </button>
+                                <button
                                     v-if="exec.status === 'active'"
                                     type="button"
                                     class="rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
@@ -324,5 +434,74 @@ const isSlaOverdue = computed(() => (slaDate: string | null): boolean => {
                 </div>
             </div>
         </div>
+
+        <Dialog v-model:open="detailsOpen">
+            <DialogContent class="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>Detalhes da execução</DialogTitle>
+                    <DialogDescription>
+                        Defina o responsável da execução entre os usuários permitidos da etapa.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div v-if="detailsLoading" class="text-sm text-muted-foreground">
+                    Carregando detalhes...
+                </div>
+
+                <div v-else-if="detailsError" class="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    {{ detailsError }}
+                </div>
+
+                <div v-else-if="detailsPayload" class="space-y-4">
+                    <div class="rounded-lg border border-border bg-muted/20 p-3 text-sm">
+                        <p class="font-medium text-foreground">
+                            {{ detailsPayload.execution.gondola?.name ?? 'Gôndola sem nome' }}
+                        </p>
+                        <p class="text-xs text-muted-foreground">
+                            Etapa: {{ detailsPayload.execution.step?.name ?? '—' }}
+                        </p>
+                        <p v-if="detailsPayload.execution.gondola?.location" class="text-xs text-muted-foreground">
+                            Local: {{ detailsPayload.execution.gondola.location }}
+                        </p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="execution-assignee" class="text-sm font-medium text-foreground">
+                            Responsável
+                        </label>
+                        <select
+                            id="execution-assignee"
+                            v-model="selectedAssigneeId"
+                            class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                        >
+                            <option value="">
+                                Selecione um usuário permitido
+                            </option>
+                            <option v-for="user in detailsPayload.allowed_users" :key="user.id" :value="user.id">
+                                {{ user.name }}
+                            </option>
+                        </select>
+
+                        <p v-if="detailsPayload.allowed_users.length === 0" class="text-xs text-muted-foreground">
+                            Não há usuários permitidos nesta etapa.
+                        </p>
+                    </div>
+
+                    <div class="flex justify-end gap-2">
+                        <Button type="button" variant="outline" @click="detailsOpen = false">
+                            Fechar
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="gradient"
+                            :disabled="assigning || selectedAssigneeId === '' || detailsPayload.allowed_users.length === 0"
+                            @click="assignFromDetails"
+                        >
+                            {{ assigning ? 'Salvando...' : 'Confirmar responsável' }}
+                        </Button>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
     </AppLayout>
 </template>

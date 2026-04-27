@@ -247,7 +247,11 @@ const pageMeta = useCrudPageMeta({
                         v-show="activeTab === 'workflow'"
                         class="grid grid-cols-1 gap-4 md:grid-cols-12"
                     >
-                         <FormKanbanSettings v-if="props.planogram" :planogram="props.planogram" />
+                        <FormKanbanSettings
+                            v-if="props.planogram"
+                            :subdomain="props.subdomain"
+                            :planogram="props.planogram"
+                        />
                     </div>
                 </FormCard>
             </Form>

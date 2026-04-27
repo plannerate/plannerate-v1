@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Planogram;
 use App\Models\WorkflowGondolaExecution;
 use App\Services\WorkflowKanbanService;
+use App\Services\WorkflowPlanogramStepService;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,7 +16,10 @@ class WorkflowKanbanController extends Controller
 {
     use InteractsWithTenantContext;
 
-    public function __construct(private readonly WorkflowKanbanService $kanbanService) {}
+    public function __construct(
+        private readonly WorkflowKanbanService $kanbanService,
+        private readonly WorkflowPlanogramStepService $stepService,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -45,6 +49,7 @@ class WorkflowKanbanController extends Controller
     {
         unset($subdomain);
         $this->authorize('viewAny', WorkflowGondolaExecution::class);
+        $this->stepService->syncForPlanogram($planogram);
 
         $planograms = Planogram::query()
             ->with('store:id,name')
