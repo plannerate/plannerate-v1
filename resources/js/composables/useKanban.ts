@@ -9,7 +9,10 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
     const showCompleted = ref(true);
     const detailHttp = useHttp();
     const historyHttp = useHttp();
-    const actionHttp = useHttp<Record<string, string | null>>({});
+    const actionHttp = useHttp<{ notes: string | null; target_step_id: string | null }>({
+        notes: null,
+        target_step_id: null,
+    });
 
     const draggingExecutionId = ref<string | null>(null);
     const draggingFromStepId = ref<string | null>(null);
