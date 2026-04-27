@@ -14,6 +14,7 @@ import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
+import FormKanbanSettings from '@/components/form/FormKanbanSettings.vue';
 
 type PlanogramPayload = {
     id: string;
@@ -49,9 +50,18 @@ const categoryId = ref<string | null>(props.planogram?.category_id ?? null);
 const activeTab = ref<TabKey>('identificacao');
 
 const tabs = computed(() => [
-    { key: 'identificacao' as const, label: t('app.tenant.planograms.tabs.identificacao') },
-    { key: 'mercadologico' as const, label: t('app.tenant.planograms.tabs.mercadologico') },
-    { key: 'workflow' as const, label: t('app.tenant.planograms.tabs.workflow') },
+    {
+        key: 'identificacao' as const,
+        label: t('app.tenant.planograms.tabs.identificacao'),
+    },
+    {
+        key: 'mercadologico' as const,
+        label: t('app.tenant.planograms.tabs.mercadologico'),
+    },
+    {
+        key: 'workflow' as const,
+        label: t('app.tenant.planograms.tabs.workflow'),
+    },
 ]);
 
 const pageMeta = useCrudPageMeta({
@@ -105,17 +115,20 @@ const pageMeta = useCrudPageMeta({
                     :processing="processing"
                     :cancel-href="planogramsIndexPath"
                 >
-                    
-
                     <FormTabsBar v-model="activeTab" :tabs="tabs" />
 
                     <!-- Tab: Identificação -->
-                    <div v-show="activeTab === 'identificacao'" class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                    <div
+                        v-show="activeTab === 'identificacao'"
+                        class="grid grid-cols-1 gap-4 md:grid-cols-12"
+                    >
                         <FormSelectField
                             id="type"
                             name="type"
                             :label="t('app.tenant.planograms.fields.type')"
-                            :default-value="props.planogram?.type ?? 'planograma'"
+                            :default-value="
+                                props.planogram?.type ?? 'planograma'
+                            "
                             :error="errors.type"
                             class="md:col-span-3"
                             required
@@ -142,8 +155,14 @@ const pageMeta = useCrudPageMeta({
                             :error="errors.cluster_id"
                             class="md:col-span-6"
                         >
-                            <option value="">{{ t('app.tenant.common.all') }}</option>
-                            <option v-for="cluster in props.clusters" :key="cluster.id" :value="cluster.id">
+                            <option value="">
+                                {{ t('app.tenant.common.all') }}
+                            </option>
+                            <option
+                                v-for="cluster in props.clusters"
+                                :key="cluster.id"
+                                :value="cluster.id"
+                            >
                                 {{ cluster.name }}
                             </option>
                         </FormSelectField>
@@ -156,8 +175,14 @@ const pageMeta = useCrudPageMeta({
                             :error="errors.store_id"
                             class="md:col-span-6"
                         >
-                            <option value="">{{ t('app.tenant.common.all') }}</option>
-                            <option v-for="store in props.stores" :key="store.id" :value="store.id">
+                            <option value="">
+                                {{ t('app.tenant.common.all') }}
+                            </option>
+                            <option
+                                v-for="store in props.stores"
+                                :key="store.id"
+                                :value="store.id"
+                            >
                                 {{ store.name }}
                             </option>
                         </FormSelectField>
@@ -166,7 +191,9 @@ const pageMeta = useCrudPageMeta({
                             id="start_date"
                             name="start_date"
                             type="date"
-                            :label="t('app.tenant.planograms.fields.start_date')"
+                            :label="
+                                t('app.tenant.planograms.fields.start_date')
+                            "
                             :default-value="props.planogram?.start_date ?? ''"
                             :error="errors.start_date"
                             class="md:col-span-4"
@@ -181,6 +208,30 @@ const pageMeta = useCrudPageMeta({
                             :error="errors.end_date"
                             class="md:col-span-4"
                         />
+                        <FormStatusField
+                            id="status"
+                            name="status"
+                            :label="t('app.tenant.planograms.fields.status')"
+                            :default-value="props.planogram?.status ?? 'draft'"
+                            :error="errors.status"
+                            class="md:col-span-12"
+                            :options="[
+                                { value: 'draft', label: 'Draft' },
+                                { value: 'published', label: 'Published' },
+                            ]"
+                        />
+
+                        <FormTextareaField
+                            id="description"
+                            name="description"
+                            :label="
+                                t('app.tenant.planograms.fields.description')
+                            "
+                            :default-value="props.planogram?.description ?? ''"
+                            :error="errors.description"
+                            class="md:col-span-12"
+                            :rows="3"
+                        />
                     </div>
 
                     <!-- Tab: Mercadológico -->
@@ -192,57 +243,11 @@ const pageMeta = useCrudPageMeta({
                     </div>
 
                     <!-- Tab: Workflow -->
-                    <div v-show="activeTab === 'workflow'" class="grid grid-cols-1 gap-4 md:grid-cols-12">
-                        <FormStatusField
-                            id="status"
-                            name="status"
-                            :label="t('app.tenant.planograms.fields.status')"
-                            :default-value="props.planogram?.status ?? 'draft'"
-                            :error="errors.status"
-                            class="md:col-span-3"
-                            :options="[
-                                { value: 'draft', label: 'Draft' },
-                                { value: 'published', label: 'Published' },
-                            ]"
-                        />
-
-                        <FormTextField
-                            id="order"
-                            name="order"
-                            type="number"
-                            :label="t('app.tenant.planograms.fields.order')"
-                            :default-value="String(props.planogram?.order ?? 0)"
-                            :error="errors.order"
-                            class="md:col-span-2"
-                        />
-
-                        <FormTextField
-                            id="slug"
-                            name="slug"
-                            label="Slug"
-                            :default-value="props.planogram?.slug ?? ''"
-                            :error="errors.slug"
-                            class="md:col-span-4"
-                        />
-
-                        <FormTextField
-                            id="template_id"
-                            name="template_id"
-                            :label="t('app.tenant.planograms.fields.template_id')"
-                            :default-value="props.planogram?.template_id ?? ''"
-                            :error="errors.template_id"
-                            class="md:col-span-3"
-                        />
-
-                        <FormTextareaField
-                            id="description"
-                            name="description"
-                            :label="t('app.tenant.planograms.fields.description')"
-                            :default-value="props.planogram?.description ?? ''"
-                            :error="errors.description"
-                            class="md:col-span-12"
-                            :rows="3"
-                        />
+                    <div
+                        v-show="activeTab === 'workflow'"
+                        class="grid grid-cols-1 gap-4 md:grid-cols-12"
+                    >
+                         <FormKanbanSettings v-if="props.planogram" :planogram="props.planogram" />
                     </div>
                 </FormCard>
             </Form>
