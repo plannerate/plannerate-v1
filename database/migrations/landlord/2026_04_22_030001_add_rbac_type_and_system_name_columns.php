@@ -146,8 +146,10 @@ return new class extends Migration
                 ->update(['type' => RbacType::LANDLORD]);
         }
 
-        DB::connection($this->connection)->statement('ALTER TABLE `permissions` MODIFY `type` VARCHAR(50) NOT NULL');
-        DB::connection($this->connection)->statement('ALTER TABLE `roles` MODIFY `type` VARCHAR(50) NOT NULL');
+        if (DB::connection($this->connection)->getDriverName() === 'mysql') {
+            DB::connection($this->connection)->statement('ALTER TABLE `permissions` MODIFY `type` VARCHAR(50) NOT NULL');
+            DB::connection($this->connection)->statement('ALTER TABLE `roles` MODIFY `type` VARCHAR(50) NOT NULL');
+        }
 
         try {
             DB::connection($this->connection)->statement('ALTER TABLE `permissions` DROP INDEX `permissions_name_guard_name_unique`');
@@ -173,13 +175,17 @@ return new class extends Migration
             // index already missing
         }
 
-        Schema::connection($this->connection)->table('permissions', function (Blueprint $table): void {
-            $table->unique(['guard_name', 'name', 'type'], 'permissions_guard_name_type_unique');
-        });
+        if (! $this->hasUniqueIndex('permissions', 'permissions_guard_name_type_unique')) {
+            Schema::connection($this->connection)->table('permissions', function (Blueprint $table): void {
+                $table->unique(['guard_name', 'name', 'type'], 'permissions_guard_name_type_unique');
+            });
+        }
 
-        Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
-            $table->unique(['tenant_id', 'guard_name', 'name', 'type'], 'roles_team_name_guard_type_unique');
-        });
+        if (! $this->hasUniqueIndex('roles', 'roles_team_name_guard_type_unique')) {
+            Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
+                $table->unique(['tenant_id', 'guard_name', 'name', 'type'], 'roles_team_name_guard_type_unique');
+            });
+        }
 
         if (! $this->hasUniqueIndex('roles', 'roles_system_name_unique')) {
             Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
@@ -242,6 +248,19 @@ return new class extends Migration
 
     private function hasUniqueIndex(string $table, string $index): bool
     {
+        $driver = DB::connection($this->connection)->getDriverName();
+
+        if ($driver === 'sqlite') {
+            $rows = DB::connection($this->connection)->select("PRAGMA index_list({$table})");
+            foreach ($rows as $row) {
+                if ($row->name === $index) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         $matches = DB::connection($this->connection)
             ->select('SHOW INDEX FROM `'.$table.'` WHERE Key_name = ?', [$index]);
 

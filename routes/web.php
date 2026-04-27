@@ -175,7 +175,6 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
             // ── KANBAN ────────────────────────────────────────────────
             Route::get('kanban', [WorkflowKanbanController::class, 'index'])->name('kanban.index');
-            Route::get('kanban/{planogram}', [WorkflowKanbanController::class, 'show'])->name('kanban.show');
 
             Route::post('kanban/{planogram}/executions', [WorkflowExecutionController::class, 'store'])
                 ->name('kanban.executions.store');

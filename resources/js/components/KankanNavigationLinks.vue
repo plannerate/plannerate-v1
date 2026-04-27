@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import { Kanban, LayoutList, Map } from 'lucide-vue-next';
 import { computed } from 'vue';
 import planograms from '@/routes/tenant/planograms';
+import WorkflowKanbanController from '@/actions/App/Http/Controllers/Tenant/WorkflowKanbanController';
 
 const props = defineProps<{
     subdomain: string;
@@ -25,11 +26,13 @@ const currentPath = computed(() => {
 });
 
 const isListActive = computed(() => currentPath.value === '/planograms');
-const isKanbanActive = computed(() => currentPath.value === '/planograms/kanban');
+const isKanbanActive = computed(() => currentPath.value.startsWith('/kanban'));
 const isMapsActive = computed(() => currentPath.value === '/planograms/maps');
 
 const listPath = computed(() => planograms.index.url(props.subdomain).replace(/^\/\/[^/]+/, ''));
-const kanbanPath = computed(() => planograms.kanban.url(props.subdomain).replace(/^\/\/[^/]+/, ''));
+const kanbanPath = computed(() =>
+    WorkflowKanbanController.index.url(props.subdomain).replace(/^\/\/[^/]+/, ''),
+);
 const mapsPath = computed(() => planograms.maps.url(props.subdomain).replace(/^\/\/[^/]+/, ''));
 
 function linkClasses(isActive: boolean): string {

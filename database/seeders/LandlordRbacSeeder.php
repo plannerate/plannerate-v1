@@ -92,6 +92,11 @@ class LandlordRbacSeeder extends Seeder
             PermissionName::TENANT_GONDOLAS_CREATE,
             PermissionName::TENANT_GONDOLAS_UPDATE,
             PermissionName::TENANT_GONDOLAS_DELETE,
+            PermissionName::TENANT_KANBAN_VIEW_ANY,
+            PermissionName::TENANT_KANBAN_EXECUTIONS_START,
+            PermissionName::TENANT_KANBAN_EXECUTIONS_MOVE,
+            PermissionName::TENANT_KANBAN_EXECUTIONS_MANAGE,
+            PermissionName::TENANT_KANBAN_EXECUTIONS_RESTORE,
         ]);
 
         setPermissionsTeamId($currentTeamId);

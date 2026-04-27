@@ -18,12 +18,15 @@ return new class extends Migration
 
         // Backfill: popula gondola_id a partir da cadeia segment→shelf→section
         DB::statement('
-            UPDATE layers l
-            JOIN segments s  ON s.id  = l.segment_id
-            JOIN shelves  sh ON sh.id = s.shelf_id
-            JOIN sections sc ON sc.id = sh.section_id
-            SET l.gondola_id = sc.gondola_id
-            WHERE l.gondola_id IS NULL
+            UPDATE layers
+            SET gondola_id = (
+                SELECT sc.gondola_id
+                FROM segments s
+                JOIN shelves  sh ON sh.id = s.shelf_id
+                JOIN sections sc ON sc.id = sh.section_id
+                WHERE s.id = layers.segment_id
+            )
+            WHERE gondola_id IS NULL
         ');
     }
 

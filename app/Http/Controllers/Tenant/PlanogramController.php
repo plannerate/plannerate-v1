@@ -91,13 +91,9 @@ class PlanogramController extends Controller
         ]);
     }
 
-    public function kanban(): Response
+    public function kanban(): RedirectResponse
     {
-        $this->authorize('viewAny', Planogram::class);
-
-        return Inertia::render('tenant/planograms/Kanban', [
-            'subdomain' => $this->tenantSubdomain(),
-        ]);
+        return to_route('tenant.kanban.index', $this->tenantRouteParameters());
     }
 
     public function maps(): Response

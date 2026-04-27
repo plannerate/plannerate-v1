@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\ProvisionTenantDatabaseJob;
 use App\Models\Gondola;
 use App\Models\Module;
 use App\Models\Planogram;
@@ -12,21 +13,19 @@ use App\Models\WorkflowTemplate;
 use App\Support\Modules\ModuleSlug;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function (): void {
+    config()->set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
     config()->set('permission.rbac_enabled', true);
+    Queue::fake([ProvisionTenantDatabaseJob::class]);
+    app()->forgetInstance((string) config('multitenancy.current_tenant_container_key', 'currentTenant'));
 
-    Artisan::call('migrate:fresh', [
+    Artisan::call('migrate', [
         '--database' => 'landlord',
         '--path' => 'database/migrations/landlord',
-        '--force' => true,
-        '--no-interaction' => true,
-    ]);
-
-    Artisan::call('migrate:fresh', [
-        '--path' => 'database/migrations',
         '--force' => true,
         '--no-interaction' => true,
     ]);
@@ -62,12 +61,10 @@ test('workflow settings sync creates missing steps and copies template suggested
         'status' => 'draft',
     ]);
 
-    $response = $this
-        ->withServerVariables(['HTTP_HOST' => $context['host']])
-        ->get(route('tenant.planograms.workflow-settings.index', [
-            'subdomain' => $context['subdomain'],
-            'planogram' => $planogram->id,
-        ], false));
+    $response = $this->get(route('tenant.planograms.workflow-settings.index', [
+        'subdomain' => $context['subdomain'],
+        'planogram' => $planogram->id,
+    ]));
 
     $response
         ->assertOk()
@@ -109,32 +106,28 @@ test('workflow settings update persists required skipped and allowed users', fun
         'status' => 'draft',
     ]);
 
-    $this
-        ->withServerVariables(['HTTP_HOST' => $context['host']])
-        ->get(route('tenant.planograms.workflow-settings.index', [
-            'subdomain' => $context['subdomain'],
-            'planogram' => $planogram->id,
-        ], false))
+    $this->get(route('tenant.planograms.workflow-settings.index', [
+        'subdomain' => $context['subdomain'],
+        'planogram' => $planogram->id,
+    ]))
         ->assertOk();
 
     $step = WorkflowPlanogramStep::query()->where('planogram_id', $planogram->id)->firstOrFail();
 
-    $response = $this
-        ->withServerVariables(['HTTP_HOST' => $context['host']])
-        ->putJson(route('tenant.planograms.workflow-settings.update', [
-            'subdomain' => $context['subdomain'],
-            'planogram' => $planogram->id,
-        ], false), [
-            'steps' => [
-                [
-                    'step_id' => $step->id,
-                    'is_required' => false,
-                    'is_skipped' => true,
-                    'estimated_duration_days' => 9,
-                    'user_ids' => [$allowedA->id, $allowedB->id],
-                ],
+    $response = $this->putJson(route('tenant.planograms.workflow-settings.update', [
+        'subdomain' => $context['subdomain'],
+        'planogram' => $planogram->id,
+    ]), [
+        'steps' => [
+            [
+                'step_id' => $step->id,
+                'is_required' => false,
+                'is_skipped' => true,
+                'estimated_duration_days' => 9,
+                'user_ids' => [$allowedA->id, $allowedB->id],
             ],
-        ]);
+        ],
+    ]);
 
     $response
         ->assertOk()
@@ -200,12 +193,10 @@ test('workflow settings load defaults resets settings based on tenant templates'
 
     $step->availableUsers()->sync([$oldUser->id]);
 
-    $response = $this
-        ->withServerVariables(['HTTP_HOST' => $context['host']])
-        ->postJson(route('tenant.planograms.workflow-settings.load-defaults', [
-            'subdomain' => $context['subdomain'],
-            'planogram' => $planogram->id,
-        ], false));
+    $response = $this->postJson(route('tenant.planograms.workflow-settings.load-defaults', [
+        'subdomain' => $context['subdomain'],
+        'planogram' => $planogram->id,
+    ]));
 
     $response
         ->assertOk()
@@ -255,12 +246,10 @@ test('kanban board hides skipped steps for a planogram', function (): void {
         'status' => 'draft',
     ]);
 
-    $this
-        ->withServerVariables(['HTTP_HOST' => $context['host']])
-        ->get(route('tenant.planograms.workflow-settings.index', [
-            'subdomain' => $context['subdomain'],
-            'planogram' => $planogram->id,
-        ], false))
+    $this->get(route('tenant.planograms.workflow-settings.index', [
+        'subdomain' => $context['subdomain'],
+        'planogram' => $planogram->id,
+    ]))
         ->assertOk();
 
     $step = WorkflowPlanogramStep::query()->where('planogram_id', $planogram->id)->firstOrFail();
@@ -281,17 +270,15 @@ test('kanban board hides skipped steps for a planogram', function (): void {
         'status' => 'pending',
     ]);
 
-    $response = $this
-        ->withServerVariables(['HTTP_HOST' => $context['host']])
-        ->get(route('tenant.kanban.show', [
-            'subdomain' => $context['subdomain'],
-            'planogram' => $planogram->id,
-        ], false));
+    $response = $this->get(route('tenant.kanban.index', [
+        'subdomain' => $context['subdomain'],
+        'planogram_id' => $planogram->id,
+    ]));
 
     $response
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('tenant/kanban/Index')
+            ->component('tenant/planograms/Kanban')
             ->has('board', 0));
 });
 
@@ -318,12 +305,10 @@ test('execution details returns allowed users and assign only accepts users allo
         'status' => 'draft',
     ]);
 
-    $this
-        ->withServerVariables(['HTTP_HOST' => $context['host']])
-        ->get(route('tenant.planograms.workflow-settings.index', [
-            'subdomain' => $context['subdomain'],
-            'planogram' => $planogram->id,
-        ], false))
+    $this->get(route('tenant.planograms.workflow-settings.index', [
+        'subdomain' => $context['subdomain'],
+        'planogram' => $planogram->id,
+    ]))
         ->assertOk();
 
     $step = WorkflowPlanogramStep::query()->where('planogram_id', $planogram->id)->firstOrFail();
@@ -344,37 +329,31 @@ test('execution details returns allowed users and assign only accepts users allo
         'status' => 'pending',
     ]);
 
-    $detailsResponse = $this
-        ->withServerVariables(['HTTP_HOST' => $context['host']])
-        ->get(route('tenant.kanban.executions.details', [
-            'subdomain' => $context['subdomain'],
-            'execution' => $execution->id,
-        ], false));
+    $detailsResponse = $this->get(route('tenant.kanban.executions.details', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $execution->id,
+    ]));
 
     $detailsResponse
         ->assertOk()
         ->assertJsonPath('execution.id', $execution->id)
         ->assertJsonPath('allowed_users.0.id', $allowedUser->id);
 
-    $blockedAssignResponse = $this
-        ->withServerVariables(['HTTP_HOST' => $context['host']])
-        ->patchJson(route('tenant.kanban.executions.assign', [
-            'subdomain' => $context['subdomain'],
-            'execution' => $execution->id,
-        ], false), [
-            'user_id' => $blockedUser->id,
-        ]);
+    $blockedAssignResponse = $this->patchJson(route('tenant.kanban.executions.assign', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $execution->id,
+    ]), [
+        'user_id' => $blockedUser->id,
+    ]);
 
     $blockedAssignResponse->assertStatus(422);
 
-    $allowedAssignResponse = $this
-        ->withServerVariables(['HTTP_HOST' => $context['host']])
-        ->patchJson(route('tenant.kanban.executions.assign', [
-            'subdomain' => $context['subdomain'],
-            'execution' => $execution->id,
-        ], false), [
-            'user_id' => $allowedUser->id,
-        ]);
+    $allowedAssignResponse = $this->patchJson(route('tenant.kanban.executions.assign', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $execution->id,
+    ]), [
+        'user_id' => $allowedUser->id,
+    ]);
 
     $allowedAssignResponse->assertOk();
 
@@ -405,9 +384,12 @@ function setupWorkflowTenantContext(string $subdomain): array
         'is_active' => true,
     ]);
 
-    $kanban = Module::query()->create([
-        'name' => 'Kanban',
+    app()->instance((string) config('multitenancy.current_tenant_container_key', 'currentTenant'), $tenant);
+
+    $kanban = Module::query()->firstOrCreate([
         'slug' => ModuleSlug::KANBAN,
+    ], [
+        'name' => 'Kanban',
         'is_active' => true,
     ]);
 
