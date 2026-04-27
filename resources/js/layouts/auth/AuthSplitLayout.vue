@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import { useT } from '@/composables/useT';
 import { home } from '@/routes';
+
+const { t } = useT();
 
 defineProps<{
     title?: string;
@@ -33,39 +36,42 @@ defineProps<{
                     <div class="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-5 py-2">
                         <span class="size-1.5 rounded-full bg-primary" />
                         <span class="text-xs font-bold uppercase tracking-widest text-primary">
-                            Retail Precision Engine
+                            {{ t('app.auth_layout.badge') }}
                         </span>
                     </div>
 
                     <h1 class="mb-6 text-5xl font-bold leading-[1.12] tracking-tight text-white xl:text-6xl">
-                        Organize. Integre.<br />
-                        Controle.<br />
-                        <span class="text-primary italic">Onde quiser. Quando<br />quiser.</span>
+                        {{ t('app.auth_layout.headline_line_1') }}<br />
+                        {{ t('app.auth_layout.headline_line_2') }}<br />
+                        <span class="text-primary italic">
+                            {{ t('app.auth_layout.headline_highlight_line_1') }}<br />
+                            {{ t('app.auth_layout.headline_highlight_line_2') }}
+                        </span>
                     </h1>
 
                     <p class="max-w-md text-lg leading-relaxed text-white/55">
-                        Eleve seu espaço de varejo com planogramas de precisão. Transforme dados em excelência estratégica e impulsione a conversão com layouts otimizados.
+                        {{ t('app.auth_layout.description') }}
                     </p>
                 </div>
 
                 <!-- Stats -->
                 <div class="flex flex-wrap gap-12 border-t border-white/10 pt-9">
                     <div>
-                        <div class="text-3xl font-bold text-primary">99.8%</div>
+                        <div class="text-3xl font-bold text-primary">{{ t('app.auth_layout.stats.inventory_precision_value') }}</div>
                         <div class="mt-1 text-[11px] font-semibold uppercase tracking-widest text-white/40">
-                            Precisão de inventário
+                            {{ t('app.auth_layout.stats.inventory_precision') }}
                         </div>
                     </div>
                     <div>
-                        <div class="text-3xl font-bold text-primary">24/7</div>
+                        <div class="text-3xl font-bold text-primary">{{ t('app.auth_layout.stats.cloud_sync_value') }}</div>
                         <div class="mt-1 text-[11px] font-semibold uppercase tracking-widest text-white/40">
-                            Sincronização Cloud
+                            {{ t('app.auth_layout.stats.cloud_sync') }}
                         </div>
                     </div>
                     <div>
-                        <div class="text-3xl font-bold text-primary">15k+</div>
+                        <div class="text-3xl font-bold text-primary">{{ t('app.auth_layout.stats.global_deployments_value') }}</div>
                         <div class="mt-1 text-[11px] font-semibold uppercase tracking-widest text-white/40">
-                            Implantações globais
+                            {{ t('app.auth_layout.stats.global_deployments') }}
                         </div>
                     </div>
                 </div>

@@ -27,6 +27,24 @@ return [
     'toggle_sidebar' => 'Alternar barra lateral',
     'loading' => 'Carregando...',
 
+    'auth_layout' => [
+        'badge' => 'PLANOGRAMAS GERADOS COM PRECISÃO',
+        'headline_line_1' => 'Organize. Integre.',
+        'headline_line_2' => 'Controle.',
+        'headline_highlight_line_1' => 'Onde quiser. Quando',
+        'headline_highlight_line_2' => 'quiser.',
+        'description' => 'Transforme dados em planogramas inteligentes.<br/>
+Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resultados do seu ponto de venda.',
+        'stats' => [
+            'inventory_precision_value' => 'ERP',
+            'inventory_precision' => 'Integração de dados',
+            'cloud_sync_value' => '100%',
+            'cloud_sync' => 'Áreas conectadas',
+            'global_deployments_value' => '360°',
+            'global_deployments' => 'Fluxo entre áreas',
+        ],
+    ],
+
     'full_name' => 'Nome completo',
     'email' => 'E-mail',
     'password' => 'Senha',
