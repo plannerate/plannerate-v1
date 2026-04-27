@@ -419,6 +419,11 @@ return [
                 'new' => 'Nova loja',
                 'edit' => 'Editar loja',
             ],
+            'tabs' => [
+                'identificacao' => 'Identificação',
+                'endereco' => 'Endereço',
+                'mapa_da_loja' => 'Mapa Da Loja',
+            ],
             'fields' => [
                 'name' => 'Nome',
                 'document' => 'Documento',
@@ -427,6 +432,10 @@ return [
                 'email' => 'E-mail',
                 'status' => 'Status',
                 'description' => 'Descricao',
+                'map' => 'Mapa Da Loja',
+            ],
+            'hints' => [
+                'map' => 'Envie a planta da loja e marque as áreas como gôndolas, ilhas, entradas e checkouts.',
             ],
             'messages' => [
                 'created' => 'Loja criada com sucesso.',

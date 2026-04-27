@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function (): void {
@@ -37,6 +38,7 @@ beforeEach(function (): void {
 test('tenant admin can execute stores clusters and providers crud in tenant context', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);
+    Storage::fake('public');
 
     $tenant = makeTenantForRegistry('tenant-crud-stores');
     assignTenantAdminRoleForRegistry($user, $tenant->id);
@@ -52,6 +54,22 @@ test('tenant admin can execute stores clusters and providers crud in tenant cont
             'code' => 'STORE-001',
             'document' => '123',
             'status' => 'draft',
+            'map' => [
+                'image' => 'data:image/png;base64,'.base64_encode('fake-image-content'),
+                'regions' => [
+                    [
+                        'id' => '01j8z0j6n7r4w8e9q1t2y3u4i5',
+                        'x' => 10,
+                        'y' => 20,
+                        'width' => 120,
+                        'height' => 80,
+                        'shape' => 'rectangle',
+                        'label' => 'G-01',
+                        'type' => 'gondola',
+                        'color' => 'rgba(59, 130, 246, 0.3)',
+                    ],
+                ],
+            ],
             'address' => [
                 'type' => 'commercial',
                 'zip_code' => '01310-100',
@@ -78,6 +96,10 @@ test('tenant admin can execute stores clusters and providers crud in tenant cont
     expect($storeAddress)->not->toBeNull();
     expect($storeAddress?->city)->toBe('Sao Paulo');
     expect($storeAddress?->is_default)->toBeTrue();
+    expect($store->map_image_path)->toStartWith('store-maps/');
+    expect($store->map_regions)->toHaveCount(1);
+    expect($store->map_regions[0]['label'])->toBe('G-01');
+    Storage::disk('public')->assertExists($store->map_image_path);
 
     $storeUpdate = $this
         ->withServerVariables(['HTTP_HOST' => $host])
@@ -87,6 +109,21 @@ test('tenant admin can execute stores clusters and providers crud in tenant cont
             'code' => 'STORE-002',
             'document' => '456',
             'status' => 'published',
+            'map' => [
+                'regions' => [
+                    [
+                        'id' => '01j8z0j6n7r4w8e9q1t2y3u4i5',
+                        'x' => 30,
+                        'y' => 40,
+                        'width' => 160,
+                        'height' => 90,
+                        'shape' => 'rectangle',
+                        'label' => 'G-01 Atualizada',
+                        'type' => 'gondola',
+                        'color' => 'rgba(34, 197, 94, 0.3)',
+                    ],
+                ],
+            ],
             'address' => [
                 'id' => $storeAddress?->id,
                 'type' => 'commercial',
@@ -106,6 +143,10 @@ test('tenant admin can execute stores clusters and providers crud in tenant cont
 
     $store->refresh();
     expect($store->name)->toBe('Loja Atualizada');
+    expect($store->map_image_path)->toStartWith('store-maps/');
+    expect($store->map_regions)->toHaveCount(1);
+    expect($store->map_regions[0]['x'])->toBe(30);
+    expect($store->map_regions[0]['label'])->toBe('G-01 Atualizada');
     $storeAddress = $storeAddress?->fresh();
     expect($storeAddress?->city)->toBe('Rio de Janeiro');
     expect($storeAddress?->state)->toBe('RJ');

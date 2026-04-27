@@ -24,17 +24,26 @@ test('address fields component defines nested payload fields', function (): void
     expect($content)->toContain("inputName('status')");
 });
 
-test('store provider and cluster forms include shared address fields component', function (): void {
+test('store and provider forms include shared address fields component', function (): void {
     $storeForm = file_get_contents(resource_path('js/pages/tenant/stores/Form.vue'));
     $providerForm = file_get_contents(resource_path('js/pages/tenant/providers/Form.vue'));
-    $clusterForm = file_get_contents(resource_path('js/pages/tenant/clusters/Form.vue'));
 
     expect($storeForm)->toContain("import AddressFields from '@/components/form/AddressFields.vue'");
-    expect($storeForm)->toContain('<AddressFields :model-value="props.address" :errors="errors" />');
+    expect($storeForm)->toContain("v-show=\"activeTab === 'endereco'\"");
+    expect($storeForm)->toContain(':model-value="props.address"');
     expect($providerForm)->toContain("import AddressFields from '@/components/form/AddressFields.vue'");
     expect($providerForm)->toContain('<AddressFields :model-value="props.address" :errors="errors" />');
-    expect($clusterForm)->toContain("import AddressFields from '@/components/form/AddressFields.vue'");
-    expect($clusterForm)->toContain('<AddressFields :errors="errors" />');
+});
+
+test('store form includes map editor in store map tab', function (): void {
+    $storeForm = file_get_contents(resource_path('js/pages/tenant/stores/Form.vue'));
+    $mapField = file_get_contents(resource_path('js/components/form/FormMapField.vue'));
+
+    expect($storeForm)->toContain("import FormMapField from '@/components/form/FormMapField.vue'");
+    expect($storeForm)->toContain("v-show=\"activeTab === 'mapa_da_loja'\"");
+    expect($storeForm)->toContain('v-model="storeMap"');
+    expect($mapField)->toContain('`${column.name}[image]`');
+    expect($mapField)->toContain('`${column.name}[regions]`');
 });
 
 test('cep lookup component exists and emits resolved payload', function (): void {

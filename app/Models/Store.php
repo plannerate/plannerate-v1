@@ -34,7 +34,21 @@ class Store extends Model
         'email',
         'status',
         'description',
+        'map_image_path',
+        'map_regions',
     ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'map_regions' => 'array',
+        ];
+    }
 
     /**
      * Get clusters associated to this store.
