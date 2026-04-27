@@ -3,6 +3,8 @@ export type AssignedUser = {
     name: string | null;
 };
 
+export type KanbanExecutionAction = 'start' | 'pause' | 'resume' | 'complete' | 'abandon';
+
 export type Execution = {
     id: string;
     gondola_id: string;

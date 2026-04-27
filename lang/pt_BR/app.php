@@ -458,12 +458,12 @@ return [
             ],
         ],
         'providers' => [
-            'navigation' => 'Providers',
-            'title' => 'Providers',
-            'description' => 'Gerencie os providers do tenant.',
+            'navigation' => 'Fornecedores',
+            'title' => 'Fornecedores',
+            'description' => 'Gerencie os fornecedores do tenant.',
             'actions' => [
-                'new' => 'Novo provider',
-                'edit' => 'Editar provider',
+                'new' => 'Novo fornecedor',
+                'edit' => 'Editar fornecedor',
             ],
             'fields' => [
                 'name' => 'Nome',
@@ -475,9 +475,9 @@ return [
                 'description' => 'Descricao',
             ],
             'messages' => [
-                'created' => 'Provider criado com sucesso.',
-                'updated' => 'Provider atualizado com sucesso.',
-                'deleted' => 'Provider removido com sucesso.',
+                'created' => 'Fornecedor criado com sucesso.',
+                'updated' => 'Fornecedor atualizado com sucesso.',
+                'deleted' => 'Fornecedor removido com sucesso.',
             ],
         ],
         'planograms' => [

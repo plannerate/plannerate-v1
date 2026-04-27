@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
 import { Kanban } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
+import KanbanActionConfirmDialog from '@/components/kanban/KanbanActionConfirmDialog.vue';
 import KanbanBoard from '@/components/kanban/KanbanBoard.vue';
 import KanbanCardDetail from '@/components/kanban/KanbanCardDetail.vue';
 import KanbanFilters from '@/components/kanban/KanbanFilters.vue';
-import type { KanbanPageProps } from '@/components/kanban/types';
+import type { Execution, KanbanExecutionAction, KanbanPageProps } from '@/components/kanban/types';
 import KankanNavigationLinks from '@/components/KankanNavigationLinks.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
@@ -20,6 +22,10 @@ const page = usePage();
 
 const { t } = useT();
 const currentUserId = (page.props.auth as Auth | undefined)?.user?.id ?? null;
+const confirmOpen = ref(false);
+const pendingAction = ref<KanbanExecutionAction | null>(null);
+const pendingExecution = ref<Execution | null>(null);
+const pendingFromDetail = ref(false);
 
 const pageMeta = useCrudPageMeta({
     headTitle: 'Kanban',
@@ -67,6 +73,80 @@ const {
 
 function statusClass(status: string): string {
     return statusColors[status] ?? 'bg-muted text-muted-foreground';
+}
+
+const confirmGondolaName = computed(() => (
+    pendingFromDetail.value
+        ? (detailPayload.value?.execution.gondola?.name ?? null)
+        : (pendingExecution.value?.gondola_name ?? null)
+));
+
+const confirmStepName = computed(() => (
+    pendingFromDetail.value
+        ? (detailPayload.value?.execution.step?.name ?? null)
+        : (pendingExecution.value?.step_name ?? null)
+));
+
+function requestCardAction(action: KanbanExecutionAction, execution: Execution): void {
+    pendingAction.value = action;
+    pendingExecution.value = execution;
+    pendingFromDetail.value = false;
+    actionNotes.value = '';
+    confirmOpen.value = true;
+}
+
+function requestDetailAction(action: KanbanExecutionAction): void {
+    pendingAction.value = action;
+    pendingExecution.value = null;
+    pendingFromDetail.value = true;
+    confirmOpen.value = true;
+}
+
+async function confirmPendingAction(): Promise<void> {
+    const action = pendingAction.value;
+
+    if (!action) {
+        return;
+    }
+
+    if (pendingFromDetail.value) {
+        await runDetailAction(action);
+    } else if (pendingExecution.value) {
+        await runCardAction(action, pendingExecution.value);
+    }
+
+    confirmOpen.value = false;
+    pendingAction.value = null;
+    pendingExecution.value = null;
+    pendingFromDetail.value = false;
+}
+
+async function runDetailAction(action: KanbanExecutionAction): Promise<void> {
+    if (action === 'start') {
+        await startDetailExecution();
+    } else if (action === 'pause') {
+        await pauseDetailExecution();
+    } else if (action === 'resume') {
+        await resumeDetailExecution();
+    } else if (action === 'complete') {
+        await completeDetailExecution();
+    } else if (action === 'abandon') {
+        await abandonDetailExecution();
+    }
+}
+
+async function runCardAction(action: KanbanExecutionAction, execution: Execution): Promise<void> {
+    if (action === 'start') {
+        await startExecution(execution);
+    } else if (action === 'pause') {
+        await pauseExecution(execution);
+    } else if (action === 'resume') {
+        await resumeExecution(execution);
+    } else if (action === 'complete') {
+        await completeExecution(execution);
+    } else if (action === 'abandon') {
+        await abandonExecution(execution);
+    }
 }
 </script>
 
@@ -130,11 +210,11 @@ function statusClass(status: string): string {
                 @dragleave="onDragLeave"
                 @drop="onDrop"
                 @details="openExecutionDetails"
-                @start="startExecution"
-                @pause="pauseExecution"
-                @resume="resumeExecution"
-                @complete="completeExecution"
-                @abandon="abandonExecution"
+                @start="requestCardAction('start', $event)"
+                @pause="requestCardAction('pause', $event)"
+                @resume="requestCardAction('resume', $event)"
+                @complete="requestCardAction('complete', $event)"
+                @abandon="requestCardAction('abandon', $event)"
             />
         </div>
 
@@ -150,11 +230,22 @@ function statusClass(status: string): string {
             :subdomain="props.subdomain"
             :current-user-id="currentUserId"
             @update:action-notes="actionNotes = $event"
-            @start="startDetailExecution"
-            @pause="pauseDetailExecution"
-            @resume="resumeDetailExecution"
-            @complete="completeDetailExecution"
-            @abandon="abandonDetailExecution"
+            @start="requestDetailAction('start')"
+            @pause="requestDetailAction('pause')"
+            @resume="requestDetailAction('resume')"
+            @complete="requestDetailAction('complete')"
+            @abandon="requestDetailAction('abandon')"
+        />
+
+        <KanbanActionConfirmDialog
+            v-model:open="confirmOpen"
+            :action="pendingAction"
+            :gondola-name="confirmGondolaName"
+            :step-name="confirmStepName"
+            :notes="actionNotes"
+            :busy="Boolean(busyExecutionId)"
+            @update:notes="actionNotes = $event"
+            @confirm="confirmPendingAction"
         />
     </AppLayout>
 </template>
