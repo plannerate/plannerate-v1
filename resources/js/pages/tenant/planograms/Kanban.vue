@@ -116,6 +116,8 @@ function statusClass(status: string): string {
             <KanbanBoard
                 v-else
                 :board="filteredBoard"
+                :subdomain="props.subdomain"
+                :current-user-id="currentUserId"
                 :dragging-execution-id="draggingExecutionId"
                 :drag-over-step-id="dragOverStepId"
                 :busy-execution-id="busyExecutionId"
@@ -145,6 +147,7 @@ function statusClass(status: string): string {
             :action-notes="actionNotes"
             :busy="busyExecutionId === detailPayload?.execution.id"
             :steps="filteredBoard.map((column) => column.step)"
+            :subdomain="props.subdomain"
             :current-user-id="currentUserId"
             @update:action-notes="actionNotes = $event"
             @start="startDetailExecution"

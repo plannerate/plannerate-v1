@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { CalendarClock, CheckCircle2, GripVertical, Pause, Play, User, XCircle } from 'lucide-vue-next';
+import { CalendarClock, CheckCircle2, ExternalLink, GripVertical, Pause, Play, User, XCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
 import type { Execution } from '@/components/kanban/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { editor as tenantEditorPlanogramGondolas } from '@/routes/tenant/planograms/gondolas';
 
 const props = defineProps<{
     execution: Execution;
+    subdomain: string;
+    currentUserId: string | null;
     isDragging: boolean;
     statusClass: string;
     statusLabel: string;
@@ -30,6 +34,25 @@ const canPause = computed(() => props.execution.can_pause);
 const canResume = computed(() => props.execution.can_resume);
 const canComplete = computed(() => props.execution.can_complete);
 const canAbandon = computed(() => props.execution.can_abandon);
+const isActive = computed(() => props.execution.status === 'active');
+const wasStartedByCurrentUser = computed(
+    () => isActive.value && props.execution.started_by?.id === props.currentUserId,
+);
+const executionLinkHref = computed(() => {
+    if (!isActive.value || !props.execution.started_by?.id || !props.currentUserId) {
+        return null;
+    }
+
+    if (wasStartedByCurrentUser.value) {
+        return tenantEditorPlanogramGondolas.url({
+            subdomain: props.subdomain,
+            record: props.execution.gondola_id,
+        });
+    }
+
+    return gondolaView.url(props.execution.gondola_id);
+});
+const executionLinkLabel = computed(() => (wasStartedByCurrentUser.value ? 'Abrir editor' : 'Visualizar PDF'));
 </script>
 
 <template>
@@ -79,6 +102,13 @@ const canAbandon = computed(() => props.execution.can_abandon);
         <div class="mt-3 flex flex-wrap items-center gap-1.5">
             <Button size="sm" variant="outline" class="h-7 px-2 text-xs" @click="emit('details', execution)">
                 Detalhes
+            </Button>
+
+            <Button v-if="executionLinkHref" size="sm" variant="outline" class="h-7 px-2 text-xs" as-child>
+                <a :href="executionLinkHref" target="_blank" rel="noopener noreferrer">
+                    <ExternalLink class="mr-1 size-3.5" />
+                    {{ executionLinkLabel }}
+                </a>
             </Button>
 
             <Button

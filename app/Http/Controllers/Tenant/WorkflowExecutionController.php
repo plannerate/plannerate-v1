@@ -210,9 +210,9 @@ class WorkflowExecutionController extends Controller
                     'id' => $execution->currentResponsible->id,
                     'name' => $execution->currentResponsible->name,
                 ] : null,
-                'started_by' => $execution->startedBy ? [
-                    'id' => $execution->startedBy->id,
-                    'name' => $execution->startedBy->name,
+                'started_by' => $execution->execution_started_by ? [
+                    'id' => $execution->execution_started_by,
+                    'name' => $execution->startedBy?->name,
                 ] : null,
                 'started_at' => $execution->started_at?->toIso8601String(),
                 'sla_date' => $execution->sla_date?->toIso8601String(),

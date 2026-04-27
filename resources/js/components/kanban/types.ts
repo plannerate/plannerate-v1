@@ -1,6 +1,6 @@
 export type AssignedUser = {
     id: string;
-    name: string;
+    name: string | null;
 };
 
 export type Execution = {
@@ -12,6 +12,7 @@ export type Execution = {
     step_name: string | null;
     status: 'pending' | 'active' | 'paused' | 'completed' | 'cancelled';
     assigned_to_user: AssignedUser | null;
+    started_by: AssignedUser | null;
     started_at: string | null;
     sla_date: string | null;
     can_start: boolean;

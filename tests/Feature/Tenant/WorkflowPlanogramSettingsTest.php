@@ -267,7 +267,10 @@ test('kanban board hides skipped steps for a planogram', function (): void {
         'tenant_id' => $context['tenant']->id,
         'gondola_id' => $gondola->id,
         'workflow_planogram_step_id' => $step->id,
-        'status' => 'pending',
+        'status' => 'active',
+        'current_responsible_id' => $context['user']->id,
+        'execution_started_by' => $context['user']->id,
+        'started_at' => now(),
     ]);
 
     $response = $this->get(route('tenant.kanban.index', [
@@ -323,13 +326,18 @@ test('kanban board includes execution display fields for cards', function (): vo
         'tenant_id' => $context['tenant']->id,
         'gondola_id' => $gondola->id,
         'workflow_planogram_step_id' => $step->id,
-        'status' => 'pending',
+        'status' => 'active',
+        'current_responsible_id' => $context['user']->id,
+        'execution_started_by' => $context['user']->id,
+        'started_at' => now(),
     ]);
 
-    $this->get(route('tenant.kanban.index', [
+    $response = $this->get(route('tenant.kanban.index', [
         'subdomain' => $context['subdomain'],
         'planogram_id' => $planogram->id,
-    ]))
+    ]));
+
+    $response
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('tenant/planograms/Kanban')
@@ -338,6 +346,8 @@ test('kanban board includes execution display fields for cards', function (): vo
             ->where('board.0.executions.0.gondola_location', 'Corredor 3')
             ->where('board.0.executions.0.planogram_name', $planogram->name)
             ->where('board.0.executions.0.step_name', $step->name)
+            ->where('board.0.executions.0.started_by.id', $context['user']->id)
+            ->where('board.0.executions.0.can_pause', true)
         );
 });
 

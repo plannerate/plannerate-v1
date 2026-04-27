@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { CheckCircle2, Pause, Play, RotateCcw, XCircle } from 'lucide-vue-next';
+import { CheckCircle2, ExternalLink, Pause, Play, RotateCcw, XCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
 import type { BoardStep, ExecutionDetails, WorkflowHistory } from '@/components/kanban/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +12,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { editor as tenantEditorPlanogramGondolas } from '@/routes/tenant/planograms/gondolas';
 
 const props = defineProps<{
     open: boolean;
@@ -21,6 +23,7 @@ const props = defineProps<{
     actionNotes: string;
     busy: boolean;
     steps: BoardStep[];
+    subdomain: string;
     currentUserId: string | null;
 }>();
 
@@ -49,6 +52,27 @@ const canPause = computed(() => execution.value?.can_pause ?? false);
 const canResume = computed(() => execution.value?.can_resume ?? false);
 const canComplete = computed(() => execution.value?.can_complete ?? false);
 const canAbandon = computed(() => execution.value?.can_abandon ?? false);
+const isActive = computed(() => execution.value?.status === 'active');
+const wasStartedByCurrentUser = computed(
+    () => isActive.value && execution.value?.started_by?.id === props.currentUserId,
+);
+const executionLinkHref = computed(() => {
+    const gondolaId = execution.value?.gondola?.id;
+
+    if (!isActive.value || !gondolaId || !execution.value?.started_by?.id || !props.currentUserId) {
+        return null;
+    }
+
+    if (wasStartedByCurrentUser.value) {
+        return tenantEditorPlanogramGondolas.url({
+            subdomain: props.subdomain,
+            record: gondolaId,
+        });
+    }
+
+    return gondolaView.url(gondolaId);
+});
+const executionLinkLabel = computed(() => (wasStartedByCurrentUser.value ? 'Abrir editor de gondolas' : 'Visualizar PDF'));
 
 const statusLabels: Record<string, string> = {
     pending: 'Pendente',
@@ -125,6 +149,12 @@ function formatDateTime(iso: string | null): string {
                                     </p>
                                 </div>
                             </div>
+                            <Button v-if="executionLinkHref" variant="outline" size="sm" class="mt-3" as-child>
+                                <a :href="executionLinkHref" target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink class="size-4" />
+                                    {{ executionLinkLabel }}
+                                </a>
+                            </Button>
                         </section>
 
                         <section class="rounded-lg border bg-card p-3">
