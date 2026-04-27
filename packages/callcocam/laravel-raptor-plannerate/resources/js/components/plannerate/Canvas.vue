@@ -42,11 +42,16 @@ const canvasTopPadding = computed(() => {
     let maxOverflow = 48; // baseline matches pt-12
 
     for (const section of sortedSections.value) {
-        for (const shelf of (section.shelves ?? []).filter(s => !s.deleted_at)) {
+        for (const shelf of (section.shelves ?? []).filter(
+            (s) => !s.deleted_at,
+        )) {
             const shelfTopPx = shelf.shelf_position * scale;
 
-            for (const segment of (shelf.segments ?? []).filter(s => !s.deleted_at)) {
-                const productHeight = (segment.layer?.product?.height ?? 0) * scale;
+            for (const segment of (shelf.segments ?? []).filter(
+                (s) => !s.deleted_at,
+            )) {
+                const productHeight =
+                    (segment.layer?.product?.height ?? 0) * scale;
                 const qty = segment.quantity ?? 1;
                 const overflow = productHeight * qty - shelfTopPx;
                 if (overflow > maxOverflow) {
@@ -126,7 +131,7 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
         v-if="containerHeight"
     >
         <div
-            class="relative overflow-auto border border-dashed border-border bg-background p-8 dark:bg-background"
+            class="relative isolate overflow-auto border border-dashed border-border bg-background p-8 dark:bg-background"
             :style="{ height: containerHeight + 'px' }"
         >
             <!-- Grade de alinhamento -->
@@ -145,7 +150,7 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
             <!-- Sections do Planograma -->
             <div
                 v-if="sortedSections.length > 0"
-                class="flex min-h-full items-start pb-4"
+                class="relative z-0 flex min-h-full items-start pb-4"
                 :style="{ paddingTop: canvasTopPadding + 'px' }"
                 data-planogram-canvas
                 @click="handleCanvasClick"
