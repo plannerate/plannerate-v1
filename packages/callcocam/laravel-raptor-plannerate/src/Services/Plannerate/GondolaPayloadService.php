@@ -2,8 +2,13 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
+use App\Models\Tenant;
+use App\Models\WorkflowGondolaExecution;
+use App\Support\Modules\ModuleSlug;
+use App\Support\Modules\TenantModuleService;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Store;
+use Illuminate\Support\Collection;
 
 class GondolaPayloadService
 {
@@ -143,7 +148,7 @@ class GondolaPayloadService
                 'updated_at' => $planogram->updated_at?->toISOString(),
             ];
 
-            $gondolas = $planogram->gondolas
+            $gondolas = $this->navigationGondolas($planogram->gondolas)
                 ->map(fn ($relatedGondola) => [
                     'id' => $relatedGondola->id,
                     'name' => $relatedGondola->name,
@@ -194,5 +199,72 @@ class GondolaPayloadService
         ];
 
         return $recordData;
+    }
+
+    /**
+     * @param  Collection<int, Gondola>  $gondolas
+     * @return Collection<int, Gondola>
+     */
+    private function navigationGondolas(Collection $gondolas): Collection
+    {
+        $tenant = $this->resolveTenant();
+
+        if (! $tenant instanceof Tenant) {
+            return $gondolas;
+        }
+
+        $hasKanban = app(TenantModuleService::class)
+            ->tenantHasActiveModule($tenant, ModuleSlug::KANBAN);
+
+        if (! $hasKanban) {
+            return $gondolas;
+        }
+
+        $currentUserId = auth()->id();
+
+        if (! $currentUserId) {
+            return collect();
+        }
+
+        $startedGondolaIds = WorkflowGondolaExecution::query()
+            ->whereIn('gondola_id', $gondolas->pluck('id')->filter()->values())
+            ->where('current_responsible_id', $currentUserId)
+            ->whereNotNull('execution_started_by')
+            ->whereNotNull('started_at')
+            ->pluck('gondola_id')
+            ->map(fn (mixed $id): string => (string) $id)
+            ->unique()
+            ->all();
+
+        return $gondolas
+            ->filter(fn (Gondola $relatedGondola): bool => in_array((string) $relatedGondola->id, $startedGondolaIds, true))
+            ->values();
+    }
+
+    private function resolveTenant(): ?Tenant
+    {
+        if (app()->bound('tenant')) {
+            $tenant = app('tenant');
+
+            if ($tenant instanceof Tenant) {
+                return $tenant;
+            }
+        }
+
+        $current = Tenant::current();
+
+        if ($current instanceof Tenant) {
+            return $current;
+        }
+
+        $containerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
+
+        if (! app()->bound($containerKey)) {
+            return null;
+        }
+
+        $resolved = app($containerKey);
+
+        return $resolved instanceof Tenant ? $resolved : null;
     }
 }

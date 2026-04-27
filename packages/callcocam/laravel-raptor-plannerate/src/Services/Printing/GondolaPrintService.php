@@ -6,6 +6,7 @@ use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Services\QRCode\QRCodeService;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class GondolaPrintService
@@ -65,7 +66,7 @@ class GondolaPrintService
 
             return $this->getPlaceholderImage();
         } catch (\Exception $e) {
-            \Log::warning('Erro ao processar imagem', [
+            Log::warning('Erro ao processar imagem', [
                 'url' => $imageUrl,
                 'error' => $e->getMessage(),
             ]);
@@ -221,6 +222,7 @@ class GondolaPrintService
                             'shelf_height' => $shelf->shelf_height,
                             'shelf_width' => $shelf->shelf_width,
                             'shelf_depth' => $shelf->shelf_depth,
+                            'product_type' => $shelf->product_type ?? 'normal',
                             'segments' => $shelf->segments->map(function ($segment) {
                                 $layer = $segment->layer;
                                 $product = $layer?->product;

@@ -43,6 +43,8 @@ class GondolaController extends Controller
     public function edit(string $subdomain, string $record)
     {
         $gondola = $this->findGondolaOrFail($record);
+        $this->authorize('view', $gondola);
+
         $gondola->load([
             'planogram.gondolas:id,planogram_id,name,slug',
             'planogram.category',
