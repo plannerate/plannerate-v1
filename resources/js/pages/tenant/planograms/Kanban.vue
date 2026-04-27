@@ -1,20 +1,25 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { Kanban } from 'lucide-vue-next';
+import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import KanbanBoard from '@/components/kanban/KanbanBoard.vue';
 import KanbanCardDetail from '@/components/kanban/KanbanCardDetail.vue';
 import KanbanFilters from '@/components/kanban/KanbanFilters.vue';
 import type { KanbanPageProps } from '@/components/kanban/types';
 import KankanNavigationLinks from '@/components/KankanNavigationLinks.vue';
+import NewActionButton from '@/components/NewActionButton.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useKanban } from '@/composables/useKanban';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
+import type { Auth } from '@/types/auth';
 
 const props = defineProps<KanbanPageProps>();
+const page = usePage();
 
 const { t } = useT();
+const currentUserId = (page.props.auth as Auth | undefined)?.user?.id ?? null;
 
 const pageMeta = useCrudPageMeta({
     headTitle: 'Kanban',
@@ -37,16 +42,23 @@ const {
     detailLoading,
     detailError,
     detailPayload,
-    assigning,
+    detailHistories,
+    actionNotes,
     isOverdue,
     formatDate,
     statusColors,
     statusLabel,
+    startExecution,
+    startDetailExecution,
     pauseExecution,
+    pauseDetailExecution,
     resumeExecution,
+    resumeDetailExecution,
     completeExecution,
+    completeDetailExecution,
+    abandonExecution,
+    abandonDetailExecution,
     openExecutionDetails,
-    assignFromDetails,
     onDragStart,
     onDragOver,
     onDragLeave,
@@ -63,8 +75,13 @@ function statusClass(status: string): string {
         <Head :title="pageMeta.headTitle" />
 
         <template #header-actions>
-            <KankanNavigationLinks :subdomain="props.subdomain" />
+            <div class="flex items-center justify-end gap-2">
+                <NewActionButton :href="PlanogramController.create.url(props.subdomain)">
+                    {{ t('app.tenant.planograms.actions.new') }}
+                </NewActionButton>
+            </div>
         </template>
+        <KankanNavigationLinks :subdomain="props.subdomain" />
 
         <div class="flex h-full flex-col">
             <div class="border-b border-border bg-background px-4 py-3">
@@ -111,9 +128,11 @@ function statusClass(status: string): string {
                 @dragleave="onDragLeave"
                 @drop="onDrop"
                 @details="openExecutionDetails"
+                @start="startExecution"
                 @pause="pauseExecution"
                 @resume="resumeExecution"
                 @complete="completeExecution"
+                @abandon="abandonExecution"
             />
         </div>
 
@@ -121,9 +140,18 @@ function statusClass(status: string): string {
             v-model:open="detailOpen"
             :loading="detailLoading"
             :payload="detailPayload"
+            :histories="detailHistories"
             :error="detailError"
-            :assigning="assigning"
-            @assign="assignFromDetails"
+            :action-notes="actionNotes"
+            :busy="busyExecutionId === detailPayload?.execution.id"
+            :steps="filteredBoard.map((column) => column.step)"
+            :current-user-id="currentUserId"
+            @update:action-notes="actionNotes = $event"
+            @start="startDetailExecution"
+            @pause="pauseDetailExecution"
+            @resume="resumeDetailExecution"
+            @complete="completeDetailExecution"
+            @abandon="abandonDetailExecution"
         />
     </AppLayout>
 </template>

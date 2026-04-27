@@ -422,6 +422,285 @@ test('execution details returns allowed users and assign only accepts users allo
     ]);
 });
 
+test('logged user can start and abandon a pending execution with notes', function (): void {
+    $context = setupWorkflowTenantContext('tenant-workflow-start-abandon');
+    $executor = User::factory()->create();
+    $executor->assignRole(Role::query()->where('system_name', 'tenant-admin')->firstOrFail());
+    $this->actingAs($executor);
+
+    $template = WorkflowTemplate::query()->create([
+        'name' => 'Execução loja',
+        'slug' => 'execucao-loja-'.Str::lower(Str::random(8)),
+        'suggested_order' => 5,
+        'is_required_by_default' => true,
+        'status' => 'published',
+    ]);
+
+    $planogram = Planogram::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'name' => 'Planograma Start',
+        'slug' => 'planograma-start',
+        'type' => 'planograma',
+        'status' => 'draft',
+    ]);
+
+    $this->get(route('tenant.planograms.workflow-settings.index', [
+        'subdomain' => $context['subdomain'],
+        'planogram' => $planogram->id,
+    ]))
+        ->assertOk();
+
+    $step = WorkflowPlanogramStep::query()
+        ->where('planogram_id', $planogram->id)
+        ->where('workflow_template_id', $template->id)
+        ->firstOrFail();
+    $step->availableUsers()->sync([$executor->id]);
+
+    $gondola = Gondola::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+        'name' => 'Gondola Start',
+        'slug' => 'gondola-start',
+        'status' => 'draft',
+    ]);
+
+    $execution = WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondola->id,
+        'workflow_planogram_step_id' => $step->id,
+        'status' => 'pending',
+    ]);
+
+    $startResponse = $this->patchJson(route('tenant.kanban.executions.start', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $execution->id,
+    ]), [
+        'notes' => 'Começando conferência em loja.',
+    ]);
+
+    $startResponse
+        ->assertOk()
+        ->assertJsonPath('execution.status', 'active');
+
+    $this->assertDatabaseHas('workflow_gondola_executions', [
+        'id' => $execution->id,
+        'status' => 'active',
+        'current_responsible_id' => $executor->id,
+        'execution_started_by' => $executor->id,
+    ]);
+
+    $detailsResponse = $this->get(route('tenant.kanban.executions.details', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $execution->id,
+    ]));
+
+    $detailsResponse
+        ->assertOk()
+        ->assertJsonPath('execution.started_by.id', $executor->id)
+        ->assertJsonPath('execution.assigned_to_user.id', $executor->id);
+
+    $abandonResponse = $this->patchJson(route('tenant.kanban.executions.abandon', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $execution->id,
+    ]), [
+        'notes' => 'Gondola indisponível para execução.',
+    ]);
+
+    $abandonResponse
+        ->assertOk()
+        ->assertJsonPath('execution.status', 'cancelled');
+
+    $this->assertDatabaseHas('workflow_gondola_executions', [
+        'id' => $execution->id,
+        'status' => 'cancelled',
+    ]);
+
+    $this->assertDatabaseHas('workflow_histories', [
+        'workflow_gondola_execution_id' => $execution->id,
+        'action' => 'cancelled',
+        'description' => 'Gondola indisponível para execução.',
+    ]);
+});
+
+test('execution policy guards allowed users statuses and last step completion', function (): void {
+    $context = setupWorkflowTenantContext('tenant-workflow-policy-rules');
+    $executor = User::factory()->create();
+    $blockedUser = User::factory()->create();
+    $role = Role::query()->where('system_name', 'tenant-admin')->firstOrFail();
+    $executor->assignRole($role);
+    $blockedUser->assignRole($role);
+
+    $firstTemplate = WorkflowTemplate::query()->create([
+        'name' => 'Revisão inicial',
+        'slug' => 'revisao-inicial-'.Str::lower(Str::random(8)),
+        'suggested_order' => 1,
+        'is_required_by_default' => true,
+        'status' => 'published',
+    ]);
+
+    $lastTemplate = WorkflowTemplate::query()->create([
+        'name' => 'Execução final',
+        'slug' => 'execucao-final-'.Str::lower(Str::random(8)),
+        'suggested_order' => 2,
+        'is_required_by_default' => true,
+        'status' => 'published',
+    ]);
+
+    $planogram = Planogram::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'name' => 'Planograma Policy',
+        'slug' => 'planograma-policy',
+        'type' => 'planograma',
+        'status' => 'draft',
+    ]);
+
+    $this->actingAs($executor)
+        ->get(route('tenant.planograms.workflow-settings.index', [
+            'subdomain' => $context['subdomain'],
+            'planogram' => $planogram->id,
+        ]))
+        ->assertOk();
+
+    $firstStep = WorkflowPlanogramStep::query()
+        ->where('planogram_id', $planogram->id)
+        ->where('workflow_template_id', $firstTemplate->id)
+        ->firstOrFail();
+    $lastStep = WorkflowPlanogramStep::query()
+        ->where('planogram_id', $planogram->id)
+        ->where('workflow_template_id', $lastTemplate->id)
+        ->firstOrFail();
+    $firstStep->availableUsers()->sync([$executor->id]);
+    $lastStep->availableUsers()->sync([$executor->id]);
+
+    $gondola = Gondola::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+        'name' => 'Gondola Policy',
+        'slug' => 'gondola-policy',
+        'status' => 'draft',
+    ]);
+
+    $pendingExecution = WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondola->id,
+        'workflow_planogram_step_id' => $firstStep->id,
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($blockedUser)
+        ->patchJson(route('tenant.kanban.executions.start', [
+            'subdomain' => $context['subdomain'],
+            'execution' => $pendingExecution->id,
+        ]))
+        ->assertForbidden();
+
+    $this->actingAs($executor)
+        ->patchJson(route('tenant.kanban.executions.start', [
+            'subdomain' => $context['subdomain'],
+            'execution' => $pendingExecution->id,
+        ]), [
+            'notes' => 'Iniciando com usuário permitido.',
+        ])
+        ->assertOk();
+
+    $this->assertDatabaseHas('workflow_histories', [
+        'workflow_gondola_execution_id' => $pendingExecution->id,
+        'action' => 'started',
+        'description' => 'Iniciando com usuário permitido.',
+    ]);
+
+    $pendingForBlockedActions = WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondola->id,
+        'workflow_planogram_step_id' => $firstStep->id,
+        'status' => 'pending',
+    ]);
+
+    $this->patchJson(route('tenant.kanban.executions.pause', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $pendingForBlockedActions->id,
+    ]))->assertForbidden();
+
+    $this->patchJson(route('tenant.kanban.executions.abandon', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $pendingForBlockedActions->id,
+    ]))->assertForbidden();
+
+    $activeFirstStep = WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondola->id,
+        'workflow_planogram_step_id' => $firstStep->id,
+        'status' => 'active',
+        'current_responsible_id' => $executor->id,
+        'execution_started_by' => $executor->id,
+        'started_at' => now(),
+    ]);
+
+    $this->patchJson(route('tenant.kanban.executions.complete', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $activeFirstStep->id,
+    ]))->assertForbidden();
+
+    $this->patchJson(route('tenant.kanban.executions.pause', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $activeFirstStep->id,
+    ]), [
+        'notes' => 'Pausa operacional.',
+    ])->assertOk();
+
+    $this->assertDatabaseHas('workflow_histories', [
+        'workflow_gondola_execution_id' => $activeFirstStep->id,
+        'action' => 'paused',
+        'description' => 'Pausa operacional.',
+    ]);
+
+    $activeToAbandon = WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondola->id,
+        'workflow_planogram_step_id' => $firstStep->id,
+        'status' => 'active',
+        'current_responsible_id' => $executor->id,
+        'execution_started_by' => $executor->id,
+        'started_at' => now(),
+    ]);
+
+    $this->patchJson(route('tenant.kanban.executions.abandon', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $activeToAbandon->id,
+    ]), [
+        'notes' => 'Abandono autorizado.',
+    ])->assertOk();
+
+    $this->assertDatabaseHas('workflow_histories', [
+        'workflow_gondola_execution_id' => $activeToAbandon->id,
+        'action' => 'cancelled',
+        'description' => 'Abandono autorizado.',
+    ]);
+
+    $activeLastStep = WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondola->id,
+        'workflow_planogram_step_id' => $lastStep->id,
+        'status' => 'active',
+        'current_responsible_id' => $executor->id,
+        'execution_started_by' => $executor->id,
+        'started_at' => now(),
+    ]);
+
+    $this->patchJson(route('tenant.kanban.executions.complete', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $activeLastStep->id,
+    ]), [
+        'notes' => 'Conclusão na última etapa.',
+    ])->assertOk();
+
+    $this->assertDatabaseHas('workflow_histories', [
+        'workflow_gondola_execution_id' => $activeLastStep->id,
+        'action' => 'completed',
+        'description' => 'Conclusão na última etapa.',
+    ]);
+});
+
 /**
  * @return array{subdomain: string, host: string, tenant: Tenant, user: User}
  */

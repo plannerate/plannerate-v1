@@ -40,6 +40,34 @@ class WorkflowKanbanService
         });
     }
 
+    public function startPendingExecution(
+        WorkflowGondolaExecution $execution,
+        User $actor,
+        ?string $notes = null
+    ): WorkflowGondolaExecution {
+        return DB::transaction(function () use ($execution, $actor, $notes) {
+            $execution->update([
+                'status' => WorkflowExecutionStatus::Active,
+                'execution_started_by' => $actor->id,
+                'current_responsible_id' => $actor->id,
+                'started_at' => now(),
+                'paused_at' => null,
+                'notes' => $notes,
+            ]);
+
+            $this->recordHistory(
+                $execution,
+                WorkflowHistoryAction::Started,
+                $actor,
+                null,
+                $execution->workflow_planogram_step_id,
+                $notes
+            );
+
+            return $execution->fresh();
+        });
+    }
+
     /**
      * Move execution to a different step, resetting timing fields.
      */
@@ -116,6 +144,21 @@ class WorkflowKanbanService
         });
     }
 
+    public function abandon(WorkflowGondolaExecution $execution, User $actor, ?string $notes = null): WorkflowGondolaExecution
+    {
+        return DB::transaction(function () use ($execution, $actor, $notes) {
+            $execution->update([
+                'status' => WorkflowExecutionStatus::Cancelled,
+                'completed_at' => now(),
+                'notes' => $notes,
+            ]);
+
+            $this->recordHistory($execution, WorkflowHistoryAction::Cancelled, $actor, $execution->workflow_planogram_step_id, null, $notes);
+
+            return $execution->fresh();
+        });
+    }
+
     /**
      * Assign a responsible user to the execution.
      */
@@ -182,7 +225,7 @@ class WorkflowKanbanService
      *
      * @return array<int, array{step: array<string, mixed>, executions: array<int, array<string, mixed>>}>
      */
-    public function buildBoardForPlanogram(Planogram $planogram): array
+    public function buildBoardForPlanogram(Planogram $planogram, ?User $user = null): array
     {
         $steps = $planogram->workflowSteps()
             ->with(['template', 'executions.gondola.planogram', 'executions.currentResponsible'])
@@ -190,7 +233,7 @@ class WorkflowKanbanService
             ->get()
             ->sortBy('suggested_order');
 
-        return $steps->map(function (WorkflowPlanogramStep $step) {
+        return $steps->map(function (WorkflowPlanogramStep $step) use ($user) {
             return [
                 'step' => [
                     'id' => $step->id,
@@ -216,6 +259,11 @@ class WorkflowKanbanService
                     ] : null,
                     'started_at' => $exec->started_at?->toIso8601String(),
                     'sla_date' => $exec->sla_date?->toIso8601String(),
+                    'can_start' => $user?->can('start', $exec) ?? false,
+                    'can_pause' => $user?->can('pause', $exec) ?? false,
+                    'can_resume' => $user?->can('resume', $exec) ?? false,
+                    'can_complete' => $user?->can('complete', $exec) ?? false,
+                    'can_abandon' => $user?->can('abandon', $exec) ?? false,
                 ])->values()->all(),
             ];
         })->values()->all();

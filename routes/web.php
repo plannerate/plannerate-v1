@@ -180,6 +180,8 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
                 ->name('kanban.executions.store');
             Route::get('kanban/executions/{execution}/details', [WorkflowExecutionController::class, 'details'])
                 ->name('kanban.executions.details');
+            Route::patch('kanban/executions/{execution}/start', [WorkflowExecutionController::class, 'start'])
+                ->name('kanban.executions.start');
             Route::patch('kanban/executions/{execution}/move', [WorkflowExecutionController::class, 'move'])
                 ->name('kanban.executions.move');
             Route::patch('kanban/executions/{execution}/pause', [WorkflowExecutionController::class, 'pause'])
@@ -188,6 +190,8 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
                 ->name('kanban.executions.resume');
             Route::patch('kanban/executions/{execution}/complete', [WorkflowExecutionController::class, 'complete'])
                 ->name('kanban.executions.complete');
+            Route::patch('kanban/executions/{execution}/abandon', [WorkflowExecutionController::class, 'abandon'])
+                ->name('kanban.executions.abandon');
             Route::patch('kanban/executions/{execution}/assign', [WorkflowExecutionController::class, 'assign'])
                 ->name('kanban.executions.assign');
             Route::get('kanban/executions/{execution}/history', [WorkflowExecutionController::class, 'history'])

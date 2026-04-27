@@ -76,10 +76,26 @@ class WorkflowExecutionController extends Controller
         return response()->json(['execution' => $execution->toArray()]);
     }
 
+    public function start(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    {
+        unset($subdomain);
+        $this->authorize('start', $execution);
+
+        $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
+
+        $execution = $this->kanbanService->startPendingExecution(
+            $execution,
+            $request->user(),
+            $request->string('notes') ?: null
+        );
+
+        return response()->json(['execution' => $execution->toArray()]);
+    }
+
     public function pause(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
     {
         unset($subdomain);
-        $this->authorize('manage', $execution);
+        $this->authorize('pause', $execution);
 
         $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
 
@@ -92,10 +108,26 @@ class WorkflowExecutionController extends Controller
         return response()->json(['execution' => $execution->toArray()]);
     }
 
+    public function abandon(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    {
+        unset($subdomain);
+        $this->authorize('abandon', $execution);
+
+        $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
+
+        $execution = $this->kanbanService->abandon(
+            $execution,
+            $request->user(),
+            $request->string('notes') ?: null
+        );
+
+        return response()->json(['execution' => $execution->toArray()]);
+    }
+
     public function resume(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
     {
         unset($subdomain);
-        $this->authorize('manage', $execution);
+        $this->authorize('resume', $execution);
 
         $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
 
@@ -111,7 +143,7 @@ class WorkflowExecutionController extends Controller
     public function complete(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
     {
         unset($subdomain);
-        $this->authorize('manage', $execution);
+        $this->authorize('complete', $execution);
 
         $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
 
@@ -146,7 +178,7 @@ class WorkflowExecutionController extends Controller
         return response()->json(['execution' => $execution->toArray()]);
     }
 
-    public function details(string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    public function details(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
     {
         unset($subdomain);
         $this->authorize('viewAny', WorkflowGondolaExecution::class);
@@ -157,6 +189,7 @@ class WorkflowExecutionController extends Controller
             'step.template:id,name,description',
             'step.availableUsers:id,name',
             'currentResponsible:id,name',
+            'startedBy:id,name',
         ]);
 
         return response()->json([
@@ -177,8 +210,17 @@ class WorkflowExecutionController extends Controller
                     'id' => $execution->currentResponsible->id,
                     'name' => $execution->currentResponsible->name,
                 ] : null,
+                'started_by' => $execution->startedBy ? [
+                    'id' => $execution->startedBy->id,
+                    'name' => $execution->startedBy->name,
+                ] : null,
                 'started_at' => $execution->started_at?->toIso8601String(),
                 'sla_date' => $execution->sla_date?->toIso8601String(),
+                'can_start' => $request->user()?->can('start', $execution) ?? false,
+                'can_pause' => $request->user()?->can('pause', $execution) ?? false,
+                'can_resume' => $request->user()?->can('resume', $execution) ?? false,
+                'can_complete' => $request->user()?->can('complete', $execution) ?? false,
+                'can_abandon' => $request->user()?->can('abandon', $execution) ?? false,
             ],
             'allowed_users' => $execution->step?->availableUsers
                 ?->map(fn (User $user): array => [

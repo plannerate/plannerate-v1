@@ -6,6 +6,7 @@ import KankanNavigationLinks from '@/components/KankanNavigationLinks.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
+import NewActionButton from '@/components/NewActionButton.vue';
 
 const props = defineProps<{
     subdomain: string;
@@ -29,6 +30,13 @@ const pageMeta = useCrudPageMeta({
 <template>
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <Head :title="pageMeta.headTitle" />
+        <template #header-actions>
+            <div class="flex items-center justify-end gap-2">
+                <NewActionButton :href="PlanogramController.create.url(props.subdomain)">
+                    {{ t('app.tenant.planograms.actions.new') }}
+                </NewActionButton>
+            </div>
+        </template>
         <KankanNavigationLinks :subdomain="props.subdomain" />
         <div class="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
             Página Maps em branco.

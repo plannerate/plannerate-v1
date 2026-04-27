@@ -14,6 +14,11 @@ export type Execution = {
     assigned_to_user: AssignedUser | null;
     started_at: string | null;
     sla_date: string | null;
+    can_start: boolean;
+    can_pause: boolean;
+    can_resume: boolean;
+    can_complete: boolean;
+    can_abandon: boolean;
 };
 
 export type BoardStep = {
@@ -39,10 +44,29 @@ export type ExecutionDetails = {
         gondola: { id: string; name: string | null; location: string | null } | null;
         step: { id: string; name: string; description: string | null } | null;
         assigned_to_user: AssignedUser | null;
+        started_by: AssignedUser | null;
         started_at: string | null;
         sla_date: string | null;
+        can_start: boolean;
+        can_pause: boolean;
+        can_resume: boolean;
+        can_complete: boolean;
+        can_abandon: boolean;
     };
     allowed_users: AssignedUser[];
+};
+
+export type WorkflowHistory = {
+    id: string;
+    action: 'started' | 'moved' | 'paused' | 'resumed' | 'assigned' | 'completed' | 'cancelled' | 'restored';
+    description: string | null;
+    from_step_id: string | null;
+    to_step_id: string | null;
+    previous_responsible_id: string | null;
+    new_responsible_id: string | null;
+    can_restore: boolean;
+    performed_at: string | null;
+    performed_by: AssignedUser | null;
 };
 
 export type KanbanPageProps = {

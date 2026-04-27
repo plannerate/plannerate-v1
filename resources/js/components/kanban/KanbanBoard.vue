@@ -19,9 +19,11 @@ const emit = defineEmits<{
     dragleave: [stepId: string];
     drop: [stepId: string];
     details: [execution: Execution];
+    start: [execution: Execution];
     pause: [execution: Execution];
     resume: [execution: Execution];
     complete: [execution: Execution];
+    abandon: [execution: Execution];
 }>();
 </script>
 
@@ -44,9 +46,11 @@ const emit = defineEmits<{
                 @dragleave="emit('dragleave', $event)"
                 @drop="emit('drop', $event)"
                 @details="emit('details', $event)"
+                @start="emit('start', $event)"
                 @pause="emit('pause', $event)"
                 @resume="emit('resume', $event)"
                 @complete="emit('complete', $event)"
+                @abandon="emit('abandon', $event)"
             />
         </div>
     </div>

@@ -1,15 +1,15 @@
 import { router, useHttp } from '@inertiajs/vue3';
-import { computed, ref, toValue  } from 'vue';
-import type {MaybeRefOrGetter} from 'vue';
+import { computed, ref, toValue } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import WorkflowExecutionController from '@/actions/App/Http/Controllers/Tenant/WorkflowExecutionController';
-import type { BoardColumn, Execution, ExecutionDetails } from '@/components/kanban/types';
+import type { BoardColumn, Execution, ExecutionDetails, WorkflowHistory } from '@/components/kanban/types';
 
 export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdomain: MaybeRefOrGetter<string>) {
     const onlyOverdue = ref(false);
     const showCompleted = ref(true);
-    const http = useHttp();
+    const detailHttp = useHttp();
+    const historyHttp = useHttp();
     const actionHttp = useHttp<Record<string, string | null>>({});
-    const assignHttp = useHttp<{ user_id: string }>({ user_id: '' });
 
     const draggingExecutionId = ref<string | null>(null);
     const draggingFromStepId = ref<string | null>(null);
@@ -20,7 +20,8 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
     const detailLoading = ref(false);
     const detailError = ref<string | null>(null);
     const detailPayload = ref<ExecutionDetails | null>(null);
-    const assigning = ref(false);
+    const detailHistories = ref<WorkflowHistory[]>([]);
+    const actionNotes = ref('');
 
     const filteredBoard = computed((): BoardColumn[] => {
         const columns = toValue(board);
@@ -96,10 +97,11 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
     }
 
     async function submitExecutionAction(
-        execution: Execution,
-        action: 'pause' | 'resume' | 'complete',
+        execution: Pick<Execution, 'id'>,
+        action: 'start' | 'pause' | 'resume' | 'complete' | 'abandon',
     ): Promise<void> {
         busyExecutionId.value = execution.id;
+        actionHttp.notes = actionNotes.value.trim() || null;
 
         try {
             const route = WorkflowExecutionController[action]({
@@ -112,9 +114,27 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
                 url: normalizedUrl(route.url),
             });
 
+            actionNotes.value = '';
             reloadBoard();
+
+            if (detailOpen.value) {
+                await loadExecutionDetails(execution.id);
+            }
         } finally {
+            actionHttp.notes = null;
             busyExecutionId.value = null;
+        }
+    }
+
+    async function startExecution(execution: Execution): Promise<void> {
+        await submitExecutionAction(execution, 'start');
+    }
+
+    async function startDetailExecution(): Promise<void> {
+        const execution = detailPayload.value?.execution;
+
+        if (execution) {
+            await submitExecutionAction(execution, 'start');
         }
     }
 
@@ -122,30 +142,77 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
         await submitExecutionAction(execution, 'pause');
     }
 
+    async function pauseDetailExecution(): Promise<void> {
+        const execution = detailPayload.value?.execution;
+
+        if (execution) {
+            await submitExecutionAction(execution, 'pause');
+        }
+    }
+
     async function resumeExecution(execution: Execution): Promise<void> {
         await submitExecutionAction(execution, 'resume');
+    }
+
+    async function resumeDetailExecution(): Promise<void> {
+        const execution = detailPayload.value?.execution;
+
+        if (execution) {
+            await submitExecutionAction(execution, 'resume');
+        }
     }
 
     async function completeExecution(execution: Execution): Promise<void> {
         await submitExecutionAction(execution, 'complete');
     }
 
-    async function openExecutionDetails(execution: Execution): Promise<void> {
-        detailOpen.value = true;
+    async function completeDetailExecution(): Promise<void> {
+        const execution = detailPayload.value?.execution;
+
+        if (execution) {
+            await submitExecutionAction(execution, 'complete');
+        }
+    }
+
+    async function abandonExecution(execution: Execution): Promise<void> {
+        await submitExecutionAction(execution, 'abandon');
+    }
+
+    async function abandonDetailExecution(): Promise<void> {
+        const execution = detailPayload.value?.execution;
+
+        if (execution) {
+            await submitExecutionAction(execution, 'abandon');
+        }
+    }
+
+    async function loadExecutionDetails(executionId: string): Promise<void> {
         detailLoading.value = true;
         detailError.value = null;
         detailPayload.value = null;
+        detailHistories.value = [];
 
         try {
-            const route = WorkflowExecutionController.details({
+            const detailsRoute = WorkflowExecutionController.details({
                 subdomain: toValue(subdomain),
-                execution: execution.id,
+                execution: executionId,
+            });
+            const historyRoute = WorkflowExecutionController.history({
+                subdomain: toValue(subdomain),
+                execution: executionId,
             });
 
-            detailPayload.value = await http.submit({
-                ...route,
-                url: normalizedUrl(route.url),
+            detailPayload.value = await detailHttp.submit({
+                ...detailsRoute,
+                url: normalizedUrl(detailsRoute.url),
             }) as ExecutionDetails;
+
+            const historyPayload = await historyHttp.submit({
+                ...historyRoute,
+                url: normalizedUrl(historyRoute.url),
+            }) as { histories: WorkflowHistory[] };
+
+            detailHistories.value = historyPayload.histories;
         } catch (error) {
             console.error(error);
             detailError.value = 'Não foi possível carregar os detalhes da execução.';
@@ -154,35 +221,11 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
         }
     }
 
-    async function assignFromDetails(userId: string): Promise<void> {
-        const executionId = detailPayload.value?.execution.id;
+    async function openExecutionDetails(execution: Execution): Promise<void> {
+        detailOpen.value = true;
+        actionNotes.value = '';
 
-        if (!executionId) {
-            return;
-        }
-
-        assigning.value = true;
-        assignHttp.user_id = userId;
-
-        try {
-            const route = WorkflowExecutionController.assign({
-                subdomain: toValue(subdomain),
-                execution: executionId,
-            });
-
-            await assignHttp.submit({
-                ...route,
-                url: normalizedUrl(route.url),
-            });
-
-            detailOpen.value = false;
-            reloadBoard();
-        } catch (error) {
-            console.error(error);
-            detailError.value = 'Não foi possível atribuir o responsável.';
-        } finally {
-            assigning.value = false;
-        }
+        await loadExecutionDetails(execution.id);
     }
 
     function onDragStart(execution: Execution, stepId: string): void {
@@ -214,6 +257,7 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
 
         busyExecutionId.value = executionId;
         actionHttp.target_step_id = targetStepId;
+        actionHttp.notes = null;
 
         try {
             const route = WorkflowExecutionController.move({
@@ -227,8 +271,13 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
             });
 
             reloadBoard();
+
+            if (detailOpen.value) {
+                await loadExecutionDetails(executionId);
+            }
         } finally {
             actionHttp.target_step_id = null;
+            actionHttp.notes = null;
             busyExecutionId.value = null;
         }
     }
@@ -244,16 +293,23 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
         detailLoading,
         detailError,
         detailPayload,
-        assigning,
+        detailHistories,
+        actionNotes,
         isOverdue,
         formatDate,
         statusColors,
         statusLabel,
+        startExecution,
+        startDetailExecution,
         pauseExecution,
+        pauseDetailExecution,
         resumeExecution,
+        resumeDetailExecution,
         completeExecution,
+        completeDetailExecution,
+        abandonExecution,
+        abandonDetailExecution,
         openExecutionDetails,
-        assignFromDetails,
         onDragStart,
         onDragOver,
         onDragLeave,

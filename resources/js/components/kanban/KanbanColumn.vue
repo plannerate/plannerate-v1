@@ -21,9 +21,11 @@ const emit = defineEmits<{
     dragleave: [stepId: string];
     drop: [stepId: string];
     details: [execution: Execution];
+    start: [execution: Execution];
     pause: [execution: Execution];
     resume: [execution: Execution];
     complete: [execution: Execution];
+    abandon: [execution: Execution];
 }>();
 
 const columnSearch = ref('');
@@ -89,9 +91,11 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
                     :is-overdue="isOverdue(execution)"
                     @dragstart="emit('dragstart', $event, column.step.id)"
                     @details="emit('details', $event)"
+                    @start="emit('start', $event)"
                     @pause="emit('pause', $event)"
                     @resume="emit('resume', $event)"
                     @complete="emit('complete', $event)"
+                    @abandon="emit('abandon', $event)"
                 />
             </template>
 

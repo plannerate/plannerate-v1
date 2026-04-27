@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CalendarClock, CheckCircle2, GripVertical, Pause, Play, User } from 'lucide-vue-next';
+import { CalendarClock, CheckCircle2, GripVertical, Pause, Play, User, XCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
 import type { Execution } from '@/components/kanban/types';
 import { Badge } from '@/components/ui/badge';
@@ -18,14 +18,18 @@ const props = defineProps<{
 const emit = defineEmits<{
     dragstart: [execution: Execution];
     details: [execution: Execution];
+    start: [execution: Execution];
     pause: [execution: Execution];
     resume: [execution: Execution];
     complete: [execution: Execution];
+    abandon: [execution: Execution];
 }>();
 
-const canPause = computed(() => props.execution.status === 'active');
-const canResume = computed(() => props.execution.status === 'paused');
-const canComplete = computed(() => !['completed', 'cancelled'].includes(props.execution.status));
+const canStart = computed(() => props.execution.can_start);
+const canPause = computed(() => props.execution.can_pause);
+const canResume = computed(() => props.execution.can_resume);
+const canComplete = computed(() => props.execution.can_complete);
+const canAbandon = computed(() => props.execution.can_abandon);
 </script>
 
 <template>
@@ -78,6 +82,18 @@ const canComplete = computed(() => !['completed', 'cancelled'].includes(props.ex
             </Button>
 
             <Button
+                v-if="canStart"
+                size="sm"
+                variant="ghost"
+                class="h-7 px-2 text-xs"
+                :disabled="isBusy"
+                @click="emit('start', execution)"
+            >
+                <Play class="mr-1 size-3.5" />
+                Iniciar
+            </Button>
+
+            <Button
                 v-if="canPause"
                 size="sm"
                 variant="ghost"
@@ -111,6 +127,18 @@ const canComplete = computed(() => !['completed', 'cancelled'].includes(props.ex
             >
                 <CheckCircle2 class="mr-1 size-3.5" />
                 Concluir
+            </Button>
+
+            <Button
+                v-if="canAbandon"
+                size="sm"
+                variant="ghost"
+                class="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                :disabled="isBusy"
+                @click="emit('abandon', execution)"
+            >
+                <XCircle class="mr-1 size-3.5" />
+                Abandonar
             </Button>
         </div>
     </article>

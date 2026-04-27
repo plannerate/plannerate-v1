@@ -59,7 +59,7 @@ class WorkflowKanbanController extends Controller
 
             if ($planogram !== null) {
                 $this->stepService->syncForPlanogram($planogram);
-                $board = $this->kanbanService->buildBoardForPlanogram($planogram);
+                $board = $this->kanbanService->buildBoardForPlanogram($planogram, $request->user());
                 $selectedPlanogram = [
                     'id' => $planogram->id,
                     'name' => $planogram->name,
