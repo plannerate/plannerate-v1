@@ -43,6 +43,7 @@ const {
     filteredBoard,
     draggingExecutionId,
     dragOverStepId,
+    moveDeniedMessage,
     busyExecutionId,
     detailOpen,
     detailLoading,
@@ -175,6 +176,13 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
                     @update:only-overdue="onlyOverdue = $event"
                     @update:show-completed="showCompleted = $event"
                 />
+            </div>
+
+            <div
+                v-if="moveDeniedMessage"
+                class="mx-4 mt-3 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+                {{ moveDeniedMessage }}
             </div>
 
             <div

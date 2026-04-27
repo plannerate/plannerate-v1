@@ -61,9 +61,11 @@ class WorkflowExecutionController extends Controller
 
         $targetStep = WorkflowPlanogramStep::findOrFail($request->string('target_step_id'));
         $currentStep = $execution->step()->first();
+        $gondola = $execution->gondola()->first();
 
         abort_if($currentStep === null, 422, 'A execução não possui etapa atual válida.');
-        abort_if((string) $targetStep->planogram_id !== (string) $currentStep->planogram_id, 422, 'A etapa de destino não pertence ao mesmo planograma.');
+        abort_if($gondola === null, 422, 'A execução não possui gôndola válida.');
+        abort_if((string) $targetStep->planogram_id !== (string) $gondola->planogram_id, 422, 'A etapa de destino não pertence ao planograma desta gôndola.');
         abort_if((bool) $targetStep->is_skipped, 422, 'A etapa de destino está desativada para este planograma.');
 
         $execution = $this->kanbanService->moveToStep(
@@ -221,6 +223,7 @@ class WorkflowExecutionController extends Controller
                 'can_resume' => $request->user()?->can('resume', $execution) ?? false,
                 'can_complete' => $request->user()?->can('complete', $execution) ?? false,
                 'can_abandon' => $request->user()?->can('abandon', $execution) ?? false,
+                'can_move' => $request->user()?->can('move', $execution) ?? false,
             ],
             'allowed_users' => $execution->step?->availableUsers
                 ?->map(fn (User $user): array => [

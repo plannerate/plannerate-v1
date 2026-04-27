@@ -348,6 +348,8 @@ test('kanban board includes execution display fields for cards', function (): vo
             ->where('board.0.executions.0.step_name', $step->name)
             ->where('board.0.executions.0.started_by.id', $context['user']->id)
             ->where('board.0.executions.0.can_pause', true)
+            ->where('board.0.executions.0.can_move', true)
+            ->where('board.0.step.is_skipped', false)
         );
 });
 
@@ -708,6 +710,123 @@ test('execution policy guards allowed users statuses and last step completion', 
         'workflow_gondola_execution_id' => $activeLastStep->id,
         'action' => 'completed',
         'description' => 'Conclusão na última etapa.',
+    ]);
+});
+
+test('execution move requires active status and blocks skipped target steps', function (): void {
+    $context = setupWorkflowTenantContext('tenant-workflow-move-rules');
+    $this->actingAs($context['user']);
+
+    $firstTemplate = WorkflowTemplate::query()->create([
+        'name' => 'Separação',
+        'slug' => 'separacao-'.Str::lower(Str::random(8)),
+        'suggested_order' => 1,
+        'is_required_by_default' => true,
+        'status' => 'published',
+    ]);
+
+    $skippedTemplate = WorkflowTemplate::query()->create([
+        'name' => 'Etapa ignorada',
+        'slug' => 'etapa-ignorada-'.Str::lower(Str::random(8)),
+        'suggested_order' => 2,
+        'is_required_by_default' => true,
+        'status' => 'published',
+    ]);
+
+    $nextTemplate = WorkflowTemplate::query()->create([
+        'name' => 'Execução',
+        'slug' => 'execucao-'.Str::lower(Str::random(8)),
+        'suggested_order' => 3,
+        'is_required_by_default' => true,
+        'status' => 'published',
+    ]);
+
+    $planogram = Planogram::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'name' => 'Planograma Move',
+        'slug' => 'planograma-move',
+        'type' => 'planograma',
+        'status' => 'draft',
+    ]);
+
+    $this->get(route('tenant.planograms.workflow-settings.index', [
+        'subdomain' => $context['subdomain'],
+        'planogram' => $planogram->id,
+    ]))->assertOk();
+
+    $firstStep = WorkflowPlanogramStep::query()
+        ->where('planogram_id', $planogram->id)
+        ->where('workflow_template_id', $firstTemplate->id)
+        ->firstOrFail();
+    $skippedStep = WorkflowPlanogramStep::query()
+        ->where('planogram_id', $planogram->id)
+        ->where('workflow_template_id', $skippedTemplate->id)
+        ->firstOrFail();
+    $nextStep = WorkflowPlanogramStep::query()
+        ->where('planogram_id', $planogram->id)
+        ->where('workflow_template_id', $nextTemplate->id)
+        ->firstOrFail();
+
+    $skippedStep->update(['is_skipped' => true]);
+
+    $gondola = Gondola::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+        'name' => 'Gondola Move',
+        'slug' => 'gondola-move',
+        'status' => 'draft',
+    ]);
+
+    $pendingExecution = WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondola->id,
+        'workflow_planogram_step_id' => $firstStep->id,
+        'status' => 'pending',
+    ]);
+
+    $this->patchJson(route('tenant.kanban.executions.move', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $pendingExecution->id,
+    ]), [
+        'target_step_id' => $nextStep->id,
+    ])->assertForbidden();
+
+    $activeExecution = WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondola->id,
+        'workflow_planogram_step_id' => $firstStep->id,
+        'status' => 'active',
+        'current_responsible_id' => $context['user']->id,
+        'execution_started_by' => $context['user']->id,
+        'started_at' => now(),
+    ]);
+
+    $this->patchJson(route('tenant.kanban.executions.move', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $activeExecution->id,
+    ]), [
+        'target_step_id' => $skippedStep->id,
+    ])->assertUnprocessable();
+
+    $this->patchJson(route('tenant.kanban.executions.move', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $activeExecution->id,
+    ]), [
+        'target_step_id' => $nextStep->id,
+        'notes' => 'Movido para a próxima etapa disponível.',
+    ])->assertOk();
+
+    $this->assertDatabaseHas('workflow_gondola_executions', [
+        'id' => $activeExecution->id,
+        'workflow_planogram_step_id' => $nextStep->id,
+    ]);
+
+    $this->assertDatabaseHas('workflow_histories', [
+        'workflow_gondola_execution_id' => $activeExecution->id,
+        'action' => 'moved',
+        'from_step_id' => $firstStep->id,
+        'to_step_id' => $nextStep->id,
+        'description' => 'Movido para a próxima etapa disponível.',
     ]);
 });
 

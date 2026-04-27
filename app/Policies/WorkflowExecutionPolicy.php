@@ -36,7 +36,8 @@ class WorkflowExecutionPolicy
 
     public function move(User $user, WorkflowGondolaExecution $execution): bool
     {
-        return $this->allowByContext($user, PermissionName::TENANT_KANBAN_EXECUTIONS_MOVE);
+        return $this->allowByContext($user, PermissionName::TENANT_KANBAN_EXECUTIONS_MOVE)
+            && $execution->status === WorkflowExecutionStatus::Active;
     }
 
     public function pause(User $user, WorkflowGondolaExecution $execution): bool

@@ -2,7 +2,7 @@ import { router, useHttp } from '@inertiajs/vue3';
 import { computed, ref, toValue } from 'vue';
 import type { MaybeRefOrGetter } from 'vue';
 import WorkflowExecutionController from '@/actions/App/Http/Controllers/Tenant/WorkflowExecutionController';
-import type { BoardColumn, Execution, ExecutionDetails, WorkflowHistory } from '@/components/kanban/types';
+import type { BoardColumn, BoardStep, Execution, ExecutionDetails, WorkflowHistory } from '@/components/kanban/types';
 
 export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdomain: MaybeRefOrGetter<string>) {
     const onlyOverdue = ref(false);
@@ -17,6 +17,7 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
     const draggingExecutionId = ref<string | null>(null);
     const draggingFromStepId = ref<string | null>(null);
     const dragOverStepId = ref<string | null>(null);
+    const moveDeniedMessage = ref<string | null>(null);
     const busyExecutionId = ref<string | null>(null);
 
     const detailOpen = ref(false);
@@ -91,6 +92,62 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
 
     function normalizedUrl(url: string): string {
         return url.replace(/^\/\/[^/]+/, '');
+    }
+
+    function findExecution(executionId: string): Execution | null {
+        for (const column of filteredBoard.value) {
+            const execution = column.executions.find((item) => item.id === executionId);
+
+            if (execution) {
+                return execution;
+            }
+        }
+
+        return null;
+    }
+
+    function findStep(stepId: string): BoardStep | null {
+        return filteredBoard.value.find((column) => column.step.id === stepId)?.step ?? null;
+    }
+
+    function denyMove(message: string): void {
+        moveDeniedMessage.value = message;
+    }
+
+    function clearMoveDeniedMessage(): void {
+        moveDeniedMessage.value = null;
+    }
+
+    function canMoveExecution(execution: Execution): boolean {
+        return execution.can_move && execution.status === 'active';
+    }
+
+    function canDropOnStep(stepId: string): boolean {
+        const executionId = draggingExecutionId.value;
+
+        if (!executionId) {
+            return false;
+        }
+
+        const execution = findExecution(executionId);
+
+        if (!execution || !canMoveExecution(execution)) {
+            denyMove('Somente execuções iniciadas podem ser movidas.');
+
+            return false;
+        }
+
+        const targetStep = findStep(stepId);
+
+        if (targetStep?.is_skipped) {
+            denyMove('Esta etapa está desativada para o planograma. Solte na próxima etapa disponível.');
+
+            return false;
+        }
+
+        clearMoveDeniedMessage();
+
+        return true;
     }
 
     function reloadBoard(): void {
@@ -232,11 +289,24 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
     }
 
     function onDragStart(execution: Execution, stepId: string): void {
+        if (!canMoveExecution(execution)) {
+            denyMove('Inicie a execução antes de mover este card.');
+
+            return;
+        }
+
+        clearMoveDeniedMessage();
         draggingExecutionId.value = execution.id;
         draggingFromStepId.value = stepId;
     }
 
     function onDragOver(stepId: string): void {
+        if (!canDropOnStep(stepId)) {
+            dragOverStepId.value = null;
+
+            return;
+        }
+
         dragOverStepId.value = stepId;
     }
 
@@ -250,13 +320,25 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
         const executionId = draggingExecutionId.value;
         const fromStepId = draggingFromStepId.value;
 
+        if (!executionId || !fromStepId || fromStepId === targetStepId) {
+            draggingExecutionId.value = null;
+            draggingFromStepId.value = null;
+            dragOverStepId.value = null;
+
+            return;
+        }
+
+        if (!canDropOnStep(targetStepId)) {
+            draggingExecutionId.value = null;
+            draggingFromStepId.value = null;
+            dragOverStepId.value = null;
+
+            return;
+        }
+
         draggingExecutionId.value = null;
         draggingFromStepId.value = null;
         dragOverStepId.value = null;
-
-        if (!executionId || !fromStepId || fromStepId === targetStepId) {
-            return;
-        }
 
         busyExecutionId.value = executionId;
         actionHttp.target_step_id = targetStepId;
@@ -278,6 +360,8 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
             if (detailOpen.value) {
                 await loadExecutionDetails(executionId);
             }
+        } catch {
+            denyMove('Não foi possível mover para esta etapa. Verifique se a execução está iniciada e se a etapa está ativa.');
         } finally {
             actionHttp.target_step_id = null;
             actionHttp.notes = null;
@@ -291,6 +375,7 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
         filteredBoard,
         draggingExecutionId,
         dragOverStepId,
+        moveDeniedMessage,
         busyExecutionId,
         detailOpen,
         detailLoading,

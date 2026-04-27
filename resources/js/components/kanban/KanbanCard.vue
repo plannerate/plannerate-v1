@@ -34,6 +34,7 @@ const canPause = computed(() => props.execution.can_pause);
 const canResume = computed(() => props.execution.can_resume);
 const canComplete = computed(() => props.execution.can_complete);
 const canAbandon = computed(() => props.execution.can_abandon);
+const canMove = computed(() => props.execution.can_move && props.execution.status === 'active');
 const isActive = computed(() => props.execution.status === 'active');
 const wasStartedByCurrentUser = computed(
     () => isActive.value && props.execution.started_by?.id === props.currentUserId,
@@ -57,15 +58,23 @@ const executionLinkLabel = computed(() => (wasStartedByCurrentUser.value ? 'Abri
 
 <template>
     <article
-        draggable="true"
+        :draggable="canMove && !isBusy"
         class="group rounded-lg border border-border bg-background p-3 text-sm shadow-sm transition hover:border-primary/40 hover:shadow-md"
-        :class="{ 'opacity-50 ring-2 ring-primary/30': isDragging }"
+        :class="{
+            'cursor-grab active:cursor-grabbing': canMove,
+            'cursor-not-allowed': !canMove,
+            'opacity-50 ring-2 ring-primary/30': isDragging,
+        }"
+        :title="canMove ? 'Mover execução' : 'Inicie a execução antes de mover'"
         @dragstart="emit('dragstart', execution)"
     >
         <div class="flex items-start justify-between gap-2">
             <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2">
-                    <GripVertical class="size-4 shrink-0 text-muted-foreground opacity-50" />
+                    <GripVertical
+                        class="size-4 shrink-0 text-muted-foreground"
+                        :class="{ 'opacity-50': canMove, 'opacity-20': !canMove }"
+                    />
                     <p class="truncate font-medium text-foreground">
                         {{ execution.gondola_name ?? 'Gondola sem nome' }}
                     </p>

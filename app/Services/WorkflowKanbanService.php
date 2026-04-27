@@ -243,6 +243,7 @@ class WorkflowKanbanService
                     'icon' => $step->icon,
                     'suggested_order' => $step->suggested_order,
                     'is_required' => $step->is_required,
+                    'is_skipped' => $step->is_skipped,
                     'status' => $step->status,
                 ],
                 'executions' => $step->executions->map(fn (WorkflowGondolaExecution $exec) => [
@@ -268,6 +269,7 @@ class WorkflowKanbanService
                     'can_resume' => $user?->can('resume', $exec) ?? false,
                     'can_complete' => $user?->can('complete', $exec) ?? false,
                     'can_abandon' => $user?->can('abandon', $exec) ?? false,
+                    'can_move' => $user?->can('move', $exec) ?? false,
                 ])->values()->all(),
             ];
         })->values()->all();

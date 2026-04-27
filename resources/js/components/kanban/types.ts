@@ -22,6 +22,7 @@ export type Execution = {
     can_resume: boolean;
     can_complete: boolean;
     can_abandon: boolean;
+    can_move: boolean;
 };
 
 export type BoardStep = {
@@ -32,6 +33,7 @@ export type BoardStep = {
     icon: string | null;
     suggested_order: number;
     is_required: boolean;
+    is_skipped: boolean;
     status: string;
 };
 
@@ -55,6 +57,7 @@ export type ExecutionDetails = {
         can_resume: boolean;
         can_complete: boolean;
         can_abandon: boolean;
+        can_move: boolean;
     };
     allowed_users: AssignedUser[];
 };
