@@ -52,6 +52,50 @@ test('tenant kanban route is forbidden when tenant does not have active kanban m
     $response->assertForbidden();
 });
 
+test('tenant planograms kanban view is forbidden when tenant does not have active kanban module', function () {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant Alfa',
+        'slug' => 'alfa',
+        'database' => 'tenant_alfa',
+        'status' => 'active',
+    ]);
+
+    $tenant->domains()->create([
+        'host' => 'alfa.'.config('app.landlord_domain'),
+        'type' => 'subdomain',
+        'is_primary' => true,
+        'is_active' => true,
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'alfa.'.config('app.landlord_domain')])
+        ->get(route('tenant.planograms.kanban', ['subdomain' => 'alfa'], false));
+
+    $response->assertForbidden();
+});
+
+test('tenant planograms maps view stays available without kanban module', function () {
+    $tenant = Tenant::query()->create([
+        'name' => 'Tenant Alfa',
+        'slug' => 'alfa',
+        'database' => 'tenant_alfa',
+        'status' => 'active',
+    ]);
+
+    $tenant->domains()->create([
+        'host' => 'alfa.'.config('app.landlord_domain'),
+        'type' => 'subdomain',
+        'is_primary' => true,
+        'is_active' => true,
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'alfa.'.config('app.landlord_domain')])
+        ->get(route('tenant.planograms.maps', ['subdomain' => 'alfa'], false));
+
+    $response->assertOk();
+});
+
 test('tenant kanban route is forbidden when kanban module is globally inactive', function () {
     $tenant = Tenant::query()->create([
         'name' => 'Tenant Alfa',

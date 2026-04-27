@@ -134,6 +134,13 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->except(['show'])
             ->names('planograms');
 
+        Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)
+            ->get('planograms/kanban', [PlanogramController::class, 'kanban'])
+            ->name('planograms.kanban');
+
+        Route::get('planograms/maps', [PlanogramController::class, 'maps'])
+            ->name('planograms.maps');
+
         Route::resource('planograms/{planogram}/gondolas', GondolaController::class)
             ->except(['show'])
             ->names('gondolas');

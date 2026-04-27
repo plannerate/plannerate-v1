@@ -18,6 +18,7 @@ import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import { computed, nextTick, ref, watch } from 'vue';
 import type ListPage from '@/components/ListPage.vue';
+import KankanNavigationLinks from '@/components/KankanNavigationLinks.vue';
 
 type PlanogramRow = {
     id: string;
@@ -83,6 +84,7 @@ const pageMeta = useCrudPageMeta({
 <template>
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <Head :title="pageMeta.headTitle" />
+        <KankanNavigationLinks :subdomain="props.subdomain" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
                 <NewActionButton :href="PlanogramController.create.url(props.subdomain)">

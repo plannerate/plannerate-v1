@@ -91,6 +91,24 @@ class PlanogramController extends Controller
         ]);
     }
 
+    public function kanban(): Response
+    {
+        $this->authorize('viewAny', Planogram::class);
+
+        return Inertia::render('tenant/planograms/Kanban', [
+            'subdomain' => $this->tenantSubdomain(),
+        ]);
+    }
+
+    public function maps(): Response
+    {
+        $this->authorize('viewAny', Planogram::class);
+
+        return Inertia::render('tenant/planograms/Maps', [
+            'subdomain' => $this->tenantSubdomain(),
+        ]);
+    }
+
     public function store(PlanogramStoreRequest $request): RedirectResponse
     {
         $this->authorize('create', Planogram::class);
