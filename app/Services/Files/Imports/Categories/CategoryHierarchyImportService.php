@@ -1,0 +1,203 @@
+<?php
+
+namespace App\Services\Files\Imports\Categories;
+
+use App\Models\Category;
+use App\Services\Files\Imports\Connections\CategoryImportConnection;
+use App\Services\Files\Imports\Connections\PlanogramCategoryLeafConnection;
+use App\Services\Files\Imports\Connections\ProductCategoryByEanConnection;
+use App\Services\Files\Imports\ImportExecutionResult;
+use Illuminate\Support\Str;
+
+class CategoryHierarchyImportService
+{
+    /**
+     * @var array<int, string>
+     */
+    private const LEVEL_COLUMNS = [
+        1 => 'segmento_varejista',
+        2 => 'departamento',
+        3 => 'subdepartamento',
+        4 => 'categoria',
+        5 => 'subcategoria',
+        6 => 'segmento',
+        7 => 'subsegmento',
+        8 => 'atributo',
+    ];
+
+    /**
+     * @var array<int, CategoryImportConnection>
+     */
+    private array $connections;
+
+    /**
+     * @param  array<int, CategoryImportConnection>|null  $connections
+     */
+    public function __construct(?array $connections = null)
+    {
+        $this->connections = $connections ?? [
+            new ProductCategoryByEanConnection,
+            new PlanogramCategoryLeafConnection,
+        ];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     */
+    public function importRows(string $tenantId, ?string $userId, array $rows): ImportExecutionResult
+    {
+        $result = new ImportExecutionResult;
+
+        foreach ($rows as $index => $row) {
+            $rowNumber = $index + 2;
+            $normalized = $this->normalizeRow($row);
+            $result->rowsProcessed++;
+
+            if (($normalized['ean'] ?? '') === '') {
+                $result->addError("Linha {$rowNumber}: coluna ean obrigatoria.");
+
+                continue;
+            }
+
+            if (($normalized['segmento_varejista'] ?? '') === '') {
+                $result->addError("Linha {$rowNumber}: coluna segmento_varejista obrigatoria.");
+
+                continue;
+            }
+
+            if (! $this->isHierarchyContinuous($normalized)) {
+                $result->addError("Linha {$rowNumber}: niveis intermediarios vazios nao sao permitidos.");
+
+                continue;
+            }
+
+            $leafCategory = $this->resolveHierarchy($tenantId, $userId, $normalized, $result);
+            if (! $leafCategory instanceof Category) {
+                continue;
+            }
+
+            foreach ($this->connections as $connection) {
+                $connection->connect($tenantId, $userId, $leafCategory, $normalized, $result);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @return array<string, string>
+     */
+    private function normalizeRow(array $row): array
+    {
+        $normalized = [];
+
+        foreach ($row as $key => $value) {
+            $normalizedKey = Str::of((string) $key)->trim()->lower()->ascii()->replace(' ', '_')->replace('-', '_')->toString();
+            $normalizedValue = trim((string) ($value ?? ''));
+            $normalized[$normalizedKey] = $normalizedValue;
+        }
+
+        if (isset($normalized['ean'])) {
+            $normalized['ean'] = preg_replace('/\D+/', '', $normalized['ean']) ?? '';
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param  array<string, string>  $row
+     */
+    private function isHierarchyContinuous(array $row): bool
+    {
+        $foundEmpty = false;
+
+        foreach (self::LEVEL_COLUMNS as $column) {
+            $hasValue = ($row[$column] ?? '') !== '';
+
+            if (! $hasValue) {
+                $foundEmpty = true;
+
+                continue;
+            }
+
+            if ($foundEmpty) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  array<string, string>  $row
+     */
+    private function resolveHierarchy(
+        string $tenantId,
+        ?string $userId,
+        array $row,
+        ImportExecutionResult $result
+    ): ?Category {
+        $parentId = null;
+        $pathNames = [];
+        $leafCategory = null;
+
+        foreach (self::LEVEL_COLUMNS as $position => $column) {
+            $name = $row[$column] ?? '';
+            if ($name === '') {
+                break;
+            }
+
+            $pathNames[] = $name;
+
+            $category = Category::query()
+                ->where('tenant_id', $tenantId)
+                ->where('category_id', $parentId)
+                ->whereRaw('LOWER(name) = ?', [Str::lower($name)])
+                ->first();
+
+            if (! $category instanceof Category) {
+                $category = Category::query()->create([
+                    'tenant_id' => $tenantId,
+                    'user_id' => $userId,
+                    'category_id' => $parentId,
+                    'name' => $name,
+                    'level_name' => $column,
+                    'status' => 'importer',
+                    'nivel' => (string) $position,
+                    'hierarchy_position' => $position,
+                    'full_path' => implode(' > ', $pathNames),
+                    'hierarchy_path' => $pathNames,
+                    'is_placeholder' => false,
+                ]);
+
+                $result->categoriesCreated++;
+            } else {
+                $updates = [];
+
+                $expectedPath = implode(' > ', $pathNames);
+                if ((string) $category->full_path !== $expectedPath) {
+                    $updates['full_path'] = $expectedPath;
+                }
+
+                if ((int) $category->hierarchy_position !== $position) {
+                    $updates['hierarchy_position'] = $position;
+                }
+
+                if ((string) $category->nivel !== (string) $position) {
+                    $updates['nivel'] = (string) $position;
+                }
+
+                if (! empty($updates)) {
+                    $category->update($updates);
+                    $result->categoriesUpdated++;
+                }
+            }
+
+            $parentId = $category->id;
+            $leafCategory = $category;
+        }
+
+        return $leafCategory;
+    }
+}

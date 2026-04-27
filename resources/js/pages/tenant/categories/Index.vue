@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryController';
+import ImportFileButton from '@/components/imports/ImportFileButton.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { ColumnActions, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -14,6 +16,7 @@ import type { Paginator } from '@/types';
 type CategoryRow = {
     id: string;
     name: string;
+    full_path: string | null;
     slug: string | null;
     status: 'draft' | 'published' | 'importer';
     codigo: number | null;
@@ -56,6 +59,26 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
+                <Button variant="outline" size="pill-sm" as-child>
+                    <a :href="CategoryController.exportTemplate.url(props.subdomain)">
+                        {{ t('app.tenant.categories.actions.download_template') }}
+                    </a>
+                </Button>
+                <Button variant="outline" size="pill-sm" as-child>
+                    <a :href="CategoryController.exportData.url(props.subdomain)">
+                        {{ t('app.tenant.categories.actions.export_data') }}
+                    </a>
+                </Button>
+                <ImportFileButton
+                    :action="CategoryController.importMethod.url(props.subdomain)"
+                    :button-label="t('app.tenant.categories.actions.import')"
+                    :title="t('app.tenant.categories.import.title')"
+                    :description="t('app.tenant.categories.import.description')"
+                    :file-label="t('app.tenant.categories.import.file_label')"
+                    :submit-label="t('app.tenant.categories.import.submit')"
+                    :submitting-label="t('app.tenant.categories.import.submitting')"
+                    :cancel-label="t('app.tenant.categories.import.cancel')"
+                />
                 <NewActionButton :href="CategoryController.create.url(props.subdomain)">
                     {{ t('app.tenant.categories.actions.new') }}
                 </NewActionButton>
@@ -91,7 +114,7 @@ const pageMeta = useCrudPageMeta({
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.name') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.codigo') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.full_path') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.status') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.is_placeholder') }}</th>
                         <th class="px-4 py-3 text-right font-medium">{{ t('app.tenant.common.actions') }}</th>
@@ -111,7 +134,7 @@ const pageMeta = useCrudPageMeta({
                         <td class="px-4 py-3">
                             <ColumnLabel :label="category.name" :description="category.slug" />
                         </td>
-                        <td class="px-4 py-3 text-muted-foreground">{{ category.codigo ?? '—' }}</td>
+                        <td class="px-4 py-3 text-muted-foreground">{{ category.full_path }}</td>
                         <td class="px-4 py-3">
                             <ColumnStatusBadge :status="category.status" />
                         </td>

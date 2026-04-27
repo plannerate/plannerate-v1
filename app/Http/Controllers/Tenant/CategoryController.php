@@ -3,15 +3,19 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tenant\ImportCategorySpreadsheetRequest;
 use App\Http\Requests\Tenant\StoreCategoryRequest;
 use App\Http\Requests\Tenant\UpdateCategoryRequest;
+use App\Jobs\Imports\ImportCategoriesFromSpreadsheetJob;
 use App\Models\Category;
+use App\Services\Files\Exports\Categories\CategoryExportService;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CategoryController extends Controller
 {
@@ -104,6 +108,7 @@ class CategoryController extends Controller
                 'slug' => $category->slug,
                 'status' => $category->status,
                 'codigo' => $category->codigo,
+                'full_path' => $category->full_path,
                 'is_placeholder' => $category->is_placeholder,
                 'created_at' => $category->created_at?->toDateTimeString(),
             ]);
@@ -208,6 +213,47 @@ class CategoryController extends Controller
         ]);
 
         return to_route('tenant.categories.index', $this->tenantRouteParameters());
+    }
+
+    public function import(ImportCategorySpreadsheetRequest $request): RedirectResponse
+    {
+        $this->authorize('create', Category::class);
+
+        $uploadedFile = $request->file('spreadsheet');
+        if ($uploadedFile === null) {
+            return to_route('tenant.categories.index', $this->tenantRouteParameters());
+        }
+
+        $disk = 'local';
+        $path = $uploadedFile->store('imports/categories', $disk);
+
+        ImportCategoriesFromSpreadsheetJob::dispatch(
+            tenantId: (string) $this->tenantId(),
+            userId: $request->user()?->getAuthIdentifier(),
+            disk: $disk,
+            path: $path,
+        );
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.categories.messages.import_queued'),
+        ]);
+
+        return to_route('tenant.categories.index', $this->tenantRouteParameters());
+    }
+
+    public function exportTemplate(CategoryExportService $service): BinaryFileResponse
+    {
+        $this->authorize('viewAny', Category::class);
+
+        return $service->downloadTemplate();
+    }
+
+    public function exportData(CategoryExportService $service): BinaryFileResponse
+    {
+        $this->authorize('viewAny', Category::class);
+
+        return $service->downloadData((string) $this->tenantId());
     }
 
     /**

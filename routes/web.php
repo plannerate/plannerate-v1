@@ -110,6 +110,12 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('categories.cascade.children');
         Route::get('categories/cascade/path', [CategoryController::class, 'cascadePath'])
             ->name('categories.cascade.path');
+        Route::post('categories/import', [CategoryController::class, 'import'])
+            ->name('categories.import');
+        Route::get('categories/export/template', [CategoryController::class, 'exportTemplate'])
+            ->name('categories.export.template');
+        Route::get('categories/export/data', [CategoryController::class, 'exportData'])
+            ->name('categories.export.data');
 
         Route::resource('categories', CategoryController::class)
             ->except(['show'])

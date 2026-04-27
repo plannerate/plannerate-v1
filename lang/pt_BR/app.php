@@ -393,6 +393,9 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'actions' => [
                 'new' => 'Nova categoria',
                 'edit' => 'Editar categoria',
+                'import' => 'Importar planilha',
+                'download_template' => 'Baixar modelo',
+                'export_data' => 'Exportar dados',
             ],
             'fields' => [
                 'name' => 'Nome',
@@ -415,6 +418,16 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'created' => 'Categoria criada com sucesso.',
                 'updated' => 'Categoria atualizada com sucesso.',
                 'deleted' => 'Categoria removida com sucesso.',
+                'import_queued' => 'Importacao enviada para processamento.',
+                'import_finished_detail' => 'Importacao concluida: :rows linhas, :created novas categorias, :updated atualizadas, :linked produtos vinculados. Avisos: :warnings. Erros: :errors.',
+            ],
+            'import' => [
+                'title' => 'Importar categorias',
+                'description' => 'Selecione uma planilha Excel com a folha Categorias e coluna ean.',
+                'file_label' => 'Arquivo da planilha',
+                'submit' => 'Enviar importacao',
+                'submitting' => 'Enviando...',
+                'cancel' => 'Cancelar',
             ],
             'cascade' => [
                 'level_1' => 'Segmento varejista',
