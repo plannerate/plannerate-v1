@@ -308,11 +308,13 @@ interface Props {
     column: FormColumn;
     modelValue?: MapData | null;
     error?: string | string[];
+    visible?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     modelValue: null,
     error: undefined,
+    visible: true,
 });
 
 const emit = defineEmits<{
@@ -444,7 +446,15 @@ const handleFileUpload = (event: Event) => {
 };
 
 const handleImageLoaded = () => {
-    mapCanvasRef.value?.fitToContainer();
+    fitMapToVisibleContainer();
+};
+
+const fitMapToVisibleContainer = () => {
+    nextTick(() => {
+        window.requestAnimationFrame(() => {
+            mapCanvasRef.value?.fitToContainer();
+        });
+    });
 };
 
 const zoomIn = () => {
@@ -658,9 +668,7 @@ watch(
 );
 
 watch(showExpandedEditor, () => {
-    nextTick(() => {
-        mapCanvasRef.value?.fitToContainer();
-    });
+    fitMapToVisibleContainer();
 });
 
 watch(mapImage, (value) => {
@@ -668,6 +676,15 @@ watch(mapImage, (value) => {
         showExpandedEditor.value = false;
     }
 });
+
+watch(
+    () => props.visible,
+    (visible) => {
+        if (visible && mapImage.value) {
+            fitMapToVisibleContainer();
+        }
+    },
+);
 
 // Keyboard shortcuts
 const handleKeyDown = (event: KeyboardEvent) => {

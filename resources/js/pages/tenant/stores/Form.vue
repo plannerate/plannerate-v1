@@ -255,6 +255,7 @@ const pageMeta = useCrudPageMeta(
                         <FormMapField
                             v-model="storeMap"
                             :column="mapColumn"
+                            :visible="activeTab === 'mapa_da_loja'"
                             :error="
                                 errors.map ||
                                 errors['map.image'] ||

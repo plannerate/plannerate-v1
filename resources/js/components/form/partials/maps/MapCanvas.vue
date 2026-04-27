@@ -161,8 +161,8 @@
     (e: 'region-move', regionId: string, x: number, y: number): void
     (e: 'region-resize', regionId: string, x: number, y: number, width: number, height: number): void
     (e: 'update:zoom', value: number): void
-    (e: 'update:panX', value: number): void
-    (e: 'update:panY', value: number): void
+    (e: 'update:pan-x', value: number): void
+    (e: 'update:pan-y', value: number): void
     (e: 'image-loaded', width: number, height: number): void
     (e: 'deselect'): void
   }>()
@@ -273,8 +273,8 @@
     if (isDrawing.value && props.currentTool === 'draw') {
       drawEnd.value = getMousePosition(event)
     } else if (isPanning.value && props.currentTool === 'pan' && panStart.value) {
-      emit('update:panX', event.clientX - panStart.value.x)
-      emit('update:panY', event.clientY - panStart.value.y)
+      emit('update:pan-x', event.clientX - panStart.value.x)
+      emit('update:pan-y', event.clientY - panStart.value.y)
     } else if (isDragging.value && selectedRegion.value && dragStart.value) {
       const pos = getMousePosition(event)
       const deltaX = pos.x - dragStart.value.x
@@ -362,8 +362,8 @@
       const mouseY = event.clientY - rect.top
   
       const scaleChange = newZoom / props.zoom
-      emit('update:panX', mouseX - (mouseX - props.panX) * scaleChange)
-      emit('update:panY', mouseY - (mouseY - props.panY) * scaleChange)
+      emit('update:pan-x', mouseX - (mouseX - props.panX) * scaleChange)
+      emit('update:pan-y', mouseY - (mouseY - props.panY) * scaleChange)
     }
   
     emit('update:zoom', newZoom)
@@ -380,8 +380,14 @@
     fitToContainer: () => {
       if (mapContainer.value && imageWidth.value) {
         const containerWidth = mapContainer.value.clientWidth
-        const scale = Math.min(containerWidth / imageWidth.value, props.containerHeight / imageHeight.value)
-        emit('update:zoom', Math.min(scale, 1))
+        const containerHeight = mapContainer.value.clientHeight || props.containerHeight
+
+        if (containerWidth <= 0 || containerHeight <= 0 || imageHeight.value <= 0) {
+          return
+        }
+
+        const scale = Math.min(containerWidth / imageWidth.value, containerHeight / imageHeight.value)
+        emit('update:zoom', Math.max(0.1, Math.min(scale, 1)))
       }
     }
   })

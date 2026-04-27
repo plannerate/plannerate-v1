@@ -42,8 +42,20 @@ test('store form includes map editor in store map tab', function (): void {
     expect($storeForm)->toContain("import FormMapField from '@/components/form/FormMapField.vue'");
     expect($storeForm)->toContain("v-show=\"activeTab === 'mapa_da_loja'\"");
     expect($storeForm)->toContain('v-model="storeMap"');
+    expect($storeForm)->toContain(':visible="activeTab === \'mapa_da_loja\'"');
     expect($mapField)->toContain('`${column.name}[image]`');
     expect($mapField)->toContain('`${column.name}[regions]`');
+});
+
+test('map canvas keeps a usable zoom and emits pan events used by parent', function (): void {
+    $mapCanvas = file_get_contents(resource_path('js/components/form/partials/maps/MapCanvas.vue'));
+    $mapField = file_get_contents(resource_path('js/components/form/FormMapField.vue'));
+
+    expect($mapCanvas)->toContain("emit('update:pan-x'");
+    expect($mapCanvas)->toContain("emit('update:pan-y'");
+    expect($mapCanvas)->toContain('containerWidth <= 0');
+    expect($mapCanvas)->toContain('Math.max(0.1, Math.min(scale, 1))');
+    expect($mapField)->toContain('fitMapToVisibleContainer');
 });
 
 test('cep lookup component exists and emits resolved payload', function (): void {
