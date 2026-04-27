@@ -282,6 +282,65 @@ test('kanban board hides skipped steps for a planogram', function (): void {
             ->has('board', 0));
 });
 
+test('kanban board includes execution display fields for cards', function (): void {
+    $context = setupWorkflowTenantContext('tenant-workflow-card-fields');
+    $this->actingAs($context['user']);
+
+    WorkflowTemplate::query()->create([
+        'name' => 'Execução em loja',
+        'slug' => 'execucao-em-loja-'.Str::lower(Str::random(8)),
+        'suggested_order' => 1,
+        'is_required_by_default' => true,
+        'status' => 'published',
+    ]);
+
+    $planogram = Planogram::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'name' => 'Planograma Cards',
+        'slug' => 'planograma-cards',
+        'type' => 'planograma',
+        'status' => 'draft',
+    ]);
+
+    $this->get(route('tenant.planograms.workflow-settings.index', [
+        'subdomain' => $context['subdomain'],
+        'planogram' => $planogram->id,
+    ]))
+        ->assertOk();
+
+    $step = WorkflowPlanogramStep::query()->where('planogram_id', $planogram->id)->firstOrFail();
+
+    $gondola = Gondola::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+        'name' => 'Gondola Cards',
+        'slug' => 'gondola-cards',
+        'location' => 'Corredor 3',
+        'status' => 'draft',
+    ]);
+
+    WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondola->id,
+        'workflow_planogram_step_id' => $step->id,
+        'status' => 'pending',
+    ]);
+
+    $this->get(route('tenant.kanban.index', [
+        'subdomain' => $context['subdomain'],
+        'planogram_id' => $planogram->id,
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/planograms/Kanban')
+            ->has('board', 1)
+            ->where('board.0.executions.0.gondola_name', 'Gondola Cards')
+            ->where('board.0.executions.0.gondola_location', 'Corredor 3')
+            ->where('board.0.executions.0.planogram_name', $planogram->name)
+            ->where('board.0.executions.0.step_name', $step->name)
+        );
+});
+
 test('execution details returns allowed users and assign only accepts users allowed by step', function (): void {
     $context = setupWorkflowTenantContext('tenant-workflow-assign');
     $this->actingAs($context['user']);

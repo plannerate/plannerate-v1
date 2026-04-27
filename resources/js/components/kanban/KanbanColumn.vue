@@ -1,10 +1,29 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import { Kanban } from 'lucide-vue-next';
-import type { BoardColumn } from '@/components/kanban/types';
+import { computed, ref } from 'vue';
+import KanbanCard from '@/components/kanban/KanbanCard.vue';
+import type { BoardColumn, Execution } from '@/components/kanban/types';
 
 const props = defineProps<{
     column: BoardColumn;
+    isDragOver: boolean;
+    draggingExecutionId: string | null;
+    busyExecutionId: string | null;
+    statusClass: (status: string) => string;
+    statusLabel: (status: string) => string;
+    formatDate: (iso: string | null) => string;
+    isOverdue: (execution: Execution) => boolean;
+}>();
+
+const emit = defineEmits<{
+    dragstart: [execution: Execution, stepId: string];
+    dragover: [stepId: string];
+    dragleave: [stepId: string];
+    drop: [stepId: string];
+    details: [execution: Execution];
+    pause: [execution: Execution];
+    resume: [execution: Execution];
+    complete: [execution: Execution];
 }>();
 
 const columnSearch = ref('');
@@ -27,7 +46,11 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
 <template>
     <div
         class="flex h-full w-72 shrink-0 flex-col rounded-lg border bg-card transition-all"
+        :class="{ 'ring-2 ring-primary/30': isDragOver }"
         :style="{ borderTopWidth: '3px', borderTopColor: topColor }"
+        @dragover.prevent="emit('dragover', column.step.id)"
+        @dragleave="emit('dragleave', column.step.id)"
+        @drop.prevent="emit('drop', column.step.id)"
     >
         <div class="sticky top-0 z-10 space-y-2 rounded-t-lg border-b bg-card p-3">
             <div class="flex items-start justify-between gap-2">
@@ -54,18 +77,22 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
 
         <div class="flex-1 space-y-2 overflow-y-auto p-2">
             <template v-if="visibleExecutions.length > 0">
-                <div
+                <KanbanCard
                     v-for="execution in visibleExecutions"
                     :key="execution.id"
-                    class="rounded-lg border border-border bg-background p-3 text-sm shadow-sm"
-                >
-                    <p class="truncate font-medium text-foreground">
-                        {{ execution.gondola_name ?? '-' }}
-                    </p>
-                    <p v-if="execution.gondola_location" class="truncate text-xs text-muted-foreground">
-                        {{ execution.gondola_location }}
-                    </p>
-                </div>
+                    :execution="execution"
+                    :is-dragging="draggingExecutionId === execution.id"
+                    :is-busy="busyExecutionId === execution.id"
+                    :status-class="statusClass(execution.status)"
+                    :status-label="statusLabel(execution.status)"
+                    :formatted-sla-date="formatDate(execution.sla_date)"
+                    :is-overdue="isOverdue(execution)"
+                    @dragstart="emit('dragstart', $event, column.step.id)"
+                    @details="emit('details', $event)"
+                    @pause="emit('pause', $event)"
+                    @resume="emit('resume', $event)"
+                    @complete="emit('complete', $event)"
+                />
             </template>
 
             <div

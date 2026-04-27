@@ -185,7 +185,7 @@ class WorkflowKanbanService
     public function buildBoardForPlanogram(Planogram $planogram): array
     {
         $steps = $planogram->workflowSteps()
-            ->with(['template', 'executions.gondola', 'executions.currentResponsible'])
+            ->with(['template', 'executions.gondola.planogram', 'executions.currentResponsible'])
             ->where('is_skipped', false)
             ->get()
             ->sortBy('suggested_order');
@@ -195,6 +195,7 @@ class WorkflowKanbanService
                 'step' => [
                     'id' => $step->id,
                     'name' => $step->name,
+                    'description' => $step->description,
                     'color' => $step->color,
                     'icon' => $step->icon,
                     'suggested_order' => $step->suggested_order,
@@ -206,6 +207,8 @@ class WorkflowKanbanService
                     'gondola_id' => $exec->gondola_id,
                     'gondola_name' => $exec->gondola?->name,
                     'gondola_location' => $exec->gondola?->location,
+                    'planogram_name' => $exec->gondola?->planogram?->name,
+                    'step_name' => $step->name,
                     'status' => $exec->status?->value,
                     'assigned_to_user' => $exec->currentResponsible ? [
                         'id' => $exec->currentResponsible->id,
