@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ChevronDown, LayoutTemplate, SlidersHorizontal, Store, X } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
+import WorkflowKanbanController from '@/actions/App/Http/Controllers/Tenant/WorkflowKanbanController';
 import ListTablePage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { ColumnActions, ColumnDate, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
@@ -49,10 +50,17 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
+const page = usePage();
 
 const listPageRef = ref<InstanceType<typeof ListPage> | null>(null);
 const categoryId = ref<string | null>(props.filters.category_id ?? null);
 const categoryPopoverOpen = ref(false);
+const activeModules = computed<string[]>(() => {
+    const tenant = (page.props.tenant ?? null) as { active_modules?: string[] } | null;
+
+    return Array.isArray(tenant?.active_modules) ? tenant.active_modules : [];
+});
+const canUseKanban = computed(() => activeModules.value.includes('kanban'));
 
 watch(categoryId, (value, prev) => {
     if (value !== prev) {
@@ -69,6 +77,16 @@ const categoryLabel = computed(() => {
     return t('app.tenant.products.fields.category') + ' ✓';
 });
 const planogramsIndexPath = PlanogramController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+
+function planogramWorkflowHref(planogramId: string): string {
+    if (canUseKanban.value) {
+        return WorkflowKanbanController.index.url(props.subdomain, {
+            query: { planogram_id: planogramId },
+        }).replace(/^\/\/[^/]+/, '');
+    }
+
+    return GondolaController.index.url({ subdomain: props.subdomain, planogram: planogramId });
+}
 
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.planograms.title'),
@@ -235,7 +253,7 @@ const pageMeta = useCrudPageMeta({
                                 :require-confirm-word="true"
                             >
                                 <Button variant="outline" size="sm" as-child>
-                                    <Link :href="GondolaController.index.url({ subdomain: props.subdomain, planogram: planogram.id })">
+                                    <Link :href="planogramWorkflowHref(planogram.id)">
                                         {{ t('app.tenant.planograms.actions.view_gondolas') }}
                                     </Link>
                                 </Button>

@@ -112,6 +112,52 @@ const reloadEditorRecord = () => {
     });
 };
 
+const saveChangesAndReloadEditorRecord = async () => {
+    const loadingToastId = toast.loading('Salvando alterações antes de recarregar...');
+
+    try {
+        const saved = editor.hasChanges.value ? await editor.save() : true;
+
+        toast.dismiss(loadingToastId);
+
+        if (!saved) {
+            toast.error('Não foi possível salvar as alterações.');
+
+            return;
+        }
+
+        reloadEditorRecord();
+        toast.success('Alterações salvas. Recarregando imagens...');
+    } catch {
+        toast.dismiss(loadingToastId);
+        toast.error('Erro ao salvar antes de recarregar as imagens.');
+    }
+};
+
+const handleProductImagesUpdated = (payload: ProductImagesUpdatedPayload) => {
+    if (payload.gondola_id !== props.record?.id) return;
+
+    if (!editor.hasChanges.value) {
+        toast.success(
+            `Imagens atualizadas: ${payload.processed_count} produto(s) processado(s).`,
+        );
+        reloadEditorRecord();
+
+        return;
+    }
+
+    toast.warning('Imagens atualizadas, mas há alterações não salvas.', {
+        description: 'Salve o planograma antes de recarregar para não perder mudanças.',
+        duration: 15000,
+        action: {
+            label: 'Salvar e recarregar',
+            onClick: () => {
+                void saveChangesAndReloadEditorRecord();
+            },
+        },
+    });
+};
+
 const handleUpdateGondolaImages = () => {
     const gondolaId = props.record?.id;
     if (!gondolaId) return;
@@ -135,18 +181,11 @@ watch(
     },
 );
 
-if (authUserId.value) {
+if (isBrowser && authUserId.value) {
     useEcho<ProductImagesUpdatedPayload>(
         `App.Models.User.${authUserId.value}`,
         '.plannerate.gondola.product-images.updated',
-        (payload) => {
-            if (payload.gondola_id !== props.record?.id) return;
-
-            toast.success(
-                `Imagens atualizadas: ${payload.processed_count} produto(s) processado(s).`,
-            );
-            reloadEditorRecord();
-        },
+        handleProductImagesUpdated,
     );
 }
 
