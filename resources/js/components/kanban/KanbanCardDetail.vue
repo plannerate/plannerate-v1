@@ -233,49 +233,49 @@ function toggleHistory(historyId: string): void {
                         </div>
                     </section>
 
-                    <section class="rounded-lg border bg-card p-3">
+                    <section class="rounded-lg border bg-card p-2.5">
                         <div class="flex items-center justify-between gap-3">
                             <h3 class="text-sm font-semibold text-foreground">{{ t('app.kanban.history.title') }}</h3>
                             <Button
                                 v-if="histories.length > 5"
                                 variant="ghost"
                                 size="sm"
-                                class="h-7 px-2 text-xs"
+                                class="h-6 px-2 text-xs"
                                 @click="showAllHistories = !showAllHistories"
                             >
                                 {{ showAllHistories ? t('app.kanban.history.show_less') : t('app.kanban.history.show_all') }}
                             </Button>
                         </div>
 
-                        <div class="relative mt-4 space-y-0 pl-5">
-                            <div v-if="visibleHistories.length > 0" class="absolute bottom-4 left-1.5 top-2 w-px bg-border" />
+                        <div class="relative mt-3 pl-4">
+                            <div v-if="visibleHistories.length > 0" class="absolute bottom-3 left-1 top-2 w-px bg-border/80" />
                             <div
                                 v-for="history in visibleHistories"
                                 :key="history.id"
-                                class="relative pb-3 last:pb-0"
+                                class="relative pb-2 last:pb-0"
                             >
-                                <span class="absolute -left-5 top-1.5 size-3 rounded-full border-2 border-primary bg-background" />
+                                <span class="absolute -left-[17px] top-2 size-2.5 rounded-full border border-primary bg-background ring-2 ring-background" />
 
-                                <div class="rounded-lg border bg-background p-3 text-xs shadow-sm">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div>
-                                            <p class="font-medium text-foreground">
+                                <div class="rounded-md border border-border/70 bg-background/70 px-2.5 py-2 text-xs transition-colors hover:bg-muted/30">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <p class="truncate font-medium text-foreground">
                                                 {{ actionLabel(history.action) }}
                                             </p>
-                                            <p class="mt-0.5 text-muted-foreground">
+                                            <p class="truncate text-muted-foreground">
                                                 {{ history.performed_by?.name ?? t('app.kanban.history.system') }}
                                             </p>
                                         </div>
-                                        <span class="shrink-0 text-muted-foreground">{{ formatDateTime(history.performed_at) }}</span>
+                                        <span class="shrink-0 text-[11px] text-muted-foreground">{{ formatDateTime(history.performed_at) }}</span>
                                     </div>
 
-                                    <p v-if="history.description" class="mt-2 text-muted-foreground">
+                                    <p v-if="history.description" class="mt-1.5 line-clamp-2 text-muted-foreground">
                                         {{ history.description }}
                                     </p>
 
                                     <button
                                         type="button"
-                                        class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                                        class="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
                                         @click="toggleHistory(history.id)"
                                     >
                                         {{ expandedHistoryId === history.id ? t('app.kanban.history.hide_details') : t('app.kanban.history.view_details') }}
@@ -287,7 +287,7 @@ function toggleHistory(historyId: string): void {
 
                                     <div
                                         v-if="expandedHistoryId === history.id"
-                                        class="mt-3 grid gap-2 rounded-md bg-muted/40 p-2 text-muted-foreground sm:grid-cols-2"
+                                        class="mt-2 grid gap-x-3 gap-y-1 rounded-md bg-muted/40 p-2 text-[11px] text-muted-foreground sm:grid-cols-2"
                                     >
                                         <p>
                                             <span class="font-medium text-foreground">{{ t('app.kanban.history.from_step') }}:</span>
