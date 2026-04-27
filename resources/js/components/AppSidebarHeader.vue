@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppearanceTabs from '@/components/AppearanceTabs.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import NotificationsDropdown from '@/components/NotificationsDropdown.vue';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -24,7 +25,9 @@ const props = withDefaults(
             <template v-if="props.breadcrumbs && props.breadcrumbs.length > 0">
                 <Breadcrumbs :breadcrumbs="props.breadcrumbs" />
             </template>
+            <!-- Dark mode toggle -->
             <div class="ml-auto flex items-center gap-1">
+                <AppearanceTabs compact />
                 <NotificationsDropdown />
             </div>
         </div>

@@ -2,7 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Transformar o board estrutural da Fase 1 em um kanban operacional com cards ricos, modal de detalhes, atribuição de responsável, ações rápidas e drag-and-drop entre etapas.
+**Goal:** Transformar o board estrutural da Fase 1 em um kanban operacional com cards ricos, modal de detalhes, ações rápidas autorizadas por policy e drag-and-drop controlado entre etapas.
+
+**Status atualizado em 2026-04-27:** Implementado. A fase foi expandida durante a execução para cobrir início de execução, regras por responsável permitido, histórico, links contextuais, confirmação customizada de ações, sincronização de dados reais e restrições de movimento.
 
 **Architecture:** O backend já possui endpoints JSON em `WorkflowExecutionController` e a UI deve consumi-los com `useHttp`, como `FormKanbanSettings.vue` já faz. `useKanban.ts` passa a centralizar estado de ações, loading, drag-and-drop e modal; `KanbanBoard` e `KanbanColumn` só repassam props/eventos; `KanbanCard` e `KanbanCardDetail` ficam responsáveis pela apresentação. O board é recarregado após cada ação usando `router.reload({ only: ['board'] })` para manter a fonte de verdade no backend.
 
@@ -22,6 +24,10 @@
 | Modificar | `resources/js/components/kanban/KanbanBoard.vue` |
 | Modificar | `resources/js/composables/useKanban.ts` |
 | Modificar | `resources/js/pages/tenant/planograms/Kanban.vue` |
+| Criar | `resources/js/components/kanban/KanbanActionConfirmDialog.vue` |
+| Modificar | `app/Policies/WorkflowExecutionPolicy.php` |
+| Criar | `app/Console/Commands/SyncWorkflowKanbanData.php` |
+| Criar | `tests/Unit/SyncWorkflowKanbanDataCommandTest.php` |
 
 ---
 
@@ -955,3 +961,72 @@ Expected: sem erro visual, sem erro no console e sem responses 422 inesperadas.
 - TDD: começa com assertion backend RED para o contrato do payload; frontend é validado por typecheck/lint e teste manual porque não há suíte Vue configurada.
 - Sail: todos os comandos usam `./vendor/bin/sail`.
 - Banco: nenhum passo usa `migrate:fresh`, `migrate:refresh`, `db:wipe` ou comando destrutivo.
+
+---
+
+## Atualização de execução — 2026-04-27
+
+### Entregue além do plano original
+
+- [x] `SyncWorkflowKanbanData` criado para gerar dados reais de Kanban sem comandos destrutivos de banco.
+- [x] Comando evoluído para modo interativo com seleção de tenant e planograma, incluindo opção de processar todos.
+- [x] `WorkflowExecutionPolicy` passou a centralizar regras de início, pausa, retomada, conclusão, abandono e movimentação.
+- [x] Cards e modal usam flags vindas do backend: `can_start`, `can_pause`, `can_resume`, `can_complete`, `can_abandon` e `can_move`.
+- [x] Ação `Iniciar` só aparece para execução `pending` quando o usuário logado está nos executantes permitidos da etapa.
+- [x] Ação `Abandonar` só aparece para execução `active`.
+- [x] Ação `Concluir` só aparece na última etapa ativa do workflow.
+- [x] Ações de workflow registram histórico em `workflow_histories` com notas quando informadas.
+- [x] Modal compacto de detalhes mostra executantes permitidos, destaca o usuário logado, exibe responsável atual, usuário que iniciou, histórico e notas.
+- [x] Modal customizado de confirmação criado para iniciar, pausar, retomar, concluir e abandonar.
+- [x] Links contextuais no card e modal:
+  - se o usuário logado iniciou a execução ativa, exibe link para abrir editor de gôndola;
+  - se outro usuário iniciou, exibe link para visualizar PDF.
+- [x] Movimento por drag-and-drop limitado a execuções `active`.
+- [x] Movimento bloqueia etapa de destino com `is_skipped = true` e mantém feedback visual para o usuário soltar na próxima etapa disponível.
+- [x] Listagem de planogramas passa a enviar para o Kanban com `planogram_id` quando o módulo Kanban está ativo; caso contrário mantém rota de gôndolas.
+- [x] Filtros do Kanban alinhados visualmente pela base dos campos.
+
+### Decisões finais tomadas
+
+- O usuário logado é o responsável ao iniciar uma execução; não há seleção manual de responsável no início.
+- A UI não decide permissão sozinha: o frontend apenas reflete flags calculadas por policy no backend.
+- `move` valida o planograma da gôndola, não apenas a etapa atual da execução, para evitar mover cards para etapas de outro planograma.
+- Etapas com `is_skipped = true` não aparecem como colunas do board e também são bloqueadas no endpoint de `move`.
+- As notas continuam centralizadas em `actionNotes` e são reutilizadas pelo modal de confirmação.
+
+### Verificações executadas
+
+- `./vendor/bin/sail artisan test --compact tests/Feature/Tenant/WorkflowPlanogramSettingsTest.php`
+- `./vendor/bin/sail artisan test --compact --filter='execution move requires active status and blocks skipped target steps'`
+- `./vendor/bin/sail php vendor/bin/pint --dirty --format agent`
+- `./vendor/bin/sail npx eslint --fix resources/js/composables/useKanban.ts resources/js/components/kanban/KanbanCard.vue resources/js/pages/tenant/planograms/Kanban.vue resources/js/components/kanban/types.ts`
+- `./vendor/bin/sail npx eslint --fix resources/js/components/ListFiltersBar.vue resources/js/components/kanban/KanbanFilters.vue`
+
+Observação: `./vendor/bin/sail npm run types:check` foi executado e falhou por erros preexistentes fora dos arquivos do Kanban alterados nesta fase.
+
+---
+
+## Sugestões de melhorias — próxima fase
+
+### Alta prioridade
+
+- [ ] Exibir toast padronizado para negações de movimento e erros de ação, substituindo ou complementando o alerta inline atual.
+- [ ] Criar um composable específico para regras de drag-and-drop se `useKanban.ts` continuar crescendo.
+- [ ] Revisar textos hardcoded do Kanban e mover para `lang/pt_BR/app.php`.
+- [ ] Melhorar o card de histórico do modal para uma timeline compacta, com opção de expandir para ver detalhes completos da ação, notas, etapa anterior, etapa destino, usuário executor e responsável envolvido.
+- [ ] Criar testes específicos para o frontend do Kanban com browser/Pest, cobrindo abrir modal, confirmar ações, links contextuais e drag-and-drop.
+- [ ] Adicionar refresh parcial depois de ações para também atualizar contadores globais, quando existirem.
+- [ ] Melhorar acessibilidade do drag-and-drop com alternativa por menu: "Mover para próxima etapa disponível".
+
+### Média prioridade
+
+- [ ] Adicionar indicador visual de próxima etapa disponível quando o usuário tenta soltar em etapa pulada.
+- [ ] Permitir filtro por responsável atual e por status da execução no Kanban.
+- [ ] Persistir preferência de `onlyOverdue` e `showCompleted` por usuário.
+- [ ] Criar painel resumido por planograma: total pendente, em andamento, atrasado, concluído e cancelado.
+
+### Baixa prioridade
+
+- [ ] Padronizar "gôndola" com acento nos textos de UI.
+- [ ] Adicionar skeleton mais rico no carregamento do modal de detalhes.
+- [ ] Investigar os erros globais de `types:check` fora do escopo do Kanban para recuperar essa verificação como gate confiável.

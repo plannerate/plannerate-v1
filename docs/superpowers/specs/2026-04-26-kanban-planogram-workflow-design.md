@@ -1,7 +1,7 @@
 # Kanban de Workflow de Planogramas
 
 **Data:** 2026-04-26
-**Status:** Aprovado para implementação
+**Status:** Implementado em fases; atualizado com refinamentos de 2026-04-27
 
 ## Contexto
 
@@ -255,3 +255,46 @@ Fase 1 mantém o composable simples: apenas os dois checkboxes client-side e os 
 6. Busca por gôndola dentro de coluna → filtra inline (Fase 2)
 7. `FormKanbanSettings.vue` continua funcionando — `WorkflowPlanogramStepController` sem mudança
 8. Rota `kanban.show` removida — sem quebra de links internos
+
+---
+
+## Estado atual após implementação — 2026-04-27
+
+### Backend
+
+- `WorkflowKanbanController::index()` renderiza `tenant/planograms/Kanban`, aceita `planogram_id` e `store_id`, sincroniza etapas do planograma selecionado e envia o board com flags de permissão calculadas por policy.
+- `WorkflowExecutionController` expõe ações JSON para iniciar, mover, pausar, retomar, concluir, abandonar, detalhar, listar histórico e restaurar histórico.
+- `WorkflowExecutionPolicy` centraliza regras por status, permissão RBAC, usuário permitido na etapa e última etapa ativa.
+- `WorkflowKanbanService` monta colunas ignorando `is_skipped`, serializa dados de card e registra históricos de ações.
+- `SyncWorkflowKanbanData` cria dados reais para todos ou alguns tenants/planogramas sem destruir dados existentes.
+
+### Frontend
+
+- `Kanban.vue` é a página única da experiência Kanban.
+- `useKanban.ts` centraliza filtros client-side, detalhes, histórico, ações, notas, confirmação e drag-and-drop.
+- `KanbanCard.vue` mostra ações conforme flags backend e links contextuais para editor/PDF.
+- `KanbanCardDetail.vue` mostra dados compactos da execução, executantes permitidos, usuário responsável, usuário que iniciou, histórico e notas.
+- `KanbanActionConfirmDialog.vue` confirma iniciar, pausar, retomar, concluir e abandonar.
+- `KanbanFilters.vue` reutiliza `ListFiltersBar.vue`, com filtros alinhados visualmente e checkboxes client-side.
+- `Index.vue` de planogramas direciona o botão de ação para Kanban com `planogram_id` quando o módulo Kanban está ativo; caso contrário mantém a rota de gôndolas.
+
+### Regras funcionais consolidadas
+
+- Apenas execuções `pending` podem ser iniciadas.
+- Apenas usuários listados em `workflow_planogram_step_users` da etapa atual podem iniciar.
+- Ao iniciar, o usuário logado vira responsável e iniciador da execução.
+- Apenas execuções `active` podem ser pausadas, abandonadas ou movidas.
+- Apenas execuções `paused` podem ser retomadas.
+- Apenas execuções `active` na última etapa ativa podem ser concluídas.
+- Movimento só aceita etapas do planograma da gôndola e bloqueia `target_step` com `is_skipped = true`.
+- Toda ação relevante registra histórico em `workflow_histories`.
+
+### Pendências e melhorias recomendadas
+
+- Começar pela troca das mensagens inline de erro por toast padronizado da aplicação.
+- Extrair regras de movimento para composable próprio, reduzindo a responsabilidade de `useKanban.ts`.
+- Completar internacionalização dos textos hardcoded do Kanban.
+- Melhorar o card de histórico do modal para uma timeline compacta, com opção de expandir para ver mais detalhes da ação, notas, etapa anterior, etapa destino e usuário responsável.
+- Adicionar teste browser para o fluxo completo do Kanban, incluindo drag-and-drop.
+- Adicionar ação acessível de "mover para próxima etapa disponível" para usuários sem drag-and-drop.
+- Corrigir erros globais de `types:check` fora do escopo do Kanban para voltar a usar typecheck como verificação final obrigatória.
