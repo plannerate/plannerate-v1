@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { SlidersHorizontal, Search } from 'lucide-vue-next';
-import { Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -33,7 +33,10 @@ withDefaults(
 const formRef = ref<HTMLFormElement | null>(null);
 
 function submitForm(): void {
-    if (!formRef.value) return;
+    if (!formRef.value) {
+return;
+}
+
     const data = Object.fromEntries(
         new FormData(formRef.value).entries(),
     ) as Record<string, string>;
@@ -53,7 +56,8 @@ const onDebouncedSearchInput = useDebounceFn(submitForm, 400);
 defineExpose({ submitForm });
 
 function onFormChange(event: Event): void {
-    const target = event.target as HTMLElement; 
+    const target = event.target as HTMLElement;
+
     if (target.tagName === 'SELECT') {
         submitForm();
     }
@@ -69,7 +73,7 @@ function onFormChange(event: Event): void {
         @submit.prevent="onSubmit"
         @change="onFormChange"
     >
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-wrap items-end gap-3">
             <!-- Search input -->
             <div class="relative min-w-48 flex-1">
                 <Search

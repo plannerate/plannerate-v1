@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import ListFiltersBar from '@/components/ListFiltersBar.vue';
 import WorkflowKanbanController from '@/actions/App/Http/Controllers/Tenant/WorkflowKanbanController';
+import ListFiltersBar from '@/components/ListFiltersBar.vue';
 
 const props = defineProps<{
     subdomain: string;
