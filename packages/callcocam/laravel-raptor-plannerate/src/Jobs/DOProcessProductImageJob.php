@@ -5,6 +5,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Jobs;
 use Callcocam\LaravelRaptorPlannerate\Concerns\BelongsToConnection;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Client;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
+use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Config;
@@ -16,7 +17,7 @@ use Intervention\Image\Laravel\Facades\Image;
 
 class DOProcessProductImageJob implements ShouldQueue
 {
-    use BelongsToConnection, Queueable;
+    use Batchable, BelongsToConnection, Queueable;
 
     /**
      * Create a new job instance.

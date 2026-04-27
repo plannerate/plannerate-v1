@@ -2,9 +2,11 @@
 import { updateImages } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramKeyboard } from '@/composables/plannerate/usePlanogramKeyboard';
-import { router } from '@inertiajs/vue3';
+import { useEcho } from '@laravel/echo-vue';
+import { router, usePage } from '@inertiajs/vue3';
 import { PanelLeftOpen, PanelRightOpen } from 'lucide-vue-next';
-import { computed, onMounted, provide, ref } from 'vue';
+import { computed, onMounted, provide, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
 import Canvas from './Canvas.vue';
 import ConfirmDeleteDialog from './editor/ConfirmDeleteDialog.vue';
 import DuplicateSectionDialog from './editor/DuplicateSectionDialog.vue';
@@ -34,10 +36,26 @@ interface Props {
     };
 }
 
+interface ProductImagesUpdatedPayload {
+    gondola_id: string;
+    processed_count: number;
+}
+
+interface AuthPageProps {
+    [key: string]: unknown;
+    auth?: {
+        user?: {
+            id?: string;
+        };
+    };
+}
+
 const props = defineProps<Props>();
+const page = usePage<AuthPageProps>();
 const isBrowser = typeof window !== 'undefined';
 // Usa o composable para gerenciar o estado
 const editor = usePlanogramEditor();
+const authUserId = computed(() => page.props.auth?.user?.id);
 
 // Inicializa o editor imediatamente se houver record
 if (props.record) {
@@ -88,9 +106,14 @@ const goBack = () => {
     router.get(props.backRoute || '/plannerates');
 };
 
+const reloadEditorRecord = () => {
+    router.reload({
+        only: ['record'],
+    });
+};
+
 const handleUpdateGondolaImages = () => {
     const gondolaId = props.record?.id;
-    console.log('Updating gondola images for gondola ID:', gondolaId);
     if (!gondolaId) return;
 
     router.post(
@@ -101,6 +124,31 @@ const handleUpdateGondolaImages = () => {
         },
     );
 };
+
+watch(
+    () => props.record,
+    (record) => {
+        if (!record) return;
+
+        editor.initializeEditor(record);
+        editor.setSaveChangesRoute(props.saveChangesRoute || '');
+    },
+);
+
+if (authUserId.value) {
+    useEcho<ProductImagesUpdatedPayload>(
+        `App.Models.User.${authUserId.value}`,
+        '.plannerate.gondola.product-images.updated',
+        (payload) => {
+            if (payload.gondola_id !== props.record?.id) return;
+
+            toast.success(
+                `Imagens atualizadas: ${payload.processed_count} produto(s) processado(s).`,
+            );
+            reloadEditorRecord();
+        },
+    );
+}
 
 // Funções separadas para abrir/fechar (não toggle)
 const openProperties = () => {

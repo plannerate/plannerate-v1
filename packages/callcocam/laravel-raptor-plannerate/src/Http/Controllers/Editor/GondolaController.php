@@ -241,12 +241,12 @@ class GondolaController extends Controller
         // Cacheado por 2 min: muda apenas quando usuário move produtos no editor
         $gondolaId = $gondola->id;
         $usedProductIds = DB::table('layers')
-                    ->where('gondola_id', $gondolaId)
-                    ->whereNotNull('product_id')
-                    ->whereNull('deleted_at')
-                    ->distinct()
-                    ->pluck('product_id')
-                    ->toArray(); 
+            ->where('gondola_id', $gondolaId)
+            ->whereNotNull('product_id')
+            ->whereNull('deleted_at')
+            ->distinct()
+            ->pluck('product_id')
+            ->toArray();
 
         // Query de produtos
         // Carrega a cadeia de pais (até 6 níveis) para que getFullHierarchy() não faça
@@ -380,7 +380,12 @@ class GondolaController extends Controller
             return redirect()->back()->with('error', 'Database do tenant não configurado.');
         }
 
-        ProcessProductImagesByEansJob::dispatch($eans, $database);
+        ProcessProductImagesByEansJob::dispatch(
+            $eans,
+            $database,
+            (string) $gondolaModel->id,
+            (string) auth()->id(),
+        );
 
         return redirect()->back()->with(
             'success',
