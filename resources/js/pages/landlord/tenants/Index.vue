@@ -27,7 +27,6 @@ type TenantRow = {
 
 const props = defineProps<{
     tenants: Paginator<TenantRow>;
-    subdomain: string;
     filters: {
         search: string;
         status: string;

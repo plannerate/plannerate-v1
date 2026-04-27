@@ -58,6 +58,30 @@ test('authenticated user can view tenant access screen with quota metadata', fun
             ->has('status_options'));
 });
 
+test('tenant access prioritizes plan item user_limit over plans user_limit', function () {
+    $tenant = createTenantWithPlan(limit: 5);
+    $plan = Plan::query()->findOrFail($tenant->plan_id);
+
+    $plan->items()->create([
+        'key' => 'user_limit',
+        'label' => 'Maximo de usuarios',
+        'value' => '1',
+        'type' => 'integer',
+        'sort_order' => 0,
+        'is_active' => true,
+    ]);
+
+    createTenantUser($tenant, 'Ana');
+
+    $response = $this->get(route('landlord.tenants.access.edit', $tenant));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('tenant.plan_user_limit', 1)
+            ->where('tenant.can_create_users', false));
+});
+
 test('can create tenant user with tenant roles', function () {
     $tenant = createTenantWithPlan(limit: 2);
     $role = Role::query()->where('system_name', 'tenant-admin')->firstOrFail();
@@ -85,6 +109,27 @@ test('can create tenant user with tenant roles', function () {
         'model_type' => TenantUser::class,
         'model_id' => $tenantUser->id,
     ], 'landlord');
+});
+
+test('create redirects to tenant access base route without stale filters or pagination', function () {
+    $tenant = createTenantWithPlan(limit: 3);
+
+    $response = $this
+        ->from(route('landlord.tenants.access.edit', [
+            'tenant' => $tenant,
+            'search' => 'ana',
+            'status' => 'inactive',
+            'page' => 2,
+        ]))
+        ->post(route('landlord.tenants.access.users.store', $tenant), [
+            'name' => 'Novo Usuario',
+            'email' => 'novo-redirecionamento@tenant.test',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'is_active' => '1',
+        ]);
+
+    $response->assertRedirect(route('landlord.tenants.access.edit', $tenant));
 });
 
 test('blocks creation when tenant has no plan limit', function () {

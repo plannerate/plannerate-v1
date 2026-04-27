@@ -33,8 +33,6 @@ class TenantUserAccessController extends Controller
     {
         $this->authorize('update', $tenant);
 
-        $tenant->loadMissing('plan:id,user_limit');
-
         $search = trim((string) $request->string('search'));
         $status = (string) $request->string('status');
         $statusFilter = in_array($status, self::AVAILABLE_STATUS_FILTERS, true) ? $status : 'all';
@@ -100,7 +98,7 @@ class TenantUserAccessController extends Controller
             'role_names' => $roleNamesByUser[$user['id']] ?? [],
         ]);
 
-        $planUserLimit = $tenant->plan?->user_limit;
+        $planUserLimit = $tenant->plan_user_limit;
         $hasPlanLimit = $planUserLimit !== null;
         $hasReachedLimit = $hasPlanLimit && $tenantUserData['activeCount'] >= $planUserLimit;
         $canCreateUsers = $hasPlanLimit && ! $hasReachedLimit;
@@ -145,7 +143,6 @@ class TenantUserAccessController extends Controller
     {
         $this->authorize('update', $tenant);
 
-        $tenant->loadMissing('plan:id,user_limit');
         $this->ensureUserCreationAllowed($tenant);
         $validated = $this->validateStorePayload($request, $tenant);
 
@@ -163,7 +160,7 @@ class TenantUserAccessController extends Controller
             'message' => __('app.landlord.tenant_access.messages.created'),
         ]);
 
-        return back();
+        return to_route('landlord.tenants.access.edit', $tenant);
     }
 
     /**
@@ -300,7 +297,7 @@ class TenantUserAccessController extends Controller
      */
     private function ensureUserCreationAllowed(Tenant $tenant): void
     {
-        $limit = $tenant->plan?->user_limit;
+        $limit = $tenant->plan_user_limit;
 
         if ($tenant->plan === null || $limit === null) {
             throw ValidationException::withMessages([

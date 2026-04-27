@@ -53,6 +53,37 @@ class Tenant extends ModelsTenant
     }
 
     /**
+     * Resolve the effective user limit for this tenant's plan.
+     * Priority:
+     * 1) Active plan item with key "user_limit"
+     * 2) plans.user_limit fallback
+     */
+    public function getPlanUserLimitAttribute(): ?int
+    {
+        $this->loadMissing('plan:id,user_limit');
+
+        $plan = $this->plan;
+
+        if (! $plan instanceof Plan) {
+            return null;
+        }
+
+        $plan->loadMissing([
+            'items' => static fn ($query) => $query
+                ->where('key', 'user_limit')
+                ->where('is_active', true),
+        ]);
+
+        $planItemLimit = $plan->items->firstWhere('key', 'user_limit')?->typedValue();
+
+        if (is_int($planItemLimit)) {
+            return $planItemLimit;
+        }
+
+        return $plan->user_limit;
+    }
+
+    /**
      * Get the plan used by the tenant.
      */
     public function plan(): BelongsTo
