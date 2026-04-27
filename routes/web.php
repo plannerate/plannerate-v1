@@ -24,6 +24,7 @@ use App\Http\Controllers\Tenant\StoreController;
 use App\Http\Controllers\Tenant\WorkflowExecutionController;
 use App\Http\Controllers\Tenant\WorkflowKanbanController;
 use App\Http\Middleware\SetPermissionTeamContext;
+use App\Support\Modules\ModuleSlug;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -79,20 +80,22 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::patch('tenants/{tenant}/access/users/{userId}/restore', [TenantUserAccessController::class, 'restore'])
         ->name('landlord.tenants.access.users.restore');
 
-    Route::get('tenants/{tenant}/kanban/templates', [LandlordWorkflowTemplateController::class, 'index'])
-        ->name('landlord.tenants.kanban.templates.index');
-    Route::get('tenants/{tenant}/kanban/templates/create', [LandlordWorkflowTemplateController::class, 'create'])
-        ->name('landlord.tenants.kanban.templates.create');
-    Route::post('tenants/{tenant}/kanban/templates', [LandlordWorkflowTemplateController::class, 'store'])
-        ->name('landlord.tenants.kanban.templates.store');
-    Route::post('tenants/{tenant}/kanban/templates/seed-defaults', [LandlordWorkflowTemplateController::class, 'seedDefaultTemplates'])
-        ->name('landlord.tenants.kanban.templates.seed-defaults');
-    Route::get('tenants/{tenant}/kanban/templates/{template}/edit', [LandlordWorkflowTemplateController::class, 'edit'])
-        ->name('landlord.tenants.kanban.templates.edit');
-    Route::put('tenants/{tenant}/kanban/templates/{template}', [LandlordWorkflowTemplateController::class, 'update'])
-        ->name('landlord.tenants.kanban.templates.update');
-    Route::delete('tenants/{tenant}/kanban/templates/{template}', [LandlordWorkflowTemplateController::class, 'destroy'])
-        ->name('landlord.tenants.kanban.templates.destroy');
+    Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
+        Route::get('tenants/{tenant}/kanban/templates', [LandlordWorkflowTemplateController::class, 'index'])
+            ->name('landlord.tenants.kanban.templates.index');
+        Route::get('tenants/{tenant}/kanban/templates/create', [LandlordWorkflowTemplateController::class, 'create'])
+            ->name('landlord.tenants.kanban.templates.create');
+        Route::post('tenants/{tenant}/kanban/templates', [LandlordWorkflowTemplateController::class, 'store'])
+            ->name('landlord.tenants.kanban.templates.store');
+        Route::post('tenants/{tenant}/kanban/templates/seed-defaults', [LandlordWorkflowTemplateController::class, 'seedDefaultTemplates'])
+            ->name('landlord.tenants.kanban.templates.seed-defaults');
+        Route::get('tenants/{tenant}/kanban/templates/{template}/edit', [LandlordWorkflowTemplateController::class, 'edit'])
+            ->name('landlord.tenants.kanban.templates.edit');
+        Route::put('tenants/{tenant}/kanban/templates/{template}', [LandlordWorkflowTemplateController::class, 'update'])
+            ->name('landlord.tenants.kanban.templates.update');
+        Route::delete('tenants/{tenant}/kanban/templates/{template}', [LandlordWorkflowTemplateController::class, 'destroy'])
+            ->name('landlord.tenants.kanban.templates.destroy');
+    });
 });
 
 // ── TENANT (rotas que exigem tenant ativo) ────────────────────
@@ -161,26 +164,28 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::delete('notifications/{id}', [NotificationController::class, 'destroy'])
             ->name('notifications.destroy');
 
-        // ── KANBAN ────────────────────────────────────────────────
-        Route::get('kanban', [WorkflowKanbanController::class, 'index'])->name('kanban.index');
-        Route::get('kanban/{planogram}', [WorkflowKanbanController::class, 'show'])->name('kanban.show');
+        Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
+            // ── KANBAN ────────────────────────────────────────────────
+            Route::get('kanban', [WorkflowKanbanController::class, 'index'])->name('kanban.index');
+            Route::get('kanban/{planogram}', [WorkflowKanbanController::class, 'show'])->name('kanban.show');
 
-        Route::post('kanban/{planogram}/executions', [WorkflowExecutionController::class, 'store'])
-            ->name('kanban.executions.store');
-        Route::patch('kanban/executions/{execution}/move', [WorkflowExecutionController::class, 'move'])
-            ->name('kanban.executions.move');
-        Route::patch('kanban/executions/{execution}/pause', [WorkflowExecutionController::class, 'pause'])
-            ->name('kanban.executions.pause');
-        Route::patch('kanban/executions/{execution}/resume', [WorkflowExecutionController::class, 'resume'])
-            ->name('kanban.executions.resume');
-        Route::patch('kanban/executions/{execution}/complete', [WorkflowExecutionController::class, 'complete'])
-            ->name('kanban.executions.complete');
-        Route::patch('kanban/executions/{execution}/assign', [WorkflowExecutionController::class, 'assign'])
-            ->name('kanban.executions.assign');
-        Route::get('kanban/executions/{execution}/history', [WorkflowExecutionController::class, 'history'])
-            ->name('kanban.executions.history');
-        Route::post('kanban/histories/{history}/restore', [WorkflowExecutionController::class, 'restore'])
-            ->name('kanban.histories.restore');
+            Route::post('kanban/{planogram}/executions', [WorkflowExecutionController::class, 'store'])
+                ->name('kanban.executions.store');
+            Route::patch('kanban/executions/{execution}/move', [WorkflowExecutionController::class, 'move'])
+                ->name('kanban.executions.move');
+            Route::patch('kanban/executions/{execution}/pause', [WorkflowExecutionController::class, 'pause'])
+                ->name('kanban.executions.pause');
+            Route::patch('kanban/executions/{execution}/resume', [WorkflowExecutionController::class, 'resume'])
+                ->name('kanban.executions.resume');
+            Route::patch('kanban/executions/{execution}/complete', [WorkflowExecutionController::class, 'complete'])
+                ->name('kanban.executions.complete');
+            Route::patch('kanban/executions/{execution}/assign', [WorkflowExecutionController::class, 'assign'])
+                ->name('kanban.executions.assign');
+            Route::get('kanban/executions/{execution}/history', [WorkflowExecutionController::class, 'history'])
+                ->name('kanban.executions.history');
+            Route::post('kanban/histories/{history}/restore', [WorkflowExecutionController::class, 'restore'])
+                ->name('kanban.histories.restore');
+        });
     });
 
 // Broadcasting auth precisa rodar no contexto do tenant para autenticar canais privados

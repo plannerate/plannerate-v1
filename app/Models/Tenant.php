@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\TenantFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -66,6 +67,15 @@ class Tenant extends ModelsTenant
     {
         return $this->belongsToMany(Module::class, 'tenant_modules')
             ->withTimestamps();
+    }
+
+    public function scopeWhereHasActiveModule(Builder $query, string $slug): void
+    {
+        $query->whereHas('modules', function ($moduleQuery) use ($slug): void {
+            $moduleQuery
+                ->where('modules.slug', $slug)
+                ->where('modules.is_active', true);
+        });
     }
 
     /**

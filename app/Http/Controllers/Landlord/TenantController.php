@@ -9,6 +9,8 @@ use App\Jobs\ProvisionTenantDatabaseJob;
 use App\Models\Module;
 use App\Models\Plan;
 use App\Models\Tenant;
+use App\Support\Modules\ModuleSlug;
+use App\Support\Modules\TenantModuleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -23,6 +25,10 @@ class TenantController extends Controller
      */
     private const AVAILABLE_STATUSES = ['provisioning', 'active', 'suspended', 'inactive'];
 
+    public function __construct(
+        private readonly TenantModuleService $tenantModuleService,
+    ) {}
+
     /**
      * Display a listing of tenants.
      */
@@ -33,8 +39,10 @@ class TenantController extends Controller
         $search = trim((string) $request->string('search'));
         $status = (string) $request->string('status');
         $planId = trim((string) $request->string('plan_id'));
+        $module = trim((string) $request->string('module'));
         $hasStatusFilter = in_array($status, self::AVAILABLE_STATUSES, true);
         $hasPlanFilter = $planId !== '';
+        $hasModuleFilter = $module !== '';
 
         $tenants = Tenant::query()
             ->when($search !== '', function ($query) use ($search): void {
@@ -48,11 +56,14 @@ class TenantController extends Controller
             })
             ->when($hasStatusFilter, fn ($query) => $query->where('status', $status))
             ->when($hasPlanFilter, fn ($query) => $query->where('plan_id', $planId))
-            ->with(['plan:id,name', 'primaryDomain:id,tenant_id,host,is_active'])
+            ->when($hasModuleFilter, fn ($query) => $query->whereHasActiveModule($module))
+            ->with(['plan:id,name', 'primaryDomain:id,tenant_id,host,is_active', 'modules:id,slug,is_active'])
             ->latest()
             ->paginate(10)
             ->withQueryString()
             ->through(fn (Tenant $tenant): array => [
+                'active_modules' => $this->tenantModuleService->tenantActiveModuleSlugs($tenant),
+                'has_kanban' => $this->tenantModuleService->tenantHasActiveModule($tenant, ModuleSlug::KANBAN),
                 'id' => $tenant->id,
                 'name' => $tenant->name,
                 'slug' => $tenant->slug,
@@ -76,6 +87,7 @@ class TenantController extends Controller
                 'search' => $search,
                 'status' => $hasStatusFilter ? $status : '',
                 'plan_id' => $hasPlanFilter ? $planId : '',
+                'module' => $hasModuleFilter ? $module : '',
             ],
             'filter_options' => [
                 'statuses' => $this->statusesForSelect(),
@@ -87,6 +99,7 @@ class TenantController extends Controller
                         'name' => $plan->name,
                     ])
                     ->all(),
+                'modules' => $this->modulesForFilter(),
             ],
         ]);
     }
@@ -297,6 +310,22 @@ class TenantController extends Controller
                 'id' => $module->id,
                 'name' => $module->name,
                 'is_active' => $module->is_active,
+            ])
+            ->all();
+    }
+
+    /**
+     * @return array<int, array{slug: string, name: string}>
+     */
+    private function modulesForFilter(): array
+    {
+        return Module::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['slug', 'name'])
+            ->map(fn (Module $module): array => [
+                'slug' => $module->slug,
+                'name' => $module->name,
             ])
             ->all();
     }

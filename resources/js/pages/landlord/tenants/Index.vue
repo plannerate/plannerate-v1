@@ -14,6 +14,8 @@ import type { Paginator } from '@/types';
 import ColumnActions from '@/components/table/columns/ColumnActions.vue';
 
 type TenantRow = {
+    active_modules: string[];
+    has_kanban: boolean;
     id: string;
     name: string;
     slug: string;
@@ -30,10 +32,12 @@ const props = defineProps<{
         search: string;
         status: string;
         plan_id: string;
+        module: string;
     };
     filter_options: {
         statuses: Array<{ value: string; label: string }>;
         plans: Array<{ id: string; name: string }>;
+        modules: Array<{ slug: string; name: string }>;
     };
 }>();
 
@@ -101,6 +105,21 @@ const pageMeta = useCrudPageMeta({
                         :value="plan.id"
                     >
                         {{ plan.name }}
+                    </option>
+                </select>
+
+                <select
+                    name="module"
+                    :value="props.filters.module"
+                    class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                >
+                    <option value="">{{ t('app.landlord.common.all') }}</option>
+                    <option
+                        v-for="module in props.filter_options.modules"
+                        :key="module.slug"
+                        :value="module.slug"
+                    >
+                        {{ module.name }}
                     </option>
                 </select>
             </template>
@@ -221,6 +240,7 @@ const pageMeta = useCrudPageMeta({
                                         </Link>
                                     </Button>
                                     <Button
+                                        v-if="tenant.has_kanban"
                                         variant="secondary"
                                         size="sm"
                                         as-child

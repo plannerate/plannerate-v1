@@ -4,7 +4,9 @@ use App\Models\Module;
 use App\Models\Permission;
 use App\Models\Plan;
 use App\Models\Role;
+use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Modules\ModuleSlug;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -158,4 +160,48 @@ test('modules index supports search and active status filters', function () {
             ->where('modules.data.0.slug', 'modulo-analytics')
             ->where('filters.search', 'Analytics')
             ->where('filters.is_active', '1'));
+});
+
+test('tenants index supports module filter with active module rule', function () {
+    $kanban = Module::query()->create([
+        'name' => 'Kanban',
+        'slug' => ModuleSlug::KANBAN,
+        'description' => null,
+        'is_active' => true,
+    ]);
+    $inactiveKanban = Module::query()->create([
+        'name' => 'Kanban Inativo',
+        'slug' => 'kanban-inativo',
+        'description' => null,
+        'is_active' => false,
+    ]);
+
+    $tenantWithKanban = Tenant::query()->create([
+        'name' => 'Tenant Com Kanban',
+        'slug' => 'tenant-com-kanban',
+        'database' => 'tenant_com_kanban',
+        'status' => 'active',
+    ]);
+    $tenantWithoutKanban = Tenant::query()->create([
+        'name' => 'Tenant Sem Kanban',
+        'slug' => 'tenant-sem-kanban',
+        'database' => 'tenant_sem_kanban',
+        'status' => 'active',
+    ]);
+
+    $tenantWithKanban->modules()->sync([$kanban->id, $inactiveKanban->id]);
+    $tenantWithoutKanban->modules()->sync([$inactiveKanban->id]);
+
+    $response = $this->get(route('landlord.tenants.index', [
+        'module' => ModuleSlug::KANBAN,
+    ]));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('landlord/tenants/Index')
+            ->has('tenants.data', 1)
+            ->where('tenants.data.0.slug', 'tenant-com-kanban')
+            ->where('tenants.data.0.has_kanban', true)
+            ->where('filters.module', ModuleSlug::KANBAN));
 });

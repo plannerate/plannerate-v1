@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Tenant;
+use App\Support\Modules\TenantModuleService;
 use App\Support\Navigation\SidebarNavigationService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -62,8 +64,50 @@ class HandleInertiaRequests extends Middleware
                     ->all(),
                 'unread_count' => fn (): int => $request->user()?->unreadNotifications()->count() ?? 0,
             ],
+            'tenant' => [
+                'active_modules' => fn (): array => $this->resolveActiveTenantModules($request),
+            ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'navigation' => app(SidebarNavigationService::class)->build($request),
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function resolveActiveTenantModules(Request $request): array
+    {
+        $tenant = $this->resolveTenantFromContext($request);
+
+        if (! $tenant instanceof Tenant) {
+            return [];
+        }
+
+        return app(TenantModuleService::class)->tenantActiveModuleSlugs($tenant);
+    }
+
+    private function resolveTenantFromContext(Request $request): ?Tenant
+    {
+        $routeTenant = $request->route('tenant');
+
+        if ($routeTenant instanceof Tenant) {
+            return $routeTenant;
+        }
+
+        $current = Tenant::current();
+
+        if ($current instanceof Tenant) {
+            return $current;
+        }
+
+        $containerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
+
+        if (! app()->bound($containerKey)) {
+            return null;
+        }
+
+        $resolved = app($containerKey);
+
+        return $resolved instanceof Tenant ? $resolved : null;
     }
 }
