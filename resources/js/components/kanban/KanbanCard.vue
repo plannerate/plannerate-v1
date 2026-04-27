@@ -5,6 +5,7 @@ import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate
 import type { Execution } from '@/components/kanban/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useT } from '@/composables/useT';
 import { editor as tenantEditorPlanogramGondolas } from '@/routes/tenant/planograms/gondolas';
 
 const props = defineProps<{
@@ -28,6 +29,8 @@ const emit = defineEmits<{
     complete: [execution: Execution];
     abandon: [execution: Execution];
 }>();
+
+const { t } = useT();
 
 const canStart = computed(() => props.execution.can_start);
 const canPause = computed(() => props.execution.can_pause);
@@ -53,7 +56,11 @@ const executionLinkHref = computed(() => {
 
     return gondolaView.url(props.execution.gondola_id);
 });
-const executionLinkLabel = computed(() => (wasStartedByCurrentUser.value ? 'Abrir editor' : 'Visualizar PDF'));
+const executionLinkLabel = computed(() => (
+    wasStartedByCurrentUser.value
+        ? t('app.kanban.links.open_editor')
+        : t('app.kanban.links.view_pdf')
+));
 </script>
 
 <template>
@@ -65,7 +72,7 @@ const executionLinkLabel = computed(() => (wasStartedByCurrentUser.value ? 'Abri
             'cursor-not-allowed': !canMove,
             'opacity-50 ring-2 ring-primary/30': isDragging,
         }"
-        :title="canMove ? 'Mover execução' : 'Inicie a execução antes de mover'"
+        :title="canMove ? t('app.kanban.move.card_title') : t('app.kanban.move.must_be_started')"
         @dragstart="emit('dragstart', execution)"
     >
         <div class="flex items-start justify-between gap-2">
@@ -76,11 +83,11 @@ const executionLinkLabel = computed(() => (wasStartedByCurrentUser.value ? 'Abri
                         :class="{ 'opacity-50': canMove, 'opacity-20': !canMove }"
                     />
                     <p class="truncate font-medium text-foreground">
-                        {{ execution.gondola_name ?? 'Gondola sem nome' }}
+                        {{ execution.gondola_name ?? t('app.kanban.card.unnamed_gondola') }}
                     </p>
                 </div>
                 <p class="mt-1 truncate text-xs text-muted-foreground">
-                    {{ execution.gondola_location ?? 'Sem local informado' }}
+                    {{ execution.gondola_location ?? t('app.kanban.card.no_location') }}
                 </p>
             </div>
 
@@ -91,26 +98,26 @@ const executionLinkLabel = computed(() => (wasStartedByCurrentUser.value ? 'Abri
 
         <div class="mt-3 space-y-1.5 text-xs text-muted-foreground">
             <p class="truncate">
-                Planograma:
+                {{ t('app.kanban.card.planogram') }}:
                 <span class="font-medium text-foreground">{{ execution.planogram_name ?? '-' }}</span>
             </p>
             <p class="truncate">
-                Etapa:
+                {{ t('app.kanban.card.step') }}:
                 <span class="font-medium text-foreground">{{ execution.step_name ?? '-' }}</span>
             </p>
             <p class="flex items-center gap-1.5" :class="{ 'text-destructive': isOverdue }">
                 <CalendarClock class="size-3.5" />
-                SLA: {{ formattedSlaDate }}
+                {{ t('app.kanban.card.sla') }}: {{ formattedSlaDate }}
             </p>
             <p class="flex items-center gap-1.5">
                 <User class="size-3.5" />
-                {{ execution.assigned_to_user?.name ?? 'Sem responsavel' }}
+                {{ execution.assigned_to_user?.name ?? t('app.kanban.card.no_responsible') }}
             </p>
         </div>
 
         <div class="mt-3 flex flex-wrap items-center gap-1.5">
             <Button size="sm" variant="outline" class="h-7 px-2 text-xs" @click="emit('details', execution)">
-                Detalhes
+                {{ t('app.kanban.actions.details') }}
             </Button>
 
             <Button v-if="executionLinkHref" size="sm" variant="outline" class="h-7 px-2 text-xs" as-child>
@@ -129,7 +136,7 @@ const executionLinkLabel = computed(() => (wasStartedByCurrentUser.value ? 'Abri
                 @click="emit('start', execution)"
             >
                 <Play class="mr-1 size-3.5" />
-                Iniciar
+                {{ t('app.kanban.actions.start') }}
             </Button>
 
             <Button
@@ -141,7 +148,7 @@ const executionLinkLabel = computed(() => (wasStartedByCurrentUser.value ? 'Abri
                 @click="emit('pause', execution)"
             >
                 <Pause class="mr-1 size-3.5" />
-                Pausar
+                {{ t('app.kanban.actions.pause') }}
             </Button>
 
             <Button
@@ -153,7 +160,7 @@ const executionLinkLabel = computed(() => (wasStartedByCurrentUser.value ? 'Abri
                 @click="emit('resume', execution)"
             >
                 <Play class="mr-1 size-3.5" />
-                Retomar
+                {{ t('app.kanban.actions.resume') }}
             </Button>
 
             <Button
@@ -165,7 +172,7 @@ const executionLinkLabel = computed(() => (wasStartedByCurrentUser.value ? 'Abri
                 @click="emit('complete', execution)"
             >
                 <CheckCircle2 class="mr-1 size-3.5" />
-                Concluir
+                {{ t('app.kanban.actions.complete') }}
             </Button>
 
             <Button
@@ -177,7 +184,7 @@ const executionLinkLabel = computed(() => (wasStartedByCurrentUser.value ? 'Abri
                 @click="emit('abandon', execution)"
             >
                 <XCircle class="mr-1 size-3.5" />
-                Abandonar
+                {{ t('app.kanban.actions.abandon') }}
             </Button>
         </div>
     </article>

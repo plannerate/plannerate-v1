@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { CheckCircle2, ExternalLink, Pause, Play, RotateCcw, XCircle } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { CheckCircle2, ChevronDown, ExternalLink, Pause, Play, RotateCcw, XCircle } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
 import type { BoardStep, ExecutionDetails, WorkflowHistory } from '@/components/kanban/types';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useT } from '@/composables/useT';
 import { editor as tenantEditorPlanogramGondolas } from '@/routes/tenant/planograms/gondolas';
 
 const props = defineProps<{
@@ -41,6 +42,9 @@ const execution = computed(() => props.payload?.execution ?? null);
 const allowedUsers = computed(() => props.payload?.allowed_users ?? []);
 const currentStepId = computed(() => execution.value?.step?.id ?? null);
 const currentStepIndex = computed(() => props.steps.findIndex((step) => step.id === currentStepId.value));
+const expandedHistoryId = ref<string | null>(null);
+const showAllHistories = ref(false);
+const { t } = useT();
 
 const notesModel = computed({
     get: () => props.actionNotes,
@@ -72,26 +76,12 @@ const executionLinkHref = computed(() => {
 
     return gondolaView.url(gondolaId);
 });
-const executionLinkLabel = computed(() => (wasStartedByCurrentUser.value ? 'Abrir editor de gondolas' : 'Visualizar PDF'));
-
-const statusLabels: Record<string, string> = {
-    pending: 'Pendente',
-    active: 'Em andamento',
-    paused: 'Pausado',
-    completed: 'Concluído',
-    cancelled: 'Abandonado',
-};
-
-const actionLabels: Record<string, string> = {
-    started: 'Iniciou',
-    moved: 'Moveu',
-    paused: 'Pausou',
-    resumed: 'Retomou',
-    assigned: 'Atribuiu',
-    completed: 'Concluiu',
-    cancelled: 'Abandonou',
-    restored: 'Restaurou',
-};
+const executionLinkLabel = computed(() => (
+    wasStartedByCurrentUser.value
+        ? t('app.kanban.links.open_gondola_editor')
+        : t('app.kanban.links.view_pdf')
+));
+const visibleHistories = computed(() => (showAllHistories.value ? props.histories : props.histories.slice(0, 5)));
 
 function formatDateTime(iso: string | null): string {
     if (!iso) {
@@ -105,15 +95,35 @@ function formatDateTime(iso: string | null): string {
         minute: '2-digit',
     });
 }
+
+function actionLabel(action: WorkflowHistory['action']): string {
+    return t(`app.kanban.history.actions.${action}`);
+}
+
+function statusLabel(status: string): string {
+    return t(`app.kanban.executions.status.${status}`);
+}
+
+function stepLabel(stepId: string | null): string {
+    if (!stepId) {
+        return '-';
+    }
+
+    return props.steps.find((step) => step.id === stepId)?.name ?? stepId;
+}
+
+function toggleHistory(historyId: string): void {
+    expandedHistoryId.value = expandedHistoryId.value === historyId ? null : historyId;
+}
 </script>
 
 <template>
     <Dialog :open="open" @update:open="emit('update:open', $event)">
         <DialogContent class="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-3xl">
             <DialogHeader>
-                <DialogTitle>{{ execution?.gondola?.name ?? 'Detalhes da execução' }}</DialogTitle>
+                <DialogTitle>{{ execution?.gondola?.name ?? t('app.kanban.detail.title') }}</DialogTitle>
                 <DialogDescription>
-                    Acompanhe a etapa, executantes, histórico e notas desta execução.
+                    {{ t('app.kanban.detail.description') }}
                 </DialogDescription>
             </DialogHeader>
 
@@ -134,16 +144,16 @@ function formatDateTime(iso: string | null): string {
                 <div v-else-if="execution" class="space-y-3 pb-2">
                     <div class="grid gap-3 md:grid-cols-2">
                         <section class="rounded-lg border bg-card p-3">
-                            <h3 class="text-sm font-semibold text-foreground">Responsabilidade</h3>
+                            <h3 class="text-sm font-semibold text-foreground">{{ t('app.kanban.detail.responsibility') }}</h3>
                             <div class="mt-3 grid gap-2 text-sm sm:grid-cols-2">
                                 <div>
-                                    <p class="text-xs text-muted-foreground">Responsável atual</p>
+                                    <p class="text-xs text-muted-foreground">{{ t('app.kanban.detail.current_responsible') }}</p>
                                     <p class="font-medium text-foreground">
                                         {{ execution.assigned_to_user?.name ?? '-' }}
                                     </p>
                                 </div>
                                 <div>
-                                    <p class="text-xs text-muted-foreground">Iniciado por</p>
+                                    <p class="text-xs text-muted-foreground">{{ t('app.kanban.detail.started_by') }}</p>
                                     <p class="font-medium text-foreground">
                                         {{ execution.started_by?.name ?? '-' }}
                                     </p>
@@ -158,14 +168,14 @@ function formatDateTime(iso: string | null): string {
                         </section>
 
                         <section class="rounded-lg border bg-card p-3">
-                            <h3 class="text-sm font-semibold text-foreground">Resumo</h3>
+                            <h3 class="text-sm font-semibold text-foreground">{{ t('app.kanban.detail.summary') }}</h3>
                             <div class="mt-3 grid gap-2 text-sm sm:grid-cols-2">
                                 <div>
-                                    <p class="text-xs text-muted-foreground">Status</p>
-                                    <p class="font-medium text-foreground">{{ statusLabels[execution.status] }}</p>
+                                    <p class="text-xs text-muted-foreground">{{ t('app.kanban.detail.status') }}</p>
+                                    <p class="font-medium text-foreground">{{ statusLabel(execution.status) }}</p>
                                 </div>
                                 <div>
-                                    <p class="text-xs text-muted-foreground">SLA</p>
+                                    <p class="text-xs text-muted-foreground">{{ t('app.kanban.card.sla') }}</p>
                                     <p class="font-medium text-foreground">{{ formatDateTime(execution.sla_date) }}</p>
                                 </div>
                             </div>
@@ -173,7 +183,7 @@ function formatDateTime(iso: string | null): string {
                     </div>
 
                     <section class="rounded-lg border bg-card p-3">
-                        <h3 class="text-sm font-semibold text-foreground">Fluxo do Workflow</h3>
+                        <h3 class="text-sm font-semibold text-foreground">{{ t('app.kanban.detail.workflow_flow') }}</h3>
                         <div class="relative mt-4 overflow-x-auto pb-1">
                             <div class="absolute left-0 right-0 top-5 h-0.5 min-w-[640px] bg-border" />
                             <div class="relative flex min-w-[640px] justify-between">
@@ -202,7 +212,7 @@ function formatDateTime(iso: string | null): string {
                     </section>
 
                     <section class="rounded-lg border bg-card p-3">
-                        <h3 class="text-sm font-semibold text-foreground">Possíveis executantes</h3>
+                        <h3 class="text-sm font-semibold text-foreground">{{ t('app.kanban.detail.allowed_users') }}</h3>
                         <div class="mt-3 flex flex-wrap gap-2">
                             <span
                                 v-for="user in allowedUsers"
@@ -215,35 +225,91 @@ function formatDateTime(iso: string | null): string {
                                 "
                             >
                                 {{ user.name }}
-                                <span v-if="user.id === currentUserId" class="ml-1">(você)</span>
+                                <span v-if="user.id === currentUserId" class="ml-1">({{ t('app.kanban.detail.you') }})</span>
                             </span>
                             <span v-if="allowedUsers.length === 0" class="text-xs text-muted-foreground">
-                                Nenhum usuário configurado para esta etapa.
+                                {{ t('app.kanban.detail.no_allowed_users') }}
                             </span>
                         </div>
                     </section>
 
                     <section class="rounded-lg border bg-card p-3">
-                        <h3 class="text-sm font-semibold text-foreground">Histórico</h3>
-                        <div class="mt-3 space-y-2">
-                            <div
-                                v-for="history in histories.slice(0, 5)"
-                                :key="history.id"
-                                class="rounded-md border bg-background p-2 text-xs"
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-semibold text-foreground">{{ t('app.kanban.history.title') }}</h3>
+                            <Button
+                                v-if="histories.length > 5"
+                                variant="ghost"
+                                size="sm"
+                                class="h-7 px-2 text-xs"
+                                @click="showAllHistories = !showAllHistories"
                             >
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="font-medium text-foreground">
-                                        {{ actionLabels[history.action] ?? history.action }}
-                                    </span>
-                                    <span class="text-muted-foreground">{{ formatDateTime(history.performed_at) }}</span>
+                                {{ showAllHistories ? t('app.kanban.history.show_less') : t('app.kanban.history.show_all') }}
+                            </Button>
+                        </div>
+
+                        <div class="relative mt-4 space-y-0 pl-5">
+                            <div v-if="visibleHistories.length > 0" class="absolute bottom-4 left-1.5 top-2 w-px bg-border" />
+                            <div
+                                v-for="history in visibleHistories"
+                                :key="history.id"
+                                class="relative pb-3 last:pb-0"
+                            >
+                                <span class="absolute -left-5 top-1.5 size-3 rounded-full border-2 border-primary bg-background" />
+
+                                <div class="rounded-lg border bg-background p-3 text-xs shadow-sm">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p class="font-medium text-foreground">
+                                                {{ actionLabel(history.action) }}
+                                            </p>
+                                            <p class="mt-0.5 text-muted-foreground">
+                                                {{ history.performed_by?.name ?? t('app.kanban.history.system') }}
+                                            </p>
+                                        </div>
+                                        <span class="shrink-0 text-muted-foreground">{{ formatDateTime(history.performed_at) }}</span>
+                                    </div>
+
+                                    <p v-if="history.description" class="mt-2 text-muted-foreground">
+                                        {{ history.description }}
+                                    </p>
+
+                                    <button
+                                        type="button"
+                                        class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                                        @click="toggleHistory(history.id)"
+                                    >
+                                        {{ expandedHistoryId === history.id ? t('app.kanban.history.hide_details') : t('app.kanban.history.view_details') }}
+                                        <ChevronDown
+                                            class="size-3 transition-transform"
+                                            :class="{ 'rotate-180': expandedHistoryId === history.id }"
+                                        />
+                                    </button>
+
+                                    <div
+                                        v-if="expandedHistoryId === history.id"
+                                        class="mt-3 grid gap-2 rounded-md bg-muted/40 p-2 text-muted-foreground sm:grid-cols-2"
+                                    >
+                                        <p>
+                                            <span class="font-medium text-foreground">{{ t('app.kanban.history.from_step') }}:</span>
+                                            {{ stepLabel(history.from_step_id) }}
+                                        </p>
+                                        <p>
+                                            <span class="font-medium text-foreground">{{ t('app.kanban.history.to_step') }}:</span>
+                                            {{ stepLabel(history.to_step_id) }}
+                                        </p>
+                                        <p>
+                                            <span class="font-medium text-foreground">{{ t('app.kanban.history.previous_responsible') }}:</span>
+                                            {{ history.previous_responsible_id ?? '-' }}
+                                        </p>
+                                        <p>
+                                            <span class="font-medium text-foreground">{{ t('app.kanban.history.new_responsible') }}:</span>
+                                            {{ history.new_responsible_id ?? '-' }}
+                                        </p>
+                                    </div>
                                 </div>
-                                <p class="mt-0.5 text-muted-foreground">
-                                    {{ history.performed_by?.name ?? 'Sistema' }}
-                                    <span v-if="history.description">- {{ history.description }}</span>
-                                </p>
                             </div>
                             <p v-if="histories.length === 0" class="text-xs text-muted-foreground">
-                                Nenhum histórico registrado.
+                                {{ t('app.kanban.history.empty') }}
                             </p>
                         </div>
                     </section>
@@ -251,13 +317,15 @@ function formatDateTime(iso: string | null): string {
             </div>
 
             <div class="space-y-2 border-t pt-3">
-                <label for="kanban-action-notes" class="text-xs font-medium text-muted-foreground">Notas</label>
+                <label for="kanban-action-notes" class="text-xs font-medium text-muted-foreground">
+                    {{ t('app.kanban.detail.notes') }}
+                </label>
                 <textarea
                     id="kanban-action-notes"
                     v-model="notesModel"
                     rows="2"
                     class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                    placeholder="Adicionar notas para a próxima ação..."
+                    :placeholder="t('app.kanban.detail.notes_placeholder')"
                 />
             </div>
 
@@ -265,26 +333,26 @@ function formatDateTime(iso: string | null): string {
                 <div class="flex flex-wrap gap-2">
                     <Button v-if="canStart" :disabled="busy" @click="emit('start')">
                         <Play class="size-4" />
-                        Iniciar
+                        {{ t('app.kanban.actions.start') }}
                     </Button>
                     <Button v-if="canPause" variant="outline" :disabled="busy" @click="emit('pause')">
                         <Pause class="size-4" />
-                        Pausar
+                        {{ t('app.kanban.actions.pause') }}
                     </Button>
                     <Button v-if="canResume" variant="outline" :disabled="busy" @click="emit('resume')">
                         <RotateCcw class="size-4" />
-                        Retomar
+                        {{ t('app.kanban.actions.resume') }}
                     </Button>
                     <Button v-if="canComplete" variant="outline" :disabled="busy" @click="emit('complete')">
                         <CheckCircle2 class="size-4" />
-                        Concluir
+                        {{ t('app.kanban.actions.complete') }}
                     </Button>
                     <Button v-if="canAbandon" variant="destructive" :disabled="busy" @click="emit('abandon')">
                         <XCircle class="size-4" />
-                        Abandonar
+                        {{ t('app.kanban.actions.abandon') }}
                     </Button>
                 </div>
-                <Button variant="outline" @click="emit('update:open', false)">Fechar</Button>
+                <Button variant="outline" @click="emit('update:open', false)">{{ t('app.kanban.actions.close') }}</Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>

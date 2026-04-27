@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, Pause, Play, RotateCcw, XCircle } from 'lu
 import { computed } from 'vue';
 import type { KanbanExecutionAction } from '@/components/kanban/types';
 import { Button } from '@/components/ui/button';
+import { useT } from '@/composables/useT';
 import {
     Dialog,
     DialogContent,
@@ -27,35 +28,13 @@ const emit = defineEmits<{
     confirm: [];
 }>();
 
-const contentByAction: Record<KanbanExecutionAction, { title: string; description: string; button: string }> = {
-    start: {
-        title: 'Iniciar execução?',
-        description: 'Você será definido como responsável pela execução e esta ação ficará registrada no histórico.',
-        button: 'Iniciar',
-    },
-    pause: {
-        title: 'Pausar execução?',
-        description: 'A execução ficará pausada até ser retomada e a pausa será registrada no histórico.',
-        button: 'Pausar',
-    },
-    resume: {
-        title: 'Retomar execução?',
-        description: 'A execução voltará para o status em andamento e a retomada será registrada no histórico.',
-        button: 'Retomar',
-    },
-    complete: {
-        title: 'Concluir execução?',
-        description: 'A execução será marcada como concluída. Essa ação ficará registrada no histórico.',
-        button: 'Concluir',
-    },
-    abandon: {
-        title: 'Abandonar execução?',
-        description: 'A execução será marcada como abandonada. Use as notas para registrar o motivo.',
-        button: 'Abandonar',
-    },
-};
+const { t } = useT();
 
-const currentContent = computed(() => (props.action ? contentByAction[props.action] : null));
+const currentContent = computed(() => (props.action ? {
+    title: t(`app.kanban.confirm.${props.action}.title`),
+    description: t(`app.kanban.confirm.${props.action}.description`),
+    button: t(`app.kanban.actions.${props.action}`),
+} : null));
 const isDestructive = computed(() => props.action === 'abandon');
 const notesModel = computed({
     get: () => props.notes,
@@ -80,7 +59,7 @@ const notesModel = computed({
                         <AlertTriangle v-else class="size-5 text-primary" />
                     </div>
                     <div>
-                        <DialogTitle>{{ currentContent?.title ?? 'Confirmar ação?' }}</DialogTitle>
+                        <DialogTitle>{{ currentContent?.title ?? t('app.kanban.confirm.fallback_title') }}</DialogTitle>
                         <DialogDescription class="mt-1">
                             {{ currentContent?.description }}
                         </DialogDescription>
@@ -90,30 +69,34 @@ const notesModel = computed({
 
             <div class="space-y-3">
                 <div class="rounded-lg border bg-muted/30 p-3 text-sm">
-                    <p class="font-medium text-foreground">{{ gondolaName ?? 'Gondola sem nome' }}</p>
-                    <p class="text-xs text-muted-foreground">Etapa: {{ stepName ?? '-' }}</p>
+                    <p class="font-medium text-foreground">
+                        {{ gondolaName ?? t('app.kanban.card.unnamed_gondola') }}
+                    </p>
+                    <p class="text-xs text-muted-foreground">
+                        {{ t('app.kanban.card.step') }}: {{ stepName ?? '-' }}
+                    </p>
                 </div>
 
                 <div class="space-y-1.5">
                     <label for="kanban-confirm-notes" class="text-xs font-medium text-muted-foreground">
-                        Notas da ação
+                        {{ t('app.kanban.confirm.notes_label') }}
                     </label>
                     <textarea
                         id="kanban-confirm-notes"
                         v-model="notesModel"
                         rows="3"
                         class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                        placeholder="Opcional: registre observações para o histórico..."
+                        :placeholder="t('app.kanban.confirm.notes_placeholder')"
                     />
                 </div>
             </div>
 
             <DialogFooter>
                 <Button variant="outline" :disabled="busy" @click="emit('update:open', false)">
-                    Cancelar
+                    {{ t('app.kanban.actions.cancel') }}
                 </Button>
                 <Button :variant="isDestructive ? 'destructive' : 'default'" :disabled="busy" @click="emit('confirm')">
-                    {{ busy ? 'Processando...' : (currentContent?.button ?? 'Confirmar') }}
+                    {{ busy ? t('app.kanban.actions.processing') : (currentContent?.button ?? t('app.kanban.actions.confirm')) }}
                 </Button>
             </DialogFooter>
         </DialogContent>

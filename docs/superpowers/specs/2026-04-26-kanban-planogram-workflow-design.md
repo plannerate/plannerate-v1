@@ -291,10 +291,7 @@ Fase 1 mantém o composable simples: apenas os dois checkboxes client-side e os 
 
 ### Pendências e melhorias recomendadas
 
-- Começar pela troca das mensagens inline de erro por toast padronizado da aplicação.
-- Extrair regras de movimento para composable próprio, reduzindo a responsabilidade de `useKanban.ts`.
-- Completar internacionalização dos textos hardcoded do Kanban.
-- Melhorar o card de histórico do modal para uma timeline compacta, com opção de expandir para ver mais detalhes da ação, notas, etapa anterior, etapa destino e usuário responsável.
+- Toast padronizado, composable de movimento, internacionalização inicial e timeline expansível de histórico foram implementados na primeira rodada de melhorias pós-Fase 2.
 - Adicionar teste browser para o fluxo completo do Kanban, incluindo drag-and-drop.
 - Adicionar ação acessível de "mover para próxima etapa disponível" para usuários sem drag-and-drop.
 - Corrigir erros globais de `types:check` fora do escopo do Kanban para voltar a usar typecheck como verificação final obrigatória.

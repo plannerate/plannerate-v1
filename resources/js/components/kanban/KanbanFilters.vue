@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import WorkflowKanbanController from '@/actions/App/Http/Controllers/Tenant/WorkflowKanbanController';
 import ListFiltersBar from '@/components/ListFiltersBar.vue';
+import { useT } from '@/composables/useT';
 
 const props = defineProps<{
     subdomain: string;
@@ -16,6 +17,8 @@ const emit = defineEmits<{
     'update:onlyOverdue': [value: boolean];
     'update:showCompleted': [value: boolean];
 }>();
+
+const { t } = useT();
 
 const kanbanUrl = computed(() =>
     WorkflowKanbanController.index.url(props.subdomain).replace(/^\/\/[^/]+/, ''),
@@ -36,19 +39,21 @@ const filteredPlanograms = computed(() => {
         :clear-href="kanbanUrl"
         :search-value="filters.gondola_search ?? ''"
         search-name="gondola_search"
-        search-placeholder="Buscar gondola..."
-        filter-label="Filtrar"
-        clear-label="Limpar"
+        :search-placeholder="t('app.kanban.filters.search_gondola')"
+        :filter-label="t('app.kanban.filters.submit')"
+        :clear-label="t('app.kanban.filters.clear')"
     >
         <div class="flex flex-col gap-1">
-            <label for="kanban-store" class="text-xs font-medium text-foreground">Loja</label>
+            <label for="kanban-store" class="text-xs font-medium text-foreground">
+                {{ t('app.kanban.filters.store') }}
+            </label>
             <select
                 id="kanban-store"
                 name="store_id"
                 :value="filters.store_id ?? ''"
                 class="h-9 min-w-36 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
             >
-                <option value="">Todas</option>
+                <option value="">{{ t('app.kanban.filters.all_stores') }}</option>
                 <option v-for="store in stores" :key="store.id" :value="store.id">
                     {{ store.name }}
                 </option>
@@ -56,14 +61,16 @@ const filteredPlanograms = computed(() => {
         </div>
 
         <div class="flex flex-col gap-1">
-            <label for="kanban-planogram" class="text-xs font-medium text-foreground">Planograma</label>
+            <label for="kanban-planogram" class="text-xs font-medium text-foreground">
+                {{ t('app.kanban.filters.planogram') }}
+            </label>
             <select
                 id="kanban-planogram"
                 name="planogram_id"
                 :value="filters.planogram_id ?? ''"
                 class="h-9 min-w-56 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
             >
-                <option value="">Selecione um planograma</option>
+                <option value="">{{ t('app.kanban.filters.select_planogram') }}</option>
                 <option v-for="planogram in filteredPlanograms" :key="planogram.id" :value="planogram.id">
                     {{ planogram.name }}{{ planogram.store ? ` - ${planogram.store}` : '' }}
                 </option>
@@ -78,7 +85,7 @@ const filteredPlanograms = computed(() => {
                     class="h-4 w-4 rounded border-input"
                     @change="emit('update:onlyOverdue', ($event.target as HTMLInputElement).checked)"
                 />
-                Apenas atrasadas
+                {{ t('app.kanban.filters.only_overdue') }}
             </label>
             <label class="flex cursor-pointer items-center gap-2 text-xs text-foreground">
                 <input
@@ -87,7 +94,7 @@ const filteredPlanograms = computed(() => {
                     class="h-4 w-4 rounded border-input"
                     @change="emit('update:showCompleted', ($event.target as HTMLInputElement).checked)"
                 />
-                Mostrar concluidas
+                {{ t('app.kanban.filters.show_completed') }}
             </label>
         </div>
     </ListFiltersBar>

@@ -28,12 +28,12 @@ const pendingExecution = ref<Execution | null>(null);
 const pendingFromDetail = ref(false);
 
 const pageMeta = useCrudPageMeta({
-    headTitle: 'Kanban',
-    title: 'Kanban',
-    description: 'Gerencie o fluxo de trabalho dos planogramas',
+    headTitle: t('app.kanban.title'),
+    title: t('app.kanban.title'),
+    description: t('app.kanban.description'),
     breadcrumbs: [
         { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
-        { title: 'Kanban', href: '#' },
+        { title: t('app.kanban.navigation'), href: '#' },
     ],
 });
 
@@ -43,7 +43,6 @@ const {
     filteredBoard,
     draggingExecutionId,
     dragOverStepId,
-    moveDeniedMessage,
     busyExecutionId,
     detailOpen,
     detailLoading,
@@ -179,18 +178,11 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
             </div>
 
             <div
-                v-if="moveDeniedMessage"
-                class="mx-4 mt-3 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
-                {{ moveDeniedMessage }}
-            </div>
-
-            <div
                 v-if="!props.selected_planogram"
                 class="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground"
             >
                 <Kanban class="size-10 opacity-20" />
-                <p class="text-sm">Selecione um planograma para visualizar o kanban</p>
+                <p class="text-sm">{{ t('app.kanban.select_planogram') }}</p>
             </div>
 
             <div
@@ -198,7 +190,7 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
                 class="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground"
             >
                 <Kanban class="size-10 opacity-20" />
-                <p class="text-sm">Nenhuma etapa configurada para este planograma</p>
+                <p class="text-sm">{{ t('app.kanban.empty_steps') }}</p>
             </div>
 
             <KanbanBoard

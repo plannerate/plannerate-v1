@@ -3,6 +3,7 @@ import { Kanban } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import KanbanCard from '@/components/kanban/KanbanCard.vue';
 import type { BoardColumn, Execution } from '@/components/kanban/types';
+import { useT } from '@/composables/useT';
 
 const props = defineProps<{
     column: BoardColumn;
@@ -31,6 +32,7 @@ const emit = defineEmits<{
 }>();
 
 const columnSearch = ref('');
+const { t } = useT();
 
 const visibleExecutions = computed(() => {
     const search = columnSearch.value.toLowerCase().trim();
@@ -74,7 +76,7 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
             <input
                 v-model="columnSearch"
                 type="text"
-                placeholder="Buscar gondola"
+                :placeholder="t('app.kanban.filters.search_gondola_short')"
                 class="h-8 w-full rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary/60 focus:ring-1 focus:ring-primary/20"
             />
         </div>
@@ -108,7 +110,7 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
                 class="flex h-24 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/60 text-xs text-muted-foreground"
             >
                 <Kanban class="size-5 opacity-30" />
-                <span>Nenhuma gondola encontrada</span>
+                <span>{{ t('app.kanban.column.empty') }}</span>
             </div>
         </div>
     </div>

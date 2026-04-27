@@ -1010,10 +1010,10 @@ Observação: `./vendor/bin/sail npm run types:check` foi executado e falhou por
 
 ### Alta prioridade
 
-- [ ] Exibir toast padronizado para negações de movimento e erros de ação, substituindo ou complementando o alerta inline atual.
-- [ ] Criar um composable específico para regras de drag-and-drop se `useKanban.ts` continuar crescendo.
-- [ ] Revisar textos hardcoded do Kanban e mover para `lang/pt_BR/app.php`.
-- [ ] Melhorar o card de histórico do modal para uma timeline compacta, com opção de expandir para ver detalhes completos da ação, notas, etapa anterior, etapa destino, usuário executor e responsável envolvido.
+- [x] Exibir toast padronizado para negações de movimento e erros de ação, substituindo ou complementando o alerta inline atual.
+- [x] Criar um composable específico para regras de drag-and-drop se `useKanban.ts` continuar crescendo.
+- [x] Revisar textos hardcoded do Kanban e mover para `lang/pt_BR/app.php`.
+- [x] Melhorar o card de histórico do modal para uma timeline compacta, com opção de expandir para ver detalhes completos da ação, notas, etapa anterior, etapa destino, usuário executor e responsável envolvido.
 - [ ] Criar testes específicos para o frontend do Kanban com browser/Pest, cobrindo abrir modal, confirmar ações, links contextuais e drag-and-drop.
 - [ ] Adicionar refresh parcial depois de ações para também atualizar contadores globais, quando existirem.
 - [ ] Melhorar acessibilidade do drag-and-drop com alternativa por menu: "Mover para próxima etapa disponível".

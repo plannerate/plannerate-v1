@@ -1,10 +1,14 @@
 import { router, useHttp } from '@inertiajs/vue3';
 import { computed, ref, toValue } from 'vue';
 import type { MaybeRefOrGetter } from 'vue';
+import { toast } from 'vue-sonner';
 import WorkflowExecutionController from '@/actions/App/Http/Controllers/Tenant/WorkflowExecutionController';
-import type { BoardColumn, BoardStep, Execution, ExecutionDetails, WorkflowHistory } from '@/components/kanban/types';
+import type { BoardColumn, Execution, ExecutionDetails, WorkflowHistory } from '@/components/kanban/types';
+import { useT } from '@/composables/useT';
+import { useKanbanMove } from '@/composables/useKanbanMove';
 
 export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdomain: MaybeRefOrGetter<string>) {
+    const { t } = useT();
     const onlyOverdue = ref(false);
     const showCompleted = ref(true);
     const detailHttp = useHttp();
@@ -14,10 +18,6 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
         target_step_id: null,
     });
 
-    const draggingExecutionId = ref<string | null>(null);
-    const draggingFromStepId = ref<string | null>(null);
-    const dragOverStepId = ref<string | null>(null);
-    const moveDeniedMessage = ref<string | null>(null);
     const busyExecutionId = ref<string | null>(null);
 
     const detailOpen = ref(false);
@@ -78,77 +78,33 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
         cancelled: 'bg-destructive/15 text-destructive',
     };
 
-    const statusLabels: Record<string, string> = {
-        pending: 'Pendente',
-        active: 'Em andamento',
-        paused: 'Pausado',
-        completed: 'Concluído',
-        cancelled: 'Cancelado',
-    };
-
     function statusLabel(status: string): string {
-        return statusLabels[status] ?? status;
+        return t(`app.kanban.executions.status.${status}`);
     }
 
     function normalizedUrl(url: string): string {
         return url.replace(/^\/\/[^/]+/, '');
     }
 
-    function findExecution(executionId: string): Execution | null {
-        for (const column of filteredBoard.value) {
-            const execution = column.executions.find((item) => item.id === executionId);
-
-            if (execution) {
-                return execution;
-            }
-        }
-
-        return null;
-    }
-
-    function findStep(stepId: string): BoardStep | null {
-        return filteredBoard.value.find((column) => column.step.id === stepId)?.step ?? null;
-    }
-
     function denyMove(message: string): void {
-        moveDeniedMessage.value = message;
+        toast.error(message);
     }
 
-    function clearMoveDeniedMessage(): void {
-        moveDeniedMessage.value = null;
-    }
-
-    function canMoveExecution(execution: Execution): boolean {
-        return execution.can_move && execution.status === 'active';
-    }
-
-    function canDropOnStep(stepId: string): boolean {
-        const executionId = draggingExecutionId.value;
-
-        if (!executionId) {
-            return false;
-        }
-
-        const execution = findExecution(executionId);
-
-        if (!execution || !canMoveExecution(execution)) {
-            denyMove('Somente execuções iniciadas podem ser movidas.');
-
-            return false;
-        }
-
-        const targetStep = findStep(stepId);
-
-        if (targetStep?.is_skipped) {
-            denyMove('Esta etapa está desativada para o planograma. Solte na próxima etapa disponível.');
-
-            return false;
-        }
-
-        clearMoveDeniedMessage();
-
-        return true;
-    }
+    const {
+        draggingExecutionId,
+        dragOverStepId,
+        onDragStart,
+        onDragOver,
+        onDragLeave,
+        resolveDrop,
+    } = useKanbanMove(
+        filteredBoard,
+        {
+            mustBeStarted: t('app.kanban.move.must_be_started'),
+            skippedStep: t('app.kanban.move.skipped_step'),
+        },
+        denyMove,
+    );
 
     function reloadBoard(): void {
         router.reload({
@@ -180,6 +136,8 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
             if (detailOpen.value) {
                 await loadExecutionDetails(execution.id);
             }
+        } catch {
+            toast.error(t('app.kanban.messages.action_failed'));
         } finally {
             actionHttp.notes = null;
             busyExecutionId.value = null;
@@ -275,7 +233,8 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
             detailHistories.value = historyPayload.histories;
         } catch (error) {
             console.error(error);
-            detailError.value = 'Não foi possível carregar os detalhes da execução.';
+            toast.error(t('app.kanban.messages.details_failed'));
+            detailError.value = t('app.kanban.messages.details_failed');
         } finally {
             detailLoading.value = false;
         }
@@ -288,58 +247,14 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
         await loadExecutionDetails(execution.id);
     }
 
-    function onDragStart(execution: Execution, stepId: string): void {
-        if (!canMoveExecution(execution)) {
-            denyMove('Inicie a execução antes de mover este card.');
-
-            return;
-        }
-
-        clearMoveDeniedMessage();
-        draggingExecutionId.value = execution.id;
-        draggingFromStepId.value = stepId;
-    }
-
-    function onDragOver(stepId: string): void {
-        if (!canDropOnStep(stepId)) {
-            dragOverStepId.value = null;
-
-            return;
-        }
-
-        dragOverStepId.value = stepId;
-    }
-
-    function onDragLeave(stepId: string): void {
-        if (dragOverStepId.value === stepId) {
-            dragOverStepId.value = null;
-        }
-    }
-
     async function onDrop(targetStepId: string): Promise<void> {
-        const executionId = draggingExecutionId.value;
-        const fromStepId = draggingFromStepId.value;
+        const moveAttempt = resolveDrop(targetStepId);
 
-        if (!executionId || !fromStepId || fromStepId === targetStepId) {
-            draggingExecutionId.value = null;
-            draggingFromStepId.value = null;
-            dragOverStepId.value = null;
-
+        if (!moveAttempt) {
             return;
         }
 
-        if (!canDropOnStep(targetStepId)) {
-            draggingExecutionId.value = null;
-            draggingFromStepId.value = null;
-            dragOverStepId.value = null;
-
-            return;
-        }
-
-        draggingExecutionId.value = null;
-        draggingFromStepId.value = null;
-        dragOverStepId.value = null;
-
+        const { executionId } = moveAttempt;
         busyExecutionId.value = executionId;
         actionHttp.target_step_id = targetStepId;
         actionHttp.notes = null;
@@ -361,7 +276,7 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
                 await loadExecutionDetails(executionId);
             }
         } catch {
-            denyMove('Não foi possível mover para esta etapa. Verifique se a execução está iniciada e se a etapa está ativa.');
+            denyMove(t('app.kanban.move.failed'));
         } finally {
             actionHttp.target_step_id = null;
             actionHttp.notes = null;
@@ -375,7 +290,6 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
         filteredBoard,
         draggingExecutionId,
         dragOverStepId,
-        moveDeniedMessage,
         busyExecutionId,
         detailOpen,
         detailLoading,

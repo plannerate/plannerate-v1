@@ -2,14 +2,16 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import { Kanban, LayoutList, Map } from 'lucide-vue-next';
 import { computed } from 'vue';
-import planograms from '@/routes/tenant/planograms';
 import WorkflowKanbanController from '@/actions/App/Http/Controllers/Tenant/WorkflowKanbanController';
+import { useT } from '@/composables/useT';
+import planograms from '@/routes/tenant/planograms';
 
 const props = defineProps<{
     subdomain: string;
 }>();
 
 const page = usePage();
+const { t } = useT();
 
 const activeModules = computed<string[]>(() => {
     const tenant = (page.props.tenant ?? null) as { active_modules?: string[] } | null;
@@ -46,20 +48,20 @@ function linkClasses(isActive: boolean): string {
 </script>
 
 <template>
-    <nav class="mb-3 inline-flex items-center rounded-xl bg-muted p-1 mx-2" aria-label="Planogram views">
+    <nav class="mx-2 mb-3 inline-flex items-center rounded-xl bg-muted p-1" :aria-label="t('app.kanban.navigation_views')">
         <Link :href="listPath" :class="linkClasses(isListActive)">
             <LayoutList class="h-4 w-4" />
-            <span>Lista</span>
+            <span>{{ t('app.kanban.navigation_list') }}</span>
         </Link>
 
         <Link v-if="canUseKanban" :href="kanbanPath" :class="linkClasses(isKanbanActive)">
             <Kanban class="h-4 w-4" />
-            <span>Kanban</span>
+            <span>{{ t('app.kanban.navigation') }}</span>
         </Link>
 
         <Link :href="mapsPath" :class="linkClasses(isMapsActive)">
             <Map class="h-4 w-4" />
-            <span>Maps</span>
+            <span>{{ t('app.kanban.navigation_maps') }}</span>
         </Link>
     </nav>
 </template>
