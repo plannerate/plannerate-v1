@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Module;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
@@ -34,6 +35,16 @@ test('authenticated user can create and update tenant with primary domain', func
         'price_cents' => 1000,
         'is_active' => true,
     ]);
+    $moduleA = Module::query()->create([
+        'name' => 'Modulo A',
+        'slug' => 'modulo-a',
+        'is_active' => true,
+    ]);
+    $moduleB = Module::query()->create([
+        'name' => 'Modulo B',
+        'slug' => 'modulo-b',
+        'is_active' => true,
+    ]);
 
     $createResponse = $this->post(route('landlord.tenants.store'), [
         'name' => 'Tenant Alfa',
@@ -41,14 +52,14 @@ test('authenticated user can create and update tenant with primary domain', func
         'database' => 'tenant_alfa',
         'status' => 'active',
         'plan_id' => $plan->id,
+        'module_ids' => [$moduleA->id],
         'user_limit' => 20,
         'host' => 'alfa.plannerate-v1.test',
         'domain_is_active' => '1',
     ]);
 
-    $createResponse->assertRedirect(route('landlord.tenants.index'));
-
     $tenant = Tenant::query()->where('slug', 'tenant-alfa')->firstOrFail();
+    $createResponse->assertRedirect(route('landlord.tenants.setup', $tenant));
 
     $this->assertDatabaseHas('tenants', [
         'id' => $tenant->id,
@@ -63,6 +74,10 @@ test('authenticated user can create and update tenant with primary domain', func
         'is_primary' => 1,
         'is_active' => 1,
     ], 'landlord');
+    $this->assertDatabaseHas('tenant_modules', [
+        'tenant_id' => $tenant->id,
+        'module_id' => $moduleA->id,
+    ], 'landlord');
 
     $updateResponse = $this->put(route('landlord.tenants.update', $tenant), [
         'name' => 'Tenant Alfa Editado',
@@ -70,6 +85,7 @@ test('authenticated user can create and update tenant with primary domain', func
         'database' => 'tenant_alfa_editado',
         'status' => 'suspended',
         'plan_id' => $plan->id,
+        'module_ids' => [$moduleB->id],
         'user_limit' => 30,
         'host' => 'alfa-novo.plannerate-v1.test',
         'domain_is_active' => '0',
@@ -89,6 +105,14 @@ test('authenticated user can create and update tenant with primary domain', func
         'host' => 'alfa-novo.plannerate-v1.test',
         'is_primary' => 1,
         'is_active' => 0,
+    ], 'landlord');
+    $this->assertDatabaseHas('tenant_modules', [
+        'tenant_id' => $tenant->id,
+        'module_id' => $moduleB->id,
+    ], 'landlord');
+    $this->assertDatabaseMissing('tenant_modules', [
+        'tenant_id' => $tenant->id,
+        'module_id' => $moduleA->id,
     ], 'landlord');
 });
 

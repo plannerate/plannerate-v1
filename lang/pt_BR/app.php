@@ -103,6 +103,7 @@ return [
         'navigation_menu' => 'Menu de navegacao',
         'plans' => 'Planos',
         'tenants' => 'Tenants',
+        'modules' => 'Modulos',
         'roles' => 'Perfis de acesso',
         'users' => 'Usuarios',
         'permissions' => 'Permissoes',
@@ -164,6 +165,7 @@ return [
                 'status' => 'Status',
                 'host' => 'Dominio primario',
                 'plan' => 'Plano',
+                'modules' => 'Modulos',
                 'user_limit' => 'Limite de usuarios',
                 'domain_is_active' => 'Dominio primario ativo',
             ],
@@ -186,6 +188,27 @@ return [
                 'active_message' => 'Tenant ativo e pronto para uso.',
                 'error_message' => 'Ocorreu um erro durante o provisionamento.',
                 'manage_users_button' => 'Gerenciar usuarios',
+            ],
+        ],
+        'modules' => [
+            'navigation' => 'Modulos',
+            'title' => 'Modulos',
+            'description' => 'Gerencie os modulos disponiveis para os tenants.',
+            'actions' => [
+                'new' => 'Novo modulo',
+                'edit' => 'Editar modulo',
+            ],
+            'fields' => [
+                'name' => 'Nome',
+                'description' => 'Descricao',
+                'is_active' => 'Ativo',
+                'tenants_count' => 'Tenants',
+            ],
+            'messages' => [
+                'created' => 'Modulo criado com sucesso.',
+                'updated' => 'Modulo atualizado com sucesso.',
+                'deleted' => 'Modulo removido com sucesso.',
+                'in_use' => 'Nao e possivel excluir um modulo que possui tenants vinculados.',
             ],
         ],
         'roles' => [

@@ -11,7 +11,22 @@ import {
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import type { SharedNavigationItem, SharedNavigationNode, SharedNavigationSubmenu } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { Building2, ChevronRight, FolderKanban, KeyRound, LayoutGrid, PackageOpen, ShieldCheck, Users } from 'lucide-vue-next';
+import {
+    Blocks,
+    Building2,
+    ChevronRight,
+    FolderKanban,
+    FolderTree,
+    KeyRound,
+    LayoutGrid,
+    LayoutTemplate,
+    Package,
+    PackageOpen,
+    ShieldCheck,
+    Store,
+    Truck,
+    Users,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{
@@ -23,11 +38,17 @@ const { isCurrentUrl } = useCurrentUrl();
 const iconMap = {
     'layout-grid': LayoutGrid,
     'package-open': PackageOpen,
+    package: Package,
     'building-2': Building2,
+    blocks: Blocks,
     'folder-kanban': FolderKanban,
+    'folder-tree': FolderTree,
     'shield-check': ShieldCheck,
     users: Users,
     'key-round': KeyRound,
+    store: Store,
+    truck: Truck,
+    'layout-template': LayoutTemplate,
 } as const;
 
 const isItemNode = computed(() => props.node.type === 'item');

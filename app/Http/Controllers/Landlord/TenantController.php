@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreTenantRequest;
 use App\Http\Requests\Landlord\UpdateTenantRequest;
 use App\Jobs\ProvisionTenantDatabaseJob;
+use App\Models\Module;
 use App\Models\Plan;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
@@ -100,6 +101,7 @@ class TenantController extends Controller
         return Inertia::render('landlord/tenants/Form', [
             'tenant' => null,
             'plans' => $this->plansForSelect(),
+            'modules' => $this->modulesForSelect(),
             'statuses' => $this->statusesForSelect(),
         ]);
     }
@@ -112,9 +114,10 @@ class TenantController extends Controller
         $this->authorize('create', Tenant::class);
 
         $validated = $request->validated();
+        $moduleIds = $validated['module_ids'] ?? [];
 
-        DB::connection('landlord')->transaction(function () use ($validated): void {
-            $tenant = Tenant::query()->create(Arr::except($validated, ['host', 'domain_is_active']));
+        DB::connection('landlord')->transaction(function () use ($validated, $moduleIds): void {
+            $tenant = Tenant::query()->create(Arr::except($validated, ['host', 'domain_is_active', 'module_ids']));
 
             $tenant->domains()->create([
                 'tenant_id' => $tenant->id,
@@ -123,6 +126,8 @@ class TenantController extends Controller
                 'is_primary' => true,
                 'is_active' => (bool) ($validated['domain_is_active'] ?? true),
             ]);
+
+            $tenant->modules()->sync($moduleIds);
         });
 
         Inertia::flash('toast', [
@@ -142,7 +147,7 @@ class TenantController extends Controller
     {
         $this->authorize('update', $tenant);
 
-        $tenant->load(['primaryDomain:id,tenant_id,host,is_active']);
+        $tenant->load(['primaryDomain:id,tenant_id,host,is_active', 'modules:id,name']);
 
         return Inertia::render('landlord/tenants/Form', [
             'tenant' => [
@@ -153,10 +158,12 @@ class TenantController extends Controller
                 'status' => $tenant->status,
                 'provisioning_error' => $tenant->provisioning_error,
                 'plan_id' => $tenant->plan_id,
+                'module_ids' => $tenant->modules->pluck('id')->values()->all(),
                 'host' => $tenant->primaryDomain?->host,
                 'domain_is_active' => $tenant->primaryDomain?->is_active ?? true,
             ],
             'plans' => $this->plansForSelect(),
+            'modules' => $this->modulesForSelect(),
             'statuses' => $this->statusesForSelect(),
         ]);
     }
@@ -169,9 +176,10 @@ class TenantController extends Controller
         $this->authorize('update', $tenant);
 
         $validated = $request->validated();
+        $moduleIds = $validated['module_ids'] ?? [];
 
-        DB::connection('landlord')->transaction(function () use ($tenant, $validated): void {
-            $tenant->update(Arr::except($validated, ['host', 'domain_is_active']));
+        DB::connection('landlord')->transaction(function () use ($tenant, $validated, $moduleIds): void {
+            $tenant->update(Arr::except($validated, ['host', 'domain_is_active', 'module_ids']));
 
             $tenant->domains()->updateOrCreate(
                 ['tenant_id' => $tenant->id],
@@ -182,6 +190,8 @@ class TenantController extends Controller
                     'is_active' => (bool) ($validated['domain_is_active'] ?? true),
                 ],
             );
+
+            $tenant->modules()->sync($moduleIds);
         });
 
         Inertia::flash('toast', [
@@ -271,6 +281,22 @@ class TenantController extends Controller
             ->map(fn (Plan $plan): array => [
                 'id' => $plan->id,
                 'name' => $plan->name,
+            ])
+            ->all();
+    }
+
+    /**
+     * @return array<int, array{id: string, name: string, is_active: bool}>
+     */
+    private function modulesForSelect(): array
+    {
+        return Module::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'is_active'])
+            ->map(fn (Module $module): array => [
+                'id' => $module->id,
+                'name' => $module->name,
+                'is_active' => $module->is_active,
             ])
             ->all();
     }

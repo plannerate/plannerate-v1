@@ -57,6 +57,8 @@ class StoreTenantRequest extends FormRequest
             'database' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9_]+$/', Rule::unique('landlord.tenants', 'database')],
             'status' => ['required', 'string', Rule::in(self::AVAILABLE_STATUSES)],
             'plan_id' => ['nullable', 'string', Rule::exists('landlord.plans', 'id')],
+            'module_ids' => ['nullable', 'array'],
+            'module_ids.*' => ['string', 'distinct', Rule::exists('landlord.modules', 'id')],
             'host' => ['required', 'string', 'max:255', Rule::unique('landlord.tenant_domains', 'host')],
             'domain_is_active' => ['sometimes', 'boolean'],
         ];

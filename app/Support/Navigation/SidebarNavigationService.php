@@ -4,6 +4,7 @@ namespace App\Support\Navigation;
 
 use App\Models\Category;
 use App\Models\Cluster;
+use App\Models\Module;
 use App\Models\Permission;
 use App\Models\Plan;
 use App\Models\Planogram;
@@ -56,52 +57,53 @@ class SidebarNavigationService
                     ->authorize('viewAny', Tenant::class)
                     ->setOrder(10);
             })
-            ->submenu('landlord.registries', function ($submenu): void {
-                $submenu
-                    ->label(__('app.landlord.common.registries'))
-                    ->icon('folder-kanban')
+            ->item('landlord.plans', function ($item): void {
+                $item
+                    ->label(__('app.landlord.plans.navigation'))
+                    ->href(route('landlord.plans.index', absolute: false))
+                    ->icon('package-open')
+                    ->authorize('viewAny', Plan::class)
+                    ->setOrder(20);
+            })
+            ->item('landlord.modules', function ($item): void {
+                $item
+                    ->label(__('app.landlord.modules.navigation'))
+                    ->href(route('landlord.modules.index', absolute: false))
+                    ->icon('blocks')
+                    ->authorize('viewAny', Module::class)
+                    ->setOrder(30);
+            })
+            ->item('landlord.tenants', function ($item): void {
+                $item
+                    ->label(__('app.landlord.tenants.navigation'))
+                    ->href(route('landlord.tenants.index', absolute: false))
+                    ->icon('building-2')
                     ->authorize('viewAny', Tenant::class)
-                    ->setOrder(30)
-                    ->item('landlord.plans', function ($item): void {
-                        $item
-                            ->label(__('app.landlord.plans.navigation'))
-                            ->href(route('landlord.plans.index', absolute: false))
-                            ->icon('package-open')
-                            ->authorize('viewAny', Plan::class)
-                            ->setOrder(10);
-                    })
-                    ->item('landlord.tenants', function ($item): void {
-                        $item
-                            ->label(__('app.landlord.tenants.navigation'))
-                            ->href(route('landlord.tenants.index', absolute: false))
-                            ->icon('building-2')
-                            ->authorize('viewAny', Tenant::class)
-                            ->setOrder(20);
-                    })
-                    ->item('landlord.roles', function ($item): void {
-                        $item
-                            ->label(__('app.landlord.roles.navigation'))
-                            ->href(route('landlord.roles.index', absolute: false))
-                            ->icon('shield-check')
-                            ->authorize('viewAny', Role::class)
-                            ->setOrder(30);
-                    })
-                    ->item('landlord.users', function ($item): void {
-                        $item
-                            ->label(__('app.landlord.users.navigation'))
-                            ->href(route('landlord.users.index', absolute: false))
-                            ->icon('users')
-                            ->authorize('viewAny', User::class)
-                            ->setOrder(40);
-                    })
-                    ->item('landlord.permissions', function ($item): void {
-                        $item
-                            ->label(__('app.landlord.permissions.navigation'))
-                            ->href(route('landlord.permissions.index', absolute: false))
-                            ->icon('key-round')
-                            ->authorize('viewAny', Permission::class)
-                            ->setOrder(50);
-                    });
+                    ->setOrder(40);
+            })
+            ->item('landlord.permissions', function ($item): void {
+                $item
+                    ->label(__('app.landlord.permissions.navigation'))
+                    ->href(route('landlord.permissions.index', absolute: false))
+                    ->icon('key-round')
+                    ->authorize('viewAny', Permission::class)
+                    ->setOrder(50);
+            })
+            ->item('landlord.roles', function ($item): void {
+                $item
+                    ->label(__('app.landlord.roles.navigation'))
+                    ->href(route('landlord.roles.index', absolute: false))
+                    ->icon('shield-check')
+                    ->authorize('viewAny', Role::class)
+                    ->setOrder(60);
+            })
+            ->item('landlord.users', function ($item): void {
+                $item
+                    ->label(__('app.landlord.users.navigation'))
+                    ->href(route('landlord.users.index', absolute: false))
+                    ->icon('users')
+                    ->authorize('viewAny', User::class)
+                    ->setOrder(70);
             });
     }
 

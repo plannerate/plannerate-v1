@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Module;
 use App\Models\Permission;
 use App\Models\Plan;
 use App\Models\Role;
@@ -19,16 +20,24 @@ test('landlord dashboard shares landlord navigation context', function () {
             ->where('navigation.context', 'landlord')
             ->where('navigation.main.0.type', 'item')
             ->where('navigation.main.0.href', route('dashboard', absolute: false))
-            ->where('navigation.main.1.type', 'submenu')
-            ->where('navigation.main.1.children.0.href', route('landlord.plans.index', absolute: false))
-            ->where('navigation.main.1.children.0.subject', Plan::class)
-            ->where('navigation.main.1.children.1.href', route('landlord.tenants.index', absolute: false))
-            ->where('navigation.main.1.children.2.href', route('landlord.roles.index', absolute: false))
-            ->where('navigation.main.1.children.2.subject', Role::class)
-            ->where('navigation.main.1.children.3.href', route('landlord.users.index', absolute: false))
-            ->where('navigation.main.1.children.3.subject', User::class)
-            ->where('navigation.main.1.children.4.href', route('landlord.permissions.index', absolute: false))
-            ->where('navigation.main.1.children.4.subject', Permission::class)
+            ->where('navigation.main.1.type', 'item')
+            ->where('navigation.main.1.href', route('landlord.plans.index', absolute: false))
+            ->where('navigation.main.1.subject', Plan::class)
+            ->where('navigation.main.2.type', 'item')
+            ->where('navigation.main.2.href', route('landlord.tenants.index', absolute: false))
+            ->where('navigation.main.2.subject', Tenant::class)
+            ->where('navigation.main.3.type', 'item')
+            ->where('navigation.main.3.href', route('landlord.modules.index', absolute: false))
+            ->where('navigation.main.3.subject', Module::class)
+            ->where('navigation.main.4.type', 'item')
+            ->where('navigation.main.4.href', route('landlord.roles.index', absolute: false))
+            ->where('navigation.main.4.subject', Role::class)
+            ->where('navigation.main.5.type', 'item')
+            ->where('navigation.main.5.href', route('landlord.users.index', absolute: false))
+            ->where('navigation.main.5.subject', User::class)
+            ->where('navigation.main.6.type', 'item')
+            ->where('navigation.main.6.href', route('landlord.permissions.index', absolute: false))
+            ->where('navigation.main.6.subject', Permission::class)
         );
 });
 

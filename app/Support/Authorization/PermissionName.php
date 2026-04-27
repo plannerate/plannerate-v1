@@ -54,6 +54,16 @@ final class PermissionName
 
     public const LANDLORD_ROLES_DELETE = 'landlord.roles.delete';
 
+    public const LANDLORD_MODULES_VIEW_ANY = 'landlord.modules.viewAny';
+
+    public const LANDLORD_MODULES_VIEW = 'landlord.modules.view';
+
+    public const LANDLORD_MODULES_CREATE = 'landlord.modules.create';
+
+    public const LANDLORD_MODULES_UPDATE = 'landlord.modules.update';
+
+    public const LANDLORD_MODULES_DELETE = 'landlord.modules.delete';
+
     public const TENANT_DASHBOARD_VIEW = 'tenant.dashboard.view';
 
     public const TENANT_CATEGORIES_VIEW_ANY = 'tenant.categories.viewAny';
@@ -175,6 +185,11 @@ final class PermissionName
             self::LANDLORD_ROLES_CREATE,
             self::LANDLORD_ROLES_UPDATE,
             self::LANDLORD_ROLES_DELETE,
+            self::LANDLORD_MODULES_VIEW_ANY,
+            self::LANDLORD_MODULES_VIEW,
+            self::LANDLORD_MODULES_CREATE,
+            self::LANDLORD_MODULES_UPDATE,
+            self::LANDLORD_MODULES_DELETE,
             self::TENANT_DASHBOARD_VIEW,
             self::TENANT_CATEGORIES_VIEW_ANY,
             self::TENANT_CATEGORIES_VIEW,

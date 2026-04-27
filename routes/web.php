@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Landlord\DashboardController as LandlordDashboardController;
+use App\Http\Controllers\Landlord\ModuleController;
 use App\Http\Controllers\Landlord\PermissionController;
 use App\Http\Controllers\Landlord\PlanController;
 use App\Http\Controllers\Landlord\RoleController;
@@ -47,6 +48,10 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::resource('roles', RoleController::class)
         ->except(['show'])
         ->names('landlord.roles');
+
+    Route::resource('modules', ModuleController::class)
+        ->except(['show'])
+        ->names('landlord.modules');
 
     Route::resource('users', UserController::class)
         ->except(['show'])

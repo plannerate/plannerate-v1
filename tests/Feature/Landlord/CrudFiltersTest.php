@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Module;
 use App\Models\Permission;
 use App\Models\Plan;
 use App\Models\Role;
@@ -127,4 +128,34 @@ test('permissions index supports type and search filters', function () {
             ->where('permissions.data.0.name', 'tenant.custom.reports.viewAny')
             ->where('filters.type', 'tenant')
             ->where('filters.search', 'custom.reports'));
+});
+
+test('modules index supports search and active status filters', function () {
+    Module::query()->create([
+        'name' => 'Modulo Analytics',
+        'slug' => 'modulo-analytics',
+        'description' => null,
+        'is_active' => true,
+    ]);
+
+    Module::query()->create([
+        'name' => 'Modulo Inativo',
+        'slug' => 'modulo-inativo',
+        'description' => null,
+        'is_active' => false,
+    ]);
+
+    $response = $this->get(route('landlord.modules.index', [
+        'search' => 'Analytics',
+        'is_active' => '1',
+    ]));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('landlord/modules/Index')
+            ->has('modules.data', 1)
+            ->where('modules.data.0.slug', 'modulo-analytics')
+            ->where('filters.search', 'Analytics')
+            ->where('filters.is_active', '1'));
 });

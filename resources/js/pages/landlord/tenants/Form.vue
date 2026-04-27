@@ -19,6 +19,7 @@ type TenantPayload = {
     status: string;
     provisioning_error: string | null;
     plan_id: string | null;
+    module_ids: string[];
     host: string | null;
     domain_is_active: boolean;
 };
@@ -33,9 +34,16 @@ type StatusOption = {
     label: string;
 };
 
+type ModuleOption = {
+    id: string;
+    name: string;
+    is_active: boolean;
+};
+
 const props = defineProps<{
     tenant: TenantPayload | null;
     plans: PlanOption[];
+    modules: ModuleOption[];
     statuses: StatusOption[];
 }>();
 
@@ -223,6 +231,40 @@ function onDatabaseInput(): void {
                         </select>
                         <InputError :message="errors.plan_id" />
                     </div>
+                </div>
+
+                <!-- Modules -->
+                <div class="grid gap-2">
+                    <Label>{{ t('app.landlord.tenants.fields.modules') }}</Label>
+                    <div
+                        v-if="props.modules.length === 0"
+                        class="rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground"
+                    >
+                        Nenhum modulo cadastrado.
+                    </div>
+                    <div v-else class="grid gap-2 md:grid-cols-2">
+                        <label
+                            v-for="module in props.modules"
+                            :key="module.id"
+                            class="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/40 has-checked:border-primary/50 has-checked:bg-primary/5"
+                        >
+                            <input
+                                type="checkbox"
+                                name="module_ids[]"
+                                :value="module.id"
+                                :checked="props.tenant?.module_ids.includes(module.id) ?? false"
+                                class="accent-primary"
+                            />
+                            <span>{{ module.name }}</span>
+                            <span
+                                v-if="!module.is_active"
+                                class="rounded border border-yellow-500/40 bg-yellow-500/10 px-1.5 py-0.5 text-[11px] text-yellow-700 dark:text-yellow-400"
+                            >
+                                Inativo
+                            </span>
+                        </label>
+                    </div>
+                    <InputError :message="errors.module_ids" />
                 </div>
 
                 <!-- Domain -->
