@@ -28,12 +28,16 @@ class StoreStoreRequest extends FormRequest
     public function rules(): array
     {
         $tenantId = $this->tenantId();
+        $tenantConnectionName = config('multitenancy.tenant_database_connection_name');
+        $storesTable = is_string($tenantConnectionName) && $tenantConnectionName !== ''
+            ? $tenantConnectionName.'.stores'
+            : 'stores';
 
         return [
             'name' => ['required', 'string', 'max:255'],
             'document' => ['nullable', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('stores', 'slug')->where('tenant_id', $tenantId)],
-            'code' => ['nullable', 'string', 'max:255', Rule::unique('stores', 'code')->where('tenant_id', $tenantId)],
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique($storesTable, 'slug')->where('tenant_id', $tenantId)],
+            'code' => ['nullable', 'string', 'max:255', Rule::unique($storesTable, 'code')->where('tenant_id', $tenantId)],
             'phone' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'status' => ['required', Rule::in(['draft', 'published'])],

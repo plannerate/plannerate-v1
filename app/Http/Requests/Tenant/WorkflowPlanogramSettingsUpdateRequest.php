@@ -27,13 +27,15 @@ class WorkflowPlanogramSettingsUpdateRequest extends FormRequest
     {
         /** @var Planogram $planogram */
         $planogram = $this->route('planogram');
+        $workflowPlanogramStepsTable = $this->tenantTable('workflow_planogram_steps');
+        $usersTable = $this->tenantTable('users');
 
         return [
             'steps' => ['required', 'array', 'min:1'],
             'steps.*.step_id' => [
                 'required',
                 'ulid',
-                Rule::exists('workflow_planogram_steps', 'id')
+                Rule::exists($workflowPlanogramStepsTable, 'id')
                     ->where('planogram_id', $planogram->id)
                     ->where('tenant_id', $this->tenantId()),
             ],
@@ -41,7 +43,7 @@ class WorkflowPlanogramSettingsUpdateRequest extends FormRequest
             'steps.*.is_skipped' => ['required', 'boolean'],
             'steps.*.estimated_duration_days' => ['nullable', 'integer', 'min:0'],
             'steps.*.user_ids' => ['nullable', 'array'],
-            'steps.*.user_ids.*' => ['ulid', Rule::exists('users', 'id')],
+            'steps.*.user_ids.*' => ['ulid', Rule::exists($usersTable, 'id')],
         ];
     }
 }

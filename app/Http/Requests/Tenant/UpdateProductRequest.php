@@ -28,12 +28,14 @@ class UpdateProductRequest extends FormRequest
     {
         $product = $this->resolvedRouteProduct();
         $tenantId = $this->tenantId();
+        $categoriesTable = $this->tenantTable('categories');
+        $productsTable = $this->tenantTable('products');
 
         return [
-            'category_id' => ['nullable', 'ulid', Rule::exists('categories', 'id')->where('tenant_id', $tenantId)],
+            'category_id' => ['nullable', 'ulid', Rule::exists($categoriesTable, 'id')->where('tenant_id', $tenantId)],
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('products', 'slug')->where('tenant_id', $tenantId)->ignore($product)],
-            'ean' => ['nullable', 'string', 'max:255', Rule::unique('products', 'ean')->where('tenant_id', $tenantId)->ignore($product)],
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique($productsTable, 'slug')->where('tenant_id', $tenantId)->ignore($product)],
+            'ean' => ['nullable', 'string', 'max:255', Rule::unique($productsTable, 'ean')->where('tenant_id', $tenantId)->ignore($product)],
             'codigo_erp' => ['nullable', 'string', 'max:255'],
             'stackable' => ['sometimes', 'boolean'],
             'perishable' => ['sometimes', 'boolean'],

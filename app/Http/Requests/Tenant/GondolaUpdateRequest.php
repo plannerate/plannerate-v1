@@ -33,13 +33,14 @@ class GondolaUpdateRequest extends FormRequest
         /** @var Gondola $gondola */
         $gondola = $this->route('gondola');
         $tenantId = $this->tenantId();
+        $gondolasTable = $this->tenantTable('gondolas');
 
         return [
             'planogram_id' => ['required', Rule::in([$gondola->planogram_id])],
             'linked_map_gondola_id' => ['nullable', 'ulid'],
             'linked_map_gondola_category' => ['nullable', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('gondolas', 'slug')->where('tenant_id', $tenantId)->ignore($gondola)],
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique($gondolasTable, 'slug')->where('tenant_id', $tenantId)->ignore($gondola)],
             'num_modulos' => ['required', 'integer', 'min:1'],
             'location' => ['nullable', 'string', 'max:255'],
             'side' => ['nullable', 'string', 'max:255'],

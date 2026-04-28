@@ -23,12 +23,14 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         $tenantId = $this->tenantId();
+        $categoriesTable = $this->tenantTable('categories');
+        $productsTable = $this->tenantTable('products');
 
         return [
-            'category_id' => ['nullable', 'ulid', Rule::exists('categories', 'id')->where('tenant_id', $tenantId)],
+            'category_id' => ['nullable', 'ulid', Rule::exists($categoriesTable, 'id')->where('tenant_id', $tenantId)],
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('products', 'slug')->where('tenant_id', $tenantId)],
-            'ean' => ['nullable', 'string', 'max:255', Rule::unique('products', 'ean')->where('tenant_id', $tenantId)],
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique($productsTable, 'slug')->where('tenant_id', $tenantId)],
+            'ean' => ['nullable', 'string', 'max:255', Rule::unique($productsTable, 'ean')->where('tenant_id', $tenantId)],
             'codigo_erp' => ['nullable', 'string', 'max:255'],
             'stackable' => ['sometimes', 'boolean'],
             'perishable' => ['sometimes', 'boolean'],

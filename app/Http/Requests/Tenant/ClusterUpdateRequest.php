@@ -33,14 +33,16 @@ class ClusterUpdateRequest extends FormRequest
         /** @var Cluster $cluster */
         $cluster = $this->route('cluster');
         $tenantId = $this->tenantId();
+        $storesTable = $this->tenantTable('stores');
+        $clustersTable = $this->tenantTable('clusters');
 
         return [
-            'store_id' => ['required', 'ulid', Rule::exists('stores', 'id')->where('tenant_id', $tenantId)],
+            'store_id' => ['required', 'ulid', Rule::exists($storesTable, 'id')->where('tenant_id', $tenantId)],
             'name' => ['required', 'string', 'max:255'],
             'specification_1' => ['nullable', 'string', 'max:255'],
             'specification_2' => ['nullable', 'string', 'max:255'],
             'specification_3' => ['nullable', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('clusters', 'slug')->where('tenant_id', $tenantId)->ignore($cluster)],
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique($clustersTable, 'slug')->where('tenant_id', $tenantId)->ignore($cluster)],
             'status' => ['required', Rule::in(['draft', 'published'])],
             'description' => ['nullable', 'string', 'max:255'],
         ];

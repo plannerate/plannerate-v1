@@ -28,9 +28,10 @@ class ProviderStoreRequest extends FormRequest
     public function rules(): array
     {
         $tenantId = $this->tenantId();
+        $providersTable = $this->tenantTable('providers');
 
         return [
-            'code' => ['nullable', 'string', 'max:255', Rule::unique('providers', 'code')->where('tenant_id', $tenantId)],
+            'code' => ['nullable', 'string', 'max:255', Rule::unique($providersTable, 'code')->where('tenant_id', $tenantId)],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],

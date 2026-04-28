@@ -74,4 +74,15 @@ trait InteractsWithTenantContext
     {
         abort_if((string) data_get($model, $column) !== (string) $this->tenantId(), 404);
     }
+
+    protected function tenantTable(string $table): string
+    {
+        $tenantConnectionName = config('multitenancy.tenant_database_connection_name');
+
+        if (is_string($tenantConnectionName) && $tenantConnectionName !== '') {
+            return $tenantConnectionName.'.'.$table;
+        }
+
+        return $table;
+    }
 }

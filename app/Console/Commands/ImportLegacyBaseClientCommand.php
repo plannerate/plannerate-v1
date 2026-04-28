@@ -26,8 +26,8 @@ class ImportLegacyBaseClientCommand extends Command
 
     private array $tables = [
         'stores',
-        'categories',
-        'products',
+        // 'categories',
+        // 'products',
         'planograms',
         'gondolas',
         'sections',
@@ -35,8 +35,8 @@ class ImportLegacyBaseClientCommand extends Command
         'segments',
         'layers',
         // 'sales',
-        'purchases',
-        'providers',
+        // 'purchases',
+        // 'providers',
         // 'store_maps',
         // 'store_map_gondolas',
     ];

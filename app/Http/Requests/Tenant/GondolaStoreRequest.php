@@ -28,13 +28,15 @@ class GondolaStoreRequest extends FormRequest
     public function rules(): array
     {
         $tenantId = $this->tenantId();
+        $planogramsTable = $this->tenantTable('planograms');
+        $gondolasTable = $this->tenantTable('gondolas');
 
         return [
-            'planogram_id' => ['required', 'ulid', Rule::exists('planograms', 'id')->where('tenant_id', $tenantId)],
+            'planogram_id' => ['required', 'ulid', Rule::exists($planogramsTable, 'id')->where('tenant_id', $tenantId)],
             'linked_map_gondola_id' => ['nullable', 'ulid'],
             'linked_map_gondola_category' => ['nullable', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('gondolas', 'slug')->where('tenant_id', $tenantId)],
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique($gondolasTable, 'slug')->where('tenant_id', $tenantId)],
             'num_modulos' => ['required', 'integer', 'min:1'],
             'location' => ['nullable', 'string', 'max:255'],
             'side' => ['nullable', 'string', 'max:255'],

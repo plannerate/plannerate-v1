@@ -28,11 +28,12 @@ class UpdateCategoryRequest extends FormRequest
         /** @var Category $category */
         $category = $this->route('category');
         $tenantId = $this->tenantId();
+        $categoriesTable = $this->tenantTable('categories');
 
         return [
-            'category_id' => ['nullable', 'ulid', 'different:id', Rule::exists('categories', 'id')->where('tenant_id', $tenantId)],
+            'category_id' => ['nullable', 'ulid', 'different:id', Rule::exists($categoriesTable, 'id')->where('tenant_id', $tenantId)],
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('categories', 'slug')->where('tenant_id', $tenantId)->ignore($category)],
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique($categoriesTable, 'slug')->where('tenant_id', $tenantId)->ignore($category)],
             'level_name' => ['nullable', 'string', 'max:255'],
             'codigo' => ['nullable', 'integer'],
             'status' => ['required', Rule::in(['draft', 'published', 'importer'])],
