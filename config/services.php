@@ -39,4 +39,15 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
     ],
 
+    'sysmo' => [
+        'tenants' => [
+            'bruda' => [
+                'auth_password' => env('SYSMO_BRUDA_AUTH_PASSWORD', ''),
+            ],
+            'franciosi' => [
+                'auth_password' => env('SYSMO_FRANCIOSI_AUTH_PASSWORD', ''),
+            ],
+        ],
+    ],
+
 ];

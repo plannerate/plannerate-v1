@@ -71,8 +71,7 @@ return new class extends Migration
 
             $table->unique(['tenant_id', 'ean']);
             $table->unique(['tenant_id', 'slug']);
-            $table->index(['sync_source', 'sync_at']);
-            $table->index(['tenant_id', 'dimensions_ean']);
+            $table->index(['sync_source', 'sync_at']); 
         });
     }
 
