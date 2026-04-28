@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Contracts\ProductsIntegrationService;
 use App\Services\Integrations\ExternalApiBaseService;
+use App\Services\Integrations\Support\DeterministicIdGenerator;
 use Illuminate\Support\Carbon;
 
 class SysmoProductsIntegrationService implements ProductsIntegrationService
@@ -15,6 +16,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         private readonly ExternalApiBaseService $externalApiBaseService,
         private readonly SysmoEndpoints $sysmoEndpoints,
         private readonly SysmoProductsResponseMapper $responseMapper,
+        private readonly DeterministicIdGenerator $deterministicIdGenerator,
     ) {}
 
     public function fetchProducts(TenantIntegration $integration, array $filters = []): array
@@ -185,9 +187,6 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
 
     private function generateProductId(?string $ean, string $tenantId, ?string $codigoErp): string
     {
-        $identity = $ean ?? $codigoErp ?? 'sem-chave';
-        $hash = md5($tenantId.'|'.$identity);
-
-        return 'P1'.strtoupper(substr($hash, 0, 24));
+        return $this->deterministicIdGenerator->productId($tenantId, $ean, $codigoErp);
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Models\Product;
 use App\Services\Integrations\ExternalApiBaseService;
+use App\Services\Integrations\Support\DeterministicIdGenerator;
 use App\Services\Integrations\Sysmo\SysmoEndpoints;
 use App\Services\Integrations\Sysmo\SysmoSalesIntegrationService;
 use App\Services\Integrations\Sysmo\SysmoSalesResponseMapper;
@@ -21,9 +22,11 @@ test('persist mapped sales fills ean from product using codigo erp', function ()
         app(ExternalApiBaseService::class),
         app(SysmoEndpoints::class),
         new SysmoSalesResponseMapper,
+        new DeterministicIdGenerator,
     );
+    $integrationId = (string) str()->ulid();
 
-    $service->persistMappedSales($tenantId, [
+    $service->persistMappedSales($tenantId, $integrationId, [
         [
             'codigo_erp' => '10022',
             'promocao' => 'N',
@@ -50,6 +53,7 @@ test('persist mapped sales fills ean from product using codigo erp', function ()
     expect($sale)->not->toBeNull()
         ->and($sale?->product_id)->toBe($product->id)
         ->and($sale?->ean)->toBe('789000000002')
+        ->and((string) $sale?->id)->toStartWith('S1')
         ->and((float) $sale?->total_sale_value)->toBe(59.9)
         ->and($sale?->promotion)->toBe('N');
 });

@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Contracts\SalesIntegrationService;
 use App\Services\Integrations\ExternalApiBaseService;
+use App\Services\Integrations\Support\DeterministicIdGenerator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -15,6 +16,7 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
         private readonly ExternalApiBaseService $externalApiBaseService,
         private readonly SysmoEndpoints $sysmoEndpoints,
         private readonly SysmoSalesResponseMapper $responseMapper,
+        private readonly DeterministicIdGenerator $deterministicIdGenerator,
     ) {}
 
     public function fetchSales(TenantIntegration $integration, array $filters = []): array
@@ -203,16 +205,12 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
         string $saleDate,
         ?string $promotion,
     ): string {
-        $uniqueKey = implode('|', [
-            $tenantId,
-            $integrationId,
-            preg_replace('/[^A-Za-z0-9]/', '', $codigoErp) ?? $codigoErp,
-            preg_replace('/[^0-9]/', '', $saleDate) ?? $saleDate,
-            strtoupper($promotion ?? 'N'),
-        ]);
-
-        $hash = hash('sha256', $uniqueKey);
-
-        return 'S1'.strtoupper(substr($hash, 0, 24));
+        return $this->deterministicIdGenerator->saleId(
+            tenantId: $tenantId,
+            integrationId: $integrationId,
+            codigoErp: $codigoErp,
+            saleDate: $saleDate,
+            promotion: $promotion,
+        );
     }
 }

@@ -4,7 +4,7 @@ namespace App\Jobs\Integrations;
 
 use App\Models\IntegrationSyncDay;
 use App\Models\TenantIntegration;
-use App\Services\Integrations\Sysmo\SysmoSalesIntegrationService;
+use App\Services\Integrations\Support\IntegrationServiceResolver;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
@@ -21,7 +21,7 @@ class SyncTenantSalesDayJob implements ShouldQueue
         public string $referenceDate,
     ) {}
 
-    public function handle(SysmoSalesIntegrationService $salesIntegrationService): void
+    public function handle(IntegrationServiceResolver $integrationServiceResolver): void
     {
         $integration = TenantIntegration::query()
             ->whereKey($this->integrationId)
@@ -46,6 +46,8 @@ class SyncTenantSalesDayJob implements ShouldQueue
         $syncDay->markRunning();
 
         try {
+            $salesIntegrationService = $integrationServiceResolver->resolveSalesService($integration);
+
             $salesIntegrationService->fetchSales($integration, [
                 'date' => Carbon::parse($this->referenceDate)->toDateString(),
             ]);

@@ -4,6 +4,7 @@ use App\Models\Category;
 use App\Models\EanReference;
 use App\Models\Product;
 use App\Services\Integrations\ExternalApiBaseService;
+use App\Services\Integrations\Support\DeterministicIdGenerator;
 use App\Services\Integrations\Sysmo\SysmoEndpoints;
 use App\Services\Integrations\Sysmo\SysmoProductsIntegrationService;
 use App\Services\Integrations\Sysmo\SysmoProductsResponseMapper;
@@ -31,6 +32,7 @@ test('persist mapped products uses ean reference as knowledge base', function ()
         app(ExternalApiBaseService::class),
         app(SysmoEndpoints::class),
         new SysmoProductsResponseMapper,
+        new DeterministicIdGenerator,
     );
 
     $service->persistMappedProducts($tenantId, 'sysmo', [
@@ -63,6 +65,7 @@ test('persist mapped products uses ean reference as knowledge base', function ()
         ->first();
 
     expect($knownProduct)->not->toBeNull()
+        ->and((string) $knownProduct?->id)->toStartWith('P1')
         ->and($knownProduct?->category_id)->toBe($category->id)
         ->and($knownProduct?->brand)->toBe('Marca da Base')
         ->and($knownProduct?->subbrand)->toBe('Submarca da Base')
@@ -74,6 +77,7 @@ test('persist mapped products uses ean reference as knowledge base', function ()
         ->and($knownProduct?->sync_source)->toBe('sysmo');
 
     expect($unknownProduct)->not->toBeNull()
+        ->and((string) $unknownProduct?->id)->toStartWith('P1')
         ->and($unknownProduct?->category_id)->toBeNull()
         ->and($unknownProduct?->brand)->toBe('Marca API Sem Base');
 });
