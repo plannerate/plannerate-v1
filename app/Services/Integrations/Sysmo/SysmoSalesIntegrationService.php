@@ -23,7 +23,7 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
     {
         $requestBody = [
             'pagina' => (int) ($filters['page'] ?? 1),
-            'tamanho_pagina' => (int) ($filters['page_size'] ?? 1000),
+            'tamanho_pagina' => (int) ($filters['page_size'] ?? 20000),
             'partner_key' => (string) ($filters['partner_key'] ?? ''),
             'tipo_consulta' => (string) ($filters['tipo_consulta'] ?? 'produto'),
         ];
@@ -50,6 +50,7 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
             tenantId: (string) $integration->tenant_id,
             integrationId: (string) $integration->id,
             mappedItems: $mappedItems,
+            storeId: is_string($filters['store_id'] ?? null) ? $filters['store_id'] : null,
         );
 
         return $mappedItems;
@@ -58,8 +59,12 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
     /**
      * @param  array<int, array<string, mixed>>  $mappedItems
      */
-    public function persistMappedSales(string $tenantId, string $integrationId, array $mappedItems): void
-    {
+    public function persistMappedSales(
+        string $tenantId,
+        string $integrationId,
+        array $mappedItems,
+        ?string $storeId = null,
+    ): void {
         if ($tenantId === '' || $mappedItems === []) {
             return;
         }
@@ -90,7 +95,7 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
             $promotion = $this->normalizeString($item['promocao'] ?? null);
             $lookup = [
                 'tenant_id' => $tenantId,
-                'store_id' => null,
+                'store_id' => $storeId,
                 'codigo_erp' => $codigoErp,
                 'sale_date' => $saleDate,
                 'promotion' => $promotion,
@@ -124,6 +129,7 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
                 'id' => $this->generateSaleId(
                     tenantId: $tenantId,
                     integrationId: $integrationId,
+                    storeId: $storeId,
                     codigoErp: $codigoErp,
                     saleDate: $saleDate,
                     promotion: $promotion,
@@ -201,6 +207,7 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
     private function generateSaleId(
         string $tenantId,
         string $integrationId,
+        ?string $storeId,
         string $codigoErp,
         string $saleDate,
         ?string $promotion,
@@ -208,6 +215,7 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
         return $this->deterministicIdGenerator->saleId(
             tenantId: $tenantId,
             integrationId: $integrationId,
+            storeId: $storeId,
             codigoErp: $codigoErp,
             saleDate: $saleDate,
             promotion: $promotion,

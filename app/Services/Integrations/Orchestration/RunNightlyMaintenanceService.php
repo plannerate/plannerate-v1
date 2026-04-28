@@ -1,35 +1,22 @@
 <?php
 
-namespace App\Jobs\Integrations;
+namespace App\Services\Integrations\Orchestration;
 
 use App\Models\Product;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class RunTenantIntegrationNightlyMaintenanceJob implements ShouldQueue
+class RunNightlyMaintenanceService
 {
-    use Queueable;
-
     public function __construct(
-        public string $integrationId,
+        private readonly TenantIntegrationConfigNormalizer $configNormalizer,
     ) {}
 
-    public function handle(TenantIntegrationConfigNormalizer $configNormalizer): void
+    public function run(TenantIntegration $integration): void
     {
-        $integration = TenantIntegration::query()
-            ->whereKey($this->integrationId)
-            ->where('is_active', true)
-            ->first();
-
-        if (! $integration) {
-            return;
-        }
-
-        $processing = $configNormalizer->normalize($integration)['processing'];
+        $processing = $this->configNormalizer->normalize($integration)['processing'];
         $retentionDays = max(1, (int) ($processing['sales_retention_days'] ?? 120));
         $tenantId = (string) $integration->tenant_id;
         $cutoffDate = Carbon::today()->subDays($retentionDays)->toDateString();

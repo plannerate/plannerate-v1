@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\Integrations;
 
-use App\Jobs\Integrations\RunTenantIntegrationNightlyMaintenanceJob;
+use App\Jobs\Integrations\Maintenance\RunTenantIntegrationNightlyMaintenanceJob;
 use App\Models\TenantIntegration;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 
 #[Signature('integrations:dispatch-nightly-maintenance {--tenant=}')]
 #[Description('Dispara limpeza noturna de vendas e ciclo de vida de produtos')]
-class IntegrationsDispatchNightlyMaintenanceCommand extends Command
+class DispatchNightlyMaintenanceCommand extends Command
 {
     public function handle(): int
     {

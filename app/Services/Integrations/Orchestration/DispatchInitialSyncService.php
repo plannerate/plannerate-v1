@@ -1,33 +1,22 @@
 <?php
 
-namespace App\Jobs\Integrations;
+namespace App\Services\Integrations\Orchestration;
 
+use App\Jobs\Integrations\Products\SyncTenantProductsDayJob;
+use App\Jobs\Integrations\Sales\SyncTenantSalesDayJob;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
 
-class DispatchTenantIntegrationInitialSyncJob implements ShouldQueue
+class DispatchInitialSyncService
 {
-    use Queueable;
-
     public function __construct(
-        public string $integrationId,
+        private readonly TenantIntegrationConfigNormalizer $configNormalizer,
     ) {}
 
-    public function handle(TenantIntegrationConfigNormalizer $configNormalizer): void
+    public function dispatch(TenantIntegration $integration): void
     {
-        $integration = TenantIntegration::query()
-            ->whereKey($this->integrationId)
-            ->where('is_active', true)
-            ->first();
-
-        if (! $integration) {
-            return;
-        }
-
-        $processing = $configNormalizer->normalize($integration)['processing'];
+        $processing = $this->configNormalizer->normalize($integration)['processing'];
         $yesterday = Carbon::yesterday()->startOfDay();
 
         $salesInitialDays = max(1, (int) ($processing['sales_initial_days'] ?? 120));
@@ -43,6 +32,5 @@ class DispatchTenantIntegrationInitialSyncJob implements ShouldQueue
         for ($date = $productsStart->copy(); $date->lte($yesterday); $date->addDay()) {
             SyncTenantProductsDayJob::dispatch($integration->id, $date->toDateString());
         }
-
     }
 }

@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\Integrations;
 
-use App\Jobs\Integrations\DispatchTenantIntegrationDailySyncJob;
+use App\Jobs\Integrations\Dispatch\DispatchTenantIntegrationInitialSyncJob;
 use App\Models\TenantIntegration;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('integrations:dispatch-daily {--tenant=}')]
-#[Description('Dispara sincronizacao diaria e reprocessamento de lacunas')]
-class IntegrationsDispatchDailyCommand extends Command
+#[Signature('integrations:dispatch-initial {--tenant=}')]
+#[Description('Dispara sincronizacao inicial por dias para integracoes ativas')]
+class DispatchInitialCommand extends Command
 {
     public function handle(): int
     {
@@ -25,12 +25,12 @@ class IntegrationsDispatchDailyCommand extends Command
         $integrations = $query->get(['id', 'tenant_id']);
 
         foreach ($integrations as $integration) {
-            DispatchTenantIntegrationDailySyncJob::dispatch($integration->id);
-            $this->line(sprintf('Daily sync dispatched for tenant %s', $integration->tenant_id));
+            DispatchTenantIntegrationInitialSyncJob::dispatch($integration->id);
+            $this->line(sprintf('Initial sync dispatched for tenant %s', $integration->tenant_id));
         }
 
         if ($integrations->isEmpty()) {
-            $this->warn('Nenhuma integracao ativa encontrada para sincronizacao diaria.');
+            $this->warn('Nenhuma integracao ativa encontrada para sincronizacao inicial.');
         }
 
         return self::SUCCESS;

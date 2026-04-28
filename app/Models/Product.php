@@ -8,6 +8,7 @@ use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 use Tall\Sluggable\HasSlug;
@@ -108,6 +109,13 @@ class Product extends Model
         }
 
         return Storage::disk('public')->url($this->url);
+    }
+
+    public function stores(): BelongsToMany
+    {
+        return $this->belongsToMany(Store::class, 'product_store')
+            ->withPivot(['tenant_id', 'last_synced_at'])
+            ->withTimestamps();
     }
 
     /**

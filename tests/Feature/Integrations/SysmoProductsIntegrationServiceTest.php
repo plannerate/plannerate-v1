@@ -3,6 +3,7 @@
 use App\Models\Category;
 use App\Models\EanReference;
 use App\Models\Product;
+use App\Models\Store;
 use App\Services\Integrations\ExternalApiBaseService;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
 use App\Services\Integrations\Sysmo\SysmoEndpoints;
@@ -54,6 +55,23 @@ test('persist mapped products uses ean reference as knowledge base', function ()
         ],
     ]);
 
+    $store = Store::query()->create([
+        'tenant_id' => $tenantId,
+        'name' => 'Loja Teste',
+        'code' => '1',
+    ]);
+
+    $service->persistMappedProducts($tenantId, 'sysmo', [
+        [
+            'external_id' => '66526',
+            'ean' => '789.0000.00002',
+            'name' => 'Produto API',
+            'brand' => 'Marca API',
+            'unit' => 'LT',
+            'status' => 'ATIVO',
+        ],
+    ], (string) $store->id);
+
     $knownProduct = Product::query()
         ->where('tenant_id', $tenantId)
         ->where('ean', '789000000002')
@@ -80,4 +98,10 @@ test('persist mapped products uses ean reference as knowledge base', function ()
         ->and((string) $unknownProduct?->id)->toStartWith('P1')
         ->and($unknownProduct?->category_id)->toBeNull()
         ->and($unknownProduct?->brand)->toBe('Marca API Sem Base');
+
+    $this->assertDatabaseHas('product_store', [
+        'tenant_id' => $tenantId,
+        'product_id' => $knownProduct?->id,
+        'store_id' => $store->id,
+    ]);
 });

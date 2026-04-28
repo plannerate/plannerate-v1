@@ -1,16 +1,15 @@
 <?php
 
-namespace App\Jobs\Integrations;
+namespace App\Jobs\Integrations\Products;
 
 use App\Models\IntegrationSyncDay;
+use App\Models\Store;
 use App\Models\TenantIntegration;
-use App\Services\Integrations\Support\IntegrationServiceResolver;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Carbon;
 use Throwable;
 
-class SyncTenantSalesDayJob implements ShouldQueue
+class SyncTenantProductsDayJob implements ShouldQueue
 {
     use Queueable;
 
@@ -21,8 +20,8 @@ class SyncTenantSalesDayJob implements ShouldQueue
         public string $referenceDate,
     ) {}
 
-    public function handle(IntegrationServiceResolver $integrationServiceResolver): void
-    {
+    public function handle(
+    ): void {
         $integration = TenantIntegration::query()
             ->whereKey($this->integrationId)
             ->where('is_active', true)
@@ -35,7 +34,7 @@ class SyncTenantSalesDayJob implements ShouldQueue
         $syncDay = IntegrationSyncDay::query()->firstOrCreate(
             [
                 'tenant_integration_id' => $integration->id,
-                'resource' => 'sales',
+                'resource' => 'products',
                 'reference_date' => $this->referenceDate,
             ],
             [
@@ -46,11 +45,18 @@ class SyncTenantSalesDayJob implements ShouldQueue
         $syncDay->markRunning();
 
         try {
-            $salesIntegrationService = $integrationServiceResolver->resolveSalesService($integration);
+            $stores = Store::query()
+                ->where('tenant_id', $integration->tenant_id)
+                ->whereNull('deleted_at')
+                ->get(['id']);
 
-            $salesIntegrationService->fetchSales($integration, [
-                'date' => Carbon::parse($this->referenceDate)->toDateString(),
-            ]);
+            foreach ($stores as $store) {
+                DispatchTenantProductStorePagesJob::dispatch(
+                    integrationId: $integration->id,
+                    referenceDate: $this->referenceDate,
+                    storeId: (string) $store->id,
+                );
+            }
 
             $syncDay->markSuccess();
         } catch (Throwable $exception) {

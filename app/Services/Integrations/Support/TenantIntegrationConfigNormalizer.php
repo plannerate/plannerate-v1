@@ -28,6 +28,7 @@ class TenantIntegrationConfigNormalizer
         $processing = is_array($config['processing'] ?? null) ? $config['processing'] : $config;
         $auth = is_array($config['auth'] ?? null) ? $config['auth'] : [];
         $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
+        $authenticationBody = is_array($integration->authentication_body) ? $integration->authentication_body : [];
         $legacyHeaders = is_array($integration->authentication_headers) ? $integration->authentication_headers : [];
 
         $authType = (string) ($auth['type'] ?? AuthenticationType::Basic->value);
@@ -54,7 +55,7 @@ class TenantIntegrationConfigNormalizer
                 'ping_method' => strtoupper((string) ($connection['ping_method'] ?? 'GET')),
                 'headers' => $this->normalizeHeaders($connection['headers'] ?? []),
             ],
-            'processing' => $this->normalizeProcessing($processing),
+            'processing' => $this->normalizeProcessing($processing, $authenticationBody),
         ];
     }
 
@@ -87,7 +88,7 @@ class TenantIntegrationConfigNormalizer
     /**
      * @return array<string, mixed>
      */
-    private function normalizeProcessing(mixed $processing): array
+    private function normalizeProcessing(mixed $processing, array $authenticationBody): array
     {
         if (! is_array($processing)) {
             $processing = [];
@@ -98,9 +99,11 @@ class TenantIntegrationConfigNormalizer
             'products_initial_days' => (int) ($processing['products_initial_days'] ?? $processing['initial_days'] ?? 120),
             'sales_retention_days' => (int) ($processing['sales_retention_days'] ?? 120),
             'daily_lookback_days' => (int) ($processing['daily_lookback_days'] ?? 7),
-            'page_size' => (int) ($processing['page_size'] ?? 1000),
-            'empresa' => is_string($processing['empresa'] ?? null) ? $processing['empresa'] : '',
-            'partner_key' => is_string($processing['partner_key'] ?? null) ? $processing['partner_key'] : '',
+            'sales_page_size' => (int) ($processing['sales_page_size'] ?? $processing['page_size'] ?? 20000),
+            'products_page_size' => (int) ($processing['products_page_size'] ?? $processing['page_size'] ?? 1000),
+            'empresa' => (string) ($processing['empresa'] ?? $authenticationBody['empresa'] ?? ''),
+            'partner_key' => (string) ($processing['partner_key'] ?? $authenticationBody['partner_key'] ?? ''),
+            'sales_tipo_consulta' => (string) ($processing['sales_tipo_consulta'] ?? 'produto'),
         ];
     }
 }

@@ -23,8 +23,14 @@ return new class extends Migration
             $table->timestamp('finished_at')->nullable();
             $table->timestamps();
 
-            $table->unique(['tenant_integration_id', 'resource', 'reference_date']);
-            $table->index(['resource', 'reference_date', 'status']);
+            $table->unique(
+                ['tenant_integration_id', 'resource', 'reference_date'],
+                'int_sync_days_tenant_resource_date_uq'
+            );
+            $table->index(
+                ['resource', 'reference_date', 'status'],
+                'int_sync_days_resource_date_status_idx'
+            );
         });
     }
 

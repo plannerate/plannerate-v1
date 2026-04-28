@@ -9,6 +9,7 @@ use App\Services\Integrations\Contracts\ProductsIntegrationService;
 use App\Services\Integrations\ExternalApiBaseService;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class SysmoProductsIntegrationService implements ProductsIntegrationService
 {
@@ -21,39 +22,36 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
 
     public function fetchProducts(TenantIntegration $integration, array $filters = []): array
     {
-        $requestBody = [
-            'pagina' => (int) ($filters['page'] ?? 1),
-            'tamanho_pagina' => (int) ($filters['page_size'] ?? 1000),
-            'partner_key' => (string) ($filters['partner_key'] ?? ''),
-        ];
-
-        if (is_string($filters['date'] ?? null) && $filters['date'] !== '') {
-            $requestBody['data_ultima_alteracao'] = $filters['date'];
-        }
-
-        $response = $this->externalApiBaseService->request(
-            integration: $integration,
-            method: strtoupper((string) $integration->http_method),
-            endpoint: $this->sysmoEndpoints->get('products'),
-            body: $requestBody,
-        );
-
-        $mappedItems = $this->responseMapper->mapMany($this->extractItems($response->json()));
+        $payload = $this->requestProducts($integration, $filters);
+        $mappedItems = $this->responseMapper->mapMany($this->extractItems($payload));
 
         $this->persistMappedProducts(
             tenantId: (string) $integration->tenant_id,
             source: (string) ($integration->integration_type ?: 'sysmo'),
             mappedItems: $mappedItems,
+            storeId: is_string($filters['store_id'] ?? null) ? $filters['store_id'] : null,
         );
 
         return $mappedItems;
     }
 
+    public function discoverProductsTotalPages(TenantIntegration $integration, array $filters = []): int
+    {
+        $payload = $this->requestProducts($integration, array_merge($filters, ['page' => 1]));
+        $totalPages = $payload['total_paginas'] ?? $payload['total_pages'] ?? 1;
+
+        return max(1, (int) $totalPages);
+    }
+
     /**
      * @param  array<int, array<string, mixed>>  $mappedItems
      */
-    public function persistMappedProducts(string $tenantId, string $source, array $mappedItems): void
-    {
+    public function persistMappedProducts(
+        string $tenantId,
+        string $source,
+        array $mappedItems,
+        ?string $storeId = null,
+    ): void {
         if ($tenantId === '' || $mappedItems === []) {
             return;
         }
@@ -118,7 +116,61 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
             ]);
 
             $product->save();
+
+            if ($storeId !== null && $storeId !== '') {
+                $existingPivotId = DB::table('product_store')
+                    ->where('tenant_id', $tenantId)
+                    ->where('product_id', $product->id)
+                    ->where('store_id', $storeId)
+                    ->value('id');
+
+                DB::table('product_store')->updateOrInsert(
+                    [
+                        'tenant_id' => $tenantId,
+                        'product_id' => $product->id,
+                        'store_id' => $storeId,
+                    ],
+                    [
+                        'id' => $existingPivotId ?? (string) str()->ulid(),
+                        'last_synced_at' => Carbon::now(),
+                        'updated_at' => Carbon::now(),
+                        'created_at' => $existingPivotId !== null
+                            ? DB::table('product_store')->where('id', $existingPivotId)->value('created_at')
+                            : Carbon::now(),
+                    ]
+                );
+            }
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    private function requestProducts(TenantIntegration $integration, array $filters): array
+    {
+        $requestBody = [
+            'pagina' => (int) ($filters['page'] ?? 1),
+            'tamanho_pagina' => (int) ($filters['page_size'] ?? 1000),
+            'partner_key' => (string) ($filters['partner_key'] ?? ''),
+        ];
+
+        if (is_string($filters['date'] ?? null) && $filters['date'] !== '') {
+            $requestBody['data_ultima_alteracao'] = $filters['date'];
+        }
+
+        if (is_string($filters['empresa'] ?? null) && $filters['empresa'] !== '') {
+            $requestBody['empresa'] = $filters['empresa'];
+        }
+
+        $response = $this->externalApiBaseService->request(
+            integration: $integration,
+            method: strtoupper((string) $integration->http_method),
+            endpoint: $this->sysmoEndpoints->get('products'),
+            body: $requestBody,
+        );
+
+        return is_array($response->json()) ? $response->json() : [];
     }
 
     /**

@@ -1,8 +1,8 @@
 <?php
 
-use App\Jobs\Integrations\DispatchTenantIntegrationDailySyncJob;
-use App\Jobs\Integrations\DispatchTenantIntegrationInitialSyncJob;
-use App\Jobs\Integrations\RunTenantIntegrationNightlyMaintenanceJob;
+use App\Jobs\Integrations\Dispatch\DispatchTenantIntegrationDailySyncJob;
+use App\Jobs\Integrations\Dispatch\DispatchTenantIntegrationInitialSyncJob;
+use App\Jobs\Integrations\Maintenance\RunTenantIntegrationNightlyMaintenanceJob;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\User;
