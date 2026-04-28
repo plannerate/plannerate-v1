@@ -37,13 +37,6 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
             $requestBody['empresa'] = $filters['empresa'];
         }
 
-        Log::info('Sysmo sales request payload.', [
-            'integration_id' => $integration->id,
-            'tenant_id' => $integration->tenant_id,
-            'endpoint' => $this->sysmoEndpoints->get('sales'),
-            'request_body' => $requestBody,
-        ]);
-
         $response = $this->externalApiBaseService->request(
             integration: $integration,
             method: strtoupper((string) $integration->http_method),
@@ -83,6 +76,8 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
         $now = Carbon::now();
         $rowsToUpsert = [];
         $erpCodes = [];
+        $missingStoreDocumentCount = 0;
+        $missingStoreDocumentExamples = [];
 
         foreach ($mappedItems as $item) {
             $codigoErp = $this->normalizeString($item['codigo_erp'] ?? $item['product_code'] ?? null);
@@ -95,13 +90,14 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
             $promotion = $this->normalizeString($item['promocao'] ?? null);
             $saleStoreDocument = $this->normalizeString($item['store_identifier'] ?? null) ?? $storeDocument;
             if ($saleStoreDocument === null) {
-                Log::warning('Integrations sales skipped row due to missing store document.', [
-                    'tenant_id' => $tenantId,
-                    'integration_id' => $integrationId,
-                    'store_id' => $storeId,
-                    'codigo_erp' => $codigoErp,
-                    'sale_date' => $saleDate,
-                ]);
+                $missingStoreDocumentCount++;
+
+                if (count($missingStoreDocumentExamples) < 5) {
+                    $missingStoreDocumentExamples[] = [
+                        'codigo_erp' => $codigoErp,
+                        'sale_date' => $saleDate,
+                    ];
+                }
 
                 continue;
             }
@@ -145,6 +141,17 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
+        }
+
+        if ($missingStoreDocumentCount > 0) {
+            Log::warning('Integrations sales skipped rows due to missing store document.', [
+                'tenant_id' => $tenantId,
+                'integration_id' => $integrationId,
+                'store_id' => $storeId,
+                'missing_store_document_count' => $missingStoreDocumentCount,
+                'mapped_items_count' => count($mappedItems),
+                'missing_store_document_examples' => $missingStoreDocumentExamples,
+            ]);
         }
 
         if ($rowsToUpsert === []) {

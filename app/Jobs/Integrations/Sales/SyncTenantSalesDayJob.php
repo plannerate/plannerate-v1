@@ -67,13 +67,6 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
             $referenceDate = Carbon::parse($this->referenceDate)->toDateString();
             $executed = false;
 
-            Log::info('Integrations sales sync stores loaded.', [
-                'integration_id' => $integration->id,
-                'tenant_id' => $integration->tenant_id,
-                'reference_date' => $referenceDate,
-                'stores_count' => $stores->count(),
-            ]);
-
             foreach ($stores as $store) {
                 $empresa = $this->resolveEmpresaForStore($store->code, $store->document, $processing);
 
@@ -100,16 +93,6 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
                     'tipo_consulta' => (string) ($processing['sales_tipo_consulta'] ?? 'produto'),
                     'partner_key' => (string) ($processing['partner_key'] ?? ''),
                 ];
-
-                Log::info('Integrations sales sync request filters.', [
-                    'integration_id' => $integration->id,
-                    'tenant_id' => $integration->tenant_id,
-                    'reference_date' => $referenceDate,
-                    'store_id' => (string) $store->id,
-                    'store_code' => $store->code,
-                    'store_document' => $store->document,
-                    'filters' => $filters,
-                ]);
 
                 $salesIntegrationService->fetchSales($integration, $filters);
 
@@ -138,13 +121,6 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
                     'tipo_consulta' => (string) ($processing['sales_tipo_consulta'] ?? 'produto'),
                     'partner_key' => (string) ($processing['partner_key'] ?? ''),
                 ];
-
-                Log::info('Integrations sales sync fallback request filters.', [
-                    'integration_id' => $integration->id,
-                    'tenant_id' => $integration->tenant_id,
-                    'reference_date' => $referenceDate,
-                    'filters' => $fallbackFilters,
-                ]);
 
                 $salesIntegrationService->fetchSales($integration, $fallbackFilters);
             }
