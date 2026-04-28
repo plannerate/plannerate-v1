@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Notifications\AppNotification;
 use App\Services\Integrations\Support\IntegrationServiceResolver;
 use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
+use App\Support\BroadcastPayload;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
@@ -161,6 +162,8 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
                 type: 'success',
             );
         } catch (Throwable $exception) {
+            $shortErrorMessage = BroadcastPayload::shortenErrorMessage($exception->getMessage());
+
             $syncDay->markFailed($exception->getMessage());
             broadcast(new IntegrationProcessFinished(
                 tenantId: (string) $integration->tenant_id,
@@ -168,11 +171,11 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
                 resource: 'sales',
                 referenceDate: $this->referenceDate,
                 status: 'failed',
-                errorMessage: $exception->getMessage(),
+                errorMessage: $shortErrorMessage,
             ));
             $this->notifyTenantUsers(
                 title: 'Falha na sincronização de vendas',
-                message: sprintf('Integração %s falhou em vendas para %s: %s', $integration->id, $this->referenceDate, $exception->getMessage()),
+                message: sprintf('Integração %s falhou em vendas para %s: %s', $integration->id, $this->referenceDate, $shortErrorMessage ?? 'Erro sem detalhe'),
                 type: 'error',
             );
             Log::error('Integrations sales sync failed without rethrow.', [

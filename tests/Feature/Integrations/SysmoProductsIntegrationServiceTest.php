@@ -11,6 +11,8 @@ use App\Services\Integrations\Sysmo\SysmoProductsIntegrationService;
 use App\Services\Integrations\Sysmo\SysmoProductsResponseMapper;
 
 test('persist mapped products uses ean reference as knowledge base', function () {
+    config(['multitenancy.tenant_database_connection_name' => null]);
+
     $tenantId = (string) str()->ulid();
     $category = Category::query()->create([
         'tenant_id' => $tenantId,
@@ -50,6 +52,22 @@ test('persist mapped products uses ean reference as knowledge base', function ()
             'ean' => '7899999999999',
             'name' => 'Produto sem referencia',
             'brand' => 'Marca API Sem Base',
+            'unit' => 'UN',
+            'status' => 'ATIVO',
+        ],
+        [
+            'external_id' => 'N/A',
+            'ean' => '7891111111111',
+            'name' => 'Produto com codigo invalido',
+            'brand' => 'Marca Invalida',
+            'unit' => 'UN',
+            'status' => 'ATIVO',
+        ],
+        [
+            'external_id' => '66528',
+            'ean' => '12345678901234',
+            'name' => 'Produto com gtin invalido',
+            'brand' => 'Marca Invalida GTIN',
             'unit' => 'UN',
             'status' => 'ATIVO',
         ],
@@ -98,6 +116,16 @@ test('persist mapped products uses ean reference as knowledge base', function ()
         ->and((string) $unknownProduct?->id)->toStartWith('P1')
         ->and($unknownProduct?->category_id)->toBeNull()
         ->and($unknownProduct?->brand)->toBe('Marca API Sem Base');
+
+    expect(Product::query()
+        ->where('tenant_id', $tenantId)
+        ->where('name', 'Produto com codigo invalido')
+        ->exists())->toBeFalse();
+
+    expect(Product::query()
+        ->where('tenant_id', $tenantId)
+        ->where('name', 'Produto com gtin invalido')
+        ->exists())->toBeFalse();
 
     $this->assertDatabaseHas('product_store', [
         'tenant_id' => $tenantId,

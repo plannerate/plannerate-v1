@@ -37,4 +37,19 @@ class IntegrationProcessFinished implements ShouldBroadcastNow
     {
         return 'integration.process.finished';
     }
+
+    /**
+     * @return array<string, string|null>
+     */
+    public function broadcastWith(): array
+    {
+        return [
+            'tenant_id' => $this->tenantId,
+            'integration_id' => $this->integrationId,
+            'resource' => $this->resource,
+            'reference_date' => $this->referenceDate,
+            'status' => $this->status,
+            'error_message' => $this->errorMessage,
+        ];
+    }
 }

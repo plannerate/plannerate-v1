@@ -111,21 +111,28 @@ Body base:
 - `tipo_consulta` (config da integracao)
 - `partner_key` (config da integracao)
 - `empresa` (identificador da loja na Sysmo)
+- `store_document` (metadado interno para idempotencia do ID deterministico)
 
 ### Loja -> empresa
 
 Prioridade para montar `empresa`:
-1. `stores.code`
-2. `stores.document`
+1. `stores.document`
+2. `stores.code`
 3. fallback `processing.empresa`
 
 ### Persistencia
 
-- resolve produto por `tenant_id + codigo_erp`;
-- preenche `sales.product_id`;
-- preenche `sales.ean` a partir de `products.ean`;
-- `store_id` salvo na venda;
-- ID deterministico com prefixo `S1`.
+- persistencia em lote com `upsert` por `id` (chave deterministica);
+- `id` de venda e gerado por: `tenant_id + integration_id + store_document + codigo_erp + sale_date + promotion` (prefixo `S1`);
+- `store_document` e obrigatorio para gerar ID:
+  - prioridade: `item.store_identifier` (retorno da API);
+  - fallback controlado: `filters.store_document` (enviado pelo job);
+  - se ausente, a linha de venda e ignorada com log de warning;
+- `store_id` continua salvo na tabela `sales` para rastreabilidade operacional;
+- sincronizacao de referencia de produto ocorre ao final da carga:
+  - atualiza `sales.product_id` e `sales.ean` por `tenant_id + codigo_erp`;
+  - em MySQL/MariaDB usa `UPDATE ... JOIN` em lote;
+  - em SQLite (testes) usa fallback por subquery.
 
 ## Fluxo de produtos
 
@@ -177,7 +184,7 @@ Body base:
 ## Idempotencia e resiliencia
 
 - processamento por dia reduz impacto de erro (perde no maximo um dia por falha);
-- IDs deterministicos para `products` e `sales`;
+- IDs deterministicos para `products` e `sales` (sem depender de `store_id` no caso de vendas);
 - controle por dia/recurso em `integration_sync_days`;
 - reprocessamento seguro de lacunas.
 

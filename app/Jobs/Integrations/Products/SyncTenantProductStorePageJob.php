@@ -9,11 +9,14 @@ use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Spatie\Multitenancy\Jobs\TenantAware;
 
 class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
 {
     use Queueable;
+
+    private const MAX_PROGRESSIVE_PAGE = 500;
 
     public function __construct(
         public string $integrationId,
@@ -48,14 +51,75 @@ class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
 
         $processing = $configNormalizer->normalize($integration)['processing'];
         $productsService = $integrationServiceResolver->resolveProductsService($integration);
+        $page = max(1, $this->page);
+        $pageSize = (int) ($processing['products_page_size'] ?? 1000);
+        $referenceDate = Carbon::parse($this->referenceDate)->toDateString();
 
-        $productsService->fetchProducts($integration, [
-            'date' => Carbon::parse($this->referenceDate)->toDateString(),
+        Log::info('Products page sync started.', [
+            'integration_id' => $integration->id,
+            'tenant_id' => $integration->tenant_id,
             'store_id' => (string) $store->id,
             'empresa' => $this->empresa,
-            'page' => max(1, $this->page),
-            'page_size' => (int) ($processing['products_page_size'] ?? 1000),
+            'reference_date' => $referenceDate,
+            'page' => $page,
+            'page_size' => $pageSize,
+        ]);
+
+        $items = $productsService->fetchProducts($integration, [
+            'date' => $referenceDate,
+            'store_id' => (string) $store->id,
+            'empresa' => $this->empresa,
+            'page' => $page,
+            'page_size' => $pageSize,
             'partner_key' => (string) ($processing['partner_key'] ?? ''),
         ]);
+
+        $itemsCount = count($items);
+
+        Log::info('Products page sync finished.', [
+            'integration_id' => $integration->id,
+            'tenant_id' => $integration->tenant_id,
+            'store_id' => (string) $store->id,
+            'empresa' => $this->empresa,
+            'reference_date' => $referenceDate,
+            'page' => $page,
+            'items_count' => $itemsCount,
+        ]);
+
+        if ($itemsCount >= $pageSize && $page < self::MAX_PROGRESSIVE_PAGE) {
+            $nextPage = $page + 1;
+
+            SyncTenantProductStorePageJob::dispatch(
+                integrationId: (string) $integration->id,
+                referenceDate: $referenceDate,
+                storeId: (string) $store->id,
+                empresa: $this->empresa,
+                page: $nextPage,
+            );
+
+            Log::info('Products page sync enqueued next page.', [
+                'integration_id' => $integration->id,
+                'tenant_id' => $integration->tenant_id,
+                'store_id' => (string) $store->id,
+                'empresa' => $this->empresa,
+                'reference_date' => $referenceDate,
+                'current_page' => $page,
+                'next_page' => $nextPage,
+                'items_count' => $itemsCount,
+            ]);
+        }
+
+        if ($page >= self::MAX_PROGRESSIVE_PAGE && $itemsCount >= $pageSize) {
+            Log::warning('Products page sync reached progressive page safety limit.', [
+                'integration_id' => $integration->id,
+                'tenant_id' => $integration->tenant_id,
+                'store_id' => (string) $store->id,
+                'empresa' => $this->empresa,
+                'reference_date' => $referenceDate,
+                'page' => $page,
+                'items_count' => $itemsCount,
+                'page_size' => $pageSize,
+            ]);
+        }
     }
 }

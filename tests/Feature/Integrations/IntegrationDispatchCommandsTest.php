@@ -3,11 +3,15 @@
 use App\Jobs\Integrations\Dispatch\DispatchTenantIntegrationDailySyncJob;
 use App\Jobs\Integrations\Dispatch\DispatchTenantIntegrationInitialSyncJob;
 use App\Jobs\Integrations\Maintenance\RunTenantIntegrationNightlyMaintenanceJob;
+use App\Jobs\Integrations\Products\SyncTenantProductsDayJob;
+use App\Jobs\Integrations\Sales\SyncTenantSalesDayJob;
+use App\Models\IntegrationSyncDay;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\User;
 use App\Services\Integrations\Orchestration\DispatchDailySyncService;
 use App\Services\Integrations\Orchestration\DispatchInitialSyncService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
@@ -147,6 +151,47 @@ test('daily sync sales jobs are queued with tenant context', function () {
     expect($payload)->not->toBeNull()
         ->and($decodedPayload)->toHaveKey('illuminate:log:context')
         ->and(unserialize($decodedPayload['illuminate:log:context']['data']['tenantId']))->toBe($tenant->id);
+});
+
+test('initial sync skips sales dates already marked as success', function () {
+    Bus::fake();
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Initial Skip',
+        'slug' => 'tenant-initial-skip-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.mysql.database'),
+        'status' => 'active',
+    ]));
+
+    $integration = TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['sales_initial_days' => 1, 'products_initial_days' => 1]],
+        'is_active' => true,
+    ]);
+
+    $referenceDate = Carbon::yesterday()->toDateString();
+
+    IntegrationSyncDay::query()->create([
+        'tenant_integration_id' => $integration->id,
+        'resource' => 'sales',
+        'reference_date' => $referenceDate,
+        'status' => 'success',
+    ]);
+
+    IntegrationSyncDay::query()->create([
+        'tenant_integration_id' => $integration->id,
+        'resource' => 'products',
+        'reference_date' => $referenceDate,
+        'status' => 'success',
+    ]);
+
+    app(DispatchInitialSyncService::class)->dispatch($integration);
+
+    Bus::assertNotDispatched(SyncTenantSalesDayJob::class);
+    Bus::assertNotDispatched(SyncTenantProductsDayJob::class);
 });
 
 test('queue and cache infrastructure use landlord connection explicitly', function () {

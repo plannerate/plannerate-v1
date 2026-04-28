@@ -3,13 +3,14 @@
 namespace App\Services\Integrations\Sysmo;
 
 use App\Models\EanReference;
-use App\Models\Product;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Contracts\ProductsIntegrationService;
 use App\Services\Integrations\ExternalApiBaseService;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SysmoProductsIntegrationService implements ProductsIntegrationService
 {
@@ -69,78 +70,162 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
             ->whereIn('ean', array_values(array_unique($eanValues)))
             ->get()
             ->keyBy('ean');
+        $tenantConnectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+        $now = Carbon::now();
+        $productsRows = [];
+        $referenceUpdatesByProductId = [];
 
         foreach ($mappedItems as $item) {
             $normalizedEan = $this->normalizeEan($item['ean'] ?? null);
             $reference = $normalizedEan !== null ? $references->get($normalizedEan) : null;
-            $externalId = $this->normalizeString($item['external_id'] ?? null);
+            $externalId = $this->validateCodigoErp($this->normalizeString($item['external_id'] ?? null));
 
-            $unique = $normalizedEan !== null
-                ? ['tenant_id' => $tenantId, 'ean' => $normalizedEan]
-                : ($externalId !== null
-                    ? ['tenant_id' => $tenantId, 'codigo_erp' => $externalId]
-                    : null);
+            if ($normalizedEan === null || $externalId === null) {
+                Log::warning('Products sync skipped invalid item identity.', [
+                    'tenant_id' => $tenantId,
+                    'store_id' => $storeId,
+                    'codigo_erp' => $item['external_id'] ?? null,
+                    'ean' => $item['ean'] ?? null,
+                ]);
 
-            if ($unique === null) {
                 continue;
             }
 
-            $product = Product::withTrashed()->firstOrNew($unique);
+            $productId = $this->generateProductId(
+                ean: $normalizedEan,
+                tenantId: $tenantId,
+                codigoErp: $externalId,
+            );
 
-            if (! $product->exists) {
-                $product->id = $this->generateProductId(
-                    ean: $normalizedEan,
-                    tenantId: $tenantId,
-                    codigoErp: $externalId,
-                );
-            }
-
-            $product->fill([
+            $productsRows[] = [
+                'id' => $productId,
                 'tenant_id' => $tenantId,
                 'name' => $this->normalizeString($item['name'] ?? null) ?? $reference?->reference_description,
                 'ean' => $normalizedEan,
                 'codigo_erp' => $externalId,
-                'category_id' => $reference?->category_id,
                 'description' => $reference?->reference_description,
-                'brand' => $reference?->brand ?? $this->normalizeString($item['brand'] ?? null),
-                'subbrand' => $reference?->subbrand,
-                'packaging_type' => $reference?->packaging_type,
-                'packaging_size' => $reference?->packaging_size,
-                'measurement_unit' => $reference?->measurement_unit,
+                'brand' => $this->normalizeString($item['brand'] ?? null),
                 'unit_measure' => $this->normalizeString($item['unit'] ?? null),
                 'sales_status' => $this->normalizeString($item['status'] ?? null),
                 'status' => 'synced',
                 'sync_source' => $source,
-                'sync_at' => Carbon::now(),
+                'sync_at' => $now,
                 'deleted_at' => null,
+                'updated_at' => $now,
+                'created_at' => $now,
+            ];
+
+            $referenceUpdatesByProductId[$productId] = $reference;
+        }
+
+        if ($productsRows === []) {
+            Log::warning('Products sync skipped persistence: no valid product identity.', [
+                'tenant_id' => $tenantId,
+                'store_id' => $storeId,
+                'items_count' => count($mappedItems),
             ]);
 
-            $product->save();
+            return;
+        }
 
-            if ($storeId !== null && $storeId !== '') {
-                $existingPivotId = DB::table('product_store')
-                    ->where('tenant_id', $tenantId)
-                    ->where('product_id', $product->id)
-                    ->where('store_id', $storeId)
-                    ->value('id');
+        DB::connection($tenantConnectionName)->table('products')->upsert(
+            $productsRows,
+            ['id'],
+            [
+                'tenant_id',
+                'name',
+                'ean',
+                'codigo_erp',
+                'description',
+                'brand',
+                'unit_measure',
+                'sales_status',
+                'status',
+                'sync_source',
+                'sync_at',
+                'deleted_at',
+                'updated_at',
+            ]
+        );
 
-                DB::table('product_store')->updateOrInsert(
-                    [
-                        'tenant_id' => $tenantId,
-                        'product_id' => $product->id,
-                        'store_id' => $storeId,
-                    ],
-                    [
-                        'id' => $existingPivotId ?? (string) str()->ulid(),
-                        'last_synced_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                        'created_at' => $existingPivotId !== null
-                            ? DB::table('product_store')->where('id', $existingPivotId)->value('created_at')
-                            : Carbon::now(),
-                    ]
-                );
+        $this->applyEanReferenceUpdates(
+            tenantConnectionName: $tenantConnectionName,
+            referenceUpdatesByProductId: collect($referenceUpdatesByProductId),
+            now: $now,
+        );
+
+        if ($storeId !== null && $storeId !== '') {
+            $pivotRows = [];
+
+            foreach ($productsRows as $productRow) {
+                $pivotRows[] = [
+                    'id' => (string) str()->ulid(),
+                    'tenant_id' => $tenantId,
+                    'product_id' => $productRow['id'],
+                    'store_id' => $storeId,
+                    'last_synced_at' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            DB::connection($tenantConnectionName)->table('product_store')->upsert(
+                $pivotRows,
+                ['tenant_id', 'product_id', 'store_id'],
+                ['last_synced_at', 'updated_at']
+            );
+        }
+    }
+
+    /**
+     * @param  Collection<string, EanReference|null>  $referenceUpdatesByProductId
+     */
+    private function applyEanReferenceUpdates(
+        string $tenantConnectionName,
+        Collection $referenceUpdatesByProductId,
+        Carbon $now,
+    ): void {
+        foreach ($referenceUpdatesByProductId as $productId => $reference) {
+            if (! $reference instanceof EanReference) {
+                continue;
+            }
+
+            $updates = $this->buildReferenceUpdates($reference);
+            if ($updates === []) {
+                continue;
+            }
+
+            $updates['updated_at'] = $now;
+
+            DB::connection($tenantConnectionName)->table('products')
+                ->where('id', $productId)
+                ->update($updates);
+        }
+    }
+
+    /**
+     * @return array<string, string|null>
+     */
+    private function buildReferenceUpdates(EanReference $reference): array
+    {
+        $updates = [];
+        $referenceValues = [
+            'category_id' => $reference->category_id,
+            'description' => $reference->reference_description,
+            'brand' => $reference->brand,
+            'subbrand' => $reference->subbrand,
+            'packaging_type' => $reference->packaging_type,
+            'packaging_size' => $reference->packaging_size,
+            'measurement_unit' => $reference->measurement_unit,
+        ];
+
+        foreach ($referenceValues as $column => $value) {
+            if ($value !== null) {
+                $updates[$column] = $value;
             }
         }
+
+        return $updates;
     }
 
     /**
@@ -234,7 +319,32 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
 
         $normalized = EanReference::normalizeEan($ean);
 
-        return $normalized !== '' ? $normalized : null;
+        if ($normalized === '' || strlen($normalized) > 13) {
+            return null;
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Valida e limpa codigo_erp.
+     * Retorna null se for inválido.
+     */
+    private function validateCodigoErp(?string $codigoErp): ?string
+    {
+        if ($codigoErp === null) {
+            return null;
+        }
+
+        $codigoErp = trim((string) $codigoErp);
+
+        $invalidValues = ['N/A', 'n/a', 'NA', 'na', 'NULL', 'null', 'NONE', 'none', '-', ''];
+
+        if (in_array($codigoErp, $invalidValues, true)) {
+            return null;
+        }
+
+        return $codigoErp;
     }
 
     private function generateProductId(?string $ean, string $tenantId, ?string $codigoErp): string

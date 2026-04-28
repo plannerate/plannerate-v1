@@ -9,6 +9,7 @@ use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Spatie\Multitenancy\Jobs\TenantAware;
 
 class DispatchTenantProductStorePagesJob implements ShouldQueue, TenantAware
@@ -31,6 +32,12 @@ class DispatchTenantProductStorePagesJob implements ShouldQueue, TenantAware
             ->first();
 
         if (! $integration) {
+            Log::warning('Products pages dispatch skipped: integration not found or inactive.', [
+                'integration_id' => $this->integrationId,
+                'store_id' => $this->storeId,
+                'reference_date' => $this->referenceDate,
+            ]);
+
             return;
         }
 
@@ -41,6 +48,13 @@ class DispatchTenantProductStorePagesJob implements ShouldQueue, TenantAware
             ->first();
 
         if (! $store) {
+            Log::warning('Products pages dispatch skipped: store not found.', [
+                'integration_id' => $integration->id,
+                'tenant_id' => $integration->tenant_id,
+                'store_id' => $this->storeId,
+                'reference_date' => $this->referenceDate,
+            ]);
+
             return;
         }
 
@@ -48,29 +62,48 @@ class DispatchTenantProductStorePagesJob implements ShouldQueue, TenantAware
         $empresa = $this->resolveEmpresaForStore($store->code, $store->document, $processing);
 
         if ($empresa === null) {
+            Log::warning('Products pages dispatch skipped: empresa not resolved.', [
+                'integration_id' => $integration->id,
+                'tenant_id' => $integration->tenant_id,
+                'store_id' => $store->id,
+                'store_code' => $store->code,
+                'store_document' => $store->document,
+                'reference_date' => $this->referenceDate,
+            ]);
+
             return;
         }
 
-        $productsService = $integrationServiceResolver->resolveProductsService($integration);
         $pageSize = (int) ($processing['products_page_size'] ?? 1000);
-        $partnerKey = (string) ($processing['partner_key'] ?? '');
         $date = Carbon::parse($this->referenceDate)->toDateString();
-        $totalPages = $productsService->discoverProductsTotalPages($integration, [
-            'date' => $date,
+        Log::info('Products pages dispatch started.', [
+            'integration_id' => $integration->id,
+            'tenant_id' => $integration->tenant_id,
+            'store_id' => $store->id,
+            'store_code' => $store->code,
+            'store_document' => $store->document,
             'empresa' => $empresa,
+            'reference_date' => $date,
             'page_size' => $pageSize,
-            'partner_key' => $partnerKey,
         ]);
 
-        for ($page = 1; $page <= $totalPages; $page++) {
-            SyncTenantProductStorePageJob::dispatch(
-                integrationId: $integration->id,
-                referenceDate: $date,
-                storeId: $store->id,
-                empresa: $empresa,
-                page: $page,
-            );
-        }
+        SyncTenantProductStorePageJob::dispatch(
+            integrationId: $integration->id,
+            referenceDate: $date,
+            storeId: $store->id,
+            empresa: $empresa,
+            page: 1,
+        );
+
+        Log::info('Products pages dispatch finished.', [
+            'integration_id' => $integration->id,
+            'tenant_id' => $integration->tenant_id,
+            'store_id' => $store->id,
+            'reference_date' => $date,
+            'dispatched_pages' => 1,
+            'strategy' => 'progressive-pagination',
+            'mode' => 'skip-total-pages-discovery',
+        ]);
     }
 
     /**
