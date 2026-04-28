@@ -86,6 +86,8 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->name('landlord.tenants.integration.edit');
     Route::put('tenants/{tenant}/integration', [TenantIntegrationController::class, 'update'])
         ->name('landlord.tenants.integration.update');
+    Route::post('tenants/{tenant}/integration/test-connection', [TenantIntegrationController::class, 'testConnection'])
+        ->name('landlord.tenants.integration.test-connection');
 
     Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
         Route::get('tenants/{tenant}/kanban/templates', [LandlordWorkflowTemplateController::class, 'index'])

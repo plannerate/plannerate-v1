@@ -54,6 +54,13 @@ class UpdateTenantIntegrationRequest extends FormRequest
             'processing_time' => ['nullable', 'date_format:H:i'],
             'initial_setup_date' => ['nullable', 'date'],
             'is_active' => ['sometimes', 'boolean'],
+            'auth_type' => ['nullable', 'string', Rule::in(['none', 'bearer', 'basic', 'api_key_header', 'api_key_query', 'custom_headers'])],
+            'auth_token' => ['nullable', 'string', 'max:2000'],
+            'auth_api_key' => ['nullable', 'string', 'max:2000'],
+            'auth_api_key_name' => ['nullable', 'string', 'max:255'],
+            'auth_api_key_prefix' => ['nullable', 'string', 'max:50'],
+            'connection_timeout' => ['nullable', 'integer', 'min:1', 'max:120'],
+            'connection_connect_timeout' => ['nullable', 'integer', 'min:1', 'max:120'],
         ];
     }
 
@@ -67,7 +74,19 @@ class UpdateTenantIntegrationRequest extends FormRequest
         $tenant = $this->route('tenant');
         $existingIntegration = $tenant?->integration;
         $existingHeaders = is_array($existingIntegration?->authentication_headers) ? $existingIntegration->authentication_headers : [];
+        $existingConfig = is_array($existingIntegration?->config) ? $existingIntegration->config : [];
+        $existingAuthConfig = is_array($existingConfig['auth'] ?? null) ? $existingConfig['auth'] : [];
+        $existingConnectionConfig = is_array($existingConfig['connection'] ?? null) ? $existingConfig['connection'] : [];
         $resolvedPassword = $validated['auth_password'] ?? $existingHeaders['auth_password'] ?? '';
+
+        $authType = (string) ($validated['auth_type'] ?? $existingAuthConfig['type'] ?? 'basic');
+        $authCredentials = $this->resolveAuthCredentials(
+            $authType,
+            $validated,
+            $existingAuthConfig,
+            $existingHeaders,
+            (string) $resolvedPassword,
+        );
 
         return [
             'integration_type' => $validated['integration_type'],
@@ -87,12 +106,68 @@ class UpdateTenantIntegrationRequest extends FormRequest
                 'empresa' => $validated['empresa'] ?? $validated['identifier'],
             ],
             'config' => [
-                'days_to_maintain' => $validated['days_to_maintain'] ?? 120,
-                'auto_processing_enabled' => (bool) ($validated['auto_processing_enabled'] ?? true),
-                'processing_time' => $validated['processing_time'] ?? '02:00',
-                'initial_setup_date' => $validated['initial_setup_date'] ?? null,
+                'processing' => [
+                    'days_to_maintain' => $validated['days_to_maintain'] ?? 120,
+                    'auto_processing_enabled' => (bool) ($validated['auto_processing_enabled'] ?? true),
+                    'processing_time' => $validated['processing_time'] ?? '02:00',
+                    'initial_setup_date' => $validated['initial_setup_date'] ?? null,
+                ],
+                'auth' => [
+                    'type' => $authType,
+                    'credentials' => $authCredentials,
+                ],
+                'connection' => [
+                    'base_url' => $validated['api_url'],
+                    'timeout' => (int) ($validated['connection_timeout'] ?? $existingConnectionConfig['timeout'] ?? 30),
+                    'connect_timeout' => (int) ($validated['connection_connect_timeout'] ?? $existingConnectionConfig['connect_timeout'] ?? 10),
+                    'verify_ssl' => (bool) ($existingConnectionConfig['verify_ssl'] ?? true),
+                    'ping_path' => (string) ($existingConnectionConfig['ping_path'] ?? '/'),
+                    'ping_method' => (string) ($existingConnectionConfig['ping_method'] ?? 'GET'),
+                    'headers' => is_array($existingConnectionConfig['headers'] ?? null) ? $existingConnectionConfig['headers'] : [],
+                ],
             ],
             'is_active' => (bool) ($validated['is_active'] ?? true),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @param  array<string, mixed>  $existingAuthConfig
+     * @param  array<string, mixed>  $existingHeaders
+     * @return array<string, mixed>
+     */
+    private function resolveAuthCredentials(
+        string $authType,
+        array $validated,
+        array $existingAuthConfig,
+        array $existingHeaders,
+        string $resolvedPassword,
+    ): array {
+        $existingCredentials = is_array($existingAuthConfig['credentials'] ?? null) ? $existingAuthConfig['credentials'] : [];
+
+        return match ($authType) {
+            'none' => [],
+            'bearer' => [
+                'token' => (string) ($validated['auth_token'] ?? $existingCredentials['token'] ?? ''),
+            ],
+            'api_key_header' => [
+                'name' => (string) ($validated['auth_api_key_name'] ?? $existingCredentials['name'] ?? 'X-API-KEY'),
+                'key' => (string) ($validated['auth_api_key'] ?? $existingCredentials['key'] ?? ''),
+                'prefix' => (string) ($validated['auth_api_key_prefix'] ?? $existingCredentials['prefix'] ?? ''),
+            ],
+            'api_key_query' => [
+                'name' => (string) ($validated['auth_api_key_name'] ?? $existingCredentials['name'] ?? 'api_key'),
+                'key' => (string) ($validated['auth_api_key'] ?? $existingCredentials['key'] ?? ''),
+            ],
+            'custom_headers' => is_array($existingCredentials['headers'] ?? null) ? [
+                'headers' => $existingCredentials['headers'],
+            ] : [
+                'headers' => $existingHeaders,
+            ],
+            default => [
+                'username' => (string) ($validated['auth_username'] ?? $existingCredentials['username'] ?? ''),
+                'password' => $resolvedPassword,
+            ],
+        };
     }
 }

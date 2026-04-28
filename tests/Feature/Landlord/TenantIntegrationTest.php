@@ -5,6 +5,7 @@ use App\Models\TenantIntegration;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function (): void {
@@ -130,6 +131,68 @@ test('update keeps existing password when auth_password is blank', function () {
 
     expect($headers['auth_password'])->toBe('planner-pass')
         ->and($integration->api_url)->toBe('https://keep-password.example.com');
+});
+
+test('can test connection successfully', function () {
+    $tenant = createTenantForIntegration();
+    $this->put(route('landlord.tenants.integration.update', $tenant), sysmoPayload());
+
+    Http::fake([
+        'https://sysmo.example.com/*' => Http::response(['ok' => true], 200),
+    ]);
+
+    $response = $this
+        ->withHeaders(['Accept' => 'application/json'])
+        ->postJson(route('landlord.tenants.integration.test-connection', $tenant), [
+            'test_path' => '/',
+            'test_method' => 'GET',
+        ]);
+
+    $response->assertOk()->assertJsonPath('ok', true);
+
+    $integration = TenantIntegration::query()->where('tenant_id', $tenant->id)->firstOrFail();
+    expect($integration->last_sync)->not->toBeNull();
+});
+
+test('test connection returns error feedback when request fails', function () {
+    $tenant = createTenantForIntegration();
+    $this->put(route('landlord.tenants.integration.update', $tenant), sysmoPayload());
+    $integration = TenantIntegration::query()->where('tenant_id', $tenant->id)->firstOrFail();
+
+    Http::fake([
+        'https://sysmo.example.com/*' => Http::response(['message' => 'not authorized'], 401),
+    ]);
+
+    $response = $this->post(route('landlord.tenants.integration.test-connection', $tenant));
+
+    $response->assertRedirect(route('landlord.tenants.integration.edit', $tenant));
+
+    $integration->refresh();
+    expect($integration->last_sync)->toBeNull();
+});
+
+test('test connection returns structured json response', function () {
+    $tenant = createTenantForIntegration();
+    $this->put(route('landlord.tenants.integration.update', $tenant), sysmoPayload());
+
+    Http::fake([
+        'https://sysmo.example.com/*' => Http::response(['items' => [['id' => 10]]], 200),
+    ]);
+
+    $response = $this
+        ->withHeaders(['Accept' => 'application/json'])
+        ->postJson(route('landlord.tenants.integration.test-connection', $tenant), [
+            'test_path' => '/custom/path',
+            'test_method' => 'GET',
+            'test_body' => '{"filtro":"abc"}',
+        ]);
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('ok', true)
+        ->assertJsonPath('meta.method', 'GET')
+        ->assertJsonPath('meta.path', '/custom/path')
+        ->assertJsonPath('data.items.0.id', 10);
 });
 
 function createTenantForIntegration(): Tenant

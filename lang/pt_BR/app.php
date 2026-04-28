@@ -326,6 +326,10 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'navigation' => 'Integracao API',
             'title' => 'Integracao API',
             'description' => 'Configure a integracao de API deste tenant.',
+            'actions' => [
+                'test_connection' => 'Testar conexao',
+                'run_test' => 'Executar teste',
+            ],
             'types' => [
                 'sysmo' => 'Sysmo',
             ],
@@ -347,15 +351,23 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'processing_time' => 'Horario de processamento',
                 'initial_setup_date' => 'Data de setup inicial',
                 'is_active' => 'Integracao ativa',
+                'test_method' => 'Metodo de teste',
+                'test_path' => 'Path do endpoint',
+                'test_body' => 'Body JSON (opcional)',
+                'test_response' => 'Resposta da API',
             ],
             'messages' => [
                 'updated' => 'Integracao do tenant atualizada com sucesso.',
+                'missing_configuration' => 'Salve a configuracao da integracao antes de testar a conexao.',
+                'connection_success' => 'Conexao validada com sucesso.',
+                'connection_failed' => 'Falha ao testar conexao: :error',
             ],
             'hints' => [
                 'auth_password' => 'Ao editar, preencha apenas se quiser trocar a senha atual.',
             ],
             'placeholders' => [
                 'keep_password' => 'Deixe em branco para manter a senha atual',
+                'test_body' => '{"filtro":"valor"}',
             ],
         ],
         'tenant_statuses' => [
