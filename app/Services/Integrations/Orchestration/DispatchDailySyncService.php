@@ -17,6 +17,11 @@ class DispatchDailySyncService
 
     public function dispatch(TenantIntegration $integration): void
     {
+        $tenant = $integration->tenant;
+        if (! $tenant) {
+            return;
+        }
+
         $processing = $this->configNormalizer->normalize($integration)['processing'];
         $lookbackDays = max(2, (int) ($processing['daily_lookback_days'] ?? 7));
         $yesterday = Carbon::yesterday()->startOfDay();
@@ -51,12 +56,14 @@ class DispatchDailySyncService
         sort($salesDatesToDispatch);
         sort($productsDatesToDispatch);
 
-        foreach ($salesDatesToDispatch as $date) {
-            SyncTenantSalesDayJob::dispatch($integration->id, $date);
-        }
+        $tenant->execute(function () use ($integration, $productsDatesToDispatch, $salesDatesToDispatch): void {
+            foreach ($salesDatesToDispatch as $date) {
+                SyncTenantSalesDayJob::dispatch($integration->id, $date, (string) $integration->tenant_id);
+            }
 
-        foreach ($productsDatesToDispatch as $date) {
-            SyncTenantProductsDayJob::dispatch($integration->id, $date);
-        }
+            foreach ($productsDatesToDispatch as $date) {
+                SyncTenantProductsDayJob::dispatch($integration->id, $date);
+            }
+        });
     }
 }

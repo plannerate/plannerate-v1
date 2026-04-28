@@ -77,20 +77,35 @@ class DispatchTenantProductStorePagesJob implements ShouldQueue
      */
     private function resolveEmpresaForStore(?string $storeCode, ?string $storeDocument, array $processing): ?string
     {
-        if (is_string($storeCode) && trim($storeCode) !== '') {
-            return trim($storeCode);
+        $empresaFromDocument = $this->normalizeEmpresaValue($storeDocument);
+        if ($empresaFromDocument !== null) {
+            return $empresaFromDocument;
         }
 
-        if (is_string($storeDocument) && trim($storeDocument) !== '') {
-            return trim($storeDocument);
+        $empresaFromStoreCode = $this->normalizeEmpresaValue($storeCode);
+        if ($empresaFromStoreCode !== null) {
+            return $empresaFromStoreCode;
         }
 
-        $fallbackEmpresa = $processing['empresa'] ?? null;
-
-        if (is_string($fallbackEmpresa) && trim($fallbackEmpresa) !== '') {
-            return trim($fallbackEmpresa);
+        $empresaFromProcessing = $this->normalizeEmpresaValue($processing['empresa'] ?? null);
+        if ($empresaFromProcessing !== null) {
+            return $empresaFromProcessing;
         }
 
         return null;
+    }
+
+    private function normalizeEmpresaValue(mixed $value): ?string
+    {
+        if (! is_string($value) && ! is_numeric($value)) {
+            return null;
+        }
+
+        $normalized = preg_replace('/\D+/', '', trim((string) $value));
+        if ($normalized === '' || ! ctype_digit($normalized)) {
+            return null;
+        }
+
+        return (int) $normalized > 0 ? $normalized : null;
     }
 }

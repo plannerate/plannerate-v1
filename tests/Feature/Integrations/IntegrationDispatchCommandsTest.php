@@ -6,8 +6,11 @@ use App\Jobs\Integrations\Maintenance\RunTenantIntegrationNightlyMaintenanceJob;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\User;
+use App\Services\Integrations\Orchestration\DispatchDailySyncService;
+use App\Services\Integrations\Orchestration\DispatchInitialSyncService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 
 beforeEach(function (): void {
     config([
@@ -70,6 +73,80 @@ test('integrations dispatch initial command enqueues jobs for active integration
     $this->artisan('integrations:dispatch-initial')->assertSuccessful();
 
     Bus::assertDispatched(DispatchTenantIntegrationInitialSyncJob::class, 1);
+});
+
+test('initial sync sales jobs are queued with tenant context', function () {
+    config([
+        'queue.default' => 'database',
+        'queue.connections.database.connection' => 'landlord',
+        'multitenancy.tenant_database_connection_name' => 'tenant',
+    ]);
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Initial Context',
+        'slug' => 'tenant-initial-context-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.mysql.database'),
+        'status' => 'active',
+    ]));
+
+    $integration = TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['sales_initial_days' => 1, 'products_initial_days' => 1]],
+        'is_active' => true,
+    ]);
+
+    app(DispatchInitialSyncService::class)->dispatch($integration);
+
+    $payload = DB::connection('landlord')
+        ->table('jobs')
+        ->where('payload', 'like', '%SyncTenantSalesDayJob%')
+        ->value('payload');
+
+    $decodedPayload = json_decode((string) $payload, true);
+
+    expect($payload)->not->toBeNull()
+        ->and($decodedPayload)->toHaveKey('illuminate:log:context')
+        ->and(unserialize($decodedPayload['illuminate:log:context']['data']['tenantId']))->toBe($tenant->id);
+});
+
+test('daily sync sales jobs are queued with tenant context', function () {
+    config([
+        'queue.default' => 'database',
+        'queue.connections.database.connection' => 'landlord',
+        'multitenancy.tenant_database_connection_name' => 'tenant',
+    ]);
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Daily Context',
+        'slug' => 'tenant-daily-context-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.mysql.database'),
+        'status' => 'active',
+    ]));
+
+    $integration = TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['daily_lookback_days' => 2]],
+        'is_active' => true,
+    ]);
+
+    app(DispatchDailySyncService::class)->dispatch($integration);
+
+    $payload = DB::connection('landlord')
+        ->table('jobs')
+        ->where('payload', 'like', '%SyncTenantSalesDayJob%')
+        ->value('payload');
+
+    $decodedPayload = json_decode((string) $payload, true);
+
+    expect($payload)->not->toBeNull()
+        ->and($decodedPayload)->toHaveKey('illuminate:log:context')
+        ->and(unserialize($decodedPayload['illuminate:log:context']['data']['tenantId']))->toBe($tenant->id);
 });
 
 test('integrations nightly maintenance command enqueues maintenance job', function () {

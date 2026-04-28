@@ -47,6 +47,7 @@ class SyncTenantProductsDayJob implements ShouldQueue
         try {
             $stores = Store::query()
                 ->where('tenant_id', $integration->tenant_id)
+                ->where('status', 'published')
                 ->whereNull('deleted_at')
                 ->get(['id']);
 

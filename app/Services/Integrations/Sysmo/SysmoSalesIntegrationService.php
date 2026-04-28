@@ -9,6 +9,7 @@ use App\Services\Integrations\ExternalApiBaseService;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SysmoSalesIntegrationService implements SalesIntegrationService
 {
@@ -36,6 +37,13 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
         if (is_string($filters['empresa'] ?? null) && $filters['empresa'] !== '') {
             $requestBody['empresa'] = $filters['empresa'];
         }
+
+        Log::info('Sysmo sales request payload.', [
+            'integration_id' => $integration->id,
+            'tenant_id' => $integration->tenant_id,
+            'endpoint' => $this->sysmoEndpoints->get('sales'),
+            'request_body' => $requestBody,
+        ]);
 
         $response = $this->externalApiBaseService->request(
             integration: $integration,

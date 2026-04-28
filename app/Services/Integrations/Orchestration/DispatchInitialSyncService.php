@@ -16,6 +16,11 @@ class DispatchInitialSyncService
 
     public function dispatch(TenantIntegration $integration): void
     {
+        $tenant = $integration->tenant;
+        if (! $tenant) {
+            return;
+        }
+
         $processing = $this->configNormalizer->normalize($integration)['processing'];
         $yesterday = Carbon::yesterday()->startOfDay();
 
@@ -25,12 +30,14 @@ class DispatchInitialSyncService
         $salesStart = $yesterday->copy()->subDays($salesInitialDays - 1);
         $productsStart = $yesterday->copy()->subDays($productsInitialDays - 1);
 
-        for ($date = $salesStart->copy(); $date->lte($yesterday); $date->addDay()) {
-            SyncTenantSalesDayJob::dispatch($integration->id, $date->toDateString());
-        }
+        $tenant->execute(function () use ($integration, $productsStart, $salesStart, $yesterday): void {
+            for ($date = $salesStart->copy(); $date->lte($yesterday); $date->addDay()) {
+                SyncTenantSalesDayJob::dispatch($integration->id, $date->toDateString(), (string) $integration->tenant_id);
+            }
 
-        for ($date = $productsStart->copy(); $date->lte($yesterday); $date->addDay()) {
-            SyncTenantProductsDayJob::dispatch($integration->id, $date->toDateString());
-        }
+            for ($date = $productsStart->copy(); $date->lte($yesterday); $date->addDay()) {
+                SyncTenantProductsDayJob::dispatch($integration->id, $date->toDateString());
+            }
+        });
     }
 }

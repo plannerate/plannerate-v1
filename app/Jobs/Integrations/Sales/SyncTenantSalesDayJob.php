@@ -10,9 +10,11 @@ use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
+use Spatie\Multitenancy\Jobs\TenantAware;
 use Throwable;
 
-class SyncTenantSalesDayJob implements ShouldQueue
+class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
 {
     use Queueable;
 
@@ -21,6 +23,7 @@ class SyncTenantSalesDayJob implements ShouldQueue
     public function __construct(
         public string $integrationId,
         public string $referenceDate,
+        public string $tenantId,
     ) {}
 
     public function handle(
@@ -53,46 +56,101 @@ class SyncTenantSalesDayJob implements ShouldQueue
             $salesIntegrationService = $integrationServiceResolver->resolveSalesService($integration);
             $processing = $configNormalizer->normalize($integration)['processing'];
             $stores = Store::query()
-                ->where('tenant_id', $integration->tenant_id)
+                ->where('status', 'published')
                 ->whereNull('deleted_at')
                 ->get(['id', 'code', 'document']);
             $referenceDate = Carbon::parse($this->referenceDate)->toDateString();
             $executed = false;
 
+            Log::info('Integrations sales sync stores loaded.', [
+                'integration_id' => $integration->id,
+                'tenant_id' => $integration->tenant_id,
+                'reference_date' => $referenceDate,
+                'stores_count' => $stores->count(),
+            ]);
+
             foreach ($stores as $store) {
                 $empresa = $this->resolveEmpresaForStore($store->code, $store->document, $processing);
 
                 if ($empresa === null) {
+                    Log::warning('Integrations sales sync skipped store due to missing/invalid empresa.', [
+                        'integration_id' => $integration->id,
+                        'tenant_id' => $integration->tenant_id,
+                        'reference_date' => $referenceDate,
+                        'store_id' => (string) $store->id,
+                        'store_code' => $store->code,
+                        'store_document' => $store->document,
+                        'processing_empresa' => $processing['empresa'] ?? null,
+                    ]);
+
                     continue;
                 }
 
-                $salesIntegrationService->fetchSales($integration, [
+                $filters = [
                     'date' => $referenceDate,
                     'store_id' => (string) $store->id,
                     'empresa' => $empresa,
                     'page_size' => (int) ($processing['sales_page_size'] ?? 20000),
                     'tipo_consulta' => (string) ($processing['sales_tipo_consulta'] ?? 'produto'),
                     'partner_key' => (string) ($processing['partner_key'] ?? ''),
+                ];
+
+                Log::info('Integrations sales sync request filters.', [
+                    'integration_id' => $integration->id,
+                    'tenant_id' => $integration->tenant_id,
+                    'reference_date' => $referenceDate,
+                    'store_id' => (string) $store->id,
+                    'store_code' => $store->code,
+                    'store_document' => $store->document,
+                    'filters' => $filters,
                 ]);
+
+                $salesIntegrationService->fetchSales($integration, $filters);
 
                 $executed = true;
             }
 
             if (! $executed) {
-                $salesIntegrationService->fetchSales($integration, [
+                $fallbackEmpresa = $this->normalizeEmpresaValue($processing['empresa'] ?? null);
+                if ($fallbackEmpresa === null) {
+                    Log::warning('Integrations sales sync fallback skipped due to missing/invalid empresa.', [
+                        'integration_id' => $integration->id,
+                        'tenant_id' => $integration->tenant_id,
+                        'reference_date' => $referenceDate,
+                        'processing_empresa' => $processing['empresa'] ?? null,
+                    ]);
+
+                    $syncDay->markFailed('Empresa invalida para sincronizacao de vendas.');
+
+                    return;
+                }
+
+                $fallbackFilters = [
                     'date' => $referenceDate,
-                    'empresa' => (string) ($processing['empresa'] ?? ''),
+                    'empresa' => $fallbackEmpresa,
                     'page_size' => (int) ($processing['sales_page_size'] ?? 20000),
                     'tipo_consulta' => (string) ($processing['sales_tipo_consulta'] ?? 'produto'),
                     'partner_key' => (string) ($processing['partner_key'] ?? ''),
+                ];
+
+                Log::info('Integrations sales sync fallback request filters.', [
+                    'integration_id' => $integration->id,
+                    'tenant_id' => $integration->tenant_id,
+                    'reference_date' => $referenceDate,
+                    'filters' => $fallbackFilters,
                 ]);
+
+                $salesIntegrationService->fetchSales($integration, $fallbackFilters);
             }
 
             $syncDay->markSuccess();
         } catch (Throwable $exception) {
             $syncDay->markFailed($exception->getMessage());
-
-            throw $exception;
+            Log::error('Integrations sales sync failed without rethrow.', [
+                'integration_id' => $this->integrationId,
+                'reference_date' => $this->referenceDate,
+                'error' => $exception->getMessage(),
+            ]);
         }
     }
 
@@ -103,20 +161,35 @@ class SyncTenantSalesDayJob implements ShouldQueue
      */
     private function resolveEmpresaForStore(?string $storeCode, ?string $storeDocument, array $processing): ?string
     {
-        if (is_string($storeCode) && trim($storeCode) !== '') {
-            return trim($storeCode);
+        $empresaFromDocument = $this->normalizeEmpresaValue($storeDocument);
+        if ($empresaFromDocument !== null) {
+            return $empresaFromDocument;
         }
 
-        if (is_string($storeDocument) && trim($storeDocument) !== '') {
-            return trim($storeDocument);
+        $empresaFromStoreCode = $this->normalizeEmpresaValue($storeCode);
+        if ($empresaFromStoreCode !== null) {
+            return $empresaFromStoreCode;
         }
 
-        $fallbackEmpresa = $processing['empresa'] ?? null;
-
-        if (is_string($fallbackEmpresa) && trim($fallbackEmpresa) !== '') {
-            return trim($fallbackEmpresa);
+        $empresaFromProcessing = $this->normalizeEmpresaValue($processing['empresa'] ?? null);
+        if ($empresaFromProcessing !== null) {
+            return $empresaFromProcessing;
         }
 
         return null;
+    }
+
+    private function normalizeEmpresaValue(mixed $value): ?string
+    {
+        if (! is_string($value) && ! is_numeric($value)) {
+            return null;
+        }
+
+        $normalized = preg_replace('/\D+/', '', trim((string) $value));
+        if ($normalized === '' || ! ctype_digit($normalized)) {
+            return null;
+        }
+
+        return (int) $normalized > 0 ? $normalized : null;
     }
 }
