@@ -117,6 +117,8 @@ test('persist mapped products uses ean reference as knowledge base', function ()
         ],
     ], (string) $store->id);
 
+    $service->finalizePersistedProductsSync($tenantId);
+
     $knownProduct = Product::query()
         ->where('tenant_id', $tenantId)
         ->where('ean', '789000000002')
@@ -221,6 +223,8 @@ test('persist mapped products backfills sales references by codigo erp', functio
             'status' => 'ATIVO',
         ],
     ]);
+
+    $productsService->finalizePersistedProductsSync($tenantId);
 
     $product = Product::query()
         ->where('tenant_id', $tenantId)
