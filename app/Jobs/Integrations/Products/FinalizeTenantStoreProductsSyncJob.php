@@ -13,6 +13,11 @@ class FinalizeTenantStoreProductsSyncJob implements ShouldQueue, TenantAware
 {
     use Queueable;
 
+    /**
+     * Finalizacao pode executar reconciliacao em lote grande (sales x products).
+     */
+    public int $timeout = 900;
+
     public function __construct(
         public string $integrationId,
         public string $storeId,
@@ -32,6 +37,7 @@ class FinalizeTenantStoreProductsSyncJob implements ShouldQueue, TenantAware
 
         $store = Store::query()
             ->whereKey($this->storeId)
+            ->where('status', 'published')
             ->where('tenant_id', $integration->tenant_id)
             ->whereNull('deleted_at')
             ->first();

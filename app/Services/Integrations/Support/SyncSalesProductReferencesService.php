@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 class SyncSalesProductReferencesService
 {
+    private const ERP_CHUNK_SIZE = 200;
+
     /**
      * Atualiza product_id e ean das vendas pelo codigo_erp em lote.
      *
@@ -29,7 +31,7 @@ class SyncSalesProductReferencesService
             $salesTable = $connection->getTablePrefix().'sales';
             $productsTable = $connection->getTablePrefix().'products';
 
-            foreach (array_chunk($erpCodes, 500) as $erpChunk) {
+            foreach (array_chunk($erpCodes, self::ERP_CHUNK_SIZE) as $erpChunk) {
                 $inPlaceholders = implode(', ', array_fill(0, count($erpChunk), '?'));
 
                 $sql = "
@@ -43,6 +45,12 @@ class SyncSalesProductReferencesService
                         s.updated_at = ?
                     WHERE s.tenant_id = ?
                       AND s.codigo_erp IN ({$inPlaceholders})
+                      AND (
+                          s.product_id IS NULL
+                          OR s.ean IS NULL
+                          OR s.product_id <> p.id
+                          OR COALESCE(s.ean, '') <> COALESCE(p.ean, '')
+                      )
                 ";
 
                 $connection->update($sql, [
