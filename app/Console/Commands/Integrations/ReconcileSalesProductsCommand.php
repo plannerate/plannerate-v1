@@ -3,26 +3,28 @@
 namespace App\Console\Commands\Integrations;
 
 use App\Models\Tenant;
-use App\Services\Integrations\Support\SyncSalesProductReferencesService;
+use App\Services\Integrations\Sysmo\SysmoProductsIntegrationService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
-#[Signature('integrations:reconcile-sales-products {--tenant=} {--chunk=500}')]
-#[Description('Reconcila product_id/ean em vendas a partir de products.codigo_erp')]
+#[Signature('integrations:reconcile-sales-products {--tenant=} {--chunk=500} {--with-ean-references}')]
+#[Description('Reconcila products por ean_references e sales por products.codigo_erp')]
 class ReconcileSalesProductsCommand extends Command
 {
     public function __construct(
-        private readonly SyncSalesProductReferencesService $syncSalesProductReferencesService,
+        private readonly SysmoProductsIntegrationService $sysmoProductsIntegrationService,
     ) {
         parent::__construct();
     }
 
     public function handle(): int
     {
-        $chunkSize = max(1, (int) $this->option('chunk'));
+        if ($this->option('chunk') !== null) {
+            $this->line('Opcao --chunk mantida por compatibilidade e ignorada no modo atual.');
+        }
+
+        $withEanReferences = (bool) $this->option('with-ean-references');
 
         $query = Tenant::query()->where('status', 'active');
         $tenantId = $this->option('tenant');
@@ -30,7 +32,7 @@ class ReconcileSalesProductsCommand extends Command
             $query->whereKey($tenantId);
         }
 
-        $tenants = $query->get(['id']);
+        $tenants = $query->get(['id', 'database']);
 
         if ($tenants->isEmpty()) {
             $this->warn('Nenhum tenant ativo encontrado para reconciliacao.');
@@ -43,39 +45,27 @@ class ReconcileSalesProductsCommand extends Command
         $shouldSwitchTenantContext = is_string($configuredTenantConnection) && $configuredTenantConnection !== '';
 
         foreach ($tenants as $tenant) {
-            $processedChunks = 0;
-            $processedCodes = 0;
-
-            $runReconciliation = function () use ($tenant, $tenantConnectionName, $chunkSize, &$processedChunks, &$processedCodes): void {
-                DB::connection($tenantConnectionName)
-                    ->table('products')
-                    ->whereNotNull('codigo_erp')
-                    ->orderBy('id')
-                    ->select(['codigo_erp'])
-                    ->chunk($chunkSize, function ($rows) use ($tenant, $tenantConnectionName, &$processedChunks, &$processedCodes): void {
-                        $erpCodes = collect($rows)
-                            ->pluck('codigo_erp')
-                            ->filter(fn (mixed $codigo): bool => is_string($codigo) && trim($codigo) !== '')
-                            ->map(fn (string $codigo): string => trim($codigo))
-                            ->unique()
-                            ->values()
-                            ->all();
-
-                        if ($erpCodes === []) {
-                            return;
-                        }
-
-                        $this->syncSalesProductReferencesService->syncByCodigoErp(
-                            tenantConnectionName: $tenantConnectionName,
-                            tenantId: (string) $tenant->id,
-                            erpCodes: $erpCodes,
-                            now: Carbon::now(),
-                        );
-
-                        $processedChunks++;
-                        $processedCodes += count($erpCodes);
-                    });
+            $runReconciliation = function () use ($tenant, $shouldSwitchTenantContext, $withEanReferences): void {
+                $this->sysmoProductsIntegrationService->finalizePersistedProductsSync(
+                    tenantId: (string) $tenant->id,
+                    enqueueSalesReconciliation: true,
+                    executeInTenantContextForJobs: $shouldSwitchTenantContext,
+                    enqueueProductsReconciliation: $withEanReferences,
+                );
             };
+
+            $tenantDatabase = is_string($tenant->getAttribute('database'))
+                ? trim((string) $tenant->getAttribute('database'))
+                : '';
+
+            if ($shouldSwitchTenantContext && $tenantDatabase === '') {
+                $this->warn(sprintf(
+                    'Tenant %s sem database configurado; reconciliacao ignorada para evitar execucao na base landlord.',
+                    $tenant->id,
+                ));
+
+                continue;
+            }
 
             if ($shouldSwitchTenantContext) {
                 $tenant->execute($runReconciliation);
@@ -84,10 +74,10 @@ class ReconcileSalesProductsCommand extends Command
             }
 
             $this->line(sprintf(
-                'Reconciliacao concluida para tenant %s (chunks=%d, codigos=%d)',
+                $withEanReferences
+                    ? 'Reconciliacao enfileirada para tenant %s (ean_references + sales por codigo_erp)'
+                    : 'Reconciliacao enfileirada para tenant %s (sales por codigo_erp)',
                 $tenant->id,
-                $processedChunks,
-                $processedCodes,
             ));
         }
 

@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Spatie\Multitenancy\Jobs\TenantAware;
 
-class FinalizeTenantStoreProductsSyncJob implements ShouldQueue, TenantAware
+class FinalizeTenantProductsSyncJob implements ShouldQueue, TenantAware
 {
     use Queueable;
 
@@ -35,6 +35,8 @@ class FinalizeTenantStoreProductsSyncJob implements ShouldQueue, TenantAware
 
         $productsIntegrationService->finalizePersistedProductsSync(
             tenantId: (string) $integration->tenant_id,
+            enqueueSalesReconciliation: true,
+            enqueueProductsReconciliation: true,
         );
     }
 }

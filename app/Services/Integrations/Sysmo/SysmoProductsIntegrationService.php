@@ -2,6 +2,8 @@
 
 namespace App\Services\Integrations\Sysmo;
 
+use App\Jobs\Integrations\Products\ReconcileProductsFromEanReferencesChunkJob;
+use App\Jobs\Integrations\Products\ReconcileSalesProductsChunkJob;
 use App\Models\EanReference;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Contracts\ProductsIntegrationService;
@@ -203,8 +205,12 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         }
     }
 
-    public function finalizePersistedProductsSync(string $tenantId): void
-    {
+    public function finalizePersistedProductsSync(
+        string $tenantId,
+        bool $enqueueSalesReconciliation = false,
+        bool $executeInTenantContextForJobs = true,
+        bool $enqueueProductsReconciliation = false,
+    ): void {
         if ($tenantId === '') {
             return;
         }
@@ -215,7 +221,31 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         $connection = DB::connection($tenantConnectionName);
         $driver = $connection->getDriverName();
 
-        if (in_array($driver, ['mysql', 'mariadb'], true)) {
+        if ($enqueueProductsReconciliation) {
+            $connection->table('products')
+                ->where('tenant_id', $tenantId)
+                ->orderBy('id')
+                ->select(['id'])
+                ->chunk(50, function ($rows) use ($tenantConnectionName, $tenantId, $executeInTenantContextForJobs): void {
+                    $productIds = collect($rows)
+                        ->pluck('id')
+                        ->filter(fn (mixed $id): bool => is_string($id) && trim($id) !== '')
+                        ->map(fn (string $id): string => trim($id))
+                        ->values()
+                        ->all();
+
+                    if ($productIds === []) {
+                        return;
+                    }
+
+                    ReconcileProductsFromEanReferencesChunkJob::dispatch(
+                        tenantId: $tenantId,
+                        productIds: $productIds,
+                        tenantConnectionName: $tenantConnectionName,
+                        executeInTenantContext: $executeInTenantContextForJobs,
+                    )->onQueue('reconcile');
+                });
+        } elseif (in_array($driver, ['mysql', 'mariadb'], true)) {
             $productsTable = $connection->getTablePrefix().'products';
             $referencesTable = $connection->getTablePrefix().'ean_references';
 
@@ -296,6 +326,36 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
                         ->update($updates);
                 }
             }
+        }
+
+        if ($enqueueSalesReconciliation) {
+            $connection->table('products')
+                ->where('tenant_id', $tenantId)
+                ->whereNotNull('codigo_erp')
+                ->orderBy('id')
+                ->select(['codigo_erp'])
+                ->chunk(50, function ($rows) use ($tenantConnectionName, $tenantId, $executeInTenantContextForJobs): void {
+                    $erpCodes = collect($rows)
+                        ->pluck('codigo_erp')
+                        ->filter(fn (mixed $codigo): bool => is_string($codigo) && trim($codigo) !== '')
+                        ->map(fn (string $codigo): string => trim($codigo))
+                        ->unique()
+                        ->values()
+                        ->all();
+
+                    if ($erpCodes === []) {
+                        return;
+                    }
+
+                    ReconcileSalesProductsChunkJob::dispatch(
+                        tenantId: $tenantId,
+                        erpCodes: $erpCodes,
+                        tenantConnectionName: $tenantConnectionName,
+                        executeInTenantContext: $executeInTenantContextForJobs,
+                    )->onQueue('reconcile');
+                });
+
+            return;
         }
 
         $this->syncSalesProductReferencesService->syncAllByCodigoErp(

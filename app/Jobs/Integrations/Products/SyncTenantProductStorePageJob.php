@@ -79,7 +79,7 @@ class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
                 fullSync: $this->fullSync,
             );
         } else {
-            FinalizeTenantStoreProductsSyncJob::dispatch(
+            FinalizeTenantProductsSyncJob::dispatch(
                 integrationId: (string) $integration->id,
             );
         }
