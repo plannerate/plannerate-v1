@@ -96,6 +96,7 @@ class Product extends Model
             'depth' => 'decimal:2',
             'weight' => 'decimal:2',
             'sync_at' => 'datetime',
+            'last_purchase_date' => 'date',
         ];
     }
 

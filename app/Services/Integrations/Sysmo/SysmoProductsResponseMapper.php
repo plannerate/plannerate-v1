@@ -3,6 +3,7 @@
 namespace App\Services\Integrations\Sysmo;
 
 use App\Services\Integrations\Mappers\ProductsResponseMapper;
+use Illuminate\Support\Carbon;
 
 class SysmoProductsResponseMapper implements ProductsResponseMapper
 {
@@ -45,6 +46,7 @@ class SysmoProductsResponseMapper implements ProductsResponseMapper
             'preco_promocional' => $this->pickFloat($item, ['preco_promocional']),
             'custo_medio_geral' => $this->pickFloat($item, ['custo_medio_geral']),
             'current_stock' => $this->pickFloatFromPaths($item, ['estoque.disponivel']),
+            'last_purchase_date' => $this->extractLastPurchaseDate($item),
             'status' => $this->pickString($item, ['status', 'situacao']),
             'unit' => $this->pickString($item, ['unidade', 'un']),
             'raw' => $item,
@@ -79,6 +81,36 @@ class SysmoProductsResponseMapper implements ProductsResponseMapper
         }
 
         return [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    private function extractLastPurchaseDate(array $item): ?string
+    {
+        $suppliers = $item['fornecedores'] ?? null;
+        if (! is_array($suppliers)) {
+            return null;
+        }
+
+        $latestDate = null;
+
+        foreach ($suppliers as $supplier) {
+            if (! is_array($supplier)) {
+                continue;
+            }
+
+            $parsed = $this->normalizeDate($supplier['data_ultima_compra'] ?? null);
+            if ($parsed === null) {
+                continue;
+            }
+
+            if ($latestDate === null || $parsed > $latestDate) {
+                $latestDate = $parsed;
+            }
+        }
+
+        return $latestDate;
     }
 
     /**
@@ -209,5 +241,23 @@ class SysmoProductsResponseMapper implements ProductsResponseMapper
         }
 
         return $digitsOnly;
+    }
+
+    private function normalizeDate(mixed $value): ?string
+    {
+        if (! is_string($value) && ! is_numeric($value)) {
+            return null;
+        }
+
+        $dateValue = trim((string) $value);
+        if ($dateValue === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($dateValue)->toDateString();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

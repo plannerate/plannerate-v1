@@ -123,6 +123,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
                 'current_stock' => $this->normalizeFloat(
                     $item['current_stock'] ?? data_get($item, 'raw.estoque.disponivel')
                 ),
+                'last_purchase_date' => $this->normalizeDate($item['last_purchase_date'] ?? null),
                 'description' => $reference?->reference_description,
                 'brand' => $this->normalizeString($item['brand'] ?? null),
                 'unit_measure' => $this->normalizeString($item['unit'] ?? null),
@@ -166,6 +167,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
                 'ean',
                 'codigo_erp',
                 'current_stock',
+                'last_purchase_date',
                 'description',
                 'brand',
                 'unit_measure',
@@ -380,6 +382,20 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         }
 
         return null;
+    }
+
+    private function normalizeDate(mixed $value): ?string
+    {
+        $dateValue = $this->normalizeString($value);
+        if ($dateValue === null) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($dateValue)->toDateString();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function normalizeEan(mixed $value): ?string

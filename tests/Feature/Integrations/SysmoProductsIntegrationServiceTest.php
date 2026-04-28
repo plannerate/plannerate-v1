@@ -59,6 +59,7 @@ test('persist mapped products uses ean reference as knowledge base', function ()
             'brand' => 'Marca API Sem Base',
             'unit' => 'UN',
             'current_stock' => 7.5,
+            'last_purchase_date' => '2026-04-17',
             'status' => 'ATIVO',
         ],
         [
@@ -145,7 +146,8 @@ test('persist mapped products uses ean reference as knowledge base', function ()
         ->and((string) $unknownProduct?->id)->toStartWith('P1')
         ->and($unknownProduct?->category_id)->toBeNull()
         ->and($unknownProduct?->brand)->toBe('Marca API Sem Base')
-        ->and((float) $unknownProduct?->current_stock)->toBe(7.5);
+        ->and((float) $unknownProduct?->current_stock)->toBe(7.5)
+        ->and($unknownProduct?->last_purchase_date?->toDateString())->toBe('2026-04-17');
 
     expect(Product::query()
         ->where('tenant_id', $tenantId)
