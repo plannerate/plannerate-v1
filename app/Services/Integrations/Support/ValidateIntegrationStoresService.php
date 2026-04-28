@@ -40,8 +40,18 @@ class ValidateIntegrationStoresService
             }
 
             $processing = $this->configNormalizer->normalize($integration)['processing'];
-            $productsService = $this->integrationServiceResolver->resolveProductsService($integration);
+            try {
+                $productsService = $this->integrationServiceResolver->resolveProductsService($integration);
+            } catch (Throwable $exception) {
+                $this->notifyTenantUsersAboutInvalidStores($integration, $dispatchLabel, [[
+                    'store_id' => 'n/a',
+                    'reason' => $exception->getMessage(),
+                ]]);
+
+                return false;
+            }
             $failedStores = [];
+            $hasAtLeastOneValidStore = false;
 
             foreach ($stores as $store) {
                 $empresa = $this->resolveEmpresaForStore($store->code, $store->document, $processing);
@@ -62,6 +72,7 @@ class ValidateIntegrationStoresService
                         'partner_key' => (string) ($processing['partner_key'] ?? ''),
                         'page_size' => (int) ($processing['products_page_size'] ?? 1000),
                     ]);
+                    $hasAtLeastOneValidStore = true;
                 } catch (Throwable $exception) {
                     $failedStores[] = [
                         'store_id' => (string) $store->id,
@@ -73,7 +84,9 @@ class ValidateIntegrationStoresService
 
             if ($failedStores !== []) {
                 $this->notifyTenantUsersAboutInvalidStores($integration, $dispatchLabel, $failedStores);
+            }
 
+            if (! $hasAtLeastOneValidStore) {
                 return false;
             }
 

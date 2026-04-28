@@ -24,7 +24,7 @@ class DispatchInitialCommand extends Command
             $query->where('tenant_id', $tenantId);
         }
 
-        $integrations = $query->get(['id', 'tenant_id']);
+        $integrations = $query->get();
 
         foreach ($integrations as $integration) {
             if (! $validateIntegrationStoresService->validateBeforeDispatch($integration, 'inicial')) {
