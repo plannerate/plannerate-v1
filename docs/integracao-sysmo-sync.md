@@ -48,6 +48,13 @@ Comandos:
 - `integrations:dispatch-daily`
 - `integrations:dispatch-nightly-maintenance`
 
+Pre-validacao antes do dispatch (`initial` e `daily`):
+- ambos usam `ValidateIntegrationStoresService`;
+- lojas com falha de configuracao/API sao marcadas como `draft` para nao reentrar automaticamente;
+- o tenant so e bloqueado quando **nenhuma** loja valida permanece;
+- se houver ao menos uma loja valida, o dispatch continua para evitar bloqueio total por uma loja ruim;
+- os comandos devem carregar a integracao completa (`$query->get()`), pois `integration_type`/config sao obrigatorios na validacao.
+
 Agendado em `routes/console.php`:
 - diario `01:30`: dispatch diario
 - diario `03:30`: manutencao noturna
@@ -66,6 +73,7 @@ Comando:
 Efeito:
 - dispara jobs de vendas e produtos desde o periodo configurado em dias;
 - processa por dia (e produtos por loja/pagina).
+- executa pre-validacao das lojas antes de enfileirar jobs.
 
 ### 2) Operacao diaria
 
@@ -81,6 +89,7 @@ Efeito:
 - sempre inclui ontem;
 - inclui dias com `failed/pending` na janela de lookback;
 - dispara sync de vendas e produtos.
+- executa a mesma pre-validacao de lojas usada no fluxo inicial.
 
 ### 3) Manutencao noturna
 
@@ -147,21 +156,22 @@ Body base:
 - `empresa` (loja)
 - `partner_key`
 
-### Estrategia de paginação (2 fases)
+### Estrategia de paginacao progressiva
 
 1. `DispatchTenantProductStorePagesJob`
-   - faz chamada inicial (`pagina = 1`) por loja/dia;
-   - le `total_paginas`;
-   - dispara um job por pagina.
+   - dispara apenas a `pagina = 1` por loja;
+   - nao faz pre-descoberta de `total_paginas`.
 
 2. `SyncTenantProductStorePageJob`
-   - processa apenas uma pagina especifica;
-   - persiste produtos e relacao loja.
+   - processa uma pagina e persiste produtos/relacao loja;
+   - enfileira a proxima pagina progressivamente quando necessario;
+   - ao finalizar a loja, dispara a etapa de finalizacao pos-persistencia.
 
 ### Persistencia
 
 - produto unico por tenant (nao duplica por loja);
-- usa `ean_references` para enriquecer categoria e dados comerciais;
+- persistencia e finalizacao sao separadas: primeiro grava, depois normaliza/reconcilia;
+- usa `ean_references` na etapa de finalizacao para enriquecer categoria e dados comerciais;
 - restaura produto soft deleted quando reaparece;
 - registra pivot `product_store` (`tenant_id`, `product_id`, `store_id`, `last_synced_at`);
 - ID deterministico com prefixo `P1`.
