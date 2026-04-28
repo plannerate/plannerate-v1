@@ -9,6 +9,8 @@ use App\Services\Integrations\Sysmo\SysmoSalesResponseMapper;
 use Illuminate\Support\Facades\DB;
 
 test('persist mapped sales fills ean from product using codigo erp', function () {
+    config(['multitenancy.tenant_database_connection_name' => null]);
+
     $tenantId = (string) str()->ulid();
 
     $product = Product::query()->create([
@@ -55,5 +57,7 @@ test('persist mapped sales fills ean from product using codigo erp', function ()
         ->and($sale?->ean)->toBe('789000000002')
         ->and((string) $sale?->id)->toStartWith('S1')
         ->and((float) $sale?->total_sale_value)->toBe(59.9)
+        ->and((float) $sale?->total_profit_margin)->toBe(23.3175)
+        ->and((float) $sale?->margem_contribuicao)->toBe(21.89)
         ->and($sale?->promotion)->toBe('N');
 });

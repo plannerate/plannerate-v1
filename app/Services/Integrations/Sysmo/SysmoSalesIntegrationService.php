@@ -117,6 +117,11 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
                 'sale_price' => $item['unit_price'] ?? null,
                 'total_sale_quantity' => $item['quantity'] ?? null,
                 'total_sale_value' => $item['total_price'] ?? null,
+                'total_profit_margin' => $this->convertToFloat(data_get($item, 'custo_comercial')),
+                'margem_contribuicao' => $this->calculateMargemContribuicao(
+                    $item,
+                    $this->convertToFloat(data_get($item, 'total_price')),
+                ),
                 'extra_data' => json_encode([
                     'empresa' => $item['empresa'] ?? null,
                     'valor_liquido' => $item['valor_liquido'] ?? null,
@@ -230,5 +235,39 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
             saleDate: $saleDate,
             promotion: $promotion,
         );
+    }
+
+    /**
+     * Calcula a margem de contribuição da venda.
+     *
+     * Fórmula: total_sale_value - valor_impostos - custo_medio_loja.
+     *
+     * @param  array<string, mixed>  $sale
+     */
+    private function calculateMargemContribuicao(array $sale, ?float $totalSaleValue): ?float
+    {
+        if ($totalSaleValue === null) {
+            return null;
+        }
+
+        $valorImpostos = $this->convertToFloat(data_get($sale, 'valor_impostos', 0)) ?? 0.0;
+        $custoMedioLoja = $this->convertToFloat(data_get($sale, 'custo_medio_loja', 0)) ?? 0.0;
+
+        return round($totalSaleValue - $valorImpostos - $custoMedioLoja, 2);
+    }
+
+    private function convertToFloat(mixed $value): ?float
+    {
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        if (is_string($value)) {
+            $normalized = str_replace(',', '.', trim($value));
+
+            return is_numeric($normalized) ? (float) $normalized : null;
+        }
+
+        return null;
     }
 }
