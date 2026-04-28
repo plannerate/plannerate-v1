@@ -71,6 +71,27 @@ test('persist mapped products uses ean reference as knowledge base', function ()
             'unit' => 'UN',
             'status' => 'ATIVO',
         ],
+        [
+            'external_id' => '66529',
+            'ean' => '7891111111112',
+            'name' => 'Produto inativo na empresa',
+            'brand' => 'Marca Inativa',
+            'unit' => 'UN',
+            'status' => 'ATIVO',
+            'raw' => [
+                'gtins' => [
+                    'completo' => [
+                        [
+                            'gtin' => '7891111111112',
+                            'principal' => 'S',
+                        ],
+                    ],
+                ],
+                'cadastro_ativo' => 'S',
+                'ativo_na_empresa' => 'N',
+                'pertence_ao_mix' => 'S',
+            ],
+        ],
     ]);
 
     $store = Store::query()->create([
@@ -125,6 +146,11 @@ test('persist mapped products uses ean reference as knowledge base', function ()
     expect(Product::query()
         ->where('tenant_id', $tenantId)
         ->where('name', 'Produto com gtin invalido')
+        ->exists())->toBeFalse();
+
+    expect(Product::query()
+        ->where('tenant_id', $tenantId)
+        ->where('name', 'Produto inativo na empresa')
         ->exists())->toBeFalse();
 
     $this->assertDatabaseHas('product_store', [

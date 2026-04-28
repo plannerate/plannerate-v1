@@ -78,6 +78,19 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         $invalidItemsExamples = [];
 
         foreach ($mappedItems as $item) {
+            if (! $this->validateImportData($item)) {
+                $invalidItemsCount++;
+
+                if (count($invalidItemsExamples) < 5) {
+                    $invalidItemsExamples[] = [
+                        'codigo_erp' => $item['external_id'] ?? null,
+                        'ean' => $item['ean'] ?? null,
+                    ];
+                }
+
+                continue;
+            }
+
             $normalizedEan = $this->normalizeEan($item['ean'] ?? null);
             $reference = $normalizedEan !== null ? $references->get($normalizedEan) : null;
             $externalId = $this->validateCodigoErp($this->normalizeString($item['external_id'] ?? null));
@@ -364,5 +377,95 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
     private function generateProductId(?string $ean, string $tenantId, ?string $codigoErp): string
     {
         return $this->deterministicIdGenerator->productId($tenantId, $ean, $codigoErp);
+    }
+
+    /**
+     * Validação consolidada dos dados de importação.
+     *
+     * @param  array<string, mixed>  $item
+     */
+    private function validateImportData(array $item): bool
+    {
+        /** @var array<string, mixed> $rawItem */
+        $rawItem = is_array($item['raw'] ?? null) ? $item['raw'] : [];
+
+        $ean = $this->getProcessedGtin($rawItem, $item);
+        if ($ean === null) {
+            return false;
+        }
+
+        $requiredFlags = ['cadastro_ativo', 'ativo_na_empresa', 'pertence_ao_mix'];
+
+        foreach ($requiredFlags as $flag) {
+            $value = $this->getProcessedValue($flag, $rawItem, $item);
+            if ($value === 'N') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $rawItem
+     * @param  array<string, mixed>  $mappedItem
+     */
+    private function getProcessedValue(string $key, array $rawItem, array $mappedItem, ?string $default = null): ?string
+    {
+        $value = $rawItem[$key] ?? $mappedItem[$key] ?? $default;
+
+        return $this->normalizeString($value);
+    }
+
+    /**
+     * @param  array<string, mixed>  $rawItem
+     * @param  array<string, mixed>  $mappedItem
+     */
+    private function getProcessedGtin(array $rawItem, array $mappedItem): ?string
+    {
+        if (array_key_exists('gtins', $rawItem)) {
+            if (empty($rawItem['gtins'])) {
+                return null;
+            }
+
+            $fromRaw = $this->extractGtinFromRaw($rawItem['gtins']);
+
+            return $this->normalizeEan($fromRaw);
+        }
+
+        return $this->normalizeEan($mappedItem['ean'] ?? null);
+    }
+
+    private function extractGtinFromRaw(mixed $gtins): ?string
+    {
+        if (! is_array($gtins)) {
+            return null;
+        }
+
+        $complete = $gtins['completo'] ?? null;
+        if (is_array($complete)) {
+            foreach ($complete as $entry) {
+                if (! is_array($entry)) {
+                    continue;
+                }
+
+                if (($entry['principal'] ?? null) === 'S') {
+                    return $this->normalizeString($entry['gtin'] ?? null);
+                }
+            }
+
+            foreach ($complete as $entry) {
+                if (! is_array($entry)) {
+                    continue;
+                }
+
+                $candidate = $this->normalizeString($entry['gtin'] ?? null);
+                if ($candidate !== null) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return $this->normalizeString($gtins['gtin'] ?? null);
     }
 }
