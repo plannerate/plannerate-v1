@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Category;
+use App\Models\EanReference;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\Files\Imports\Categories\CategoryHierarchyImportService;
@@ -56,6 +57,11 @@ test('monta hierarquia e vincula produto pelo ean na categoria folha', function 
             'subsegmento' => 'Tradicional',
             'atributo' => 'Premium',
             'ean' => '7890000000001',
+            'descricao_atual' => 'Macarrao Premium',
+            'marca_obrigatorio' => 'Marca A',
+            'tipo_de_embalagem_obrigatorio' => 'Pacote',
+            'tamanho_ou_quantidade_da_embalagem_obrigatorio' => '500',
+            'unidade_de_medida_obrigatorio' => 'g',
         ]]
     );
 
@@ -64,6 +70,16 @@ test('monta hierarquia e vincula produto pelo ean na categoria folha', function 
 
     expect($leafCategory)->not->toBeNull();
     expect($product->category_id)->toBe($leafCategory?->id);
+
+    $eanReference = EanReference::query()
+        ->where('tenant_id', $tenantId)
+        ->where('ean', '7890000000001')
+        ->first();
+
+    expect($eanReference)->not->toBeNull();
+    expect($eanReference?->category_id)->toBe($leafCategory?->id);
+    expect($eanReference?->reference_description)->toBe('Macarrao Premium');
+    expect($eanReference?->brand)->toBe('Marca A');
 });
 
 test('ean inexistente gera aviso e ainda cria categorias', function (): void {
@@ -136,4 +152,39 @@ test('reimportacao idempotente para produto e categorias', function (): void {
     expect($product->category_id)->not->toBeNull();
     expect($second->categoriesCreated)->toBe(0);
     expect($first->productsLinked + $second->productsLinked)->toBeGreaterThanOrEqual(1);
+});
+
+test('mapeia colunas extras com cabecalho original da planilha', function (): void {
+    $tenantId = (string) Str::ulid();
+    $user = User::factory()->create();
+
+    $service = app(CategoryHierarchyImportService::class);
+    $service->importRows(
+        tenantId: $tenantId,
+        userId: $user->id,
+        rows: [[
+            'EAN' => '7890000000999',
+            'Segmento varejista' => 'Mercearia',
+            'Departamento' => 'Alimentos',
+            'Descrição atual' => 'Produto Teste',
+            'Marca (obrigatório)' => 'JUREIA',
+            'Submarca' => 'Linha A',
+            'Tipo de embalagem (obrigatório)' => 'PACOTE',
+            'Tamanho ou quantidade da embalagem (obrigatório)' => '500',
+            'Unidade de medida (obrigatório)' => 'G',
+        ]]
+    );
+
+    $reference = EanReference::query()
+        ->where('tenant_id', $tenantId)
+        ->where('ean', '7890000000999')
+        ->first();
+
+    expect($reference)->not->toBeNull();
+    expect($reference?->reference_description)->toBe('Produto Teste');
+    expect($reference?->brand)->toBe('JUREIA');
+    expect($reference?->subbrand)->toBe('Linha A');
+    expect($reference?->packaging_type)->toBe('PACOTE');
+    expect($reference?->packaging_size)->toBe('500');
+    expect($reference?->measurement_unit)->toBe('G');
 });

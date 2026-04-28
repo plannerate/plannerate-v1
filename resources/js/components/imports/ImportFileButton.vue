@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { Upload } from 'lucide-vue-next';
+import { FileSpreadsheet, Upload } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +12,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 
 const props = withDefaults(
     defineProps<{
@@ -25,20 +24,59 @@ const props = withDefaults(
         submittingLabel: string;
         cancelLabel: string;
         accept?: string;
+        dropLabel?: string;
+        dropHint?: string;
     }>(),
     {
         accept: '.xlsx,.xls',
+        dropLabel: 'Arraste e solte a planilha aqui',
+        dropHint: 'ou clique para escolher um arquivo',
     }
 );
 
 const isOpen = ref(false);
+const isDragging = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
 const form = useForm<{ spreadsheet: File | null }>({
     spreadsheet: null,
 });
 
+function setSpreadsheet(file: File | null): void {
+    form.spreadsheet = file;
+}
+
 function handleChange(event: Event): void {
     const target = event.target as HTMLInputElement;
-    form.spreadsheet = target.files?.[0] ?? null;
+    setSpreadsheet(target.files?.[0] ?? null);
+}
+
+function openFilePicker(): void {
+    fileInput.value?.click();
+}
+
+function onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (form.processing) {
+        return;
+    }
+
+    isDragging.value = true;
+}
+
+function onDragLeave(): void {
+    isDragging.value = false;
+}
+
+function onDrop(event: DragEvent): void {
+    event.preventDefault();
+    isDragging.value = false;
+
+    if (form.processing) {
+        return;
+    }
+
+    const file = event.dataTransfer?.files?.[0] ?? null;
+    setSpreadsheet(file);
 }
 
 function submit(): void {
@@ -59,6 +97,7 @@ function close(): void {
 
     form.clearErrors();
     form.reset();
+    isDragging.value = false;
     isOpen.value = false;
 }
 </script>
@@ -80,7 +119,42 @@ function close(): void {
 
             <div class="space-y-2">
                 <label class="text-sm font-medium text-foreground">{{ fileLabel }}</label>
-                <Input type="file" name="spreadsheet" :accept="accept" @change="handleChange" />
+                <input
+                    ref="fileInput"
+                    type="file"
+                    name="spreadsheet"
+                    class="hidden"
+                    :accept="accept"
+                    @change="handleChange"
+                />
+                <button
+                    type="button"
+                    class="w-full rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 px-4 py-5 text-left transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    :class="{
+                        'border-primary bg-primary/5': isDragging,
+                        'opacity-70 cursor-not-allowed': form.processing,
+                        'hover:border-primary/60 hover:bg-primary/5': !form.processing,
+                    }"
+                    :disabled="form.processing"
+                    @click="openFilePicker"
+                    @dragover="onDragOver"
+                    @dragleave="onDragLeave"
+                    @drop="onDrop"
+                >
+                    <div class="flex items-start gap-3">
+                        <div class="rounded-md bg-background p-2">
+                            <FileSpreadsheet class="size-5 text-primary" />
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-sm font-medium text-foreground">
+                                {{ form.spreadsheet?.name || dropLabel }}
+                            </p>
+                            <p class="text-xs text-muted-foreground">
+                                {{ dropHint }}
+                            </p>
+                        </div>
+                    </div>
+                </button>
                 <p v-if="form.errors.spreadsheet" class="text-sm text-destructive">
                     {{ form.errors.spreadsheet }}
                 </p>

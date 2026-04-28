@@ -17,6 +17,7 @@ type CategoryRow = {
     id: string;
     name: string;
     full_path: string | null;
+    level_name: string | null;
     slug: string | null;
     status: 'draft' | 'published' | 'importer';
     codigo: number | null;
@@ -116,7 +117,7 @@ const pageMeta = useCrudPageMeta({
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.name') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.full_path') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.status') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.is_placeholder') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.level_name') }}</th>
                         <th class="px-4 py-3 text-right font-medium">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>
@@ -139,10 +140,9 @@ const pageMeta = useCrudPageMeta({
                             <ColumnStatusBadge :status="category.status" />
                         </td>
                         <td class="px-4 py-3">
-                            <Badge v-if="category.is_placeholder" variant="secondary">
-                                {{ t('app.tenant.common.yes') }}
+                            <Badge v-if="category.level_name" variant="outline">
+                                {{ category.level_name }}
                             </Badge>
-                            <span v-else class="text-muted-foreground">{{ t('app.tenant.common.no') }}</span>
                         </td>
                         <td class="px-4 py-3 text-right">
                             <ColumnActions

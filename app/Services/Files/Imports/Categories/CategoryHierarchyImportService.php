@@ -4,6 +4,7 @@ namespace App\Services\Files\Imports\Categories;
 
 use App\Models\Category;
 use App\Services\Files\Imports\Connections\CategoryImportConnection;
+use App\Services\Files\Imports\Connections\EanReferenceByEanConnection;
 use App\Services\Files\Imports\Connections\PlanogramCategoryLeafConnection;
 use App\Services\Files\Imports\Connections\ProductCategoryByEanConnection;
 use App\Services\Files\Imports\ImportExecutionResult;
@@ -36,6 +37,7 @@ class CategoryHierarchyImportService
     public function __construct(?array $connections = null)
     {
         $this->connections = $connections ?? [
+            new EanReferenceByEanConnection,
             new ProductCategoryByEanConnection,
             new PlanogramCategoryLeafConnection,
         ];
@@ -93,7 +95,13 @@ class CategoryHierarchyImportService
         $normalized = [];
 
         foreach ($row as $key => $value) {
-            $normalizedKey = Str::of((string) $key)->trim()->lower()->ascii()->replace(' ', '_')->replace('-', '_')->toString();
+            $normalizedKey = Str::of((string) $key)
+                ->trim()
+                ->lower()
+                ->ascii()
+                ->replaceMatches('/[^a-z0-9]+/', '_')
+                ->trim('_')
+                ->toString();
             $normalizedValue = trim((string) ($value ?? ''));
             $normalized[$normalizedKey] = $normalizedValue;
         }

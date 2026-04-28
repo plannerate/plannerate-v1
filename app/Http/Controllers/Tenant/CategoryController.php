@@ -110,6 +110,7 @@ class CategoryController extends Controller
                 'codigo' => $category->codigo,
                 'full_path' => $category->full_path,
                 'is_placeholder' => $category->is_placeholder,
+                'level_name' => $category->level_name,
                 'created_at' => $category->created_at?->toDateTimeString(),
             ]);
 
