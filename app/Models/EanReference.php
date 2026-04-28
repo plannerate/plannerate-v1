@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\BelongsToTenant;
+use App\Models\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class EanReference extends Model
 {
-    use BelongsToTenant, HasUlids, SoftDeletes;
+    use BelongsToTenant, HasUlids, SoftDeletes, UsesTenantConnection;
 
     /**
      * @var list<string>

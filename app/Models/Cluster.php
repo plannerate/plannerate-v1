@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\BelongsToTenant;
+use App\Models\Traits\UsesTenantConnection;
 use Database\Factories\ClusterFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +16,7 @@ use Tall\Sluggable\SlugOptions;
 class Cluster extends Model
 {
     /** @use HasFactory<ClusterFactory> */
-    use BelongsToTenant, HasFactory, HasSlug, HasUlids, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasSlug, HasUlids, SoftDeletes, UsesTenantConnection;
 
     /**
      * The attributes that are mass assignable.

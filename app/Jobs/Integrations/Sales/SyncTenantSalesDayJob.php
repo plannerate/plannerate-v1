@@ -11,10 +11,9 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
-use Spatie\Multitenancy\Jobs\TenantAware;
 use Throwable;
 
-class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
+class SyncTenantSalesDayJob implements ShouldQueue
 {
     use Queueable;
 
@@ -23,7 +22,6 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
     public function __construct(
         public string $integrationId,
         public string $referenceDate,
-        public string $tenantId,
     ) {}
 
     public function handle(

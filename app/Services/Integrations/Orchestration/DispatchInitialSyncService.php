@@ -32,7 +32,7 @@ class DispatchInitialSyncService
 
         $tenant->execute(function () use ($integration, $productsStart, $salesStart, $yesterday): void {
             for ($date = $salesStart->copy(); $date->lte($yesterday); $date->addDay()) {
-                SyncTenantSalesDayJob::dispatch($integration->id, $date->toDateString(), (string) $integration->tenant_id);
+                SyncTenantSalesDayJob::dispatch($integration->id, $date->toDateString());
             }
 
             for ($date = $productsStart->copy(); $date->lte($yesterday); $date->addDay()) {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\UsesTenantConnection;
 use Database\Factories\AddressFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Address extends Model
 {
     /** @use HasFactory<AddressFactory> */
-    use HasFactory, HasUlids, SoftDeletes;
+    use HasFactory, HasUlids, SoftDeletes, UsesTenantConnection;
 
     /**
      * The attributes that are mass assignable.
@@ -57,7 +58,7 @@ class Address extends Model
         $containerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
 
         if (app()->bound($containerKey) && app($containerKey) !== null) {
-            return null;
+            return $this->getConnectionNameFromTenantConfig();
         }
 
         return 'landlord';

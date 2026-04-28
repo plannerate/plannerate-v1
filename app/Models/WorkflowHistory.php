@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\WorkflowHistoryAction;
+use App\Models\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WorkflowHistory extends Model
 {
-    use HasUlids, SoftDeletes;
+    use HasUlids, SoftDeletes, UsesTenantConnection;
 
     protected $fillable = [
         'user_id',

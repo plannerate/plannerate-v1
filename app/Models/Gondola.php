@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use App\Models\Traits\BelongsToTenant;
+use App\Models\Traits\UsesTenantConnection;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola as EditorGondola;
 use Database\Factories\GondolaFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Tall\Sluggable\HasSlug;
@@ -16,7 +16,7 @@ use Tall\Sluggable\SlugOptions;
 class Gondola extends EditorGondola
 {
     /** @use HasFactory<GondolaFactory> */
-    use BelongsToTenant, HasFactory, HasSlug, HasUlids, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasSlug, HasUlids, SoftDeletes, UsesTenantConnection;
 
     /**
      * The attributes that are mass assignable.

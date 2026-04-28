@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\BelongsToTenant;
+use App\Models\Traits\UsesTenantConnection;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram as EditorPlanogram;
 use Database\Factories\PlanogramFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -16,7 +17,7 @@ use Tall\Sluggable\SlugOptions;
 class Planogram extends EditorPlanogram
 {
     /** @use HasFactory<PlanogramFactory> */
-    use BelongsToTenant, HasFactory, HasSlug, HasUlids, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasSlug, HasUlids, SoftDeletes, UsesTenantConnection;
 
     /**
      * The attributes that are mass assignable.

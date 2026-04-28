@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProductImageAiOperation extends Model
 {
-    use HasUlids;
+    use HasUlids, UsesTenantConnection;
 
     /**
      * @var list<string>

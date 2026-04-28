@@ -58,7 +58,7 @@ class DispatchDailySyncService
 
         $tenant->execute(function () use ($integration, $productsDatesToDispatch, $salesDatesToDispatch): void {
             foreach ($salesDatesToDispatch as $date) {
-                SyncTenantSalesDayJob::dispatch($integration->id, $date, (string) $integration->tenant_id);
+                SyncTenantSalesDayJob::dispatch($integration->id, $date);
             }
 
             foreach ($productsDatesToDispatch as $date) {

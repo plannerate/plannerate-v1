@@ -70,7 +70,7 @@ return [
      *
      * Set to `null` to use the default connection.
      */
-    'tenant_database_connection_name' => null,
+    'tenant_database_connection_name' => 'tenant',
 
     /*
      * The connection name to reach the landlord database.

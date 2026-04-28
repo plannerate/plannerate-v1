@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\BelongsToTenant;
+use App\Models\Traits\UsesTenantConnection;
 use Database\Factories\ProviderFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Provider extends Model
 {
     /** @use HasFactory<ProviderFactory> */
-    use BelongsToTenant, HasFactory, HasUlids, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasUlids, SoftDeletes, UsesTenantConnection;
 
     /**
      * The attributes that are mass assignable.

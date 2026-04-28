@@ -394,6 +394,6 @@ class TenantUserAccessController extends Controller
 
     private function resolveTenantConnectionName(): string
     {
-        return (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+        return (string) (config('multitenancy.tenant_database_connection_name') ?: 'tenant');
     }
 }

@@ -150,12 +150,34 @@ test('daily sync sales jobs are queued with tenant context', function () {
 });
 
 test('queue and cache infrastructure use landlord connection explicitly', function () {
-    expect(config('multitenancy.tenant_database_connection_name'))->toBeNull()
+    expect(config('multitenancy.tenant_database_connection_name'))->toBe('tenant')
         ->and(config('cache.stores.database.connection'))->toBe('landlord')
         ->and(config('cache.stores.database.lock_connection'))->toBe('landlord')
         ->and(config('queue.connections.database.connection'))->toBe('landlord')
         ->and(config('queue.batching.database'))->toBe('landlord')
         ->and(config('queue.failed.database'))->toBe('landlord');
+});
+
+test('makeCurrent switches only dedicated tenant connection', function () {
+    $defaultConnectionName = (string) config('database.default');
+    $tenantConnectionName = (string) config('multitenancy.tenant_database_connection_name');
+
+    $originalDefaultDatabase = config("database.connections.{$defaultConnectionName}.database");
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Connection Switch',
+        'slug' => 'tenant-connection-switch-'.fake()->numberBetween(100, 999),
+        'database' => 'tenant_connection_switch_db',
+        'status' => 'active',
+    ]));
+
+    $tenant->makeCurrent();
+
+    expect(config("database.connections.{$tenantConnectionName}.database"))->toBe('tenant_connection_switch_db')
+        ->and(config("database.connections.{$defaultConnectionName}.database"))->toBe($originalDefaultDatabase);
+
+    Tenant::forgetCurrent();
+
+    expect(config("database.connections.{$tenantConnectionName}.database"))->toBeNull();
 });
 
 test('integrations nightly maintenance command enqueues maintenance job', function () {

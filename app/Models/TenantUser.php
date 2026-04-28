@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\UsesTenantConnection;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -18,7 +19,7 @@ use Spatie\Permission\Traits\HasRoles;
 class TenantUser extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, HasUlids, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, HasUlids, Notifiable, SoftDeletes, TwoFactorAuthenticatable, UsesTenantConnection;
 
     protected $table = 'users';
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Traits\UsesTenantConnection;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -20,14 +21,14 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, HasUlids, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, HasUlids, Notifiable, TwoFactorAuthenticatable, UsesTenantConnection;
 
     public function getConnectionName(): ?string
     {
         $containerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
 
         if (app()->bound($containerKey) && app($containerKey) !== null) {
-            return null;
+            return $this->resolveTenantConnectionName();
         }
 
         $host = strtolower((string) request()->getHost());
@@ -47,11 +48,16 @@ class User extends Authenticatable
             if ($tenant !== null && method_exists($tenant, 'makeCurrent')) {
                 $tenant->makeCurrent();
 
-                return null;
+                return $this->resolveTenantConnectionName();
             }
         }
 
         return 'landlord';
+    }
+
+    private function resolveTenantConnectionName(): ?string
+    {
+        return $this->getConnectionNameFromTenantConfig();
     }
 
     /**

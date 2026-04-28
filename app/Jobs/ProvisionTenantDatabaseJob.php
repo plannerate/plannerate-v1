@@ -21,7 +21,7 @@ class ProvisionTenantDatabaseJob implements NotTenantAware, ShouldQueue
 
     public function handle(): void
     {
-        $connectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+        $connectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: 'tenant');
         $originalDatabase = config("database.connections.{$connectionName}.database");
 
         try {

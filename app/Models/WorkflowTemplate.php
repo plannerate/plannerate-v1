@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\BelongsToTenant;
+use App\Models\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,7 @@ use Tall\Sluggable\SlugOptions;
 
 class WorkflowTemplate extends Model
 {
-    use BelongsToTenant, HasUlids, SoftDeletes, HasSlug;
+    use BelongsToTenant, HasSlug, HasUlids, SoftDeletes, UsesTenantConnection;
 
     protected $fillable = [
         'user_id',
@@ -62,7 +63,6 @@ class WorkflowTemplate extends Model
     {
         return $this->hasMany(WorkflowPlanogramStep::class);
     }
-
 
     /**
      * @return SlugOptions
@@ -163,7 +163,6 @@ class WorkflowTemplate extends Model
                 'tags' => ['revisao', 'periodica'],
             ],
         ];
- 
 
         return $defaults;
     }
