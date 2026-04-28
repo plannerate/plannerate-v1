@@ -6,6 +6,7 @@ use App\Http\Controllers\Landlord\PermissionController;
 use App\Http\Controllers\Landlord\PlanController;
 use App\Http\Controllers\Landlord\RoleController;
 use App\Http\Controllers\Landlord\TenantController as LandlordTenantController;
+use App\Http\Controllers\Landlord\TenantIntegrationController;
 use App\Http\Controllers\Landlord\TenantUserAccessController;
 use App\Http\Controllers\Landlord\UserController;
 use App\Http\Controllers\Landlord\WorkflowTemplateController as LandlordWorkflowTemplateController;
@@ -80,6 +81,11 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->name('landlord.tenants.access.users.destroy');
     Route::patch('tenants/{tenant}/access/users/{userId}/restore', [TenantUserAccessController::class, 'restore'])
         ->name('landlord.tenants.access.users.restore');
+
+    Route::get('tenants/{tenant}/integration', [TenantIntegrationController::class, 'edit'])
+        ->name('landlord.tenants.integration.edit');
+    Route::put('tenants/{tenant}/integration', [TenantIntegrationController::class, 'update'])
+        ->name('landlord.tenants.integration.update');
 
     Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
         Route::get('tenants/{tenant}/kanban/templates', [LandlordWorkflowTemplateController::class, 'index'])

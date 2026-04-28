@@ -117,6 +117,11 @@ class Tenant extends ModelsTenant
         return $this->hasMany(TenantDomain::class);
     }
 
+    public function integration(): HasOne
+    {
+        return $this->hasOne(TenantIntegration::class);
+    }
+
     /**
      * Get the primary domain of the tenant.
      */

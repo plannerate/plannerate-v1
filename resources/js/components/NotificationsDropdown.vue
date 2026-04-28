@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import { onClickOutside } from '@vueuse/core';
 import { useConnectionStatus, useEchoNotification } from '@laravel/echo-vue';
+import type { ConnectionStatus } from '@laravel/echo-vue';
 import {
     AlertTriangle,
     Bell,
@@ -26,7 +27,8 @@ import {
 import type { AppNotification, NotificationData } from '@/types/auth';
 
 const page = usePage();
-const subdomain = window.location.hostname.split('.')[0];
+const isBrowser = typeof window !== 'undefined';
+const subdomain = isBrowser ? window.location.hostname.split('.')[0] : '';
 const isOpen = ref(false);
 const panelRef = ref<HTMLElement | null>(null);
 
@@ -37,27 +39,29 @@ const unreadCount = ref<number>(auth.value.unread_count ?? 0);
 
 onClickOutside(panelRef, () => { isOpen.value = false; });
 
-const connectionStatus = useConnectionStatus();
+const connectionStatus = isBrowser ? useConnectionStatus() : ref<ConnectionStatus>('disconnected');
 
-useEchoNotification<NotificationData>(
-    `App.Models.User.${auth.value.user.id}`,
-    (payload) => {
-        notifications.value.unshift({
-            id: payload.id,
-            read_at: null,
-            data: {
-                title: payload.title,
-                message: payload.message,
-                notification_type: payload.notification_type,
-                action_url: payload.action_url,
-                download_url: payload.download_url,
-                download_name: payload.download_name,
-            },
-            created_at: new Date().toISOString(),
-        });
-        unreadCount.value += 1;
-    },
-);
+if (isBrowser) {
+    useEchoNotification<NotificationData>(
+        `App.Models.User.${auth.value.user.id}`,
+        (payload) => {
+            notifications.value.unshift({
+                id: payload.id,
+                read_at: null,
+                data: {
+                    title: payload.title,
+                    message: payload.message,
+                    notification_type: payload.notification_type,
+                    action_url: payload.action_url,
+                    download_url: payload.download_url,
+                    download_name: payload.download_name,
+                },
+                created_at: new Date().toISOString(),
+            });
+            unreadCount.value += 1;
+        },
+    );
+}
 
 // --- Date helpers ---
 

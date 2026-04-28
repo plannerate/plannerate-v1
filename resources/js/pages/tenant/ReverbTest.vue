@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
-import { ConnectionStatus, useConnectionStatus, useEchoNotification } from '@laravel/echo-vue';
+import { useConnectionStatus, useEchoNotification } from '@laravel/echo-vue';
+import type { ConnectionStatus } from '@laravel/echo-vue';
 import {
     AlertCircle,
     AlertTriangle,
@@ -35,31 +36,34 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
-const subdomain = window.location.hostname.split('.')[0];
+const isBrowser = typeof window !== 'undefined';
+const subdomain = isBrowser ? window.location.hostname.split('.')[0] : '';
 
-const connectionStatus = useConnectionStatus();
+const connectionStatus = isBrowser ? useConnectionStatus() : ref<ConnectionStatus>('disconnected');
 
 const receivedNotifications = ref<Array<AppNotification & { received_at: string }>>([]);
 
-useEchoNotification<NotificationData>(
-    `App.Models.User.${props.user.id}`,
-    (payload) => {
-        receivedNotifications.value.unshift({
-            id: payload.id,
-            read_at: null,
-            data: {
-                title: payload.title,
-                message: payload.message,
-                notification_type: payload.notification_type,
-                action_url: payload.action_url,
-                download_url: payload.download_url,
-                download_name: payload.download_name,
-            },
-            created_at: new Date().toLocaleTimeString('pt-BR'),
-            received_at: new Date().toLocaleTimeString('pt-BR'),
-        });
-    },
-);
+if (isBrowser) {
+    useEchoNotification<NotificationData>(
+        `App.Models.User.${props.user.id}`,
+        (payload) => {
+            receivedNotifications.value.unshift({
+                id: payload.id,
+                read_at: null,
+                data: {
+                    title: payload.title,
+                    message: payload.message,
+                    notification_type: payload.notification_type,
+                    action_url: payload.action_url,
+                    download_url: payload.download_url,
+                    download_name: payload.download_name,
+                },
+                created_at: new Date().toLocaleTimeString('pt-BR'),
+                received_at: new Date().toLocaleTimeString('pt-BR'),
+            });
+        },
+    );
+}
 
 const form = useForm({
     title: '',
@@ -105,7 +109,7 @@ const typeColorMap = {
 <template>
     <Head title="Teste Reverb" />
     <AppLayout
-        :breadcrumbs="[{ title: 'Dashboard', href: '/' }, { title: 'Teste Reverb' }]"
+        :breadcrumbs="[{ title: 'Dashboard', href: '/' }, { title: 'Teste Reverb', href: ReverbTestController.index.url(subdomain) }]"
         :page-header="{ title: 'Teste Reverb / WebSocket', description: 'Verifique a conexão e dispare notificações em tempo real' }"
     >
         <div class="flex flex-col gap-6 p-4">

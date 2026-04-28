@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Users, Layers } from 'lucide-vue-next';
+import { Users, Layers, Link2 } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
+import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord/TenantIntegrationController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
 import ListPage from '@/components/ListPage.vue';
@@ -216,6 +217,26 @@ const pageMeta = useCrudPageMeta({
                                             {{
                                                 t(
                                                     'app.landlord.tenants.setup.title',
+                                                )
+                                            }}
+                                        </Link>
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="
+                                                TenantIntegrationController.edit.url(
+                                                    tenant.id,
+                                                )
+                                            "
+                                        >
+                                            <Link2 class="size-4" />
+                                            {{
+                                                t(
+                                                    'app.landlord.tenant_integrations.navigation',
                                                 )
                                             }}
                                         </Link>

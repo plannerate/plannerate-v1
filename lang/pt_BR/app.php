@@ -322,6 +322,42 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'limit_reached' => 'Limite de usuarios do plano atingido para este tenant.',
             ],
         ],
+        'tenant_integrations' => [
+            'navigation' => 'Integracao API',
+            'title' => 'Integracao API',
+            'description' => 'Configure a integracao de API deste tenant.',
+            'types' => [
+                'sysmo' => 'Sysmo',
+            ],
+            'fields' => [
+                'integration_type' => 'Tipo de integracao',
+                'identifier' => 'Identificador/CNPJ',
+                'external_name' => 'Nome externo principal',
+                'external_name_ean' => 'Campo EAN externo',
+                'external_name_status' => 'Campo status externo',
+                'external_name_sale_date' => 'Campo data de venda externo',
+                'http_method' => 'Metodo HTTP',
+                'api_url' => 'URL da API',
+                'auth_username' => 'Usuario de autenticacao',
+                'auth_password' => 'Senha de autenticacao',
+                'partner_key' => 'Partner key',
+                'empresa' => 'Empresa',
+                'days_to_maintain' => 'Dias para manter',
+                'auto_processing_enabled' => 'Processamento automatico habilitado',
+                'processing_time' => 'Horario de processamento',
+                'initial_setup_date' => 'Data de setup inicial',
+                'is_active' => 'Integracao ativa',
+            ],
+            'messages' => [
+                'updated' => 'Integracao do tenant atualizada com sucesso.',
+            ],
+            'hints' => [
+                'auth_password' => 'Ao editar, preencha apenas se quiser trocar a senha atual.',
+            ],
+            'placeholders' => [
+                'keep_password' => 'Deixe em branco para manter a senha atual',
+            ],
+        ],
         'tenant_statuses' => [
             'provisioning' => 'Provisionando',
             'active' => 'Ativo',
