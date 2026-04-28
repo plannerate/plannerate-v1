@@ -80,4 +80,56 @@ class SyncSalesProductReferencesService
                 'updated_at' => $now,
             ]);
     }
+
+    public function syncAllByCodigoErp(
+        string $tenantConnectionName,
+        string $tenantId,
+        Carbon $now,
+    ): void {
+        $connection = DB::connection($tenantConnectionName);
+        $driver = $connection->getDriverName();
+
+        if (in_array($driver, ['mysql', 'mariadb'], true)) {
+            $salesTable = $connection->getTablePrefix().'sales';
+            $productsTable = $connection->getTablePrefix().'products';
+
+            $sql = "
+                UPDATE {$salesTable} s
+                INNER JOIN {$productsTable} p
+                    ON p.tenant_id = s.tenant_id
+                   AND p.codigo_erp = s.codigo_erp
+                   AND p.deleted_at IS NULL
+                SET s.product_id = p.id,
+                    s.ean = p.ean,
+                    s.updated_at = ?
+                WHERE s.tenant_id = ?
+                  AND (
+                      s.product_id IS NULL
+                      OR s.ean IS NULL
+                      OR s.product_id <> p.id
+                      OR COALESCE(s.ean, '') <> COALESCE(p.ean, '')
+                  )
+            ";
+
+            $connection->update($sql, [$now, $tenantId]);
+
+            return;
+        }
+
+        // Fallback compatível com SQLite para ambiente de testes.
+        $connection->table('sales')
+            ->where('tenant_id', $tenantId)
+            ->whereExists(function ($query): void {
+                $query->selectRaw('1')
+                    ->from('products')
+                    ->whereColumn('products.tenant_id', 'sales.tenant_id')
+                    ->whereColumn('products.codigo_erp', 'sales.codigo_erp')
+                    ->whereNull('products.deleted_at');
+            })
+            ->update([
+                'product_id' => DB::raw('(SELECT products.id FROM products WHERE products.tenant_id = sales.tenant_id AND products.codigo_erp = sales.codigo_erp AND products.deleted_at IS NULL LIMIT 1)'),
+                'ean' => DB::raw('(SELECT products.ean FROM products WHERE products.tenant_id = sales.tenant_id AND products.codigo_erp = sales.codigo_erp AND products.deleted_at IS NULL LIMIT 1)'),
+                'updated_at' => $now,
+            ]);
+    }
 }

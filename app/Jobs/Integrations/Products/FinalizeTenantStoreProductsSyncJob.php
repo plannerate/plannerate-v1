@@ -2,7 +2,6 @@
 
 namespace App\Jobs\Integrations\Products;
 
-use App\Models\Store;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Sysmo\SysmoProductsIntegrationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -20,7 +19,6 @@ class FinalizeTenantStoreProductsSyncJob implements ShouldQueue, TenantAware
 
     public function __construct(
         public string $integrationId,
-        public string $storeId,
     ) {}
 
     public function handle(
@@ -35,20 +33,8 @@ class FinalizeTenantStoreProductsSyncJob implements ShouldQueue, TenantAware
             return;
         }
 
-        $store = Store::query()
-            ->whereKey($this->storeId)
-            ->where('status', 'published')
-            ->where('tenant_id', $integration->tenant_id)
-            ->whereNull('deleted_at')
-            ->first();
-
-        if (! $store) {
-            return;
-        }
-
         $productsIntegrationService->finalizePersistedProductsSync(
             tenantId: (string) $integration->tenant_id,
-            storeId: (string) $store->id,
         );
     }
 }

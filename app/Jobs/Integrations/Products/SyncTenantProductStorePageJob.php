@@ -81,7 +81,6 @@ class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
         } else {
             FinalizeTenantStoreProductsSyncJob::dispatch(
                 integrationId: (string) $integration->id,
-                storeId: (string) $store->id,
             );
         }
 

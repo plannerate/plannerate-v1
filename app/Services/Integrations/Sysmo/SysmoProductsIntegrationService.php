@@ -203,7 +203,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         }
     }
 
-    public function finalizePersistedProductsSync(string $tenantId, ?string $storeId = null): void
+    public function finalizePersistedProductsSync(string $tenantId): void
     {
         if ($tenantId === '') {
             return;
@@ -211,81 +211,98 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
 
         $tenantConnectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
         $now = Carbon::now();
-        $erpCodes = [];
 
-        if ($storeId !== null && $storeId !== '') {
-            DB::connection($tenantConnectionName)->table('product_store')
-                ->where('tenant_id', $tenantId)
-                ->where('store_id', $storeId)
-                ->orderBy('product_id')
-                ->select(['product_id'])
-                ->chunk(500, function ($rows) use ($tenantConnectionName, $tenantId, $now, &$erpCodes): void {
-                    $productIds = collect($rows)
-                        ->pluck('product_id')
-                        ->filter(fn (mixed $id): bool => is_string($id) && trim($id) !== '')
-                        ->map(fn (string $id): string => trim($id))
-                        ->unique()
-                        ->values()
-                        ->all();
+        $connection = DB::connection($tenantConnectionName);
+        $driver = $connection->getDriverName();
 
-                    if ($productIds === []) {
-                        return;
-                    }
+        if (in_array($driver, ['mysql', 'mariadb'], true)) {
+            $productsTable = $connection->getTablePrefix().'products';
+            $referencesTable = $connection->getTablePrefix().'ean_references';
 
-                    $this->normalizeProductsChunk($tenantConnectionName, $tenantId, $productIds, $now, $erpCodes);
-                });
+            $connection->update(
+                "
+                UPDATE {$productsTable} p
+                INNER JOIN {$referencesTable} r
+                    ON r.tenant_id = p.tenant_id
+                   AND r.ean = p.ean
+                   AND r.deleted_at IS NULL
+                SET p.category_id = COALESCE(r.category_id, p.category_id),
+                    p.description = COALESCE(r.reference_description, p.description),
+                    p.brand = COALESCE(r.brand, p.brand),
+                    p.subbrand = COALESCE(r.subbrand, p.subbrand),
+                    p.packaging_type = COALESCE(r.packaging_type, p.packaging_type),
+                    p.packaging_size = COALESCE(r.packaging_size, p.packaging_size),
+                    p.measurement_unit = COALESCE(r.measurement_unit, p.measurement_unit),
+                    p.updated_at = ?
+                WHERE p.tenant_id = ?
+                ",
+                [$now, $tenantId],
+            );
         } else {
-            DB::connection($tenantConnectionName)->table('products')
+            $products = $connection->table('products')
                 ->where('tenant_id', $tenantId)
                 ->orderBy('id')
-                ->select(['id'])
-                ->chunk(500, function ($rows) use ($tenantConnectionName, $tenantId, $now, &$erpCodes): void {
-                    $productIds = collect($rows)
-                        ->pluck('id')
-                        ->filter(fn (mixed $id): bool => is_string($id) && trim($id) !== '')
-                        ->map(fn (string $id): string => trim($id))
-                        ->values()
-                        ->all();
+                ->get(['id', 'ean']);
 
-                    if ($productIds === []) {
-                        return;
+            $eanValues = $products
+                ->pluck('ean')
+                ->filter(fn (mixed $ean): bool => is_string($ean) && trim($ean) !== '')
+                ->map(fn (string $ean): string => trim($ean))
+                ->unique()
+                ->values()
+                ->all();
+
+            if ($eanValues !== []) {
+                $references = EanReference::query()
+                    ->where('tenant_id', $tenantId)
+                    ->whereIn('ean', $eanValues)
+                    ->get()
+                    ->keyBy('ean');
+
+                foreach ($products as $product) {
+                    $ean = is_string($product->ean ?? null) ? trim($product->ean) : null;
+                    if ($ean === null || $ean === '') {
+                        continue;
                     }
 
-                    $this->normalizeProductsChunk($tenantConnectionName, $tenantId, $productIds, $now, $erpCodes);
-                });
-        }
+                    $reference = $references->get($ean);
+                    if (! $reference instanceof EanReference) {
+                        continue;
+                    }
 
-        $this->syncSalesProductReferencesService->syncByCodigoErp(
-            tenantConnectionName: $tenantConnectionName,
-            tenantId: $tenantId,
-            erpCodes: array_values(array_unique($erpCodes)),
-            now: $now,
-        );
-    }
+                    $updates = [];
+                    foreach ([
+                        'category_id' => $reference->category_id,
+                        'description' => $reference->reference_description,
+                        'brand' => $reference->brand,
+                        'subbrand' => $reference->subbrand,
+                        'packaging_type' => $reference->packaging_type,
+                        'packaging_size' => $reference->packaging_size,
+                        'measurement_unit' => $reference->measurement_unit,
+                    ] as $column => $value) {
+                        if ($value !== null) {
+                            $updates[$column] = $value;
+                        }
+                    }
 
-    /**
-     * @return array<string, string|null>
-     */
-    private function buildReferenceUpdates(EanReference $reference): array
-    {
-        $updates = [];
-        $referenceValues = [
-            'category_id' => $reference->category_id,
-            'description' => $reference->reference_description,
-            'brand' => $reference->brand,
-            'subbrand' => $reference->subbrand,
-            'packaging_type' => $reference->packaging_type,
-            'packaging_size' => $reference->packaging_size,
-            'measurement_unit' => $reference->measurement_unit,
-        ];
+                    if ($updates === []) {
+                        continue;
+                    }
 
-        foreach ($referenceValues as $column => $value) {
-            if ($value !== null) {
-                $updates[$column] = $value;
+                    $updates['updated_at'] = $now;
+
+                    $connection->table('products')
+                        ->where('id', (string) $product->id)
+                        ->update($updates);
+                }
             }
         }
 
-        return $updates;
+        $this->syncSalesProductReferencesService->syncAllByCodigoErp(
+            tenantConnectionName: $tenantConnectionName,
+            tenantId: $tenantId,
+            now: $now,
+        );
     }
 
     /**
@@ -529,57 +546,5 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         }
 
         return $this->normalizeString($gtins['gtin'] ?? null);
-    }
-
-    /**
-     * @param  array<int, string>  $productIds
-     * @param  array<int, string>  $erpCodes
-     */
-    private function normalizeProductsChunk(
-        string $tenantConnectionName,
-        string $tenantId,
-        array $productIds,
-        Carbon $now,
-        array &$erpCodes,
-    ): void {
-        $products = DB::connection($tenantConnectionName)->table('products')
-            ->where('tenant_id', $tenantId)
-            ->whereIn('id', $productIds)
-            ->get(['id', 'ean', 'codigo_erp']);
-
-        $eanValues = $products
-            ->pluck('ean')
-            ->filter(fn (mixed $ean): bool => is_string($ean) && trim($ean) !== '')
-            ->map(fn (string $ean): string => trim($ean))
-            ->unique()
-            ->values()
-            ->all();
-
-        $references = EanReference::query()
-            ->where('tenant_id', $tenantId)
-            ->whereIn('ean', $eanValues)
-            ->get()
-            ->keyBy('ean');
-
-        foreach ($products as $product) {
-            $ean = is_string($product->ean ?? null) ? trim($product->ean) : null;
-            $reference = $ean !== null && $ean !== '' ? $references->get($ean) : null;
-
-            if ($reference instanceof EanReference) {
-                $updates = $this->buildReferenceUpdates($reference);
-                if ($updates !== []) {
-                    $updates['updated_at'] = $now;
-
-                    DB::connection($tenantConnectionName)->table('products')
-                        ->where('id', (string) $product->id)
-                        ->update($updates);
-                }
-            }
-
-            $codigoErp = is_string($product->codigo_erp ?? null) ? trim($product->codigo_erp) : null;
-            if ($codigoErp !== null && $codigoErp !== '') {
-                $erpCodes[] = $codigoErp;
-            }
-        }
     }
 }
