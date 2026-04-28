@@ -149,6 +149,15 @@ test('daily sync sales jobs are queued with tenant context', function () {
         ->and(unserialize($decodedPayload['illuminate:log:context']['data']['tenantId']))->toBe($tenant->id);
 });
 
+test('queue and cache infrastructure use landlord connection explicitly', function () {
+    expect(config('multitenancy.tenant_database_connection_name'))->toBeNull()
+        ->and(config('cache.stores.database.connection'))->toBe('landlord')
+        ->and(config('cache.stores.database.lock_connection'))->toBe('landlord')
+        ->and(config('queue.connections.database.connection'))->toBe('landlord')
+        ->and(config('queue.batching.database'))->toBe('landlord')
+        ->and(config('queue.failed.database'))->toBe('landlord');
+});
+
 test('integrations nightly maintenance command enqueues maintenance job', function () {
     Bus::fake();
 
