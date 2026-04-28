@@ -15,7 +15,7 @@ class DeterministicIdGenerator
     public function saleId(
         string $tenantId,
         string $integrationId,
-        ?string $storeId,
+        ?string $storeDocument,
         string $codigoErp,
         string $saleDate,
         ?string $promotion,
@@ -23,7 +23,7 @@ class DeterministicIdGenerator
         $uniqueKey = implode('|', [
             $tenantId,
             $integrationId,
-            $storeId ?? 'sem-loja',
+            $storeDocument ?? 'sem-documento-loja',
             preg_replace('/[^A-Za-z0-9]/', '', $codigoErp) ?? $codigoErp,
             preg_replace('/[^0-9]/', '', $saleDate) ?? $saleDate,
             strtoupper($promotion ?? 'N'),

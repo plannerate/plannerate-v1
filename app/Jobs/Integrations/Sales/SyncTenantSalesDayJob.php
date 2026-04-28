@@ -2,15 +2,19 @@
 
 namespace App\Jobs\Integrations\Sales;
 
+use App\Events\Tenant\IntegrationProcessFinished;
 use App\Models\IntegrationSyncDay;
 use App\Models\Store;
 use App\Models\TenantIntegration;
+use App\Models\User;
+use App\Notifications\AppNotification;
 use App\Services\Integrations\Support\IntegrationServiceResolver;
 use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Multitenancy\Jobs\TenantAware;
 use Throwable;
 
@@ -88,6 +92,7 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
                 $filters = [
                     'date' => $referenceDate,
                     'store_id' => (string) $store->id,
+                    'store_document' => (string) $store->document,
                     'empresa' => $empresa,
                     'page_size' => (int) ($processing['sales_page_size'] ?? 20000),
                     'tipo_consulta' => (string) ($processing['sales_tipo_consulta'] ?? 'produto'),
@@ -143,14 +148,56 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
             }
 
             $syncDay->markSuccess();
+            broadcast(new IntegrationProcessFinished(
+                tenantId: (string) $integration->tenant_id,
+                integrationId: (string) $integration->id,
+                resource: 'sales',
+                referenceDate: $this->referenceDate,
+                status: 'success',
+            ));
+            $this->notifyTenantUsers(
+                title: 'Sincronização de vendas concluída',
+                message: sprintf('Integração %s finalizou vendas para %s com sucesso.', $integration->id, $this->referenceDate),
+                type: 'success',
+            );
         } catch (Throwable $exception) {
             $syncDay->markFailed($exception->getMessage());
+            broadcast(new IntegrationProcessFinished(
+                tenantId: (string) $integration->tenant_id,
+                integrationId: (string) $integration->id,
+                resource: 'sales',
+                referenceDate: $this->referenceDate,
+                status: 'failed',
+                errorMessage: $exception->getMessage(),
+            ));
+            $this->notifyTenantUsers(
+                title: 'Falha na sincronização de vendas',
+                message: sprintf('Integração %s falhou em vendas para %s: %s', $integration->id, $this->referenceDate, $exception->getMessage()),
+                type: 'error',
+            );
             Log::error('Integrations sales sync failed without rethrow.', [
                 'integration_id' => $this->integrationId,
                 'reference_date' => $this->referenceDate,
                 'error' => $exception->getMessage(),
             ]);
         }
+    }
+
+    private function notifyTenantUsers(string $title, string $message, string $type): void
+    {
+        $users = User::query()
+            ->where('is_active', true)
+            ->get();
+
+        if ($users->isEmpty()) {
+            return;
+        }
+
+        Notification::send($users, new AppNotification(
+            title: $title,
+            message: $message,
+            type: $type,
+        ));
     }
 
     /**

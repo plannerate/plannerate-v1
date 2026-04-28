@@ -31,6 +31,7 @@ test('persist mapped sales fills ean from product using codigo erp', function ()
     $service->persistMappedSales($tenantId, $integrationId, [
         [
             'codigo_erp' => '10022',
+            'store_identifier' => '81342172000145',
             'promocao' => 'N',
             'sold_at' => '2025-01-22 10:00:00',
             'quantity' => 2.0,

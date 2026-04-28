@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import TenantCategoriesImportListener from '@/components/broadcast/TenantCategoriesImportListener.vue';
+import TenantIntegrationProcessFinishedListener from '@/components/broadcast/TenantIntegrationProcessFinishedListener.vue';
 import AppContent from '@/components/AppContent.vue';
 import AppShell from '@/components/AppShell.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
@@ -26,11 +27,18 @@ const hasEchoPrivateChannelUser = computed(() => {
 
     return typeof id === 'string' && id !== '';
 });
+
+const hasEchoPrivateTenantChannel = computed(() => {
+    const tenant = (page.props.tenant ?? null) as { id?: string } | null;
+
+    return typeof tenant?.id === 'string' && tenant.id !== '';
+});
 </script>
 
 <template>
     <AppShell variant="sidebar">
         <TenantCategoriesImportListener v-if="hasEchoPrivateChannelUser" />
+        <TenantIntegrationProcessFinishedListener v-if="hasEchoPrivateTenantChannel" />
         <AppSidebar />
         <AppContent variant="sidebar" class="overflow-x-hidden">
             <AppSidebarHeader :breadcrumbs="breadcrumbs" :page-header="pageHeader">

@@ -367,6 +367,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'missing_configuration' => 'Salve a configuracao da integracao antes de testar a conexao.',
                 'connection_success' => 'Conexao validada com sucesso.',
                 'connection_failed' => 'Falha ao testar conexao: :error',
+                'process_finished_detail' => 'Processo :resource (:date) finalizado com status :status.',
             ],
             'hints' => [
                 'auth_password' => 'Ao editar, preencha apenas se quiser trocar a senha atual.',

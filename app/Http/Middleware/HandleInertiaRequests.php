@@ -65,6 +65,8 @@ class HandleInertiaRequests extends Middleware
                 'unread_count' => fn (): int => $request->user()?->unreadNotifications()->count() ?? 0,
             ],
             'tenant' => [
+                'id' => fn (): ?string => $this->resolveTenantFromContext($request)?->getKey(),
+                'slug' => fn (): ?string => $this->resolveTenantFromContext($request)?->slug,
                 'active_modules' => fn (): array => $this->resolveActiveTenantModules($request),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

@@ -2,7 +2,6 @@
 
 namespace App\Services\Integrations\Sysmo;
 
-use App\Models\Product;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Contracts\SalesIntegrationService;
 use App\Services\Integrations\ExternalApiBaseService;
@@ -59,6 +58,7 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
             integrationId: (string) $integration->id,
             mappedItems: $mappedItems,
             storeId: is_string($filters['store_id'] ?? null) ? $filters['store_id'] : null,
+            storeDocument: is_string($filters['store_document'] ?? null) ? $filters['store_document'] : null,
         );
 
         return $mappedItems;
@@ -72,26 +72,17 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
         string $integrationId,
         array $mappedItems,
         ?string $storeId = null,
+        ?string $storeDocument = null,
     ): void {
         if ($tenantId === '' || $mappedItems === []) {
             return;
         }
 
-        $erpCodes = [];
-        foreach ($mappedItems as $item) {
-            $erpCode = $this->normalizeString($item['codigo_erp'] ?? $item['product_code'] ?? null);
-            if ($erpCode !== null) {
-                $erpCodes[] = $erpCode;
-            }
-        }
-
-        $productsByErp = Product::query()
-            ->where('tenant_id', $tenantId)
-            ->whereIn('codigo_erp', array_values(array_unique($erpCodes)))
-            ->get(['id', 'codigo_erp', 'ean'])
-            ->keyBy('codigo_erp');
         $tenantConnectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
         $salesTable = DB::connection($tenantConnectionName)->table('sales');
+        $now = Carbon::now();
+        $rowsToUpsert = [];
+        $erpCodes = [];
 
         foreach ($mappedItems as $item) {
             $codigoErp = $this->normalizeString($item['codigo_erp'] ?? $item['product_code'] ?? null);
@@ -101,20 +92,41 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
                 continue;
             }
 
-            $product = $productsByErp->get($codigoErp);
             $promotion = $this->normalizeString($item['promocao'] ?? null);
-            $lookup = [
+            $saleStoreDocument = $this->normalizeString($item['store_identifier'] ?? null) ?? $storeDocument;
+            if ($saleStoreDocument === null) {
+                Log::warning('Integrations sales skipped row due to missing store document.', [
+                    'tenant_id' => $tenantId,
+                    'integration_id' => $integrationId,
+                    'store_id' => $storeId,
+                    'codigo_erp' => $codigoErp,
+                    'sale_date' => $saleDate,
+                ]);
+
+                continue;
+            }
+            $erpCodes[] = $codigoErp;
+
+            $rowId = $this->generateSaleId(
+                tenantId: $tenantId,
+                integrationId: $integrationId,
+                storeDocument: $saleStoreDocument,
+                codigoErp: $codigoErp,
+                saleDate: $saleDate,
+                promotion: $promotion,
+            );
+
+            $rowsToUpsert[] = [
+                'id' => $rowId,
                 'tenant_id' => $tenantId,
                 'store_id' => $storeId,
+                'product_id' => null,
+                'ean' => null,
                 'codigo_erp' => $codigoErp,
-                'sale_date' => $saleDate,
-                'promotion' => $promotion,
-            ];
-            $payload = [
-                'product_id' => $product?->id,
-                'ean' => $product?->ean,
                 'acquisition_cost' => $item['custo_aquisicao'] ?? null,
                 'sale_price' => $item['unit_price'] ?? null,
+                'sale_date' => $saleDate,
+                'promotion' => $promotion,
                 'total_sale_quantity' => $item['quantity'] ?? null,
                 'total_sale_value' => $item['total_price'] ?? null,
                 'total_profit_margin' => $this->convertToFloat(data_get($item, 'custo_comercial')),
@@ -130,28 +142,107 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
                     'custo_medio_geral' => $item['custo_medio_geral'] ?? null,
                     'custo_comercial' => $item['custo_comercial'] ?? null,
                 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-                'updated_at' => Carbon::now(),
+                'created_at' => $now,
+                'updated_at' => $now,
             ];
-            $existingId = $salesTable->where($lookup)->value('id');
+        }
 
-            if ($existingId !== null) {
-                $salesTable->where('id', $existingId)->update($payload);
+        if ($rowsToUpsert === []) {
+            return;
+        }
 
-                continue;
+        $salesTable->upsert(
+            $rowsToUpsert,
+            ['id'],
+            [
+                'tenant_id',
+                'store_id',
+                'codigo_erp',
+                'acquisition_cost',
+                'sale_price',
+                'sale_date',
+                'promotion',
+                'total_sale_quantity',
+                'total_sale_value',
+                'total_profit_margin',
+                'margem_contribuicao',
+                'extra_data',
+                'updated_at',
+            ]
+        );
+
+        $this->syncSaleProductReferences(
+            tenantConnectionName: $tenantConnectionName,
+            tenantId: $tenantId,
+            erpCodes: array_values(array_unique($erpCodes)),
+            now: $now,
+        );
+    }
+
+    /**
+     * Atualiza product_id e ean das vendas pelo codigo_erp em lote.
+     *
+     * @param  array<int, string>  $erpCodes
+     */
+    private function syncSaleProductReferences(
+        string $tenantConnectionName,
+        string $tenantId,
+        array $erpCodes,
+        Carbon $now,
+    ): void {
+        if ($erpCodes === []) {
+            return;
+        }
+
+        $connection = DB::connection($tenantConnectionName);
+        $driver = $connection->getDriverName();
+
+        if (in_array($driver, ['mysql', 'mariadb'], true)) {
+            $salesTable = $connection->getTablePrefix().'sales';
+            $productsTable = $connection->getTablePrefix().'products';
+
+            foreach (array_chunk($erpCodes, 500) as $erpChunk) {
+                $inPlaceholders = implode(', ', array_fill(0, count($erpChunk), '?'));
+
+                $sql = "
+                    UPDATE {$salesTable} s
+                    INNER JOIN {$productsTable} p
+                        ON p.tenant_id = s.tenant_id
+                       AND p.codigo_erp = s.codigo_erp
+                       AND p.deleted_at IS NULL
+                    SET s.product_id = p.id,
+                        s.ean = p.ean,
+                        s.updated_at = ?
+                    WHERE s.tenant_id = ?
+                      AND s.codigo_erp IN ({$inPlaceholders})
+                ";
+
+                $connection->update($sql, [
+                    $now,
+                    $tenantId,
+                    ...$erpChunk,
+                ]);
             }
 
-            $salesTable->insert(array_merge($lookup, $payload, [
-                'id' => $this->generateSaleId(
-                    tenantId: $tenantId,
-                    integrationId: $integrationId,
-                    storeId: $storeId,
-                    codigoErp: $codigoErp,
-                    saleDate: $saleDate,
-                    promotion: $promotion,
-                ),
-                'created_at' => Carbon::now(),
-            ]));
+            return;
         }
+
+        // Fallback compatível com SQLite para ambiente de testes.
+        $connection->table('sales')
+            ->where('tenant_id', $tenantId)
+            ->whereIn('codigo_erp', $erpCodes)
+            ->whereExists(function ($query): void {
+                $query->selectRaw('1')
+                    ->from('products')
+                    ->whereColumn('products.tenant_id', 'sales.tenant_id')
+                    ->whereColumn('products.codigo_erp', 'sales.codigo_erp')
+                    ->whereNull('products.deleted_at');
+            })
+            ->update([
+                'product_id' => DB::raw('(SELECT products.id FROM products WHERE products.tenant_id = sales.tenant_id AND products.codigo_erp = sales.codigo_erp AND products.deleted_at IS NULL LIMIT 1)'),
+                'ean' => DB::raw('(SELECT products.ean FROM products WHERE products.tenant_id = sales.tenant_id AND products.codigo_erp = sales.codigo_erp AND products.deleted_at IS NULL LIMIT 1)'),
+                'updated_at' => $now,
+            ]);
     }
 
     /**
@@ -222,7 +313,7 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
     private function generateSaleId(
         string $tenantId,
         string $integrationId,
-        ?string $storeId,
+        ?string $storeDocument,
         string $codigoErp,
         string $saleDate,
         ?string $promotion,
@@ -230,7 +321,7 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
         return $this->deterministicIdGenerator->saleId(
             tenantId: $tenantId,
             integrationId: $integrationId,
-            storeId: $storeId,
+            storeDocument: $storeDocument,
             codigoErp: $codigoErp,
             saleDate: $saleDate,
             promotion: $promotion,

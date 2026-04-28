@@ -2,11 +2,15 @@
 
 namespace App\Jobs\Integrations\Products;
 
+use App\Events\Tenant\IntegrationProcessFinished;
 use App\Models\IntegrationSyncDay;
 use App\Models\Store;
 use App\Models\TenantIntegration;
+use App\Models\User;
+use App\Notifications\AppNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Multitenancy\Jobs\TenantAware;
 use Throwable;
 
@@ -61,10 +65,52 @@ class SyncTenantProductsDayJob implements ShouldQueue, TenantAware
             }
 
             $syncDay->markSuccess();
+            broadcast(new IntegrationProcessFinished(
+                tenantId: (string) $integration->tenant_id,
+                integrationId: (string) $integration->id,
+                resource: 'products',
+                referenceDate: $this->referenceDate,
+                status: 'success',
+            ));
+            $this->notifyTenantUsers(
+                title: 'Sincronização de produtos concluída',
+                message: sprintf('Integração %s finalizou produtos para %s com sucesso.', $integration->id, $this->referenceDate),
+                type: 'success',
+            );
         } catch (Throwable $exception) {
             $syncDay->markFailed($exception->getMessage());
+            broadcast(new IntegrationProcessFinished(
+                tenantId: (string) $integration->tenant_id,
+                integrationId: (string) $integration->id,
+                resource: 'products',
+                referenceDate: $this->referenceDate,
+                status: 'failed',
+                errorMessage: $exception->getMessage(),
+            ));
+            $this->notifyTenantUsers(
+                title: 'Falha na sincronização de produtos',
+                message: sprintf('Integração %s falhou em produtos para %s: %s', $integration->id, $this->referenceDate, $exception->getMessage()),
+                type: 'error',
+            );
 
             throw $exception;
         }
+    }
+
+    private function notifyTenantUsers(string $title, string $message, string $type): void
+    {
+        $users = User::query()
+            ->where('is_active', true)
+            ->get();
+
+        if ($users->isEmpty()) {
+            return;
+        }
+
+        Notification::send($users, new AppNotification(
+            title: $title,
+            message: $message,
+            type: $type,
+        ));
     }
 }
