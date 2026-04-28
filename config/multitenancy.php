@@ -3,10 +3,6 @@
 use App\Jobs\Integrations\Dispatch\DispatchTenantIntegrationDailySyncJob;
 use App\Jobs\Integrations\Dispatch\DispatchTenantIntegrationInitialSyncJob;
 use App\Jobs\Integrations\Maintenance\RunTenantIntegrationNightlyMaintenanceJob;
-use App\Jobs\Integrations\Products\DispatchTenantProductStorePagesJob;
-use App\Jobs\Integrations\Products\SyncTenantProductsDayJob;
-use App\Jobs\Integrations\Products\SyncTenantProductStorePageJob;
-use App\Jobs\Integrations\Sales\SyncTenantSalesDayJob;
 use App\Models\Tenant;
 use App\Multitenancy\TenantFinder\DomainTenantWithDomainsFinder;
 use Illuminate\Broadcasting\BroadcastEvent;
@@ -142,9 +138,5 @@ return [
         DispatchTenantIntegrationInitialSyncJob::class,
         DispatchTenantIntegrationDailySyncJob::class,
         RunTenantIntegrationNightlyMaintenanceJob::class,
-        SyncTenantSalesDayJob::class,
-        SyncTenantProductsDayJob::class,
-        DispatchTenantProductStorePagesJob::class,
-        SyncTenantProductStorePageJob::class,
     ],
 ];

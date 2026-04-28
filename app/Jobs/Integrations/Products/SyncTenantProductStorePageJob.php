@@ -9,8 +9,9 @@ use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
+use Spatie\Multitenancy\Jobs\TenantAware;
 
-class SyncTenantProductStorePageJob implements ShouldQueue
+class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
 {
     use Queueable;
 

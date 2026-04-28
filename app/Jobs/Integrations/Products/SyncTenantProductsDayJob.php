@@ -7,9 +7,10 @@ use App\Models\Store;
 use App\Models\TenantIntegration;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Spatie\Multitenancy\Jobs\TenantAware;
 use Throwable;
 
-class SyncTenantProductsDayJob implements ShouldQueue
+class SyncTenantProductsDayJob implements ShouldQueue, TenantAware
 {
     use Queueable;
 

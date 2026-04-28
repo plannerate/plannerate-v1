@@ -11,9 +11,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
+use Spatie\Multitenancy\Jobs\TenantAware;
 use Throwable;
 
-class SyncTenantSalesDayJob implements ShouldQueue
+class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
 {
     use Queueable;
 
