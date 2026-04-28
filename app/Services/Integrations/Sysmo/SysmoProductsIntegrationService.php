@@ -7,6 +7,7 @@ use App\Models\TenantIntegration;
 use App\Services\Integrations\Contracts\ProductsIntegrationService;
 use App\Services\Integrations\ExternalApiBaseService;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
+use App\Services\Integrations\Support\SyncSalesProductReferencesService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         private readonly SysmoEndpoints $sysmoEndpoints,
         private readonly SysmoProductsResponseMapper $responseMapper,
         private readonly DeterministicIdGenerator $deterministicIdGenerator,
+        private readonly SyncSalesProductReferencesService $syncSalesProductReferencesService,
     ) {}
 
     public function fetchProducts(TenantIntegration $integration, array $filters = []): array
@@ -178,6 +180,13 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         $this->applyEanReferenceUpdates(
             tenantConnectionName: $tenantConnectionName,
             referenceUpdatesByProductId: collect($referenceUpdatesByProductId),
+            now: $now,
+        );
+
+        $this->syncSalesProductReferencesService->syncByCodigoErp(
+            tenantConnectionName: $tenantConnectionName,
+            tenantId: $tenantId,
+            erpCodes: array_values(array_unique(array_column($productsRows, 'codigo_erp'))),
             now: $now,
         );
 

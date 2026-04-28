@@ -6,9 +6,13 @@ use App\Models\Product;
 use App\Models\Store;
 use App\Services\Integrations\ExternalApiBaseService;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
+use App\Services\Integrations\Support\SyncSalesProductReferencesService;
 use App\Services\Integrations\Sysmo\SysmoEndpoints;
 use App\Services\Integrations\Sysmo\SysmoProductsIntegrationService;
 use App\Services\Integrations\Sysmo\SysmoProductsResponseMapper;
+use App\Services\Integrations\Sysmo\SysmoSalesIntegrationService;
+use App\Services\Integrations\Sysmo\SysmoSalesResponseMapper;
+use Illuminate\Support\Facades\DB;
 
 test('persist mapped products uses ean reference as knowledge base', function () {
     config(['multitenancy.tenant_database_connection_name' => null]);
@@ -36,6 +40,7 @@ test('persist mapped products uses ean reference as knowledge base', function ()
         app(SysmoEndpoints::class),
         new SysmoProductsResponseMapper,
         new DeterministicIdGenerator,
+        app(SyncSalesProductReferencesService::class),
     );
 
     $service->persistMappedProducts($tenantId, 'sysmo', [
@@ -158,4 +163,75 @@ test('persist mapped products uses ean reference as knowledge base', function ()
         'product_id' => $knownProduct?->id,
         'store_id' => $store->id,
     ]);
+});
+
+test('persist mapped products backfills sales references by codigo erp', function () {
+    config(['multitenancy.tenant_database_connection_name' => null]);
+
+    $tenantId = (string) str()->ulid();
+    $integrationId = (string) str()->ulid();
+
+    $salesService = new SysmoSalesIntegrationService(
+        app(ExternalApiBaseService::class),
+        app(SysmoEndpoints::class),
+        new SysmoSalesResponseMapper,
+        new DeterministicIdGenerator,
+        app(SyncSalesProductReferencesService::class),
+    );
+
+    $salesService->persistMappedSales($tenantId, $integrationId, [
+        [
+            'codigo_erp' => '66599',
+            'store_identifier' => '81342172000145',
+            'promocao' => 'N',
+            'sold_at' => '2025-01-23 10:00:00',
+            'quantity' => 1.0,
+            'unit_price' => 10.0,
+            'total_price' => 10.0,
+            'custo_aquisicao' => 8.0,
+            'empresa' => '7',
+        ],
+    ]);
+
+    $saleBefore = DB::table('sales')
+        ->where('tenant_id', $tenantId)
+        ->where('codigo_erp', '66599')
+        ->first();
+
+    expect($saleBefore?->product_id)->toBeNull()
+        ->and($saleBefore?->ean)->toBeNull();
+
+    $productsService = new SysmoProductsIntegrationService(
+        app(ExternalApiBaseService::class),
+        app(SysmoEndpoints::class),
+        new SysmoProductsResponseMapper,
+        new DeterministicIdGenerator,
+        app(SyncSalesProductReferencesService::class),
+    );
+
+    $productsService->persistMappedProducts($tenantId, 'sysmo', [
+        [
+            'external_id' => '66599',
+            'ean' => '7891234500001',
+            'name' => 'Produto Backfill',
+            'brand' => 'Marca Backfill',
+            'unit' => 'UN',
+            'status' => 'ATIVO',
+        ],
+    ]);
+
+    $product = Product::query()
+        ->where('tenant_id', $tenantId)
+        ->where('codigo_erp', '66599')
+        ->first();
+
+    $saleAfter = DB::table('sales')
+        ->where('tenant_id', $tenantId)
+        ->where('codigo_erp', '66599')
+        ->first();
+
+    expect($product)->not->toBeNull()
+        ->and($saleAfter)->not->toBeNull()
+        ->and($saleAfter?->product_id)->toBe($product?->id)
+        ->and($saleAfter?->ean)->toBe('7891234500001');
 });

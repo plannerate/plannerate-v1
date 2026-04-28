@@ -3,6 +3,7 @@
 use App\Models\Product;
 use App\Services\Integrations\ExternalApiBaseService;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
+use App\Services\Integrations\Support\SyncSalesProductReferencesService;
 use App\Services\Integrations\Sysmo\SysmoEndpoints;
 use App\Services\Integrations\Sysmo\SysmoSalesIntegrationService;
 use App\Services\Integrations\Sysmo\SysmoSalesResponseMapper;
@@ -25,6 +26,7 @@ test('persist mapped sales fills ean from product using codigo erp', function ()
         app(SysmoEndpoints::class),
         new SysmoSalesResponseMapper,
         new DeterministicIdGenerator,
+        app(SyncSalesProductReferencesService::class),
     );
     $integrationId = (string) str()->ulid();
 
