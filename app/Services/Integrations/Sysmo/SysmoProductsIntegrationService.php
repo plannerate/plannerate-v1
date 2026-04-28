@@ -122,6 +122,9 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
                 'name' => $this->normalizeString($item['name'] ?? null) ?? $reference?->reference_description,
                 'ean' => $normalizedEan,
                 'codigo_erp' => $externalId,
+                'current_stock' => $this->normalizeFloat(
+                    $item['current_stock'] ?? data_get($item, 'raw.estoque.disponivel')
+                ),
                 'description' => $reference?->reference_description,
                 'brand' => $this->normalizeString($item['brand'] ?? null),
                 'unit_measure' => $this->normalizeString($item['unit'] ?? null),
@@ -165,6 +168,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
                 'name',
                 'ean',
                 'codigo_erp',
+                'current_stock',
                 'description',
                 'brand',
                 'unit_measure',
@@ -343,6 +347,21 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         $normalized = trim((string) $value);
 
         return $normalized !== '' ? $normalized : null;
+    }
+
+    private function normalizeFloat(mixed $value): ?float
+    {
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        if (is_string($value)) {
+            $normalized = str_replace(',', '.', trim($value));
+
+            return is_numeric($normalized) ? (float) $normalized : null;
+        }
+
+        return null;
     }
 
     private function normalizeEan(mixed $value): ?string

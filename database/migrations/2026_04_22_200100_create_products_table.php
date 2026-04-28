@@ -55,14 +55,15 @@ return new class extends Migration
             $table->string('additional_information')->nullable();
             $table->string('sortiment_attribute')->nullable();
 
-            $table->string('dimensions_ean', 13)->nullable();
-            $table->decimal('width', 10, 2)->nullable();
-            $table->decimal('height', 10, 2)->nullable();
-            $table->decimal('depth', 10, 2)->nullable();
-            $table->decimal('weight', 10, 2)->nullable();
-            $table->string('unit')->default('cm');
-            $table->enum('dimensions_status', ['draft', 'published'])->default('published');
-            $table->string('dimensions_description')->nullable();
+            // Colunas de dimensions
+            $table->decimal('width', 10, 2)->nullable()->comment('Largura em cm (de dimensions)');
+            $table->decimal('height', 10, 2)->nullable()->comment('Altura em cm (de dimensions)');
+            $table->decimal('depth', 10, 2)->nullable()->comment('Profundidade em cm (de dimensions)');
+            $table->decimal('weight', 10, 2)->nullable()->comment('Peso em gramas (de dimensions)');
+            $table->string('unit')->default('cm')->comment('Unidade de medida (de dimensions)');
+            $table->boolean('has_dimensions')->default(false)->comment('True = Com dimensão (width, height, depth > 0); False = Sem dimensão');
+            $table->enum('dimension_status', ['draft', 'published'])->default('published')->comment('Status da dimensão (de dimensions)');
+            $table->float('current_stock')->nullable();
 
             $table->timestamps();
             $table->softDeletes();

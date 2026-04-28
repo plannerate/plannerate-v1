@@ -44,6 +44,7 @@ class SysmoProductsResponseMapper implements ProductsResponseMapper
             'preco_normal' => $this->pickFloat($item, ['preco', 'preco_normal']),
             'preco_promocional' => $this->pickFloat($item, ['preco_promocional']),
             'custo_medio_geral' => $this->pickFloat($item, ['custo_medio_geral']),
+            'current_stock' => $this->pickFloatFromPaths($item, ['estoque.disponivel']),
             'status' => $this->pickString($item, ['status', 'situacao']),
             'unit' => $this->pickString($item, ['unidade', 'un']),
             'raw' => $item,
@@ -144,6 +145,27 @@ class SysmoProductsResponseMapper implements ProductsResponseMapper
     {
         foreach ($keys as $key) {
             $value = $item[$key] ?? null;
+
+            if (is_numeric($value)) {
+                return (float) $value;
+            }
+
+            if (is_string($value) && is_numeric(str_replace(',', '.', $value))) {
+                return (float) str_replace(',', '.', $value);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @param  array<int, string>  $paths
+     */
+    private function pickFloatFromPaths(array $item, array $paths): ?float
+    {
+        foreach ($paths as $path) {
+            $value = data_get($item, $path);
 
             if (is_numeric($value)) {
                 return (float) $value;

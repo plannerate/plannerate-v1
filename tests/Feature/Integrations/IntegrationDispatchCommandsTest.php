@@ -11,6 +11,7 @@ use App\Models\TenantIntegration;
 use App\Models\User;
 use App\Services\Integrations\Orchestration\DispatchDailySyncService;
 use App\Services\Integrations\Orchestration\DispatchInitialSyncService;
+use App\Services\Integrations\Support\DeterministicIdGenerator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
@@ -275,4 +276,86 @@ test('integrations nightly maintenance command enqueues maintenance job', functi
     $this->artisan('integrations:dispatch-nightly-maintenance')->assertSuccessful();
 
     Bus::assertDispatched(RunTenantIntegrationNightlyMaintenanceJob::class, 1);
+});
+
+test('integrations reconcile sales products command updates sales references', function () {
+    config(['multitenancy.tenant_database_connection_name' => null]);
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Reconcile',
+        'slug' => 'tenant-reconcile-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.mysql.database'),
+        'status' => 'active',
+    ]));
+
+    $tenantConnectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+    $now = now();
+    $generator = app(DeterministicIdGenerator::class);
+
+    DB::connection($tenantConnectionName)->table('sales')->insert([
+        'id' => $generator->saleId(
+            tenantId: (string) $tenant->id,
+            integrationId: (string) str()->ulid(),
+            storeDocument: '81342172000145',
+            codigoErp: '99901',
+            saleDate: '2025-01-22',
+            promotion: 'N',
+        ),
+        'tenant_id' => (string) $tenant->id,
+        'store_id' => null,
+        'product_id' => null,
+        'ean' => null,
+        'codigo_erp' => '99901',
+        'acquisition_cost' => 1,
+        'sale_price' => 1,
+        'sale_date' => '2025-01-22',
+        'promotion' => 'N',
+        'total_sale_quantity' => 1,
+        'total_sale_value' => 1,
+        'total_profit_margin' => 1,
+        'margem_contribuicao' => 1,
+        'extra_data' => null,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    DB::connection($tenantConnectionName)->table('products')->insert([
+        'id' => $generator->productId(
+            tenantId: (string) $tenant->id,
+            ean: '7891234500009',
+            codigoErp: '99901',
+        ),
+        'tenant_id' => (string) $tenant->id,
+        'name' => 'Produto Reconcile',
+        'ean' => '7891234500009',
+        'codigo_erp' => '99901',
+        'description' => null,
+        'brand' => null,
+        'unit_measure' => null,
+        'sales_status' => null,
+        'status' => 'synced',
+        'sync_source' => 'manual',
+        'sync_at' => $now,
+        'deleted_at' => null,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    $this->artisan(sprintf('integrations:reconcile-sales-products --tenant=%s', $tenant->id))
+        ->assertSuccessful();
+
+    $sale = DB::connection($tenantConnectionName)->table('sales')
+        ->where('tenant_id', (string) $tenant->id)
+        ->where('codigo_erp', '99901')
+        ->first();
+
+    $product = DB::connection($tenantConnectionName)->table('products')
+        ->where('tenant_id', (string) $tenant->id)
+        ->where('codigo_erp', '99901')
+        ->first();
+
+    expect($sale)->not->toBeNull()
+        ->and($product)->not->toBeNull()
+        ->and($sale?->product_id)->toBe($product?->id)
+        ->and($sale?->ean)->toBe('7891234500009');
 });
