@@ -32,6 +32,12 @@ type IntegrationPayload = {
     partner_key: string;
     empresa: string;
     days_to_maintain: number;
+    sales_initial_days: number;
+    products_initial_days: number;
+    daily_lookback_days: number;
+    sales_page_size: number;
+    products_page_size: number;
+    sales_tipo_consulta: string;
     auto_processing_enabled: boolean;
     processing_time: string;
     initial_setup_date: string | null;
@@ -90,6 +96,12 @@ const formData = computed(() => ({
     partner_key: props.integration?.partner_key ?? '',
     empresa: props.integration?.empresa ?? '',
     days_to_maintain: props.integration?.days_to_maintain ?? 120,
+    sales_initial_days: props.integration?.sales_initial_days ?? 120,
+    products_initial_days: props.integration?.products_initial_days ?? 120,
+    daily_lookback_days: props.integration?.daily_lookback_days ?? 7,
+    sales_page_size: props.integration?.sales_page_size ?? 20000,
+    products_page_size: props.integration?.products_page_size ?? 1000,
+    sales_tipo_consulta: props.integration?.sales_tipo_consulta ?? 'produto',
     auto_processing_enabled: props.integration?.auto_processing_enabled ?? true,
     processing_time: props.integration?.processing_time ?? '02:00',
     initial_setup_date: props.integration?.initial_setup_date ?? '',

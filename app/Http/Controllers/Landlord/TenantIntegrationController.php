@@ -11,6 +11,7 @@ use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 use RuntimeException;
@@ -52,6 +53,12 @@ class TenantIntegrationController extends Controller
                 'partner_key' => (string) ($body['partner_key'] ?? ''),
                 'empresa' => (string) ($body['empresa'] ?? ''),
                 'days_to_maintain' => (int) ($processing['days_to_maintain'] ?? 120),
+                'sales_initial_days' => (int) ($processing['sales_initial_days'] ?? $processing['days_to_maintain'] ?? 120),
+                'products_initial_days' => (int) ($processing['products_initial_days'] ?? $processing['days_to_maintain'] ?? 120),
+                'daily_lookback_days' => (int) ($processing['daily_lookback_days'] ?? 7),
+                'sales_page_size' => (int) ($processing['sales_page_size'] ?? 20000),
+                'products_page_size' => (int) ($processing['products_page_size'] ?? 1000),
+                'sales_tipo_consulta' => (string) ($processing['sales_tipo_consulta'] ?? 'produto'),
                 'auto_processing_enabled' => (bool) ($processing['auto_processing_enabled'] ?? true),
                 'processing_time' => (string) ($processing['processing_time'] ?? '02:00'),
                 'initial_setup_date' => $processing['initial_setup_date'] ?? null,
@@ -110,12 +117,34 @@ class TenantIntegrationController extends Controller
 
         $normalized = $this->configNormalizer->normalize($integration);
         $connection = $normalized['connection'];
+        $processing = $normalized['processing'];
+        $authenticationBody = is_array($integration->authentication_body) ? $integration->authentication_body : [];
         $endpoint = (string) ($request->string('test_path') ?: $connection['ping_path'] ?: '/');
         $method = strtoupper((string) ($request->string('test_method') ?: $connection['ping_method'] ?: 'GET'));
         $query = $request->query();
-        $body = $this->decodeJsonBody((string) $request->input('test_body', ''));
+        $defaultPageSize = str_contains($endpoint, 'hubvendas')
+            ? (int) ($processing['sales_page_size'] ?? 20000)
+            : (int) ($processing['products_page_size'] ?? 1000);
+        $body = array_merge(
+            [
+                'partner_key' => (string) ($authenticationBody['partner_key'] ?? ''),
+                'empresa' => (string) ($authenticationBody['empresa'] ?? ''),
+                'pagina' => 1,
+                'tamanho_pagina' => max(1, $defaultPageSize),
+            ],
+            $this->decodeJsonBody((string) $request->input('test_body', ''))
+        );
 
         try {
+            Log::info('Tenant integration test request', [
+                'tenant_id' => $tenant->id,
+                'integration_id' => $integration->id,
+                'method' => $method,
+                'endpoint' => $endpoint,
+                'query' => $query,
+                'body' => $body,
+            ]);
+
             $response = $this->externalApiBaseService->request(
                 integration: $integration,
                 method: $method,
@@ -159,6 +188,14 @@ class TenantIntegrationController extends Controller
                 'data' => $responseBody,
             ]);
         } catch (RuntimeException $exception) {
+            Log::error('Tenant integration test failed', [
+                'tenant_id' => $tenant->id,
+                'integration_id' => $integration->id,
+                'method' => $method,
+                'endpoint' => $endpoint,
+                'error' => $exception->getMessage(),
+            ]);
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'ok' => false,

@@ -3,6 +3,7 @@
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\User;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -52,6 +53,14 @@ test('put creates tenant integration when absent and stores encrypted payload', 
         'is_active' => 1,
     ], 'landlord');
 
+    $integration = TenantIntegration::query()->where('tenant_id', $tenant->id)->firstOrFail();
+
+    expect($integration->config['processing']['sales_initial_days'] ?? null)->toBe(120)
+        ->and($integration->config['processing']['products_initial_days'] ?? null)->toBe(120)
+        ->and($integration->config['processing']['sales_page_size'] ?? null)->toBe(20000)
+        ->and($integration->config['processing']['products_page_size'] ?? null)->toBe(1000)
+        ->and($integration->config['processing']['sales_tipo_consulta'] ?? null)->toBe('produto');
+
     $record = DB::connection('landlord')
         ->table('tenant_integrations')
         ->where('tenant_id', $tenant->id)
@@ -99,6 +108,11 @@ test('validation blocks invalid integration type and missing sysmo required fiel
             'auth_username' => '',
             'auth_password' => '',
             'partner_key' => '',
+            'sales_initial_days' => 0,
+            'products_initial_days' => 0,
+            'daily_lookback_days' => 1,
+            'sales_page_size' => 0,
+            'products_page_size' => 0,
         ]);
 
     $response
@@ -112,6 +126,11 @@ test('validation blocks invalid integration type and missing sysmo required fiel
             'auth_username',
             'auth_password',
             'partner_key',
+            'sales_initial_days',
+            'products_initial_days',
+            'daily_lookback_days',
+            'sales_page_size',
+            'products_page_size',
         ]);
 });
 
@@ -183,16 +202,54 @@ test('test connection returns structured json response', function () {
         ->withHeaders(['Accept' => 'application/json'])
         ->postJson(route('landlord.tenants.integration.test-connection', $tenant), [
             'test_path' => '/custom/path',
-            'test_method' => 'GET',
-            'test_body' => '{"filtro":"abc"}',
+            'test_method' => 'POST',
+            'test_body' => '{"empresa":"72316342000126","filtro":"abc"}',
         ]);
 
     $response
         ->assertOk()
         ->assertJsonPath('ok', true)
-        ->assertJsonPath('meta.method', 'GET')
+        ->assertJsonPath('meta.method', 'POST')
         ->assertJsonPath('meta.path', '/custom/path')
         ->assertJsonPath('data.items.0.id', 10);
+
+    Http::assertSent(function (Request $request): bool {
+        $payload = $request->data();
+
+        return ($payload['empresa'] ?? null) === '72316342000126'
+            && ($payload['partner_key'] ?? null) === 'partner-123'
+            && ($payload['filtro'] ?? null) === 'abc';
+    });
+});
+
+test('test connection merges partner_key from integration when body omits it', function () {
+    $tenant = createTenantForIntegration();
+    $this->put(route('landlord.tenants.integration.update', $tenant), sysmoPayload([
+        'partner_key' => 'proplanner',
+    ]));
+
+    Http::fake([
+        'https://sysmo.example.com/*' => Http::response(['ok' => true], 200),
+    ]);
+
+    $response = $this
+        ->withHeaders(['Accept' => 'application/json'])
+        ->postJson(route('landlord.tenants.integration.test-connection', $tenant), [
+            'test_path' => '/custom/path',
+            'test_method' => 'POST',
+            'test_body' => '{"empresa":"79645404000869"}',
+        ]);
+
+    $response->assertOk()->assertJsonPath('ok', true);
+
+    Http::assertSent(function (Request $request): bool {
+        $payload = $request->data();
+
+        return ($payload['partner_key'] ?? null) === 'proplanner'
+            && ($payload['tamanho_pagina'] ?? null) === 1000
+            && ($payload['pagina'] ?? null) === 1
+            && ($payload['empresa'] ?? null) === '79645404000869';
+    });
 });
 
 function createTenantForIntegration(): Tenant
@@ -230,6 +287,12 @@ function sysmoPayload(array $overrides = []): array
         'partner_key' => 'partner-123',
         'empresa' => '72316342000126',
         'days_to_maintain' => 120,
+        'sales_initial_days' => 120,
+        'products_initial_days' => 120,
+        'daily_lookback_days' => 7,
+        'sales_page_size' => 20000,
+        'products_page_size' => 1000,
+        'sales_tipo_consulta' => 'produto',
         'auto_processing_enabled' => true,
         'processing_time' => '02:00',
         'initial_setup_date' => '2026-04-27',

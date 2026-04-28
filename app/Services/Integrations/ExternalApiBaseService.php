@@ -60,9 +60,16 @@ class ExternalApiBaseService
         );
 
         if ($response->failed()) {
+            $responsePayload = $response->json();
+            $responseBody = is_array($responsePayload)
+                ? json_encode($responsePayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                : $response->body();
+
             throw new RuntimeException(sprintf(
-                'Falha na requisicao externa: HTTP %s.',
+                'Falha na requisicao externa: HTTP %s | URL: %s | Resposta: %s',
                 $response->status(),
+                $this->buildUrl($connection['base_url'], $endpoint),
+                mb_substr((string) $responseBody, 0, 1000),
             ));
         }
 

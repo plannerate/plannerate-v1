@@ -1,5 +1,10 @@
 # Padrões do Sistema — Plannerate
 
+## Integracao Sysmo
+
+Documentacao operacional da integracao (sync inicial, diario, lacunas, paginação por loja e manutencao):
+- `docs/integracao-sysmo-sync.md`
+
 ## ⚠️ Lembrete Crítico: Domínio do Tenant
 
 Ao criar um tenant, o campo **"Domínio primário ativo"** (`domain_is_active` → `tenant_domains.is_active`) **DEVE estar `true`**.

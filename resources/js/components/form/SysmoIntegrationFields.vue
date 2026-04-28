@@ -17,6 +17,12 @@ type IntegrationFormData = {
     partner_key: string;
     empresa: string;
     days_to_maintain: string | number;
+    sales_initial_days: string | number;
+    products_initial_days: string | number;
+    daily_lookback_days: string | number;
+    sales_page_size: string | number;
+    products_page_size: string | number;
+    sales_tipo_consulta: string;
     processing_time: string;
     initial_setup_date: string;
     auto_processing_enabled: boolean;
@@ -161,6 +167,70 @@ const { t } = useT();
             :error="errors.days_to_maintain"
             class="md:col-span-4"
             min="1"
+        />
+
+        <FormTextField
+            id="sales_initial_days"
+            name="sales_initial_days"
+            type="number"
+            :label="t('app.landlord.tenant_integrations.fields.sales_initial_days')"
+            :default-value="data.sales_initial_days"
+            :error="errors.sales_initial_days"
+            class="md:col-span-4"
+            min="1"
+        />
+
+        <FormTextField
+            id="products_initial_days"
+            name="products_initial_days"
+            type="number"
+            :label="t('app.landlord.tenant_integrations.fields.products_initial_days')"
+            :default-value="data.products_initial_days"
+            :error="errors.products_initial_days"
+            class="md:col-span-4"
+            min="1"
+        />
+
+        <FormTextField
+            id="daily_lookback_days"
+            name="daily_lookback_days"
+            type="number"
+            :label="t('app.landlord.tenant_integrations.fields.daily_lookback_days')"
+            :default-value="data.daily_lookback_days"
+            :error="errors.daily_lookback_days"
+            class="md:col-span-4"
+            min="2"
+        />
+
+        <FormTextField
+            id="sales_page_size"
+            name="sales_page_size"
+            type="number"
+            :label="t('app.landlord.tenant_integrations.fields.sales_page_size')"
+            :default-value="data.sales_page_size"
+            :error="errors.sales_page_size"
+            class="md:col-span-4"
+            min="1"
+        />
+
+        <FormTextField
+            id="products_page_size"
+            name="products_page_size"
+            type="number"
+            :label="t('app.landlord.tenant_integrations.fields.products_page_size')"
+            :default-value="data.products_page_size"
+            :error="errors.products_page_size"
+            class="md:col-span-4"
+            min="1"
+        />
+
+        <FormTextField
+            id="sales_tipo_consulta"
+            name="sales_tipo_consulta"
+            :label="t('app.landlord.tenant_integrations.fields.sales_tipo_consulta')"
+            :default-value="data.sales_tipo_consulta"
+            :error="errors.sales_tipo_consulta"
+            class="md:col-span-4"
         />
 
         <FormTextField
