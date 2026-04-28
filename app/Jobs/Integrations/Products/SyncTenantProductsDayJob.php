@@ -24,6 +24,7 @@ class SyncTenantProductsDayJob implements ShouldQueue, TenantAware
     public function __construct(
         public string $integrationId,
         public string $referenceDate,
+        public bool $fullSync = false,
     ) {}
 
     public function handle(
@@ -62,22 +63,25 @@ class SyncTenantProductsDayJob implements ShouldQueue, TenantAware
                     integrationId: $integration->id,
                     referenceDate: $this->referenceDate,
                     storeId: (string) $store->id,
+                    fullSync: $this->fullSync,
                 );
             }
 
             $syncDay->markSuccess();
-            broadcast(new IntegrationProcessFinished(
-                tenantId: (string) $integration->tenant_id,
-                integrationId: (string) $integration->id,
-                resource: 'products',
-                referenceDate: $this->referenceDate,
-                status: 'success',
-            ));
-            $this->notifyTenantUsers(
-                title: 'Sincronização de produtos concluída',
-                message: sprintf('Integração %s finalizou produtos para %s com sucesso.', $integration->id, $this->referenceDate),
-                type: 'success',
-            );
+            if (! $this->fullSync) {
+                broadcast(new IntegrationProcessFinished(
+                    tenantId: (string) $integration->tenant_id,
+                    integrationId: (string) $integration->id,
+                    resource: 'products',
+                    referenceDate: $this->referenceDate,
+                    status: 'success',
+                ));
+                $this->notifyTenantUsers(
+                    title: 'Sincronização de produtos concluída',
+                    message: sprintf('Integração %s finalizou produtos para %s com sucesso.', $integration->id, $this->referenceDate),
+                    type: 'success',
+                );
+            }
         } catch (Throwable $exception) {
             $shortErrorMessage = BroadcastPayload::shortenErrorMessage($exception->getMessage());
 

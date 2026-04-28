@@ -20,6 +20,7 @@ class DispatchTenantProductStorePagesJob implements ShouldQueue, TenantAware
         public string $integrationId,
         public string $referenceDate,
         public string $storeId,
+        public bool $fullSync = false,
     ) {}
 
     public function handle(
@@ -76,16 +77,6 @@ class DispatchTenantProductStorePagesJob implements ShouldQueue, TenantAware
 
         $pageSize = (int) ($processing['products_page_size'] ?? 1000);
         $date = Carbon::parse($this->referenceDate)->toDateString();
-        Log::info('Products pages dispatch started.', [
-            'integration_id' => $integration->id,
-            'tenant_id' => $integration->tenant_id,
-            'store_id' => $store->id,
-            'store_code' => $store->code,
-            'store_document' => $store->document,
-            'empresa' => $empresa,
-            'reference_date' => $date,
-            'page_size' => $pageSize,
-        ]);
 
         SyncTenantProductStorePageJob::dispatch(
             integrationId: $integration->id,
@@ -93,17 +84,8 @@ class DispatchTenantProductStorePagesJob implements ShouldQueue, TenantAware
             storeId: $store->id,
             empresa: $empresa,
             page: 1,
+            fullSync: $this->fullSync,
         );
-
-        Log::info('Products pages dispatch finished.', [
-            'integration_id' => $integration->id,
-            'tenant_id' => $integration->tenant_id,
-            'store_id' => $store->id,
-            'reference_date' => $date,
-            'dispatched_pages' => 1,
-            'strategy' => 'progressive-pagination',
-            'mode' => 'skip-total-pages-discovery',
-        ]);
     }
 
     /**

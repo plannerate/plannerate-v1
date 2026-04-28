@@ -28,6 +28,7 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
     public function __construct(
         public string $integrationId,
         public string $referenceDate,
+        public bool $suppressSuccessNotifications = false,
     ) {}
 
     public function handle(
@@ -149,18 +150,20 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
             }
 
             $syncDay->markSuccess();
-            broadcast(new IntegrationProcessFinished(
-                tenantId: (string) $integration->tenant_id,
-                integrationId: (string) $integration->id,
-                resource: 'sales',
-                referenceDate: $this->referenceDate,
-                status: 'success',
-            ));
-            $this->notifyTenantUsers(
-                title: 'Sincronização de vendas concluída',
-                message: sprintf('Integração %s finalizou vendas para %s com sucesso.', $integration->id, $this->referenceDate),
-                type: 'success',
-            );
+            if (! $this->suppressSuccessNotifications) {
+                broadcast(new IntegrationProcessFinished(
+                    tenantId: (string) $integration->tenant_id,
+                    integrationId: (string) $integration->id,
+                    resource: 'sales',
+                    referenceDate: $this->referenceDate,
+                    status: 'success',
+                ));
+                $this->notifyTenantUsers(
+                    title: 'Sincronização de vendas concluída',
+                    message: sprintf('Integração %s finalizou vendas para %s com sucesso.', $integration->id, $this->referenceDate),
+                    type: 'success',
+                );
+            }
         } catch (Throwable $exception) {
             $shortErrorMessage = BroadcastPayload::shortenErrorMessage($exception->getMessage());
 

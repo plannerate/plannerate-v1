@@ -74,6 +74,8 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         $now = Carbon::now();
         $productsRows = [];
         $referenceUpdatesByProductId = [];
+        $invalidItemsCount = 0;
+        $invalidItemsExamples = [];
 
         foreach ($mappedItems as $item) {
             $normalizedEan = $this->normalizeEan($item['ean'] ?? null);
@@ -81,12 +83,14 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
             $externalId = $this->validateCodigoErp($this->normalizeString($item['external_id'] ?? null));
 
             if ($normalizedEan === null || $externalId === null) {
-                Log::warning('Products sync skipped invalid item identity.', [
-                    'tenant_id' => $tenantId,
-                    'store_id' => $storeId,
-                    'codigo_erp' => $item['external_id'] ?? null,
-                    'ean' => $item['ean'] ?? null,
-                ]);
+                $invalidItemsCount++;
+
+                if (count($invalidItemsExamples) < 5) {
+                    $invalidItemsExamples[] = [
+                        'codigo_erp' => $item['external_id'] ?? null,
+                        'ean' => $item['ean'] ?? null,
+                    ];
+                }
 
                 continue;
             }
@@ -116,6 +120,16 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
             ];
 
             $referenceUpdatesByProductId[$productId] = $reference;
+        }
+
+        if ($invalidItemsCount > 0) {
+            Log::warning('Products sync skipped invalid item identities.', [
+                'tenant_id' => $tenantId,
+                'store_id' => $storeId,
+                'invalid_items_count' => $invalidItemsCount,
+                'mapped_items_count' => count($mappedItems),
+                'invalid_items_examples' => $invalidItemsExamples,
+            ]);
         }
 
         if ($productsRows === []) {

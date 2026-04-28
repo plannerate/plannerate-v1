@@ -24,6 +24,7 @@ class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
         public string $storeId,
         public string $empresa,
         public int $page,
+        public bool $fullSync = false,
     ) {}
 
     public function handle(
@@ -55,18 +56,8 @@ class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
         $pageSize = (int) ($processing['products_page_size'] ?? 1000);
         $referenceDate = Carbon::parse($this->referenceDate)->toDateString();
 
-        Log::info('Products page sync started.', [
-            'integration_id' => $integration->id,
-            'tenant_id' => $integration->tenant_id,
-            'store_id' => (string) $store->id,
-            'empresa' => $this->empresa,
-            'reference_date' => $referenceDate,
-            'page' => $page,
-            'page_size' => $pageSize,
-        ]);
-
         $items = $productsService->fetchProducts($integration, [
-            'date' => $referenceDate,
+            'date' => $this->fullSync ? null : $referenceDate,
             'store_id' => (string) $store->id,
             'empresa' => $this->empresa,
             'page' => $page,
@@ -75,16 +66,6 @@ class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
         ]);
 
         $itemsCount = count($items);
-
-        Log::info('Products page sync finished.', [
-            'integration_id' => $integration->id,
-            'tenant_id' => $integration->tenant_id,
-            'store_id' => (string) $store->id,
-            'empresa' => $this->empresa,
-            'reference_date' => $referenceDate,
-            'page' => $page,
-            'items_count' => $itemsCount,
-        ]);
 
         if ($itemsCount >= $pageSize && $page < self::MAX_PROGRESSIVE_PAGE) {
             $nextPage = $page + 1;
@@ -95,18 +76,8 @@ class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
                 storeId: (string) $store->id,
                 empresa: $this->empresa,
                 page: $nextPage,
+                fullSync: $this->fullSync,
             );
-
-            Log::info('Products page sync enqueued next page.', [
-                'integration_id' => $integration->id,
-                'tenant_id' => $integration->tenant_id,
-                'store_id' => (string) $store->id,
-                'empresa' => $this->empresa,
-                'reference_date' => $referenceDate,
-                'current_page' => $page,
-                'next_page' => $nextPage,
-                'items_count' => $itemsCount,
-            ]);
         }
 
         if ($page >= self::MAX_PROGRESSIVE_PAGE && $itemsCount >= $pageSize) {

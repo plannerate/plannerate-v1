@@ -24,8 +24,12 @@ class SysmoProductsResponseMapper implements ProductsResponseMapper
         $primaryGtin = $this->extractPrimaryGtin($item);
 
         return [
-            'external_id' => $this->pickString($item, ['produto', 'id', 'codigo', 'codigo_produto', 'produto_id']),
-            'ean' => $primaryGtin ?? $this->pickString($item, ['ean', 'codigo_barras', 'gtin']),
+            'external_id' => $this->normalizeCodigoErp(
+                $this->pickString($item, ['produto', 'id', 'codigo', 'codigo_produto', 'produto_id'])
+            ),
+            'ean' => $this->normalizeGtin(
+                $primaryGtin ?? $this->pickString($item, ['ean', 'codigo_barras', 'gtin'])
+            ),
             'brand' => $this->pickString($item, ['marca', 'nome_marca']),
             'name' => $this->pickString($item, ['descricao', 'nome', 'nome_produto']),
             'department_code' => $this->pickString($item, ['departamento']),
@@ -151,5 +155,37 @@ class SysmoProductsResponseMapper implements ProductsResponseMapper
         }
 
         return null;
+    }
+
+    private function normalizeCodigoErp(?string $codigoErp): ?string
+    {
+        if ($codigoErp === null) {
+            return null;
+        }
+
+        $codigoErp = trim($codigoErp);
+
+        $invalidValues = ['N/A', 'n/a', 'NA', 'na', 'NULL', 'null', 'NONE', 'none', '-', ''];
+
+        if (in_array($codigoErp, $invalidValues, true)) {
+            return null;
+        }
+
+        return $codigoErp;
+    }
+
+    private function normalizeGtin(?string $gtin): ?string
+    {
+        if ($gtin === null) {
+            return null;
+        }
+
+        $digitsOnly = preg_replace('/\D+/', '', $gtin) ?? '';
+
+        if ($digitsOnly === '' || strlen($digitsOnly) > 13) {
+            return null;
+        }
+
+        return $digitsOnly;
     }
 }

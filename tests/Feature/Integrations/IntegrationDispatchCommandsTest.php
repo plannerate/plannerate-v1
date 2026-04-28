@@ -194,6 +194,34 @@ test('initial sync skips sales dates already marked as success', function () {
     Bus::assertNotDispatched(SyncTenantProductsDayJob::class);
 });
 
+test('initial sync dispatches products as single full sync bootstrap', function () {
+    Bus::fake();
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Products Bootstrap',
+        'slug' => 'tenant-products-bootstrap-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.mysql.database'),
+        'status' => 'active',
+    ]));
+
+    $integration = TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['sales_initial_days' => 3, 'products_initial_days' => 30]],
+        'is_active' => true,
+    ]);
+
+    app(DispatchInitialSyncService::class)->dispatch($integration);
+
+    Bus::assertDispatched(
+        SyncTenantProductsDayJob::class,
+        fn (SyncTenantProductsDayJob $job): bool => $job->integrationId === (string) $integration->id
+            && $job->fullSync === true
+    );
+});
+
 test('queue and cache infrastructure use landlord connection explicitly', function () {
     expect(config('multitenancy.tenant_database_connection_name'))->toBe('tenant')
         ->and(config('cache.stores.database.connection'))->toBe('landlord')
