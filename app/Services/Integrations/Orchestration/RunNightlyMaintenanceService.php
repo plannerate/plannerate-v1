@@ -21,8 +21,9 @@ class RunNightlyMaintenanceService
         $tenantId = (string) $integration->tenant_id;
         $cutoffDate = Carbon::today()->subDays($retentionDays)->toDateString();
         $windowStart = Carbon::today()->subDays($retentionDays - 1)->toDateString();
+        $tenantConnectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
 
-        DB::table('sales')
+        DB::connection($tenantConnectionName)->table('sales')
             ->where('tenant_id', $tenantId)
             ->whereDate('sale_date', '<', $cutoffDate)
             ->delete();

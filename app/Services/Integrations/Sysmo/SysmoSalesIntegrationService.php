@@ -90,6 +90,8 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
             ->whereIn('codigo_erp', array_values(array_unique($erpCodes)))
             ->get(['id', 'codigo_erp', 'ean'])
             ->keyBy('codigo_erp');
+        $tenantConnectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+        $salesTable = DB::connection($tenantConnectionName)->table('sales');
 
         foreach ($mappedItems as $item) {
             $codigoErp = $this->normalizeString($item['codigo_erp'] ?? $item['product_code'] ?? null);
@@ -125,15 +127,15 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
                 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 'updated_at' => Carbon::now(),
             ];
-            $existingId = DB::table('sales')->where($lookup)->value('id');
+            $existingId = $salesTable->where($lookup)->value('id');
 
             if ($existingId !== null) {
-                DB::table('sales')->where('id', $existingId)->update($payload);
+                $salesTable->where('id', $existingId)->update($payload);
 
                 continue;
             }
 
-            DB::table('sales')->insert(array_merge($lookup, $payload, [
+            $salesTable->insert(array_merge($lookup, $payload, [
                 'id' => $this->generateSaleId(
                     tenantId: $tenantId,
                     integrationId: $integrationId,
