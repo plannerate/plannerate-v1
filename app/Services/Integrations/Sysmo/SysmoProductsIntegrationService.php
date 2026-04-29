@@ -139,13 +139,13 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         }
 
         if ($invalidItemsCount > 0) {
-            Log::warning('Products sync skipped invalid item identities.', [
-                'tenant_id' => $tenantId,
-                'store_id' => $storeId,
-                'invalid_items_count' => $invalidItemsCount,
-                'mapped_items_count' => count($mappedItems),
-                'invalid_items_examples' => $invalidItemsExamples,
-            ]);
+            // Log::warning('Products sync skipped invalid item identities.', [
+            //     'tenant_id' => $tenantId,
+            //     'store_id' => $storeId,
+            //     'invalid_items_count' => $invalidItemsCount,
+            //     'mapped_items_count' => count($mappedItems),
+            //     'invalid_items_examples' => $invalidItemsExamples,
+            // ]);
         }
 
         if ($productsRows === []) {
