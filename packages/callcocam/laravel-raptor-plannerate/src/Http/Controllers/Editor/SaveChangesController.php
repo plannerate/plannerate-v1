@@ -8,12 +8,12 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\Editor\SaveChangesRequest;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\PlanogramChangeService;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -29,6 +29,8 @@ use Illuminate\Support\Facades\Log;
  */
 class SaveChangesController extends Controller
 {
+    use UsesPlannerateTenantDatabase;
+
     public function __construct(
         private PlanogramChangeService $changeService
     ) {}
@@ -60,7 +62,7 @@ class SaveChangesController extends Controller
 
         try {
             // Inicia transação para garantir atomicidade
-            DB::beginTransaction();
+            $this->plannerateTenantDatabase()->beginTransaction();
 
             // Processa mudanças via service
             $changesApplied = $this->changeService->processChanges(
@@ -74,7 +76,7 @@ class SaveChangesController extends Controller
                 $validated['changes']
             );
 
-            DB::commit();
+            $this->plannerateTenantDatabase()->commit();
 
             // Log::info('💾 Mudanças salvas', [
             //     'gondola_id' => $validated['gondola_id'],
@@ -87,7 +89,7 @@ class SaveChangesController extends Controller
                 'changes_applied' => $changesApplied,
             ]);
         } catch (\Exception $e) {
-            DB::rollBack();
+            $this->plannerateTenantDatabase()->rollBack();
 
             Log::error('❌ Erro ao salvar mudanças', [
                 'gondola_id' => $validated['gondola_id'],

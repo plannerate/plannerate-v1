@@ -8,7 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate;
 
-use Illuminate\Support\Facades\DB;
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Log;
  */
 class ProductRepository
 {
+    use UsesPlannerateTenantDatabase;
+
     private const REPO = 'ProductRepository';
 
     /**
@@ -24,13 +26,13 @@ class ProductRepository
     public function find(string $productId): ?object
     {
         try {
-            return DB::connection(config('database.default'))->table('products')->where('id', $productId)->first();
+            return $this->plannerateTenantTable('products')->where('id', $productId)->first();
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'find',
                 'product_id' => $productId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -53,8 +55,7 @@ class ProductRepository
             // has_dimensions não existe como coluna; é derivado de width/height/depth
             unset($data['has_dimensions']);
 
-            return DB::connection(config('database.default'))
-                ->table('products')
+            return $this->plannerateTenantTable('products')
                 ->where('id', $product->id)
                 ->update($data) > 0;
         } catch (\Throwable $e) {
@@ -62,7 +63,7 @@ class ProductRepository
                 'repository' => self::REPO,
                 'method' => 'update',
                 'product_id' => $product->id ?? null,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;

@@ -8,15 +8,17 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SectionController extends Controller
 {
+    use UsesPlannerateTenantDatabase;
+
     protected function getResourceLabel(): ?string
     {
         return 'Seção';
@@ -48,7 +50,7 @@ class SectionController extends Controller
         ]);
 
         try {
-            DB::beginTransaction();
+            $this->plannerateTenantDatabase()->beginTransaction();
 
             // Obter próximo ordering
             $maxOrdering = Section::where('gondola_id', $gondolaId)->max('ordering') ?? -1;
@@ -101,12 +103,12 @@ class SectionController extends Controller
                 ]);
             }
 
-            DB::commit();
+            $this->plannerateTenantDatabase()->commit();
 
             // Retorna back() sem preserveState para forçar reload dos dados
             return back();
         } catch (\Exception $e) {
-            DB::rollBack();
+            $this->plannerateTenantDatabase()->rollBack();
 
             return redirect()->back()->withErrors([
                 'error' => 'Erro ao criar seção: '.$e->getMessage(),
@@ -195,7 +197,7 @@ class SectionController extends Controller
         ]);
 
         try {
-            DB::beginTransaction();
+            $this->plannerateTenantDatabase()->beginTransaction();
 
             $section = Section::findOrFail($sectionId);
             $targetGondolaId = $validated['gondola_id'];
@@ -216,11 +218,11 @@ class SectionController extends Controller
                 'ordering' => $maxOrdering + 1,
             ]);
 
-            DB::commit();
+            $this->plannerateTenantDatabase()->commit();
 
             return back();
         } catch (\Exception $e) {
-            DB::rollBack();
+            $this->plannerateTenantDatabase()->rollBack();
 
             Log::error('Erro ao transferir seção', [
                 'section_id' => $sectionId,

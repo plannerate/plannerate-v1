@@ -8,11 +8,11 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\GondolaRepository;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Log;
  */
 class GondolaService
 {
+    use UsesPlannerateTenantDatabase;
+
     public function __construct(
         private GondolaRepository $repository
     ) {}
@@ -31,7 +33,7 @@ class GondolaService
      */
     public function createGondolaWithStructure(Planogram $planogram, array $data): Gondola
     {
-        return DB::transaction(function () use ($planogram, $data) {
+        return $this->plannerateTenantDatabase()->transaction(function () use ($planogram, $data) {
             $gondola = $this->createGondola($planogram, $data);
             $this->createSectionsWithShelves($gondola, $data);
 

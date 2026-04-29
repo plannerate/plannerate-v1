@@ -9,6 +9,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate\IAGenerate;
 
 use Callcocam\LaravelRaptorPlannerate\Concerns\BelongsToConnection;
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\IAGenerate\IAGenerateConfigDTO;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\IAGenerate\IAGenerateResultDTO;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\IAGenerate\PlanogramContextDTO;
@@ -22,7 +23,6 @@ use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AutoGenerate\ProductSelectionService;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
@@ -33,7 +33,7 @@ use Prism\Prism\Facades\Prism;
  */
 class IAPlanogramService
 {
-    use BelongsToConnection;
+    use BelongsToConnection, UsesPlannerateTenantDatabase;
 
     public function __construct(
         protected ProductSelectionService $productSelectionService,
@@ -182,7 +182,7 @@ class IAPlanogramService
      */
     protected function loadGondola(string $gondolaId): Gondola
     {
-        $gondola = Gondola::on('tenant')
+        $gondola = Gondola::on($this->plannerateTenantConnectionName())
             ->with(['sections.shelves'])
             ->find($gondolaId);
 
@@ -221,7 +221,7 @@ class IAPlanogramService
         foreach (['A', 'B', 'C'] as $class) {
             $limit = $targetDistribution[$class];
 
-            $productsInClass = Product::on('tenant')
+            $productsInClass = Product::on($this->plannerateTenantConnectionName())
                 ->whereIn('category_id', $categoryIds)
                 ->leftJoin('product_analyses', function ($join) {
                     $join->on('products.id', '=', 'product_analyses.product_id')
@@ -253,7 +253,7 @@ class IAPlanogramService
             $remaining = $totalProducts - $selectedProducts->count();
             $existingIds = $selectedProducts->pluck('id')->toArray();
 
-            $additionalProducts = Product::on('tenant')
+            $additionalProducts = Product::on($this->plannerateTenantConnectionName())
                 ->whereIn('category_id', $categoryIds)
                 ->whereNotIn('id', $existingIds)
                 ->leftJoin('product_analyses', function ($join) {
@@ -318,7 +318,7 @@ class IAPlanogramService
         }
 
         // Se não encontrar, buscar categoria raiz mais comum
-        $rootCategory = Category::on('tenant')
+        $rootCategory = Category::on($this->plannerateTenantConnectionName())
             ->whereNull('category_id')
             ->first();
 
@@ -334,7 +334,7 @@ class IAPlanogramService
      */
     protected function getCategoryIds(string $categoryId): array
     {
-        $connection = DB::connection('tenant');
+        $connection = $this->plannerateTenantDatabase();
 
         // Verificar se categoria existe
         if (! $connection->table('categories')->where('id', $categoryId)->exists()) {
@@ -403,7 +403,7 @@ class IAPlanogramService
             return [];
         }
 
-        $categories = Category::on('tenant')
+        $categories = Category::on($this->plannerateTenantConnectionName())
             ->whereIn('id', $categoryIds)
             ->get(['id', 'name', 'parent_id'])
             ->toArray();
@@ -586,7 +586,7 @@ class IAPlanogramService
      */
     protected function saveAllocations(Gondola $gondola, IAGenerateResultDTO $result): void
     {
-        DB::connection('tenant')->transaction(function () use ($gondola, $result) {
+        $this->plannerateTenantDatabase()->transaction(function () use ($gondola, $result) {
             // 1. Limpar segmentos existentes (igual ao AutoPlanogramService)
             $shelfIds = [];
             foreach ($gondola->sections as $section) {
@@ -596,12 +596,12 @@ class IAPlanogramService
             }
 
             if (! empty($shelfIds)) {
-                Segment::on('tenant')->whereIn('shelf_id', $shelfIds)->delete();
+                Segment::on($this->plannerateTenantConnectionName())->whereIn('shelf_id', $shelfIds)->delete();
             }
 
             // 2. Criar novos segmentos (seguindo padrão do AutoPlanogramService)
             foreach ($result->shelves as $shelfData) {
-                $shelf = Shelf::on('tenant')->find($shelfData['shelf_id']);
+                $shelf = Shelf::on($this->plannerateTenantConnectionName())->find($shelfData['shelf_id']);
 
                 if (! $shelf) {
                     Log::warning('⚠️ Prateleira não encontrada', ['shelf_id' => $shelfData['shelf_id']]);
@@ -613,7 +613,7 @@ class IAPlanogramService
 
                 // Criar segment + layer para cada produto
                 foreach ($shelfData['products'] as $productData) {
-                    $product = Product::on('tenant')->find($productData['product_id']);
+                    $product = Product::on($this->plannerateTenantConnectionName())->find($productData['product_id']);
 
                     if (! $product) {
                         Log::warning('⚠️ Produto não encontrado', ['product_id' => $productData['product_id']]);
@@ -622,7 +622,7 @@ class IAPlanogramService
                     }
 
                     // Criar Segment
-                    $segment = Segment::on('tenant')->create([
+                    $segment = Segment::on($this->plannerateTenantConnectionName())->create([
                         'id' => (string) Str::ulid(),
                         'shelf_id' => $shelf->id,
                         'quantity' => 1,
@@ -630,7 +630,7 @@ class IAPlanogramService
                     ]);
 
                     // Criar Layer
-                    Layer::on('tenant')->create([
+                    Layer::on($this->plannerateTenantConnectionName())->create([
                         'id' => (string) Str::ulid(),
                         'segment_id' => $segment->id,
                         'product_id' => $product->id,

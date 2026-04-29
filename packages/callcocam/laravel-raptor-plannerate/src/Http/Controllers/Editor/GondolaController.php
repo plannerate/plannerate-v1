@@ -16,6 +16,7 @@ use Callcocam\LaravelRaptorPlannerate\Jobs\ProcessProductImagesByEansJob;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Category;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\GondolaAnalysis;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram as EditorPlanogram;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
@@ -242,10 +243,9 @@ class GondolaController extends Controller
         // Obter IDs de produtos já usados — gondola_id direto na tabela layers (sem JOINs)
         // Cacheado por 2 min: muda apenas quando usuário move produtos no editor
         $gondolaId = $gondola->id;
-        $usedProductIds = DB::table('layers')
+        $usedProductIds = Layer::query()
             ->where('gondola_id', $gondolaId)
             ->whereNotNull('product_id')
-            ->whereNull('deleted_at')
             ->distinct()
             ->pluck('product_id')
             ->toArray();

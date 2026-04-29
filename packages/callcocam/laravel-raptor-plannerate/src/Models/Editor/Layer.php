@@ -13,7 +13,6 @@ use Callcocam\LaravelRaptorPlannerate\Models\Traits\UsesPlannerateTenantConnecti
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\DB;
 
 class Layer extends Model
 {
@@ -26,7 +25,7 @@ class Layer extends Model
         // Auto-popula gondola_id a partir de segment→shelf→section para evitar JOINs na leitura
         static::creating(function (self $layer): void {
             if (! $layer->gondola_id && $layer->segment_id) {
-                $layer->gondola_id = DB::table('segments')
+                $layer->gondola_id = $layer->getConnection()->table('segments')
                     ->join('shelves', 'shelves.id', '=', 'segments.shelf_id')
                     ->join('sections', 'sections.id', '=', 'shelves.section_id')
                     ->where('segments.id', $layer->segment_id)

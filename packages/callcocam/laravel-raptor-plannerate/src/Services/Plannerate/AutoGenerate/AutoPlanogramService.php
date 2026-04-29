@@ -9,6 +9,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AutoGenerate;
 
 use Callcocam\LaravelRaptorPlannerate\Concerns\BelongsToConnection;
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\AutoGenerateConfigDTO;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\AutoGenerateResultDTO;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Client;
@@ -17,7 +18,6 @@ use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Segment;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -32,7 +32,7 @@ use Illuminate\Support\Str;
  */
 class AutoPlanogramService
 {
-    use BelongsToConnection;
+    use BelongsToConnection, UsesPlannerateTenantDatabase;
 
     public function __construct(
         protected ProductSelectionService $productSelection,
@@ -151,7 +151,7 @@ class AutoPlanogramService
      */
     protected function clearGondola(Gondola $gondola): void
     {
-        DB::transaction(function () use ($gondola) {
+        $this->plannerateTenantDatabase()->transaction(function () use ($gondola) {
             // Pegar IDs de todas as shelves da gôndola
             $shelfIds = [];
             foreach ($gondola->sections as $section) {
@@ -181,7 +181,7 @@ class AutoPlanogramService
      */
     protected function saveProductsToGondola(Gondola $gondola, array $shelves): void
     {
-        DB::transaction(function () use ($gondola, $shelves) {
+        $this->plannerateTenantDatabase()->transaction(function () use ($gondola, $shelves) {
             $totalCreated = 0;
 
             foreach ($shelves as $shelfLayout) {

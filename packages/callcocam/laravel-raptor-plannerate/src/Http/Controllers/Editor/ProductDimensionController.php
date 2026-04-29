@@ -2,14 +2,16 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ProductDimensionController extends Controller
 {
+    use UsesPlannerateTenantDatabase;
+
     public function update(Request $request, string $planogramId, string $productId)
     {
         $validated = $request->validate([
@@ -36,7 +38,7 @@ class ProductDimensionController extends Controller
         try {
             $product = Product::findOrFail($productId);
 
-            DB::beginTransaction();
+            $this->plannerateTenantDatabase()->beginTransaction();
 
             // Atualiza dimensões diretamente no produto (tabela dimensions foi removida)
             $product->width = $validated['width'];
@@ -60,11 +62,11 @@ class ProductDimensionController extends Controller
 
             $product->save();
 
-            DB::commit();
+            $this->plannerateTenantDatabase()->commit();
 
             return redirect()->back()->with('success', 'Produto atualizado com sucesso');
         } catch (\Exception $e) {
-            DB::rollBack();
+            $this->plannerateTenantDatabase()->rollBack();
 
             return redirect()->back()->withErrors(['error' => 'Erro ao atualizar produto: '.$e->getMessage()]);
         }

@@ -8,7 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate;
 
-use Illuminate\Support\Facades\DB;
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Log;
  */
 class SegmentRepository
 {
+    use UsesPlannerateTenantDatabase;
+
     private const REPO = 'SegmentRepository';
 
     /**
@@ -24,13 +26,13 @@ class SegmentRepository
     public function find(string $segmentId): ?object
     {
         try {
-            return DB::connection(config('database.default'))->table('segments')->where('id', $segmentId)->first();
+            return $this->plannerateTenantTable('segments')->where('id', $segmentId)->first();
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'find',
                 'segment_id' => $segmentId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -45,12 +47,12 @@ class SegmentRepository
     public function create(array $data): bool
     {
         try {
-            return DB::connection(config('database.default'))->table('segments')->insert($data);
+            return $this->plannerateTenantTable('segments')->insert($data);
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'create',
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -65,7 +67,7 @@ class SegmentRepository
     public function update(string $segmentId, array $data): int
     {
         try {
-            return DB::connection(config('database.default'))->table('segments')
+            return $this->plannerateTenantTable('segments')
                 ->where('id', $segmentId)
                 ->update($data);
         } catch (\Throwable $e) {
@@ -73,7 +75,7 @@ class SegmentRepository
                 'repository' => self::REPO,
                 'method' => 'update',
                 'segment_id' => $segmentId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -86,13 +88,13 @@ class SegmentRepository
     public function delete(string $segmentId): int
     {
         try {
-            return DB::connection(config('database.default'))->table('segments')->where('id', $segmentId)->delete();
+            return $this->plannerateTenantTable('segments')->where('id', $segmentId)->delete();
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'delete',
                 'segment_id' => $segmentId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;

@@ -41,7 +41,7 @@ trait BelongsToConnection
 
             // SOLUÇÃO: Atualiza a conexão 'tenant' existente ao invés de criar uma nova
             // Isso garante que os models que usam ->on('tenant') funcionem corretamente
-            $connectionName = 'tenant';
+            $connectionName = $this->tenantConnectionName();
 
             // Copia a configuração da conexão tenant atual
             $tenantConfig = config("database.connections.{$connectionName}");
@@ -67,7 +67,7 @@ trait BelongsToConnection
             ]);
 
             // Fallback para conexão tenant padrão
-            return 'tenant';
+            return $this->tenantConnectionName();
         }
     }
 
@@ -77,7 +77,7 @@ trait BelongsToConnection
      */
     protected function setTenantDatabase(string $database): string
     {
-        $connectionName = 'tenant';
+        $connectionName = $this->tenantConnectionName();
         $tenantConfig = config("database.connections.{$connectionName}");
         $tenantConfig['database'] = $database;
         Config::set("database.connections.{$connectionName}", $tenantConfig);
@@ -90,5 +90,14 @@ trait BelongsToConnection
     public function getClientConnection(): ?string
     {
         return $this->clientConnection;
+    }
+
+    protected function tenantConnectionName(): string
+    {
+        $tenantConnection = config('multitenancy.tenant_database_connection_name');
+
+        return is_string($tenantConnection) && $tenantConnection !== ''
+            ? $tenantConnection
+            : (string) config('database.default');
     }
 }

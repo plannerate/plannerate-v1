@@ -8,7 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate;
 
-use Illuminate\Support\Facades\DB;
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Log;
  */
 class SectionRepository
 {
+    use UsesPlannerateTenantDatabase;
+
     private const REPO = 'SectionRepository';
 
     /**
@@ -24,13 +26,13 @@ class SectionRepository
     public function exists(string $sectionId): bool
     {
         try {
-            return DB::connection(config('database.default'))->table('sections')->where('id', $sectionId)->exists();
+            return $this->plannerateTenantTable('sections')->where('id', $sectionId)->exists();
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'exists',
                 'section_id' => $sectionId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -43,13 +45,13 @@ class SectionRepository
     public function find(string $sectionId): ?object
     {
         try {
-            return DB::connection(config('database.default'))->table('sections')->where('id', $sectionId)->first();
+            return $this->plannerateTenantTable('sections')->where('id', $sectionId)->first();
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'find',
                 'section_id' => $sectionId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -64,14 +66,14 @@ class SectionRepository
     public function create(array $data): bool
     {
         try {
-            DB::connection(config('database.default'))->table('sections')->insert($data);
+            $this->plannerateTenantTable('sections')->insert($data);
 
             return true;
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'create',
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
 
@@ -87,7 +89,7 @@ class SectionRepository
     public function update(string $sectionId, array $data): int
     {
         try {
-            return DB::connection(config('database.default'))->table('sections')
+            return $this->plannerateTenantTable('sections')
                 ->where('id', $sectionId)
                 ->update($data);
         } catch (\Throwable $e) {
@@ -95,7 +97,7 @@ class SectionRepository
                 'repository' => self::REPO,
                 'method' => 'update',
                 'section_id' => $sectionId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -110,7 +112,7 @@ class SectionRepository
     public function findByGondolaId(string $gondolaId): array
     {
         try {
-            return DB::connection(config('database.default'))->table('sections')
+            return $this->plannerateTenantTable('sections')
                 ->where('gondola_id', $gondolaId)
                 ->whereNull('deleted_at')
                 ->orderBy('ordering', 'asc')
@@ -121,7 +123,7 @@ class SectionRepository
                 'repository' => self::REPO,
                 'method' => 'findByGondolaId',
                 'gondola_id' => $gondolaId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -137,7 +139,7 @@ class SectionRepository
     {
         try {
             foreach ($sections as $section) {
-                DB::connection(config('database.default'))->table('sections')
+                $this->plannerateTenantTable('sections')
                     ->where('id', $section['id'])
                     ->update([
                         'ordering' => $section['ordering'],
@@ -148,7 +150,7 @@ class SectionRepository
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'updateBatch',
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;

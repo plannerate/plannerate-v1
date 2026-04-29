@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Model para sumarização mensal de vendas
@@ -161,8 +160,8 @@ class MonthlySalesSummary extends Model
             return null;
         }
 
-        return cache()->remember("store:{$this->store_id}", 3600, function () {
-            return DB::connection(config('raptor.database.landlord_connection_name', 'landlord'))
+        return cache()->remember("tenant-store:{$this->getConnectionName()}:{$this->store_id}", 3600, function () {
+            return $this->getConnection()
                 ->table('stores')
                 ->where('id', $this->store_id)
                 ->first();

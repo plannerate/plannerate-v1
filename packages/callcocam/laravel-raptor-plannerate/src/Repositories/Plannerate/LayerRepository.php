@@ -8,7 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate;
 
-use Illuminate\Support\Facades\DB;
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -16,18 +16,20 @@ use Illuminate\Support\Facades\Log;
  */
 class LayerRepository
 {
+    use UsesPlannerateTenantDatabase;
+
     private const REPO = 'LayerRepository';
 
     public function findByProductId(string $productId): ?object
     {
         try {
-            return DB::connection(config('database.default'))->table('layers')->where('product_id', $productId)->first();
+            return $this->plannerateTenantTable('layers')->where('product_id', $productId)->first();
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'findByProductId',
                 'product_id' => $productId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -37,13 +39,13 @@ class LayerRepository
     public function find(string $layerId): ?object
     {
         try {
-            return DB::connection(config('database.default'))->table('layers')->where('id', $layerId)->first();
+            return $this->plannerateTenantTable('layers')->where('id', $layerId)->first();
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'find',
                 'layer_id' => $layerId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -53,12 +55,12 @@ class LayerRepository
     public function create(array $data): bool
     {
         try {
-            return DB::connection(config('database.default'))->table('layers')->insert($data);
+            return $this->plannerateTenantTable('layers')->insert($data);
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'create',
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -68,7 +70,7 @@ class LayerRepository
     public function update(string $layerId, array $data): int
     {
         try {
-            return DB::connection(config('database.default'))->table('layers')
+            return $this->plannerateTenantTable('layers')
                 ->where('id', $layerId)
                 ->update($data);
         } catch (\Throwable $e) {
@@ -76,7 +78,7 @@ class LayerRepository
                 'repository' => self::REPO,
                 'method' => 'update',
                 'layer_id' => $layerId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -86,13 +88,13 @@ class LayerRepository
     public function delete(string $layerId): int
     {
         try {
-            return DB::connection(config('database.default'))->table('layers')->where('id', $layerId)->delete();
+            return $this->plannerateTenantTable('layers')->where('id', $layerId)->delete();
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'delete',
                 'layer_id' => $layerId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -102,13 +104,13 @@ class LayerRepository
     public function countBySegmentId(string $segmentId): int
     {
         try {
-            return DB::connection(config('database.default'))->table('layers')->where('segment_id', $segmentId)->count();
+            return $this->plannerateTenantTable('layers')->where('segment_id', $segmentId)->count();
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'countBySegmentId',
                 'segment_id' => $segmentId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;

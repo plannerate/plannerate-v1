@@ -8,8 +8,8 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate;
 
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Log;
  */
 class GondolaRepository
 {
+    use UsesPlannerateTenantDatabase;
+
     private const REPO = 'GondolaRepository';
 
     /**
@@ -31,7 +33,7 @@ class GondolaRepository
                 'repository' => self::REPO,
                 'method' => 'find',
                 'gondola_id' => $gondolaId,
-                'connection' => config('database.default'),
+                'connection' => (new Gondola)->getConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -50,7 +52,7 @@ class GondolaRepository
                 'repository' => self::REPO,
                 'method' => 'findOrFail',
                 'gondola_id' => $gondolaId,
-                'connection' => config('database.default'),
+                'connection' => (new Gondola)->getConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -65,7 +67,7 @@ class GondolaRepository
     public function update(string $gondolaId, array $data): int
     {
         try {
-            return DB::connection(config('database.default'))->table('gondolas')
+            return $this->plannerateTenantTable('gondolas')
                 ->where('id', $gondolaId)
                 ->update($data);
         } catch (\Throwable $e) {
@@ -73,7 +75,7 @@ class GondolaRepository
                 'repository' => self::REPO,
                 'method' => 'update',
                 'gondola_id' => $gondolaId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;

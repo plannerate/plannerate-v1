@@ -42,7 +42,7 @@ class ProcessProductImagesByEansJob implements ShouldQueue
         }
 
         $this->setTenantDatabase($this->database);
-        $connection = $this->getClientConnection() ?? 'tenant';
+        $connection = $this->getClientConnection() ?? $this->tenantConnectionName();
 
         $products = Product::on($connection)
             ->whereIn('ean', $this->eans)

@@ -8,7 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate;
 
-use Illuminate\Support\Facades\DB;
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -16,18 +16,20 @@ use Illuminate\Support\Facades\Log;
  */
 class ShelfRepository
 {
+    use UsesPlannerateTenantDatabase;
+
     private const REPO = 'ShelfRepository';
 
     public function exists(string $shelfId): bool
     {
         try {
-            return DB::connection(config('database.default'))->table('shelves')->where('id', $shelfId)->exists();
+            return $this->plannerateTenantTable('shelves')->where('id', $shelfId)->exists();
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'exists',
                 'shelf_id' => $shelfId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -37,13 +39,13 @@ class ShelfRepository
     public function find(string $shelfId): ?object
     {
         try {
-            return DB::connection(config('database.default'))->table('shelves')->where('id', $shelfId)->first();
+            return $this->plannerateTenantTable('shelves')->where('id', $shelfId)->first();
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'find',
                 'shelf_id' => $shelfId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -53,12 +55,12 @@ class ShelfRepository
     public function create(array $data): bool
     {
         try {
-            return DB::connection(config('database.default'))->table('shelves')->insert($data);
+            return $this->plannerateTenantTable('shelves')->insert($data);
         } catch (\Throwable $e) {
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'create',
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -68,7 +70,7 @@ class ShelfRepository
     public function update(string $shelfId, array $data): int
     {
         try {
-            return DB::connection(config('database.default'))->table('shelves')
+            return $this->plannerateTenantTable('shelves')
                 ->where('id', $shelfId)
                 ->update($data);
         } catch (\Throwable $e) {
@@ -76,7 +78,7 @@ class ShelfRepository
                 'repository' => self::REPO,
                 'method' => 'update',
                 'shelf_id' => $shelfId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -86,7 +88,7 @@ class ShelfRepository
     public function findBySectionId(string $sectionId): array
     {
         try {
-            return DB::connection(config('database.default'))->table('shelves')
+            return $this->plannerateTenantTable('shelves')
                 ->where('section_id', $sectionId)
                 ->whereNull('deleted_at')
                 ->orderBy('shelf_position', 'asc')
@@ -97,7 +99,7 @@ class ShelfRepository
                 'repository' => self::REPO,
                 'method' => 'findBySectionId',
                 'section_id' => $sectionId,
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;
@@ -108,7 +110,7 @@ class ShelfRepository
     {
         try {
             foreach ($shelves as $shelf) {
-                DB::connection(config('database.default'))->table('shelves')
+                $this->plannerateTenantTable('shelves')
                     ->where('id', $shelf['id'])
                     ->update([
                         'ordering' => $shelf['ordering'],
@@ -119,7 +121,7 @@ class ShelfRepository
             Log::error('Plannerate repository failed', [
                 'repository' => self::REPO,
                 'method' => 'updateBatch',
-                'connection' => config('database.default'),
+                'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);
             throw $e;

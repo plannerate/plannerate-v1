@@ -8,6 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AutoGenerate;
 
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\AutoGenerateConfigDTO;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\RankedProductDTO;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
@@ -28,6 +29,8 @@ use Illuminate\Support\Facades\Log;
  */
 class ProductSelectionService
 {
+    use UsesPlannerateTenantDatabase;
+
     /**
      * Selecionar e rankear produtos para o planograma
      *
@@ -107,8 +110,7 @@ class ProductSelectionService
      */
     protected function getProductsFromCategory(string $categoryId): Collection
     {
-        // IMPORTANTE: Usar conexão 'tenant' explicitamente em TODAS as queries
-        $connection = DB::connection('tenant');
+        $connection = $this->plannerateTenantDatabase();
 
         // Primeiro verificar se a categoria existe
         $categoryExists = $connection->table('categories')->where('id', $categoryId)->exists();
@@ -161,7 +163,7 @@ class ProductSelectionService
         ]);
 
         // Buscar produtos dessas categorias usando a conexão tenant
-        $products = Product::on('tenant')
+        $products = Product::on($this->plannerateTenantConnectionName())
             ->whereIn('category_id', $categoryIds)
             ->with(['category'])
             ->get();
@@ -198,7 +200,7 @@ class ProductSelectionService
             : Carbon::parse($planogram->end_date)->subYear();
 
         $tableType = $config->tableType ?: 'sales';
-        $connection = DB::connection('tenant');
+        $connection = $this->plannerateTenantDatabase();
 
         Log::info('📅 Filtro de vendas para ranking', [
             'table_type' => $tableType,
@@ -271,8 +273,7 @@ class ProductSelectionService
 
         $productIds = $products->pluck('id')->toArray();
 
-        // Usar conexão 'tenant' explicitamente
-        $analyses = DB::connection('tenant')->table('product_analyses')
+        $analyses = $this->plannerateTenantTable('product_analyses')
             ->whereIn('product_id', $productIds)
             ->select(['product_id', 'abc_classification', 'target_stock', 'safety_stock'])
             ->get();

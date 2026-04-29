@@ -2,11 +2,11 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate\SectionGenerate;
 
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\SectionGenerate\SectionAllocationResultDTO;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Segment;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -17,6 +17,8 @@ use Illuminate\Support\Str;
  */
 class SectionPersistenceService
 {
+    use UsesPlannerateTenantDatabase;
+
     /**
      * Remove todos os segments (e layers em cascade) das prateleiras desta section.
      */
@@ -58,7 +60,7 @@ class SectionPersistenceService
         $positionByShelf = [];
         $segmentsByShelf = [];
 
-        DB::transaction(function () use ($result, &$created, &$orderingByShelf, &$positionByShelf, &$segmentsByShelf) {
+        $this->plannerateTenantDatabase()->transaction(function () use ($result, &$created, &$orderingByShelf, &$positionByShelf, &$segmentsByShelf) {
             foreach ($result->allocation as $item) {
                 $shelfId = $item->shelfId;
                 $order = $orderingByShelf[$shelfId] ?? 0;

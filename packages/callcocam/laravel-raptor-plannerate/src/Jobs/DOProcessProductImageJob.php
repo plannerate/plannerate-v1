@@ -39,13 +39,13 @@ class DOProcessProductImageJob implements ShouldQueue
             if ($this->database) {
                 $this->configureTenantConnection($this->database);
             } elseif ($this->clientId) {
-                $client = Client::on(config('database.default'))->find($this->clientId);
+                $client = Client::query()->find($this->clientId);
                 if ($client) {
                     $this->setupClientConnection($client);
                 }
             }
 
-            $connection = $this->getClientConnection() ?? 'tenant';
+            $connection = $this->getClientConnection() ?? $this->tenantConnectionName();
             $product = Product::on($connection)->find($this->productId);
 
             if (! $product) {
@@ -74,7 +74,7 @@ class DOProcessProductImageJob implements ShouldQueue
      */
     protected function configureTenantConnection(string $database): void
     {
-        $connectionName = 'tenant';
+        $connectionName = $this->tenantConnectionName();
         $tenantConfig = config("database.connections.{$connectionName}");
         $tenantConfig['database'] = $database;
         Config::set("database.connections.{$connectionName}", $tenantConfig);
