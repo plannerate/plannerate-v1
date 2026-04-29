@@ -80,7 +80,7 @@ export type KanbanPageProps = {
     planograms: Array<{ id: string; name: string; store: string | null; store_id: string | null }>;
     stores: Array<{ id: string; name: string }>;
     users: Array<{ id: string; name: string }>;
-    filters: { planogram_id?: string; store_id?: string; gondola_search?: string };
+    filters: { planogram_id?: string; store_id?: string; gondola_search?: string; status?: string };
     board: BoardColumn[] | null;
     selected_planogram: { id: string; name: string; store: string | null } | null;
     can_initiate: boolean;

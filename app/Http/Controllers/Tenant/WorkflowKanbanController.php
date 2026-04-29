@@ -18,6 +18,11 @@ class WorkflowKanbanController extends Controller
 {
     use InteractsWithTenantContext;
 
+    /**
+     * @var list<string>
+     */
+    private const EXECUTION_STATUS_FILTERS = ['pending', 'active', 'paused', 'completed', 'cancelled'];
+
     public function __construct(
         private readonly WorkflowKanbanService $kanbanService,
         private readonly WorkflowPlanogramStepService $stepService,
@@ -29,10 +34,14 @@ class WorkflowKanbanController extends Controller
 
         $planogramId = trim((string) $request->string('planogram_id'));
         $hasPlanogramFilter = $planogramId !== '';
+        $storeId = trim((string) $request->string('store_id'));
+        $hasStoreFilter = $storeId !== '';
+        $status = trim((string) $request->string('status'));
+        $executionStatuses = in_array($status, self::EXECUTION_STATUS_FILTERS, true) ? [$status] : null;
 
         $planograms = Planogram::query()
             ->with('store:id,name')
-            ->when($request->filled('store_id'), fn ($query) => $query->where('store_id', $request->input('store_id')))
+            ->when($hasStoreFilter, fn ($query) => $query->where('store_id', $storeId))
             ->orderBy('name')
             ->get(['id', 'name', 'store_id'])
             ->map(fn (Planogram $planogram): array => [
@@ -53,12 +62,8 @@ class WorkflowKanbanController extends Controller
             ->get(['id', 'name'])
             ->all();
 
-        $filters = $request->only(['planogram_id', 'store_id', 'gondola_search']);
-        $selectedPlanogramId = $hasPlanogramFilter ? $planogramId : (string) ($planograms[0]['id'] ?? '');
-
-        if (! $hasPlanogramFilter && $selectedPlanogramId !== '') {
-            $filters['planogram_id'] = $selectedPlanogramId;
-        }
+        $filters = $request->only(['planogram_id', 'store_id', 'gondola_search', 'status']);
+        $selectedPlanogramId = $hasPlanogramFilter ? $planogramId : '';
 
         $selectedPlanogram = null;
         $board = null;
@@ -68,13 +73,19 @@ class WorkflowKanbanController extends Controller
 
             if ($planogram !== null) {
                 $this->stepService->syncForPlanogram($planogram);
-                $board = $this->kanbanService->buildBoardForPlanogram($planogram, $request->user());
+                $board = $this->kanbanService->buildBoardForPlanogramWithStatuses($planogram, $executionStatuses, $request->user());
                 $selectedPlanogram = [
                     'id' => $planogram->id,
                     'name' => $planogram->name,
                     'store' => $planogram->store?->name,
                 ];
             }
+        } else {
+            $board = $this->kanbanService->buildBoardForInProgressExecutions(
+                $request->user(),
+                $hasStoreFilter ? $storeId : null,
+                $executionStatuses,
+            );
         }
 
         return Inertia::render('tenant/planograms/Kanban', [

@@ -227,52 +227,153 @@ class WorkflowKanbanService
      */
     public function buildBoardForPlanogram(Planogram $planogram, ?User $user = null): array
     {
+        return $this->buildBoardForPlanogramWithStatuses($planogram, null, $user);
+    }
+
+    /**
+     * Build board data for all gondola executions in a planogram, grouped by step,
+     * filtering only executions by status when provided.
+     *
+     * @param  list<string>|null  $executionStatuses
+     * @return array<int, array{step: array<string, mixed>, executions: array<int, array<string, mixed>>}>
+     */
+    public function buildBoardForPlanogramWithStatuses(
+        Planogram $planogram,
+        ?array $executionStatuses = null,
+        ?User $user = null,
+    ): array {
         $steps = $planogram->workflowSteps()
-            ->with(['template', 'executions.gondola.planogram', 'executions.currentResponsible', 'executions.startedBy'])
+            ->with([
+                'template',
+                'executions' => fn ($query) => $query
+                    ->when(
+                        $executionStatuses !== null && $executionStatuses !== [],
+                        fn ($executionQuery) => $executionQuery->whereIn('status', $executionStatuses)
+                    )
+                    ->with(['gondola.planogram', 'currentResponsible', 'startedBy']),
+            ])
             ->where('is_skipped', false)
             ->get()
             ->sortBy('suggested_order');
 
         return $steps->map(function (WorkflowPlanogramStep $step) use ($user) {
             return [
-                'step' => [
-                    'id' => $step->id,
-                    'name' => $step->name,
-                    'description' => $step->description,
-                    'color' => $step->color,
-                    'icon' => $step->icon,
-                    'suggested_order' => $step->suggested_order,
-                    'is_required' => $step->is_required,
-                    'is_skipped' => $step->is_skipped,
-                    'status' => $step->status,
-                ],
-                'executions' => $step->executions->map(fn (WorkflowGondolaExecution $exec) => [
-                    'id' => $exec->id,
-                    'gondola_id' => $exec->gondola_id,
-                    'gondola_name' => $exec->gondola?->name,
-                    'gondola_location' => $exec->gondola?->location,
-                    'planogram_name' => $exec->gondola?->planogram?->name,
-                    'step_name' => $step->name,
-                    'status' => $exec->status?->value,
-                    'assigned_to_user' => $exec->currentResponsible ? [
-                        'id' => $exec->currentResponsible->id,
-                        'name' => $exec->currentResponsible->name,
-                    ] : null,
-                    'started_by' => $exec->execution_started_by ? [
-                        'id' => $exec->execution_started_by,
-                        'name' => $exec->startedBy?->name,
-                    ] : null,
-                    'started_at' => $exec->started_at?->toIso8601String(),
-                    'sla_date' => $exec->sla_date?->toIso8601String(),
-                    'can_start' => $user?->can('start', $exec) ?? false,
-                    'can_pause' => $user?->can('pause', $exec) ?? false,
-                    'can_resume' => $user?->can('resume', $exec) ?? false,
-                    'can_complete' => $user?->can('complete', $exec) ?? false,
-                    'can_abandon' => $user?->can('abandon', $exec) ?? false,
-                    'can_move' => $user?->can('move', $exec) ?? false,
-                ])->values()->all(),
+                'step' => $this->stepPayload($step),
+                'executions' => $step->executions
+                    ->map(fn (WorkflowGondolaExecution $exec) => $this->executionPayload($exec, $step, $user))
+                    ->values()
+                    ->all(),
             ];
         })->values()->all();
+    }
+
+    /**
+     * Build board data for all in-progress executions (active/paused), grouped by step.
+     *
+     * @return array<int, array{step: array<string, mixed>, executions: array<int, array<string, mixed>>}>
+     */
+    public function buildBoardForInProgressExecutions(
+        ?User $user = null,
+        ?string $storeId = null,
+        ?array $executionStatuses = null,
+    ): array {
+        $inProgressStatuses = [
+            WorkflowExecutionStatus::Active->value,
+            WorkflowExecutionStatus::Paused->value,
+        ];
+
+        $planogramIds = WorkflowGondolaExecution::query()
+            ->whereIn('status', $inProgressStatuses)
+            ->with('gondola:id,planogram_id')
+            ->get()
+            ->map(fn (WorkflowGondolaExecution $execution): ?string => $execution->gondola?->planogram_id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($planogramIds === []) {
+            return [];
+        }
+
+        $steps = WorkflowPlanogramStep::query()
+            ->whereIn('planogram_id', $planogramIds)
+            ->where('is_skipped', false)
+            ->with([
+                'template',
+                'executions' => fn ($query) => $query
+                    ->whereIn('status', $executionStatuses !== null && $executionStatuses !== [] ? $executionStatuses : $inProgressStatuses)
+                    ->when(
+                        $storeId !== null && $storeId !== '',
+                        fn ($executionQuery) => $executionQuery->whereHas('gondola.planogram', fn ($planogramQuery) => $planogramQuery->where('store_id', $storeId))
+                    )
+                    ->with(['gondola.planogram', 'currentResponsible', 'startedBy']),
+            ])
+            ->orderBy('planogram_id')
+            ->get();
+
+        return $steps
+            ->sortBy(fn (WorkflowPlanogramStep $step): string => sprintf('%s-%06d', (string) $step->planogram_id, $step->suggested_order))
+            ->values()
+            ->map(function (WorkflowPlanogramStep $step) use ($user): array {
+                return [
+                    'step' => $this->stepPayload($step),
+                    'executions' => $step->executions
+                        ->map(fn (WorkflowGondolaExecution $execution) => $this->executionPayload($execution, $step, $user))
+                        ->values()
+                        ->all(),
+                ];
+            })->all();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function stepPayload(WorkflowPlanogramStep $step): array
+    {
+        return [
+            'id' => $step->id,
+            'name' => $step->name,
+            'description' => $step->description,
+            'color' => $step->color,
+            'icon' => $step->icon,
+            'suggested_order' => $step->suggested_order,
+            'is_required' => $step->is_required,
+            'is_skipped' => $step->is_skipped,
+            'status' => $step->status,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function executionPayload(WorkflowGondolaExecution $execution, ?WorkflowPlanogramStep $step, ?User $user): array
+    {
+        return [
+            'id' => $execution->id,
+            'gondola_id' => $execution->gondola_id,
+            'gondola_name' => $execution->gondola?->name,
+            'gondola_location' => $execution->gondola?->location,
+            'planogram_name' => $execution->gondola?->planogram?->name,
+            'step_name' => $step?->name,
+            'status' => $execution->status?->value,
+            'assigned_to_user' => $execution->currentResponsible ? [
+                'id' => $execution->currentResponsible->id,
+                'name' => $execution->currentResponsible->name,
+            ] : null,
+            'started_by' => $execution->execution_started_by ? [
+                'id' => $execution->execution_started_by,
+                'name' => $execution->startedBy?->name,
+            ] : null,
+            'started_at' => $execution->started_at?->toIso8601String(),
+            'sla_date' => $execution->sla_date?->toIso8601String(),
+            'can_start' => $user?->can('start', $execution) ?? false,
+            'can_pause' => $user?->can('pause', $execution) ?? false,
+            'can_resume' => $user?->can('resume', $execution) ?? false,
+            'can_complete' => $user?->can('complete', $execution) ?? false,
+            'can_abandon' => $user?->can('abandon', $execution) ?? false,
+            'can_move' => $user?->can('move', $execution) ?? false,
+        ];
     }
 
     private function recordHistory(

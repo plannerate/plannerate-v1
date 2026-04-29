@@ -808,6 +808,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'all_stores' => 'Todas',
             'planogram' => 'Planograma',
             'select_planogram' => 'Selecione um planograma',
+            'status' => 'Status',
+            'all_statuses' => 'Todos os status',
             'only_overdue' => 'Apenas atrasadas',
             'show_completed' => 'Mostrar concluidas',
         ],
