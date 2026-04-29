@@ -178,7 +178,7 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
             </div>
 
             <div
-                v-if="!props.selected_planogram && !props.board"
+                v-if="!props.selected_planogram"
                 class="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground"
             >
                 <Kanban class="size-10 opacity-20" />

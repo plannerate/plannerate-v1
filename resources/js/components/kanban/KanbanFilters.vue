@@ -77,25 +77,6 @@ const filteredPlanograms = computed(() => {
             </select>
         </div>
 
-        <div class="flex flex-col gap-1">
-            <label for="kanban-status" class="text-xs font-medium text-foreground">
-                {{ t('app.kanban.filters.status') }}
-            </label>
-            <select
-                id="kanban-status"
-                name="status"
-                :value="filters.status ?? ''"
-                class="h-9 min-w-44 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-            >
-                <option value="">{{ t('app.kanban.filters.all_statuses') }}</option>
-                <option value="active">{{ t('app.kanban.executions.status.active') }}</option>
-                <option value="paused">{{ t('app.kanban.executions.status.paused') }}</option>
-                <option value="pending">{{ t('app.kanban.executions.status.pending') }}</option>
-                <option value="completed">{{ t('app.kanban.executions.status.completed') }}</option>
-                <option value="cancelled">{{ t('app.kanban.executions.status.cancelled') }}</option>
-            </select>
-        </div>
-
         <div class="flex flex-col justify-end gap-1.5 pb-0.5">
             <label class="flex cursor-pointer items-center gap-2 text-xs text-foreground">
                 <input

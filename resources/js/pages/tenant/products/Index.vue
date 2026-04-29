@@ -101,7 +101,7 @@ const pageMeta = useCrudPageMeta({
             <template #filters>
                 <select
                     name="status"
-                    :value="filters.status"
+                    v-model="filters.status"
                     class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                 >
                     <option value="">{{ t('app.tenant.common.all') }}</option>

@@ -18,11 +18,6 @@ class WorkflowKanbanController extends Controller
 {
     use InteractsWithTenantContext;
 
-    /**
-     * @var list<string>
-     */
-    private const EXECUTION_STATUS_FILTERS = ['pending', 'active', 'paused', 'completed', 'cancelled'];
-
     public function __construct(
         private readonly WorkflowKanbanService $kanbanService,
         private readonly WorkflowPlanogramStepService $stepService,
@@ -32,16 +27,9 @@ class WorkflowKanbanController extends Controller
     {
         $this->authorize('viewAny', WorkflowGondolaExecution::class);
 
-        $planogramId = trim((string) $request->string('planogram_id'));
-        $hasPlanogramFilter = $planogramId !== '';
-        $storeId = trim((string) $request->string('store_id'));
-        $hasStoreFilter = $storeId !== '';
-        $status = trim((string) $request->string('status'));
-        $executionStatuses = in_array($status, self::EXECUTION_STATUS_FILTERS, true) ? [$status] : null;
-
         $planograms = Planogram::query()
             ->with('store:id,name')
-            ->when($hasStoreFilter, fn ($query) => $query->where('store_id', $storeId))
+            ->when($request->filled('store_id'), fn ($query) => $query->where('store_id', $request->input('store_id')))
             ->orderBy('name')
             ->get(['id', 'name', 'store_id'])
             ->map(fn (Planogram $planogram): array => [
@@ -62,36 +50,22 @@ class WorkflowKanbanController extends Controller
             ->get(['id', 'name'])
             ->all();
 
-        $filters = $request->only(['planogram_id', 'store_id', 'gondola_search', 'status']);
-        $selectedPlanogramId = $hasPlanogramFilter ? $planogramId : '';
-
+        $filters = $request->only(['planogram_id', 'store_id', 'gondola_search']);
         $selectedPlanogram = null;
         $board = null;
 
-        if ($executionStatuses !== null) {
-            $board = $this->kanbanService->buildBoardForInProgressExecutions(
-                $request->user(),
-                $hasStoreFilter ? $storeId : null,
-                $executionStatuses,
-            );
-        } elseif ($selectedPlanogramId !== '') {
-            $planogram = Planogram::query()->find($selectedPlanogramId);
+        if ($request->filled('planogram_id')) {
+            $planogram = Planogram::query()->find($request->input('planogram_id'));
 
             if ($planogram !== null) {
                 $this->stepService->syncForPlanogram($planogram);
-                $board = $this->kanbanService->buildBoardForPlanogramWithStatuses($planogram, $executionStatuses, $request->user());
+                $board = $this->kanbanService->buildBoardForPlanogram($planogram, $request->user());
                 $selectedPlanogram = [
                     'id' => $planogram->id,
                     'name' => $planogram->name,
                     'store' => $planogram->store?->name,
                 ];
             }
-        } else {
-            $board = $this->kanbanService->buildBoardForInProgressExecutions(
-                $request->user(),
-                $hasStoreFilter ? $storeId : null,
-                $executionStatuses,
-            );
         }
 
         return Inertia::render('tenant/planograms/Kanban', [

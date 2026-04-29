@@ -36,22 +36,14 @@ withDefaults(
 
 const formRef = ref<HTMLFormElement | null>(null);
 
-function sanitizeQueryParams(data: Record<string, string>): Record<string, string> {
-    return Object.fromEntries(
-        Object.entries(data).filter(([, value]) => value.trim() !== ''),
-    );
-}
-
 function submitForm(): void {
     if (!formRef.value) {
-        return;
-    }
+return;
+}
 
-    const rawData = Object.fromEntries(
+    const data = Object.fromEntries(
         new FormData(formRef.value).entries(),
     ) as Record<string, string>;
-    const data = sanitizeQueryParams(rawData);
-
     router.get(formRef.value.action, data, {
         preserveState: true,
         preserveScroll: true,
