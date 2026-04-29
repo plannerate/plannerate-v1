@@ -79,7 +79,7 @@ const pageMeta = useCrudPageMeta({
                             name="description"
                             rows="3"
                             class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                        >{{ props.module?.description ?? '' }}</textarea>
+                        :value="props.module?.description ?? ''"></textarea>
                         <InputError :message="errors.description" />
                     </div>
 

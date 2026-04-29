@@ -1,14 +1,4 @@
 <script setup lang="ts">
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import {
   Map,
   MapPin,
@@ -19,6 +9,16 @@ import {
   Check,
 } from 'lucide-vue-next'
 import { computed, nextTick, ref, watch } from 'vue'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Separator } from '@/components/ui/separator'
 
 interface Region {
   id: string
@@ -79,7 +79,10 @@ const pan = ref({ x: 0, y: 0 })
 const regions = computed(() => props.mapRegions || [])
 
 const selectedRegion = computed(() => {
-  if (!selectedRegionId.value) return null
+  if (!selectedRegionId.value) {
+return null
+}
+
   return regions.value.find(r => r.id === selectedRegionId.value) || null
 })
 
@@ -123,6 +126,7 @@ const regionTypeLabel = (type: string) => {
     storage: 'Estoque',
     other: 'Outro',
   }
+
   return labels[type] || type
 }
 
@@ -147,7 +151,10 @@ const handleWheel = (event: WheelEvent) => {
 }
 
 const fitToContainer = () => {
-  if (!mapContainer.value || !imageWidth.value) return
+  if (!mapContainer.value || !imageWidth.value) {
+return
+}
+
   const containerWidth = mapContainer.value.clientWidth
   const scale = Math.min(containerWidth / imageWidth.value, containerHeight.value / imageHeight.value)
   zoom.value = Math.min(scale, 1)

@@ -1,5 +1,5 @@
-import type { Section } from '@/types/planogram';
 import { computed } from 'vue';
+import type { Section } from '@/types/planogram';
 import { usePlanogramEditor } from './usePlanogramEditor';
 import { usePlanogramSelection } from './usePlanogramSelection';
 import { shouldShowDeleteConfirm } from './usePlanogramUtils';
@@ -26,10 +26,15 @@ export function useSectionActions(section: Section | (() => Section)) {
      */
     const canInvertShelves = computed(() => {
         const currentSection = sectionRef.value;
-        if (!currentSection?.shelves) return false;
+
+        if (!currentSection?.shelves) {
+return false;
+}
+
         const activeShelves = currentSection.shelves.filter(
             (s: any) => !s.deleted_at,
         );
+
         return activeShelves.length >= 2;
     });
 
@@ -38,12 +43,16 @@ export function useSectionActions(section: Section | (() => Section)) {
      */
     const canMoveLeft = computed(() => {
         const currentSection = sectionRef.value;
-        if (!currentSection?.id) return false;
+
+        if (!currentSection?.id) {
+return false;
+}
 
         const displaySections = editor.sectionsOrdered.value;
         const currentIndex = displaySections.findIndex(
             (s: Section) => s.id === currentSection.id,
         );
+
         return currentIndex > 0;
     });
 
@@ -52,12 +61,16 @@ export function useSectionActions(section: Section | (() => Section)) {
      */
     const canMoveRight = computed(() => {
         const currentSection = sectionRef.value;
-        if (!currentSection?.id) return false;
+
+        if (!currentSection?.id) {
+return false;
+}
 
         const displaySections = editor.sectionsOrdered.value;
         const currentIndex = displaySections.findIndex(
             (s: Section) => s.id === currentSection.id,
         );
+
         return currentIndex >= 0 && currentIndex < displaySections.length - 1;
     });
 
@@ -66,7 +79,11 @@ export function useSectionActions(section: Section | (() => Section)) {
      */
     function invertShelves(): void {
         const currentSection = sectionRef.value;
-        if (!currentSection?.id) return;
+
+        if (!currentSection?.id) {
+return;
+}
+
         editor.invertShelvesOrder(currentSection.id);
     }
 
@@ -76,8 +93,10 @@ export function useSectionActions(section: Section | (() => Section)) {
      */
     function moveBetweenPositions(direction: -1 | 1): boolean {
         const currentSection = sectionRef.value;
-        if (!currentSection?.id || sectionsMoving.get(currentSection.id))
-            return false;
+
+        if (!currentSection?.id || sectionsMoving.get(currentSection.id)) {
+return false;
+}
 
         const displaySections = editor.sectionsOrdered.value;
         const currentIndex = displaySections.findIndex(
@@ -85,8 +104,9 @@ export function useSectionActions(section: Section | (() => Section)) {
         );
         const targetIndex = currentIndex + direction;
 
-        if (targetIndex < 0 || targetIndex >= displaySections.length)
-            return false;
+        if (targetIndex < 0 || targetIndex >= displaySections.length) {
+return false;
+}
 
         const currentSectionData = displaySections[currentIndex];
         const targetSection = displaySections[targetIndex];
@@ -102,7 +122,9 @@ export function useSectionActions(section: Section | (() => Section)) {
                 targetSection.id,
             );
 
-            if (!currentSectionOriginal || !targetSectionOriginal) return false;
+            if (!currentSectionOriginal || !targetSectionOriginal) {
+return false;
+}
 
             // Guarda orderings originais ANTES de fazer qualquer mudança
             const originalOrderings = new Map<string, number>();
@@ -126,9 +148,11 @@ export function useSectionActions(section: Section | (() => Section)) {
                     if (s.id === currentSectionOriginal.id) {
                         return { ...s, ordering: newCurrentOrdering };
                     }
+
                     if (s.id === targetSectionOriginal.id) {
                         return { ...s, ordering: newTargetOrdering };
                     }
+
                     return s;
                 })
                 .sort((a: Section, b: Section) => (a.ordering || 0) - (b.ordering || 0));
@@ -156,6 +180,7 @@ export function useSectionActions(section: Section | (() => Section)) {
             const updatedSection = editor.findSectionById(
                 currentSectionData.id,
             );
+
             if (updatedSection) {
                 selection.selectItem(
                     'section',

@@ -91,7 +91,11 @@ const {
 // Busca dados de target stock pelo EAN do produto
 const stockInfo = computed(() => {
     const ean = props.segment?.layer?.product?.ean;
-    if (!ean) return null;
+
+    if (!ean) {
+return null;
+}
+
     return getTargetStockData(ean);
 });
 
@@ -119,7 +123,9 @@ const iconPadding = computed(() => Math.max(2, Math.min(8, props.scale * 2)));
 
 // Status do estoque (increase, decrease, ok, unknown)
 const stockStatus = computed(() => {
-    if (!stockInfo.value) return 'unknown';
+    if (!stockInfo.value) {
+return 'unknown';
+}
     
     return getStockStatus(
         segmentCapacity.value,

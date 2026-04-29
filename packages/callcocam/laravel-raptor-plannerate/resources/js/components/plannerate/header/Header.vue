@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { Link } from "@inertiajs/vue3";
+import { ArrowLeft, Edit, Plus, RefreshCcw, Upload } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import GondolaCreateStepper from '@/components/plannerate/form/GondolaCreateStepper.vue';
 import GondolaEditForm from '@/components/plannerate/form/GondolaEditForm.vue';
 import {
@@ -19,9 +22,6 @@ import {
     SheetDescription,
     SheetTitle,
 } from '@/components/ui/sheet';
-import { ArrowLeft, Edit, Plus, RefreshCcw, Upload } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
-import { Link } from "@inertiajs/vue3";
 
 interface Props {
     title?: string;
@@ -62,6 +62,7 @@ const getStatusColor = (status: string) => {
         published: 'bg-green-500/10 text-green-500',
         archived: 'bg-gray-500/10 text-gray-500',
     };
+
     return colors[status] || colors.draft;
 };
 

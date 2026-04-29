@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useForm } from '@inertiajs/vue3';
+import { Check, ChevronLeft, ChevronRight, Circle, Dot } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -22,9 +25,6 @@ import {
 } from '@/composables/plannerate/useGondolaFields';
 import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/useSectionFields';
 import { DEFAULT_SHELF_FIELDS } from '@/composables/plannerate/useShelfFields';
-import { useForm } from '@inertiajs/vue3';
-import { Check, ChevronLeft, ChevronRight, Circle, Dot } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
 import Step1BasicInfo, {
     validate as validateStep1,
 } from './steps/Step1BasicInfo.vue';
@@ -72,8 +72,10 @@ const loadScaleFromLocalStorage = (): number | null => {
 
     try {
         const savedScale = window.localStorage.getItem('plannerate-scale-factor');
+
         if (savedScale) {
             const scale = parseFloat(savedScale);
+
             if (!isNaN(scale) && scale >= 1) {
                 return scale;
             }
@@ -81,6 +83,7 @@ const loadScaleFromLocalStorage = (): number | null => {
     } catch (error) {
         console.warn('Erro ao carregar escala do localStorage:', error);
     }
+
     return null;
 };
 
@@ -332,7 +335,9 @@ const handleClose = () => {
 };
 
 const handleSubmit = () => {
-    if (!props.planogramId) return;
+    if (!props.planogramId) {
+return;
+}
  
 
     form.post(`/api/editor/planograms/${props.planogramId}/gondolas`, {

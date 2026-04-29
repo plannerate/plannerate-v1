@@ -45,13 +45,13 @@
 </template>
 
 <script setup lang="ts">
+import { Package, Users } from 'lucide-vue-next';
+import { computed, inject, ref } from 'vue';
+import { toast } from 'vue-sonner';
 import { Separator } from '@/components/ui/separator';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import type { Product } from '@/types/planogram';
-import { Package, Users } from 'lucide-vue-next';
-import { computed, inject, ref } from 'vue';
-import { toast } from 'vue-sonner';
 import ProductDimensionsEditor from './ProductDimensionsEditor.vue';
 import ProductImageCard from './ProductImageCard.vue';
 import ProductImageUpload from './ProductImageUpload.vue';
@@ -88,7 +88,9 @@ function handleUpdateProductDimension(
     value: number,
 ) {
 
-    if (!product.value?.id) return;
+    if (!product.value?.id) {
+return;
+}
 
     // Se há múltiplos produtos selecionados, atualiza todos
     if (hasMultipleSelections.value && selectedProducts.value.length > 0) {

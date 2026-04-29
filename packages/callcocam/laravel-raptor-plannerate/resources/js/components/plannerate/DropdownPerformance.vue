@@ -90,6 +90,8 @@
     />
 </template>
 <script setup lang="ts">
+import { ChevronDown, Eye, EyeOff, Gauge, Trash2 } from 'lucide-vue-next';
+import { computed, onMounted, ref, watch } from 'vue';
 import Performance from '@/components/plannerate/header/Performance.vue';
 import { Button } from '@/components/ui/button'; 
 import {
@@ -102,8 +104,6 @@ import {
 
 import { usePerformanceIndicators } from '@/composables/plannerate/usePerformanceIndicators';
 import type { AbcAnalysis, Gondola, StockAnalysis } from '@/types/planogram';
-import { ChevronDown, Eye, EyeOff, Gauge, Trash2 } from 'lucide-vue-next';
-import { computed, onMounted, ref, watch } from 'vue';
 
 
 const props = defineProps<{
@@ -228,10 +228,12 @@ onMounted(() => {
 
 const planogram = computed(() => {
     const pg = props.gondola.planogram;
+
     // Return the full planogram if it has required id and name properties
     if (pg && 'id' in pg && 'name' in pg) {
         return pg as any; // Cast to Planogram type
     }
+
     return null;
 });
 </script>

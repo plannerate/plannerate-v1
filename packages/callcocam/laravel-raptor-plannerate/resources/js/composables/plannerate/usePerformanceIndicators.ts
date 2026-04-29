@@ -1,5 +1,5 @@
-import { computed } from 'vue';
 import { router } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import { useAbcClassification } from './useAbcClassification';
 import { useTargetStockAnalysis } from './useTargetStockAnalysis';
 

@@ -9,7 +9,11 @@ import { currentGondola } from './useGondolaState';
  */
 export function findSectionById(sectionId: string) {
     const sections = currentGondola.value?.sections;
-    if (!sections) return null;
+
+    if (!sections) {
+return null;
+}
+
     return sections.find((s) => s.id === sectionId) || null;
 }
 
@@ -20,15 +24,23 @@ export function findShelfById(
     shelfId: string,
 ): { shelf: any; section: any } | null {
     const sections = currentGondola.value?.sections;
-    if (!sections) return null;
+
+    if (!sections) {
+return null;
+}
 
     for (const section of sections) {
-        if (!section.shelves) continue;
+        if (!section.shelves) {
+continue;
+}
+
         const shelf = section.shelves.find((s: any) => s.id === shelfId);
+
         if (shelf) {
             return { shelf, section };
         }
     }
+
     return null;
 }
 
@@ -43,19 +55,30 @@ export function findSegmentById(segmentId: string): {
     segmentIndex: number;
 } | null {
     const sections = currentGondola.value?.sections;
-    if (!sections) return null;
+
+    if (!sections) {
+return null;
+}
 
     for (const section of sections) {
-        if (!section.shelves) continue;
+        if (!section.shelves) {
+continue;
+}
+
         for (const shelf of section.shelves) {
-            if (!shelf.segments) continue;
+            if (!shelf.segments) {
+continue;
+}
+
             const segmentIndex = shelf.segments.findIndex(
                 (s: any) => s.id === segmentId,
             );
+
             if (segmentIndex !== -1) {
                 const shelfIndex = section.shelves.findIndex(
                     (s: any) => s.id === shelf.id,
                 );
+
                 return {
                     segment: shelf.segments[segmentIndex],
                     shelf,
@@ -66,6 +89,7 @@ export function findSegmentById(segmentId: string): {
             }
         }
     }
+
     return null;
 }
 
@@ -74,19 +98,30 @@ export function findSegmentById(segmentId: string): {
  */
 export function findSegmentByLayerId(layerId: string) {
     const sections = currentGondola.value?.sections;
-    if (!sections) return null;
+
+    if (!sections) {
+return null;
+}
 
     for (const section of sections) {
-        if (!section.shelves) continue;
+        if (!section.shelves) {
+continue;
+}
+
         for (const shelf of section.shelves) {
-            if (!shelf.segments) continue;
+            if (!shelf.segments) {
+continue;
+}
+
             const segmentIndex = shelf.segments.findIndex(
                 (s: any) => s.layer?.id === layerId,
             );
+
             if (segmentIndex !== -1) {
                 const shelfIndex = section.shelves.findIndex(
                     (s: any) => s.id === shelf.id,
                 );
+
                 return {
                     segment: shelf.segments[segmentIndex],
                     shelf,
@@ -97,5 +132,6 @@ export function findSegmentByLayerId(layerId: string) {
             }
         }
     }
+
     return null;
 }

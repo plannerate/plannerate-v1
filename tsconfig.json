@@ -154,6 +154,10 @@
         "vendor/callcocam/laravel-raptor-plannerate/resources/js/**/*.ts",
         "vendor/callcocam/laravel-raptor-plannerate/resources/js/**/*.d.ts",
         "vendor/callcocam/laravel-raptor-plannerate/resources/js/**/*.tsx",
-        "vendor/callcocam/laravel-raptor-plannerate/resources/js/**/*.vue"
+        "vendor/callcocam/laravel-raptor-plannerate/resources/js/**/*.vue",
+        "packages/callcocam/laravel-raptor-plannerate/resources/js/**/*.ts",
+        "packages/callcocam/laravel-raptor-plannerate/resources/js/**/*.d.ts",
+        "packages/callcocam/laravel-raptor-plannerate/resources/js/**/*.tsx",
+        "packages/callcocam/laravel-raptor-plannerate/resources/js/**/*.vue"
     ]
 }

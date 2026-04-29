@@ -1,6 +1,4 @@
 <script lang="ts">
-import { validateShelfFields } from '@/composables/plannerate/useShelfFields';
-
 export const validate = (data: {
     shelfHeight: number;
     shelfWidth: number;
@@ -21,6 +19,8 @@ export const validate = (data: {
 </script>
 
 <script setup lang="ts">
+import { RulerIcon } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,9 +28,8 @@ import { calculateUsableHeight } from '@/composables/plannerate/useSectionFields
 import {
     calculateShelfSpacing,
     calculateTotalDisplayArea,
+    validateShelfFields,
 } from '@/composables/plannerate/useShelfFields';
-import { RulerIcon } from 'lucide-vue-next';
-import { computed } from 'vue';
 
 interface Props {
     modelValue: {
@@ -76,7 +75,9 @@ const usableHeightDisplay = computed(() => {
 });
 
 const calculateSpacing = () => {
-    if (props.modelValue.numShelves === 0) return '0';
+    if (props.modelValue.numShelves === 0) {
+return '0';
+}
 
     const spacing = calculateShelfSpacing(
         usableHeight.value,
@@ -94,6 +95,7 @@ const calculateDisplayArea = () => {
         props.modelValue.numShelves,
         props.moduleData.numModules,
     );
+
     return totalArea.toFixed(0);
 };
 </script>

@@ -329,6 +329,8 @@
 </template>
 
 <script setup lang="ts">
+import { CheckCircle, TrendingDown, TrendingUp } from 'lucide-vue-next';
+import { computed } from 'vue';
 import {
     Tooltip,
     TooltipContent,
@@ -337,8 +339,6 @@ import {
 } from '@/components/ui/tooltip';
 import { useTargetStockAnalysis } from '../../../composables/plannerate/useTargetStockAnalysis';
 import type { Segment } from '../../../types/planogram';
-import { CheckCircle, TrendingDown, TrendingUp } from 'lucide-vue-next';
-import { computed } from 'vue';
 
 interface Props {
     segment: Segment;
@@ -362,7 +362,11 @@ const {
 // Busca dados de target stock pelo EAN do produto
 const stockInfo = computed(() => {
     const ean = props.segment?.layer?.product?.ean;
-    if (!ean) return null;
+
+    if (!ean) {
+return null;
+}
+
     return getTargetStockData(ean);
 });
 
@@ -385,6 +389,7 @@ const itemsInDepth = computed(() => {
     if (!productDepth.value || !props.shelfDepth || productDepth.value === 0) {
         return 0;
     }
+
     return Math.floor(props.shelfDepth / productDepth.value);
 });
 
@@ -400,7 +405,10 @@ const segmentCapacity = computed(() => {
 
 // Margem de tolerância
 const toleranceMargin = computed(() => {
-    if (!stockInfo.value) return 0;
+    if (!stockInfo.value) {
+return 0;
+}
+
     return calculateToleranceMargin(
         stockInfo.value.estoque_alvo,
         DEFAULT_TOLERANCE,
@@ -409,7 +417,9 @@ const toleranceMargin = computed(() => {
 
 // Status do estoque (increase, decrease, ok, unknown)
 const stockStatus = computed(() => {
-    if (!stockInfo.value) return 'unknown';
+    if (!stockInfo.value) {
+return 'unknown';
+}
 
     return getStockStatus(
         segmentCapacity.value,
@@ -424,7 +434,10 @@ const iconPadding = computed(() => Math.max(2, Math.min(8, (props.scale ?? 3) * 
 
 // Formata número com 2 casas decimais
 const formatNumber = (value: number | undefined) => {
-    if (value === undefined || value === null) return '0.00';
+    if (value === undefined || value === null) {
+return '0.00';
+}
+
     return value.toFixed(2);
 };
 </script>

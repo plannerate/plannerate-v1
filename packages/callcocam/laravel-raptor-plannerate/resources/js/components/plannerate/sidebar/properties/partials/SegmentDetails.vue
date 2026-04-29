@@ -137,6 +137,10 @@
 </template>
 
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
+import { ArrowLeft, ArrowRight, Box, Trash2 } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import { toast } from 'vue-sonner';
 import { deleteImage } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
@@ -146,10 +150,6 @@ import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor'
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { useSegmentActions } from '@/composables/plannerate/useSegmentActions';
 import type { Segment } from '@/types/planogram';
-import { router } from '@inertiajs/vue3';
-import { ArrowLeft, ArrowRight, Box, Trash2 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
-import { toast } from 'vue-sonner';
 import ProductDimensionsEditor from './ProductDimensionsEditor.vue';
 import ProductImageCard from './ProductImageCard.vue';
 import ProductImageUpload from './ProductImageUpload.vue';
@@ -171,20 +171,33 @@ const deleteImageAction = deleteImage;
 // Busca o segmento diretamente do gondola para garantir reatividade
 const segment = computed(() => {
     const currentGondola = editor.currentGondola.value;
-    if (!currentGondola?.sections || !props.item?.id) return props.item;
+
+    if (!currentGondola?.sections || !props.item?.id) {
+return props.item;
+}
 
     // Se o item for uma layer, busca pelo segment_id
     const searchId = props.item.segment_id || props.item.id;
 
     // Busca o segmento na estrutura do gondola
     for (const section of currentGondola.sections) {
-        if (!section.shelves) continue;
+        if (!section.shelves) {
+continue;
+}
+
         for (const shelf of section.shelves) {
-            if (!shelf.segments) continue;
+            if (!shelf.segments) {
+continue;
+}
+
             const seg = shelf.segments.find((s: any) => s.id === searchId);
-            if (seg) return seg;
+
+            if (seg) {
+return seg;
+}
         }
     }
+
     // Fallback para o item original
     return props.item;
 });
@@ -192,6 +205,7 @@ const segment = computed(() => {
 // Busca a prateleira do segmento
 const shelf = computed(() => {
     const found = editor.findSegmentById(segment.value.id);
+
     return found?.shelf;
 });
 
@@ -212,7 +226,9 @@ function handleUpdateProductDimension(
     dimension: 'width' | 'height' | 'depth',
     value: number,
 ) {
-    if (!segment.value?.layer?.id || !product.value?.id) return;
+    if (!segment.value?.layer?.id || !product.value?.id) {
+return;
+}
 
     // Usa o método do editor (já registra change e força reatividade)
     editor.updateProductDimension(segment.value.layer.id, dimension, value);
@@ -225,7 +241,9 @@ function handleUpdateLayer(
     field: 'quantity' | 'height' | 'spacing' | 'alignment',
     value: any,
 ) {
-    if (!segment.value?.layer?.id) return;
+    if (!segment.value?.layer?.id) {
+return;
+}
 
     // Usa o método do editor (já registra change e força reatividade)
     editor.updateLayer(segment.value.layer.id, { [field]: value });
@@ -269,8 +287,13 @@ function handleDelete() {
  * Remove a imagem do produto
  */
 function handleDeleteProductImage() {
-    if (!product.value?.id) return;
-    if (!deleteImageAction) return;
+    if (!product.value?.id) {
+return;
+}
+
+    if (!deleteImageAction) {
+return;
+}
 
     router.delete(deleteImageAction.url(product.value.id), {
         onSuccess: () => {

@@ -66,13 +66,13 @@
     </div>
 </template>
 <script setup lang="ts">
+import { AlertCircle, CheckCircle2 } from 'lucide-vue-next';
+import { computed, inject, onMounted, ref } from 'vue';
+import { toast } from 'vue-sonner';
+import { Badge } from '@/components/ui/badge';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
-import { Product } from '@/types/planogram';
-import { computed, inject, onMounted, ref } from 'vue';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'vue-sonner';
-import { AlertCircle, CheckCircle2 } from 'lucide-vue-next';
+import type { Product } from '@/types/planogram';
 
 const props = defineProps<{
     product: Product;
@@ -102,13 +102,17 @@ const getDimensionsTooltip = () => {
     if (props.product.has_dimensions) {
         return 'Produto com dimensões, pronto para uso no planograma';
     }
+
     const issues = [];
+
     if (!props.product.width || !props.product.height || !props.product.depth) {
         issues.push('dimensões incompletas');
     }
+
     if (!props.product.ean) {
         issues.push('sem EAN');
     }
+
     return issues.length ? `Sem dimensão: ${issues.join(', ')}` : 'Sem dimensão';
 };
 
@@ -166,6 +170,7 @@ const handleDragStart = (event: DragEvent) => {
 
         // Define uma imagem de arrastar customizada
         const dragImage = event.currentTarget as HTMLElement;
+
         if (dragImage) {
             event.dataTransfer.setDragImage(dragImage, 20, 20);
         }
@@ -181,6 +186,7 @@ const handlerselectClick = (event: MouseEvent) => {
     if (clickTimer) {
         clearTimeout(clickTimer);
         clickTimer = null;
+
         return; // É um duplo-clique, não seleciona
     }
 
@@ -194,6 +200,7 @@ const handlerselectClick = (event: MouseEvent) => {
             // Clique simples → Seleção única
             selectItem('product', props.product.id, props.product);
         }
+
         clickTimer = null;
     }, clickDelay);
 };
@@ -203,8 +210,10 @@ const handlerDbClick = () => {
         toast.error(
             `Produto "${props.product.name}" não tem dimensões e não pode ser adicionado à prateleira.`,
         );
+
         return;
     }
+
     // Verifica se há uma shelf selecionada
     if (
         selection.selectedType.value === 'shelf' &&

@@ -6,9 +6,16 @@
         recordChange: (change: any) => void,
     ): void {
         const found = findShelfById(shelfId);
-        if (!found) return;
+
+        if (!found) {
+return;
+}
+
         const { shelf, section } = found;
-        if (!shelf.segments || shelf.segments.length < 2) return;
+
+        if (!shelf.segments || shelf.segments.length < 2) {
+return;
+}
 
         // Filtra segmentos não deletados e inverte
         const nonDeleted = shelf.segments.filter((s: any) => !s.deleted_at);
@@ -25,6 +32,7 @@
             if (!s.deleted_at) {
                 return reversed[revIdx++];
             }
+
             return s;
         });
         shelf.segments = [...shelf.segments];
@@ -40,10 +48,10 @@
             });
         });
     }
-import { validateShelfWidth } from '@plannerate/libs/validation';
-import { Layer, Segment, Shelf } from '@/types/planogram';
 import { ulid } from 'ulid';
 import { toast } from 'vue-sonner';
+import type { Layer, Segment, Shelf } from '@/types/planogram';
+import { validateShelfWidth } from '@plannerate/libs/validation';
 import { currentGondola } from './useGondolaState';
 import { findSectionById, findShelfById } from './useLookupHelpers';
 import {
@@ -68,7 +76,10 @@ export function useShelfOperations() {
         recordChange: (change: any) => void,
     ): Shelf | null {
         const section = findSectionById(sectionId);
-        if (!section) return null;
+
+        if (!section) {
+return null;
+}
 
         // Cria a shelf
         const newShelf = {
@@ -78,7 +89,10 @@ export function useShelfOperations() {
         } as Shelf;
 
         // Adiciona à seção
-        if (!section.shelves) section.shelves = [];
+        if (!section.shelves) {
+section.shelves = [];
+}
+
         section.shelves.push(newShelf);
 
         // Força reatividade
@@ -116,13 +130,19 @@ export function useShelfOperations() {
         recordChange: (change: any) => void,
     ): Shelf | null {
         const found = findShelfById(shelfId);
-        if (!found) return null;
+
+        if (!found) {
+return null;
+}
 
         const { shelf, section: currentSection } = found;
         const shelfIndex = currentSection.shelves.findIndex(
             (s: any) => s.id === shelfId,
         );
-        if (shelfIndex === -1) return null;
+
+        if (shelfIndex === -1) {
+return null;
+}
 
         // Verifica se está mudando de seção
         const isChangingSection =
@@ -139,6 +159,7 @@ export function useShelfOperations() {
                     '❌ Seção de destino não encontrada:',
                     updates.section_id,
                 );
+
                 return null;
             }
 
@@ -148,7 +169,11 @@ export function useShelfOperations() {
 
             // Adiciona na nova seção com updates aplicados
             const updatedShelf = { ...shelf, ...updates };
-            if (!targetSection.shelves) targetSection.shelves = [];
+
+            if (!targetSection.shelves) {
+targetSection.shelves = [];
+}
+
             targetSection.shelves.push(updatedShelf);
             targetSection.shelves = [...targetSection.shelves];
 
@@ -202,6 +227,7 @@ export function useShelfOperations() {
         recordChange: (change: any) => void,
     ): void {
         const section = findSectionById(sectionId);
+
         if (!section?.shelves || section.shelves.length === 0) {
             return;
         }
@@ -250,6 +276,7 @@ export function useShelfOperations() {
             const shelfIndex = section.shelves!.findIndex(
                 (s: any) => s.id === shelfId,
             );
+
             if (shelfIndex !== -1) {
                 section.shelves![shelfIndex].shelf_position = newShelfPosition;
             }
@@ -272,6 +299,7 @@ export function useShelfOperations() {
 
         // Força reatividade
         section.shelves = [...section.shelves];
+
         if (currentGondola.value?.sections) {
             currentGondola.value.sections = [...currentGondola.value.sections];
         }
@@ -307,8 +335,10 @@ export function useShelfOperations() {
         recordChange: (change: any) => void,
     ): Segment | null {
         const found = findShelfById(shelfId);
+
         if (!found) {
             console.warn('Shelf não encontrada:', shelfId);
+
             return null;
         }
 
@@ -342,6 +372,7 @@ export function useShelfOperations() {
                 totalWidth: validation.totalWidth,
                 sectionWidth: validation.sectionWidth,
             });
+
             return null;
         }
 
@@ -390,6 +421,7 @@ export function useShelfOperations() {
         const shelfIndex = section.shelves.findIndex(
             (s: any) => s.id === shelfId,
         );
+
         if (shelfIndex !== -1) {
             section.shelves[shelfIndex] = { ...shelf };
             section.shelves = [...section.shelves];
@@ -400,6 +432,7 @@ export function useShelfOperations() {
             const sectionIndex = currentGondola.value.sections.findIndex(
                 (s: any) => s.id === section.id,
             );
+
             if (sectionIndex !== -1) {
                 currentGondola.value.sections[sectionIndex] = { ...section };
                 currentGondola.value.sections = [
@@ -437,7 +470,10 @@ export function useShelfOperations() {
         recordChange: (change: any) => void,
     ): boolean {
         const result = findShelfById(shelfId);
-        if (!result) return false;
+
+        if (!result) {
+return false;
+}
 
         const { shelf, section } = result;
 
@@ -470,21 +506,29 @@ export function useShelfOperations() {
         newPosition: number,
         recordChange: (change: any) => void,
     ): boolean {
-        if (!currentGondola.value) return false;
+        if (!currentGondola.value) {
+return false;
+}
 
         const result = findShelfById(shelfId);
-        if (!result) return false;
+
+        if (!result) {
+return false;
+}
 
         const { shelf, section: sourceSection } = result;
         const targetSection = findSectionById(targetSectionId);
 
-        if (!targetSection) return false;
+        if (!targetSection) {
+return false;
+}
 
         // Remove da section de origem
         if (sourceSection.shelves) {
             const index = sourceSection.shelves.findIndex(
                 (s: any) => s.id === shelfId,
             );
+
             if (index > -1) {
                 sourceSection.shelves.splice(index, 1);
                 sourceSection.shelves = [...sourceSection.shelves];
@@ -496,7 +540,10 @@ export function useShelfOperations() {
         shelf.shelf_position = newPosition;
 
         // Adiciona à section de destino
-        if (!targetSection.shelves) targetSection.shelves = [];
+        if (!targetSection.shelves) {
+targetSection.shelves = [];
+}
+
         targetSection.shelves.push(shelf);
         targetSection.shelves = [...targetSection.shelves];
 

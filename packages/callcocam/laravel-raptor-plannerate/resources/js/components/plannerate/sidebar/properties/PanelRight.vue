@@ -38,9 +38,9 @@
     </Transition>
 </template>
 <script setup lang="ts">
-import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { X } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import NoSelection from './partials/NoSelection.vue';
 import ProductDetails from './partials/ProductDetails.vue';
 import SectionDetails from './partials/SectionDetails.vue';
@@ -60,6 +60,7 @@ const currentComponent = computed(() => {
     if (!selectedItem.value) {
         return NoSelection;
     }
+
     switch (selectedItem.value.type) {
         case 'product':
             return ProductDetails;

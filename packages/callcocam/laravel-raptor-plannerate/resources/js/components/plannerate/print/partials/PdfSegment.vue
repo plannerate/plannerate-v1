@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import ProductDetailModal from './ProductDetailModal.vue'
-import PdfAbcBadge from './PdfAbcBadge.vue'
-import PdfStockIndicator from './PdfStockIndicator.vue'
-import type { Segment } from '@/types/planogram'
-import PdfLayer from './PdfLayer.vue'
 import { useAbcClassification } from '@/composables/plannerate/useAbcClassification'
+import type { Segment } from '@/types/planogram'
+import PdfAbcBadge from './PdfAbcBadge.vue'
+import PdfLayer from './PdfLayer.vue'
+import PdfStockIndicator from './PdfStockIndicator.vue'
+import ProductDetailModal from './ProductDetailModal.vue'
 
 interface Props {
   segment: Segment
@@ -23,7 +23,11 @@ const { getClassification } = useAbcClassification()
 // Busca classificação ABC do produto pelo EAN
 const abcClassification = computed(() => {
   const ean = props.segment.layer?.product?.ean
-  if (!ean) return undefined
+
+  if (!ean) {
+return undefined
+}
+
   return getClassification(ean)
 })
 

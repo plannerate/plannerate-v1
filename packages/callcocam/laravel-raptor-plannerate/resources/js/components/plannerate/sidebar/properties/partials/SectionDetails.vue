@@ -212,6 +212,14 @@
 </template>
 
 <script setup lang="ts">
+import {
+    ArrowLeft,
+    ArrowRight,
+    ArrowUpDown,
+    Box,
+    Trash2,
+} from 'lucide-vue-next';
+import { computed } from 'vue';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -221,14 +229,6 @@ import { usePlanogramKeyboard } from '@/composables/plannerate/usePlanogramKeybo
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { useSectionActions } from '@/composables/plannerate/useSectionActions';
 import type { Section } from '@/types/planogram';
-import {
-    ArrowLeft,
-    ArrowRight,
-    ArrowUpDown,
-    Box,
-    Trash2,
-} from 'lucide-vue-next';
-import { computed } from 'vue';
 
 interface Props {
     item: Section;
@@ -250,7 +250,9 @@ const editor = usePlanogramEditor();
  * Atualiza propriedade da seção de forma reativa
  */
 function handleUpdate(field: keyof Section, value: any) {
-    if (!section.value?.id) return;
+    if (!section.value?.id) {
+return;
+}
 
     // Atualiza de forma reativa usando o editor
     editor.updateSection(section.value.id, { [field]: value });
@@ -285,6 +287,7 @@ function handleDelete() {
     if (!section.value?.id) {
         return;
     }
+
     // Garante que a seção está selecionada antes de qualquer ação
     selection.selectItem('section', section.value.id, section.value);
 

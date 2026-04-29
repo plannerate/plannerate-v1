@@ -44,6 +44,7 @@ export function useShelfAreaCalculation() {
       // Garante que não ultrapasse a prateleira atual
       // Se a prateleira atual está muito próxima, limita o início da área
       const maxStart = shelfPosition - minSpacing
+
       if (areaStartCm > maxStart) {
         areaStartCm = Math.max(shelfHeightCm, maxStart)
       }

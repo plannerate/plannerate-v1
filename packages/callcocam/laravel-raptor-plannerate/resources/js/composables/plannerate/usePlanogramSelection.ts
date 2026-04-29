@@ -1,6 +1,6 @@
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { Layer, Product, Section, Segment, Shelf } from '@/types/planogram';
 import { computed, readonly, ref } from 'vue';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import type { Layer, Product, Section, Segment, Shelf } from '@/types/planogram';
 
 interface SelectedItem {
     id: string;
@@ -61,6 +61,7 @@ export function usePlanogramSelection() {
         if (!multiSelectEnabled.value) {
             // Se múltipla seleção desabilitada, comporta como seleção única
             selectItem(type, id, item, context);
+
             return;
         }
 
@@ -104,6 +105,7 @@ export function usePlanogramSelection() {
     ) {
         if (!multiSelectEnabled.value) {
             selectItem(type, id, item, context);
+
             return;
         }
 
@@ -203,6 +205,7 @@ export function usePlanogramSelection() {
      */
     function setMultiSelectEnabled(enabled: boolean) {
         multiSelectEnabled.value = enabled;
+
         if (!enabled) {
             // Limpa seleções múltiplas ao desabilitar
             selectedItems.value = [];
@@ -218,7 +221,10 @@ export function usePlanogramSelection() {
     async function deleteSelected(): Promise<boolean> {
         const { type } = selectedItem.value as SelectedItem;
 
-        if (!type) return false;
+        if (!type) {
+return false;
+}
+
         // const strategy =  deletionStrategies[type as keyof typeof deletionStrategies];
         switch (type) {
             case 'shelf':
@@ -236,13 +242,16 @@ export function usePlanogramSelection() {
             case 'section':
                 return await deleteSection(selectedItem.value?.item as Section);
         }
+
         return false;
     }
 
     async function deleteShelf(
         shelf: Shelf,
     ): Promise<boolean> {
-        if (!shelf?.id) return false;
+        if (!shelf?.id) {
+return false;
+}
 
         // Soft delete - marca como deletado
         editor.updateShelf(shelf.id, {
@@ -258,7 +267,9 @@ export function usePlanogramSelection() {
     async function deleteLayer(
         layer: Layer,
     ): Promise<boolean> {
-        if (!layer?.id) return false;
+        if (!layer?.id) {
+return false;
+}
 
         // Soft delete - marca como deletado
         editor.updateLayer(layer.id, {
@@ -274,7 +285,9 @@ export function usePlanogramSelection() {
     async function deleteSegment(
         segment: Segment,
     ): Promise<boolean> {
-        if (!segment?.id) return false;
+        if (!segment?.id) {
+return false;
+}
 
         // Soft delete - marca como deletado
         editor.updateSegment(segment.id, {
@@ -288,7 +301,9 @@ export function usePlanogramSelection() {
     }
 
     async function deleteSection(section: Section): Promise<boolean> {
-        if (!section?.id) return false;
+        if (!section?.id) {
+return false;
+}
 
         // Soft delete - marca como deletado
         editor.updateSection(section.id, {
@@ -357,6 +372,7 @@ export function usePlanogramSelection() {
     function selectShelfWithProducts(shelf: Shelf, section: Section) {
         if (!multiSelectEnabled.value) {
             selectItem('shelf', shelf.id, shelf, { section });
+
             return;
         }
 
@@ -369,6 +385,7 @@ export function usePlanogramSelection() {
         // Adiciona todos os produtos da shelf
         shelf.segments?.forEach((segment: Segment) => {
             const layer = segment.layer;
+
             if (layer?.product) {
                 addToSelection('product', layer.product.id, layer.product, {
                     layer,

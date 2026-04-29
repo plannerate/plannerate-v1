@@ -1,6 +1,6 @@
-import type { Layer, Shelf } from '@/types/planogram';
 import { ulid } from 'ulid';
 import { toast } from 'vue-sonner';
+import type { Layer, Shelf } from '@/types/planogram';
 
 const debouncedToast = (() => {
     let canShow = true;
@@ -13,7 +13,10 @@ const debouncedToast = (() => {
             canShow = false;
 
             // Libera para mostrar novamente após o delay
-            if (timeout) clearTimeout(timeout);
+            if (timeout) {
+clearTimeout(timeout);
+}
+
             timeout = setTimeout(() => {
                 canShow = true;
                 timeout = null;
@@ -61,16 +64,27 @@ export function validateShelfWidth(
     for (const seg of segmentsToCalculate) {
         // Garantir que o ID é string ou é o nosso temporário
         if (typeof seg.id !== 'string' || seg.id === '') {
-            if (seg.id !== temporarySegmentId) continue;
+            if (seg.id !== temporarySegmentId) {
+continue;
+}
         }
 
         const currentLayer = seg.layer as Layer | undefined;
 
-        if (!currentLayer) continue;
+        if (!currentLayer) {
+continue;
+}
+
         const product = currentLayer.product;
-        if (!product) continue;
+
+        if (!product) {
+continue;
+}
+
         // Dimensões agora estão diretamente no produto (tabela dimensions foi removida)
-        if (!product.width || product.width <= 0) continue;
+        if (!product.width || product.width <= 0) {
+continue;
+}
 
         const productWidth = product.width;
         const quantity =
@@ -80,12 +94,15 @@ export function validateShelfWidth(
         const spacing = currentLayer.spacing ?? 0;
 
         let segmentWidth = 0;
+
         if (quantity && quantity > 0) {
             segmentWidth = productWidth * quantity;
+
             if (quantity > 1) {
                 segmentWidth += spacing * (quantity - 1);
             }
         }
+
         totalWidth += segmentWidth;
     }
 

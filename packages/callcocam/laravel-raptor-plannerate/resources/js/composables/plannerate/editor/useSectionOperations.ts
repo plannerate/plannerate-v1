@@ -1,5 +1,5 @@
-import { Section } from '@/types/planogram';
 import { ulid } from 'ulid';
+import type { Section } from '@/types/planogram';
 import { currentGondola } from './useGondolaState';
 
 /**
@@ -18,6 +18,7 @@ export function useSectionOperations() {
     ): Section | null {
         if (!currentGondola.value?.id) {
             console.warn('Nenhuma gôndola selecionada para adicionar seção');
+
             return null;
         }
 
@@ -40,6 +41,7 @@ export function useSectionOperations() {
         if (!currentGondola.value.sections) {
             currentGondola.value.sections = [];
         }
+
         currentGondola.value.sections.push(newSection);
 
         // Força reatividade
@@ -74,10 +76,16 @@ export function useSectionOperations() {
         recordChange: (change: any) => void,
     ): Section | null {
         const sections = currentGondola.value?.sections;
-        if (!sections) return null;
+
+        if (!sections) {
+return null;
+}
 
         const sectionIndex = sections.findIndex((s: any) => s.id === sectionId);
-        if (sectionIndex === -1) return null;
+
+        if (sectionIndex === -1) {
+return null;
+}
 
         // Atualiza reativamente
         updateSectionReactive(sectionIndex, updates);
@@ -99,7 +107,10 @@ export function useSectionOperations() {
      */
     function reorderSectionsByOrdering(): void {
         const gondola = currentGondola.value;
-        if (!gondola?.sections || gondola.sections.length === 0) return;
+
+        if (!gondola?.sections || gondola.sections.length === 0) {
+return;
+}
 
         const sortedSections = [...gondola.sections]
             .filter((s: any) => !s.deleted_at)
@@ -113,6 +124,7 @@ export function useSectionOperations() {
                 section.ordering = ordering;
                 hasChanges = true;
             }
+
             ordering++;
         }
 

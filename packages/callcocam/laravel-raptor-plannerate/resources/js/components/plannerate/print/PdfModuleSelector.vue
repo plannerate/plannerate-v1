@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { Download, Eye } from 'lucide-vue-next'
 import { ref, computed } from 'vue'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
     Dialog,
     DialogContent,
@@ -8,10 +11,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
-import { Download, Eye } from 'lucide-vue-next'
 import type { Section } from '@/types/planogram'
 
 interface Props {
@@ -35,6 +35,7 @@ const handleOpenChange = (value: boolean) => {
         // Quando abrir, seleciona todos
         selectedSectionIds.value = props.sections.map(s => s.id)
     }
+
     emit('update:open', value)
 }
 
@@ -52,6 +53,7 @@ function isChecked(sectionId: string): boolean {
 
 function toggleSection(sectionId: string) {
     const index = selectedSectionIds.value.indexOf(sectionId)
+
     if (index > -1) {
         selectedSectionIds.value.splice(index, 1)
     } else {
@@ -70,8 +72,10 @@ function toggleAll() {
 function handlePreview() {
     if (selectedSectionIds.value.length === 0) {
         alert('Selecione pelo menos um módulo')
+
         return
     }
+
     emit('generate', {
         sectionIds: [...selectedSectionIds.value],
         autoDownload: false
@@ -81,8 +85,10 @@ function handlePreview() {
 function handleDownload() {
     if (selectedSectionIds.value.length === 0) {
         alert('Selecione pelo menos um módulo')
+
         return
     }
+
     emit('generate', {
         sectionIds: [...selectedSectionIds.value],
         autoDownload: true

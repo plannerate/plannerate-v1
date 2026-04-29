@@ -150,13 +150,20 @@ export function calculateShelfSpacing(
     shelfHeight: number,
     numShelves: number,
 ): number {
-    if (numShelves === 0) return 0;
-    if (numShelves === 1) return Math.max(0, usableHeight);
+    if (numShelves === 0) {
+return 0;
+}
+
+    if (numShelves === 1) {
+return Math.max(0, usableHeight);
+}
 
     const totalShelfHeight = numShelves * shelfHeight;
     const remainingHeight = usableHeight - totalShelfHeight;
 
-    if (remainingHeight <= 0) return 0;
+    if (remainingHeight <= 0) {
+return 0;
+}
 
     return remainingHeight / (numShelves - 1);
 }
@@ -171,6 +178,7 @@ export function calculateTotalDisplayArea(
     numModules: number = 1,
 ): number {
     const areaPerShelf = shelfWidth * shelfDepth;
+
     return numModules * numShelves * areaPerShelf;
 }
 

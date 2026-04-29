@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Search } from 'lucide-vue-next';
+import { computed, ref, useSlots, watch } from 'vue';
 import AbcSelectionPanel from '@/components/plannerate/analysis/abc/AbcSelectionPanel.vue';
 import type { AbcResult } from '@/components/plannerate/analysis/abc/types';
 import TableHeadAnalysis from '@/components/plannerate/analysis/TableHeadAnalysis.vue';
@@ -16,8 +18,6 @@ import {
 import { useAnalysisFilters } from '@/composables/plannerate/analysis/useAnalysisFilters';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
-import { Search } from 'lucide-vue-next';
-import { computed, ref, useSlots, watch } from 'vue';
 
 interface Props {
     results: AbcResult[];
@@ -70,6 +70,7 @@ const filteredResults = computed(() => {
 // Stats customizado para incluir retirarMix
 const stats = computed(() => {
     const retirarMix = props.results.filter((r) => r.retirar_do_mix).length;
+
     return {
         ...classStats.value,
         retirarMix,
@@ -175,6 +176,7 @@ watch(
     (items) => {
         if (!items.length) {
             selectedProductId.value = null;
+
             return;
         }
 

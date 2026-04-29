@@ -4,33 +4,7 @@
 // ============================================================================
 
 // UI Components
-import AddModuleSheet from '@/components/plannerate/form/AddModuleSheet.vue';
-import TransferSectionDialog from '@/components/plannerate/sidebar/properties/partials/TransferSectionDialog.vue';
-import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
-import AutoGenerateModal from './AutoGenerateModal.vue';
-import ConfirmDeleteGondolaDialog from './ConfirmDeleteGondolaDialog.vue';
-import MapRegionSelectorModal from './MapRegionSelectorModal.vue';
-
-// Composables (Estado Global)
-import {
-    currentGondola,
-    eanSearchQuery,
-    showPerformanceModal,
-} from '@/composables/plannerate/editor/useGondolaState';
-import { usePlanogramChanges } from '@/composables/plannerate/usePlanogramChanges';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
-
-// Types
-
-// Inertia
 import { Link, usePage } from '@inertiajs/vue3';
-
-// Icons
 import {
     AlignCenter,
     AlignHorizontalDistributeCenter,
@@ -50,12 +24,38 @@ import {
     Undo2,
     X,
 } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
+import AddModuleSheet from '@/components/plannerate/form/AddModuleSheet.vue';
+import TransferSectionDialog from '@/components/plannerate/sidebar/properties/partials/TransferSectionDialog.vue';
+import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+
+// Composables (Estado Global)
+import {
+    currentGondola,
+    eanSearchQuery,
+    showPerformanceModal,
+} from '@/composables/plannerate/editor/useGondolaState';
+import { usePlanogramChanges } from '@/composables/plannerate/usePlanogramChanges';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
+
+// Types
+
+// Inertia
+
+// Icons
 
 // Vue
-import { Gondola } from '@/types/planogram';
-import { computed, ref, watch } from 'vue';
+import type { Gondola } from '@/types/planogram';
 import DropdownActions from '../DropdownActions.vue';
 import DropdownPerformance from '../DropdownPerformance.vue';
+import AutoGenerateModal from './AutoGenerateModal.vue';
+import ConfirmDeleteGondolaDialog from './ConfirmDeleteGondolaDialog.vue';
+import MapRegionSelectorModal from './MapRegionSelectorModal.vue';
 import Performance from './Performance.vue';
 
 // ============================================================================
@@ -156,6 +156,7 @@ const autoSaveEnabled = computed(() => changes.autoSaveEnabled.value);
  */
 const currentPageUrl = computed(() => {
     const url = page.url || '/';
+
     return url.startsWith('/') ? url : `/${url}`;
 });
 
@@ -261,9 +262,11 @@ const showTransferSectionDialog = ref(false);
  */
 const selectedSection = computed(() => {
     const item = selection.selectedItem.value;
+
     if (item?.type === 'section') {
         return item.item as any; // Type assertion para compatibilidade com tipos readonly
     }
+
     return null;
 });
 
@@ -277,6 +280,7 @@ const showMapRegionSelector = ref(false);
  */
 const hasStore = computed(() => {
     const planogram = currentGondola.value?.planogram as any;
+
     return !!planogram?.store_id;
 });
 
@@ -285,6 +289,7 @@ const hasStore = computed(() => {
  */
 const storeData = computed(() => {
     const planogram = currentGondola.value?.planogram as any;
+
     return planogram?.store || null;
 });
 
@@ -293,7 +298,11 @@ const storeData = computed(() => {
  */
 const mapImageUrl = computed(() => {
     const store = storeData.value;
-    if (!store?.map_image_path) return null;
+
+    if (!store?.map_image_path) {
+return null;
+}
+
     // Retorna a URL pública do storage
     return `/storage/${store.map_image_path}`;
 });
@@ -303,6 +312,7 @@ const mapImageUrl = computed(() => {
  */
 const mapRegions = computed(() => {
     const store = storeData.value;
+
     return store?.map_regions || [];
 });
 
@@ -344,6 +354,7 @@ watch(
     (query) => {
         if (syncingEanFromSelection.value) {
             syncingEanFromSelection.value = false;
+
             return;
         }
 
@@ -399,7 +410,9 @@ function gondolaHref(gondola: Gondola): string {
  * Handler para quando uma região é selecionada
  */
 const handleMapRegionSelect = (regionId: string | null) => {
-    if (!currentGondola.value) return;
+    if (!currentGondola.value) {
+return;
+}
 
     // Busca a região para obter o tipo
     const region = mapRegions.value.find((r: any) => r.id === regionId);

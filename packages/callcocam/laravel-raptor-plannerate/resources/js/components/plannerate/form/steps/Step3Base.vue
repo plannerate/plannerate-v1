@@ -14,9 +14,9 @@ export const validate = (data: {
 </script>
 
 <script setup lang="ts">
+import { BoxIcon } from 'lucide-vue-next';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { BoxIcon } from 'lucide-vue-next';
 
 interface Props {
     modelValue: {

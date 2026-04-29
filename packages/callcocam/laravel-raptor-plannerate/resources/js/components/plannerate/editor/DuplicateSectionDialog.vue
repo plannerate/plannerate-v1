@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Copy, Package } from 'lucide-vue-next';
+import { ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -9,8 +11,6 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import type { Section } from '../../../types/planogram';
-import { Copy, Package } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
 
 interface Props {
     open: boolean;

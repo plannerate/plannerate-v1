@@ -57,6 +57,7 @@ export function useAnalysisFilters<T extends Record<string, any>>(
             filtered = filtered.filter((item) =>
                 options.searchFields.some((field) => {
                     const value = item[field];
+
                     return value && String(value).toLowerCase().includes(query);
                 })
             );
@@ -95,12 +96,16 @@ export function useAnalysisFilters<T extends Record<string, any>>(
      */
     const handleSort = (key: string, validKeys: (keyof T)[]) => {
         // Previne múltiplas chamadas simultâneas
-        if (isSorting || !key) return;
+        if (isSorting || !key) {
+return;
+}
+
         isSorting = true;
 
         // Valida se a chave é válida
         if (!validKeys.includes(key as keyof T)) {
             isSorting = false;
+
             return;
         }
 
@@ -112,6 +117,7 @@ export function useAnalysisFilters<T extends Record<string, any>>(
 
         // Determina nova direção
         let newDirection: 'asc' | 'desc' = 'desc';
+
         if (currentKey === newKey) {
             newDirection = sortConfig.value.direction === 'asc' ? 'desc' : 'asc';
         }
@@ -151,6 +157,7 @@ export function useAnalysisFilters<T extends Record<string, any>>(
         if (hasAlert) {
             return 'bg-yellow-100 dark:bg-yellow-900/50';
         }
+
         switch (classificacao) {
             case 'A':
                 return 'bg-blue-100 dark:bg-blue-900/50';

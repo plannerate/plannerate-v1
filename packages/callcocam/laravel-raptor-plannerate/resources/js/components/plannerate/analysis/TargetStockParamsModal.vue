@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Calculator, Settings } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -9,8 +11,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calculator, Settings } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
 import AnalysisPeriodSelector from './AnalysisPeriodSelector.vue';
 
 interface FormData {

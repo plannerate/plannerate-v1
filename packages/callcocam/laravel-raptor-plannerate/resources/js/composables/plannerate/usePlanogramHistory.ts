@@ -1,5 +1,5 @@
-import { ActionType } from '@/types/planogram';
 import { computed, readonly, ref } from 'vue';
+import type { ActionType } from '@/types/planogram';
 
 interface HistorySnapshot {
     shelfId?: string;
@@ -84,13 +84,17 @@ export function usePlanogramHistory() {
 
         try {
             const saved = window.localStorage.getItem(localStorageKey);
-            if (!saved) return false;
+
+            if (!saved) {
+return false;
+}
             
             const data = JSON.parse(saved);
             
             // Valida estrutura
             if (!data.history || !Array.isArray(data.history)) {
                 console.warn('⚠️ Histórico inválido no localStorage');
+
                 return false;
             }
             
@@ -101,6 +105,7 @@ export function usePlanogramHistory() {
             
             if (age > maxAge) {
                 window.localStorage.removeItem(localStorageKey);
+
                 return false;
             }
             
@@ -115,6 +120,7 @@ export function usePlanogramHistory() {
         } catch (error) {
             console.warn('⚠️ Erro ao carregar histórico do localStorage:', error);
             window.localStorage.removeItem(localStorageKey);
+
             return false;
         }
     }
@@ -149,7 +155,10 @@ export function usePlanogramHistory() {
      * Cria um deep clone do estado para salvar no histórico
      */
     function cloneState(state: any): any {
-        if (!state) return null;
+        if (!state) {
+return null;
+}
+
         return JSON.parse(JSON.stringify(state));
     }
 
@@ -190,6 +199,7 @@ export function usePlanogramHistory() {
     function undoAction(): HistorySnapshot | null {
         if (!canUndo.value) {
             console.warn('⚠️ Não há ações para desfazer');
+
             return null;
         }
 
@@ -208,6 +218,7 @@ export function usePlanogramHistory() {
     function redoAction(): HistorySnapshot | null {
         if (!canRedo.value) {
             console.warn('⚠️ Não há ações para refazer');
+
             return null;
         }
 

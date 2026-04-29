@@ -3,8 +3,8 @@
 // Refs compartilhados entre todas as instâncias do editor
 // ============================================================================
 
-import { Gondola, Section, Segment, Shelf } from '@/types/planogram';
 import { ref } from 'vue';
+import type { Gondola, Section, Segment, Shelf } from '@/types/planogram';
 
 // Estado da gôndola atual
 export const currentGondola = ref<Gondola | null>(null);

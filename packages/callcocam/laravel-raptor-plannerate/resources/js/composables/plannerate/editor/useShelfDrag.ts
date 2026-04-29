@@ -1,5 +1,6 @@
+import { onBeforeUnmount, ref  } from 'vue';
+import type {Ref} from 'vue';
 import type { Shelf as ShelfType } from '@/types/planogram';
-import { onBeforeUnmount, ref, type Ref } from 'vue';
 import {
     draggingShelfId,
     draggingShelfOffset,
@@ -29,7 +30,9 @@ export function useShelfDrag(options: UseShelfDragOptions) {
     };
 
     function handleGlobalMouseMove(event: MouseEvent) {
-        if (!mouseDownPos.value) return;
+        if (!mouseDownPos.value) {
+return;
+}
 
         const dx = event.clientX - mouseDownPos.value.x;
         const dy = event.clientY - mouseDownPos.value.y;
@@ -44,7 +47,9 @@ export function useShelfDrag(options: UseShelfDragOptions) {
     }
 
     function handleMouseDown(event: MouseEvent) {
-        if (event.button !== 0) return;
+        if (event.button !== 0) {
+return;
+}
 
         mouseDownPos.value = { x: event.clientX, y: event.clientY };
         canDrag.value = false;
@@ -56,6 +61,7 @@ export function useShelfDrag(options: UseShelfDragOptions) {
     function handleShelfDragStart(event: DragEvent) {
         if (!canDrag.value) {
             event.preventDefault();
+
             return;
         }
 

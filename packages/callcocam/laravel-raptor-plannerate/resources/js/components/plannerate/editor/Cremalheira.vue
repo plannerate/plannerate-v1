@@ -37,13 +37,13 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import {
     DEFAULT_SECTION_FIELDS,
     toCamelCase,
 } from '../../../composables/plannerate/useSectionFields';
 import { calculateHolePositions } from '../../../composables/plannerate/useSectionHoles';
-import { Section } from '../../../types/planogram';
-import { computed } from 'vue';
+import type { Section } from '../../../types/planogram';
 
 interface Props {
     section: Section;
@@ -63,6 +63,7 @@ const sectionCamel = computed(() => toCamelCase(props.section));
 const cremalheiraWidth = computed(() => {
     const rackWidth =
         sectionCamel.value.rackWidth ?? DEFAULT_SECTION_FIELDS.rackWidth;
+
     return rackWidth * props.scale;
 });
 
@@ -70,6 +71,7 @@ const cremalheiraWidth = computed(() => {
 const baseHeight = computed(() => {
     const baseHeightValue =
         sectionCamel.value.baseHeight ?? DEFAULT_SECTION_FIELDS.baseHeight;
+
     return baseHeightValue * props.scale;
 });
 
@@ -77,12 +79,14 @@ const baseHeight = computed(() => {
 const holeHeight = computed(() => {
     const holeHeightValue =
         sectionCamel.value.holeHeight ?? DEFAULT_SECTION_FIELDS.holeHeight;
+
     return holeHeightValue * props.scale;
 });
 
 const holeWidth = computed(() => {
     const holeWidthValue =
         sectionCamel.value.holeWidth ?? DEFAULT_SECTION_FIELDS.holeWidth;
+
     return holeWidthValue * props.scale;
 });
 

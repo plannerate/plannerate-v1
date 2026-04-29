@@ -35,7 +35,7 @@ type RoleOption = {
     name: string;
 };
 
-const props = defineProps<{
+defineProps<{
     open: boolean;
     mode: 'create' | 'edit';
     user: UserAccessRow | null;

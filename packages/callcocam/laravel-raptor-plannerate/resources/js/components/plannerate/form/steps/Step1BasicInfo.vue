@@ -1,6 +1,4 @@
 <script lang="ts">
-import { validateGondolaFields } from '@/composables/plannerate/useGondolaFields';
-
 export const validate = (data: {
     gondolaName: string;
     location: string;
@@ -15,6 +13,7 @@ export const validate = (data: {
 </script>
 
 <script setup lang="ts">
+import { InfoIcon } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,7 +26,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { InfoIcon } from 'lucide-vue-next';
+import { validateGondolaFields } from '@/composables/plannerate/useGondolaFields';
 
 interface Props {
     modelValue: {

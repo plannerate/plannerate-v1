@@ -127,8 +127,13 @@ const breadcrumbPath = computed(() => {
     return levels
         .map(level => {
             const selectedId = selections.value[level.key]
-            if (!selectedId) return null
+
+            if (!selectedId) {
+return null
+}
+
             const option = levelOptions.value[level.key]?.find(opt => opt.id === selectedId)
+
             return option?.name
         })
         .filter(Boolean)
@@ -142,6 +147,7 @@ onMounted(() => {
 watch(() => props.modelValue, (newVal) => {
     if (newVal && newVal !== getDeepestSelection()) {
         resetSelections()
+
         if (newVal) {
             loadCascadeForValue(newVal)
         }
@@ -155,8 +161,12 @@ watch(() => getDeepestSelection(), (newVal) => {
 function getDeepestSelection(): string | null {
     for (let i = levels.length - 1; i >= 0; i--) {
         const selected = selections.value[levels[i].key]
-        if (selected) return selected
+
+        if (selected) {
+return selected
+}
     }
+
     return null
 }
 
@@ -183,7 +193,9 @@ async function handleSelection(levelIndex: number, value: string | null): Promis
 }
 
 async function loadOptions(levelIndex: number): Promise<Category[]> {
-    if (levelIndex < 0 || levelIndex >= levels.length) return []
+    if (levelIndex < 0 || levelIndex >= levels.length) {
+return []
+}
 
     const currentLevel = levels[levelIndex]
     levelLoading.value[currentLevel.key] = true
@@ -201,6 +213,7 @@ async function loadOptions(levelIndex: number): Promise<Category[]> {
             if (!parentId) {
                 levelOptions.value[currentLevel.key] = []
                 levelLoading.value[currentLevel.key] = false
+
                 return []
             }
             
@@ -208,9 +221,11 @@ async function loadOptions(levelIndex: number): Promise<Category[]> {
         }
 
         const cachedOptions = optionsCache.value.get(url)
+
         if (cachedOptions) {
             const clonedOptions = [...cachedOptions]
             levelOptions.value[currentLevel.key] = clonedOptions
+
             if (clonedOptions.length === 0) {
                 levelErrors.value[currentLevel.key] = 'Nenhuma opção disponível'
             }
@@ -231,6 +246,7 @@ async function loadOptions(levelIndex: number): Promise<Category[]> {
             const normalizedChildren = children as Category[]
             optionsCache.value.set(url, [...normalizedChildren])
             levelOptions.value[currentLevel.key] = normalizedChildren
+
             if (normalizedChildren.length === 0) {
                 levelErrors.value[currentLevel.key] = 'Nenhuma opção disponível'
             }
@@ -276,6 +292,7 @@ async function loadCascadeForValue(categoryId: string): Promise<void> {
             
             for (let i = 0; i < cascade.length && i < levels.length; i++) {
                 selections.value[levels[i].key] = cascade[i]
+
                 if (i < cascade.length - 1) {
                     await loadOptions(i + 1)
                 }
@@ -285,6 +302,7 @@ async function loadCascadeForValue(categoryId: string): Promise<void> {
             // para evitar o usuário ter que "selecionar de novo" apenas para abrir opções.
             const deepestSelectedIndex = Math.min(cascade.length - 1, levels.length - 1)
             const nextLevelIndex = deepestSelectedIndex + 1
+
             if (nextLevelIndex < levels.length) {
                 await loadOptions(nextLevelIndex)
             }

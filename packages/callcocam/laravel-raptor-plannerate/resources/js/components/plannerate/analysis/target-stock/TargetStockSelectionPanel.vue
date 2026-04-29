@@ -110,6 +110,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -118,10 +119,9 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { computed } from 'vue';
-import type { TargetStockResult } from './types';
-import TargetStockQuickActions from './TargetStockQuickActions.vue';
 import ProductSalesSummary from '../../sidebar/properties/partials/ProductSalesSummary.vue';
+import TargetStockQuickActions from './TargetStockQuickActions.vue';
+import type { TargetStockResult } from './types';
 
 interface Props {
     selected: TargetStockResult | null;

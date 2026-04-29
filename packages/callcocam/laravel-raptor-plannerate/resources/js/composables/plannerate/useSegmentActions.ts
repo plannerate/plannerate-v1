@@ -1,5 +1,5 @@
-import type { Segment, Shelf } from '@/types/planogram';
 import { computed } from 'vue';
+import type { Segment, Shelf } from '@/types/planogram';
 import { usePlanogramEditor } from './usePlanogramEditor';
 import { shouldShowDeleteConfirm } from './usePlanogramUtils';
 
@@ -28,6 +28,7 @@ export function useSegmentActions(
             : computed(() => shelf)
         : computed(() => {
               const found = editor.findSegmentById(segmentRef.value.id);
+
               return found?.shelf;
           });
 
@@ -36,7 +37,10 @@ export function useSegmentActions(
      */
     function getOrderedSegments(): Segment[] {
         const currentShelf = shelfRef.value;
-        if (!currentShelf?.segments) return [];
+
+        if (!currentShelf?.segments) {
+return [];
+}
 
         return [...currentShelf.segments]
             .filter((s: Segment) => !s.deleted_at)
@@ -51,7 +55,10 @@ export function useSegmentActions(
      */
     const canMoveLeft = computed(() => {
         const currentSegment = segmentRef.value;
-        if (!currentSegment?.id) return false;
+
+        if (!currentSegment?.id) {
+return false;
+}
 
         const orderedSegments = getOrderedSegments();
         const currentIndex = orderedSegments.findIndex(
@@ -66,7 +73,10 @@ export function useSegmentActions(
      */
     const canMoveRight = computed(() => {
         const currentSegment = segmentRef.value;
-        if (!currentSegment?.id) return false;
+
+        if (!currentSegment?.id) {
+return false;
+}
 
         const orderedSegments = getOrderedSegments();
         const currentIndex = orderedSegments.findIndex(
@@ -78,10 +88,16 @@ export function useSegmentActions(
 
     function swapSegment(offset: -1 | 1): boolean {
         const currentSegment = segmentRef.value;
-        if (!currentSegment?.id) return false;
+
+        if (!currentSegment?.id) {
+return false;
+}
 
         const found = editor.findSegmentById(currentSegment.id);
-        if (!found || !found.shelf?.segments) return false;
+
+        if (!found || !found.shelf?.segments) {
+return false;
+}
 
         // Busca todos os segmentos não deletados e ordena por ordering
         const orderedSegments = [...found.shelf.segments]
@@ -89,18 +105,27 @@ export function useSegmentActions(
             .sort((a: Segment, b: Segment) => {
                 const ordA = a.ordering ?? 0;
                 const ordB = b.ordering ?? 0;
-                if (ordA !== ordB) return ordA - ordB;
+
+                if (ordA !== ordB) {
+return ordA - ordB;
+}
+
                 return 0;
             });
 
         const currentIndex = orderedSegments.findIndex(
             (seg) => seg.id === currentSegment.id,
         );
-        if (currentIndex < 0) return false;
+
+        if (currentIndex < 0) {
+return false;
+}
 
         const targetIndex = currentIndex + offset;
-        if (targetIndex < 0 || targetIndex >= orderedSegments.length)
-            return false;
+
+        if (targetIndex < 0 || targetIndex >= orderedSegments.length) {
+return false;
+}
 
         // Guarda os orderings originais antes da troca para comparação
         const originalOrderings = new Map<string, number>();
@@ -118,6 +143,7 @@ export function useSegmentActions(
         // Atualiza o ordering de todos os segmentos afetados e cria novos objetos para reatividade
         const reorderedSegments: Segment[] = swapped.map((seg, idx) => {
             const newOrdering = idx + 1;
+
             // Cria novo objeto com ordering atualizado
             return { ...seg, ordering: newOrdering };
         });
@@ -126,6 +152,7 @@ export function useSegmentActions(
         reorderedSegments.forEach((seg) => {
             const originalOrdering = originalOrderings.get(seg.id) ?? 0;
             const newOrdering = seg.ordering ?? 0;
+
             if (originalOrdering !== newOrdering) {
                 // Registra mudança para persistência
                 editor.recordChange({
@@ -147,6 +174,7 @@ export function useSegmentActions(
         const shelfIndex = updatedShelves.findIndex(
             (s: any) => s.id === found.shelf.id,
         );
+
         if (shelfIndex !== -1) {
             updatedShelves[shelfIndex] = {
                 ...found.shelf,
@@ -161,6 +189,7 @@ export function useSegmentActions(
             const sectionIndex = updatedSections.findIndex(
                 (s: any) => s.id === found.section.id,
             );
+
             if (sectionIndex !== -1) {
                 updatedSections[sectionIndex] = {
                     ...found.section,
@@ -178,7 +207,10 @@ export function useSegmentActions(
      */
     function moveLeft(): boolean {
         const currentSegment = segmentRef.value;
-        if (!currentSegment?.id) return false;
+
+        if (!currentSegment?.id) {
+return false;
+}
 
         // Previne execução dupla usando Map global
         if (segmentsMoving.get(currentSegment.id)) {
@@ -203,7 +235,10 @@ export function useSegmentActions(
      */
     function moveRight(): boolean {
         const currentSegment = segmentRef.value;
-        if (!currentSegment?.id) return false;
+
+        if (!currentSegment?.id) {
+return false;
+}
 
         // Previne execução dupla usando Map global
         if (segmentsMoving.get(currentSegment.id)) {

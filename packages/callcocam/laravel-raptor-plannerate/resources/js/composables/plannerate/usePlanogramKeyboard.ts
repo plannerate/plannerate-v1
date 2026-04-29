@@ -1,7 +1,7 @@
-import { validateShelfWidth } from '@plannerate/libs/validation';
-import type { Layer, Section, Segment, Shelf } from '@/types/planogram';
 import { ulid } from 'ulid';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import type { Layer, Section, Segment, Shelf } from '@/types/planogram';
+import { validateShelfWidth } from '@plannerate/libs/validation';
 import { usePlanogramEditor } from './usePlanogramEditor';
 import { usePlanogramSelection } from './usePlanogramSelection';
 import { shouldShowDeleteConfirm } from './usePlanogramUtils';
@@ -67,6 +67,7 @@ function handleNumberInput(digit: string, layerId: string) {
         if (quantity >= 1 && quantity <= 999) {
             // Busca dados do segment associado à layer para validação
             const segmentData = editor.findSegmentByLayerId(layerId);
+
             if (segmentData && segmentData.shelf && segmentData.section && segmentData.segment?.layer?.product?.id) {
                 // Valida se a nova quantidade cabe na largura da shelf
                 const validation = validateShelfWidth(
@@ -83,6 +84,7 @@ function handleNumberInput(digit: string, layerId: string) {
                     currentInputLayerId = null;
                     numberInputTimer = null;
                     numberInputDisplay.value = '';
+
                     return;
                 }
             }
@@ -126,6 +128,7 @@ export function usePlanogramKeyboard() {
      */
     function handleLayerKeyboard(event: KeyboardEvent): boolean {
         const selectedItem = selection.selectedItem.value;
+
         if (
             !selectedItem ||
             (selectedItem.type !== 'layer' &&
@@ -149,6 +152,7 @@ export function usePlanogramKeyboard() {
             layerId = layer?.id || null;
             segmentId =
                 layer?.segment_id || selectedItem.context?.segment?.id || null;
+
             if (segmentId) {
                 const segmentData = editor.findSegmentById(segmentId);
                 segment = segmentData?.segment || null;
@@ -177,6 +181,7 @@ export function usePlanogramKeyboard() {
                 () => segment!,
                 () => {
                     const found = editor.findSegmentById(segmentId!);
+
                     return found?.shelf;
                 },
             );
@@ -185,12 +190,14 @@ export function usePlanogramKeyboard() {
                 // Troca com o anterior
                 if (segmentActions.canMoveLeft.value) {
                     segmentActions.moveLeft();
+
                     return true;
                 }
             } else if (event.key === 'ArrowRight') {
                 // Troca com o próximo
                 if (segmentActions.canMoveRight.value) {
                     segmentActions.moveRight();
+
                     return true;
                 }
             }
@@ -212,11 +219,15 @@ export function usePlanogramKeyboard() {
             event.preventDefault();
             event.stopPropagation();
             handleNumberInput(event.key, layerId);
+
             return true;
         }
 
         const handledKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
-        if (!handledKeys.includes(event.key)) return false;
+
+        if (!handledKeys.includes(event.key)) {
+return false;
+}
 
         event.preventDefault();
         event.stopPropagation();
@@ -236,6 +247,7 @@ export function usePlanogramKeyboard() {
                     const newQty = currentLayerQty - 1;
                     editor.updateLayer(layerId, { quantity: newQty });
                 }
+
                 return true;
 
             case 'ArrowRight': {
@@ -259,6 +271,7 @@ export function usePlanogramKeyboard() {
                 }
 
                 editor.updateLayer(layerId, { quantity: newLayerQty });
+
                 return true;
             }
 
@@ -268,6 +281,7 @@ export function usePlanogramKeyboard() {
                     const newSegQty = currentSegmentQty - 1;
                     editor.updateSegment(segmentId, { quantity: newSegQty });
                 }
+
                 return true;
 
             case 'ArrowUp':
@@ -276,6 +290,7 @@ export function usePlanogramKeyboard() {
                     const newSegQty = currentSegmentQty + 1;
                     editor.updateSegment(segmentId, { quantity: newSegQty });
                 }
+
                 return true;
         }
 
@@ -294,6 +309,7 @@ export function usePlanogramKeyboard() {
     function handleShelfKeyboard(event: KeyboardEvent): boolean {
 
         const selectedItem = selection.selectedItem.value;
+
         if (!selectedItem || selectedItem.type !== 'shelf') {
             return false;
         }
@@ -306,6 +322,7 @@ export function usePlanogramKeyboard() {
             event.preventDefault();
             event.stopPropagation();
             editor.invertSegmentsOrder(shelf?.id || '');
+
             return true;
         }
 
@@ -315,6 +332,7 @@ export function usePlanogramKeyboard() {
 
         // Se não tiver section no context, busca pela shelf
         let targetSection = section;
+
         if (!targetSection) {
             const found = editor.findShelfById(shelf.id);
             targetSection = found?.section;
@@ -329,13 +347,19 @@ export function usePlanogramKeyboard() {
             event.preventDefault();
             event.stopPropagation();
             duplicateShelf(shelf, targetSection);
+
             return true;
         }
 
-        if (!event.ctrlKey && !event.metaKey) return false; // Requer Ctrl/Cmd
+        if (!event.ctrlKey && !event.metaKey) {
+return false;
+} // Requer Ctrl/Cmd
 
         const handledKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
-        if (!handledKeys.includes(event.key)) return false;
+
+        if (!handledKeys.includes(event.key)) {
+return false;
+}
 
         event.preventDefault();
         event.stopPropagation();
@@ -350,11 +374,13 @@ export function usePlanogramKeyboard() {
             case 'ArrowUp':
                 // Move shelf para cima usando a função que encaixa nos furos
                 moveUp();
+
                 return true;
 
             case 'ArrowDown':
                 // Move shelf para baixo usando a função que encaixa nos furos
                 moveDown();
+
                 return true;
 
             case 'ArrowLeft': {
@@ -369,6 +395,7 @@ export function usePlanogramKeyboard() {
                     targetSection,
                     'left',
                 );
+
                 if (result) {
                     selection.selectItem(
                         'shelf',
@@ -379,6 +406,7 @@ export function usePlanogramKeyboard() {
                         },
                     );
                 }
+
                 return true;
             }
 
@@ -394,6 +422,7 @@ export function usePlanogramKeyboard() {
                     targetSection,
                     'right',
                 );
+
                 if (result) {
                     selection.selectItem(
                         'shelf',
@@ -404,6 +433,7 @@ export function usePlanogramKeyboard() {
                         },
                     );
                 }
+
                 return true;
             }
         }
@@ -418,6 +448,7 @@ export function usePlanogramKeyboard() {
      */
     function handleSectionKeyboard(event: KeyboardEvent): boolean {
         const selectedItem = selection.selectedItem.value;
+
         if (!selectedItem || selectedItem.type !== 'section') {
             return false;
         }
@@ -442,6 +473,7 @@ export function usePlanogramKeyboard() {
             // Abre modal de confirmação
             sectionToDuplicate.value = section;
             showDuplicateSectionDialog.value = true;
+
             return true;
         }
 
@@ -454,10 +486,12 @@ export function usePlanogramKeyboard() {
             event.stopPropagation();
 
             sectionActions.invertShelves();
+
             return true;
         }
 
         const handledKeys = ['ArrowLeft', 'ArrowRight'];
+
         if (!handledKeys.includes(event.key)) {
             return false;
         }
@@ -487,7 +521,10 @@ export function usePlanogramKeyboard() {
         direction: 'left' | 'right',
     ): { shelf: Shelf; section: Section } | null {
         const gondola = editor.currentGondola.value;
-        if (!gondola?.sections) return null;
+
+        if (!gondola?.sections) {
+return null;
+}
 
         // Considera o fluxo visual da gôndola
         const flow = gondola.flow || 'left_to_right';
@@ -506,13 +543,18 @@ export function usePlanogramKeyboard() {
         const currentIndex = displaySections.findIndex(
             (s) => s.id === currentSection.id,
         );
-        if (currentIndex === -1) return null;
+
+        if (currentIndex === -1) {
+return null;
+}
 
         const targetIndex =
             direction === 'left' ? currentIndex - 1 : currentIndex + 1;
         const targetSection = displaySections[targetIndex];
 
-        if (!targetSection || targetSection.deleted_at) return null; // Não há seção adjacente
+        if (!targetSection || targetSection.deleted_at) {
+return null;
+} // Não há seção adjacente
 
         // Busca shelf atualizada do estado reativo
         const currentShelfData = editor.findShelfById(shelf.id);
@@ -548,7 +590,10 @@ export function usePlanogramKeyboard() {
     function duplicateShelf(shelf: Shelf, section: Section): void {
         // Busca a shelf atual com todos os dados atualizados
         const currentShelfData = editor.findShelfById(shelf.id);
-        if (!currentShelfData?.shelf) return;
+
+        if (!currentShelfData?.shelf) {
+return;
+}
 
         const originalShelf = currentShelfData.shelf;
 
@@ -566,6 +611,7 @@ export function usePlanogramKeyboard() {
             // Não cabe - poderia mostrar um toast aqui
             return;
         }
+
         const shelfId = ulid();
         // Cria estrutura da nova shelf (sem ID - será gerado pelo backend)
         const newShelf = {
@@ -581,6 +627,7 @@ export function usePlanogramKeyboard() {
             segments:
                 originalShelf.segments?.map((segment: Segment) => {
                     const segmentId = ulid();
+
                     return {
                         ...segment,
                         id: segmentId,
@@ -610,14 +657,22 @@ export function usePlanogramKeyboard() {
         section: Section,
         duplicateType: 'structure' | 'complete',
     ): void {
-        if (!section?.id) return;
+        if (!section?.id) {
+return;
+}
 
         const gondola = editor.currentGondola.value;
-        if (!gondola?.sections) return;
+
+        if (!gondola?.sections) {
+return;
+}
 
         // Busca a seção atual com todos os dados atualizados
         const currentSection = editor.findSectionById(section.id);
-        if (!currentSection) return;
+
+        if (!currentSection) {
+return;
+}
 
         // Calcula o ordering: coloca logo após a seção original
         const sections = gondola.sections.filter((s: Section) => !s.deleted_at);
@@ -633,6 +688,7 @@ export function usePlanogramKeyboard() {
 
         // Se for a última seção, coloca no final. Caso contrário, coloca logo após
         let newOrdering: number;
+
         if (currentIndex === sortedSections.length - 1) {
             // É a última seção, coloca no final
             const maxOrdering = sections.reduce((max: number, s: Section) => {
@@ -749,6 +805,7 @@ export function usePlanogramKeyboard() {
         // Seleciona a nova seção após ser adicionada
         if (addedSection) {
             const newSectionData = editor.findSectionById(newSectionId);
+
             if (newSectionData) {
                 selection.selectItem('section', newSectionId, newSectionData);
             }
@@ -769,7 +826,9 @@ export function usePlanogramKeyboard() {
     function handleDuplicateSectionConfirm(
         duplicateType: 'structure' | 'complete',
     ): void {
-        if (!sectionToDuplicate.value) return;
+        if (!sectionToDuplicate.value) {
+return;
+}
 
         duplicateSection(sectionToDuplicate.value, duplicateType);
 
@@ -782,7 +841,9 @@ export function usePlanogramKeyboard() {
      * Handler de confirmação da modal de exclusão
      */
     function handleDeleteConfirm(): void {
-        if (!itemToDelete.value) return;
+        if (!itemToDelete.value) {
+return;
+}
 
         // Garante que o item está selecionado antes de deletar
         const { type, item } = itemToDelete.value;
@@ -812,7 +873,9 @@ export function usePlanogramKeyboard() {
             target.tagName === 'TEXTAREA' ||
             target.isContentEditable;
 
-        if (isInputFocused) return;
+        if (isInputFocused) {
+return;
+}
 
         const selectedItem = selection.selectedItem.value;
 
@@ -834,7 +897,9 @@ export function usePlanogramKeyboard() {
                     break;
             }
 
-            if (handled) return;
+            if (handled) {
+return;
+}
         }
 
         // PRIORIDADE 2: Handlers globais
@@ -852,13 +917,18 @@ export function usePlanogramKeyboard() {
             event.preventDefault();
 
             const selectedItem = selection.selectedItem.value;
-            if (!selectedItem) return;
+
+            if (!selectedItem) {
+return;
+}
 
             // Só mostra modal para section, shelf e layer
             const supportedTypes = ['section', 'shelf', 'layer'];
+
             if (!supportedTypes.includes(selectedItem.type)) {
                 // Para outros tipos (segment, product), deleta diretamente
                 selection.deleteSelected();
+
                 return;
             }
 
@@ -878,6 +948,7 @@ export function usePlanogramKeyboard() {
                 // Deleta diretamente sem confirmação
                 selection.deleteSelected();
             }
+
             return;
         }
 
@@ -885,6 +956,7 @@ export function usePlanogramKeyboard() {
         if (isCtrl && event.key === 'z' && !event.shiftKey) {
             event.preventDefault();
             editor.undo();
+
             return;
         }
 
@@ -892,6 +964,7 @@ export function usePlanogramKeyboard() {
         if (isCtrl && event.key === 'z' && event.shiftKey) {
             event.preventDefault();
             editor.redo();
+
             return;
         }
 
@@ -899,15 +972,18 @@ export function usePlanogramKeyboard() {
         if (isCtrl && event.key === 'y') {
             event.preventDefault();
             editor.redo();
+
             return;
         }
 
         // Ctrl+S: Salvar manualmente
         if (isCtrl && event.key === 's') {
             event.preventDefault();
+
             if (editor.hasChanges?.value) {
                 editor.save();
             }
+
             return;
         }
     }

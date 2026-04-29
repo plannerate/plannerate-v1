@@ -1,19 +1,4 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { toast } from 'vue-sonner';
-import { generateQrCode } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaExportController';
-import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
 import {
     Download,
     Copy,
@@ -22,6 +7,21 @@ import {
     Loader2,
     AlertCircle,
 } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
+import { generateQrCode } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaExportController';
+import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 // Props
 const props = defineProps<{
@@ -45,9 +45,13 @@ const isLoading = ref(false);
 
 // URL de compartilhamento usando Wayfinder
 const shareUrl = computed(() => {
-    if (!props.gondolaId) return '';
+    if (!props.gondolaId) {
+return '';
+}
+
     const baseUrl = window.location.origin;
     const route = gondolaView(props.gondolaId);
+
     return `${baseUrl}${route.url}`;
 });
 
@@ -60,9 +64,12 @@ watch(() => props.open, async (isOpen) => {
 
 // Methods
 async function loadQRCode() {
-    if (!props.gondolaId) return;
+    if (!props.gondolaId) {
+return;
+}
     
     isLoading.value = true;
+
     try {
         const action = generateQrCode(props.gondolaId);
         const response = await fetch(action.url);
@@ -123,7 +130,9 @@ async function shareLink() {
 }
 
 function downloadQRCode() {
-    if (!qrCodeDataUri.value) return;
+    if (!qrCodeDataUri.value) {
+return;
+}
     
     const link = document.createElement('a');
     link.href = qrCodeDataUri.value;

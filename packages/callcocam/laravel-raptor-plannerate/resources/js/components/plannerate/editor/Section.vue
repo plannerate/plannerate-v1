@@ -35,6 +35,8 @@
 </template>
 
 <script setup lang="ts">
+import { ulid } from 'ulid';
+import { computed, ref } from 'vue';
 import {
     draggingShelfId,
     draggingShelfOffset,
@@ -52,8 +54,6 @@ import {
     findNearestHole,
 } from '../../../composables/plannerate/useSectionHoles';
 import type { Section as SectionType } from '../../../types/planogram';
-import { ulid } from 'ulid';
-import { computed, ref } from 'vue';
 import Cremalheira from './Cremalheira.vue';
 import Shelves from './Shelves.vue';
 interface Props {
@@ -83,7 +83,9 @@ const isShelfDropTarget = ref(false);
 
 function handleSectionDragOver(event: DragEvent) {
     // Só aceita se estiver arrastando uma shelf
-    if (!draggingShelfId.value) return;
+    if (!draggingShelfId.value) {
+return;
+}
 
     event.preventDefault();
     event.dataTransfer!.dropEffect = 'move';
@@ -91,7 +93,9 @@ function handleSectionDragOver(event: DragEvent) {
 }
 
 function handleSectionDragLeave(event: DragEvent) {
-    if (!draggingShelfId.value) return;
+    if (!draggingShelfId.value) {
+return;
+}
 
     const target = event.currentTarget as HTMLElement;
     const relatedTarget = event.relatedTarget as HTMLElement;
@@ -105,6 +109,7 @@ function handleSectionDragLeave(event: DragEvent) {
 function handleSectionDrop(event: DragEvent) {
     if (!draggingShelfId.value || !draggingShelfSectionId.value) {
         console.warn('⚠️ Drop sem shelf sendo arrastada');
+
         return;
     }
 
@@ -113,8 +118,10 @@ function handleSectionDrop(event: DragEvent) {
 
     // Busca a prateleira sendo arrastada para obter sua altura
     const shelfResult = findShelfById(draggedShelfId);
+
     if (!shelfResult) {
         console.warn('⚠️ Prateleira não encontrada:', draggedShelfId);
+
         return;
     }
 
@@ -197,6 +204,7 @@ const sectionStyle = computed(() => ({
 // Ordena as shelves por shelf_position (de baixo para cima)
 const sortedShelves = computed(() => {
     const shelves = [...(props.section.shelves || [])];
+
     // Filtra prateleiras deletadas e ordena por shelf_position
     return shelves
         .filter((shelf) => !shelf.deleted_at)

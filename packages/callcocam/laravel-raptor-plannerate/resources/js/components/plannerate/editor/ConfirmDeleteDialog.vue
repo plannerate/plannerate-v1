@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Check, Trash2 } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -10,8 +12,6 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import type { Layer, Section, Shelf } from '../../../types/planogram';
-import { Check, Trash2 } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
 
 interface Props {
     open: boolean;
@@ -49,6 +49,7 @@ function handleConfirm() {
     // Salva preferência no localStorage se marcado
     if (dontAskAgain.value) {
         const expiryTime = Date.now() + 5 * 60 * 1000; // 5 minutos
+
         if (isBrowser) {
             window.localStorage.setItem(
                 `planogram-delete-confirm-${props.type}`,
@@ -67,7 +68,9 @@ function handleCancel() {
 
 // Mensagens dinâmicas baseadas no tipo
 const itemName = computed(() => {
-    if (!props.item) return '';
+    if (!props.item) {
+return '';
+}
 
     if (props.type === 'section') {
         return (props.item as Section).name || 'esta seção';

@@ -2,12 +2,14 @@
 // IMPORTS
 // ============================================================================
 
+import { router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { calculateAbc } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
+import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
 import { usePlanogramChanges } from '@/composables/plannerate/usePlanogramChanges';
 import { usePlanogramHistory } from '@/composables/plannerate/usePlanogramHistory';
 import { findNearestHole } from '@/composables/plannerate/useSectionHoles';
-import { Gondola, Product, Section, Shelf } from '@/types/planogram';
-import { router } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import type { Gondola, Product, Section, Shelf } from '@/types/planogram';
 
 // Importa módulos separados por responsabilidade
 import {
@@ -22,8 +24,6 @@ import {
     showPropertiesPanel,
 } from './editor/useGondolaState';
 
-import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
-import { calculateAbc } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 
 import {
     findSectionById,
@@ -37,13 +37,13 @@ import {
     updateSegmentReactive,
 } from './editor/useReactivityHelpers';
 
+import { useSectionOperations } from './editor/useSectionOperations';
 import {
     copySegmentToShelf as copySegmentOperation,
     moveSegmentToShelf as moveSegmentOperation,
     swapSegmentPositions as swapSegmentOp,
 } from './editor/useSegmentOperations';
 
-import { useSectionOperations } from './editor/useSectionOperations';
 import { useShelfOperations } from './editor/useShelfOperations';
 
 // ============================================================================
@@ -72,7 +72,9 @@ export function usePlanogramEditor() {
      * Captura o estado ANTES da mudança para histórico
      */
     function captureBeforeState(snapshot: OptimisticSnapshot): any {
-        if (!currentGondola.value) return null;
+        if (!currentGondola.value) {
+return null;
+}
 
         try {
             switch (snapshot.type) {
@@ -81,7 +83,10 @@ export function usePlanogramEditor() {
                 case 'shelf_transfer':
                     if (snapshot.shelfId) {
                         const shelfData = findShelfById(snapshot.shelfId);
-                        if (!shelfData) return null;
+
+                        if (!shelfData) {
+return null;
+}
                         
                         // Captura posição, section_id e outros dados importantes
                         return history.cloneState({
@@ -91,6 +96,7 @@ export function usePlanogramEditor() {
                             shelf_depth: shelfData.shelf.shelf_depth,
                         });
                     }
+
                     break;
 
                 case 'segment_position':
@@ -99,15 +105,19 @@ export function usePlanogramEditor() {
                 case 'segment_copy':
                     if (snapshot.segmentId) {
                         const found = findSegmentById(snapshot.segmentId);
+
                         return found ? history.cloneState(found.segment) : null;
                     }
+
                     break;
 
                 case 'section_update':
                     if (snapshot.sectionId) {
                         const section = findSectionById(snapshot.sectionId);
+
                         return section ? history.cloneState(section) : null;
                     }
+
                     break;
 
                 case 'sections_reorder':
@@ -116,21 +126,26 @@ export function usePlanogramEditor() {
                         const sectionsData: Record<string, number> = {};
                         snapshot.sectionIds.forEach((sectionId: string) => {
                             const section = findSectionById(sectionId);
+
                             if (section) {
                                 sectionsData[sectionId] = section.ordering || 0;
                             }
                         });
+
                         return sectionsData;
                     }
+
                     break;
 
                 case 'layer_update':
                     if (snapshot.layerId) {
                         const found = findSegmentByLayerId(snapshot.layerId);
+
                         return found?.segment.layer
                             ? history.cloneState(found.segment.layer)
                             : null;
                     }
+
                     break;
 
                 case 'gondola_update':
@@ -148,6 +163,7 @@ export function usePlanogramEditor() {
             }
         } catch (error) {
             console.error('❌ Erro ao capturar estado before:', error);
+
             return null;
         }
 
@@ -158,7 +174,9 @@ export function usePlanogramEditor() {
      * Captura o estado DEPOIS da mudança para histórico
      */
     function captureAfterState(snapshot: OptimisticSnapshot, beforeState: any): any {
-        if (!currentGondola.value || !beforeState) return null;
+        if (!currentGondola.value || !beforeState) {
+return null;
+}
 
         try {
             switch (snapshot.type) {
@@ -167,7 +185,10 @@ export function usePlanogramEditor() {
                 case 'shelf_transfer':
                     if (snapshot.shelfId) {
                         const shelfData = findShelfById(snapshot.shelfId);
-                        if (!shelfData) return null;
+
+                        if (!shelfData) {
+return null;
+}
                         
                         // Captura nova posição, section_id e outros dados importantes
                         return history.cloneState({
@@ -177,14 +198,17 @@ export function usePlanogramEditor() {
                             shelf_depth: shelfData.shelf.shelf_depth,
                         });
                     }
+
                     break;
 
                 case 'segment_position':
                 case 'segment_update':
                     if (snapshot.segmentId) {
                         const found = findSegmentById(snapshot.segmentId);
+
                         return found ? history.cloneState(found.segment) : null;
                     }
+
                     break;
 
                 case 'segment_transfer':
@@ -201,6 +225,7 @@ export function usePlanogramEditor() {
                             targetShelfSegments: targetShelf ? history.cloneState(targetShelf.shelf.segments) : [],
                         };
                     }
+
                     break;
 
                 case 'segment_copy':
@@ -213,13 +238,16 @@ export function usePlanogramEditor() {
                             targetShelfSegments: targetShelf ? history.cloneState(targetShelf.shelf.segments) : [],
                         };
                     }
+
                     break;
 
                 case 'section_update':
                     if (snapshot.sectionId) {
                         const section = findSectionById(snapshot.sectionId);
+
                         return section ? history.cloneState(section) : null;
                     }
+
                     break;
 
                 case 'sections_reorder':
@@ -228,21 +256,26 @@ export function usePlanogramEditor() {
                         const sectionsData: Record<string, number> = {};
                         snapshot.sectionIds.forEach((sectionId: string) => {
                             const section = findSectionById(sectionId);
+
                             if (section) {
                                 sectionsData[sectionId] = section.ordering || 0;
                             }
                         });
+
                         return sectionsData;
                     }
+
                     break;
 
                 case 'layer_update':
                     if (snapshot.layerId) {
                         const found = findSegmentByLayerId(snapshot.layerId);
+
                         return found?.segment.layer
                             ? history.cloneState(found.segment.layer)
                             : null;
                     }
+
                     break;
 
                 case 'gondola_update':
@@ -260,6 +293,7 @@ export function usePlanogramEditor() {
             }
         } catch (error) {
             console.error('❌ Erro ao capturar estado after:', error);
+
             return null;
         }
 
@@ -285,6 +319,7 @@ export function usePlanogramEditor() {
         try {
             // Captura estado ANTES
             let beforeState: any = null;
+
             if (historySnapshot) {
                 // Se beforeState já foi passado manualmente, usa ele
                 if (historySnapshot.beforeState) {
@@ -301,6 +336,7 @@ export function usePlanogramEditor() {
             if (historySnapshot && beforeState) {
                 // Se afterState já foi passado manualmente, usa ele
                 let afterState: any;
+
                 if (historySnapshot.afterState) {
                     afterState = historySnapshot.afterState;
                 } else {
@@ -322,6 +358,7 @@ export function usePlanogramEditor() {
             return result;
         } catch (error) {
             console.error('❌ Erro ao aplicar mudança otimista:', error);
+
             return null;
         }
     }
@@ -347,8 +384,13 @@ export function usePlanogramEditor() {
         const segment1 = findSegmentById(segment1Id);
         const segment2 = findSegmentById(segment2Id);
         
-        if (!segment1 || !segment2) return false;
-        if (segment1.shelf.id !== segment2.shelf.id) return false;
+        if (!segment1 || !segment2) {
+return false;
+}
+
+        if (segment1.shelf.id !== segment2.shelf.id) {
+return false;
+}
 
         const result = commitOptimistic({
             apply: () => swapSegmentOp(segment1Id, segment2Id, recordChange),
@@ -374,10 +416,16 @@ export function usePlanogramEditor() {
         targetShelfId: string,
     ): boolean {
         const found = findSegmentById(segmentId);
-        if (!found) return false;
+
+        if (!found) {
+return false;
+}
 
         const targetShelf = findShelfById(targetShelfId);
-        if (!targetShelf) return false;
+
+        if (!targetShelf) {
+return false;
+}
 
         // Captura estado completo ANTES da operação
         const beforeState = {
@@ -412,10 +460,16 @@ export function usePlanogramEditor() {
         targetShelfId: string,
     ): boolean {
         const found = findSegmentById(segmentId);
-        if (!found) return false;
+
+        if (!found) {
+return false;
+}
 
         const targetShelf = findShelfById(targetShelfId);
-        if (!targetShelf) return false;
+
+        if (!targetShelf) {
+return false;
+}
 
         // Captura estado completo ANTES da operação
         const beforeState = {
@@ -453,7 +507,10 @@ export function usePlanogramEditor() {
         newPosition: number,
     ): boolean {
         const shelf = findShelfById(shelfId);
-        if (!shelf) return false;
+
+        if (!shelf) {
+return false;
+}
 
         const result = commitOptimistic({
             apply: () => shelfOps.moveShelfWithinSection(shelfId, newPosition, recordChange),
@@ -479,7 +536,10 @@ export function usePlanogramEditor() {
         newPosition: number,
     ): boolean {
         const shelf = findShelfById(shelfId);
-        if (!shelf) return false;
+
+        if (!shelf) {
+return false;
+}
 
         const result = commitOptimistic({
             apply: () => shelfOps.moveShelfToSection(shelfId, targetSectionId, newPosition, recordChange),
@@ -529,12 +589,14 @@ export function usePlanogramEditor() {
                                         (layer: any) => !layer.deleted_at,
                                     ) || [],
                             }));
+
                         return {
                             ...shelf,
                             shelf_position: snappedPosition,
                             segments,
                         };
                     });
+
                 return { ...section, shelves };
             });
 
@@ -548,7 +610,10 @@ export function usePlanogramEditor() {
     const sectionsOrdered = computed(() => {
         const sections = currentGondola.value?.sections;
         const flow = currentGondola.value?.flow || 'left_to_right';
-        if (!sections) return [];
+
+        if (!sections) {
+return [];
+}
 
         // Filtra seções deletadas e ordena por ordering
         const filtered = sections.filter((s: Section) => !s.deleted_at);
@@ -575,6 +640,7 @@ export function usePlanogramEditor() {
         const savedScale = isBrowser
             ? window.localStorage.getItem(`gondola_${gondola.id}_scale`)
             : null;
+
         if (savedScale) {
             const scale = parseFloat(savedScale);
             scaleFactor.value =
@@ -596,7 +662,9 @@ export function usePlanogramEditor() {
      * @returns Gondola atualizada ou null se não houver gondola
      */
     function updateGondola(updates: Partial<Gondola>) {
-        if (!currentGondola.value?.id) return null;
+        if (!currentGondola.value?.id) {
+return null;
+}
 
         return commitOptimistic({
             apply: () => {
@@ -646,8 +714,12 @@ export function usePlanogramEditor() {
      * Retorna gôndolas disponíveis no planograma
      */
     function gondolasAvailable(): Gondola[] {
-        if (!currentGondola.value) return [];
+        if (!currentGondola.value) {
+return [];
+}
+
         const { gondolas } = currentGondola.value.planogram || {};
+
         return gondolas || [];
     }
 
@@ -671,7 +743,10 @@ export function usePlanogramEditor() {
         onProductUsed?: (productId: string) => void,
     ) {
         const shelf = findShelfById(shelfId);
-        if (!shelf) return null;
+
+        if (!shelf) {
+return null;
+}
 
         return commitOptimistic({
             apply: () =>
@@ -713,7 +788,10 @@ export function usePlanogramEditor() {
      */
     function updateShelf(shelfId: string, updates: Partial<any>) {
         const shelf = findShelfById(shelfId);
-        if (!shelf) return null;
+
+        if (!shelf) {
+return null;
+}
 
         return commitOptimistic({
             apply: () => shelfOps.updateShelf(shelfId, updates, recordChange),
@@ -755,13 +833,16 @@ export function usePlanogramEditor() {
      * Captura TODAS as mudanças de ordering em um único snapshot
      */
     function swapSectionsOrdering(sectionIds: string[], newOrderings: Record<string, number>) {
-        if (!currentGondola.value?.sections) return;
+        if (!currentGondola.value?.sections) {
+return;
+}
 
         return commitOptimistic({
             apply: () => {
                 // Aplica as novas ordenações
                 sectionIds.forEach(sectionId => {
                     const section = findSectionById(sectionId);
+
                     if (section && newOrderings[sectionId] !== undefined) {
                         section.ordering = newOrderings[sectionId];
                     }
@@ -799,7 +880,10 @@ export function usePlanogramEditor() {
      */
     function updateSegment(segmentId: string, updates: Partial<any>) {
         const found = findSegmentById(segmentId);
-        if (!found) return null;
+
+        if (!found) {
+return null;
+}
 
         return commitOptimistic({
             apply: () => {
@@ -817,6 +901,7 @@ export function usePlanogramEditor() {
                 const shelfIndex = updatedShelves.findIndex(
                     (s: any) => s.id === found.shelf.id,
                 );
+
                 if (shelfIndex !== -1) {
                     updatedShelves[shelfIndex] = {
                         ...found.shelf,
@@ -831,6 +916,7 @@ export function usePlanogramEditor() {
                     const sectionIndex = updatedSections.findIndex(
                         (s: any) => s.id === found.section.id,
                     );
+
                     if (sectionIndex !== -1) {
                         updatedSections[sectionIndex] = {
                             ...found.section,
@@ -881,7 +967,10 @@ export function usePlanogramEditor() {
      */
     function updateLayer(layerId: string, updates: Partial<any>) {
         const found = findSegmentByLayerId(layerId);
-        if (!found || !found.segment.layer) return null;
+
+        if (!found || !found.segment.layer) {
+return null;
+}
 
         return commitOptimistic({
             apply: () => {
@@ -891,6 +980,7 @@ export function usePlanogramEditor() {
                     found.segmentIndex,
                     { layer: updates },
                 );
+
                 return found.segment.layer;
             },
             historySnapshot: {
@@ -921,10 +1011,16 @@ export function usePlanogramEditor() {
         onSaved?: () => void | Promise<void>,
     ) {
         const found = findSegmentByLayerId(layerId);
-        if (!found || !found.segment.layer?.product) return null;
+
+        if (!found || !found.segment.layer?.product) {
+return null;
+}
 
         const product = found.segment.layer.product;
-        if (!product) return null;
+
+        if (!product) {
+return null;
+}
 
         // Atualiza o campo diretamente no produto
         const updatedProduct = {
@@ -947,6 +1043,7 @@ export function usePlanogramEditor() {
                         product: updatedProduct,
                     },
                 );
+
                 return product;
             },
             change: {
@@ -970,7 +1067,9 @@ export function usePlanogramEditor() {
         value: number,
         onSaved?: () => void | Promise<void>,
     ) { 
-        if (!product) return null;
+        if (!product) {
+return null;
+}
 
         // Atualiza o campo diretamente no produto
         // product[dimension] = value;
@@ -1014,7 +1113,9 @@ export function usePlanogramEditor() {
         value: number,
         onSaved?: () => void | Promise<void>,
     ) {
-        if (!productIds.length) return [];
+        if (!productIds.length) {
+return [];
+}
 
         const results: any[] = [];
         let callbackAdded = false;
@@ -1023,15 +1124,24 @@ export function usePlanogramEditor() {
         for (const productId of productIds) {
             // Busca o layer deste produto no gondola
             const gondola = currentGondola.value;
-            if (!gondola?.sections) continue;
+
+            if (!gondola?.sections) {
+continue;
+}
 
             let layerId: string | null = null;
 
             // Busca o layer pelo product_id
             outerLoop: for (const section of gondola.sections) {
-                if (!section.shelves) continue;
+                if (!section.shelves) {
+continue;
+}
+
                 for (const shelf of section.shelves) {
-                    if (!shelf.segments) continue;
+                    if (!shelf.segments) {
+continue;
+}
+
                     for (const segment of shelf.segments) {
                         if (segment.layer?.product?.id === productId) {
                             layerId = segment.layer.id;
@@ -1054,7 +1164,10 @@ export function usePlanogramEditor() {
 
                 if (result) {
                     results.push(result);
-                    if (isLast) callbackAdded = true;
+
+                    if (isLast) {
+callbackAdded = true;
+}
                 }
             }
         }
@@ -1067,7 +1180,9 @@ export function usePlanogramEditor() {
         value: number,
         onSaved?: () => void | Promise<void>,
     ) {
-        if (!products.length) return [];
+        if (!products.length) {
+return [];
+}
 
         const results: any[] = [];
 
@@ -1080,6 +1195,7 @@ export function usePlanogramEditor() {
                 value,
                 onSaved,
             );
+
             if (result) {
                 results.push(result);
             }
@@ -1106,6 +1222,7 @@ export function usePlanogramEditor() {
                 apply: () => {
                     scaleFactor.value = Math.max(1, Math.min(10, value));
                     saveScaleToLocalStorage();
+
                     return scaleFactor.value;
                 },
                 historySnapshot: {
@@ -1147,11 +1264,14 @@ export function usePlanogramEditor() {
      * Define o alinhamento da gôndola
      */
     function setAlignment(alignment: 'left' | 'right' | 'center' | 'justify') {
-        if (!currentGondola.value?.id) return false;
+        if (!currentGondola.value?.id) {
+return false;
+}
 
         const result = commitOptimistic({
             apply: () => {
                 currentGondola.value!.alignment = alignment;
+
                 return true;
             },
             historySnapshot: {
@@ -1193,13 +1313,16 @@ export function usePlanogramEditor() {
      * Define a direção do fluxo da gôndola (onde começar a colocar produtos premium)
      */
     function setFlow(flow: 'left_to_right' | 'right_to_left') {
-        if (!currentGondola.value?.id) return false;
+        if (!currentGondola.value?.id) {
+return false;
+}
 
         const flowLabel = flow === 'left_to_right' ? 'Esquerda → Direita' : 'Direita → Esquerda';
 
         const result = commitOptimistic({
             apply: () => {
                 currentGondola.value!.flow = flow;
+
                 return true;
             },
             historySnapshot: {
@@ -1223,7 +1346,9 @@ export function usePlanogramEditor() {
      * Inverte a direção do fluxo da gôndola
      */
     function toggleFlow() {
-        if (!currentGondola.value?.id) return false;
+        if (!currentGondola.value?.id) {
+return false;
+}
 
         const currentFlow = currentGondola.value.flow || 'left_to_right';
         const newFlow =
@@ -1244,6 +1369,7 @@ export function usePlanogramEditor() {
         console.warn(
             '⚠️ alignHorizontal() deprecated - use alignLeft/Right/Center',
         );
+
         return alignLeft();
     }
 
@@ -1255,6 +1381,7 @@ export function usePlanogramEditor() {
         console.warn(
             '⚠️ alignVertical() deprecated - use setAlignment() ou alignRight()',
         );
+
         return alignRight();
     }
 
@@ -1266,6 +1393,7 @@ export function usePlanogramEditor() {
         console.warn(
             '⚠️ distribute() deprecated - use setAlignment("justify") ou alignJustify()',
         );
+
         return alignJustify();
     }
 
@@ -1275,6 +1403,7 @@ export function usePlanogramEditor() {
     function addModule() {
         if (!currentGondola.value?.id) {
             console.warn('Nenhuma gôndola selecionada para adicionar módulo');
+
             return;
         }
 
@@ -1307,6 +1436,7 @@ export function usePlanogramEditor() {
     function removeGondola() {
         if (!currentGondola.value?.id) {
             console.warn('Nenhuma gôndola selecionada para remover');
+
             return;
         }
 
@@ -1342,6 +1472,7 @@ export function usePlanogramEditor() {
     function applySnapshot(snapshot: any, shouldPersist: boolean = true) {
         if (!currentGondola.value || !snapshot) {
             console.error('❌ Não foi possível aplicar snapshot: gôndola ou snapshot inválidos');
+
             return false;
         }
 
@@ -1392,12 +1523,14 @@ export function usePlanogramEditor() {
 
                 default:
                     console.warn('⚠️ Tipo de snapshot não implementado:', snapshot.type);
+
                     return false;
             }
 
             return true;
         } catch (error) {
             console.error('❌ Erro ao aplicar snapshot:', error);
+
             return false;
         }
     }
@@ -1407,8 +1540,10 @@ export function usePlanogramEditor() {
      */
     function applyShelfSnapshot(snapshot: any, shouldPersist: boolean) {
         const currentShelfData = findShelfById(snapshot.shelfId);
+
         if (!currentShelfData) {
             console.error('❌ Shelf não encontrada:', snapshot.shelfId);
+
             return;
         }
 
@@ -1425,6 +1560,7 @@ export function usePlanogramEditor() {
             
             if (!currentSection || !targetSection) {
                 console.error('❌ Seções não encontradas');
+
                 return;
             }
  
@@ -1443,7 +1579,10 @@ export function usePlanogramEditor() {
                 Object.assign(shelf, beforeState);
 
                 // Adiciona na seção de destino
-                if (!targetSection.shelves) targetSection.shelves = [];
+                if (!targetSection.shelves) {
+targetSection.shelves = [];
+}
+
                 targetSection.shelves.push(shelf);
                 targetSection.shelves = [...targetSection.shelves];
 
@@ -1458,11 +1597,13 @@ export function usePlanogramEditor() {
 
             // Força reatividade
             const section = findSectionById(currentSectionId);
+
             if (section && currentGondola.value?.sections) {
                 section.shelves = [...(section.shelves || [])];
                 
                 // Encontra o índice da seção para updateSectionReactive
                 const sectionIndex = currentGondola.value.sections.findIndex(s => s.id === currentSectionId);
+
                 if (sectionIndex !== -1) {
                     updateSectionReactive(sectionIndex, {});
                 }
@@ -1505,8 +1646,10 @@ export function usePlanogramEditor() {
      */
     function applySegmentSnapshot(snapshot: any, shouldPersist: boolean) {
         const found = findSegmentById(snapshot.segmentId);
+
         if (!found) {
             console.error('❌ Segment não encontrado:', snapshot.segmentId);
+
             return;
         }
 
@@ -1537,13 +1680,16 @@ export function usePlanogramEditor() {
      */
     function applySectionSnapshot(snapshot: any, shouldPersist: boolean) {
         const section = findSectionById(snapshot.sectionId);
+
         if (!section || !currentGondola.value?.sections) {
             console.error('❌ Section não encontrada:', snapshot.sectionId);
+
             return;
         }
 
         // Força reatividade aplicando as mudanças através do updateSectionReactive
         const sectionIndex = currentGondola.value.sections.findIndex(s => s.id === snapshot.sectionId);
+
         if (sectionIndex !== -1) {
             updateSectionReactive(sectionIndex, snapshot.beforeState);
         }
@@ -1559,6 +1705,7 @@ export function usePlanogramEditor() {
             ];
             
             const data: Record<string, any> = {};
+
             for (const field of allowedFields) {
                 if (snapshot.beforeState[field] !== undefined) {
                     data[field] = snapshot.beforeState[field];
@@ -1580,6 +1727,7 @@ export function usePlanogramEditor() {
     function applySectionsReorderSnapshot(snapshot: any, shouldPersist: boolean) {
         if (!currentGondola.value?.sections || !snapshot.sectionIds || !snapshot.beforeState) {
             console.error('❌ Dados inválidos para reordenação de seções');
+
             return;
         }
 
@@ -1619,8 +1767,10 @@ export function usePlanogramEditor() {
      */
     function applyLayerSnapshot(snapshot: any, shouldPersist: boolean) {
         const found = findSegmentByLayerId(snapshot.layerId);
+
         if (!found || !found.segment.layer) {
             console.error('❌ Layer não encontrado:', snapshot.layerId);
+
             return;
         }
 
@@ -1652,12 +1802,21 @@ export function usePlanogramEditor() {
     function applyProductSnapshot(snapshot: any, shouldPersist: boolean) {
         // Busca o produto no canvas
         const gondola = currentGondola.value;
-        if (!gondola?.sections) return;
+
+        if (!gondola?.sections) {
+return;
+}
 
         for (const section of gondola.sections) {
-            if (!section.shelves) continue;
+            if (!section.shelves) {
+continue;
+}
+
             for (const shelf of section.shelves) {
-                if (!shelf.segments) continue;
+                if (!shelf.segments) {
+continue;
+}
+
                 for (const segment of shelf.segments) {
                     if (segment.layer?.product?.id === snapshot.entityId) {
                         // Aplica as mudanças do estado
@@ -1665,6 +1824,7 @@ export function usePlanogramEditor() {
 
                         // Força reatividade
                         const found = findSegmentById(segment.id);
+
                         if (found) {
                             updateSegmentReactive(
                                 found.section,
@@ -1683,6 +1843,7 @@ export function usePlanogramEditor() {
                                 data: snapshot.beforeState,
                             });
                         }
+
                         return;
                     }
                 }
@@ -1696,7 +1857,9 @@ export function usePlanogramEditor() {
      * Aplica snapshot de transferência de segmento (mover entre prateleiras)
      */
     function applySegmentTransferSnapshot(snapshot: any, shouldPersist: boolean) {
-        if (!currentGondola.value) return;
+        if (!currentGondola.value) {
+return;
+}
         
         const { sourceShelfId, targetShelfId, sourceShelfSegments, targetShelfSegments } = snapshot.beforeState;
         
@@ -1706,6 +1869,7 @@ export function usePlanogramEditor() {
         
         if (!currentTargetShelf || !currentSourceShelf) {
             console.error('❌ Prateleiras não encontradas para undo de transfer');
+
             return;
         }
 
@@ -1774,7 +1938,9 @@ export function usePlanogramEditor() {
      * Aplica snapshot de cópia de segmento (remove o produto copiado)
      */
     function applySegmentCopySnapshot(snapshot: any, shouldPersist: boolean) {
-        if (!currentGondola.value) return;
+        if (!currentGondola.value) {
+return;
+}
         
         const { targetShelfId, targetShelfSegments } = snapshot.beforeState;
         
@@ -1783,6 +1949,7 @@ export function usePlanogramEditor() {
         
         if (!targetShelfData) {
             console.error('❌ Prateleira não encontrada para undo de copy');
+
             return;
         }
 
@@ -1826,7 +1993,9 @@ export function usePlanogramEditor() {
      * Aplica snapshot de gôndola
      */
     function applyGondolaSnapshot(snapshot: any, shouldPersist: boolean) {
-        if (!currentGondola.value) return;
+        if (!currentGondola.value) {
+return;
+}
 
         const gondolaId = currentGondola.value.id; // Salva ID antes de aplicar mudanças
 
@@ -1852,6 +2021,7 @@ export function usePlanogramEditor() {
      */
     function undo() {
         const snapshot = history.undoAction();
+
         if (snapshot) {
             // Aplica o estado ANTES da ação (desfaz) E registra para persistência
             applySnapshot(snapshot, true);
@@ -1863,6 +2033,7 @@ export function usePlanogramEditor() {
      */
     function redo() {
         const snapshot = history.redoAction();
+
         if (snapshot) {
             // Aplica o estado DEPOIS da ação (refaz) E registra para persistência
             const redoSnapshot = { ...snapshot, beforeState: snapshot.afterState };
@@ -1897,6 +2068,7 @@ export function usePlanogramEditor() {
     async function save() {
         if (!currentGondola.value?.id) {
             console.error('❌ Nenhuma gôndola selecionada');
+
             return false;
         }
 
@@ -2020,6 +2192,7 @@ export function usePlanogramEditor() {
 
             if (!element) {
                 console.error('❌ Elemento do canvas não encontrado');
+
                 return;
             }
 
@@ -2068,6 +2241,7 @@ export function usePlanogramEditor() {
 
                 colorProps.forEach((prop) => {
                     const value = computed.getPropertyValue(prop);
+
                     if (value && value !== 'rgba(0, 0, 0, 0)' && value !== 'transparent') {
                         cloned.style.setProperty(prop, value, 'important');
                     }
@@ -2107,6 +2281,7 @@ export function usePlanogramEditor() {
                 canvas.toBlob((blob) => {
                     if (!blob) {
                         console.error('❌ Erro ao gerar blob da imagem');
+
                         return;
                     }
 
@@ -2126,6 +2301,7 @@ export function usePlanogramEditor() {
                 if (wrapper.parentNode) {
                     document.body.removeChild(wrapper);
                 }
+
                 throw canvasError;
             }
         } catch (error) {

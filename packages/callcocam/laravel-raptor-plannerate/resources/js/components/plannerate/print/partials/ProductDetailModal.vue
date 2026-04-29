@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
 import { computed } from 'vue'
-import type { Product } from '@/types/planogram'
+import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useAbcClassification } from '@/composables/plannerate/useAbcClassification'
 import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis'
+import type { Product } from '@/types/planogram'
 
 interface Props {
   open: boolean
@@ -25,19 +25,25 @@ const { getTargetStockData, calculateSegmentCapacity, getStockStatus, DEFAULT_TO
 // Classificação ABC
 const abcClassification = computed(() => {
   const ean = props.product?.ean
+
   return getClassification(ean)
 })
 
 // Dados de Target Stock
 const targetStockData = computed(() => {
   const ean = props.product?.ean
-  if (!ean) return null
+
+  if (!ean) {
+return null
+}
+
   return getTargetStockData(ean)
 })
 
 // Capacidade do segment atual
 const segmentCapacity = computed(() => {
   const productDepth = props.product?.depth ?? 0
+
   return calculateSegmentCapacity(
     props.segmentQuantity ?? 1,
     props.layerQuantity ?? 1,
@@ -48,7 +54,10 @@ const segmentCapacity = computed(() => {
 
 // Status do estoque
 const stockStatus = computed(() => {
-  if (!targetStockData.value) return null
+  if (!targetStockData.value) {
+return null
+}
+
   return getStockStatus(
     segmentCapacity.value,
     targetStockData.value.estoque_alvo,

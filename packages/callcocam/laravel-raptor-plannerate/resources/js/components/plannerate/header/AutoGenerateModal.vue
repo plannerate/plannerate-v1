@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import AiSettingsSection from '@/components/plannerate/header/partials/AiSettingsSection.vue';
+import { useForm } from '@inertiajs/vue3';
+import { Loader2, Sparkles } from 'lucide-vue-next';
+import { computed, watch } from 'vue';
 import AdvancedOptionsSection from '@/components/plannerate/header/partials/AdvancedOptionsSection.vue';
-import CategorySelect from '@/components/plannerate/sidebar/products/CategorySelect.vue';
+import AiSettingsSection from '@/components/plannerate/header/partials/AiSettingsSection.vue';
 import FacingsSettingsSection from '@/components/plannerate/header/partials/FacingsSettingsSection.vue';
 import GenerationModeSettings from '@/components/plannerate/header/partials/GenerationModeSettings.vue';
 import SalesDataSection from '@/components/plannerate/header/partials/SalesDataSection.vue';
 import StrategySelectionSection from '@/components/plannerate/header/partials/StrategySelectionSection.vue';
+import CategorySelect from '@/components/plannerate/sidebar/products/CategorySelect.vue';
 import { Button } from '@/components/ui/button'; 
 import {
     Dialog,
@@ -16,9 +19,6 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { useForm } from '@inertiajs/vue3';
-import { Loader2, Sparkles } from 'lucide-vue-next';
-import { computed, watch } from 'vue';
 
 // Props
 const props = defineProps<{
@@ -95,8 +95,14 @@ const form = useForm<AutoGenerateConfig>({
 watch(
     () => [props.startDate, props.endDate, props.categoryId],
     ([newStart, newEnd, newCategoryId]) => {
-        if (newStart) form.start_date = newStart;
-        if (newEnd) form.end_date = newEnd;
+        if (newStart) {
+form.start_date = newStart;
+}
+
+        if (newEnd) {
+form.end_date = newEnd;
+}
+
         form.category_id = newCategoryId || null;
     },
 );
@@ -108,6 +114,7 @@ const isFormValid = computed(() => {
             form.start_date && form.end_date && form.start_date <= form.end_date && (form.generate_by_sections || form.use_ai)
         );
     }
+
     return true;
 });
 
@@ -118,7 +125,9 @@ function handleClose() {
 }
 
 function handleGenerate() {
-    if (!isFormValid.value) return;
+    if (!isFormValid.value) {
+return;
+}
 
     const endpoint = form.generate_by_sections
         ? 'generate-by-sections'

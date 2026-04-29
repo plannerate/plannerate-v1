@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { updateImages } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { usePlanogramKeyboard } from '@/composables/plannerate/usePlanogramKeyboard';
-import { useEcho } from '@laravel/echo-vue';
 import { router, usePage } from '@inertiajs/vue3';
+import { useEcho } from '@laravel/echo-vue';
 import { PanelLeftOpen, PanelRightOpen } from 'lucide-vue-next';
 import { computed, onMounted, provide, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import { updateImages } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { usePlanogramKeyboard } from '@/composables/plannerate/usePlanogramKeyboard';
 import Canvas from './Canvas.vue';
 import ConfirmDeleteDialog from './editor/ConfirmDeleteDialog.vue';
 import DuplicateSectionDialog from './editor/DuplicateSectionDialog.vue';
@@ -62,6 +62,7 @@ if (props.record) {
     editor.initializeEditor(props.record);
     editor.setSaveChangesRoute(props.saveChangesRoute || '');
 }
+
 // Inicializa handlers de teclado centralizados
 const keyboard = usePlanogramKeyboard();
 
@@ -82,6 +83,7 @@ provide('reloadProductsList', () => {
     if (reloadProductsListFn.value) {
         return reloadProductsListFn.value();
     }
+
     return Promise.resolve();
 });
 
@@ -100,10 +102,6 @@ const setReloadFunction = (fn: () => Promise<void>) => {
 // Função para receber a função removeUsedProduct do PanelLeft
 const setRemoveUsedProductFunction = (fn: (productId: string) => void) => {
     removeUsedProductFn.value = fn;
-};
-
-const goBack = () => {
-    router.get(props.backRoute || '/plannerates');
 };
 
 const reloadEditorRecord = () => {
@@ -135,7 +133,9 @@ const saveChangesAndReloadEditorRecord = async () => {
 };
 
 const handleProductImagesUpdated = (payload: ProductImagesUpdatedPayload) => {
-    if (payload.gondola_id !== props.record?.id) return;
+    if (payload.gondola_id !== props.record?.id) {
+return;
+}
 
     if (!editor.hasChanges.value) {
         toast.success(
@@ -160,7 +160,10 @@ const handleProductImagesUpdated = (payload: ProductImagesUpdatedPayload) => {
 
 const handleUpdateGondolaImages = () => {
     const gondolaId = props.record?.id;
-    if (!gondolaId) return;
+
+    if (!gondolaId) {
+return;
+}
 
     router.post(
         updateImages.url(gondolaId),
@@ -174,7 +177,9 @@ const handleUpdateGondolaImages = () => {
 watch(
     () => props.record,
     (record) => {
-        if (!record) return;
+        if (!record) {
+return;
+}
 
         editor.initializeEditor(record);
         editor.setSaveChangesRoute(props.saveChangesRoute || '');
@@ -192,6 +197,7 @@ if (isBrowser && authUserId.value) {
 // Funções separadas para abrir/fechar (não toggle)
 const openProperties = () => {
     storedPropertiesPanel.value = true;
+
     if (isBrowser) {
         window.localStorage.setItem('planogram-properties-manual-open', 'true');
     }
@@ -199,6 +205,7 @@ const openProperties = () => {
 
 const closeProperties = () => {
     storedPropertiesPanel.value = false;
+
     if (isBrowser) {
         window.localStorage.setItem(
             'planogram-properties-manual-open',
@@ -209,6 +216,7 @@ const closeProperties = () => {
 
 const toggleProperties = () => {
     storedPropertiesPanel.value = !storedPropertiesPanel.value;
+
     if (isBrowser) {
         window.localStorage.setItem(
             'planogram-properties-manual-open',
@@ -219,6 +227,7 @@ const toggleProperties = () => {
 
 const openProducts = () => {
     storedProductsPanel.value = true;
+
     if (isBrowser) {
         window.localStorage.setItem('planogram-products-manual-open', 'true');
     }
@@ -226,6 +235,7 @@ const openProducts = () => {
 
 const closeProducts = () => {
     storedProductsPanel.value = false;
+
     if (isBrowser) {
         window.localStorage.setItem('planogram-products-manual-open', 'false');
     }
@@ -233,6 +243,7 @@ const closeProducts = () => {
 
 const toggleProducts = () => {
     storedProductsPanel.value = !storedProductsPanel.value;
+
     if (isBrowser) {
         window.localStorage.setItem(
             'planogram-products-manual-open',
@@ -256,6 +267,7 @@ onMounted(() => {
         editor.initializeEditor(props.record);
         editor.setSaveChangesRoute(props.saveChangesRoute || '');
     }
+
     if (headerAndToolbar.value) {
         containerHeight.value =
             window.innerHeight - (headerAndToolbar.value?.offsetHeight || 0);

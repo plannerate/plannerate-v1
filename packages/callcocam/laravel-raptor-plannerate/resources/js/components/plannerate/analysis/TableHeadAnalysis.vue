@@ -16,9 +16,9 @@
 </template>
 
 <script setup lang="ts">
-import { TableHead } from '@/components/ui/table';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { TableHead } from '@/components/ui/table';
 
 interface Props {
     label: string;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 import { useConnectionStatus, useEchoNotification } from '@laravel/echo-vue';
 import type { ConnectionStatus } from '@laravel/echo-vue';
 import {
@@ -35,7 +35,6 @@ const props = defineProps<{
     user: { id: string; name: string; email: string };
 }>();
 
-const page = usePage();
 const isBrowser = typeof window !== 'undefined';
 const subdomain = isBrowser ? window.location.hostname.split('.')[0] : '';
 

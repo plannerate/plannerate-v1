@@ -1,5 +1,5 @@
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { inject, ref } from 'vue';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { draggingSegmentShelfId } from './useGondolaState';
 
 /**
@@ -19,7 +19,10 @@ export function useShelfDragDrop(shelfId: string) {
      */
     const handleDragOver = (event: DragEvent) => {
         event.preventDefault();
-        if (!event.dataTransfer) return;
+
+        if (!event.dataTransfer) {
+return;
+}
 
         // Verifica se é produto(s) ou segment
         const hasProduct = event.dataTransfer.types.includes(
@@ -41,6 +44,7 @@ export function useShelfDragDrop(shelfId: string) {
             if (draggingSegmentShelfId.value === shelfId) {
                 // Mesma shelf - não mostra área de drop (deixa as drop zones do Segment funcionarem)
                 isDropTarget.value = false;
+
                 return;
             }
 
@@ -65,7 +69,9 @@ export function useShelfDragDrop(shelfId: string) {
         event.preventDefault();
         isDropTarget.value = false;
 
-        if (!event.dataTransfer) return;
+        if (!event.dataTransfer) {
+return;
+}
 
         // Verifica se são múltiplos produtos, produto único ou segmento
         const isMultiple = event.dataTransfer.getData('application/x-products-multiple') === 'true';
@@ -103,6 +109,7 @@ export function useShelfDragDrop(shelfId: string) {
 
         if (!products || products.length === 0) {
             console.warn('⚠️ Nenhum produto encontrado');
+
             return;
         }
 
@@ -135,6 +142,7 @@ export function useShelfDragDrop(shelfId: string) {
 
         if (!product) {
             console.warn('⚠️ Produto não encontrado');
+
             return;
         }
 
@@ -163,12 +171,14 @@ export function useShelfDragDrop(shelfId: string) {
         if (isCopy) {
             // Copiar segmento
             const result = editor.copySegmentToShelf(segmentId, shelfId);
+
             if (!result) {
                 console.warn('⚠️ Erro ao copiar segmento');
             }
         } else {
             // Mover segmento
             const result = editor.moveSegmentToShelf(segmentId, shelfId);
+
             if (!result) {
                 console.warn('⚠️ Erro ao mover segmento');
             }

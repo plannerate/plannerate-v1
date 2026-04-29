@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
-import type { Gondola } from '@/types/planogram';
 import { onClickOutside } from '@vueuse/core';
 import { Package } from 'lucide-vue-next';
 import { computed, onMounted, useTemplateRef, watch } from 'vue';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
+import type { Gondola } from '@/types/planogram';
 import Sections from './editor/Sections.vue';
 import Indicador from './Indicador.vue';
 
@@ -54,6 +54,7 @@ const canvasTopPadding = computed(() => {
                     (segment.layer?.product?.height ?? 0) * scale;
                 const qty = segment.quantity ?? 1;
                 const overflow = productHeight * qty - shelfTopPx;
+
                 if (overflow > maxOverflow) {
                     maxOverflow = overflow;
                 }
@@ -93,6 +94,7 @@ onMounted(() => {
     const manualOpen = isBrowser
         ? window.localStorage.getItem('planogram-properties-manual-open')
         : null;
+
     if (manualOpen === 'true' && !props.openProperties) {
         emit('openProperties');
     }
@@ -104,6 +106,7 @@ watch(
         // Abre painel quando há item selecionado (nunca fecha automaticamente)
         if (newSelection?.type) {
             emit('openProperties');
+
             if (isBrowser) {
                 window.localStorage.setItem(
                     'planogram-properties-manual-open',

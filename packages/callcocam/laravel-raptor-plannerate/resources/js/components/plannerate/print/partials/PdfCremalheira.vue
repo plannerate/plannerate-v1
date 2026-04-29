@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Section } from '@/types/planogram'
 import { calculateHolePositions } from '@/composables/plannerate/useSectionHoles'
+import type { Section } from '@/types/planogram'
 
 interface Props {
   width: number
@@ -25,17 +25,20 @@ const DEFAULT_FIELDS = {
 // Altura da base escalada
 const baseHeight = computed(() => {
   const base = props.section.base_height ?? DEFAULT_FIELDS.baseHeight
+
   return base * props.scale
 })
 
 // Dimensões dos furos escaladas
 const holeHeight = computed(() => {
   const height = props.section.hole_height ?? DEFAULT_FIELDS.holeHeight
+
   return height * props.scale
 })
 
 const holeWidth = computed(() => {
   const width = props.section.hole_width ?? DEFAULT_FIELDS.holeWidth
+
   return width * props.scale
 })
 

@@ -74,17 +74,17 @@
     </div>
 </template>
 <script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import {
     draggingSegmentShelfId,
     eanSearchQuery,
 } from '../../../composables/plannerate/editor/useGondolaState';
+import { useAbcClassification } from '../../../composables/plannerate/useAbcClassification';
 import { usePlanogramEditor } from '../../../composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '../../../composables/plannerate/usePlanogramSelection';
-import { useAbcClassification } from '../../../composables/plannerate/useAbcClassification';
-import { Layer, Segment } from '../../../types/planogram';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import LayerRenderer from './Layer.vue';
+import type { Layer, Segment } from '../../../types/planogram';
 import AbcBadge from './AbcBadge.vue';
+import LayerRenderer from './Layer.vue';
 import StockIndicator from './StockIndicator.vue';
 
 interface Props {
@@ -109,6 +109,7 @@ const getQuantity = computed(() => props.segment.quantity || 1);
 // Busca classificação ABC do produto pelo EAN
 const abcClassification = computed(() => {
     const ean = layer.value?.product?.ean;
+
     return getClassification(ean);
 });
 
@@ -202,6 +203,7 @@ function handleDragStart(event: DragEvent) {
 
         // Define uma imagem de arrastar customizada
         const dragImage = event.currentTarget as HTMLElement;
+
         if (dragImage) {
             event.dataTransfer.setDragImage(dragImage, 20, 20);
         }
@@ -217,11 +219,15 @@ function handleDragEnd() {
 
 // Handler para dragover - aceita segments da mesma shelf
 function handleDragOver(event: DragEvent) {
-    if (!event.dataTransfer) return;
+    if (!event.dataTransfer) {
+return;
+}
 
     const hasSegment = event.dataTransfer.types.includes('application/x-segment-id');
+
     if (!hasSegment) {
         isDropTarget.value = false;
+
         return;
     }
 
@@ -231,6 +237,7 @@ function handleDragOver(event: DragEvent) {
     // Nunca marca o próprio segmento como alvo
     if (draggedSegmentId === props.segment.id) {
         isDropTarget.value = false;
+
         return;
     }
 
@@ -238,6 +245,7 @@ function handleDragOver(event: DragEvent) {
     if (draggingSegmentShelfId.value === props.segment.shelf_id) {
         event.dataTransfer.dropEffect = 'move';
         isDropTarget.value = true;
+
         return;
     }
 
@@ -266,7 +274,9 @@ function handleDragLeave(event: DragEvent) {
 
 // Handler para drop - troca de posições
 function handleDrop(event: DragEvent) {
-    if (!event.dataTransfer) return;
+    if (!event.dataTransfer) {
+return;
+}
 
     isDropTarget.value = false;
 

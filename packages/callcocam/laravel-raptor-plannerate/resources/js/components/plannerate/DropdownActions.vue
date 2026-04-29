@@ -36,9 +36,10 @@
 
 </template>
 <script setup lang="ts">
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { ChevronDown, Download, Eye, FileText, MoreVertical, Share2 } from 'lucide-vue-next';
 
+import { ref } from 'vue';
+import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -48,8 +49,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { currentGondola } from '@/composables/plannerate/editor/useGondolaState';
-import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
-import { ref } from 'vue';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import ShareQRCodeModal from './header/ShareQRCodeModal.vue';
 
 /**
@@ -72,7 +72,10 @@ const showShareQRModal = ref(false);
  * Rota: /export/gondola/{gondola}/view (Wayfinder)
  */
 function handlePreviewPdf() {
-    if (!currentGondola.value?.id) return;
+    if (!currentGondola.value?.id) {
+return;
+}
+
     const route = gondolaView(currentGondola.value.id);
     window.open(route.url, '_blank');
 }
@@ -82,7 +85,10 @@ function handlePreviewPdf() {
  * Mesma rota - o botão de baixar está na página de visualização
  */
 function handleDownloadPdf() {
-    if (!currentGondola.value?.id) return;
+    if (!currentGondola.value?.id) {
+return;
+}
+
     const route = gondolaView(currentGondola.value.id);
     window.open(route.url, '_blank');
 }

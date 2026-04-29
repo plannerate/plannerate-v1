@@ -312,6 +312,12 @@
 </template>
 
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
+import axios from 'axios';
+import { ArrowLeft, ArrowRight, Clock, History, Loader2, RotateCcw, Trash2 } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -321,17 +327,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import type { Section } from '@/types/planogram';
-import { router } from '@inertiajs/vue3';
-import axios from 'axios';
-import { ArrowLeft, ArrowRight, Clock, History, Loader2, RotateCcw, Trash2 } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
-import { toast } from 'vue-sonner';
 
 // Interface para histórico de operações
 interface OperationHistory {
@@ -417,19 +417,23 @@ function loadHistoryFromStorage(): OperationHistory[] {
 
     try {
         const stored = window.localStorage.getItem(STORAGE_KEY);
+
         if (stored) {
             const parsed = JSON.parse(stored) as OperationHistory[];
             // Filtra operações muito antigas (mais de 7 dias)
             const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
             const filtered = parsed.filter(op => op.timestamp > sevenDaysAgo);
+
             // Se houve filtragem, salva novamente
             if (filtered.length !== parsed.length) {
                 window.localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
             }
+
             return filtered;
         }
     } catch (error) {
         console.warn('Erro ao carregar histórico do localStorage:', error);
+
         // Se houver erro, limpa o localStorage corrompido
         try {
             window.localStorage.removeItem(STORAGE_KEY);
@@ -437,6 +441,7 @@ function loadHistoryFromStorage(): OperationHistory[] {
             console.error('Erro ao limpar localStorage corrompido:', cleanError);
         }
     }
+
     return [];
 }
 
@@ -452,18 +457,21 @@ function saveHistoryToStorage() {
         // Limita a 50 operações mais recentes para evitar localStorage cheio
         const historyToSave = operationHistory.value.slice(0, 50);
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(historyToSave));
+
         // Se foi limitado, atualiza o ref
         if (historyToSave.length < operationHistory.value.length) {
             operationHistory.value = historyToSave;
         }
     } catch (error) {
         console.warn('Erro ao salvar histórico no localStorage:', error);
+
         // Se o localStorage estiver cheio, remove as operações mais antigas
         if (error instanceof DOMException && (error.code === 22 || error.name === 'QuotaExceededError')) {
             // Remove 50% das operações mais antigas
             const sorted = [...operationHistory.value].sort((a, b) => a.timestamp - b.timestamp);
             const reduced = sorted.slice(Math.floor(sorted.length / 2));
             operationHistory.value = reduced;
+
             try {
                 window.localStorage.setItem(STORAGE_KEY, JSON.stringify(reduced));
             } catch (retryError) {
@@ -547,6 +555,7 @@ watch(operationMode, () => {
  */
 async function loadPlanograms() {
     isLoadingPlanograms.value = true;
+
     try {
         const response = await axios.get('/api/editor/planograms');
         planograms.value = response.data.data;
@@ -564,10 +573,12 @@ async function loadPlanograms() {
 async function loadGondolas(planogramId: string) {
     if (!planogramId) {
         gondolas.value = [];
+
         return;
     }
 
     isLoadingGondolas.value = true;
+
     try {
         const response = await axios.get(`/api/editor/planograms/${planogramId}/gondolas`);
         gondolas.value = response.data.data;
@@ -585,10 +596,12 @@ async function loadGondolas(planogramId: string) {
 async function loadCurrentGondolaSections(gondolaId: string) {
     if (!gondolaId) {
         currentGondolaSections.value = [];
+
         return;
     }
 
     isLoadingCurrentSections.value = true;
+
     try {
         const response = await axios.get(`/api/editor/gondolas/${gondolaId}/sections`);
         currentGondolaSections.value = response.data.data || [];
@@ -632,10 +645,12 @@ async function handleReceiveGondolaChange() {
 async function loadReceiveGondolas(planogramId: string) {
     if (!planogramId) {
         receiveGondolas.value = [];
+
         return;
     }
 
     isLoadingReceiveGondolas.value = true;
+
     try {
         const response = await axios.get(`/api/editor/planograms/${planogramId}/gondolas`);
         receiveGondolas.value = response.data.data;
@@ -653,10 +668,12 @@ async function loadReceiveGondolas(planogramId: string) {
 async function loadSections(gondolaId: string) {
     if (!gondolaId) {
         availableSections.value = [];
+
         return;
     }
 
     isLoadingSections.value = true;
+
     try {
         const response = await axios.get(`/api/editor/gondolas/${gondolaId}/sections`);
         availableSections.value = response.data.data || [];
@@ -681,6 +698,7 @@ async function handleTransfer() {
 
     if (isSameGondola.value) {
         toast.warning('A seção já está nesta gôndola');
+
         return;
     }
 
@@ -740,9 +758,11 @@ async function handleTransfer() {
                     // Reseta apenas os campos
                     selectedGondolaId.value = '';
                     selectedSectionToSend.value = '';
+
                     if (currentGondola.value) {
                         selectedPlanogramId.value = currentGondola.value.planogram_id || '';
                         selectedGondolaId.value = currentGondola.value.id;
+
                         // Recarrega seções se não há seção pré-selecionada
                         if (!props.section) {
                             await loadCurrentGondolaSections(currentGondola.value.id);
@@ -778,6 +798,7 @@ async function handleReceive() {
 
     if (isCurrentGondola.value) {
         toast.warning('A seção já está nesta gôndola');
+
         return;
     }
 
@@ -786,6 +807,7 @@ async function handleReceive() {
     try {
         // Busca informações da seção antes de transferir (para obter ordering)
         let sectionData: any = null;
+
         try {
             const sectionInfo = await axios.get(`/api/editor/sections/${selectedSectionId.value}`);
             sectionData = sectionInfo.data.data || sectionInfo.data;
@@ -863,7 +885,9 @@ async function handleReceive() {
  * Reverte uma operação do histórico
  */
 async function revertOperation(operation: OperationHistory) {
-    if (isReverting.value || revertingOperationId.value) return;
+    if (isReverting.value || revertingOperationId.value) {
+return;
+}
 
     revertingOperationId.value = operation.id;
     isReverting.value = true;
@@ -882,6 +906,7 @@ async function revertOperation(operation: OperationHistory) {
                     toast.success('Operação revertida com sucesso!');
                     // Remove do histórico
                     const index = operationHistory.value.findIndex(op => op.id === operation.id);
+
                     if (index !== -1) {
                         operationHistory.value.splice(index, 1);
                         // Salva no localStorage
@@ -914,11 +939,14 @@ async function revertOperation(operation: OperationHistory) {
  * Limpa o histórico de operações (com confirmação)
  */
 function handleClearHistory() {
-    if (operationHistory.value.length === 0) return;
+    if (operationHistory.value.length === 0) {
+return;
+}
 
     // Confirmação simples via toast
     if (confirm('Tem certeza que deseja limpar todo o histórico de operações?')) {
         operationHistory.value = [];
+
         // Remove do localStorage
         try {
             if (isBrowser) {
@@ -927,6 +955,7 @@ function handleClearHistory() {
         } catch (error) {
             console.warn('Erro ao remover histórico do localStorage:', error);
         }
+
         toast.success('Histórico limpo com sucesso');
     }
 }

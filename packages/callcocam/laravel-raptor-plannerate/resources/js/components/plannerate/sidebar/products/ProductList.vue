@@ -51,8 +51,8 @@
 </template>
 
 <script setup lang="ts">
-import type { Product } from '@/types/planogram';
 import { Package } from 'lucide-vue-next';
+import type { Product } from '@/types/planogram';
 import CardProduct from './Card.vue';
 
 interface Props {

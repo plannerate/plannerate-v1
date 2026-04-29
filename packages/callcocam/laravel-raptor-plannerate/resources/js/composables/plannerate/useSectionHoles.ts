@@ -47,6 +47,7 @@ export function calculateHolePositions(section: Partial<Section>): number[] {
     const marginTop = remainingSpace / 2;
 
     const positions: number[] = [];
+
     for (let i = 0; i < holeCount; i++) {
         const holePosition = marginTop + i * (holeHeight + holeSpacing);
         positions.push(holePosition);
@@ -119,12 +120,15 @@ export function findNearestHole(
 ): number {
     const holePositions = calculateHolePositions(section);
 
-    if (holePositions.length === 0) return position;
+    if (holePositions.length === 0) {
+return position;
+}
 
     // Encontra o furo mais próximo
     return holePositions.reduce((nearest, current) => {
         const distanceToCurrent = Math.abs(current - position);
         const distanceToNearest = Math.abs(nearest - position);
+
         return distanceToCurrent < distanceToNearest ? current : nearest;
     });
 }

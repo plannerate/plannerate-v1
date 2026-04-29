@@ -119,6 +119,7 @@ export function getInitialSectionFields(
     // Se tem última seção, usa valores dela como base
     if (lastSection) {
         const lastFields = toCamelCase(lastSection);
+
         return {
             ...DEFAULT_SECTION_FIELDS,
             ...lastFields,

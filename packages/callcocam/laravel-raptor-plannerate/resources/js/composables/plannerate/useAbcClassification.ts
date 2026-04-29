@@ -25,6 +25,7 @@ export function useAbcClassification() {
     function setClassification(ean: string, classification: 'A' | 'B' | 'C') {
         if (!ean) {
             console.warn('⚠️ EAN vazio ao definir classificação ABC');
+
             return;
         }
         
@@ -50,7 +51,10 @@ export function useAbcClassification() {
      * Retorna undefined se não houver classificação
      */
     function getClassification(ean: string | undefined): 'A' | 'B' | 'C' | undefined {
-        if (!ean) return undefined;
+        if (!ean) {
+return undefined;
+}
+
         return abcClassifications.value.get(ean);
     }
 
@@ -58,7 +62,10 @@ export function useAbcClassification() {
      * Verifica se existe classificação para um EAN
      */
     function hasClassification(ean: string | undefined): boolean {
-        if (!ean) return false;
+        if (!ean) {
+return false;
+}
+
         return abcClassifications.value.has(ean);
     }
 
@@ -74,7 +81,10 @@ export function useAbcClassification() {
      * Remove classificação de um produto específico
      */
     function removeClassification(ean: string) {
-        if (!ean) return;
+        if (!ean) {
+return;
+}
+
         abcClassifications.value.delete(ean);
     }
 

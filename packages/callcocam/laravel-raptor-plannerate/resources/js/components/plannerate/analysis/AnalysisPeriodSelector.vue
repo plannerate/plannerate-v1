@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { Calendar, Filter } from 'lucide-vue-next';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calendar, Filter } from 'lucide-vue-next';
 
 interface Props {
     tableType: 'sales' | 'monthly_summaries';

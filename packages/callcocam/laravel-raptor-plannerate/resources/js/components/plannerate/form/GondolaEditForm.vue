@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Check, X } from 'lucide-vue-next';
+import { computed, reactive, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,8 +18,6 @@ import {
 } from '@/composables/plannerate/useGondolaFields';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import type { Gondola } from '@/types/planogram';
-import { Check, X } from 'lucide-vue-next';
-import { computed, reactive, watch } from 'vue';
 import SectionShelfBulkUpdate from './SectionShelfBulkUpdate.vue';
 
 // ============================================================================
@@ -42,6 +42,7 @@ const emit = defineEmits<{
 // Inicializa formData com valores padrão do composable
 const getDefaultFormData = () => {
     const defaults = toSnakeCase(DEFAULT_GONDOLA_FIELDS);
+
     return {
         name: '',
         num_modulos: defaults.num_modulos ?? 0,
@@ -106,6 +107,7 @@ watch(
 function handleSave() {
     if (!currentGondola.value?.id) {
         console.error('❌ Nenhuma gôndola selecionada');
+
         return;
     }
 
@@ -149,6 +151,7 @@ function handleCancel() {
             gondola.scale_factor ?? defaults.scale_factor ?? 3;
         formData.updated_at = new Date().toISOString();
     }
+
     emit('close');
 }
 </script>

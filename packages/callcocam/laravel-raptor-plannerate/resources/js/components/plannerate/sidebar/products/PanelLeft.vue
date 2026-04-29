@@ -69,17 +69,17 @@
     </Transition>
 </template>
 <script setup lang="ts">
-import { useProductsPanel } from '@/composables/plannerate/useProductsPanel';
+import { X } from 'lucide-vue-next';
 import { onMounted, provide, ref, useTemplateRef } from 'vue';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useProductsPanel } from '@/composables/plannerate/useProductsPanel';
+import type { Category as CategoryType } from '@/types/planogram';
+import Category from './CategorySelect.vue';
 import ProductFilters from './Filters.vue';
 import ProductList from './ProductList.vue';
 import ProductSearch from './Search.vue';
 import ProductStats from './Stats.vue';
-import Category from './CategorySelect.vue';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Category as CategoryType } from '@/types/planogram';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { X } from 'lucide-vue-next';
 
 interface Props {
     gondolaId: string;

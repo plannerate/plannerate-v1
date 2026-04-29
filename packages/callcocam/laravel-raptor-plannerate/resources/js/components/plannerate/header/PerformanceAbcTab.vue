@@ -125,17 +125,17 @@
 </template> 
 
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
+import { BarChart3, Calendar, Settings } from 'lucide-vue-next';
+import { ref, watch } from 'vue';
+import { calculateAbcApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
+import AbcParamsModal from '@/components/plannerate/analysis/AbcParamsModal.vue';
+import AbcResultsList from '@/components/plannerate/analysis/AbcResultsList.vue';
 import { Button } from '@/components/ui/button'; 
 import {
     Card,
     CardContent,
 } from '@/components/ui/card';
-import { BarChart3, Calendar, Settings } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
-import { router } from '@inertiajs/vue3';
-import { calculateAbcApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
-import AbcParamsModal from '@/components/plannerate/analysis/AbcParamsModal.vue';
-import AbcResultsList from '@/components/plannerate/analysis/AbcResultsList.vue';
 import { useAbcClassification } from '@/composables/plannerate/useAbcClassification';
 
 interface Planogram {
@@ -183,12 +183,20 @@ const { setClassifications } = useAbcClassification();
 
 // Função para converter data para formato de mês (YYYY-MM) - fallback caso não venha do backend
 const dateToMonth = (dateString: string | null | undefined): string => {
-    if (!dateString) return '';
+    if (!dateString) {
+return '';
+}
+
     try {
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) return '';
+
+        if (isNaN(date.getTime())) {
+return '';
+}
+
         const year = date.getFullYear();
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
+
         return `${year}-${month}`;
     } catch {
         return '';
@@ -222,11 +230,16 @@ watch(() => props.planogram, (newPlanogram: Planogram | null) => {
 }, { deep: true });
 
 const formatDate = (dateString: string | null | undefined): string => {
-    if (!dateString) return 'Não definida';
+    if (!dateString) {
+return 'Não definida';
+}
     
     try {
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) return dateString;
+
+        if (isNaN(date.getTime())) {
+return dateString;
+}
         
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -239,11 +252,16 @@ const formatDate = (dateString: string | null | undefined): string => {
 };
 
 const formatMonth = (monthString: string | null | undefined): string => {
-    if (!monthString) return 'Não definido';
+    if (!monthString) {
+return 'Não definido';
+}
 
     try {
         const [year, month] = monthString.split('-');
-        if (!year || !month) return monthString;
+
+        if (!year || !month) {
+return monthString;
+}
 
         return `${month}/${year}`;
     } catch {

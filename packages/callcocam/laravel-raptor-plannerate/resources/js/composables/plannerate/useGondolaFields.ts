@@ -58,6 +58,7 @@ export function generateGondolaCode(): string {
     const random = Math.floor(Math.random() * 10000)
         .toString()
         .padStart(4, '0');
+
     return `${prefix}-${year}${month}-${random}`;
 }
 
@@ -133,6 +134,7 @@ export function validateGondolaFields(
     fields: Partial<GondolaFieldsCamel>,
 ): boolean {
     const name = fields.gondolaName || fields.name;
+
     return (
         !!name?.trim() &&
         !!fields.side?.trim() &&

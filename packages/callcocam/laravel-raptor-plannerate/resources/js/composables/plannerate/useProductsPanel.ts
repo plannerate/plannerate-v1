@@ -1,5 +1,6 @@
+import { onMounted, reactive, ref, watch  } from 'vue';
+import type {Ref} from 'vue';
 import type { Category, Product } from '@/types/planogram';
-import { onMounted, reactive, ref, watch, type Ref } from 'vue';
 
 interface UseProductsPanelOptions {
     gondolaId: string;
@@ -36,7 +37,9 @@ export function useProductsPanel(options: UseProductsPanelOptions) {
     const usedCount = ref(0);
 
     const loadProducts = async () => {
-        if (isLoading.value || isLoadingMore.value) return;
+        if (isLoading.value || isLoadingMore.value) {
+return;
+}
 
         if (currentPage.value === 1) {
             isLoading.value = true;
@@ -64,7 +67,9 @@ export function useProductsPanel(options: UseProductsPanelOptions) {
                 },
             );
 
-            if (!response.ok) throw new Error('Failed to load products');
+            if (!response.ok) {
+throw new Error('Failed to load products');
+}
 
             const data = await response.json();
 
@@ -131,18 +136,22 @@ export function useProductsPanel(options: UseProductsPanelOptions) {
         const stored = isBrowser
             ? window.localStorage.getItem(STORAGE_KEY_FILTERS)
             : null;
+
         if (stored) {
             try {
                 const parsed = JSON.parse(stored) as Record<string, unknown>;
+
                 if (parsed.withDimensions !== undefined && parsed.hasDimensions === undefined) {
                     parsed.hasDimensions = parsed.withDimensions === 'published';
                     delete parsed.withDimensions;
                 }
+
                 Object.assign(filters, parsed);
             } catch (e) {
                 console.error('Erro ao carregar filtros:', e);
             }
         }
+
         didMount = true;
         loadProducts();
     });
@@ -150,12 +159,14 @@ export function useProductsPanel(options: UseProductsPanelOptions) {
     // Função para atualizar filtros
     const updateFilters = (newFilters: ProductFilters) => {
         Object.assign(filters, newFilters);
+
         if (isBrowser) {
             window.localStorage.setItem(
                 STORAGE_KEY_FILTERS,
                 JSON.stringify(filters),
             );
         }
+
         resetAndLoad();
     };
 
@@ -181,6 +192,7 @@ export function useProductsPanel(options: UseProductsPanelOptions) {
         if (searchTimeout) {
             clearTimeout(searchTimeout);
         }
+
         searchTimeout = setTimeout(() => {
             resetAndLoad();
         }, 500);
@@ -192,6 +204,7 @@ export function useProductsPanel(options: UseProductsPanelOptions) {
      */
     const removeUsedProduct = (productId: string) => {
         const index = products.value.findIndex((p) => p.id === productId);
+
         if (index !== -1) {
             products.value.splice(index, 1);
             total.value--;
@@ -208,6 +221,7 @@ export function useProductsPanel(options: UseProductsPanelOptions) {
         dimensions: Partial<Pick<Product, 'width' | 'height' | 'depth'>>,
     ) => {
         const product = products.value.find((p) => p.id === productId);
+
         if (product) {
             Object.assign(product, dimensions);
             const w = product.width ?? 0;

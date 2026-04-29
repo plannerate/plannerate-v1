@@ -13,8 +13,8 @@
 </template>
 <script setup lang="ts">
 
-import { Layer, Product, Segment } from '@/types/planogram';
 import { computed } from 'vue';
+import type { Layer, Product, Segment } from '@/types/planogram';
 
 interface Props {
     segment: Segment;
@@ -50,6 +50,7 @@ const style = computed(() => {
             backgroundRepeat: 'no-repeat',
         };
     }
+
     return {
         width: `${productWidth.value || 10}px`,
         height: `${productHeight.value || 10}px`,

@@ -88,12 +88,12 @@
 </template>
 
 <script setup lang="ts">
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
+import axios from 'axios';
 import { Filter, ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import { ref, computed, watch, onMounted } from 'vue';
-import axios from 'axios';
 import { toast } from 'vue-sonner';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface CategoryItem {
     id: string;
@@ -137,10 +137,14 @@ const selectedCategoryName = computed(() => {
         if (currentCategory.value?.id === category.value) {
             return currentCategory.value.name;
         }
+
         // Busca na hierarquia ou filhos
         const found = hierarchy.value.find(c => c.id === category.value) ||
                       children.value.find(c => c.id === category.value);
-        if (found) return found.name;
+
+        if (found) {
+return found.name;
+}
     }
     
     // Se não há categoria selecionada no v-model, mas há uma categoria inicial (props.current)
@@ -159,6 +163,7 @@ const selectedCategoryName = computed(() => {
 
 async function loadCategories(categoryId: string | null = null) {
     isLoading.value = true;
+
     try {
         const url = categoryId 
             ? `/api/editor/${categoryId}/categories`
@@ -215,6 +220,7 @@ onMounted(() => {
         if (!category.value) {
             category.value = props.current.id;
         }
+
         // Carrega a hierarquia da categoria inicial
         loadCategories(props.current.id);
     } else if (category.value) {
@@ -233,6 +239,7 @@ watch(() => props.current, (newCurrent) => {
         if (!category.value || category.value !== newCurrent.id) {
             category.value = newCurrent.id;
         }
+
         // Se a categoria atual mudou, recarrega a hierarquia
         if (newCurrent.id !== currentCategory.value?.id) {
             loadCategories(newCurrent.id);

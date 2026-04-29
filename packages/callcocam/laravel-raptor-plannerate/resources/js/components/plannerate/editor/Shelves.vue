@@ -18,10 +18,10 @@
 </template>
 
 <script setup lang="ts">
-import type { Section, Shelf as ShelfType } from '../../../types/planogram';
-import { useArrayNavigation } from '../../../composables/plannerate/useArrayNavigation';
-import Shelf from './Shelf.vue';
 import { toRef } from 'vue';
+import { useArrayNavigation } from '../../../composables/plannerate/useArrayNavigation';
+import type { Section, Shelf as ShelfType } from '../../../types/planogram';
+import Shelf from './Shelf.vue';
 
 interface Props {
     shelves: ShelfType[];

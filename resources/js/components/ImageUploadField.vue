@@ -47,7 +47,7 @@ const uploadHttp = useHttp<{ file: File | null }, { path?: string; public_url?: 
 const aiProcessHttp = useHttp<{ path: string }, { id?: string; status?: string }>({
     path: '',
 });
-const statusHttp = useHttp<{}, {
+const statusHttp = useHttp<Record<string, never>, {
     status?: string;
     path?: string;
     public_url?: string;

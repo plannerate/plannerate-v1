@@ -47,6 +47,7 @@ export function useProductSales() {
     async function loadSales(productId: string) {
         if (!productId) {
             error.value = 'ID do produto é obrigatório';
+
             return;
         }
 

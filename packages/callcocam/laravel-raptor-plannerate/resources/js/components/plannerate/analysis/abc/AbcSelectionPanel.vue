@@ -172,6 +172,7 @@
 </template>
 
 <script setup lang="ts">
+import { Trash2 } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import {
@@ -181,9 +182,8 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Trash2 } from 'lucide-vue-next';
-import type { AbcResult } from './types';
 import ProductSalesSummary from '../../sidebar/properties/partials/ProductSalesSummary.vue';
+import type { AbcResult } from './types';
 
 defineProps<{
     selected: AbcResult | null;

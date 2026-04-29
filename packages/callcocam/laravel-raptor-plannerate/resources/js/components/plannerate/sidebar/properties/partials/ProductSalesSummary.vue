@@ -185,11 +185,11 @@
 </template>
 
 <script setup lang="ts">
+import { Loader2, TrendingDown } from 'lucide-vue-next';
+import { watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useProductSales } from '@/composables/plannerate/useProductSales';
-import { Loader2, TrendingDown } from 'lucide-vue-next';
-import { watch } from 'vue';
 
 interface Props {
     productId: string | null;
@@ -221,7 +221,9 @@ function formatCurrency(value: number): string {
 }
 
 function formatDate(date: string | null): string {
-    if (!date) return '-';
+    if (!date) {
+return '-';
+}
 
     return new Intl.DateTimeFormat('pt-BR', {
         day: '2-digit',

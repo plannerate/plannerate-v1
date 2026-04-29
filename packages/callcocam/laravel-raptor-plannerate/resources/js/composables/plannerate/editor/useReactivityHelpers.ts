@@ -30,12 +30,14 @@ export function reorderShelvesByPosition(section: any): void {
             shelf.ordering = ordering;
             hasChanges = true;
         }
+
         ordering++;
     }
 
     // Se houver mudanças, força reatividade
     if (hasChanges) {
         section.shelves = [...section.shelves];
+
         if (currentGondola.value?.sections) {
             currentGondola.value.sections = [...currentGondola.value.sections];
         }
@@ -60,6 +62,7 @@ export function updateShelfReactive(
     section.shelves[shelfIndex] = { ...shelf, ...updates };
     // Força reatividade substituindo arrays
     section.shelves = [...section.shelves];
+
     if (currentGondola.value?.sections) {
         currentGondola.value.sections = [...currentGondola.value.sections];
     }
@@ -78,7 +81,10 @@ export function updateSectionReactive(
     updates: Partial<any>,
 ) {
     const sections = currentGondola.value?.sections;
-    if (!sections) return;
+
+    if (!sections) {
+return;
+}
 
     const orderingChanged =
         updates.ordering !== undefined &&
@@ -135,6 +141,7 @@ export function updateSegmentReactive(
     shelf.segments = [...shelf.segments];
     section.shelves[shelfIndex] = { ...shelf };
     section.shelves = [...section.shelves];
+
     if (currentGondola.value?.sections) {
         currentGondola.value.sections = [...currentGondola.value.sections];
     }

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useForm } from '@inertiajs/vue3';
+import { computed, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,8 +28,6 @@ import {
     toSnakeCase as shelfToSnakeCase,
 } from '@/composables/plannerate/useShelfFields';
 import type { Section } from '@/types/planogram';
-import { useForm } from '@inertiajs/vue3';
-import { computed, watch } from 'vue';
 
 interface Props {
     open?: boolean;
@@ -130,6 +130,7 @@ const handleClose = () => {
 const handleSubmit = () => {
     if (!props.gondolaId) {
         console.error('Gondola ID não fornecido');
+
         return;
     }
 

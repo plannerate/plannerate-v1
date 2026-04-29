@@ -1,17 +1,17 @@
 <script setup lang="ts">
+import { Columns, Download, Loader2, Minus, Plus, Rows } from 'lucide-vue-next'
 import { computed, nextTick, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
-import PdfSection from './partials/PdfSection.vue'
-import Indicador from '../Indicador.vue'
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor'
-import { useAbcClassification } from '@/composables/plannerate/useAbcClassification'
-import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis'
-import DropdownPerformance from '../DropdownPerformance.vue'
-import type { AbcAnalysis, Gondola, Section, StockAnalysis } from '@/types/planogram'
-import { usePdfGenerator } from '@/composables/plannerate/usePdfGenerator'
-import PdfModuleSelector from './PdfModuleSelector.vue'
-import { Columns, Download, Loader2, Minus, Plus, Rows } from 'lucide-vue-next'
 import { Input } from '@/components/ui/input'
+import { useAbcClassification } from '@/composables/plannerate/useAbcClassification'
+import { usePdfGenerator } from '@/composables/plannerate/usePdfGenerator'
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor'
+import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis'
+import type { AbcAnalysis, Gondola, Section, StockAnalysis } from '@/types/planogram'
+import DropdownPerformance from '../DropdownPerformance.vue'
+import Indicador from '../Indicador.vue'
+import PdfSection from './partials/PdfSection.vue'
+import PdfModuleSelector from './PdfModuleSelector.vue'
 
 interface GondolaPdf {
     id: string
@@ -53,7 +53,11 @@ const PDF_EXPORT_QUALITY = 1
 const localScale = ref(props.gondola.scale_factor ?? 1)
 const scaleDisplay = computed(() => `${localScale.value.toFixed(1)}x`)
 
-watch(() => props.gondola.scale_factor, (v) => { if (v) localScale.value = v })
+watch(() => props.gondola.scale_factor, (v) => {
+ if (v) {
+localScale.value = v
+} 
+})
 
 function increaseScale() {
     localScale.value = Math.min(SCALE_MAX, Math.round((localScale.value + SCALE_STEP) * 10) / 10)
@@ -85,6 +89,7 @@ async function generatePDF(autoDownload = false, selectedSectionIds?: string[]) 
             const allModules = document.querySelectorAll<HTMLElement>('[data-module-section]')
             specificElements = Array.from(allModules).filter(element => {
                 const sectionId = element.getAttribute('data-section-id')
+
                 return sectionId && selectedSectionIds.includes(sectionId)
             })
         }

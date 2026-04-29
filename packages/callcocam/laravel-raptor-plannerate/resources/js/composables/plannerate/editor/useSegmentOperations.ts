@@ -2,10 +2,10 @@
 // OPERAÇÕES COM SEGMENTOS - Move, Copy, Delete
 // ============================================================================
 
-import { validateShelfWidth } from '@plannerate/libs/validation';
-import type { Segment } from '@/types/planogram';
 import { ulid } from 'ulid';
 import { toast } from 'vue-sonner';
+import type { Segment } from '@/types/planogram';
+import { validateShelfWidth } from '@plannerate/libs/validation';
 import { currentGondola } from './useGondolaState';
 import { findSegmentById } from './useLookupHelpers';
 
@@ -19,13 +19,16 @@ export function moveSegmentToShelf(
 ): boolean {
     if (!currentGondola.value) {
         console.warn('⚠️ Nenhuma gôndola carregada');
+
         return false;
     }
 
     // Encontra o segmento e sua shelf de origem
     const sourceSegment = findSegmentById(segmentId);
+
     if (!sourceSegment) {
         console.warn('⚠️ Segmento não encontrado:', segmentId);
+
         return false;
     }
 
@@ -38,6 +41,7 @@ export function moveSegmentToShelf(
 
     if (sourceShelfId === targetShelfId) {
         console.warn('⚠️ Segmento já está na shelf de destino');
+
         return false;
     }
 
@@ -53,11 +57,15 @@ export function moveSegmentToShelf(
                 break;
             }
         }
-        if (targetShelf) break;
+
+        if (targetShelf) {
+break;
+}
     }
 
     if (!targetShelf) {
         console.warn('⚠️ Shelf de destino não encontrada');
+
         return false;
     }
 
@@ -78,6 +86,7 @@ export function moveSegmentToShelf(
                 totalWidth: validation.totalWidth,
                 sectionWidth: validation.sectionWidth,
             });
+
             return false;
         }
     }
@@ -87,6 +96,7 @@ export function moveSegmentToShelf(
         const index = sourceShelf.segments.findIndex(
             (s: any) => s.id === segmentId,
         );
+
         if (index > -1) {
             sourceShelf.segments.splice(index, 1);
             // Reposiciona segmentos restantes
@@ -101,6 +111,7 @@ export function moveSegmentToShelf(
     if (!targetShelf.segments) {
         targetShelf.segments = [];
     }
+
     segment.shelf_id = targetShelfId;
     segment.position = targetShelf.segments.length;
     targetShelf.segments.push(segment);
@@ -125,6 +136,7 @@ export function moveSegmentToShelf(
                 ...sourceSection,
             };
         }
+
         if (targetSectionIndex !== -1 && currentGondola.value.sections) {
             currentGondola.value.sections[targetSectionIndex] = {
                 ...targetSection,
@@ -161,13 +173,16 @@ export function copySegmentToShelf(
 ): boolean {
     if (!currentGondola.value) {
         console.warn('⚠️ Nenhuma gôndola carregada');
+
         return false;
     }
 
     // Encontra o segmento de origem
     const sourceSegment = findSegmentById(segmentId);
+
     if (!sourceSegment) {
         console.warn('⚠️ Segmento não encontrado:', segmentId);
+
         return false;
     }
 
@@ -183,11 +198,15 @@ export function copySegmentToShelf(
                 break;
             }
         }
-        if (targetShelf) break;
+
+        if (targetShelf) {
+break;
+}
     }
 
     if (!targetShelf) {
         console.warn('⚠️ Shelf de destino não encontrada');
+
         return false;
     }
 
@@ -210,6 +229,7 @@ export function copySegmentToShelf(
                 totalWidth: validation.totalWidth,
                 sectionWidth: validation.sectionWidth,
             });
+
             return false;
         }
     }
@@ -249,6 +269,7 @@ export function copySegmentToShelf(
     if (!targetShelf.segments) {
         targetShelf.segments = [];
     }
+
     targetShelf.segments.push(newSegment);
     targetShelf.segments = [...targetShelf.segments];
 
@@ -294,20 +315,25 @@ export function reorderSegmentInShelf(
 ): boolean {
     if (!currentGondola.value) {
         console.warn('⚠️ Nenhuma gôndola carregada');
+
         return false;
     }
 
     // Encontra o segment arrastado
     const draggedResult = findSegmentById(draggedSegmentId);
+
     if (!draggedResult) {
         console.warn('⚠️ Segment arrastado não encontrado:', draggedSegmentId);
+
         return false;
     }
 
     // Encontra o segment de destino
     const targetResult = findSegmentById(targetSegmentId);
+
     if (!targetResult) {
         console.warn('⚠️ Segment de destino não encontrado:', targetSegmentId);
+
         return false;
     }
 
@@ -317,6 +343,7 @@ export function reorderSegmentInShelf(
     // Verifica se estão na mesma shelf
     if (draggedShelf.id !== targetShelf.id) {
         console.warn('⚠️ Segments não estão na mesma shelf');
+
         return false;
     }
 
@@ -331,6 +358,7 @@ export function reorderSegmentInShelf(
 
     if (draggedIndex === -1 || targetIndex === -1) {
         console.warn('⚠️ Não foi possível localizar segments na shelf');
+
         return false;
     }
 
@@ -339,6 +367,7 @@ export function reorderSegmentInShelf(
 
     // Calcula nova posição
     let newIndex = segments.findIndex((s: any) => s.id === targetSegmentId);
+
     if (position === 'after') {
         newIndex += 1;
     }
@@ -381,6 +410,7 @@ export function swapSegmentPositions(
 ): boolean {
     if (!currentGondola.value) {
         console.warn('⚠️ Nenhuma gôndola carregada');
+
         return false;
     }
 
@@ -390,6 +420,7 @@ export function swapSegmentPositions(
 
     if (!segment1Result || !segment2Result) {
         console.warn('⚠️ Um ou ambos segments não encontrados');
+
         return false;
     }
 
@@ -399,6 +430,7 @@ export function swapSegmentPositions(
     // Verifica se estão na mesma shelf
     if (shelf1.id !== shelf2.id) {
         console.warn('⚠️ Segments não estão na mesma shelf');
+
         return false;
     }
 

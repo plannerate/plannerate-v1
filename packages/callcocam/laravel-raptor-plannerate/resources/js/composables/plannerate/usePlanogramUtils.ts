@@ -30,6 +30,7 @@ export function shouldShowDeleteConfirm(itemType: string = 'section'): boolean {
     if (now > expiry) {
         // Expirou, remove e mostra modal
         window.localStorage.removeItem(storageKey);
+
         return true;
     }
 

@@ -1,5 +1,13 @@
 <script setup lang="ts">
 import {
+    BoxIcon,
+    GripVerticalIcon,
+    LayoutGridIcon,
+    RotateCcwIcon,
+    RulerIcon,
+} from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import {
     Accordion,
     AccordionContent,
     AccordionItem,
@@ -23,14 +31,6 @@ import {
     toCamelCase as shelfToCamelCase,
     toSnakeCase as shelfToSnakeCase,
 } from '@/composables/plannerate/useShelfFields';
-import {
-    BoxIcon,
-    GripVerticalIcon,
-    LayoutGridIcon,
-    RotateCcwIcon,
-    RulerIcon,
-} from 'lucide-vue-next';
-import { computed, ref } from 'vue';
 
 const editor = usePlanogramEditor();
 
@@ -52,7 +52,10 @@ const applyToAllShelves = ref(false);
 // Initialize form with current values from first section/shelf usando composables
 const initializeForms = () => {
     const gondola = editor.currentGondola.value;
-    if (!gondola?.sections || gondola.sections.length === 0) return;
+
+    if (!gondola?.sections || gondola.sections.length === 0) {
+return;
+}
 
     const firstSection = gondola.sections[0];
 
@@ -115,7 +118,10 @@ const resetShelfToDefaults = () => {
 // Apply section updates usando composable para conversão
 const applySectionUpdates = () => {
     const gondola = editor.currentGondola.value;
-    if (!gondola?.sections) return;
+
+    if (!gondola?.sections) {
+return;
+}
 
     // Converte de camelCase para snake_case usando composable
     const updates = sectionToSnakeCase(sectionForm.value);
@@ -136,7 +142,10 @@ const applySectionUpdates = () => {
 // Apply shelf updates usando composable para conversão
 const applyShelfUpdates = () => {
     const gondola = editor.currentGondola.value;
-    if (!gondola?.sections) return;
+
+    if (!gondola?.sections) {
+return;
+}
 
     // Converte de camelCase para snake_case usando composable
     const shelfFieldsCamel = {
@@ -174,12 +183,17 @@ const usableHeight = computed(() => {
 
 const averageShelfSpacing = computed(() => {
     const gondola = editor.currentGondola.value;
-    if (!gondola?.sections || gondola.sections.length === 0) return 0;
+
+    if (!gondola?.sections || gondola.sections.length === 0) {
+return 0;
+}
 
     const firstSection = gondola.sections[0];
     const numShelves = firstSection.shelves?.length ?? 0;
 
-    if (numShelves === 0) return 0;
+    if (numShelves === 0) {
+return 0;
+}
 
     const spacing = calculateShelfSpacing(
         usableHeight.value,
@@ -192,7 +206,10 @@ const averageShelfSpacing = computed(() => {
 
 const totalDisplayArea = computed(() => {
     const gondola = editor.currentGondola.value;
-    if (!gondola?.sections || gondola.sections.length === 0) return 0;
+
+    if (!gondola?.sections || gondola.sections.length === 0) {
+return 0;
+}
 
     let totalShelves = 0;
     gondola.sections.forEach((section) => {
@@ -216,12 +233,16 @@ const totalSections = computed(() => {
 
 const totalShelves = computed(() => {
     const gondola = editor.currentGondola.value;
-    if (!gondola?.sections) return 0;
+
+    if (!gondola?.sections) {
+return 0;
+}
 
     let count = 0;
     gondola.sections.forEach((section) => {
         count += section.shelves?.length ?? 0;
     });
+
     return count;
 });
 </script>

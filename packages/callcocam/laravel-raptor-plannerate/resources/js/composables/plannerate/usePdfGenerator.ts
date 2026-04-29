@@ -1,6 +1,6 @@
-import { ref } from 'vue'
-import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas-pro'
+import jsPDF from 'jspdf'
+import { ref } from 'vue'
 
 const MAX_CAPTURE_SCALE = 5
 const MAX_CANVAS_SIDE = 16000
@@ -56,10 +56,15 @@ function computeSafeCaptureScale(element: HTMLElement, requestedScale: number): 
 }
 
 async function waitForFontsReady(): Promise<void> {
-  if (typeof document === 'undefined') return
+  if (typeof document === 'undefined') {
+return
+}
 
   const fontSet = (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts
-  if (!fontSet?.ready) return
+
+  if (!fontSet?.ready) {
+return
+}
 
   try {
     await fontSet.ready
@@ -79,7 +84,10 @@ async function waitForImageReady(image: HTMLImageElement, timeoutMs: number): Pr
     let settled = false
 
     const finish = () => {
-      if (settled) return
+      if (settled) {
+return
+}
+
       settled = true
       image.removeEventListener('load', finish)
       image.removeEventListener('error', finish)
@@ -315,6 +323,7 @@ export function usePdfGenerator() {
       }
     } catch (error) {
       console.error('Erro ao gerar PDF:', error)
+
       throw error
     } finally {
       isGenerating.value = false

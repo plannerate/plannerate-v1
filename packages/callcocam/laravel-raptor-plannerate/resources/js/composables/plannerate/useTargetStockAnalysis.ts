@@ -43,6 +43,7 @@ export function useTargetStockAnalysis() {
     function setTargetStockData(ean: string, data: TargetStockData) {
         if (!ean) {
             console.warn('⚠️ EAN vazio ao definir dados de target stock');
+
             return;
         }
         
@@ -79,7 +80,10 @@ export function useTargetStockAnalysis() {
      * Obtém os dados de target stock de um produto pelo EAN
      */
     function getTargetStockData(ean: string | undefined): TargetStockData | undefined {
-        if (!ean) return undefined;
+        if (!ean) {
+return undefined;
+}
+
         return targetStockData.value.get(ean);
     }
 
@@ -87,7 +91,10 @@ export function useTargetStockAnalysis() {
      * Verifica se existe dados de target stock para um EAN
      */
     function hasTargetStockData(ean: string | undefined): boolean {
-        if (!ean) return false;
+        if (!ean) {
+return false;
+}
+
         return targetStockData.value.has(ean);
     }
 
@@ -96,6 +103,7 @@ export function useTargetStockAnalysis() {
      */
     function calculateToleranceMargin(targetStock: number, tolerancePercentage: number = DEFAULT_TOLERANCE): number {
         const percentualMargin = targetStock * tolerancePercentage;
+
         return Math.max(percentualMargin, 5); // Mínimo de 5 unidades
     }
 
@@ -123,9 +131,11 @@ export function useTargetStockAnalysis() {
         if (currentCapacity < lowerBound) {
             return 'increase'; // Precisa aumentar capacidade
         }
+
         if (currentCapacity > upperBound) {
             return 'decrease'; // Precisa diminuir capacidade
         }
+
         return 'ok'; // Capacidade adequada
     }
 
@@ -169,7 +179,10 @@ export function useTargetStockAnalysis() {
      * Remove dados de um produto específico
      */
     function removeTargetStockData(ean: string) {
-        if (!ean) return;
+        if (!ean) {
+return;
+}
+
         targetStockData.value.delete(ean);
     }
 

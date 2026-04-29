@@ -13,7 +13,7 @@ type UserAccessRow = {
     role_names: string[];
 };
 
-const props = defineProps<{
+defineProps<{
     user: UserAccessRow;
     tenantId: string;
 }>();

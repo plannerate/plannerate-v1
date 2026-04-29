@@ -22,6 +22,7 @@ export function useProductImage() {
         return new Promise<boolean>((resolve) => {
             if (!updateAction) {
                 resolve(false);
+
                 return;
             }
 

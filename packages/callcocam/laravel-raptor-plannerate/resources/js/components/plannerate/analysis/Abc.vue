@@ -1,12 +1,4 @@
 <script setup lang="ts">
-import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import { router } from '@inertiajs/vue3';
 import {
     AlertCircle,
@@ -15,9 +7,17 @@ import {
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { calculateAbc } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
+import type { AbcResult } from '@/components/plannerate/analysis/abc/types';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import AbcParamsModal from './AbcParamsModal.vue';
 import AbcResultsList from './AbcResultsList.vue';
-import type { AbcResult } from '@/components/plannerate/analysis/abc/types';
 
 interface InitialData {
     results?: AbcResult[];
@@ -82,11 +82,16 @@ const showParametersModal = ref(false);
 const results = computed(() => props.initialData?.results || []);
 
 const formatDate = (dateString: string | null | undefined): string => {
-    if (!dateString) return 'Não definida';
+    if (!dateString) {
+return 'Não definida';
+}
     
     try {
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) return dateString;
+
+        if (isNaN(date.getTime())) {
+return dateString;
+}
         
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -101,6 +106,7 @@ const formatDate = (dateString: string | null | undefined): string => {
 const handleParamsSubmit = (data: typeof form.value) => {
     if (!gondolaId.value) {
         console.error('ID da gôndola não encontrado');
+
         return;
     }
 

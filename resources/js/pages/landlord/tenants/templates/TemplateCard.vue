@@ -4,7 +4,7 @@ import { Edit, Trash2 } from 'lucide-vue-next';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
 import type { TemplateRow } from './Index.vue';
 
-const props = defineProps<{
+defineProps<{
     template: TemplateRow;
     tenantId: string;
 }>();

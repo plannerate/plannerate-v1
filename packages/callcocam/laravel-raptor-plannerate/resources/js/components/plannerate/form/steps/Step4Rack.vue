@@ -16,9 +16,9 @@ export const validate = (data: {
 </script>
 
 <script setup lang="ts">
+import { GripVerticalIcon } from 'lucide-vue-next';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { GripVerticalIcon } from 'lucide-vue-next';
 
 interface Props {
     modelValue: {

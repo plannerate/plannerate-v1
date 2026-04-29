@@ -95,6 +95,12 @@
 </template>
 
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
+import { ImageIcon, Loader2, Trash2, Upload, X } from 'lucide-vue-next';
+import { ref, watch } from 'vue';
+import { Cropper } from 'vue-advanced-cropper';
+import { toast } from 'vue-sonner';
+import { uploadImage, deleteImage } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -106,14 +112,8 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { uploadImage, deleteImage } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 import type { Product } from '@/types/planogram';
-import { router } from '@inertiajs/vue3';
-import { ImageIcon, Loader2, Trash2, Upload, X } from 'lucide-vue-next';
-import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
-import { ref, watch } from 'vue';
-import { toast } from 'vue-sonner';
 
 interface Props {
     product: Product | null;
@@ -149,6 +149,7 @@ watch(open, (newValue) => {
 function handleFileSelect(event: Event) {
     const target = event.target as HTMLInputElement;
     const file = target.files?.[0];
+
     if (file) {
         validateAndSetFile(file);
     }
@@ -157,6 +158,7 @@ function handleFileSelect(event: Event) {
 function handleDrop(event: DragEvent) {
     isDragging.value = false;
     const file = event.dataTransfer?.files[0];
+
     if (file) {
         validateAndSetFile(file);
     }
@@ -168,13 +170,16 @@ function validateAndSetFile(file: File) {
     // Valida tipo de arquivo
     if (!file.type.startsWith('image/')) {
         uploadError.value = 'Por favor, selecione um arquivo de imagem válido';
+
         return;
     }
 
     // Valida tamanho (5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB
+
     if (file.size > maxSize) {
         uploadError.value = 'A imagem deve ter no máximo 5MB';
+
         return;
     }
 
@@ -192,16 +197,21 @@ function clearSelectedFile() {
     selectedFile.value = null;
     previewUrl.value = null;
     uploadError.value = null;
+
     if (fileInput.value) {
         fileInput.value.value = '';
     }
 }
 
 function formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) {
+return '0 Bytes';
+}
+
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
+
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
 
@@ -210,8 +220,13 @@ function handleClose() {
 }
 
 async function handleUploadImage() {
-    if (!selectedFile.value || !props.product?.id) return;
-    if (!uploadImageAction) return;
+    if (!selectedFile.value || !props.product?.id) {
+return;
+}
+
+    if (!uploadImageAction) {
+return;
+}
 
     isUploading.value = true;
     uploadError.value = null;
@@ -274,8 +289,13 @@ async function handleUploadImage() {
 }
 
 async function handleDeleteImage() {
-    if (!props.product?.id) return;
-    if (!deleteImageAction) return;
+    if (!props.product?.id) {
+return;
+}
+
+    if (!deleteImageAction) {
+return;
+}
 
     isUploading.value = true;
     uploadError.value = null;

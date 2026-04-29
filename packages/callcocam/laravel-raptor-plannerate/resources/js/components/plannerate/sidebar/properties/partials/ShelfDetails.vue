@@ -167,16 +167,6 @@
 </template>
 
 <script setup lang="ts">
-import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { usePlanogramKeyboard } from '@/composables/plannerate/usePlanogramKeyboard';
-import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
-import { findNearestHole } from '@/composables/plannerate/useSectionHoles';
-import { useShelfActions } from '@/composables/plannerate/useShelfActions';
-import type { Shelf } from '@/types/planogram';
 import {
     ArrowDown,
     ArrowLeft,
@@ -187,6 +177,16 @@ import {
     Trash2,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
+import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { usePlanogramKeyboard } from '@/composables/plannerate/usePlanogramKeyboard';
+import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
+import { findNearestHole } from '@/composables/plannerate/useSectionHoles';
+import { useShelfActions } from '@/composables/plannerate/useShelfActions';
+import type { Shelf } from '@/types/planogram';
 
 interface Props {
     item: Shelf;
@@ -201,12 +201,14 @@ const keyboard = usePlanogramKeyboard();
 // Busca sempre o valor mais atualizado do editor para garantir reatividade
 const shelf = computed(() => {
     const found = editor.findShelfById(props.item.id);
+
     return found?.shelf || props.item;
 });
 
 // Busca a seção da prateleira
 const section = computed(() => {
     const found = editor.findShelfById(shelf.value.id);
+
     return found?.section;
 });
 
@@ -221,10 +223,15 @@ const shelfActions = useShelfActions(
  */
 const canInvertSegments = computed(() => {
     const currentShelf = shelf.value;
-    if (!currentShelf?.segments) return false;
+
+    if (!currentShelf?.segments) {
+return false;
+}
+
     const activeSegments = currentShelf.segments.filter(
         (s: any) => !s.deleted_at,
     );
+
     return activeSegments.length >= 2;
 });
 
@@ -233,12 +240,15 @@ const canInvertSegments = computed(() => {
  * Se for shelf_position, encaixa no furo mais próximo
  */
 function handleUpdate(field: keyof Shelf, value: any) {
-    if (!shelf.value?.id) return;
+    if (!shelf.value?.id) {
+return;
+}
 
     // Se estiver alterando a posição, encaixa no furo mais próximo
     if (field === 'shelf_position' && section.value) {
         const snappedPosition = findNearestHole(section.value, value);
         editor.updateShelf(shelf.value.id, { [field]: snappedPosition });
+
         return;
     }
 
@@ -248,7 +258,11 @@ function handleUpdate(field: keyof Shelf, value: any) {
 
 function handleProductTypeChange(event: Event) {
     const target = event.target as HTMLSelectElement | null;
-    if (!target) return;
+
+    if (!target) {
+return;
+}
+
     handleUpdate('product_type', target.value);
 }
 
@@ -284,7 +298,10 @@ function handleMoveRight() {
  * Inverte a ordem dos segments (produtos) da prateleira (mesma lógica do Ctrl+I)
  */
 function handleInvertSegments() {
-    if (!shelf.value?.id) return;
+    if (!shelf.value?.id) {
+return;
+}
+
     editor.invertSegmentsOrder(shelf.value.id);
 }
 

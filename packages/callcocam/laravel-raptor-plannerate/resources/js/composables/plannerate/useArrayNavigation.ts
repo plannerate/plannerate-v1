@@ -13,7 +13,11 @@ export function useArrayNavigation<T>(items: T[] | Ref<T[]>) {
   const getPrevious = (item: T): T | undefined => {
     const itemsArray = unref(items)
     const index = itemsArray.indexOf(item)
-    if (index <= 0) return undefined
+
+    if (index <= 0) {
+return undefined
+}
+
     return itemsArray[index - 1]
   }
 
@@ -23,7 +27,11 @@ export function useArrayNavigation<T>(items: T[] | Ref<T[]>) {
   const getNext = (item: T): T | undefined => {
     const itemsArray = unref(items)
     const index = itemsArray.indexOf(item)
-    if (index === -1 || index >= itemsArray.length - 1) return undefined
+
+    if (index === -1 || index >= itemsArray.length - 1) {
+return undefined
+}
+
     return itemsArray[index + 1]
   }
 
@@ -32,7 +40,11 @@ export function useArrayNavigation<T>(items: T[] | Ref<T[]>) {
    */
   const getFirst = (): T | undefined => {
     const itemsArray = unref(items)
-    if (!itemsArray.length) return undefined
+
+    if (!itemsArray.length) {
+return undefined
+}
+
     return itemsArray[0]
   }
 
@@ -41,7 +53,11 @@ export function useArrayNavigation<T>(items: T[] | Ref<T[]>) {
    */
   const getLast = (): T | undefined => {
     const itemsArray = unref(items)
-    if (!itemsArray.length) return undefined
+
+    if (!itemsArray.length) {
+return undefined
+}
+
     return itemsArray[itemsArray.length - 1]
   }
 
@@ -50,6 +66,7 @@ export function useArrayNavigation<T>(items: T[] | Ref<T[]>) {
    */
   const isLast = (item: T): boolean => {
     const itemsArray = unref(items)
+
     return itemsArray.indexOf(item) === itemsArray.length - 1
   }
 
@@ -58,6 +75,7 @@ export function useArrayNavigation<T>(items: T[] | Ref<T[]>) {
    */
   const isFirst = (item: T): boolean => {
     const itemsArray = unref(items)
+
     return itemsArray.indexOf(item) === 0
   }
 
@@ -66,6 +84,7 @@ export function useArrayNavigation<T>(items: T[] | Ref<T[]>) {
    */
   const getIndex = (item: T): number => {
     const itemsArray = unref(items)
+
     return itemsArray.indexOf(item)
   }
 

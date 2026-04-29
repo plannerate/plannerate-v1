@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { Search } from 'lucide-vue-next';
+import { computed, ref, useSlots, watch } from 'vue';
+import TableHeadAnalysis from '@/components/plannerate/analysis/TableHeadAnalysis.vue';
+import TargetStockSelectionPanel from '@/components/plannerate/analysis/target-stock/TargetStockSelectionPanel.vue';
+import type { TargetStockResult } from '@/components/plannerate/analysis/target-stock/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,15 +18,10 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import TargetStockSelectionPanel from '@/components/plannerate/analysis/target-stock/TargetStockSelectionPanel.vue';
-import type { TargetStockResult } from '@/components/plannerate/analysis/target-stock/types';
-import { Search } from 'lucide-vue-next';
-import TableHeadAnalysis from '@/components/plannerate/analysis/TableHeadAnalysis.vue';
 import { useAnalysisFilters } from '@/composables/plannerate/analysis/useAnalysisFilters';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis';
-import { computed, ref, useSlots, watch } from 'vue';
 
 interface Props {
     results: TargetStockResult[];
@@ -197,6 +197,7 @@ watch(
     (items) => {
         if (!items.length) {
             selectedProductId.value = null;
+
             return;
         }
 
@@ -215,6 +216,7 @@ function handleSelectProduct(item: TargetStockResult): void {
     selectedProductId.value = item.product_id;
 
     const placement = matchingPlacements.value[0];
+
     if (!placement) {
         return;
     }

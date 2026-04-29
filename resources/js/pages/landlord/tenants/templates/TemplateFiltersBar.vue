@@ -2,7 +2,7 @@
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
 import ListFiltersBar from '@/components/ListFiltersBar.vue';
 
-const props = defineProps<{
+defineProps<{
     tenantId: string;
     filters: { search: string; status: string };
     filterLabel: string;

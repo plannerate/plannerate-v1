@@ -1,9 +1,9 @@
-import type { Section, Shelf } from '@/types/planogram';
 import { computed } from 'vue';
+import type { Section, Shelf } from '@/types/planogram';
 import { usePlanogramEditor } from './usePlanogramEditor';
 import { shouldShowDeleteConfirm } from './usePlanogramUtils';
-import { calculateHolePositions } from './useSectionHoles';
 import { toCamelCase, DEFAULT_SECTION_FIELDS } from './useSectionFields';
+import { calculateHolePositions } from './useSectionHoles';
 
 // Map global para rastrear shelves em movimento entre seções (previne execução dupla)
 // Exportado para ser compartilhado com usePlanogramKeyboard
@@ -28,6 +28,7 @@ export function useShelfActions(
             : computed(() => section)
         : computed(() => {
               const found = editor.findShelfById(shelfRef.value.id);
+
               return found?.section;
           });
 
@@ -39,7 +40,9 @@ export function useShelfActions(
         const currentShelf = shelfRef.value;
         const currentSection = sectionRef.value;
 
-        if (!currentShelf?.id || !currentSection?.id) return false;
+        if (!currentShelf?.id || !currentSection?.id) {
+return false;
+}
 
         const currentShelfData = editor.findShelfById(currentShelf.id);
         const currentPosition = currentShelfData?.shelf.shelf_position || 0;
@@ -56,7 +59,9 @@ export function useShelfActions(
         const currentShelf = shelfRef.value;
         const currentSection = sectionRef.value;
 
-        if (!currentShelf?.id || !currentSection?.id) return false;
+        if (!currentShelf?.id || !currentSection?.id) {
+return false;
+}
 
         const currentShelfData = editor.findShelfById(currentShelf.id);
         const currentPosition = currentShelfData?.shelf.shelf_position || 0;
@@ -83,10 +88,15 @@ export function useShelfActions(
         const currentShelf = shelfRef.value;
         const currentSection = sectionRef.value;
 
-        if (!currentShelf?.id || !currentSection?.id) return false;
+        if (!currentShelf?.id || !currentSection?.id) {
+return false;
+}
 
         const gondola = editor.currentGondola.value;
-        if (!gondola?.sections) return false;
+
+        if (!gondola?.sections) {
+return false;
+}
 
         const currentIndex = gondola.sections.findIndex(
             (s: Section) => s.id === currentSection.id,
@@ -103,10 +113,15 @@ export function useShelfActions(
         const currentShelf = shelfRef.value;
         const currentSection = sectionRef.value;
 
-        if (!currentShelf?.id || !currentSection?.id) return false;
+        if (!currentShelf?.id || !currentSection?.id) {
+return false;
+}
 
         const gondola = editor.currentGondola.value;
-        if (!gondola?.sections) return false;
+
+        if (!gondola?.sections) {
+return false;
+}
 
         const currentIndex = gondola.sections.findIndex(
             (s: Section) => s.id === currentSection.id,
@@ -123,13 +138,17 @@ export function useShelfActions(
         const currentShelf = shelfRef.value;
         const currentSection = sectionRef.value;
 
-        if (!currentShelf?.id || !currentSection?.id) return false;
+        if (!currentShelf?.id || !currentSection?.id) {
+return false;
+}
 
         const currentShelfData = editor.findShelfById(currentShelf.id);
         const currentPosition = currentShelfData?.shelf.shelf_position || 0;
 
         // Se já está no topo, não move
-        if (Math.abs(currentPosition - 0) < 0.1) return false;
+        if (Math.abs(currentPosition - 0) < 0.1) {
+return false;
+}
 
         const sectionCamel = toCamelCase(currentSection);
         const baseHeightCm =
@@ -157,6 +176,7 @@ export function useShelfActions(
         }
 
         editor.updateShelf(currentShelf.id, { shelf_position: targetPosition });
+
         return true;
     }
 
@@ -168,7 +188,9 @@ export function useShelfActions(
         const currentShelf = shelfRef.value;
         const currentSection = sectionRef.value;
 
-        if (!currentShelf?.id || !currentSection?.id) return false;
+        if (!currentShelf?.id || !currentSection?.id) {
+return false;
+}
 
         const currentShelfData = editor.findShelfById(currentShelf.id);
         const currentPosition = currentShelfData?.shelf.shelf_position || 0;
@@ -182,7 +204,9 @@ export function useShelfActions(
         const maxPosition = currentSection.height - baseHeightCm - shelfHeight;
         
         // Se já está no máximo permitido, não move
-        if (Math.abs(currentPosition - maxPosition) < 0.1) return false;
+        if (Math.abs(currentPosition - maxPosition) < 0.1) {
+return false;
+}
 
         const holePositions = calculateHolePositions(currentSection);
         const currentPositionInUsableArea = currentPosition - baseHeightCm;
@@ -194,6 +218,7 @@ export function useShelfActions(
             (sectionCamel.holeHeight ?? DEFAULT_SECTION_FIELDS.holeHeight) +
             (sectionCamel.holeSpacing ?? DEFAULT_SECTION_FIELDS.holeSpacing);
         const firstHoleInUsableArea = holePositions[0] ?? 0;
+
         if (currentPositionInUsableArea < firstHoleInUsableArea - 0.01) {
             const candidate = currentPosition + stepSize;
             const firstHoleTotal = baseHeightCm + firstHoleInUsableArea;
@@ -210,6 +235,7 @@ export function useShelfActions(
 
             if (nextHoleInUsableArea !== undefined) {
                 const nextHole = baseHeightCm + nextHoleInUsableArea;
+
                 if (nextHole <= maxPosition) {
                     targetPosition = nextHole;
                 } else {
@@ -222,6 +248,7 @@ export function useShelfActions(
         }
 
         editor.updateShelf(currentShelf.id, { shelf_position: targetPosition });
+
         return true;
     }
 
@@ -230,15 +257,19 @@ export function useShelfActions(
      */
     function moveBetweenSections(direction: -1 | 1): boolean {
         const currentShelf = shelfRef.value;
+
         if (
             !currentShelf?.id ||
             shelvesMovingBetweenSections.get(currentShelf.id)
-        )
-            return false;
+        ) {
+return false;
+}
 
         const currentShelfData = editor.findShelfById(currentShelf.id);
-        if (!currentShelfData?.shelf || !currentShelfData?.section)
-            return false;
+
+        if (!currentShelfData?.shelf || !currentShelfData?.section) {
+return false;
+}
 
         const displaySections = editor.sectionsOrdered.value;
         const currentIndex = displaySections.findIndex(
@@ -246,11 +277,15 @@ export function useShelfActions(
         );
         const targetIndex = currentIndex + direction;
 
-        if (targetIndex < 0 || targetIndex >= displaySections.length)
-            return false;
+        if (targetIndex < 0 || targetIndex >= displaySections.length) {
+return false;
+}
 
         const targetSection = displaySections[targetIndex];
-        if (!targetSection || targetSection.deleted_at) return false;
+
+        if (!targetSection || targetSection.deleted_at) {
+return false;
+}
 
         shelvesMovingBetweenSections.set(currentShelf.id, true);
 
@@ -259,6 +294,7 @@ export function useShelfActions(
                 section_id: targetSection.id,
                 shelf_position: currentShelfData.shelf.shelf_position || 0,
             });
+
             return true;
         } finally {
             setTimeout(

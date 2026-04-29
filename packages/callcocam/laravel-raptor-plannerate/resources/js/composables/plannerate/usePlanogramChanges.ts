@@ -2,9 +2,9 @@
 // IMPORTS
 // ============================================================================
 
-import { EntityType } from '@/types/planogram';
 import { router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import type { EntityType } from '@/types/planogram';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -208,6 +208,7 @@ export function usePlanogramChanges() {
             if (!pendingCallbacks.has(key)) {
                 pendingCallbacks.set(key, []);
             }
+
             pendingCallbacks.get(key)!.push(options.onSaved);
         }
 
@@ -329,11 +330,13 @@ export function usePlanogramChanges() {
                 clearChanges();
                 lastSavedAt.value = Date.now();
                 isSaving.value = false;
+
                 return true;
             }
 
             // Usa rota fornecida ou contexto
             const targetRoute = route || autoSaveRoute.value;
+
             if (!targetRoute) {
                 throw new Error('Rota de salvamento não configurada');
             }
@@ -402,6 +405,7 @@ export function usePlanogramChanges() {
         } catch (error) {
             console.error('❌ Erro ao salvar mudanças:', error);
             isSaving.value = false;
+
             return false;
         }
     }

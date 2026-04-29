@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { LayoutTemplate } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import FormKanbanSettings from '@/components/form/FormKanbanSettings.vue';

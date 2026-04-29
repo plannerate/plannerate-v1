@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import PdfSegment from './PdfSegment.vue'
-import type { Section, Shelf } from '@/types/planogram'
-import { useShelfAreaCalculation } from '@/composables/plannerate/useShelfAreaCalculation'
-import { calculateHolePositions } from '@/composables/plannerate/useSectionHoles'
-import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/useSectionFields'
 import { computed } from 'vue'
+import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/useSectionFields'
+import { calculateHolePositions } from '@/composables/plannerate/useSectionHoles'
+import { useShelfAreaCalculation } from '@/composables/plannerate/useShelfAreaCalculation'
+import type { Section, Shelf } from '@/types/planogram'
+import PdfSegment from './PdfSegment.vue'
 
 interface Props {
   shelf: Shelf
@@ -50,6 +50,7 @@ const shelfBasePosition = computed(() => {
 
   if (holePositions.length === 0) {
     const offsetFromAreaStart = props.shelf.shelf_position - areaStartCm
+
     return offsetFromAreaStart * props.scaleFactor
   }
 
@@ -62,6 +63,7 @@ const shelfBasePosition = computed(() => {
 
   for (let i = 0; i < holePositions.length; i++) {
     const distance = Math.abs(shelfPositionCm - holePositions[i])
+
     if (distance < minDistance) {
       minDistance = distance
       closestHoleIdx = i
@@ -71,6 +73,7 @@ const shelfBasePosition = computed(() => {
   const closestHolePos = holePositions[closestHoleIdx]
   const centeredPosition = closestHolePos + (holeHeight - shelfHeightCm) / 2
   const offsetFromAreaStart = centeredPosition - areaStartCm
+
   return offsetFromAreaStart * props.scaleFactor
 })
 
@@ -80,7 +83,9 @@ const isHookType = computed(() => props.shelf.product_type === 'hook')
 const segments = computed(() => props.shelf.segments?.filter(segment => !segment.deleted_at) || [])
 
 const shelfDisplayNumber = computed(() => {
-  if (!props.section?.shelves) return 1
+  if (!props.section?.shelves) {
+return 1
+}
 
   const sorted = [...props.section.shelves]
     .filter((shelf) => !shelf.deleted_at)

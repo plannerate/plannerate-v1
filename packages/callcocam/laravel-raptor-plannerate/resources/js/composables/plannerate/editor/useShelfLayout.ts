@@ -1,8 +1,9 @@
-import { useShelfAreaCalculation } from '@/composables/plannerate/useShelfAreaCalculation';
-import { calculateHolePositions } from '@/composables/plannerate/useSectionHoles';
+import { computed  } from 'vue';
+import type {Ref} from 'vue';
 import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/useSectionFields';
+import { calculateHolePositions } from '@/composables/plannerate/useSectionHoles';
+import { useShelfAreaCalculation } from '@/composables/plannerate/useShelfAreaCalculation';
 import type { Section, Shelf as ShelfType } from '@/types/planogram';
-import { computed, type Ref } from 'vue';
 
 interface UseShelfLayoutOptions {
     shelf: Ref<ShelfType>;
@@ -55,6 +56,7 @@ export function useShelfLayout(options: UseShelfLayoutOptions) {
         if (holePositions.length === 0) {
             const offsetFromAreaStart =
                 options.shelf.value.shelf_position - areaStartCm;
+
             return offsetFromAreaStart * options.scale.value;
         }
 
@@ -69,6 +71,7 @@ export function useShelfLayout(options: UseShelfLayoutOptions) {
 
         for (let i = 0; i < holePositions.length; i++) {
             const distance = Math.abs(shelfPositionCm - holePositions[i]);
+
             if (distance < minDistance) {
                 minDistance = distance;
                 closestHoleIdx = i;
@@ -80,6 +83,7 @@ export function useShelfLayout(options: UseShelfLayoutOptions) {
             closestHolePos + (holeHeight - shelfHeightCm) / 2;
 
         const offsetFromAreaStart = centeredPosition - areaStartCm;
+
         return offsetFromAreaStart * options.scale.value;
     });
 
@@ -92,7 +96,9 @@ export function useShelfLayout(options: UseShelfLayoutOptions) {
     );
 
     const shelfDisplayNumber = computed(() => {
-        if (!options.section.value?.shelves) return 1;
+        if (!options.section.value?.shelves) {
+return 1;
+}
 
         const sorted = [...options.section.value.shelves]
             .filter((s) => !s.deleted_at)

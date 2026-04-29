@@ -136,6 +136,8 @@
 
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
+import { Calendar, Package, Settings } from 'lucide-vue-next';
+import { ref, watch } from 'vue';
 import { calculateTargetStockApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 import TargetStockParamsModal from '@/components/plannerate/analysis/TargetStockParamsModal.vue';
 import TargetStockResultsList from '@/components/plannerate/analysis/TargetStockResultsList.vue';
@@ -145,8 +147,6 @@ import {
     CardContent,
 } from '@/components/ui/card';
 import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis';
-import { Calendar, Package, Settings } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
 
 interface Planogram {
     id: string;
@@ -220,11 +220,16 @@ watch(
 );
 
 const formatDate = (dateString: string | null | undefined): string => {
-    if (!dateString) return 'Não definida';
+    if (!dateString) {
+return 'Não definida';
+}
 
     try {
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) return dateString;
+
+        if (isNaN(date.getTime())) {
+return dateString;
+}
 
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -237,11 +242,16 @@ const formatDate = (dateString: string | null | undefined): string => {
 };
 
 const formatMonth = (monthString: string | null | undefined): string => {
-    if (!monthString) return 'Não definida';
+    if (!monthString) {
+return 'Não definida';
+}
 
     try {
         const [year, month] = monthString.split('-');
-        if (!year || !month) return monthString;
+
+        if (!year || !month) {
+return monthString;
+}
 
         return `${month}/${year}`;
     } catch {

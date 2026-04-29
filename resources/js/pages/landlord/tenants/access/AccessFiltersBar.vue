@@ -7,7 +7,7 @@ type FilterOption = {
     label: string;
 };
 
-const props = defineProps<{
+defineProps<{
     tenantId: string;
     filters: { search: string; status: string };
     statusOptions: FilterOption[];
