@@ -128,9 +128,10 @@ class ImportLegacyBaseClientCommand extends Command
         $filter = $this->argument('tenant') ?? search(
             label: 'Selecione o tenant de destino',
             options: fn (string $value) => Tenant::on('landlord')
-                ->where(fn ($q) => $q
-                    ->where('name', 'like', "%{$value}%")
-                    ->orWhere('slug', 'like', "%{$value}%")
+                ->where(
+                    fn ($q) => $q
+                        ->where('name', 'like', "%{$value}%")
+                        ->orWhere('slug', 'like', "%{$value}%")
                 )
                 ->pluck('name', 'id')
                 ->toArray(),
@@ -192,9 +193,10 @@ class ImportLegacyBaseClientCommand extends Command
             label: 'Selecione o cliente na base legada',
             options: fn (string $value) => $this->legacy->table('clients')
                 ->where('status', 'published')
-                ->where(fn ($q) => $q
-                    ->where('name', 'like', "%{$value}%")
-                    ->orWhere('slug', 'like', "%{$value}%")
+                ->where(
+                    fn ($q) => $q
+                        ->where('name', 'like', "%{$value}%")
+                        ->orWhere('slug', 'like', "%{$value}%")
                 )
                 ->pluck('name', 'id')
                 ->toArray(),
@@ -353,6 +355,8 @@ class ImportLegacyBaseClientCommand extends Command
             'segments' => $query->whereIn('shelf_id', $this->getShelfIds()),
 
             'layers' => $query->whereIn('segment_id', $this->getSegmentIds()),
+
+            'stores' => $query->where('client_id', $this->client->id),
 
             default => $query,
         };

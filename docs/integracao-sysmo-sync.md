@@ -5,6 +5,8 @@
 Documentar o fluxo atual da integracao Sysmo para:
 - sincronizacao inicial por periodo em dias;
 - sincronizacao diaria com reprocessamento de lacunas;
+- padronizacao pos-sync de produtos por `ean_references`;
+- vinculacao pos-sync de vendas aos produtos por `codigo_erp`;
 - manutencao noturna (retencao de vendas e ciclo de vida de produtos).
 
 ## Escopo e tabelas
@@ -26,6 +28,9 @@ Documentar o fluxo atual da integracao Sysmo para:
 - `product_store`
   - pivot de vinculacao produto x loja.
   - evita duplicidade de produto por tenant.
+- `ean_references`
+  - referencia canonica por `tenant_id + ean`;
+  - usada em rotina separada para preencher campos vazios do produto, principalmente `category_id`.
 
 ## Configuracoes normalizadas (processing)
 
@@ -47,6 +52,9 @@ Comandos:
 - `integrations:dispatch-initial`
 - `integrations:dispatch-daily`
 - `integrations:dispatch-nightly-maintenance`
+- `sync:cleanup`
+- `sync:products-from-ean-references`
+- `sync:link-sales`
 
 Pre-validacao antes do dispatch (`initial` e `daily`):
 - ambos usam `ValidateIntegrationStoresService`;
@@ -56,7 +64,7 @@ Pre-validacao antes do dispatch (`initial` e `daily`):
 - os comandos devem carregar a integracao completa (`$query->get()`), pois `integration_type`/config sao obrigatorios na validacao.
 
 Agendado em `routes/console.php`:
-- diario `01:30`: dispatch diario
+- diario `07:30`: dispatch diario
 - diario `03:30`: manutencao noturna
 
 ## Runbook rapido
@@ -74,6 +82,10 @@ Efeito:
 - dispara jobs de vendas e produtos desde o periodo configurado em dias;
 - processa por dia (e produtos por loja/pagina).
 - executa pre-validacao das lojas antes de enfileirar jobs.
+- ao fim da cadeia principal, dispara pos-sync do tenant:
+  - `sync:cleanup --tenant=<tenant_id> --all`;
+  - `sync:products-from-ean-references --tenant=<tenant_id>`;
+  - `sync:link-sales --tenant=<tenant_id>`.
 
 ### 2) Operacao diaria
 
@@ -90,6 +102,10 @@ Efeito:
 - inclui dias com `failed/pending` na janela de lookback;
 - dispara sync de vendas e produtos.
 - executa a mesma pre-validacao de lojas usada no fluxo inicial.
+- ao fim da cadeia principal, dispara pos-sync do tenant:
+  - `sync:cleanup --tenant=<tenant_id> --all`;
+  - `sync:products-from-ean-references --tenant=<tenant_id>`;
+  - `sync:link-sales --tenant=<tenant_id>`.
 
 ### 3) Manutencao noturna
 
@@ -138,10 +154,21 @@ Prioridade para montar `empresa`:
   - fallback controlado: `filters.store_document` (enviado pelo job);
   - se ausente, a linha de venda e ignorada com log de warning;
 - `store_id` continua salvo na tabela `sales` para rastreabilidade operacional;
-- sincronizacao de referencia de produto ocorre ao final da carga:
-  - atualiza `sales.product_id` e `sales.ean` por `tenant_id + codigo_erp`;
-  - em MySQL/MariaDB usa `UPDATE ... JOIN` em lote;
-  - em SQLite (testes) usa fallback por subquery.
+- a persistencia de vendas nao vincula produtos no meio do fluxo;
+- vinculacao de produto ocorre em comando separado (`sync:link-sales`), normalmente no pos-sync.
+
+### Vinculacao de vendas aos produtos
+
+Comando:
+- `php artisan sync:link-sales --tenant=<tenant_id>`
+- preview: `php artisan sync:link-sales --tenant=<tenant_id> --preview`
+
+Regra:
+- atualiza `sales.product_id` e `sales.ean` por `tenant_id + codigo_erp`;
+- considera vendas com `product_id` nulo e `codigo_erp` preenchido;
+- em MySQL/MariaDB usa `UPDATE ... JOIN` em lote;
+- em SQLite (testes) usa fallback por `UPDATE ... FROM`;
+- a regra de banco fica isolada em service para permitir futura execucao por fila.
 
 ## Fluxo de produtos
 
@@ -165,16 +192,30 @@ Body base:
 2. `SyncTenantProductStorePageJob`
    - processa uma pagina e persiste produtos/relacao loja;
    - enfileira a proxima pagina progressivamente quando necessario;
-   - ao finalizar a loja, dispara a etapa de finalizacao pos-persistencia.
+   - nao dispara reconciliacao pesada ao finalizar a pagina.
 
 ### Persistencia
 
 - produto unico por tenant (nao duplica por loja);
-- persistencia e finalizacao sao separadas: primeiro grava, depois normaliza/reconcilia;
-- usa `ean_references` na etapa de finalizacao para enriquecer categoria e dados comerciais;
+- persistencia grava apenas os dados vindos da integracao;
+- padronizacao por `ean_references` roda em comando separado no pos-sync;
 - restaura produto soft deleted quando reaparece;
 - registra pivot `product_store` (`tenant_id`, `product_id`, `store_id`, `last_synced_at`);
 - ID deterministico com prefixo `P1`.
+
+### Padronizacao de produtos por `ean_references`
+
+Comando:
+- `php artisan sync:products-from-ean-references --tenant=<tenant_id>`
+- preview: `php artisan sync:products-from-ean-references --tenant=<tenant_id> --preview`
+
+Regra:
+- busca referencia por `tenant_id + ean`;
+- preenche apenas campos vazios/nulos do produto;
+- nao sobrescreve informacoes ja preenchidas no produto;
+- campo principal: `category_id`;
+- campos extras: `description`, `brand`, `subbrand`, `packaging_type`, `packaging_size`, `measurement_unit`;
+- nao executa nenhuma vinculacao de vendas.
 
 ## Rotina diaria com lacunas
 
@@ -182,7 +223,23 @@ Body base:
 - calcula janela por `daily_lookback_days`;
 - sempre inclui ontem;
 - inclui dias com falha/pending no controle `integration_sync_days`;
-- dispara jobs de vendas e produtos por dia.
+- monta uma cadeia de jobs de vendas/produtos por dia;
+- adiciona `RunTenantIntegrationPostSyncJob` ao final da cadeia.
+
+## Pos-sync da integracao
+
+`RunTenantIntegrationPostSyncJob` roda apos a cadeia principal de sync do tenant:
+
+1. `sync:cleanup --tenant=<tenant_id> --all`
+   - executa limpeza de vendas antigas/orfas e ciclo de vida de produtos.
+2. `sync:products-from-ean-references --tenant=<tenant_id>`
+   - padroniza produtos por EAN sem sobrescrever campos existentes.
+3. `sync:link-sales --tenant=<tenant_id>`
+   - vincula vendas aos produtos por `codigo_erp`.
+
+Observacao importante:
+- as paginas de produtos ainda sao progressivas;
+- se for necessario garantir pos-sync somente apos a ultima pagina progressiva de produto, o proximo passo e transformar as paginas em batch/cadeia controlada.
 
 ## Manutencao noturna
 

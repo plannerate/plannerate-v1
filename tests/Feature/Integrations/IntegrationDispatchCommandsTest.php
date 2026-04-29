@@ -276,7 +276,7 @@ test('post sync maintenance job runs cleanup ean reference sync and link sales c
 
     Artisan::shouldReceive('call')
         ->once()
-        ->with('sync:cleanup', ['--tenant' => $tenantId, '--all'])
+        ->with('sync:cleanup', ['--tenant' => $tenantId, '--all' => true])
         ->andReturn(0);
 
     Artisan::shouldReceive('call')
