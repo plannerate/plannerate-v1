@@ -810,6 +810,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'select_planogram' => 'Selecione um planograma',
             'status' => 'Status',
             'all_statuses' => 'Todos os status',
+            'global_status_help' => 'Sem planograma selecionado, o board geral mostra execucoes em andamento/pausadas. Para ver pendentes, concluidas ou canceladas, selecione um planograma.',
             'only_overdue' => 'Apenas atrasadas',
             'show_completed' => 'Mostrar concluidas',
         ],

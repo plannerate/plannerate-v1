@@ -68,7 +68,13 @@ class WorkflowKanbanController extends Controller
         $selectedPlanogram = null;
         $board = null;
 
-        if ($selectedPlanogramId !== '') {
+        if ($executionStatuses !== null) {
+            $board = $this->kanbanService->buildBoardForInProgressExecutions(
+                $request->user(),
+                $hasStoreFilter ? $storeId : null,
+                $executionStatuses,
+            );
+        } elseif ($selectedPlanogramId !== '') {
             $planogram = Planogram::query()->find($selectedPlanogramId);
 
             if ($planogram !== null) {

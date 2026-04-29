@@ -281,9 +281,12 @@ class WorkflowKanbanService
             WorkflowExecutionStatus::Active->value,
             WorkflowExecutionStatus::Paused->value,
         ];
+        $statusesForScope = $executionStatuses !== null && $executionStatuses !== []
+            ? $executionStatuses
+            : $inProgressStatuses;
 
         $planogramIds = WorkflowGondolaExecution::query()
-            ->whereIn('status', $inProgressStatuses)
+            ->whereIn('status', $statusesForScope)
             ->with('gondola:id,planogram_id')
             ->get()
             ->map(fn (WorkflowGondolaExecution $execution): ?string => $execution->gondola?->planogram_id)
@@ -302,7 +305,7 @@ class WorkflowKanbanService
             ->with([
                 'template',
                 'executions' => fn ($query) => $query
-                    ->whereIn('status', $executionStatuses !== null && $executionStatuses !== [] ? $executionStatuses : $inProgressStatuses)
+                    ->whereIn('status', $statusesForScope)
                     ->when(
                         $storeId !== null && $storeId !== '',
                         fn ($executionQuery) => $executionQuery->whereHas('gondola.planogram', fn ($planogramQuery) => $planogramQuery->where('store_id', $storeId))
@@ -313,17 +316,25 @@ class WorkflowKanbanService
             ->get();
 
         return $steps
-            ->sortBy(fn (WorkflowPlanogramStep $step): string => sprintf('%s-%06d', (string) $step->planogram_id, $step->suggested_order))
-            ->values()
-            ->map(function (WorkflowPlanogramStep $step) use ($user): array {
+            ->groupBy(fn (WorkflowPlanogramStep $step): string => (string) ($step->workflow_template_id ?? $step->id))
+            ->map(function ($groupedSteps) use ($user): array {
+                /** @var WorkflowPlanogramStep $referenceStep */
+                $referenceStep = $groupedSteps
+                    ->sortBy(fn (WorkflowPlanogramStep $step): string => sprintf('%06d-%s', $step->suggested_order, (string) $step->id))
+                    ->first();
+
                 return [
-                    'step' => $this->stepPayload($step),
-                    'executions' => $step->executions
-                        ->map(fn (WorkflowGondolaExecution $execution) => $this->executionPayload($execution, $step, $user))
+                    'step' => $this->stepPayload($referenceStep),
+                    'executions' => $groupedSteps
+                        ->flatMap(fn (WorkflowPlanogramStep $step) => $step->executions
+                            ->map(fn (WorkflowGondolaExecution $execution) => $this->executionPayload($execution, $step, $user)))
                         ->values()
                         ->all(),
                 ];
-            })->all();
+            })
+            ->sortBy(fn (array $column): string => sprintf('%06d-%s', $column['step']['suggested_order'], (string) $column['step']['id']))
+            ->values()
+            ->all();
     }
 
     /**
