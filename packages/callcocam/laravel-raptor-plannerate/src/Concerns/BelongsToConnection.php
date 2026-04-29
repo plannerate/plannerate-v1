@@ -8,46 +8,40 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Concerns;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Client;
+use App\Models\Tenant;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 trait BelongsToConnection
 {
-    protected ?string $clientConnection = null;
+    protected ?string $tenantConnection = null;
 
     /**
-     * Configura a conexão dinâmica do banco de dados do client
-     *
-     * @param  Client  $client  Cliente para configurar conexão
      * @return string Nome da conexão configurada ('tenant')
      */
-    protected function setupClientConnection(Client $client): string
+    protected function setupTenantConnection(Tenant $tenant): string
     {
-        $clientId = $client->id;
+        $tenantId = $tenant->id;
 
-        // Forçar reconfiguração da conexão para cada cliente
-        $this->clientConnection = null;
+        $this->tenantConnection = null;
 
         try {
-            if (! $client) {
-                throw new \Exception("Client {$clientId} não encontrado");
+            if (! $tenant) {
+                throw new \Exception("Tenant {$tenantId} não encontrado");
             }
 
-            if (empty($client->database)) {
-                throw new \Exception("Client {$clientId} não possui database configurado");
+            if (empty($tenant->database)) {
+                throw new \Exception("Tenant {$tenantId} não possui database configurado");
             }
 
-            // SOLUÇÃO: Atualiza a conexão 'tenant' existente ao invés de criar uma nova
-            // Isso garante que os models que usam ->on('tenant') funcionem corretamente
             $connectionName = $this->tenantConnectionName();
 
             // Copia a configuração da conexão tenant atual
             $tenantConfig = config("database.connections.{$connectionName}");
 
-            // Atualiza o database para o database do client
-            $tenantConfig['database'] = $client->database;
+            // Atualiza o database para o database do tenant
+            $tenantConfig['database'] = $tenant->database;
 
             // Atualiza a configuração da conexão tenant
             Config::set("database.connections.{$connectionName}", $tenantConfig);
@@ -56,14 +50,14 @@ trait BelongsToConnection
             DB::purge($connectionName);
 
             // Armazena para uso futuro
-            $this->clientConnection = $connectionName;
+            $this->tenantConnection = $connectionName;
 
             return $connectionName;
         } catch (\Exception $e) {
-            Log::error('BelongsToConnection - Erro ao configurar conexão do client', [
-                'client_id' => $clientId,
+            Log::error('BelongsToConnection - Erro ao configurar conexão do tenant', [
+                'tenant_id' => $tenantId,
                 'error' => $e->getMessage(),
-                'database' => $client->database ?? 'não informado',
+                'database' => $tenant->database ?? 'não informado',
             ]);
 
             // Fallback para conexão tenant padrão
@@ -72,8 +66,8 @@ trait BelongsToConnection
     }
 
     /**
-     * Configura o database da conexão tenant pelo nome (sem precisar do model Client).
-     * Usado em jobs quando o client é passado por id/database no dispatch.
+     * Configura o database da conexão tenant pelo nome.
+     * Usado em jobs quando o tenant é passado por id/database no dispatch.
      */
     protected function setTenantDatabase(string $database): string
     {
@@ -82,14 +76,14 @@ trait BelongsToConnection
         $tenantConfig['database'] = $database;
         Config::set("database.connections.{$connectionName}", $tenantConfig);
         DB::purge($connectionName);
-        $this->clientConnection = $connectionName;
+        $this->tenantConnection = $connectionName;
 
         return $connectionName;
     }
 
-    public function getClientConnection(): ?string
+    public function getTenantConnection(): ?string
     {
-        return $this->clientConnection;
+        return $this->tenantConnection;
     }
 
     protected function tenantConnectionName(): string

@@ -9,7 +9,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
 
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\AutoGenerateConfigDTO;
-use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\IAGenerate\IAGenerateConfigDTO; 
+use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\IAGenerate\IAGenerateConfigDTO;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\AutoGeneratePlanogramRequest;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\IAGeneratePlanogramRequest;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AutoGenerate\AutoPlanogramService;
@@ -283,7 +283,7 @@ class AutoPlanogramController extends Controller
                     "⚠️ Não foi possível gerar o planograma\n\n".
                     "📦 Nenhum produto encontrado na categoria selecionada.\n\n".
                     "💡 Verifique:\n".
-                    "• Se os produtos foram importados para este cliente\n".
+                    "• Se os produtos foram importados para este tenant\n".
                     "• Se a categoria está correta no planograma\n".
                     "• Se os produtos têm a categoria_id correta\n".
                     '• Se há análise de vendas disponível (quando necessário)'

@@ -2,10 +2,10 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate\SectionGenerate;
 
+use App\Models\Tenant;
 use Callcocam\LaravelRaptorPlannerate\Concerns\BelongsToConnection;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\AutoGenerateConfigDTO;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\SectionGenerate\SectionGenerateResultDTO;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Client;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AutoGenerate\ProductSelectionService;
@@ -38,7 +38,7 @@ class SectionPlanogramService
     public function generateBySections(string $gondolaId, AutoGenerateConfigDTO $config, bool $useAi = false): SectionGenerateResultDTO
     {
 
-        $this->setupClientConnectionFromConfig();
+        $this->setupTenantConnectionFromContext();
 
         $gondola = Gondola::with(['sections.shelves'])->find($gondolaId);
         if (! $gondola) {
@@ -55,7 +55,7 @@ class SectionPlanogramService
             Log::warning('Nenhum produto ranqueado para a categoria do planograma.');
             throw new \RuntimeException(
                 'Nenhum produto encontrado para a categoria do planograma. '
-                .'Verifique se há produtos nessa categoria no banco do cliente e se a análise de vendas está disponível.'
+                .'Verifique se há produtos nessa categoria no banco do tenant e se a análise de vendas está disponível.'
             );
         }
 
@@ -369,15 +369,13 @@ class SectionPlanogramService
         return min($maxForCurrent, max($fairFloor, $proportional));
     }
 
-    protected function setupClientConnectionFromConfig(): void
+    protected function setupTenantConnectionFromContext(): void
     {
-        $clientId = config('app.current_client_id');
-        if (! $clientId) {
+        $tenant = Tenant::current();
+        if (! $tenant) {
             return;
         }
-        $client = Client::find($clientId);
-        if ($client) {
-            $this->setupClientConnection($client);
-        }
+
+        $this->setupTenantConnection($tenant);
     }
 }

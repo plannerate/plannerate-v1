@@ -17,7 +17,7 @@ use Illuminate\Routing\Controller;
 class PlanogramApiController extends Controller
 {
     /**
-     * Lista todos os planogramas do tenant/client atual
+     * Lista todos os planogramas do tenant atual
      */
     public function index(Request $request): JsonResponse
     {
@@ -25,11 +25,6 @@ class PlanogramApiController extends Controller
             ->where('tenant_id', tenant_id())
             ->select('id', 'name', 'description', 'status')
             ->orderBy('name');
-
-        // Filtrar por client_id se fornecido
-        if ($request->has('client_id')) {
-            $query->where('client_id', $request->client_id);
-        }
 
         $planograms = $query->get();
 

@@ -169,7 +169,7 @@ class MonthlySalesSummary extends Model
     }
 
     /**
-     * Relacionamento com Tenant (substitui client - cada tenant tem seu próprio banco)
+     * Relacionamento com Tenant.
      */
     public function tenant()
     {

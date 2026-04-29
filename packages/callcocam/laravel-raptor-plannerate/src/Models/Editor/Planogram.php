@@ -28,7 +28,7 @@ class Planogram extends Model
         return $this->hasMany(Gondola::class);
     }
 
-    public function getClientCascadingAttribute()
+    public function getTenantCascadingAttribute()
     {
         return [
             'store_id' => $this->store_id,

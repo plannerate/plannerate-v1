@@ -2,8 +2,8 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Jobs;
 
+use App\Models\Tenant;
 use Callcocam\LaravelRaptorPlannerate\Concerns\BelongsToConnection;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Client;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -26,7 +26,7 @@ class DOProcessProductImageJob implements ShouldQueue
      */
     public function __construct(
         public string $productId,
-        public ?string $clientId = null,
+        public ?string $tenantId = null,
         public ?string $database = null
     ) {}
 
@@ -38,14 +38,14 @@ class DOProcessProductImageJob implements ShouldQueue
         try {
             if ($this->database) {
                 $this->configureTenantConnection($this->database);
-            } elseif ($this->clientId) {
-                $client = Client::query()->find($this->clientId);
-                if ($client) {
-                    $this->setupClientConnection($client);
+            } elseif ($this->tenantId) {
+                $tenant = Tenant::query()->find($this->tenantId);
+                if ($tenant) {
+                    $this->setupTenantConnection($tenant);
                 }
             }
 
-            $connection = $this->getClientConnection() ?? $this->tenantConnectionName();
+            $connection = $this->getTenantConnection() ?? $this->tenantConnectionName();
             $product = Product::on($connection)->find($this->productId);
 
             if (! $product) {
@@ -79,7 +79,7 @@ class DOProcessProductImageJob implements ShouldQueue
         $tenantConfig['database'] = $database;
         Config::set("database.connections.{$connectionName}", $tenantConfig);
         DB::purge($connectionName);
-        $this->clientConnection = $connectionName;
+        $this->tenantConnection = $connectionName;
     }
 
     public function processImageFromStorage($storagePath, $product)
@@ -160,7 +160,7 @@ class DOProcessProductImageJob implements ShouldQueue
     {
         Log::error('DOProcessProductImageJob falhou', [
             'product_id' => $this->productId,
-            'client_id' => $this->clientId,
+            'tenant_id' => $this->tenantId,
             'database' => $this->database,
             'error' => $exception->getMessage(),
             'file' => $exception->getFile(),

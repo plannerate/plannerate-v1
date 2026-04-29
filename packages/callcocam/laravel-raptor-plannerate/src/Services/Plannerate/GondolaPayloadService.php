@@ -132,7 +132,6 @@ class GondolaPayloadService
             $recordData['planogram'] = [
                 'id' => $planogram->id,
                 'tenant_id' => $planogram->tenant_id,
-                'client_id' => $planogram->client_id,
                 'store_id' => $planogram->store_id,
                 'cluster_id' => $planogram->cluster_id,
                 'name' => $planogram->name,

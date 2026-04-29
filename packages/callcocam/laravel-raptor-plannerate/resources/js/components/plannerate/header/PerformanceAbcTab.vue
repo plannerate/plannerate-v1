@@ -141,7 +141,7 @@ import { useAbcClassification } from '@/composables/plannerate/useAbcClassificat
 interface Planogram {
     id: string;
     name: string;
-    client_id?: string;
+    tenant_id?: string;
     start_date?: string;
     end_date?: string;
     start_month?: string;

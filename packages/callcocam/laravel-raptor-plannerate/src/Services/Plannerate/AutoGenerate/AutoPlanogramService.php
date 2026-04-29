@@ -8,11 +8,11 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AutoGenerate;
 
+use App\Models\Tenant;
 use Callcocam\LaravelRaptorPlannerate\Concerns\BelongsToConnection;
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\AutoGenerateConfigDTO;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\AutoGenerateResultDTO;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Client;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
@@ -52,19 +52,16 @@ class AutoPlanogramService
             'config' => $config->toArray(),
         ]);
 
-        // 0. Configurar conexão do cliente correto
-        $currentClientId = config('app.current_client_id');
-        if ($currentClientId) {
-            $client = Client::find($currentClientId);
-            if ($client) {
-                $this->setupClientConnection($client);
-                Log::info('✅ Conexão do cliente configurada', [
-                    'client_id' => $client->id,
-                    'client_name' => $client->name,
-                    'database' => $client->database,
-                    'connection' => $this->getClientConnection(),
-                ]);
-            }
+        // 0. Configurar conexão do tenant correto
+        $tenant = Tenant::current();
+        if ($tenant) {
+            $this->setupTenantConnection($tenant);
+            Log::info('✅ Conexão do tenant configurada', [
+                'tenant_id' => $tenant->id,
+                'tenant_name' => $tenant->name,
+                'database' => $tenant->database,
+                'connection' => $this->getTenantConnection(),
+            ]);
         }
 
         // 1. Buscar gôndola específica

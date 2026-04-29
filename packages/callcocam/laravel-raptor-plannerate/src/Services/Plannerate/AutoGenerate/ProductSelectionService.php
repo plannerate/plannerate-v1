@@ -106,7 +106,7 @@ class ProductSelectionService
      * Buscar produtos da categoria do planograma (incluindo TODAS categorias filhas recursivamente)
      *
      * Usa CTE recursiva do PostgreSQL para eficiência
-     * IMPORTANTE: BelongsToConnection já configurou a conexão 'tenant' para o cliente correto
+     * IMPORTANTE: BelongsToConnection já configurou a conexão para o tenant correto
      */
     protected function getProductsFromCategory(string $categoryId): Collection
     {
@@ -128,7 +128,7 @@ class ProductSelectionService
                 'database' => $connection->getDatabaseName(),
             ]);
             throw new \RuntimeException(
-                'Categoria do planograma não encontrada no banco do cliente. '
+                'Categoria do planograma não encontrada no banco do tenant. '
                 .'Verifique se o planograma está com uma categoria válida e se as categorias foram importadas/sincronizadas no tenant.'
             );
         }
@@ -180,7 +180,7 @@ class ProductSelectionService
     /**
      * Buscar dados de vendas do ano anterior (sazonalidade)
      *
-     * IMPORTANTE: BelongsToConnection já configurou a conexão 'tenant' para o cliente correto
+     * IMPORTANTE: BelongsToConnection já configurou a conexão para o tenant correto
      *
      * @return array ['product_id' => ['total' => float, 'margin' => float]]
      */
@@ -261,7 +261,7 @@ class ProductSelectionService
     /**
      * Buscar análises ABC existentes (se configurado)
      *
-     * IMPORTANTE: BelongsToConnection já configurou a conexão 'tenant' para o cliente correto
+     * IMPORTANTE: BelongsToConnection já configurou a conexão para o tenant correto
      *
      * @return array ['product_id' => ['abc' => 'A'|'B'|'C', 'target_stock' => float, 'safety_stock' => float]]
      */

@@ -8,13 +8,13 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate\IAGenerate;
 
+use App\Models\Tenant;
 use Callcocam\LaravelRaptorPlannerate\Concerns\BelongsToConnection;
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\IAGenerate\IAGenerateConfigDTO;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\IAGenerate\IAGenerateResultDTO;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\IAGenerate\PlanogramContextDTO;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Category;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Client;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
@@ -157,23 +157,17 @@ class IAPlanogramService
      */
     protected function setupTenantConnection(): void
     {
-        $currentClientId = config('app.current_client_id');
+        $tenant = Tenant::current();
 
-        if (! $currentClientId) {
-            throw new \RuntimeException('Cliente atual não definido (current_client_id)');
+        if (! $tenant) {
+            throw new \RuntimeException('Tenant atual não definido');
         }
 
-        $client = Client::find($currentClientId);
-
-        if (! $client) {
-            throw new \RuntimeException("Cliente não encontrado: {$currentClientId}");
-        }
-
-        $this->setupClientConnection($client);
+        $this->setupTenantConnection($tenant);
 
         Log::info('🔗 Conexão tenant configurada', [
-            'client_id' => $client->id,
-            'database' => config('database.connections.tenant.database'),
+            'tenant_id' => $tenant->id,
+            'database' => config('database.connections.'.$this->tenantConnectionName().'.database'),
         ]);
     }
 
@@ -471,14 +465,14 @@ class IAPlanogramService
      */
     protected function callAnthropicAPI(string $prompt, string $model, IAGenerateConfigDTO $config): array
     {
-        $client = new PendingRequest;
-        $client->withHeaders([
+        $http = new PendingRequest;
+        $http->withHeaders([
             'x-api-key' => config('prism.providers.anthropic.api_key'),
             'anthropic-version' => config('prism.providers.anthropic.version', '2023-06-01'),
             'Content-Type' => 'application/json',
         ])->timeout(300);
 
-        $apiResponse = $client->post('https://api.anthropic.com/v1/messages', [
+        $apiResponse = $http->post('https://api.anthropic.com/v1/messages', [
             'model' => $model,
             'max_tokens' => $config->maxTokens,
             'messages' => [
@@ -515,13 +509,13 @@ class IAPlanogramService
      */
     protected function callOpenAIAPI(string $prompt, string $model, IAGenerateConfigDTO $config): array
     {
-        $client = new PendingRequest;
-        $client->withHeaders([
+        $http = new PendingRequest;
+        $http->withHeaders([
             'Authorization' => 'Bearer '.config('prism.providers.openai.api_key'),
             'Content-Type' => 'application/json',
         ])->timeout(60);
 
-        $apiResponse = $client->post('https://api.openai.com/v1/chat/completions', [
+        $apiResponse = $http->post('https://api.openai.com/v1/chat/completions', [
             'model' => $model,
             'messages' => [
                 ['role' => 'user', 'content' => $prompt],

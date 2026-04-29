@@ -1,8 +1,6 @@
 <?php
 
-use App\Models\Tenant;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Category;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Client;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\GondolaAnalysis;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
@@ -91,9 +89,23 @@ test('plannerate package wraps tenant writes in tenant connection transactions',
     expect($violations)->toBe([]);
 });
 
-test('plannerate legacy client model resolves to landlord tenant model', function (): void {
-    $client = new Client;
+test('plannerate package has no legacy client model references', function (): void {
+    $sourcePath = base_path('packages/callcocam/laravel-raptor-plannerate');
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($sourcePath));
+    $violations = [];
 
-    expect($client)->toBeInstanceOf(Tenant::class)
-        ->and($client->getConnectionName())->toBe('landlord');
+    foreach ($files as $file) {
+        if (! $file->isFile() || ! in_array($file->getExtension(), ['php', 'vue'], true)) {
+            continue;
+        }
+
+        $path = $file->getPathname();
+        $contents = (string) file_get_contents($path);
+
+        if (preg_match('/Models\\\\Editor\\\\Client|Editor\\\\Client|GondolaClient|HasClient|current_client_id|client_id|clientId|client\\/gondola|client\\.gondola/', $contents) === 1) {
+            $violations[] = str_replace(base_path().DIRECTORY_SEPARATOR, '', $path);
+        }
+    }
+
+    expect($violations)->toBe([]);
 });

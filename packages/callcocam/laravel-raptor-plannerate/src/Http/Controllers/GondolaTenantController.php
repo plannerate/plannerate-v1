@@ -1,12 +1,12 @@
 <?php
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
- 
+
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class GondolaClientController extends Controller
+class GondolaTenantController extends Controller
 {
     public function show(string $gondolaId): Response
     {
@@ -14,7 +14,7 @@ class GondolaClientController extends Controller
             'sections.shelves.segments.layer.product',
         ])->findOrFail($gondolaId);
 
-        return Inertia::render('client/gondola/show', [
+        return Inertia::render('tenant/gondola/show', [
             'gondola' => $gondola,
             'statistics' => $this->calculateStatistics($gondola),
             'readOnly' => true,
@@ -29,13 +29,16 @@ class GondolaClientController extends Controller
 
         $section = $gondola->sections()->findOrFail($sectionId);
 
-        return Inertia::render('client/gondola/ShowSection', [
+        return Inertia::render('tenant/gondola/ShowSection', [
             'gondola' => $gondola,
             'section' => $section,
             'readOnly' => true,
         ]);
     }
 
+    /**
+     * @return array<string, float|int>
+     */
     protected function calculateStatistics(Gondola $gondola): array
     {
         $totalProducts = 0;

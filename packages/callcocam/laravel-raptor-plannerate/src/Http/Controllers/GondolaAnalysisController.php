@@ -8,7 +8,6 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Category;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\GondolaAnalysis;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AbcAnalysisService;
@@ -151,7 +150,7 @@ class GondolaAnalysisController extends Controller
     private function buildFilters(Request $request, Gondola $gondola): array
     {
         $filters = [
-            'client_id' => $gondola->tenant_id, // compatibilidade com serviços legados
+            'tenant_id' => $gondola->tenant_id,
         ];
 
         if ($request->filled('date_from')) {

@@ -133,12 +133,12 @@ class SaveChangesController extends Controller
         }
 
         // Invalida cache de produtos usando pattern matching
-        // Formato: products_planogram_{planogram_id}_category_{category_id}_client_{client_id}_*
+        // Formato: products_planogram_{planogram_id}_category_{category_id}_tenant_{tenant_id}_*
         $cachePattern = sprintf(
-            'products_planogram_%s_category_%s_client_%s_*',
+            'products_planogram_%s_category_%s_tenant_%s_*',
             $gondola->planogram_id,
             $gondola->planogram->category_id ?? 'null',
-            $gondola->planogram->client_id ?? 'null'
+            $gondola->tenant_id ?? 'null'
         );
 
         // Laravel Cache não suporta wildcard delete nativamente
@@ -151,10 +151,10 @@ class SaveChangesController extends Controller
             foreach ($searchVariations as $search) {
                 foreach ($usedVariations as $used) {
                     $key = sprintf(
-                        'products_planogram_%s_category_%s_client_%s_page_%s_search_%s_used_%s',
+                        'products_planogram_%s_category_%s_tenant_%s_page_%s_search_%s_used_%s',
                         $gondola->planogram_id,
                         $gondola->planogram->category_id ?? 'null',
-                        $gondola->planogram->client_id ?? 'null',
+                        $gondola->tenant_id ?? 'null',
                         $page,
                         $search === '' ? md5('') : $search,
                         $used

@@ -84,7 +84,7 @@ class TargetStockService
      *
      * @param  array  $abcResults  Resultados da análise ABC (deve conter classificacao)
      * @param  string  $tableType  Tipo de tabela: 'sales' ou 'monthly_summaries'
-     * @param  array  $filters  Filtros adicionais (client_id, date_from, date_to, etc)
+     * @param  array  $filters  Filtros adicionais (tenant_id, date_from, date_to, etc)
      * @param  array  $currentStock  Array [ean => estoque_atual] opcional
      */
     public function calculateByAbcResults(array $abcResults, string $tableType, array $filters, array $currentStock = []): Collection
@@ -102,12 +102,12 @@ class TargetStockService
             $abcResultsByEan[$result['ean']] = $result;
         }
 
-        // Valida se client_id está presente
-        if (! isset($filters['client_id']) || empty($filters['client_id'])) {
-            Log::error('TargetStock - calculateByAbcResults: client_id não informado nos filtros', [
+        // Valida se tenant_id está presente
+        if (! isset($filters['tenant_id']) || empty($filters['tenant_id'])) {
+            Log::error('TargetStock - calculateByAbcResults: tenant_id não informado nos filtros', [
                 'filters' => $filters,
             ]);
-            throw new \InvalidArgumentException('client_id é obrigatório para calcular estoque alvo');
+            throw new \InvalidArgumentException('tenant_id é obrigatório para calcular estoque alvo');
         }
 
         // Se não foi passado estoque atual, busca diretamente da tabela products

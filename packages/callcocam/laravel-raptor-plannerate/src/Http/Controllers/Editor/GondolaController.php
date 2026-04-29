@@ -213,7 +213,7 @@ class GondolaController extends Controller
         //     'products_planogram_%s_category_%s_client_%s_page_%s_search_%s_used_%s_dims_%s',
         //     $gondola->planogram_id,
         //     $categoryId ?? 'null',
-        //     $gondola->planogram->client_id ?? 'null',
+        //     $gondola->tenant_id ?? 'null',
         //     $page,
         //     md5($search),
         //     $showUsed ? 'true' : 'false',

@@ -63,16 +63,16 @@ class AbcAnalysisService
      *
      * @param  Category  $category  Categoria e seus pais serão incluídos
      * @param  string  $tableType  'sales' ou 'monthly_summaries'
-     * @param  array  $filters  Filtros adicionais (deve incluir client_id)
+     * @param  array  $filters  Filtros adicionais (deve incluir tenant_id)
      */
     public function analyzeByCategory(
         Category $category,
         string $tableType = 'sales',
         array $filters = []
     ): Collection {
-        if (! isset($filters['client_id']) || empty($filters['client_id'])) {
-            Log::error('ABC Analysis - client_id é obrigatório para análise por categoria');
-            throw new \InvalidArgumentException('client_id é obrigatório para análise ABC');
+        if (! isset($filters['tenant_id']) || empty($filters['tenant_id'])) {
+            Log::error('ABC Analysis - tenant_id é obrigatório para análise por categoria');
+            throw new \InvalidArgumentException('tenant_id é obrigatório para análise ABC');
         }
 
         // Obtém toda a hierarquia da categoria
@@ -101,7 +101,7 @@ class AbcAnalysisService
             ->toArray();
 
         Log::info('ABC Analysis - analyzeByCategory', [
-            'client_id' => $filters['client_id'],
+            'tenant_id' => $filters['tenant_id'],
             'category_id' => $category->id,
             'category_ids' => $allCategoryIds,
             'product_ids_count' => count($productIds),
@@ -124,14 +124,14 @@ class AbcAnalysisService
             ->toArray();
 
         Log::info('ABC Analysis - codigos_erp encontrados', [
-            'client_id' => $filters['client_id'],
+            'tenant_id' => $filters['tenant_id'],
             'codigos_erp_count' => count($codigosErp),
             'codigos_erp_sample' => array_slice($codigosErp, 0, 5),
         ]);
 
         if (empty($codigosErp)) {
             Log::warning('ABC Analysis - Nenhum codigo_erp encontrado na tabela products', [
-                'client_id' => $filters['client_id'],
+                'tenant_id' => $filters['tenant_id'],
                 'product_ids_count' => count($productIds),
             ]);
 
@@ -147,7 +147,7 @@ class AbcAnalysisService
      *
      * @param  array  $eans  Lista de EANs
      * @param  string  $tableType  'sales' ou 'monthly_summaries'
-     * @param  array  $filters  Filtros adicionais (deve incluir client_id)
+     * @param  array  $filters  Filtros adicionais (deve incluir tenant_id)
      */
     public function analyzeByEans(
         array $eans,
@@ -160,16 +160,16 @@ class AbcAnalysisService
             return collect();
         }
 
-        if (! isset($filters['client_id']) || empty($filters['client_id'])) {
-            Log::error('ABC Analysis - client_id é obrigatório para análise por EANs');
-            throw new \InvalidArgumentException('client_id é obrigatório para análise ABC');
+        if (! isset($filters['tenant_id']) || empty($filters['tenant_id'])) {
+            Log::error('ABC Analysis - tenant_id é obrigatório para análise por EANs');
+            throw new \InvalidArgumentException('tenant_id é obrigatório para análise ABC');
         }
 
         // Busca produtos pelos EANs
         $products = Product::whereIn('ean', $eans)->get();
 
         Log::info('ABC Analysis - analyzeByEans', [
-            'client_id' => $filters['client_id'],
+            'tenant_id' => $filters['tenant_id'],
             'eans_count' => count($eans),
             'products_found' => $products->count(),
         ]);
@@ -192,14 +192,14 @@ class AbcAnalysisService
             ->toArray();
 
         Log::info('ABC Analysis - codigos_erp encontrados (EANs)', [
-            'client_id' => $filters['client_id'],
+            'tenant_id' => $filters['tenant_id'],
             'codigos_erp_count' => count($codigosErp),
             'codigos_erp_sample' => array_slice($codigosErp, 0, 5),
         ]);
 
         if (empty($codigosErp)) {
             Log::warning('ABC Analysis - Nenhum codigo_erp encontrado na tabela products (EANs)', [
-                'client_id' => $filters['client_id'],
+                'tenant_id' => $filters['tenant_id'],
                 'product_ids_count' => count($productIds),
             ]);
 
@@ -215,7 +215,7 @@ class AbcAnalysisService
      *
      * @param  array  $productIds  IDs dos produtos
      * @param  string  $tableType  'sales' ou 'monthly_summaries'
-     * @param  array  $filters  Filtros adicionais (deve incluir client_id)
+     * @param  array  $filters  Filtros adicionais (deve incluir tenant_id)
      */
     public function analyzeByProductIds(
         array $productIds,
@@ -228,9 +228,9 @@ class AbcAnalysisService
             return collect();
         }
 
-        if (! isset($filters['client_id']) || empty($filters['client_id'])) {
-            Log::error('ABC Analysis - client_id é obrigatório para análise por product_ids');
-            throw new \InvalidArgumentException('client_id é obrigatório para análise ABC');
+        if (! isset($filters['tenant_id']) || empty($filters['tenant_id'])) {
+            Log::error('ABC Analysis - tenant_id é obrigatório para análise por product_ids');
+            throw new \InvalidArgumentException('tenant_id é obrigatório para análise ABC');
         }
 
         // Busca codigo_erp diretamente da tabela products (campo direto, não precisa de pivot)
@@ -303,7 +303,7 @@ class AbcAnalysisService
         $salesData = $this->getSalesDataByCodigoErp($codigosErp, $productIds, $tableType, $filters);
 
         Log::info('ABC Analysis - analyzeByCodigoErp', [
-            'client_id' => $filters['client_id'] ?? 'N/A',
+            'tenant_id' => $filters['tenant_id'] ?? 'N/A',
             'table_type' => $tableType,
             'codigos_erp_count' => count($codigosErp),
             'sales_data_count' => $salesData->count(),
@@ -311,7 +311,7 @@ class AbcAnalysisService
 
         if ($salesData->isEmpty()) {
             Log::warning('ABC Analysis - Nenhuma venda encontrada', [
-                'client_id' => $filters['client_id'] ?? 'N/A',
+                'tenant_id' => $filters['tenant_id'] ?? 'N/A',
                 'table_type' => $tableType,
                 'codigos_erp_count' => count($codigosErp),
             ]);
@@ -403,12 +403,12 @@ class AbcAnalysisService
     /**
      * Query para tabela sales usando codigo_erp
      *
-     * No contexto tenant, as tabelas products e sales já estão no banco do client,
-     * então não precisamos filtrar por client_id (a coluna nem existe no banco tenant)
+     * No contexto tenant, as tabelas products e sales já estão no banco do tenant,
+     * então não precisamos filtrar por tenant_id (a conexão já isola o tenant)
      */
     private function getSalesQueryByCodigoErp(array $codigosErp, array $filters): Builder
     {
-        // No banco tenant, products e sales já pertencem ao client
+        // No banco tenant, products e sales já pertencem ao tenant
         // Usa codigo_erp para fazer o join entre products e sales
         $query = Sale::query()
             ->withoutGlobalScopes()
@@ -448,12 +448,12 @@ class AbcAnalysisService
     /**
      * Query para tabela monthly_sales_summaries usando codigo_erp
      *
-     * No contexto tenant, as tabelas products e monthly_sales_summaries já estão no banco do client,
-     * então não precisamos filtrar por client_id (a coluna nem existe no banco tenant)
+     * No contexto tenant, as tabelas products e monthly_sales_summaries já estão no banco do tenant,
+     * então não precisamos filtrar por tenant_id (a conexão já isola o tenant)
      */
     private function getMonthlySummariesQueryByCodigoErp(array $codigosErp, array $filters): Builder
     {
-        // No banco tenant, products e monthly_sales_summaries já pertencem ao client
+        // No banco tenant, products e monthly_sales_summaries já pertencem ao tenant
         // Usa codigo_erp para fazer o join entre products e monthly_sales_summaries
         $query = MonthlySalesSummary::query()
             ->withoutGlobalScopes()

@@ -29,13 +29,13 @@ interface InitialData {
     planogram?: {
         id: string;
         name: string;
-        client_id?: string;
+        tenant_id?: string;
         start_date?: string;
         end_date?: string;
     };
     filters?: {
         table_type: string;
-        client_id?: string;
+        tenant_id?: string;
         date_from?: string;
         date_to?: string;
     };
