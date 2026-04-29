@@ -57,6 +57,13 @@ test('service fills product fields from ean references without overwriting exist
             'packaging_type' => 'Garrafa',
             'packaging_size' => '500ml',
             'measurement_unit' => 'UN',
+            'width' => 17.00,
+            'height' => 21.00,
+            'depth' => 3.50,
+            'weight' => 0.00,
+            'unit' => 'cm',
+            'has_dimensions' => true,
+            'dimension_status' => 'published',
             'created_at' => $now,
             'updated_at' => $now,
         ],
@@ -71,6 +78,13 @@ test('service fills product fields from ean references without overwriting exist
             'packaging_type' => 'Pacote',
             'packaging_size' => '2L',
             'measurement_unit' => 'UN',
+            'width' => 99.00,
+            'height' => 88.00,
+            'depth' => 77.00,
+            'weight' => 2.00,
+            'unit' => 'cm',
+            'has_dimensions' => true,
+            'dimension_status' => 'published',
             'created_at' => $now,
             'updated_at' => $now,
         ],
@@ -85,6 +99,13 @@ test('service fills product fields from ean references without overwriting exist
             'packaging_type' => null,
             'packaging_size' => null,
             'measurement_unit' => null,
+            'width' => null,
+            'height' => null,
+            'depth' => null,
+            'weight' => null,
+            'unit' => 'cm',
+            'has_dimensions' => false,
+            'dimension_status' => 'draft',
             'created_at' => $now,
             'updated_at' => $now,
         ],
@@ -105,6 +126,13 @@ test('service fills product fields from ean references without overwriting exist
             'packaging_type' => null,
             'packaging_size' => null,
             'measurement_unit' => null,
+            'width' => null,
+            'height' => null,
+            'depth' => null,
+            'weight' => null,
+            'unit' => 'cm',
+            'has_dimensions' => false,
+            'dimension_status' => 'published',
             'status' => 'synced',
             'created_at' => $now,
             'updated_at' => $now,
@@ -123,6 +151,13 @@ test('service fills product fields from ean references without overwriting exist
             'packaging_type' => 'Caixa',
             'packaging_size' => '1L',
             'measurement_unit' => 'CX',
+            'width' => 10.00,
+            'height' => 10.00,
+            'depth' => 10.00,
+            'weight' => 1.00,
+            'unit' => 'mm',
+            'has_dimensions' => false,
+            'dimension_status' => 'draft',
             'status' => 'synced',
             'created_at' => $now,
             'updated_at' => $now,
@@ -141,6 +176,13 @@ test('service fills product fields from ean references without overwriting exist
             'packaging_type' => null,
             'packaging_size' => null,
             'measurement_unit' => null,
+            'width' => null,
+            'height' => null,
+            'depth' => null,
+            'weight' => null,
+            'unit' => 'cm',
+            'has_dimensions' => false,
+            'dimension_status' => 'published',
             'status' => 'synced',
             'created_at' => $now,
             'updated_at' => $now,
@@ -180,9 +222,19 @@ test('service fills product fields from ean references without overwriting exist
         ->and($emptyProduct?->packaging_type)->toBe('Garrafa')
         ->and($emptyProduct?->packaging_size)->toBe('500ml')
         ->and($emptyProduct?->measurement_unit)->toBe('UN')
+        ->and((float) ($emptyProduct?->width ?? 0))->toBe(17.0)
+        ->and((float) ($emptyProduct?->height ?? 0))->toBe(21.0)
+        ->and((float) ($emptyProduct?->depth ?? 0))->toBe(3.5)
+        ->and((float) ($emptyProduct?->weight ?? 0))->toBe(0.0)
+        ->and($emptyProduct?->unit)->toBe('cm')
+        ->and((bool) ($emptyProduct?->has_dimensions ?? false))->toBeTrue()
+        ->and($emptyProduct?->dimension_status)->toBe('published')
         ->and($filledProduct?->category_id)->toBe($otherCategoryId)
         ->and($filledProduct?->description)->toBe('Descrição existente')
         ->and($filledProduct?->brand)->toBe('Marca existente')
+        ->and((float) ($filledProduct?->width ?? 0))->toBe(10.0)
+        ->and((float) ($filledProduct?->height ?? 0))->toBe(10.0)
+        ->and($filledProduct?->unit)->toBe('mm')
         ->and($otherTenantProduct?->category_id)->toBeNull()
         ->and($otherTenantProduct?->brand)->toBeNull();
 });

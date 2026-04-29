@@ -119,6 +119,41 @@ class SyncProductsFromEanReferencesService
                     THEN r.measurement_unit
                     ELSE p.measurement_unit
                 END,
+                p.width = CASE
+                    WHEN p.width IS NULL AND r.width IS NOT NULL
+                    THEN r.width
+                    ELSE p.width
+                END,
+                p.height = CASE
+                    WHEN p.height IS NULL AND r.height IS NOT NULL
+                    THEN r.height
+                    ELSE p.height
+                END,
+                p.depth = CASE
+                    WHEN p.depth IS NULL AND r.depth IS NOT NULL
+                    THEN r.depth
+                    ELSE p.depth
+                END,
+                p.weight = CASE
+                    WHEN p.weight IS NULL AND r.weight IS NOT NULL
+                    THEN r.weight
+                    ELSE p.weight
+                END,
+                p.unit = CASE
+                    WHEN (p.unit IS NULL OR p.unit = '') AND r.unit IS NOT NULL AND r.unit <> ''
+                    THEN r.unit
+                    ELSE p.unit
+                END,
+                p.has_dimensions = CASE
+                    WHEN (p.width IS NULL OR p.height IS NULL OR p.depth IS NULL)
+                    THEN r.has_dimensions
+                    ELSE p.has_dimensions
+                END,
+                p.dimension_status = CASE
+                    WHEN (p.dimension_status IS NULL OR p.dimension_status = '') AND r.dimension_status IS NOT NULL AND r.dimension_status <> ''
+                    THEN r.dimension_status
+                    ELSE p.dimension_status
+                END,
                 p.updated_at = ?
             WHERE p.tenant_id = ?
               AND (
@@ -129,6 +164,12 @@ class SyncProductsFromEanReferencesService
                   OR ((p.packaging_type IS NULL OR p.packaging_type = '') AND r.packaging_type IS NOT NULL AND r.packaging_type <> '')
                   OR ((p.packaging_size IS NULL OR p.packaging_size = '') AND r.packaging_size IS NOT NULL AND r.packaging_size <> '')
                   OR ((p.measurement_unit IS NULL OR p.measurement_unit = '') AND r.measurement_unit IS NOT NULL AND r.measurement_unit <> '')
+                  OR (p.width IS NULL AND r.width IS NOT NULL)
+                  OR (p.height IS NULL AND r.height IS NOT NULL)
+                  OR (p.depth IS NULL AND r.depth IS NOT NULL)
+                  OR (p.weight IS NULL AND r.weight IS NOT NULL)
+                  OR ((p.unit IS NULL OR p.unit = '') AND r.unit IS NOT NULL AND r.unit <> '')
+                  OR ((p.dimension_status IS NULL OR p.dimension_status = '') AND r.dimension_status IS NOT NULL AND r.dimension_status <> '')
               )
         ";
 
@@ -157,6 +198,13 @@ class SyncProductsFromEanReferencesService
                 'p.packaging_type',
                 'p.packaging_size',
                 'p.measurement_unit',
+                'p.width',
+                'p.height',
+                'p.depth',
+                'p.weight',
+                'p.unit',
+                'p.has_dimensions',
+                'p.dimension_status',
                 'r.category_id as reference_category_id',
                 'r.reference_description',
                 'r.brand as reference_brand',
@@ -164,6 +212,13 @@ class SyncProductsFromEanReferencesService
                 'r.packaging_type as reference_packaging_type',
                 'r.packaging_size as reference_packaging_size',
                 'r.measurement_unit as reference_measurement_unit',
+                'r.width as reference_width',
+                'r.height as reference_height',
+                'r.depth as reference_depth',
+                'r.weight as reference_weight',
+                'r.unit as reference_unit',
+                'r.has_dimensions as reference_has_dimensions',
+                'r.dimension_status as reference_dimension_status',
             ])
             ->orderBy('p.id')
             ->cursor();
@@ -203,12 +258,27 @@ class SyncProductsFromEanReferencesService
             'packaging_type' => 'reference_packaging_type',
             'packaging_size' => 'reference_packaging_size',
             'measurement_unit' => 'reference_measurement_unit',
+            'width' => 'reference_width',
+            'height' => 'reference_height',
+            'depth' => 'reference_depth',
+            'weight' => 'reference_weight',
+            'unit' => 'reference_unit',
+            'dimension_status' => 'reference_dimension_status',
         ];
 
         foreach ($fields as $productField => $referenceField) {
             if ($this->isBlank($product->{$productField} ?? null) && ! $this->isBlank($product->{$referenceField} ?? null)) {
                 $updates[$productField] = $product->{$referenceField};
             }
+        }
+
+        if (
+            ($this->isBlank($product->width ?? null)
+                || $this->isBlank($product->height ?? null)
+                || $this->isBlank($product->depth ?? null))
+            && isset($product->reference_has_dimensions)
+        ) {
+            $updates['has_dimensions'] = (bool) $product->reference_has_dimensions;
         }
 
         return $updates;
@@ -268,6 +338,36 @@ class SyncProductsFromEanReferencesService
                         ->orWhere('p.measurement_unit', '');
                 })->whereNotNull('r.measurement_unit')
                     ->where('r.measurement_unit', '<>', '');
+            })
+            ->orWhere(function ($query): void {
+                $query->whereNull('p.width')
+                    ->whereNotNull('r.width');
+            })
+            ->orWhere(function ($query): void {
+                $query->whereNull('p.height')
+                    ->whereNotNull('r.height');
+            })
+            ->orWhere(function ($query): void {
+                $query->whereNull('p.depth')
+                    ->whereNotNull('r.depth');
+            })
+            ->orWhere(function ($query): void {
+                $query->whereNull('p.weight')
+                    ->whereNotNull('r.weight');
+            })
+            ->orWhere(function ($query): void {
+                $query->where(function ($query): void {
+                    $query->whereNull('p.unit')
+                        ->orWhere('p.unit', '');
+                })->whereNotNull('r.unit')
+                    ->where('r.unit', '<>', '');
+            })
+            ->orWhere(function ($query): void {
+                $query->where(function ($query): void {
+                    $query->whereNull('p.dimension_status')
+                        ->orWhere('p.dimension_status', '');
+                })->whereNotNull('r.dimension_status')
+                    ->where('r.dimension_status', '<>', '');
             });
     }
 }
