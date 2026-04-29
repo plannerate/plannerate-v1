@@ -6,6 +6,7 @@ import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { ColumnActions, ColumnLabel } from '@/components/table/columns';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
+import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
@@ -22,7 +23,7 @@ type ProviderRow = {
 
 const props = defineProps<{
     subdomain: string;
-    providers: Paginator<ProviderRow>;
+    providers?: Paginator<ProviderRow>;
     filters: {
         search: string;
         is_default: string;
@@ -31,6 +32,7 @@ const props = defineProps<{
 
 const { t } = useT();
 const providersIndexPath = ProviderController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const { meta: providersMeta, rows: providersRows, loading: providersLoading } = useDeferredPaginator(() => props.providers, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.providers.title'),
     title: t('app.tenant.providers.title'),
@@ -54,7 +56,7 @@ const pageMeta = useCrudPageMeta({
         </template>
 
         <ListPage
-            :meta="props.providers"
+            :meta="providersMeta"
             label="provider"
             :action="providersIndexPath"
             :clear-href="providersIndexPath"
@@ -82,13 +84,16 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="props.providers.data.length === 0">
+                    <tr v-if="providersLoading">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="5">Carregando fornecedores...</td>
+                    </tr>
+                    <tr v-else-if="providersRows.length === 0">
                         <td class="px-4 py-6 text-muted-foreground" colspan="5">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
                     <tr
-                        v-for="provider in props.providers.data"
+                        v-for="provider in providersRows"
                         :key="provider.id"
                         class="border-t border-sidebar-border/60 transition-colors hover:bg-muted/20 dark:border-sidebar-border"
                     >

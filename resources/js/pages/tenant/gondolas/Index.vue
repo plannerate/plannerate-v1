@@ -9,6 +9,7 @@ import NewActionButton from '@/components/NewActionButton.vue';
 import { ColumnActions, ColumnHeader, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
+import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
 import { editor as tenantEditorPlanogramGondolas } from '@/routes/tenant/planograms/gondolas';
@@ -33,7 +34,7 @@ const props = defineProps<{
         id: string;
         name: string | null;
     };
-    gondolas: Paginator<GondolaRow>;
+    gondolas?: Paginator<GondolaRow>;
     filters: {
         search: string;
         status: string;
@@ -41,6 +42,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
+const { meta: gondolasMeta, rows: gondolasRows, loading: gondolasLoading } = useDeferredPaginator(() => props.gondolas, 10);
 const gondolasIndexPath = GondolaController.index.url({
     subdomain: props.subdomain,
     planogram: props.planogram.id,
@@ -79,7 +81,7 @@ const pageMeta = useCrudPageMeta({
         </template>
 
         <ListPage
-            :meta="props.gondolas"
+            :meta="gondolasMeta"
             label="gôndola"
             :action="gondolasIndexPath"
             :clear-href="gondolasIndexPath"
@@ -108,13 +110,16 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="props.gondolas.data.length === 0">
+                    <tr v-if="gondolasLoading">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="6">Carregando gôndolas...</td>
+                    </tr>
+                    <tr v-else-if="gondolasRows.length === 0">
                         <td class="px-4 py-6 text-muted-foreground" colspan="6">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
                     <tr
-                        v-for="gondola in props.gondolas.data"
+                        v-for="gondola in gondolasRows"
                         :key="gondola.id"
                         class="border-t border-sidebar-border/60 transition-colors hover:bg-muted/20 dark:border-sidebar-border"
                     >

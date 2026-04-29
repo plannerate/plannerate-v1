@@ -6,6 +6,7 @@ import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { ColumnActions, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
+import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
@@ -22,7 +23,7 @@ type ClusterRow = {
 
 const props = defineProps<{
     subdomain: string;
-    clusters: Paginator<ClusterRow>;
+    clusters?: Paginator<ClusterRow>;
     filters: {
         search: string;
         status: string;
@@ -35,6 +36,7 @@ const props = defineProps<{
 
 const { t } = useT();
 const clustersIndexPath = ClusterController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const { meta: clustersMeta, rows: clustersRows, loading: clustersLoading } = useDeferredPaginator(() => props.clusters, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.clusters.title'),
     title: t('app.tenant.clusters.title'),
@@ -58,7 +60,7 @@ const pageMeta = useCrudPageMeta({
         </template>
 
         <ListPage
-            :meta="props.clusters"
+            :meta="clustersMeta"
             label="cluster"
             :action="clustersIndexPath"
             :clear-href="clustersIndexPath"
@@ -93,13 +95,16 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="props.clusters.data.length === 0">
+                    <tr v-if="clustersLoading">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="5">Carregando clusters...</td>
+                    </tr>
+                    <tr v-else-if="clustersRows.length === 0">
                         <td class="px-4 py-6 text-muted-foreground" colspan="5">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
                     <tr
-                        v-for="cluster in props.clusters.data"
+                        v-for="cluster in clustersRows"
                         :key="cluster.id"
                         class="border-t border-sidebar-border/60 transition-colors hover:bg-muted/20 dark:border-sidebar-border"
                     >

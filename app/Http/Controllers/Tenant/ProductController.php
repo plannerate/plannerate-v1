@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\StoreProductRequest;
 use App\Http\Requests\Tenant\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,23 +17,50 @@ use Inertia\Response;
 
 class ProductController extends Controller
 {
+    use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
 
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', Product::class);
 
-        $search = trim((string) $request->string('search'));
-        $status = trim((string) $request->string('status'));
-        $categoryId = trim((string) $request->string('category_id'));
-        $hasStatusFilter = in_array($status, ['draft', 'published', 'synced', 'error'], true);
-        $hasCategoryFilter = $categoryId !== '';
+        $search = $this->requestString($request, 'search');
+        $status = $this->requestEnum($request, 'status', ['draft', 'published', 'synced', 'error']);
+        $categoryId = $this->requestString($request, 'category_id');
         $requestedSort = trim((string) $request->query('sort', ''));
         $sort = in_array($requestedSort, ['name', 'ean', 'status', 'created_at', 'category'], true) ? $requestedSort : null;
         $requestedDirection = strtolower((string) $request->query('direction', 'asc'));
         $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'asc';
 
-        $products = Product::query()
+        return $this->renderDeferredIndex('tenant/products/Index', 'products', fn (): LengthAwarePaginator => $this->productsPaginator(
+            $search,
+            $status,
+            $categoryId,
+            $sort,
+            $direction,
+            $this->resolvePerPage($request, 10),
+        ), [
+            'subdomain' => $this->tenantSubdomain(),
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+                'category_id' => $categoryId,
+            ],
+            'filter_options' => [
+                'categories' => $this->categoriesForSelect(),
+            ],
+        ]);
+    }
+
+    private function productsPaginator(
+        string $search,
+        string $status,
+        string $categoryId,
+        ?string $sort,
+        string $direction,
+        int $perPage,
+    ): LengthAwarePaginator {
+        return Product::query()
             ->with(['category:id,name'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
@@ -41,8 +70,8 @@ class ProductController extends Controller
                         ->orWhere('ean', 'like', '%'.$search.'%');
                 });
             })
-            ->when($hasStatusFilter, fn ($query) => $query->where('status', $status))
-            ->when($hasCategoryFilter, fn ($query) => $query->where('category_id', $categoryId))
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($categoryId !== '', fn ($query) => $query->where('category_id', $categoryId))
             ->when(
                 $sort !== null,
                 function ($query) use ($sort, $direction): void {
@@ -62,7 +91,7 @@ class ProductController extends Controller
                 },
                 fn ($query) => $query->latest(),
             )
-            ->paginate($this->resolvePerPage($request, 10))
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Product $product): array => [
                 'id' => $product->id,
@@ -74,19 +103,6 @@ class ProductController extends Controller
                 'category' => $product->category?->name,
                 'created_at' => $product->created_at?->toDateTimeString(),
             ]);
-
-        return Inertia::render('tenant/products/Index', [
-            'subdomain' => $this->tenantSubdomain(),
-            'products' => $products,
-            'filters' => [
-                'search' => $search,
-                'status' => $hasStatusFilter ? $status : '',
-                'category_id' => $hasCategoryFilter ? $categoryId : '',
-            ],
-            'filter_options' => [
-                'categories' => $this->categoriesForSelect(),
-            ],
-        ]);
     }
 
     public function create(): Response

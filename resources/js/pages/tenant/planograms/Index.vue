@@ -11,6 +11,7 @@ import { ColumnActions, ColumnDate, ColumnLabel, ColumnStatusBadge } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
+import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
@@ -36,7 +37,7 @@ type PlanogramRow = {
 
 const props = defineProps<{
     subdomain: string;
-    planograms: Paginator<PlanogramRow>;
+    planograms?: Paginator<PlanogramRow>;
     filters: {
         search: string;
         status: string;
@@ -51,6 +52,7 @@ const props = defineProps<{
 
 const { t } = useT();
 const page = usePage();
+const { meta: planogramsMeta, rows: planogramsRows, loading: planogramsLoading } = useDeferredPaginator(() => props.planograms, 10);
 
 const listPageRef = ref<InstanceType<typeof ListPage> | null>(null);
 const categoryId = ref<string | null>(props.filters.category_id ?? null);
@@ -113,7 +115,7 @@ const pageMeta = useCrudPageMeta({
 
         <ListTablePage
             ref="listPageRef"
-            :meta="props.planograms"
+            :meta="planogramsMeta"
             label="planograma"
             :action="planogramsIndexPath"
             :clear-href="planogramsIndexPath"
@@ -200,13 +202,18 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="props.planograms.data.length === 0">
+                    <tr v-if="planogramsLoading">
+                        <td class="px-4 py-10 text-center text-muted-foreground" colspan="6">
+                            Carregando planogramas...
+                        </td>
+                    </tr>
+                    <tr v-else-if="planogramsRows.length === 0">
                         <td class="px-4 py-10 text-center text-muted-foreground" colspan="6">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
                     <tr
-                        v-for="planogram in props.planograms.data"
+                        v-for="planogram in planogramsRows"
                         :key="planogram.id"
                         class="border-t border-sidebar-border/60 transition-colors hover:bg-muted/20 dark:border-sidebar-border"
                     >

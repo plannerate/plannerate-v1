@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\ImportCategorySpreadsheetRequest;
 use App\Http\Requests\Tenant\StoreCategoryRequest;
 use App\Http\Requests\Tenant\UpdateCategoryRequest;
@@ -10,6 +11,7 @@ use App\Jobs\Imports\ImportCategoriesFromSpreadsheetJob;
 use App\Models\Category;
 use App\Services\Files\Exports\Categories\CategoryExportService;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +21,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CategoryController extends Controller
 {
+    use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
 
     private const MERCADOLOGICO_UI_LEVELS = 7;
@@ -86,11 +89,25 @@ class CategoryController extends Controller
     {
         $this->authorize('viewAny', Category::class);
 
-        $search = trim((string) $request->string('search'));
-        $status = trim((string) $request->string('status'));
-        $hasStatusFilter = in_array($status, ['draft', 'published', 'importer'], true);
+        $search = $this->requestString($request, 'search');
+        $status = $this->requestEnum($request, 'status', ['draft', 'published', 'importer']);
 
-        $categories = Category::query()
+        return $this->renderDeferredIndex('tenant/categories/Index', 'categories', fn (): LengthAwarePaginator => $this->categoriesPaginator(
+            $search,
+            $status,
+            $this->resolvePerPage($request, 10),
+        ), [
+            'subdomain' => $this->tenantSubdomain(),
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+            ],
+        ]);
+    }
+
+    private function categoriesPaginator(string $search, string $status, int $perPage): LengthAwarePaginator
+    {
+        return Category::query()
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -98,9 +115,9 @@ class CategoryController extends Controller
                         ->orWhere('slug', 'like', '%'.$search.'%');
                 });
             })
-            ->when($hasStatusFilter, fn ($query) => $query->where('status', $status))
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->latest()
-            ->paginate($this->resolvePerPage($request, 10))
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Category $category): array => [
                 'id' => $category->id,
@@ -113,15 +130,6 @@ class CategoryController extends Controller
                 'level_name' => $category->level_name,
                 'created_at' => $category->created_at?->toDateTimeString(),
             ]);
-
-        return Inertia::render('tenant/categories/Index', [
-            'subdomain' => $this->tenantSubdomain(),
-            'categories' => $categories,
-            'filters' => [
-                'search' => $search,
-                'status' => $hasStatusFilter ? $status : '',
-            ],
-        ]);
     }
 
     public function create(): Response

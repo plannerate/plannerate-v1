@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\PlanogramStoreRequest;
 use App\Http\Requests\Tenant\PlanogramUpdateRequest;
 use App\Models\Cluster;
 use App\Models\Planogram;
 use App\Models\Store;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,23 +18,50 @@ use Inertia\Response;
 
 class PlanogramController extends Controller
 {
+    use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
 
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', Planogram::class);
 
-        $search = trim((string) $request->string('search'));
-        $status = trim((string) $request->string('status'));
-        $type = trim((string) $request->string('type'));
-        $storeId = trim((string) $request->string('store_id'));
-        $categoryId = trim((string) $request->string('category_id'));
-        $hasStatusFilter = in_array($status, ['draft', 'published'], true);
-        $hasTypeFilter = in_array($type, ['realograma', 'planograma'], true);
-        $hasStoreFilter = $storeId !== '';
-        $hasCategoryFilter = $categoryId !== '';
+        $search = $this->requestString($request, 'search');
+        $status = $this->requestEnum($request, 'status', ['draft', 'published']);
+        $type = $this->requestEnum($request, 'type', ['realograma', 'planograma']);
+        $storeId = $this->requestString($request, 'store_id');
+        $categoryId = $this->requestString($request, 'category_id');
 
-        $planograms = Planogram::query()
+        return $this->renderDeferredIndex('tenant/planograms/Index', 'planograms', fn (): LengthAwarePaginator => $this->planogramsPaginator(
+            $search,
+            $status,
+            $type,
+            $storeId,
+            $categoryId,
+            $this->resolvePerPage($request, 10),
+        ), [
+            'subdomain' => $this->tenantSubdomain(),
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+                'type' => $type,
+                'store_id' => $storeId,
+                'category_id' => $categoryId,
+            ],
+            'filter_options' => [
+                'stores' => $this->storesForSelect(),
+            ],
+        ]);
+    }
+
+    private function planogramsPaginator(
+        string $search,
+        string $status,
+        string $type,
+        string $storeId,
+        string $categoryId,
+        int $perPage,
+    ): LengthAwarePaginator {
+        return Planogram::query()
             ->with(['store:id,name', 'cluster:id,name', 'category:id,name'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
@@ -42,12 +71,12 @@ class PlanogramController extends Controller
                         ->orWhere('description', 'like', '%'.$search.'%');
                 });
             })
-            ->when($hasStatusFilter, fn ($query) => $query->where('status', $status))
-            ->when($hasTypeFilter, fn ($query) => $query->where('type', $type))
-            ->when($hasStoreFilter, fn ($query) => $query->where('store_id', $storeId))
-            ->when($hasCategoryFilter, fn ($query) => $query->where('category_id', $categoryId))
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($type !== '', fn ($query) => $query->where('type', $type))
+            ->when($storeId !== '', fn ($query) => $query->where('store_id', $storeId))
+            ->when($categoryId !== '', fn ($query) => $query->where('category_id', $categoryId))
             ->latest()
-            ->paginate($this->resolvePerPage($request, 10))
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Planogram $planogram): array => [
                 'id' => $planogram->id,
@@ -62,21 +91,6 @@ class PlanogramController extends Controller
                 'status' => $planogram->status,
                 'created_at' => $planogram->created_at?->toDateTimeString(),
             ]);
-
-        return Inertia::render('tenant/planograms/Index', [
-            'subdomain' => $this->tenantSubdomain(),
-            'planograms' => $planograms,
-            'filters' => [
-                'search' => $search,
-                'status' => $hasStatusFilter ? $status : '',
-                'type' => $hasTypeFilter ? $type : '',
-                'store_id' => $hasStoreFilter ? $storeId : '',
-                'category_id' => $hasCategoryFilter ? $categoryId : '',
-            ],
-            'filter_options' => [
-                'stores' => $this->storesForSelect(),
-            ],
-        ]);
     }
 
     public function create(): Response

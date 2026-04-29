@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\StoreSaleRequest;
 use App\Http\Requests\Tenant\UpdateSaleRequest;
 use App\Models\Sale;
@@ -16,15 +17,15 @@ use Inertia\Response;
 
 class SaleController extends Controller
 {
+    use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
 
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', Sale::class);
 
-        $search = trim((string) $request->string('search'));
-        $storeId = trim((string) $request->string('store_id'));
-        $hasStoreFilter = $storeId !== '';
+        $search = $this->requestString($request, 'search');
+        $storeId = $this->requestString($request, 'store_id');
         $requestedSort = trim((string) $request->query('sort', ''));
         $sort = in_array($requestedSort, ['codigo_erp', 'store', 'sale_date', 'total_sale_quantity', 'total_sale_value'], true)
             ? $requestedSort
@@ -32,18 +33,17 @@ class SaleController extends Controller
         $requestedDirection = strtolower((string) $request->query('direction', 'desc'));
         $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'desc';
 
-        return Inertia::render('tenant/sales/Index', [
+        return $this->renderDeferredIndex('tenant/sales/Index', 'sales', fn (): LengthAwarePaginator => $this->salesPaginator(
+            $search,
+            $storeId,
+            $sort,
+            $direction,
+            $this->resolvePerPage($request, 10),
+        ), [
             'subdomain' => $this->tenantSubdomain(),
-            'sales' => Inertia::defer(fn (): LengthAwarePaginator => $this->salesPaginator(
-                $search,
-                $hasStoreFilter ? $storeId : '',
-                $sort,
-                $direction,
-                $this->resolvePerPage($request, 10),
-            )),
             'filters' => [
                 'search' => $search,
-                'store_id' => $hasStoreFilter ? $storeId : '',
+                'store_id' => $storeId,
             ],
             'filter_options' => [
                 'stores' => $this->storesForSelect(),

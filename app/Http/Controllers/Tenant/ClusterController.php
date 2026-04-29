@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\ClusterStoreRequest;
 use App\Http\Requests\Tenant\ClusterUpdateRequest;
 use App\Models\Cluster;
 use App\Models\Store;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,19 +17,38 @@ use Inertia\Response;
 
 class ClusterController extends Controller
 {
+    use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
 
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', Cluster::class);
 
-        $search = trim((string) $request->string('search'));
-        $status = trim((string) $request->string('status'));
-        $storeId = trim((string) $request->string('store_id'));
-        $hasStatusFilter = in_array($status, ['draft', 'published'], true);
-        $hasStoreFilter = $storeId !== '';
+        $search = $this->requestString($request, 'search');
+        $status = $this->requestEnum($request, 'status', ['draft', 'published']);
+        $storeId = $this->requestString($request, 'store_id');
 
-        $clusters = Cluster::query()
+        return $this->renderDeferredIndex('tenant/clusters/Index', 'clusters', fn (): LengthAwarePaginator => $this->clustersPaginator(
+            $search,
+            $status,
+            $storeId,
+            $this->resolvePerPage($request, 10),
+        ), [
+            'subdomain' => $this->tenantSubdomain(),
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+                'store_id' => $storeId,
+            ],
+            'filter_options' => [
+                'stores' => $this->storesForSelect(),
+            ],
+        ]);
+    }
+
+    private function clustersPaginator(string $search, string $status, string $storeId, int $perPage): LengthAwarePaginator
+    {
+        return Cluster::query()
             ->with(['store:id,name'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
@@ -39,10 +60,10 @@ class ClusterController extends Controller
                         ->orWhere('specification_3', 'like', '%'.$search.'%');
                 });
             })
-            ->when($hasStatusFilter, fn ($query) => $query->where('status', $status))
-            ->when($hasStoreFilter, fn ($query) => $query->where('store_id', $storeId))
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($storeId !== '', fn ($query) => $query->where('store_id', $storeId))
             ->latest()
-            ->paginate($this->resolvePerPage($request, 10))
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Cluster $cluster): array => [
                 'id' => $cluster->id,
@@ -54,19 +75,6 @@ class ClusterController extends Controller
                 'status' => $cluster->status,
                 'created_at' => $cluster->created_at?->toDateTimeString(),
             ]);
-
-        return Inertia::render('tenant/clusters/Index', [
-            'subdomain' => $this->tenantSubdomain(),
-            'clusters' => $clusters,
-            'filters' => [
-                'search' => $search,
-                'status' => $hasStatusFilter ? $status : '',
-                'store_id' => $hasStoreFilter ? $storeId : '',
-            ],
-            'filter_options' => [
-                'stores' => $this->storesForSelect(),
-            ],
-        ]);
     }
 
     public function create(): Response

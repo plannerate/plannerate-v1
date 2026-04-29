@@ -6,6 +6,7 @@ import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { ColumnActions, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
+import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
@@ -21,7 +22,7 @@ type StoreRow = {
 
 const props = defineProps<{
     subdomain: string;
-    stores: Paginator<StoreRow>;
+    stores?: Paginator<StoreRow>;
     filters: {
         search: string;
         status: string;
@@ -30,6 +31,7 @@ const props = defineProps<{
 
 const { t } = useT();
 const storesIndexPath = StoreController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const { meta: storesMeta, rows: storesRows, loading: storesLoading } = useDeferredPaginator(() => props.stores, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.stores.title'),
     title: t('app.tenant.stores.title'),
@@ -53,7 +55,7 @@ const pageMeta = useCrudPageMeta({
         </template>
 
         <ListPage
-            :meta="props.stores"
+            :meta="storesMeta"
             label="loja"
             :action="storesIndexPath"
             :clear-href="storesIndexPath"
@@ -81,13 +83,16 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="props.stores.data.length === 0">
+                    <tr v-if="storesLoading">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="5">Carregando lojas...</td>
+                    </tr>
+                    <tr v-else-if="storesRows.length === 0">
                         <td class="px-4 py-6 text-muted-foreground" colspan="5">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
                     <tr
-                        v-for="store in props.stores.data"
+                        v-for="store in storesRows"
                         :key="store.id"
                         class="border-t border-sidebar-border/60 transition-colors hover:bg-muted/20 dark:border-sidebar-border"
                     >

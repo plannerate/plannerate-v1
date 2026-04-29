@@ -12,6 +12,7 @@ import {
     ColumnLabel,
 } from '@/components/table/columns';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
+import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
@@ -32,7 +33,7 @@ type ProductRow = {
 
 const props = defineProps<{
     subdomain: string;
-    products: Paginator<ProductRow>;
+    products?: Paginator<ProductRow>;
     filters: {
         search: string;
         status: string;
@@ -44,6 +45,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
+const { meta: productsMeta, rows: productsRows, loading: productsLoading } = useDeferredPaginator(() => props.products, 10);
 const productsIndexPath = ProductController.index
     .url(props.subdomain)
     .replace(/^\/\/[^/]+/, '');
@@ -86,7 +88,7 @@ const pageMeta = useCrudPageMeta({
         </template>
 
         <ListPage
-            :meta="props.products"
+            :meta="productsMeta"
             label="produto"
             :action="productsIndexPath"
             :clear-href="productsIndexPath"
@@ -178,13 +180,16 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="props.products.data.length === 0">
+                    <tr v-if="productsLoading">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="6">Carregando produtos...</td>
+                    </tr>
+                    <tr v-else-if="productsRows.length === 0">
                         <td class="px-4 py-6 text-muted-foreground" colspan="6">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
                     <tr
-                        v-for="product in props.products.data"
+                        v-for="product in productsRows"
                         :key="product.id"
                         class="border-t border-sidebar-border/60 dark:border-sidebar-border"
                     >

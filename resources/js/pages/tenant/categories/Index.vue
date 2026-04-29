@@ -8,6 +8,7 @@ import { ColumnActions, ColumnLabel, ColumnStatusBadge } from '@/components/tabl
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
+import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
@@ -26,7 +27,7 @@ type CategoryRow = {
 
 const props = defineProps<{
     subdomain: string;
-    categories: Paginator<CategoryRow>;
+    categories?: Paginator<CategoryRow>;
     filters: {
         search: string;
         status: string;
@@ -34,6 +35,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
+const { meta: categoriesMeta, rows: categoriesRows, loading: categoriesLoading } = useDeferredPaginator(() => props.categories, 10);
 const categoriesIndexPath = CategoryController.index
     .url(props.subdomain)
     .replace(/^\/\/[^/]+/, '');
@@ -89,7 +91,7 @@ const pageMeta = useCrudPageMeta({
         <ListPage
             :title="pageMeta.title"
             :description="pageMeta.description"
-            :meta="props.categories"
+            :meta="categoriesMeta"
             label="categoria"
             :action="categoriesIndexPath"
             :clear-href="categoriesIndexPath"
@@ -122,13 +124,18 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="props.categories.data.length === 0">
+                    <tr v-if="categoriesLoading">
+                        <td class="px-4 py-8 text-center text-muted-foreground" colspan="5">
+                            Carregando categorias...
+                        </td>
+                    </tr>
+                    <tr v-else-if="categoriesRows.length === 0">
                         <td class="px-4 py-8 text-center text-muted-foreground" colspan="5">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
                     <tr
-                        v-for="category in props.categories.data"
+                        v-for="category in categoriesRows"
                         :key="category.id"
                         class="border-t border-sidebar-border/60 transition-colors hover:bg-muted/20 dark:border-sidebar-border"
                     >

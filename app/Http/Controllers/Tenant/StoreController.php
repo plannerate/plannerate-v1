@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithAddress;
+use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\StoreStoreRequest;
 use App\Http\Requests\Tenant\StoreUpdateRequest;
 use App\Models\Store;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -20,17 +22,32 @@ use Inertia\Response;
 class StoreController extends Controller
 {
     use InteractsWithAddress;
+    use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
 
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', Store::class);
 
-        $search = trim((string) $request->string('search'));
-        $status = trim((string) $request->string('status'));
-        $hasStatusFilter = in_array($status, ['draft', 'published'], true);
+        $search = $this->requestString($request, 'search');
+        $status = $this->requestEnum($request, 'status', ['draft', 'published']);
 
-        $stores = Store::query()
+        return $this->renderDeferredIndex('tenant/stores/Index', 'stores', fn (): LengthAwarePaginator => $this->storesPaginator(
+            $search,
+            $status,
+            $this->resolvePerPage($request, 10),
+        ), [
+            'subdomain' => $this->tenantSubdomain(),
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+            ],
+        ]);
+    }
+
+    private function storesPaginator(string $search, string $status, int $perPage): LengthAwarePaginator
+    {
+        return Store::query()
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -40,9 +57,9 @@ class StoreController extends Controller
                         ->orWhere('document', 'like', '%'.$search.'%');
                 });
             })
-            ->when($hasStatusFilter, fn ($query) => $query->where('status', $status))
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->latest()
-            ->paginate($this->resolvePerPage($request, 10))
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Store $store): array => [
                 'id' => $store->id,
@@ -53,15 +70,6 @@ class StoreController extends Controller
                 'status' => $store->status,
                 'created_at' => $store->created_at?->toDateTimeString(),
             ]);
-
-        return Inertia::render('tenant/stores/Index', [
-            'subdomain' => $this->tenantSubdomain(),
-            'stores' => $stores,
-            'filters' => [
-                'search' => $search,
-                'status' => $hasStatusFilter ? $status : '',
-            ],
-        ]);
     }
 
     public function create(): Response

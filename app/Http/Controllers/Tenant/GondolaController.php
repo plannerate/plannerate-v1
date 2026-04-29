@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\GondolaStoreRequest;
 use App\Http\Requests\Tenant\GondolaUpdateRequest;
 use App\Models\Gondola;
 use App\Models\Planogram;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
@@ -16,6 +18,7 @@ use Inertia\Response;
 
 class GondolaController extends Controller
 {
+    use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
 
     public function index(Request $request, string $subdomain, Planogram $planogram): Response
@@ -23,11 +26,30 @@ class GondolaController extends Controller
         unset($subdomain);
         $this->authorize('viewAny', Gondola::class);
         $this->authorize('view', $planogram);
-        $search = trim((string) $request->string('search'));
-        $status = trim((string) $request->string('status'));
-        $hasStatusFilter = in_array($status, ['draft', 'published'], true);
+        $search = $this->requestString($request, 'search');
+        $status = $this->requestEnum($request, 'status', ['draft', 'published']);
 
-        $gondolas = Gondola::query()
+        return $this->renderDeferredIndex('tenant/gondolas/Index', 'gondolas', fn (): LengthAwarePaginator => $this->gondolasPaginator(
+            $planogram,
+            $search,
+            $status,
+            $this->resolvePerPage($request, 10),
+        ), [
+            'subdomain' => $this->tenantSubdomain(),
+            'planogram' => [
+                'id' => $planogram->id,
+                'name' => $planogram->name,
+            ],
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+            ],
+        ]);
+    }
+
+    private function gondolasPaginator(Planogram $planogram, string $search, string $status, int $perPage): LengthAwarePaginator
+    {
+        return Gondola::query()
             ->where('planogram_id', $planogram->id)
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
@@ -37,9 +59,9 @@ class GondolaController extends Controller
                         ->orWhere('location', 'like', '%'.$search.'%');
                 });
             })
-            ->when($hasStatusFilter, fn ($query) => $query->where('status', $status))
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->latest()
-            ->paginate($this->resolvePerPage($request, 10))
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Gondola $gondola): array => [
                 'id' => $gondola->id,
@@ -54,19 +76,6 @@ class GondolaController extends Controller
                 'status' => $gondola->status,
                 'created_at' => $gondola->created_at?->toDateTimeString(),
             ]);
-
-        return Inertia::render('tenant/gondolas/Index', [
-            'subdomain' => $this->tenantSubdomain(),
-            'planogram' => [
-                'id' => $planogram->id,
-                'name' => $planogram->name,
-            ],
-            'gondolas' => $gondolas,
-            'filters' => [
-                'search' => $search,
-                'status' => $hasStatusFilter ? $status : '',
-            ],
-        ]);
     }
 
     public function create(string $subdomain, Planogram $planogram): Response

@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithAddress;
+use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\ProviderStoreRequest;
 use App\Http\Requests\Tenant\ProviderUpdateRequest;
 use App\Models\Provider;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -17,17 +19,32 @@ use Inertia\Response;
 class ProviderController extends Controller
 {
     use InteractsWithAddress;
+    use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
 
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', Provider::class);
 
-        $search = trim((string) $request->string('search'));
-        $isDefault = trim((string) $request->string('is_default'));
-        $hasDefaultFilter = in_array($isDefault, ['0', '1'], true);
+        $search = $this->requestString($request, 'search');
+        $isDefault = $this->requestEnum($request, 'is_default', ['0', '1']);
 
-        $providers = Provider::query()
+        return $this->renderDeferredIndex('tenant/providers/Index', 'providers', fn (): LengthAwarePaginator => $this->providersPaginator(
+            $search,
+            $isDefault,
+            $this->resolvePerPage($request, 10),
+        ), [
+            'subdomain' => $this->tenantSubdomain(),
+            'filters' => [
+                'search' => $search,
+                'is_default' => $isDefault,
+            ],
+        ]);
+    }
+
+    private function providersPaginator(string $search, string $isDefault, int $perPage): LengthAwarePaginator
+    {
+        return Provider::query()
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -37,9 +54,9 @@ class ProviderController extends Controller
                         ->orWhere('cnpj', 'like', '%'.$search.'%');
                 });
             })
-            ->when($hasDefaultFilter, fn ($query) => $query->where('is_default', $isDefault === '1'))
+            ->when($isDefault !== '', fn ($query) => $query->where('is_default', $isDefault === '1'))
             ->latest()
-            ->paginate($this->resolvePerPage($request, 10))
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Provider $provider): array => [
                 'id' => $provider->id,
@@ -51,15 +68,6 @@ class ProviderController extends Controller
                 'is_default' => (bool) $provider->is_default,
                 'created_at' => $provider->created_at?->toDateTimeString(),
             ]);
-
-        return Inertia::render('tenant/providers/Index', [
-            'subdomain' => $this->tenantSubdomain(),
-            'providers' => $providers,
-            'filters' => [
-                'search' => $search,
-                'is_default' => $hasDefaultFilter ? $isDefault : '',
-            ],
-        ]);
     }
 
     public function create(): Response
