@@ -16,6 +16,7 @@ use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\User;
+use App\Notifications\AppNotification;
 use App\Services\Integrations\Contracts\SalesIntegrationService;
 use App\Services\Integrations\Orchestration\DispatchDailySyncService;
 use App\Services\Integrations\Orchestration\DispatchInitialSyncService;
@@ -24,11 +25,13 @@ use App\Services\Integrations\Support\IntegrationServiceResolver;
 use App\Services\Integrations\Support\SyncSalesProductReferencesService;
 use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Database\Connection;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 
 beforeEach(function (): void {
     config([
@@ -47,13 +50,40 @@ beforeEach(function (): void {
 
 test('integrations dispatch daily command enqueues jobs for active integrations', function () {
     Bus::fake();
+    Notification::fake();
+    $tenantDatabase = tempnam(sys_get_temp_dir(), 'tenant_daily_notification_');
+    config([
+        'multitenancy.tenant_database_connection_name' => 'tenant',
+        'database.connections.tenant' => array_merge(config('database.connections.sqlite'), [
+            'database' => $tenantDatabase,
+        ]),
+    ]);
 
     $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Daily',
         'slug' => 'tenant-daily-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => $tenantDatabase,
         'status' => 'active',
     ]));
+    $tenantUser = $tenant->execute(function (): User {
+        if (! Schema::connection('tenant')->hasTable('users')) {
+            Schema::connection('tenant')->create('users', function (Blueprint $table): void {
+                $table->ulid('id')->primary();
+                $table->string('name');
+                $table->string('email')->unique();
+                $table->timestamp('email_verified_at')->nullable();
+                $table->string('password');
+                $table->rememberToken();
+                $table->text('two_factor_secret')->nullable();
+                $table->text('two_factor_recovery_codes')->nullable();
+                $table->timestamp('two_factor_confirmed_at')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+            });
+        }
+
+        return User::factory()->create(['is_active' => true]);
+    });
 
     TenantIntegration::query()->create([
         'tenant_id' => $tenant->id,
@@ -67,6 +97,13 @@ test('integrations dispatch daily command enqueues jobs for active integrations'
     $this->artisan('integrations:dispatch-daily')->assertSuccessful();
 
     Bus::assertDispatched(DispatchTenantIntegrationDailySyncJob::class, 1);
+    Notification::assertSentTo(
+        $tenantUser,
+        AppNotification::class,
+        fn (AppNotification $notification): bool => $notification->title === 'Sincronização diária iniciada'
+            && str_contains($notification->message, (string) $tenant->id)
+            && $notification->type === 'info'
+    );
 });
 
 test('integrations dispatch initial command enqueues jobs for active integrations', function () {
