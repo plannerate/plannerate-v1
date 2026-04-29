@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 beforeEach(function (): void {
     config([
@@ -358,4 +359,147 @@ test('integrations reconcile sales products command updates sales references', f
         ->and($product)->not->toBeNull()
         ->and($sale?->product_id)->toBe($product?->id)
         ->and($sale?->ean)->toBe('7891234500009');
+});
+
+test('link sales products command uses tenant option without client context', function () {
+    Notification::fake();
+    config(['multitenancy.tenant_database_connection_name' => null]);
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Link Sales',
+        'slug' => 'tenant-link-sales-'.fake()->numberBetween(100, 999),
+        'database' => 'tenant_link_sales',
+        'status' => 'active',
+    ]));
+
+    $otherTenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Other Tenant Link Sales',
+        'slug' => 'other-tenant-link-sales-'.fake()->numberBetween(100, 999),
+        'database' => 'other_tenant_link_sales',
+        'status' => 'active',
+    ]));
+
+    $tenantConnectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+    $now = now();
+    $generator = app(DeterministicIdGenerator::class);
+
+    $productId = $generator->productId(
+        tenantId: (string) $tenant->id,
+        ean: '7891234500016',
+        codigoErp: '99801',
+    );
+
+    DB::connection($tenantConnectionName)->table('products')->insert([
+        [
+            'id' => $productId,
+            'tenant_id' => (string) $tenant->id,
+            'name' => 'Produto Link Sales',
+            'ean' => '7891234500016',
+            'codigo_erp' => '99801',
+            'description' => null,
+            'brand' => null,
+            'unit_measure' => null,
+            'sales_status' => null,
+            'status' => 'synced',
+            'sync_source' => 'manual',
+            'sync_at' => $now,
+            'deleted_at' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ],
+        [
+            'id' => $generator->productId(
+                tenantId: (string) $otherTenant->id,
+                ean: '7891234500016',
+                codigoErp: '99801',
+            ),
+            'tenant_id' => (string) $otherTenant->id,
+            'name' => 'Produto Outro Tenant',
+            'ean' => '7891234500016',
+            'codigo_erp' => '99801',
+            'description' => null,
+            'brand' => null,
+            'unit_measure' => null,
+            'sales_status' => null,
+            'status' => 'synced',
+            'sync_source' => 'manual',
+            'sync_at' => $now,
+            'deleted_at' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ],
+    ]);
+
+    DB::connection($tenantConnectionName)->table('sales')->insert([
+        [
+            'id' => $generator->saleId(
+                tenantId: (string) $tenant->id,
+                integrationId: (string) str()->ulid(),
+                storeDocument: '81342172000145',
+                codigoErp: '99801',
+                saleDate: '2025-01-23',
+                promotion: 'N',
+            ),
+            'tenant_id' => (string) $tenant->id,
+            'store_id' => null,
+            'product_id' => null,
+            'ean' => null,
+            'codigo_erp' => '99801',
+            'acquisition_cost' => 1,
+            'sale_price' => 1,
+            'sale_date' => '2025-01-23',
+            'promotion' => 'N',
+            'total_sale_quantity' => 1,
+            'total_sale_value' => 1,
+            'total_profit_margin' => 1,
+            'margem_contribuicao' => 1,
+            'extra_data' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ],
+        [
+            'id' => $generator->saleId(
+                tenantId: (string) $otherTenant->id,
+                integrationId: (string) str()->ulid(),
+                storeDocument: '81342172000145',
+                codigoErp: '99801',
+                saleDate: '2025-01-23',
+                promotion: 'N',
+            ),
+            'tenant_id' => (string) $otherTenant->id,
+            'store_id' => null,
+            'product_id' => null,
+            'ean' => null,
+            'codigo_erp' => '99801',
+            'acquisition_cost' => 1,
+            'sale_price' => 1,
+            'sale_date' => '2025-01-23',
+            'promotion' => 'N',
+            'total_sale_quantity' => 1,
+            'total_sale_value' => 1,
+            'total_profit_margin' => 1,
+            'margem_contribuicao' => 1,
+            'extra_data' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ],
+    ]);
+
+    $this->artisan(sprintf('sync:link-sales --tenant=%s', $tenant->id))
+        ->assertSuccessful();
+
+    $linkedSale = DB::connection($tenantConnectionName)->table('sales')
+        ->where('tenant_id', (string) $tenant->id)
+        ->where('codigo_erp', '99801')
+        ->first();
+
+    $untouchedSale = DB::connection($tenantConnectionName)->table('sales')
+        ->where('tenant_id', (string) $otherTenant->id)
+        ->where('codigo_erp', '99801')
+        ->first();
+
+    expect($linkedSale?->product_id)->toBe($productId)
+        ->and($linkedSale?->ean)->toBe('7891234500016')
+        ->and($untouchedSale?->product_id)->toBeNull()
+        ->and($untouchedSale?->ean)->toBeNull();
 });
