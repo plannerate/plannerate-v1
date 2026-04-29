@@ -8,6 +8,7 @@ use App\Http\Requests\Tenant\UpdateSaleRequest;
 use App\Models\Sale;
 use App\Models\Store;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -31,7 +32,35 @@ class SaleController extends Controller
         $requestedDirection = strtolower((string) $request->query('direction', 'desc'));
         $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'desc';
 
-        $sales = Sale::query()
+        return Inertia::render('tenant/sales/Index', [
+            'subdomain' => $this->tenantSubdomain(),
+            'sales' => Inertia::defer(fn (): LengthAwarePaginator => $this->salesPaginator(
+                $search,
+                $hasStoreFilter ? $storeId : '',
+                $sort,
+                $direction,
+                $this->resolvePerPage($request, 10),
+            )),
+            'filters' => [
+                'search' => $search,
+                'store_id' => $hasStoreFilter ? $storeId : '',
+            ],
+            'filter_options' => [
+                'stores' => $this->storesForSelect(),
+            ],
+        ]);
+    }
+
+    private function salesPaginator(
+        string $search,
+        string $storeId,
+        ?string $sort,
+        string $direction,
+        int $perPage,
+    ): LengthAwarePaginator {
+        $hasStoreFilter = $storeId !== '';
+
+        return Sale::query()
             ->with(['store:id,name'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
@@ -61,7 +90,7 @@ class SaleController extends Controller
                 },
                 fn ($query) => $query->latest('sale_date'),
             )
-            ->paginate($this->resolvePerPage($request, 10))
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Sale $sale): array => [
                 'id' => $sale->id,
@@ -73,18 +102,6 @@ class SaleController extends Controller
                 'total_sale_quantity' => $sale->total_sale_quantity,
                 'total_sale_value' => $sale->total_sale_value,
             ]);
-
-        return Inertia::render('tenant/sales/Index', [
-            'subdomain' => $this->tenantSubdomain(),
-            'sales' => $sales,
-            'filters' => [
-                'search' => $search,
-                'store_id' => $hasStoreFilter ? $storeId : '',
-            ],
-            'filter_options' => [
-                'stores' => $this->storesForSelect(),
-            ],
-        ]);
     }
 
     public function create(): Response

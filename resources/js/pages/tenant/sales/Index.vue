@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { BadgeDollarSign, CalendarDays, Hash, Package, Store } from 'lucide-vue-next';
+import { computed } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SaleController from '@/actions/App/Http/Controllers/Tenant/SaleController';
 import ListPage from '@/components/ListPage.vue';
@@ -25,7 +26,7 @@ type SaleRow = {
 
 const props = defineProps<{
     subdomain: string;
-    sales: Paginator<SaleRow>;
+    sales?: Paginator<SaleRow>;
     filters: {
         search: string;
         store_id: string;
@@ -37,6 +38,17 @@ const props = defineProps<{
 
 const { t } = useT();
 const salesIndexPath = SaleController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const loadingSalesMeta: Omit<Paginator<SaleRow>, 'data'> = {
+    links: [],
+    from: null,
+    to: null,
+    total: 0,
+    current_page: 1,
+    last_page: 1,
+    per_page: 10,
+};
+const salesMeta = computed(() => props.sales ?? loadingSalesMeta);
+const salesData = computed(() => props.sales?.data ?? []);
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
@@ -106,7 +118,7 @@ const pageMeta = useCrudPageMeta({
         </template>
 
         <ListPage
-            :meta="props.sales"
+            :meta="salesMeta"
             label="venda"
             :action="salesIndexPath"
             :clear-href="salesIndexPath"
@@ -161,13 +173,18 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="props.sales.data.length === 0">
+                    <tr v-if="!props.sales">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="6">
+                            Carregando vendas...
+                        </td>
+                    </tr>
+                    <tr v-else-if="salesData.length === 0">
                         <td class="px-4 py-6 text-muted-foreground" colspan="6">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
                     <tr
-                        v-for="sale in props.sales.data"
+                        v-for="sale in salesData"
                         :key="sale.id"
                         class="border-t border-sidebar-border/60 transition-colors odd:bg-muted/10 even:bg-background hover:bg-muted/20 dark:border-sidebar-border"
                     >
