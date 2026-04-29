@@ -9,14 +9,12 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
 
 class CleanupOrphanSalesJob implements NotTenantAware, ShouldQueue
 {
-    use Dispatchable;
-    use InteractsWithQueue;
-    use Queueable;
-    use SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
 
@@ -28,25 +26,57 @@ class CleanupOrphanSalesJob implements NotTenantAware, ShouldQueue
     public function __construct(
         public string $tenantId,
         public array $saleIds,
+        public string $tenantConnectionName,
+        public bool $executeInTenantContext = true,
     ) {}
 
     public function handle(): void
     {
-        $tenant = Tenant::query()->find($this->tenantId);
-        if (! $tenant || $this->saleIds === []) {
+        if ($this->tenantId === '' || $this->saleIds === []) {
             return;
         }
 
-        $tenant->execute(function (): void {
-            $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+        $tenant = Tenant::query()->whereKey($this->tenantId)->first();
+        if (! $tenant) {
+            return;
+        }
 
-            foreach (array_chunk($this->saleIds, 500) as $chunk) {
-                DB::connection($connection)
+        $run = function (): void {
+            $chunks = array_chunk($this->saleIds, 500);
+            $totalDeleted = 0;
+
+            foreach ($chunks as $chunk) {
+                $totalDeleted += DB::connection($this->tenantConnectionName)
                     ->table('sales')
                     ->where('tenant_id', $this->tenantId)
                     ->whereIn('id', $chunk)
                     ->delete();
             }
-        });
+
+            Log::info('Limpeza de vendas órfãs concluída', [
+                'tenant_id' => $this->tenantId,
+                'total_deleted' => $totalDeleted,
+            ]);
+        };
+
+        if ($this->executeInTenantContext) {
+            $tenant->execute($run);
+
+            return;
+        }
+
+        $run();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function tags(): array
+    {
+        return [
+            'cleanup',
+            'orphan-sales',
+            "tenant:{$this->tenantId}",
+        ];
     }
 }
