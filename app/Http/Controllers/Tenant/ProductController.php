@@ -26,6 +26,10 @@ class ProductController extends Controller
         $categoryId = trim((string) $request->string('category_id'));
         $hasStatusFilter = in_array($status, ['draft', 'published', 'synced', 'error'], true);
         $hasCategoryFilter = $categoryId !== '';
+        $requestedSort = trim((string) $request->query('sort', ''));
+        $sort = in_array($requestedSort, ['name', 'ean', 'status', 'created_at', 'category'], true) ? $requestedSort : null;
+        $requestedDirection = strtolower((string) $request->query('direction', 'asc'));
+        $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'asc';
 
         $products = Product::query()
             ->with(['category:id,name'])
@@ -39,7 +43,25 @@ class ProductController extends Controller
             })
             ->when($hasStatusFilter, fn ($query) => $query->where('status', $status))
             ->when($hasCategoryFilter, fn ($query) => $query->where('category_id', $categoryId))
-            ->latest()
+            ->when(
+                $sort !== null,
+                function ($query) use ($sort, $direction): void {
+                    if ($sort === 'category') {
+                        $query->orderBy(
+                            Category::query()
+                                ->select('name')
+                                ->whereColumn('categories.id', 'products.category_id')
+                                ->limit(1),
+                            $direction,
+                        );
+
+                        return;
+                    }
+
+                    $query->orderBy($sort, $direction);
+                },
+                fn ($query) => $query->latest(),
+            )
             ->paginate(10)
             ->withQueryString()
             ->through(fn (Product $product): array => [

@@ -182,7 +182,6 @@ test('persist mapped products backfills sales references by codigo erp', functio
         app(SysmoEndpoints::class),
         new SysmoSalesResponseMapper,
         new DeterministicIdGenerator,
-        app(SyncSalesProductReferencesService::class),
     );
 
     $salesService->persistMappedSales($tenantId, $integrationId, [

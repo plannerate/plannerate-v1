@@ -2,12 +2,14 @@
 
 namespace App\Services\Integrations\Orchestration;
 
+use App\Jobs\Integrations\Maintenance\RunTenantIntegrationPostSyncJob;
 use App\Jobs\Integrations\Products\SyncTenantProductsDayJob;
 use App\Jobs\Integrations\Sales\SyncTenantSalesDayJob;
 use App\Models\IntegrationSyncDay;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Bus;
 
 class DispatchDailySyncService
 {
@@ -57,13 +59,23 @@ class DispatchDailySyncService
         sort($productsDatesToDispatch);
 
         $tenant->execute(function () use ($integration, $productsDatesToDispatch, $salesDatesToDispatch): void {
+            $jobs = [];
+
             foreach ($salesDatesToDispatch as $date) {
-                SyncTenantSalesDayJob::dispatch($integration->id, $date);
+                $jobs[] = new SyncTenantSalesDayJob((string) $integration->id, $date);
             }
 
             foreach ($productsDatesToDispatch as $date) {
-                SyncTenantProductsDayJob::dispatch($integration->id, $date);
+                $jobs[] = new SyncTenantProductsDayJob((string) $integration->id, $date);
             }
+
+            if ($jobs === []) {
+                return;
+            }
+
+            $jobs[] = new RunTenantIntegrationPostSyncJob((string) $integration->tenant_id);
+
+            Bus::chain($jobs)->dispatch();
         });
     }
 }

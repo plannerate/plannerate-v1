@@ -2,12 +2,14 @@
 
 namespace App\Services\Integrations\Orchestration;
 
+use App\Jobs\Integrations\Maintenance\RunTenantIntegrationPostSyncJob;
 use App\Jobs\Integrations\Products\SyncTenantProductsDayJob;
 use App\Jobs\Integrations\Sales\SyncTenantSalesDayJob;
 use App\Models\IntegrationSyncDay;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Bus;
 
 class DispatchInitialSyncService
 {
@@ -26,10 +28,11 @@ class DispatchInitialSyncService
         $yesterday = Carbon::yesterday()->startOfDay();
 
         $salesInitialDays = max(1, (int) ($processing['sales_initial_days'] ?? 120));
-        $productsInitialDays = max(1, (int) ($processing['products_initial_days'] ?? 120));
 
         $salesStart = $yesterday->copy()->subDays($salesInitialDays - 1);
         $tenant->execute(function () use ($integration, $salesStart, $yesterday): void {
+            $jobs = [];
+
             for ($date = $salesStart->copy(); $date->lte($yesterday); $date->addDay()) {
                 $referenceDate = $date->toDateString();
 
@@ -44,7 +47,7 @@ class DispatchInitialSyncService
                     continue;
                 }
 
-                SyncTenantSalesDayJob::dispatch($integration->id, $referenceDate, true);
+                $jobs[] = new SyncTenantSalesDayJob((string) $integration->id, $referenceDate, true);
             }
 
             $productsReferenceDate = $yesterday->toDateString();
@@ -54,11 +57,17 @@ class DispatchInitialSyncService
                 ->where('status', 'success')
                 ->exists();
 
-            if ($productsAlreadySynced) {
+            if (! $productsAlreadySynced) {
+                $jobs[] = new SyncTenantProductsDayJob((string) $integration->id, $productsReferenceDate, true);
+            }
+
+            if ($jobs === []) {
                 return;
             }
 
-            SyncTenantProductsDayJob::dispatch($integration->id, $productsReferenceDate, true);
+            $jobs[] = new RunTenantIntegrationPostSyncJob((string) $integration->tenant_id);
+
+            Bus::chain($jobs)->dispatch();
         });
     }
 }

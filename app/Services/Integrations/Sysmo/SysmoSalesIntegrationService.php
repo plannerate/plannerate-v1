@@ -6,19 +6,19 @@ use App\Models\TenantIntegration;
 use App\Services\Integrations\Contracts\SalesIntegrationService;
 use App\Services\Integrations\ExternalApiBaseService;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
-use App\Services\Integrations\Support\SyncSalesProductReferencesService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SysmoSalesIntegrationService implements SalesIntegrationService
 {
+    private const SALES_UPSERT_CHUNK_SIZE = 1000;
+
     public function __construct(
         private readonly ExternalApiBaseService $externalApiBaseService,
         private readonly SysmoEndpoints $sysmoEndpoints,
         private readonly SysmoSalesResponseMapper $responseMapper,
         private readonly DeterministicIdGenerator $deterministicIdGenerator,
-        private readonly SyncSalesProductReferencesService $syncSalesProductReferencesService,
     ) {}
 
     public function fetchSales(TenantIntegration $integration, array $filters = []): array
@@ -160,32 +160,28 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
             return;
         }
 
-        $salesTable->upsert(
-            $rowsToUpsert,
-            ['id'],
-            [
-                'tenant_id',
-                'store_id',
-                'codigo_erp',
-                'acquisition_cost',
-                'sale_price',
-                'sale_date',
-                'promotion',
-                'total_sale_quantity',
-                'total_sale_value',
-                'total_profit_margin',
-                'margem_contribuicao',
-                'extra_data',
-                'updated_at',
-            ]
-        );
+        foreach (array_chunk($rowsToUpsert, self::SALES_UPSERT_CHUNK_SIZE) as $rowsChunk) {
+            $salesTable->upsert(
+                $rowsChunk,
+                ['id'],
+                [
+                    'tenant_id',
+                    'store_id',
+                    'codigo_erp',
+                    'acquisition_cost',
+                    'sale_price',
+                    'sale_date',
+                    'promotion',
+                    'total_sale_quantity',
+                    'total_sale_value',
+                    'total_profit_margin',
+                    'margem_contribuicao',
+                    'extra_data',
+                    'updated_at',
+                ]
+            );
+        }
 
-        $this->syncSalesProductReferencesService->syncByCodigoErp(
-            tenantConnectionName: $tenantConnectionName,
-            tenantId: $tenantId,
-            erpCodes: array_values(array_unique($erpCodes)),
-            now: $now,
-        );
     }
 
     /**

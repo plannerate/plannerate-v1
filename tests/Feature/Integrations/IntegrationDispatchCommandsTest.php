@@ -8,15 +8,21 @@ use App\Jobs\Cleanup\RestoreSoldProductsJob;
 use App\Jobs\Integrations\Dispatch\DispatchTenantIntegrationDailySyncJob;
 use App\Jobs\Integrations\Dispatch\DispatchTenantIntegrationInitialSyncJob;
 use App\Jobs\Integrations\Maintenance\RunTenantIntegrationNightlyMaintenanceJob;
+use App\Jobs\Integrations\Maintenance\RunTenantIntegrationPostSyncJob;
 use App\Jobs\Integrations\Products\SyncTenantProductsDayJob;
 use App\Jobs\Integrations\Sales\SyncTenantSalesDayJob;
 use App\Models\IntegrationSyncDay;
+use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\User;
+use App\Services\Integrations\Contracts\SalesIntegrationService;
 use App\Services\Integrations\Orchestration\DispatchDailySyncService;
 use App\Services\Integrations\Orchestration\DispatchInitialSyncService;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
+use App\Services\Integrations\Support\IntegrationServiceResolver;
+use App\Services\Integrations\Support\SyncSalesProductReferencesService;
+use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -161,6 +167,39 @@ test('daily sync sales jobs are queued with tenant context', function () {
         ->and(unserialize($decodedPayload['illuminate:log:context']['data']['tenantId']))->toBe($tenant->id);
 });
 
+test('daily sync chains post sync maintenance after sales and products jobs', function () {
+    Bus::fake();
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Daily Post Sync',
+        'slug' => 'tenant-daily-post-sync-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.mysql.database'),
+        'status' => 'active',
+    ]));
+
+    $integration = TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['daily_lookback_days' => 2]],
+        'is_active' => true,
+    ]);
+
+    $yesterday = Carbon::yesterday()->toDateString();
+    $previousDay = Carbon::yesterday()->subDay()->toDateString();
+
+    app(DispatchDailySyncService::class)->dispatch($integration);
+
+    Bus::assertChained([
+        new SyncTenantSalesDayJob((string) $integration->id, $previousDay),
+        new SyncTenantSalesDayJob((string) $integration->id, $yesterday),
+        new SyncTenantProductsDayJob((string) $integration->id, $previousDay),
+        new SyncTenantProductsDayJob((string) $integration->id, $yesterday),
+        new RunTenantIntegrationPostSyncJob((string) $tenant->id),
+    ]);
+});
+
 test('initial sync skips sales dates already marked as success', function () {
     Bus::fake();
 
@@ -202,6 +241,146 @@ test('initial sync skips sales dates already marked as success', function () {
     Bus::assertNotDispatched(SyncTenantProductsDayJob::class);
 });
 
+test('initial sync chains post sync maintenance after initial jobs', function () {
+    Bus::fake();
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Initial Post Sync',
+        'slug' => 'tenant-initial-post-sync-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.mysql.database'),
+        'status' => 'active',
+    ]));
+
+    $integration = TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['sales_initial_days' => 1, 'products_initial_days' => 1]],
+        'is_active' => true,
+    ]);
+
+    $yesterday = Carbon::yesterday()->toDateString();
+
+    app(DispatchInitialSyncService::class)->dispatch($integration);
+
+    Bus::assertChained([
+        new SyncTenantSalesDayJob((string) $integration->id, $yesterday, true),
+        new SyncTenantProductsDayJob((string) $integration->id, $yesterday, true),
+        new RunTenantIntegrationPostSyncJob((string) $tenant->id),
+    ]);
+});
+
+test('post sync maintenance job runs cleanup ean reference sync and link sales commands for tenant', function () {
+    $tenantId = (string) str()->ulid();
+
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('sync:cleanup', ['--tenant' => $tenantId, '--all'])
+        ->andReturn(0);
+
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('sync:products-from-ean-references', ['--tenant' => $tenantId])
+        ->andReturn(0);
+
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('sync:link-sales', ['--tenant' => $tenantId])
+        ->andReturn(0);
+
+    (new RunTenantIntegrationPostSyncJob($tenantId))->handle();
+});
+
+test('sales day job only syncs sales and leaves product linking to command', function () {
+    config(['multitenancy.tenant_database_connection_name' => null]);
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Sales Final Link',
+        'slug' => 'tenant-sales-final-link-'.fake()->numberBetween(100, 999),
+        'database' => 'tenant_sales_final_link',
+        'status' => 'active',
+    ]));
+
+    $integration = TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['sales_page_size' => 20000]],
+        'is_active' => true,
+    ]);
+
+    $firstStore = Store::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Loja 1',
+        'document' => '11111111000191',
+        'code' => '1',
+        'status' => 'published',
+    ]);
+
+    $secondStore = Store::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Loja 2',
+        'document' => '22222222000191',
+        'code' => '2',
+        'status' => 'published',
+    ]);
+
+    $salesService = new class($firstStore->id, $secondStore->id) implements SalesIntegrationService
+    {
+        /** @var array<int, array<string, mixed>> */
+        public array $filters = [];
+
+        public function __construct(
+            private readonly string $firstStoreId,
+            private readonly string $secondStoreId,
+        ) {}
+
+        public function fetchSales(TenantIntegration $integration, array $filters = []): array
+        {
+            $this->filters[] = $filters;
+
+            if (($filters['store_id'] ?? null) === $this->firstStoreId) {
+                return [
+                    ['codigo_erp' => '10001'],
+                    ['codigo_erp' => '10002'],
+                ];
+            }
+
+            if (($filters['store_id'] ?? null) === $this->secondStoreId) {
+                return [
+                    ['codigo_erp' => '10002'],
+                    ['product_code' => '10003'],
+                ];
+            }
+
+            return [];
+        }
+    };
+
+    $resolver = Mockery::mock(IntegrationServiceResolver::class);
+    $resolver->shouldReceive('resolveSalesService')
+        ->once()
+        ->with(Mockery::type(TenantIntegration::class))
+        ->andReturn($salesService);
+
+    $syncSalesProductReferencesService = Mockery::mock(SyncSalesProductReferencesService::class);
+    $syncSalesProductReferencesService->shouldNotReceive('syncByCodigoErp');
+    app()->instance(SyncSalesProductReferencesService::class, $syncSalesProductReferencesService);
+
+    $handleMethod = new ReflectionMethod(SyncTenantSalesDayJob::class, 'handle');
+
+    expect($handleMethod->getNumberOfParameters())->toBe(2);
+
+    app()->call([new SyncTenantSalesDayJob((string) $integration->id, '2025-01-22', true), 'handle'], [
+        'integrationServiceResolver' => $resolver,
+        'configNormalizer' => app(TenantIntegrationConfigNormalizer::class),
+    ]);
+
+    expect($salesService->filters)->toHaveCount(2);
+});
+
 test('initial sync dispatches products as single full sync bootstrap', function () {
     Bus::fake();
 
@@ -223,11 +402,17 @@ test('initial sync dispatches products as single full sync bootstrap', function 
 
     app(DispatchInitialSyncService::class)->dispatch($integration);
 
-    Bus::assertDispatched(
-        SyncTenantProductsDayJob::class,
-        fn (SyncTenantProductsDayJob $job): bool => $job->integrationId === (string) $integration->id
-            && $job->fullSync === true
-    );
+    $yesterday = Carbon::yesterday()->toDateString();
+    $twoDaysAgo = Carbon::yesterday()->subDays(2)->toDateString();
+    $previousDay = Carbon::yesterday()->subDay()->toDateString();
+
+    Bus::assertChained([
+        new SyncTenantSalesDayJob((string) $integration->id, $twoDaysAgo, true),
+        new SyncTenantSalesDayJob((string) $integration->id, $previousDay, true),
+        new SyncTenantSalesDayJob((string) $integration->id, $yesterday, true),
+        new SyncTenantProductsDayJob((string) $integration->id, $yesterday, true),
+        new RunTenantIntegrationPostSyncJob((string) $tenant->id),
+    ]);
 });
 
 test('queue and cache infrastructure use landlord connection explicitly', function () {
