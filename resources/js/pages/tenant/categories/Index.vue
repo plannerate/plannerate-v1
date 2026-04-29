@@ -4,8 +4,8 @@ import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryCo
 import ImportFileButton from '@/components/imports/ImportFileButton.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
-import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { ColumnActions, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';

@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useT } from '@/composables/useT';
-import { store } from '@/routes/password/confirm';
 import AuthLayout from '@/layouts/AuthLayout.vue';
+import { store } from '@/routes/password/confirm';
 
 const { t } = useT();
 

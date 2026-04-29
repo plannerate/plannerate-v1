@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { Head, setLayoutProps } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
 import { Plus, UserX } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController'; 
 import ListPagination from '@/components/ListPagination.vue';
 import { Button } from '@/components/ui/button';
+import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import type { Paginator } from '@/types';
 import AccessFiltersBar from './access/AccessFiltersBar.vue';
 import AccessStatsCards from './access/AccessStatsCards.vue';
 import AccessUserCard from './access/AccessUserCard.vue';
 import AccessUserSheet from './access/AccessUserSheet.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 
 type TenantPayload = {
     id: string;

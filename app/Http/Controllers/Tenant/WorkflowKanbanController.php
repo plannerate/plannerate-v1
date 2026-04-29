@@ -27,6 +27,9 @@ class WorkflowKanbanController extends Controller
     {
         $this->authorize('viewAny', WorkflowGondolaExecution::class);
 
+        $planogramId = trim((string) $request->string('planogram_id'));
+        $hasPlanogramFilter = $planogramId !== '';
+
         $planograms = Planogram::query()
             ->with('store:id,name')
             ->when($request->filled('store_id'), fn ($query) => $query->where('store_id', $request->input('store_id')))
@@ -51,11 +54,17 @@ class WorkflowKanbanController extends Controller
             ->all();
 
         $filters = $request->only(['planogram_id', 'store_id', 'gondola_search']);
+        $selectedPlanogramId = $hasPlanogramFilter ? $planogramId : (string) ($planograms[0]['id'] ?? '');
+
+        if (! $hasPlanogramFilter && $selectedPlanogramId !== '') {
+            $filters['planogram_id'] = $selectedPlanogramId;
+        }
+
         $selectedPlanogram = null;
         $board = null;
 
-        if ($request->filled('planogram_id')) {
-            $planogram = Planogram::query()->find($request->input('planogram_id'));
+        if ($selectedPlanogramId !== '') {
+            $planogram = Planogram::query()->find($selectedPlanogramId);
 
             if ($planogram !== null) {
                 $this->stepService->syncForPlanogram($planogram);

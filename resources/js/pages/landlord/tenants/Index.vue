@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { Users, Layers, Link2 } from 'lucide-vue-next';
-import AppLayout from '@/layouts/AppLayout.vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord/TenantIntegrationController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import ColumnActions from '@/components/table/columns/ColumnActions.vue';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import type { Paginator } from '@/types';
-import ColumnActions from '@/components/table/columns/ColumnActions.vue';
 
 type TenantRow = {
     active_modules: string[];

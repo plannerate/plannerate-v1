@@ -1,13 +1,13 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import NavMenuEntry from '@/components/NavMenuEntry.vue';
 import {
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
     SidebarMenu,
 } from '@/components/ui/sidebar';
-import NavMenuEntry from '@/components/NavMenuEntry.vue';
 import type { SharedNavigationGroup, SharedNavigationNode } from '@/types';
-import { computed } from 'vue';
 
 const props = defineProps<{
     nodes: SharedNavigationNode[];

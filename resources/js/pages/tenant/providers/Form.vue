@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { computed } from 'vue';
 import { Truck } from 'lucide-vue-next';
+import { computed } from 'vue';
 import ProviderController from '@/actions/App/Http/Controllers/Tenant/ProviderController';
-import AppLayout from '@/layouts/AppLayout.vue';
 import AddressFields from '@/components/form/AddressFields.vue';
-import FormTextField from '@/components/form/FormTextField.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
+import FormTextField from '@/components/form/FormTextField.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 
 type ProviderPayload = {

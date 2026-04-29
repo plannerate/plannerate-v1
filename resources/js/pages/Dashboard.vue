@@ -2,8 +2,8 @@
 import { Head, setLayoutProps } from '@inertiajs/vue3';
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
 import { useT } from '@/composables/useT';
-import { dashboard } from '@/routes';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { dashboard } from '@/routes';
 
 const { t } = useT();
 const dashboardPath = dashboard.url().replace(/^\/\/[^/]+/, '');

@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { PanelTop } from 'lucide-vue-next';
-import AppLayout from '@/layouts/AppLayout.vue';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
-import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { ColumnActions, ColumnHeader, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { editor as tenantEditorPlanogramGondolas } from '@/routes/tenant/planograms/gondolas';
 import type { Paginator } from '@/types';

@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { Form, Head, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
-import AppLayout from '@/layouts/AppLayout.vue';
-import FormTabsBar from '@/components/form/FormTabsBar.vue';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import FormDecimalField from '@/components/form/FormDecimalField.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
+import FormTabsBar from '@/components/form/FormTabsBar.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import FormCard from '@/components/FormCard.vue';
@@ -14,6 +13,7 @@ import InputError from '@/components/InputError.vue';
 import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 

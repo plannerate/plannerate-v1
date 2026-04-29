@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import KankanNavigationLinks from '@/components/KankanNavigationLinks.vue';
+import NewActionButton from '@/components/NewActionButton.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
-import NewActionButton from '@/components/NewActionButton.vue';
 
 const props = defineProps<{
     subdomain: string;

@@ -189,13 +189,20 @@
   
   // Computed
   const selectedRegion = computed(() => {
-    if (!props.selectedRegionId) return null
+    if (!props.selectedRegionId) {
+return null
+}
+
     return props.regions.find(r => r.id === props.selectedRegionId) || null
   })
   
   const resizeHandles = computed(() => {
-    if (!selectedRegion.value) return []
+    if (!selectedRegion.value) {
+return []
+}
+
     const r = selectedRegion.value
+
     return [
       { position: 'nw', x: r.x, y: r.y },
       { position: 'ne', x: r.x + r.width, y: r.y },
@@ -216,7 +223,10 @@
   
   const getMousePosition = (event: MouseEvent) => {
     const container = mapContainer.value
-    if (!container) return { x: 0, y: 0 }
+
+    if (!container) {
+return { x: 0, y: 0 }
+}
   
     const rect = container.getBoundingClientRect()
     const x = (event.clientX - rect.left - props.panX) / props.zoom
@@ -226,7 +236,9 @@
   }
   
   const handleMouseDown = (event: MouseEvent) => {
-    if (event.button !== 0) return
+    if (event.button !== 0) {
+return
+}
   
     const pos = getMousePosition(event)
   
@@ -245,8 +257,10 @@
           const cy = r.y + r.height / 2
           const rx = r.width / 2
           const ry = r.height / 2
+
           return Math.pow((pos.x - cx) / rx, 2) + Math.pow((pos.y - cy) / ry, 2) <= 1
         }
+
         return pos.x >= r.x && pos.x <= r.x + r.width &&
           pos.y >= r.y && pos.y <= r.y + r.height
       })
@@ -286,6 +300,7 @@
       if (imageWidth.value > 0) {
         newX = Math.min(newX, imageWidth.value - selectedRegion.value.width)
       }
+
       if (imageHeight.value > 0) {
         newY = Math.min(newY, imageHeight.value - selectedRegion.value.height)
       }
@@ -318,6 +333,7 @@
           newY = r.y + r.height - newHeight
           break
       }
+
       emit('region-resize', r.id, newX, newY, newWidth, newHeight)
     }
   }
@@ -356,6 +372,7 @@
     const newZoom = Math.max(0.1, Math.min(3, props.zoom + delta))
   
     const container = mapContainer.value
+
     if (container) {
       const rect = container.getBoundingClientRect()
       const mouseX = event.clientX - rect.left

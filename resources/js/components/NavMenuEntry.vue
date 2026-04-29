@@ -1,15 +1,4 @@
 <script setup lang="ts">
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import {
-    SidebarMenuItem,
-    SidebarMenuButton,
-    SidebarMenuSub,
-    SidebarMenuSubButton,
-    SidebarMenuSubItem,
-    SidebarSeparator,
-} from '@/components/ui/sidebar';
-import { useCurrentUrl } from '@/composables/useCurrentUrl';
-import type { SharedNavigationItem, SharedNavigationNode, SharedNavigationSubmenu } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import {
     BadgeDollarSign,
@@ -29,6 +18,17 @@ import {
     Users,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+    SidebarMenuItem,
+    SidebarMenuButton,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
+    SidebarSeparator,
+} from '@/components/ui/sidebar';
+import { useCurrentUrl } from '@/composables/useCurrentUrl';
+import type { SharedNavigationItem, SharedNavigationNode, SharedNavigationSubmenu } from '@/types';
 
 const props = defineProps<{
     node: SharedNavigationNode;

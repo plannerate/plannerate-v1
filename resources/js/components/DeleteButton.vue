@@ -34,7 +34,10 @@ const confirmWord = ref(CONFIRM_WORDS[0]);
 const isDeleting = ref(false);
 
 const canConfirm = computed(() => {
-    if (!props.requireConfirmWord) return true;
+    if (!props.requireConfirmWord) {
+return true;
+}
+
     return typed.value === confirmWord.value;
 });
 
@@ -46,7 +49,10 @@ watch(isOpen, (open) => {
 });
 
 function handleConfirm(): void {
-    if (!canConfirm.value) return;
+    if (!canConfirm.value) {
+return;
+}
+
     isDeleting.value = true;
     router.delete(props.href, {
         onFinish: () => {

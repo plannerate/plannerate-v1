@@ -1,10 +1,10 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import { configureEcho } from '@laravel/echo-vue';
+import Pusher from 'pusher-js';
 import { initializeTheme } from '@/composables/useAppearance';
-import { initializeFlashToast } from '@/lib/flashToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
-import Pusher from 'pusher-js';
+import { initializeFlashToast } from '@/lib/flashToast';
 
 declare global {
     interface Window {

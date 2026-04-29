@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import type { Errors } from '@inertiajs/core';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
-import type { Errors } from '@inertiajs/core';
 import { useT } from '@/composables/useT';
 
 type IntegrationFormData = {

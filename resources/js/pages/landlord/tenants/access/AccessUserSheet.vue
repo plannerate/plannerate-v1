@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { UserPlus } from 'lucide-vue-next';
 import { Form } from '@inertiajs/vue3';
+import { UserPlus } from 'lucide-vue-next';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import InputError from '@/components/InputError.vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';

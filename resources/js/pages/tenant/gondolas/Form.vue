@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { computed } from 'vue';
 import { PanelTop } from 'lucide-vue-next';
+import { computed } from 'vue';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
-import AppLayout from '@/layouts/AppLayout.vue';
-import FormCard from '@/components/FormCard.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormStatusField from '@/components/form/FormStatusField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
+import FormCard from '@/components/FormCard.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 
 type GondolaPayload = {

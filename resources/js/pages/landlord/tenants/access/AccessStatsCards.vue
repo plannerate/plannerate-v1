@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { TrendingUp } from 'lucide-vue-next';
+import { computed } from 'vue';
 
 type TenantPayload = {
     id: string;
@@ -20,11 +20,13 @@ const usagePct = computed<number>(() => {
     if (!props.tenant.plan_user_limit) {
         return 0;
     }
+
     return Math.min(100, Math.round((props.tenant.users_count / props.tenant.plan_user_limit) * 100));
 });
 
 const usageText = computed<string>(() => {
     const limit = props.tenant.plan_user_limit === null ? '∞' : String(props.tenant.plan_user_limit);
+
     return `${props.tenant.users_count} de ${limit} usuários utilizados`;
 });
 

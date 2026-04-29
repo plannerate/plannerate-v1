@@ -54,6 +54,7 @@ function levelLabel(index: number): string {
 
 async function loadChildren(parentId: string | null): Promise<Option[]> {
     const url = new URL('/categories/cascade/children', window.location.origin);
+
     if (parentId) {
         url.searchParams.set('parent_id', parentId);
     }
@@ -75,6 +76,7 @@ async function loadPath(categoryId: string): Promise<Option[]> {
 const leafCategoryId = computed((): string | null => {
     for (let i = selections.value.length - 1; i >= 0; i--) {
         const v = selections.value[i];
+
         if (v !== '') {
             return v;
         }
@@ -87,6 +89,7 @@ function isLevelDisabled(level: number): boolean {
     if (props.disabled) {
         return true;
     }
+
     if (level === 0) {
         return false;
     }
@@ -107,6 +110,7 @@ async function hydrateFromModel(): Promise<void> {
 
     try {
         const path = await loadPath(id);
+
         for (let i = 0; i < path.length && i < props.cascadeLevels; i++) {
             selections.value[i] = path[i].id;
         }
@@ -121,6 +125,7 @@ async function hydrateFromModel(): Promise<void> {
 
 async function onLevelChange(level: number, value: string): Promise<void> {
     selections.value[level] = value;
+
     for (let j = level + 1; j < props.cascadeLevels; j++) {
         selections.value[j] = '';
         options.value[j] = [];
@@ -139,6 +144,7 @@ async function onLevelChange(level: number, value: string): Promise<void> {
 async function clearFrom(level: number): Promise<void> {
     for (let j = level; j < props.cascadeLevels; j++) {
         selections.value[j] = '';
+
         if (j > level) {
             options.value[j] = [];
         }
@@ -180,6 +186,7 @@ watch(
         if (next === leafCategoryId.value) {
             return;
         }
+
         try {
             await hydrateFromModel();
         } catch {

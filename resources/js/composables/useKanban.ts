@@ -4,8 +4,8 @@ import type { MaybeRefOrGetter } from 'vue';
 import { toast } from 'vue-sonner';
 import WorkflowExecutionController from '@/actions/App/Http/Controllers/Tenant/WorkflowExecutionController';
 import type { BoardColumn, Execution, ExecutionDetails, WorkflowHistory } from '@/components/kanban/types';
-import { useT } from '@/composables/useT';
 import { useKanbanMove } from '@/composables/useKanbanMove';
+import { useT } from '@/composables/useT';
 
 export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdomain: MaybeRefOrGetter<string>) {
     const { t } = useT();

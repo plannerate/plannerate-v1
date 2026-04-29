@@ -62,6 +62,7 @@ watch(
         if (!Number.isFinite(numeric)) {
             hiddenValue.value = '';
             displayValue.value = '';
+
             return;
         }
 
@@ -80,6 +81,7 @@ function handleInput(event: Event): void {
         hiddenValue.value = '';
         displayValue.value = '';
         emits('update:modelValue', '');
+
         return;
     }
 

@@ -3,7 +3,6 @@ import { AlertTriangle, CheckCircle2, Pause, Play, RotateCcw, XCircle } from 'lu
 import { computed } from 'vue';
 import type { KanbanExecutionAction } from '@/components/kanban/types';
 import { Button } from '@/components/ui/button';
-import { useT } from '@/composables/useT';
 import {
     Dialog,
     DialogContent,
@@ -12,6 +11,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useT } from '@/composables/useT';
 
 const props = defineProps<{
     open: boolean;

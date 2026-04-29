@@ -45,9 +45,9 @@
 </template>
 
 <script setup lang="ts">
+import { Copy, Pencil } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Copy, Pencil } from 'lucide-vue-next'
 
 interface Region {
     id: string

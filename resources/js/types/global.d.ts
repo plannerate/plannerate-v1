@@ -1,6 +1,6 @@
 import type { Auth } from '@/types/auth';
-import type { CrudPageMeta } from '@/types/page-meta';
 import type { SharedNavigation } from '@/types/navigation';
+import type { CrudPageMeta } from '@/types/page-meta';
 
 // Extend ImportMeta interface for Vite...
 declare module 'vite/client' {

@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { Form, Head, Link, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
 import { AlertCircle, Building2, ExternalLink, Loader2, RefreshCw } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
-import AppLayout from '@/layouts/AppLayout.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 
 type TenantPayload = {
     id: string;
@@ -105,13 +105,22 @@ function suggestDatabase(slugValue: string): string {
 
 function onNameInput(): void {
     const nameSlug = toSlug(name.value);
-    if (!slugTouched.value) slug.value = nameSlug;
-    if (!databaseTouched.value) database.value = suggestDatabase(nameSlug);
+
+    if (!slugTouched.value) {
+slug.value = nameSlug;
+}
+
+    if (!databaseTouched.value) {
+database.value = suggestDatabase(nameSlug);
+}
 }
 
 function onSlugInput(): void {
     slugTouched.value = true;
-    if (!databaseTouched.value) database.value = suggestDatabase(toSlug(slug.value));
+
+    if (!databaseTouched.value) {
+database.value = suggestDatabase(toSlug(slug.value));
+}
 }
 
 function onDatabaseInput(): void {

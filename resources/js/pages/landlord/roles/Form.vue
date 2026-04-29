@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
 import { ShieldCheck } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import RoleController from '@/actions/App/Http/Controllers/Landlord/RoleController';
-import AppLayout from '@/layouts/AppLayout.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 
 type RolePayload = {
     id: string;

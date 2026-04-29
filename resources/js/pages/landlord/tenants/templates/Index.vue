@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
 import { Plus, Layers, Sparkles } from 'lucide-vue-next';
+import { ref } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
-import AppLayout from '@/layouts/AppLayout.vue';
 import ListPagination from '@/components/ListPagination.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import type { Paginator } from '@/types';
-import TemplateFiltersBar from './TemplateFiltersBar.vue';
 import TemplateCard from './TemplateCard.vue';
+import TemplateFiltersBar from './TemplateFiltersBar.vue';
 import TemplateSheet from './TemplateSheet.vue';
 
 export type TemplateRow = {

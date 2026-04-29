@@ -79,10 +79,9 @@
 </template>
 
 <script setup lang="ts">
+import { Copy, Trash2 } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 import {
     Dialog,
     DialogContent,
@@ -91,6 +90,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
     Select,
     SelectContent,
@@ -98,7 +99,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { Copy, Trash2 } from 'lucide-vue-next'
 
 interface Region {
     id: string
@@ -168,6 +168,7 @@ const generateSuggestedLabel = (type: string): string => {
     const prefix = prefixes[type] || 'A'
     const countOfType = props.regions.filter(r => r.type === type).length
     const nextNumber = String(countOfType + 1).padStart(2, '0')
+
     return `${prefix}-${nextNumber}`
 }
 
@@ -200,6 +201,7 @@ watch(() => form.value.type, (newType, oldType) => {
 
 const handleOpenChange = (value: boolean) => {
     emit('update:open', value)
+
     if (!value) {
         emit('close')
     }

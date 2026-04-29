@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { Form, Head, router } from '@inertiajs/vue3';
-import { computed, onBeforeUnmount, ref } from 'vue';
 import { Link2 } from 'lucide-vue-next';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord/TenantIntegrationController';
-import FormCard from '@/components/FormCard.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import SysmoIntegrationFields from '@/components/form/SysmoIntegrationFields.vue';
+import FormCard from '@/components/FormCard.vue';
 import { Button } from '@/components/ui/button';
-import AppLayout from '@/layouts/AppLayout.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 
 type TenantPayload = {
     id: string;
@@ -121,6 +121,7 @@ const removeFlashListener = router.on('flash', (event) => {
         | undefined;
 
     const payload = flash?.tenant_integration_test;
+
     if (!payload) {
         return;
     }

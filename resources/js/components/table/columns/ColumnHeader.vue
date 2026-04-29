@@ -11,6 +11,7 @@ const page = usePage();
 
 const params = computed(() => {
     const qs = page.url.includes('?') ? page.url.split('?')[1] : '';
+
     return new URLSearchParams(qs);
 });
 

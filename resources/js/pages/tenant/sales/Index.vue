@@ -2,15 +2,15 @@
 import { Head } from '@inertiajs/vue3';
 import { BadgeDollarSign, CalendarDays, Hash, Package, Store } from 'lucide-vue-next';
 import { computed } from 'vue';
-import AppLayout from '@/layouts/AppLayout.vue';
 import SaleController from '@/actions/App/Http/Controllers/Tenant/SaleController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
-import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { ColumnActions, ColumnLabel } from '@/components/table/columns';
 import ColumnHeader from '@/components/table/columns/ColumnHeader.vue';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
 
@@ -71,6 +71,7 @@ function formatDate(value: string | null): string {
     }
 
     const parsedDate = new Date(`${value}T00:00:00`);
+
     if (Number.isNaN(parsedDate.getTime())) {
         return value;
     }
@@ -84,6 +85,7 @@ function formatCurrency(value: string | null): string {
     }
 
     const parsedValue = Number(value);
+
     return Number.isFinite(parsedValue) ? moneyFormatter.format(parsedValue) : value;
 }
 
@@ -93,6 +95,7 @@ function formatQuantity(value: string | null): string {
     }
 
     const parsedValue = Number(value);
+
     return Number.isFinite(parsedValue) ? quantityFormatter.format(parsedValue) : value;
 }
 

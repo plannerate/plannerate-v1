@@ -225,12 +225,12 @@
 </template>
 
 <script setup lang="ts">
+import { Maximize2 } from 'lucide-vue-next';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Maximize2 } from 'lucide-vue-next';
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import {
     MapCanvas,
     MapRegionDialog,
@@ -248,12 +248,14 @@ function generateULID(): string {
 
     let now = Date.now();
     let timeChars = '';
+
     for (let i = TIME_LEN - 1; i >= 0; i--) {
         timeChars = ENCODING[now % ENCODING_LEN] + timeChars;
         now = Math.floor(now / ENCODING_LEN);
     }
 
     let randomChars = '';
+
     for (let i = 0; i < RANDOM_LEN; i++) {
         randomChars += ENCODING[Math.floor(Math.random() * ENCODING_LEN)];
     }
@@ -372,6 +374,7 @@ const generateSuggestedLabel = (type: string): string => {
     const prefix = prefixes[type] || 'A';
     const countOfType = regions.value.filter((r) => r.type === type).length;
     const nextNumber = String(countOfType + 1).padStart(2, '0');
+
     return `${prefix}-${nextNumber}`;
 };
 
@@ -379,10 +382,14 @@ const generateSuggestedLabel = (type: string): string => {
 const hasError = computed(() => !!props.error);
 
 const firstError = computed(() => {
-    if (!props.error) return '';
+    if (!props.error) {
+return '';
+}
+
     if (Array.isArray(props.error)) {
         return props.error[0] ?? '';
     }
+
     return props.error;
 });
 
@@ -392,6 +399,7 @@ const MIN_REGION_SIZE = 20;
 
 const normalizeDimension = (value: number, fallback: number): number => {
     const parsed = Number(value);
+
     if (!Number.isFinite(parsed)) {
         return Math.max(MIN_REGION_SIZE, Math.round(fallback));
     }
@@ -433,7 +441,10 @@ const openExpandedEditor = () => {
 const handleFileUpload = (event: Event) => {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file) return;
+
+    if (!file) {
+return;
+}
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -512,6 +523,7 @@ const handleDrawComplete = (regionData: Omit<Region, 'id'>) => {
 
 const handleRegionMove = (regionId: string, x: number, y: number) => {
     const region = regions.value.find((r) => r.id === regionId);
+
     if (region) {
         region.x = x;
         region.y = y;
@@ -526,6 +538,7 @@ const handleRegionResize = (
     height: number,
 ) => {
     const region = regions.value.find((r) => r.id === regionId);
+
     if (region) {
         region.x = x;
         region.y = y;
@@ -560,7 +573,10 @@ const duplicateRegion = (region: Region) => {
 };
 
 const duplicateEditingRegion = () => {
-    if (!editingRegion.value) return;
+    if (!editingRegion.value) {
+return;
+}
+
     const regionToDuplicate = editingRegion.value;
     closeRegionDialog();
     duplicateRegion(regionToDuplicate);
@@ -618,13 +634,16 @@ const deleteRegion = () => {
         const index = regions.value.findIndex(
             (r) => r.id === editingRegion.value!.id,
         );
+
         if (index > -1) {
             regions.value.splice(index, 1);
         }
+
         if (selectedRegion.value?.id === editingRegion.value.id) {
             selectedRegion.value = null;
         }
     }
+
     showRegionDialog.value = false;
     editingRegion.value = null;
     emitUpdate();
@@ -633,6 +652,7 @@ const deleteRegion = () => {
 const emitUpdate = () => {
     if (!mapImage.value) {
         emit('update:modelValue', null);
+
         return;
     }
 
@@ -651,7 +671,9 @@ const emitUpdate = () => {
 watch(
     () => props.modelValue,
     (newValue) => {
-        if (!newValue) return;
+        if (!newValue) {
+return;
+}
 
         const newRegionsJson = JSON.stringify(newValue.regions || []);
         const currentRegionsJson = JSON.stringify(regions.value);
@@ -688,7 +710,9 @@ watch(
 
 // Keyboard shortcuts
 const handleKeyDown = (event: KeyboardEvent) => {
-    if (showRegionDialog.value) return;
+    if (showRegionDialog.value) {
+return;
+}
 
     if (event.key === 'Delete' || event.key === 'Backspace') {
         if (selectedRegion.value) {

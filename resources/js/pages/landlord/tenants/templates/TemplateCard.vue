@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Edit, Trash2 } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
+import { Edit, Trash2 } from 'lucide-vue-next';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
 import type { TemplateRow } from './Index.vue';
 

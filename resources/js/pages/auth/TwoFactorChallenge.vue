@@ -10,9 +10,9 @@ import {
     InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { useT } from '@/composables/useT';
+import AuthLayout from '@/layouts/AuthLayout.vue';
 import { store } from '@/routes/two-factor/login';
 import type { TwoFactorConfigContent } from '@/types';
-import AuthLayout from '@/layouts/AuthLayout.vue';
 
 const { t } = useT();
 

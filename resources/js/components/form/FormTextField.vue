@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
 import { useVModel } from '@vueuse/core';
+import type { HTMLAttributes } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';

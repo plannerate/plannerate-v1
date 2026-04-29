@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { computed } from 'vue';
 import { UserCog } from 'lucide-vue-next';
+import { computed } from 'vue';
 import UserController from '@/actions/App/Http/Controllers/Landlord/UserController';
-import AppLayout from '@/layouts/AppLayout.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 
 type UserPayload = {
     id: string;

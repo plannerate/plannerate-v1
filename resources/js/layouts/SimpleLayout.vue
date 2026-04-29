@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Toaster } from '@/components/ui/sonner';
 import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { Toaster } from '@/components/ui/sonner';
 
 interface Props {
     title?: string;

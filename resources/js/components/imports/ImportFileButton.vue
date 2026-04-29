@@ -56,6 +56,7 @@ function openFilePicker(): void {
 
 function onDragOver(event: DragEvent): void {
     event.preventDefault();
+
     if (form.processing) {
         return;
     }

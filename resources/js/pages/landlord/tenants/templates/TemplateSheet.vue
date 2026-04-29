@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Layers } from 'lucide-vue-next';
 import { Form } from '@inertiajs/vue3';
+import { Layers } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
 import InputError from '@/components/InputError.vue';
@@ -43,7 +43,9 @@ watch(() => [props.open, props.template?.id], () => {
 });
 
 watch(() => props.template?.color, (newColor) => {
-    if (newColor) colorValue.value = newColor;
+    if (newColor) {
+colorValue.value = newColor;
+}
 });
 
 const statusOptions = [

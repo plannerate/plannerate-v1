@@ -7,8 +7,14 @@ const props = defineProps<{
 }>();
 
 function statusVariant(status: string): BadgeVariants['variant'] {
-    if (status === 'published') return 'default';
-    if (status === 'importer') return 'secondary';
+    if (status === 'published') {
+return 'default';
+}
+
+    if (status === 'importer') {
+return 'secondary';
+}
+
     return 'outline';
 }
 </script>

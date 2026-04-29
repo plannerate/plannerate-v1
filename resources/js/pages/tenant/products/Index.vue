@@ -2,25 +2,25 @@
 import { Head } from '@inertiajs/vue3';
 import { ChevronDown, SlidersHorizontal, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import AppLayout from '@/layouts/AppLayout.vue';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
-import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import {
     ColumnActions,
     ColumnImage,
     ColumnLabel,
 } from '@/components/table/columns';
+import ColumnHeader from '@/components/table/columns/ColumnHeader.vue';
+import ColumnStatusBadge from '@/components/table/columns/ColumnStatusBadge.vue';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
-import ColumnHeader from '@/components/table/columns/ColumnHeader.vue';
-import ColumnStatusBadge from '@/components/table/columns/ColumnStatusBadge.vue';
-import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 type ProductRow = {
     id: string;

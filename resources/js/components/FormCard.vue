@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
+import { CornerUpLeft, Save } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useT } from '@/composables/useT';
-import { CornerUpLeft, Save } from 'lucide-vue-next';
 
 const { t } = useT();
 

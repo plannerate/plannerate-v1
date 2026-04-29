@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { useHttp } from '@inertiajs/vue3';
-import { computed, onMounted, ref } from 'vue';
 import { Users } from 'lucide-vue-next';
+import { computed, onMounted, ref } from 'vue';
 import WorkflowPlanogramStepController from '@/actions/App/Http/Controllers/Tenant/WorkflowPlanogramStepController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import Popover from '@/components/ui/popover/Popover.vue';
 import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import Popover from '@/components/ui/popover/Popover.vue';
 
 type PlanogramPayload = {
     id: string;
@@ -82,6 +82,7 @@ function isUserSelected(step: WorkflowStepSetting, userId: string): boolean {
 function toggleStepUser(step: WorkflowStepSetting, userId: string): void {
     if (step.selected_user_ids.includes(userId)) {
         step.selected_user_ids = step.selected_user_ids.filter((id) => id !== userId);
+
         return;
     }
 
@@ -105,6 +106,7 @@ function selectedUsersLabel(step: WorkflowStepSetting): string {
 function updateEstimatedDurationDays(step: WorkflowStepSetting, rawValue: string): void {
     if (rawValue.trim() === '') {
         step.estimated_duration_days = null;
+
         return;
     }
 

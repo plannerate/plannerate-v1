@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Edit, Ban, Trash2, RotateCcw, Mail } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
+import { Edit, Ban, Trash2, RotateCcw, Mail } from 'lucide-vue-next';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import { useT } from '@/composables/useT';
 

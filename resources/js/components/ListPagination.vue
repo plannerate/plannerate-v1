@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
+import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import type { Paginator } from '@/types';
@@ -20,7 +20,9 @@ const countText = computed(() => {
     if (!props.meta.from || !props.meta.to) {
         return 'Nenhum resultado';
     }
+
     const suffix = props.label ? ` ${props.label}` : '';
+
     return `Mostrando ${props.meta.from}–${props.meta.to} de ${props.meta.total}${suffix}`;
 });
 </script>

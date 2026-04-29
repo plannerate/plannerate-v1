@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { useConnectionStatus, useEchoNotification } from '@laravel/echo-vue';
 import type { ConnectionStatus } from '@laravel/echo-vue';
@@ -15,6 +14,8 @@ import {
     WifiOff,
     XCircle,
 } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import ReverbTestController from '@/actions/App/Http/Controllers/Tenant/ReverbTestController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +28,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import ReverbTestController from '@/actions/App/Http/Controllers/Tenant/ReverbTestController';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { AppNotification, NotificationData } from '@/types/auth';
 
@@ -88,6 +88,7 @@ const statusConfig = computed(() => {
         disconnected: { label: 'Desconectado', icon: WifiOff, color: 'text-muted-foreground', variant: 'outline' },
         failed: { label: 'Falha na conexão', icon: AlertCircle, color: 'text-destructive', variant: 'destructive' },
     };
+
     return map[connectionStatus.value] ?? map.disconnected;
 });
 

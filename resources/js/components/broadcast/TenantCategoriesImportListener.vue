@@ -28,6 +28,7 @@ const channel = `App.Models.User.${auth.user.id}`;
 if (typeof window !== 'undefined') {
     useEcho(channel, '.categories.import.finished', (raw: ImportFinishedPayload) => {
         const sub = window.location.hostname.split('.')[0] ?? '';
+
         if (raw.tenant_slug !== '' && raw.tenant_slug !== sub) {
             return;
         }
@@ -43,6 +44,7 @@ if (typeof window !== 'undefined') {
 
         if (raw.errors_count > 0) {
             toast.warning(message);
+
             return;
         }
 

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
 import ProviderController from '@/actions/App/Http/Controllers/Tenant/ProviderController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
-import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { ColumnActions, ColumnLabel } from '@/components/table/columns';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
 

@@ -2,9 +2,9 @@
 import type { UrlMethodPair } from '@inertiajs/core';
 import { useHttp } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import imageRoutes from '@/routes/tenant/products/image';
-import { useT } from '@/composables/useT';
 import { Label } from '@/components/ui/label';
+import { useT } from '@/composables/useT';
+import imageRoutes from '@/routes/tenant/products/image';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 const props = withDefaults(defineProps<{
@@ -80,6 +80,7 @@ function onFileChange(event: Event): void {
         const message = t('app.tenant.products.form.image_upload.too_large', { size: props.maxSizeMb });
         emit('error', message);
         target.value = '';
+
         return;
     }
 
@@ -107,9 +108,11 @@ async function uploadSelectedFile(): Promise<void> {
         }
 
         storedPath.value = payload.path;
+
         if (typeof payload.public_url === 'string') {
             previewUrl.value = payload.public_url;
         }
+
         emit('uploaded', payload.path);
     } catch {
         const message = t('app.tenant.products.form.image_upload.upload_failed');
@@ -153,12 +156,15 @@ async function fetchFromRepository(): Promise<void> {
     }
 
     const currentEan = (props.ean ?? '').trim();
+
     if (currentEan === '') {
         emit('error', t('app.tenant.products.form.image_repository.ean_required'));
+
         return;
     }
 
     isFetchingRepository.value = true;
+
     try {
         repositoryHttp.ean = currentEan;
 
@@ -171,6 +177,7 @@ async function fetchFromRepository(): Promise<void> {
         }
 
         storedPath.value = payload.path;
+
         if (typeof payload.public_url === 'string') {
             previewUrl.value = payload.public_url;
         }
@@ -198,11 +205,14 @@ async function pollAiStatus(operationId: string): Promise<void> {
 
         if (payload.status === 'completed' && typeof payload.path === 'string') {
             storedPath.value = payload.path;
+
             if (typeof payload.public_url === 'string') {
                 previewUrl.value = payload.public_url;
             }
+
             emit('aiProcessed', payload.path);
             isProcessingAi.value = false;
+
             return;
         }
 

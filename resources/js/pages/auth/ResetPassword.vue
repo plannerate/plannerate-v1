@@ -8,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useT } from '@/composables/useT';
-import { update } from '@/routes/password';
 import AuthLayout from '@/layouts/AuthLayout.vue';
+import { update } from '@/routes/password';
 
 const { t } = useT();
 

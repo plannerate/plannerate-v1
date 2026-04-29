@@ -2,15 +2,15 @@
 import { Form, Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryController'; 
-import AppLayout from '@/layouts/AppLayout.vue';
 
-import FormCard from '@/components/FormCard.vue';
-import InputError from '@/components/InputError.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormStatusField from '@/components/form/FormStatusField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
+import FormCard from '@/components/FormCard.vue';
+import InputError from '@/components/InputError.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 
 type CategoryPayload = {

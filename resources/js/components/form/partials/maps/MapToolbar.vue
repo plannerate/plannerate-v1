@@ -42,8 +42,6 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import {
     Plus,
     Minus,
@@ -54,6 +52,8 @@ import {
     RotateCcw,
     Image as ImageIcon,
 } from 'lucide-vue-next'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 
 interface Props {
     zoom: number

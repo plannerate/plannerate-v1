@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { TrainFrontTunnel } from 'lucide-vue-next';
 import type { ButtonHTMLAttributes, HTMLAttributes } from 'vue'; 
 import { Button } from '@/components/ui/button';
-import { TrainFrontTunnel } from 'lucide-vue-next';
  
 
 const props = withDefaults(

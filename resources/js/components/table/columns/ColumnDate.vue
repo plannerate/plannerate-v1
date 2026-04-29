@@ -9,7 +9,10 @@ const props = defineProps<{
 }>();
 
 function formatDate(value: string | null | undefined): string {
-    if (!value) return '-';
+    if (!value) {
+return '-';
+}
+
     return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(
         new Date(value + 'T00:00:00'),
     );
@@ -19,9 +22,11 @@ const display = computed((): string => {
     if (props.from || props.to) {
         return `${formatDate(props.from)} → ${formatDate(props.to)}`;
     }
+
     if (props.date) {
         return formatDate(props.date);
     }
+
     return '—';
 });
 </script>

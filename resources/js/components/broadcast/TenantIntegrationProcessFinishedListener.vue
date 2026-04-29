@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useEcho } from '@laravel/echo-vue';
+import { computed } from 'vue';
 import { toast } from 'vue-sonner';
 import { useT } from '@/composables/useT';
 

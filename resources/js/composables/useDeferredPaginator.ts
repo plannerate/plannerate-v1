@@ -1,4 +1,5 @@
-import { computed, toValue, type ComputedRef, type MaybeRefOrGetter } from 'vue';
+import { computed, toValue   } from 'vue';
+import type {ComputedRef, MaybeRefOrGetter} from 'vue';
 import type { Paginator } from '@/types';
 
 type DeferredPaginatorState<T> = {

@@ -1,27 +1,27 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ChevronDown, LayoutTemplate, SlidersHorizontal, Store, X } from 'lucide-vue-next';
-import AppLayout from '@/layouts/AppLayout.vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import WorkflowKanbanController from '@/actions/App/Http/Controllers/Tenant/WorkflowKanbanController';
+import KankanNavigationLinks from '@/components/KankanNavigationLinks.vue';
 import ListTablePage from '@/components/ListPage.vue';
+import type ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
-import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { ColumnActions, ColumnDate, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import Popover from '@/components/ui/popover/Popover.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
-import Popover from '@/components/ui/popover/Popover.vue';
-import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
-import { computed, nextTick, ref, watch } from 'vue';
-import type ListPage from '@/components/ListPage.vue';
-import KankanNavigationLinks from '@/components/KankanNavigationLinks.vue';
 
 type PlanogramRow = {
     id: string;

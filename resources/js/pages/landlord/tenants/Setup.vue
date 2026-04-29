@@ -46,8 +46,10 @@ function startPolling(): void {
     pollingTimer = setInterval(() => {
         if (props.tenant.status !== 'provisioning') {
             stopPolling();
+
             return;
         }
+
         router.reload({ only: ['tenant'] });
     }, 3000);
 }

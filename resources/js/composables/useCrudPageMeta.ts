@@ -1,5 +1,6 @@
 import { setLayoutProps, usePage } from '@inertiajs/vue3';
-import { computed, toValue, watchEffect, type MaybeRefOrGetter } from 'vue';
+import { computed, toValue, watchEffect  } from 'vue';
+import type {MaybeRefOrGetter} from 'vue';
 import type { CrudPageMeta, CrudPageMetaDefaults } from '@/types';
 
 type SharedPageMeta = CrudPageMeta;

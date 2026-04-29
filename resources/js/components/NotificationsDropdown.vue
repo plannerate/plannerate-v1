@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
-import { onClickOutside } from '@vueuse/core';
 import { useConnectionStatus, useEchoNotification } from '@laravel/echo-vue';
 import type { ConnectionStatus } from '@laravel/echo-vue';
+import { onClickOutside } from '@vueuse/core';
 import {
     AlertTriangle,
     Bell,
@@ -18,6 +17,7 @@ import {
     X,
     XCircle,
 } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import {
     destroyAll as destroyAllRoute,
     destroy as destroyRoute,
@@ -37,7 +37,9 @@ const auth = computed(() => page.props.auth as { user: { id: string }; notificat
 const notifications = ref<AppNotification[]>((auth.value.notifications ?? []) as AppNotification[]);
 const unreadCount = ref<number>(auth.value.unread_count ?? 0);
 
-onClickOutside(panelRef, () => { isOpen.value = false; });
+onClickOutside(panelRef, () => {
+ isOpen.value = false; 
+});
 
 const connectionStatus = isBrowser ? useConnectionStatus() : ref<ConnectionStatus>('disconnected');
 
@@ -68,13 +70,31 @@ if (isBrowser) {
 function relativeTime(iso: string): string {
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'agora';
-    if (mins < 60) return `${mins}min atrás`;
+
+    if (mins < 1) {
+return 'agora';
+}
+
+    if (mins < 60) {
+return `${mins}min atrás`;
+}
+
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h atrás`;
+
+    if (hrs < 24) {
+return `${hrs}h atrás`;
+}
+
     const days = Math.floor(hrs / 24);
-    if (days === 1) return '1d atrás';
-    if (days < 7) return `${days}d atrás`;
+
+    if (days === 1) {
+return '1d atrás';
+}
+
+    if (days < 7) {
+return `${days}d atrás`;
+}
+
     return new Date(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
 }
 
@@ -83,8 +103,15 @@ function dayBucket(iso: string): string {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
-    if (d.toDateString() === today.toDateString()) return 'hoje';
-    if (d.toDateString() === yesterday.toDateString()) return 'ontem';
+
+    if (d.toDateString() === today.toDateString()) {
+return 'hoje';
+}
+
+    if (d.toDateString() === yesterday.toDateString()) {
+return 'ontem';
+}
+
     return 'anteriores';
 }
 
@@ -93,10 +120,12 @@ const bucketLabel: Record<string, string> = { hoje: 'Hoje', ontem: 'Ontem', ante
 const groupedNotifications = computed(() => {
     const order = ['hoje', 'ontem', 'anteriores'];
     const map: Record<string, AppNotification[]> = {};
+
     for (const n of notifications.value) {
         const key = dayBucket(n.created_at);
         (map[key] ??= []).push(n);
     }
+
     return order.filter((k) => map[k]?.length).map((k) => ({ key: k, label: bucketLabel[k], items: map[k] }));
 });
 
@@ -110,6 +139,7 @@ const connConfig = computed(() => {
         disconnected: { label: 'Desconectado', icon: WifiOff, color: 'text-muted-foreground' },
         failed: { label: 'Falha', icon: WifiOff, color: 'text-destructive' },
     } as const;
+
     return map[connectionStatus.value] ?? map.disconnected;
 });
 
@@ -140,7 +170,9 @@ function markAllRead() {
     router.post(markAllReadRoute.url(subdomain), {}, {
         preserveScroll: true,
         onSuccess: () => {
-            notifications.value.forEach((n) => { n.read_at = n.read_at ?? new Date().toISOString(); });
+            notifications.value.forEach((n) => {
+ n.read_at = n.read_at ?? new Date().toISOString(); 
+});
             unreadCount.value = 0;
         },
     });
@@ -161,10 +193,14 @@ function destroy(id: string) {
         preserveScroll: true,
         onSuccess: () => {
             const idx = notifications.value.findIndex((n) => n.id === id);
+
             if (idx !== -1) {
                 const wasUnread = !notifications.value[idx].read_at;
                 notifications.value.splice(idx, 1);
-                if (wasUnread) unreadCount.value = Math.max(0, unreadCount.value - 1);
+
+                if (wasUnread) {
+unreadCount.value = Math.max(0, unreadCount.value - 1);
+}
             }
         },
     });

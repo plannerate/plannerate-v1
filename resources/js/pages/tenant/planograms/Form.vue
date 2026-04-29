@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
 import { LayoutTemplate } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
-import AppLayout from '@/layouts/AppLayout.vue';
-import FormCard from '@/components/FormCard.vue';
-import FormTabsBar from '@/components/form/FormTabsBar.vue';
+import FormKanbanSettings from '@/components/form/FormKanbanSettings.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormStatusField from '@/components/form/FormStatusField.vue';
-import FormTextField from '@/components/form/FormTextField.vue';
+import FormTabsBar from '@/components/form/FormTabsBar.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
+import FormTextField from '@/components/form/FormTextField.vue';
+import FormCard from '@/components/FormCard.vue';
 import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
-import FormKanbanSettings from '@/components/form/FormKanbanSettings.vue';
 
 type PlanogramPayload = {
     id: string;

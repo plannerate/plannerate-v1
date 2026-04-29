@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
 import { Layers, Plus, Trash2 } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import PlanController from '@/actions/App/Http/Controllers/Landlord/PlanController';
-import AppLayout from '@/layouts/AppLayout.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 
 type PlanItem = {
     id: string | null;
