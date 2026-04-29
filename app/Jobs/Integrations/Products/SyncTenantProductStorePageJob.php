@@ -78,10 +78,6 @@ class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
                 page: $nextPage,
                 fullSync: $this->fullSync,
             );
-        } else {
-            FinalizeTenantProductsSyncJob::dispatch(
-                integrationId: (string) $integration->id,
-            );
         }
 
         if ($page >= self::MAX_PROGRESSIVE_PAGE && $itemsCount >= $pageSize) {
