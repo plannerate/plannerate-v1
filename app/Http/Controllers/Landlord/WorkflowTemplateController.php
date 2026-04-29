@@ -27,18 +27,19 @@ class WorkflowTemplateController extends Controller
         $search = trim((string) $request->string('search'));
         $status = trim((string) $request->string('status'));
         $hasStatusFilter = in_array($status, ['draft', 'published'], true);
+        $perPage = $this->resolvePerPage($request, 15);
 
         /** @var array{
          *     templates: LengthAwarePaginator<array<string, mixed>>,
          * } $data
          */
-        $data = $this->runInTenantContext($tenant, function () use ($search, $hasStatusFilter, $status): array {
+        $data = $this->runInTenantContext($tenant, function () use ($search, $hasStatusFilter, $status, $perPage): array {
             $templates = WorkflowTemplate::query()
                 ->when($search !== '', fn ($q) => $q->where('name', 'like', '%'.$search.'%'))
                 ->when($hasStatusFilter, fn ($q) => $q->where('status', $status))
                 ->with('suggestedUsers:id,name')
                 ->orderBy('suggested_order')
-                ->paginate($this->resolvePerPage($request, 15))
+                ->paginate($perPage)
                 ->withQueryString()
                 ->through(fn (WorkflowTemplate $t): array => [
                     'id' => $t->id,

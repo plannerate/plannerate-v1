@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Landlord;
 
+use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreUserRequest;
 use App\Http\Requests\Landlord\UpdateUserRequest;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\Authorization\RbacType;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -16,6 +18,8 @@ use Inertia\Response;
 
 class UserController extends Controller
 {
+    use InteractsWithDeferredIndex;
+
     /**
      * Display a listing of the resource.
      */
@@ -23,13 +27,30 @@ class UserController extends Controller
     {
         $this->authorize('viewAny', User::class);
 
-        $search = trim((string) $request->string('search'));
-        $isActive = $request->query('is_active');
-        $roleId = trim((string) $request->string('role_id'));
-        $hasIsActiveFilter = in_array($isActive, ['0', '1'], true);
-        $hasRoleFilter = $roleId !== '';
+        $search = $this->requestString($request, 'search');
+        $isActive = $this->requestEnum($request, 'is_active', ['0', '1']);
+        $roleId = $this->requestString($request, 'role_id');
 
-        $users = User::query()
+        return $this->renderDeferredIndex('landlord/users/Index', 'users', fn (): LengthAwarePaginator => $this->usersPaginator(
+            $search,
+            $isActive,
+            $roleId,
+            $this->resolvePerPage($request, 10),
+        ), [
+            'filters' => [
+                'search' => $search,
+                'is_active' => $isActive,
+                'role_id' => $roleId,
+            ],
+            'filter_options' => [
+                'roles' => $this->rolesForSelect(),
+            ],
+        ]);
+    }
+
+    private function usersPaginator(string $search, string $isActive, string $roleId, int $perPage): LengthAwarePaginator
+    {
+        return User::query()
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -37,8 +58,8 @@ class UserController extends Controller
                         ->orWhere('email', 'like', '%'.$search.'%');
                 });
             })
-            ->when($hasIsActiveFilter, fn ($query) => $query->where('is_active', $isActive === '1'))
-            ->when($hasRoleFilter, function ($query) use ($roleId): void {
+            ->when($isActive !== '', fn ($query) => $query->where('is_active', $isActive === '1'))
+            ->when($roleId !== '', function ($query) use ($roleId): void {
                 $query->whereHas('roles', function ($rolesQuery) use ($roleId): void {
                     $rolesQuery
                         ->where('roles.id', $roleId)
@@ -53,7 +74,7 @@ class UserController extends Controller
                 ->where('roles.type', RbacType::LANDLORD)
                 ->orderBy('roles.name')])
             ->latest()
-            ->paginate($this->resolvePerPage($request, 10))
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (User $user): array => [
                 'id' => $user->id,
@@ -63,18 +84,6 @@ class UserController extends Controller
                 'roles' => $user->roles->pluck('name')->values()->all(),
                 'created_at' => $user->created_at?->toDateTimeString(),
             ]);
-
-        return Inertia::render('landlord/users/Index', [
-            'users' => $users,
-            'filters' => [
-                'search' => $search,
-                'is_active' => $hasIsActiveFilter ? $isActive : '',
-                'role_id' => $hasRoleFilter ? $roleId : '',
-            ],
-            'filter_options' => [
-                'roles' => $this->rolesForSelect(),
-            ],
-        ]);
     }
 
     /**

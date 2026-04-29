@@ -4,8 +4,10 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import RoleController from '@/actions/App/Http/Controllers/Landlord/RoleController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
+import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import type { Paginator } from '@/types';
 
@@ -18,7 +20,7 @@ type RoleRow = {
 };
 
 const props = defineProps<{
-    roles: Paginator<RoleRow>;
+    roles?: Paginator<RoleRow>;
     filters: {
         search: string;
         type: string;
@@ -30,6 +32,7 @@ const props = defineProps<{
 
 const { t } = useT();
 const rolesIndexPath = RoleController.index.url().replace(/^\/\/[^/]+/, '');
+const { meta: rolesMeta, rows: rolesRows, loading: rolesLoading } = useDeferredPaginator(() => props.roles, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.landlord.roles.title'),
     title: t('app.landlord.roles.title'),
@@ -55,7 +58,7 @@ const pageMeta = useCrudPageMeta({
         </template>
 
         <ListPage
-            :meta="props.roles"
+            :meta="rolesMeta"
         label="função"
         :action="rolesIndexPath"
         :clear-href="rolesIndexPath"
@@ -87,13 +90,16 @@ const pageMeta = useCrudPageMeta({
                 </tr>
             </thead>
             <tbody>
-                <tr v-if="props.roles.data.length === 0">
+                <template v-if="rolesLoading">
+                    <TableLoadingSkeleton :columns="4" :rows="6" />
+                </template>
+                <tr v-else-if="rolesRows.length === 0">
                     <td class="px-4 py-6 text-muted-foreground" colspan="4">
                         {{ t('app.landlord.common.empty') }}
                     </td>
                 </tr>
                 <tr
-                    v-for="role in props.roles.data"
+                    v-for="role in rolesRows"
                     :key="role.id"
                     class="border-t border-sidebar-border/60 dark:border-sidebar-border"
                 >

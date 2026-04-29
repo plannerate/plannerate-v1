@@ -4,8 +4,10 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import PlanController from '@/actions/App/Http/Controllers/Landlord/PlanController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
+import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import type { Paginator } from '@/types';
 
@@ -21,7 +23,7 @@ type PlanRow = {
 };
 
 const props = defineProps<{
-    plans: Paginator<PlanRow>;
+    plans?: Paginator<PlanRow>;
     filters: {
         search: string;
         is_active: string;
@@ -30,6 +32,7 @@ const props = defineProps<{
 
 const { t } = useT();
 const plansIndexPath = PlanController.index.url().replace(/^\/\/[^/]+/, '');
+const { meta: plansMeta, rows: plansRows, loading: plansLoading } = useDeferredPaginator(() => props.plans, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.landlord.plans.title'),
     title: t('app.landlord.plans.title'),
@@ -62,7 +65,7 @@ function formatPrice(cents: number): string {
         </template>
 
         <ListPage
-            :meta="props.plans"
+            :meta="plansMeta"
         label="plano"
         :action="plansIndexPath"
         :clear-href="plansIndexPath"
@@ -96,13 +99,16 @@ function formatPrice(cents: number): string {
                 </tr>
             </thead>
             <tbody>
-                <tr v-if="props.plans.data.length === 0">
+                <template v-if="plansLoading">
+                    <TableLoadingSkeleton :columns="7" :rows="6" />
+                </template>
+                <tr v-else-if="plansRows.length === 0">
                     <td class="px-4 py-6 text-muted-foreground" colspan="7">
                         {{ t('app.landlord.common.empty') }}
                     </td>
                 </tr>
                 <tr
-                    v-for="plan in props.plans.data"
+                    v-for="plan in plansRows"
                     :key="plan.id"
                     class="border-t border-sidebar-border/60 dark:border-sidebar-border"
                 >

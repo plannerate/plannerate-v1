@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Landlord;
 
+use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreModuleRequest;
 use App\Http\Requests\Landlord\UpdateModuleRequest;
 use App\Models\Module;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -13,6 +15,8 @@ use Inertia\Response;
 
 class ModuleController extends Controller
 {
+    use InteractsWithDeferredIndex;
+
     /**
      * Display a listing of modules.
      */
@@ -20,11 +24,24 @@ class ModuleController extends Controller
     {
         $this->authorize('viewAny', Module::class);
 
-        $search = trim((string) $request->string('search'));
-        $isActive = $request->query('is_active');
-        $hasIsActiveFilter = in_array($isActive, ['0', '1'], true);
+        $search = $this->requestString($request, 'search');
+        $isActive = $this->requestEnum($request, 'is_active', ['0', '1']);
 
-        $modules = Module::query()
+        return $this->renderDeferredIndex('landlord/modules/Index', 'modules', fn (): LengthAwarePaginator => $this->modulesPaginator(
+            $search,
+            $isActive,
+            $this->resolvePerPage($request, 10),
+        ), [
+            'filters' => [
+                'search' => $search,
+                'is_active' => $isActive,
+            ],
+        ]);
+    }
+
+    private function modulesPaginator(string $search, string $isActive, int $perPage): LengthAwarePaginator
+    {
+        return Module::query()
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -32,10 +49,10 @@ class ModuleController extends Controller
                         ->orWhere('slug', 'like', '%'.$search.'%');
                 });
             })
-            ->when($hasIsActiveFilter, fn ($query) => $query->where('is_active', $isActive === '1'))
+            ->when($isActive !== '', fn ($query) => $query->where('is_active', $isActive === '1'))
             ->withCount('tenants')
             ->latest()
-            ->paginate($this->resolvePerPage($request, 10))
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Module $module): array => [
                 'id' => $module->id,
@@ -46,14 +63,6 @@ class ModuleController extends Controller
                 'tenants_count' => $module->tenants_count,
                 'created_at' => $module->created_at?->toDateTimeString(),
             ]);
-
-        return Inertia::render('landlord/modules/Index', [
-            'modules' => $modules,
-            'filters' => [
-                'search' => $search,
-                'is_active' => $hasIsActiveFilter ? $isActive : '',
-            ],
-        ]);
     }
 
     /**

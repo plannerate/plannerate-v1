@@ -8,8 +8,10 @@ import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
+import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import type { Paginator } from '@/types';
 import ColumnActions from '@/components/table/columns/ColumnActions.vue';
@@ -27,7 +29,7 @@ type TenantRow = {
 };
 
 const props = defineProps<{
-    tenants: Paginator<TenantRow>;
+    tenants?: Paginator<TenantRow>;
     filters: {
         search: string;
         status: string;
@@ -43,6 +45,7 @@ const props = defineProps<{
 
 const { t } = useT();
 const tenantsIndexPath = TenantController.index.url().replace(/^\/\/[^/]+/, '');
+const { meta: tenantsMeta, rows: tenantsRows, loading: tenantsLoading } = useDeferredPaginator(() => props.tenants, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.landlord.tenants.title'),
     title: t('app.landlord.tenants.title'),
@@ -68,7 +71,7 @@ const pageMeta = useCrudPageMeta({
         </template>
 
         <ListPage
-            :meta="props.tenants"
+            :meta="tenantsMeta"
             label="tenant"
             :action="tenantsIndexPath"
             :clear-href="tenantsIndexPath"
@@ -148,13 +151,16 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="props.tenants.data.length === 0">
+                    <template v-if="tenantsLoading">
+                        <TableLoadingSkeleton :columns="6" :rows="6" />
+                    </template>
+                    <tr v-else-if="tenantsRows.length === 0">
                         <td class="px-4 py-6 text-muted-foreground" colspan="6">
                             {{ t('app.landlord.common.empty') }}
                         </td>
                     </tr>
                     <tr
-                        v-for="tenant in props.tenants.data"
+                        v-for="tenant in tenantsRows"
                         :key="tenant.id"
                         class="border-t border-sidebar-border/60 dark:border-sidebar-border"
                     >

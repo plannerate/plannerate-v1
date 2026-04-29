@@ -36,13 +36,14 @@ class TenantUserAccessController extends Controller
         $search = trim((string) $request->string('search'));
         $status = (string) $request->string('status');
         $statusFilter = in_array($status, self::AVAILABLE_STATUS_FILTERS, true) ? $status : 'all';
+        $perPage = $this->resolvePerPage($request, 10);
 
         /** @var array{
          *     users: LengthAwarePaginator<array<string, mixed>>,
          *     activeCount: int
          * } $tenantUserData
          */
-        $tenantUserData = $this->runInTenantContext($tenant, function () use ($search, $statusFilter): array {
+        $tenantUserData = $this->runInTenantContext($tenant, function () use ($search, $statusFilter, $perPage): array {
             $query = TenantUser::query()
                 ->withTrashed()
                 ->when($search !== '', function ($query) use ($search): void {
@@ -63,7 +64,7 @@ class TenantUserAccessController extends Controller
 
             $users = $query
                 ->latest()
-                ->paginate($this->resolvePerPage($request, 10))
+                ->paginate($perPage)
                 ->withQueryString()
                 ->through(fn (TenantUser $user): array => [
                     'id' => $user->id,

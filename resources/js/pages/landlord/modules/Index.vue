@@ -4,8 +4,10 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import ModuleController from '@/actions/App/Http/Controllers/Landlord/ModuleController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
+import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import type { Paginator } from '@/types';
 
@@ -19,7 +21,7 @@ type ModuleRow = {
 };
 
 const props = defineProps<{
-    modules: Paginator<ModuleRow>;
+    modules?: Paginator<ModuleRow>;
     filters: {
         search: string;
         is_active: string;
@@ -28,6 +30,7 @@ const props = defineProps<{
 
 const { t } = useT();
 const modulesIndexPath = ModuleController.index.url().replace(/^\/\/[^/]+/, '');
+const { meta: modulesMeta, rows: modulesRows, loading: modulesLoading } = useDeferredPaginator(() => props.modules, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.landlord.modules.title'),
     title: t('app.landlord.modules.title'),
@@ -53,7 +56,7 @@ const pageMeta = useCrudPageMeta({
         </template>
 
         <ListPage
-            :meta="props.modules"
+            :meta="modulesMeta"
             label="modulo"
             :action="modulesIndexPath"
             :clear-href="modulesIndexPath"
@@ -85,13 +88,16 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="props.modules.data.length === 0">
+                    <template v-if="modulesLoading">
+                        <TableLoadingSkeleton :columns="5" :rows="6" />
+                    </template>
+                    <tr v-else-if="modulesRows.length === 0">
                         <td class="px-4 py-6 text-muted-foreground" colspan="5">
                             {{ t('app.landlord.common.empty') }}
                         </td>
                     </tr>
                     <tr
-                        v-for="module in props.modules.data"
+                        v-for="module in modulesRows"
                         :key="module.id"
                         class="border-t border-sidebar-border/60 dark:border-sidebar-border"
                     >

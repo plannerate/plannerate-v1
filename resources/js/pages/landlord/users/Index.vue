@@ -4,8 +4,10 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import UserController from '@/actions/App/Http/Controllers/Landlord/UserController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
+import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import type { Paginator } from '@/types';
 
@@ -18,7 +20,7 @@ type UserRow = {
 };
 
 const props = defineProps<{
-    users: Paginator<UserRow>;
+    users?: Paginator<UserRow>;
     filters: {
         search: string;
         is_active: string;
@@ -31,6 +33,7 @@ const props = defineProps<{
 
 const { t } = useT();
 const usersIndexPath = UserController.index.url().replace(/^\/\/[^/]+/, '');
+const { meta: usersMeta, rows: usersRows, loading: usersLoading } = useDeferredPaginator(() => props.users, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.landlord.users.title'),
     title: t('app.landlord.users.title'),
@@ -56,7 +59,7 @@ const pageMeta = useCrudPageMeta({
         </template>
 
         <ListPage
-            :meta="props.users"
+            :meta="usersMeta"
         label="usuário"
         :action="usersIndexPath"
         :clear-href="usersIndexPath"
@@ -99,13 +102,16 @@ const pageMeta = useCrudPageMeta({
                 </tr>
             </thead>
             <tbody>
-                <tr v-if="props.users.data.length === 0">
+                <template v-if="usersLoading">
+                    <TableLoadingSkeleton :columns="5" :rows="6" />
+                </template>
+                <tr v-else-if="usersRows.length === 0">
                     <td class="px-4 py-6 text-muted-foreground" colspan="5">
                         {{ t('app.landlord.common.empty') }}
                     </td>
                 </tr>
                 <tr
-                    v-for="user in props.users.data"
+                    v-for="user in usersRows"
                     :key="user.id"
                     class="border-t border-sidebar-border/60 dark:border-sidebar-border"
                 >

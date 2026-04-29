@@ -4,8 +4,10 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import PermissionController from '@/actions/App/Http/Controllers/Landlord/PermissionController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
+import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import type { Paginator } from '@/types';
 
@@ -17,7 +19,7 @@ type PermissionRow = {
 };
 
 const props = defineProps<{
-    permissions: Paginator<PermissionRow>;
+    permissions?: Paginator<PermissionRow>;
     filters: {
         search: string;
         type: string;
@@ -29,6 +31,7 @@ const props = defineProps<{
 
 const { t } = useT();
 const permissionsIndexPath = PermissionController.index.url().replace(/^\/\/[^/]+/, '');
+const { meta: permissionsMeta, rows: permissionsRows, loading: permissionsLoading } = useDeferredPaginator(() => props.permissions, 15);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.landlord.permissions.title'),
     title: t('app.landlord.permissions.title'),
@@ -54,7 +57,7 @@ const pageMeta = useCrudPageMeta({
         </template>
 
         <ListPage
-            :meta="props.permissions"
+            :meta="permissionsMeta"
         label="permissão"
         :action="permissionsIndexPath"
         :clear-href="permissionsIndexPath"
@@ -85,13 +88,16 @@ const pageMeta = useCrudPageMeta({
                 </tr>
             </thead>
             <tbody>
-                <tr v-if="props.permissions.data.length === 0">
+                <template v-if="permissionsLoading">
+                    <TableLoadingSkeleton :columns="3" :rows="6" />
+                </template>
+                <tr v-else-if="permissionsRows.length === 0">
                     <td class="px-4 py-6 text-muted-foreground" colspan="3">
                         {{ t('app.landlord.common.empty') }}
                     </td>
                 </tr>
                 <tr
-                    v-for="permission in props.permissions.data"
+                    v-for="permission in permissionsRows"
                     :key="permission.id"
                     class="border-t border-sidebar-border/60 dark:border-sidebar-border"
                 >

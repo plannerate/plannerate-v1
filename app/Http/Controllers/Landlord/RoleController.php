@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Landlord;
 
+use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreRoleRequest;
 use App\Http\Requests\Landlord\UpdateRoleRequest;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Support\Authorization\RbacType;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,6 +17,8 @@ use Inertia\Response;
 
 class RoleController extends Controller
 {
+    use InteractsWithDeferredIndex;
+
     /**
      * @var list<string>
      */
@@ -27,18 +31,34 @@ class RoleController extends Controller
     {
         $this->authorize('viewAny', Role::class);
 
-        $search = trim((string) $request->string('search'));
-        $type = (string) $request->string('type');
-        $hasTypeFilter = in_array($type, RbacType::all(), true);
+        $search = $this->requestString($request, 'search');
+        $type = $this->requestEnum($request, 'type', RbacType::all());
 
-        $roles = Role::query()
+        return $this->renderDeferredIndex('landlord/roles/Index', 'roles', fn (): LengthAwarePaginator => $this->rolesPaginator(
+            $search,
+            $type,
+            $this->resolvePerPage($request, 10),
+        ), [
+            'filters' => [
+                'search' => $search,
+                'type' => $type,
+            ],
+            'filter_options' => [
+                'types' => $this->typesForSelect(),
+            ],
+        ]);
+    }
+
+    private function rolesPaginator(string $search, string $type, int $perPage): LengthAwarePaginator
+    {
+        return Role::query()
             ->whereNull('tenant_id')
             ->where('guard_name', 'web')
             ->when($search !== '', fn ($query) => $query->where('name', 'like', '%'.$search.'%'))
-            ->when($hasTypeFilter, fn ($query) => $query->where('type', $type))
+            ->when($type !== '', fn ($query) => $query->where('type', $type))
             ->withCount('permissions')
             ->latest()
-            ->paginate($this->resolvePerPage($request, 10))
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Role $role): array => [
                 'id' => $role->id,
@@ -48,17 +68,6 @@ class RoleController extends Controller
                 'is_protected' => in_array((string) $role->system_name, self::PROTECTED_ROLES, true),
                 'created_at' => $role->created_at?->toDateTimeString(),
             ]);
-
-        return Inertia::render('landlord/roles/Index', [
-            'roles' => $roles,
-            'filters' => [
-                'search' => $search,
-                'type' => $hasTypeFilter ? $type : '',
-            ],
-            'filter_options' => [
-                'types' => $this->typesForSelect(),
-            ],
-        ]);
     }
 
     /**

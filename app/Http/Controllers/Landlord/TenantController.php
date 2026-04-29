@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Landlord;
 
+use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreTenantRequest;
 use App\Http\Requests\Landlord\UpdateTenantRequest;
@@ -11,6 +12,7 @@ use App\Models\Plan;
 use App\Models\Tenant;
 use App\Support\Modules\ModuleSlug;
 use App\Support\Modules\TenantModuleService;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -20,6 +22,8 @@ use Inertia\Response;
 
 class TenantController extends Controller
 {
+    use InteractsWithDeferredIndex;
+
     /**
      * @var list<string>
      */
@@ -36,15 +40,47 @@ class TenantController extends Controller
     {
         $this->authorize('viewAny', Tenant::class);
 
-        $search = trim((string) $request->string('search'));
-        $status = (string) $request->string('status');
-        $planId = trim((string) $request->string('plan_id'));
-        $module = trim((string) $request->string('module'));
-        $hasStatusFilter = in_array($status, self::AVAILABLE_STATUSES, true);
-        $hasPlanFilter = $planId !== '';
-        $hasModuleFilter = $module !== '';
+        $search = $this->requestString($request, 'search');
+        $status = $this->requestEnum($request, 'status', self::AVAILABLE_STATUSES);
+        $planId = $this->requestString($request, 'plan_id');
+        $module = $this->requestString($request, 'module');
 
-        $tenants = Tenant::query()
+        return $this->renderDeferredIndex('landlord/tenants/Index', 'tenants', fn (): LengthAwarePaginator => $this->tenantsPaginator(
+            $search,
+            $status,
+            $planId,
+            $module,
+            $this->resolvePerPage($request, 10),
+        ), [
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+                'plan_id' => $planId,
+                'module' => $module,
+            ],
+            'filter_options' => [
+                'statuses' => $this->statusesForSelect(),
+                'plans' => Plan::query()
+                    ->orderBy('name')
+                    ->get(['id', 'name'])
+                    ->map(fn (Plan $plan): array => [
+                        'id' => $plan->id,
+                        'name' => $plan->name,
+                    ])
+                    ->all(),
+                'modules' => $this->modulesForFilter(),
+            ],
+        ]);
+    }
+
+    private function tenantsPaginator(
+        string $search,
+        string $status,
+        string $planId,
+        string $module,
+        int $perPage,
+    ): LengthAwarePaginator {
+        return Tenant::query()
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -54,12 +90,12 @@ class TenantController extends Controller
                         ->orWhereHas('primaryDomain', fn ($domainQuery) => $domainQuery->where('host', 'like', '%'.$search.'%'));
                 });
             })
-            ->when($hasStatusFilter, fn ($query) => $query->where('status', $status))
-            ->when($hasPlanFilter, fn ($query) => $query->where('plan_id', $planId))
-            ->when($hasModuleFilter, fn ($query) => $query->whereHasActiveModule($module))
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($planId !== '', fn ($query) => $query->where('plan_id', $planId))
+            ->when($module !== '', fn ($query) => $query->whereHasActiveModule($module))
             ->with(['plan:id,name', 'primaryDomain:id,tenant_id,host,is_active', 'modules:id,slug,is_active'])
             ->latest()
-            ->paginate($this->resolvePerPage($request, 10))
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Tenant $tenant): array => [
                 'active_modules' => $this->tenantModuleService->tenantActiveModuleSlugs($tenant),
@@ -80,28 +116,6 @@ class TenantController extends Controller
                 ] : null,
                 'created_at' => $tenant->created_at?->toDateTimeString(),
             ]);
-
-        return Inertia::render('landlord/tenants/Index', [
-            'tenants' => $tenants,
-            'filters' => [
-                'search' => $search,
-                'status' => $hasStatusFilter ? $status : '',
-                'plan_id' => $hasPlanFilter ? $planId : '',
-                'module' => $hasModuleFilter ? $module : '',
-            ],
-            'filter_options' => [
-                'statuses' => $this->statusesForSelect(),
-                'plans' => Plan::query()
-                    ->orderBy('name')
-                    ->get(['id', 'name'])
-                    ->map(fn (Plan $plan): array => [
-                        'id' => $plan->id,
-                        'name' => $plan->name,
-                    ])
-                    ->all(),
-                'modules' => $this->modulesForFilter(),
-            ],
-        ]);
     }
 
     /**
