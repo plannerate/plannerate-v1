@@ -38,7 +38,7 @@ class RoleController extends Controller
             ->when($hasTypeFilter, fn ($query) => $query->where('type', $type))
             ->withCount('permissions')
             ->latest()
-            ->paginate(10)
+            ->paginate($this->resolvePerPage($request, 10))
             ->withQueryString()
             ->through(fn (Role $role): array => [
                 'id' => $role->id,

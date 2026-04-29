@@ -38,7 +38,7 @@ class WorkflowTemplateController extends Controller
                 ->when($hasStatusFilter, fn ($q) => $q->where('status', $status))
                 ->with('suggestedUsers:id,name')
                 ->orderBy('suggested_order')
-                ->paginate(15)
+                ->paginate($this->resolvePerPage($request, 15))
                 ->withQueryString()
                 ->through(fn (WorkflowTemplate $t): array => [
                     'id' => $t->id,

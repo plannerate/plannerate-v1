@@ -100,7 +100,7 @@ class CategoryController extends Controller
             })
             ->when($hasStatusFilter, fn ($query) => $query->where('status', $status))
             ->latest()
-            ->paginate(10)
+            ->paginate($this->resolvePerPage($request, 10))
             ->withQueryString()
             ->through(fn (Category $category): array => [
                 'id' => $category->id,

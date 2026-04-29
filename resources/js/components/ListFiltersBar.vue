@@ -18,6 +18,8 @@ withDefaults(
         clearLabel?: string;
         total?: number | null;
         totalLabel?: string;
+        perPage?: number;
+        perPageOptions?: number[];
     }>(),
     {
         searchName: 'search',
@@ -27,6 +29,8 @@ withDefaults(
         clearLabel: 'Limpar filtros',
         total: null,
         totalLabel: undefined,
+        perPage: 10,
+        perPageOptions: () => [10, 25, 50, 100],
     },
 );
 
@@ -90,6 +94,23 @@ function onFormChange(event: Event): void {
 
             <!-- Extra filter fields (selects, etc.) -->
             <slot />
+
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-muted-foreground">Por página</span>
+                <select
+                    name="per_page"
+                    :value="String(perPage)"
+                    class="h-9 rounded-lg border border-border bg-background px-2 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                >
+                    <option
+                        v-for="option in perPageOptions"
+                        :key="option"
+                        :value="String(option)"
+                    >
+                        {{ option }}
+                    </option>
+                </select>
+            </div>
 
             <!-- Filter submit button -->
             <Button

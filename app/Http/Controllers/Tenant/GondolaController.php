@@ -39,7 +39,7 @@ class GondolaController extends Controller
             })
             ->when($hasStatusFilter, fn ($query) => $query->where('status', $status))
             ->latest()
-            ->paginate(10)
+            ->paginate($this->resolvePerPage($request, 10))
             ->withQueryString()
             ->through(fn (Gondola $gondola): array => [
                 'id' => $gondola->id,

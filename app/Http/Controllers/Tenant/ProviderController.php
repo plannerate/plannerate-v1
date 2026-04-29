@@ -39,7 +39,7 @@ class ProviderController extends Controller
             })
             ->when($hasDefaultFilter, fn ($query) => $query->where('is_default', $isDefault === '1'))
             ->latest()
-            ->paginate(10)
+            ->paginate($this->resolvePerPage($request, 10))
             ->withQueryString()
             ->through(fn (Provider $provider): array => [
                 'id' => $provider->id,

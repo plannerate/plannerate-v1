@@ -63,7 +63,7 @@ class TenantUserAccessController extends Controller
 
             $users = $query
                 ->latest()
-                ->paginate(10)
+                ->paginate($this->resolvePerPage($request, 10))
                 ->withQueryString()
                 ->through(fn (TenantUser $user): array => [
                     'id' => $user->id,

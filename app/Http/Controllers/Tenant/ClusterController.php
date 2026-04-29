@@ -42,7 +42,7 @@ class ClusterController extends Controller
             ->when($hasStatusFilter, fn ($query) => $query->where('status', $status))
             ->when($hasStoreFilter, fn ($query) => $query->where('store_id', $storeId))
             ->latest()
-            ->paginate(10)
+            ->paginate($this->resolvePerPage($request, 10))
             ->withQueryString()
             ->through(fn (Cluster $cluster): array => [
                 'id' => $cluster->id,

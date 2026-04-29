@@ -21,6 +21,7 @@ use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\ProviderController;
 use App\Http\Controllers\Tenant\ReverbTestController;
+use App\Http\Controllers\Tenant\SaleController;
 use App\Http\Controllers\Tenant\StoreController;
 use App\Http\Controllers\Tenant\WorkflowExecutionController;
 use App\Http\Controllers\Tenant\WorkflowKanbanController;
@@ -136,6 +137,10 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::resource('stores', StoreController::class)
             ->except(['show'])
             ->names('stores');
+
+        Route::resource('sales', SaleController::class)
+            ->except(['show'])
+            ->names('sales');
 
         Route::resource('clusters', ClusterController::class)
             ->except(['show'])

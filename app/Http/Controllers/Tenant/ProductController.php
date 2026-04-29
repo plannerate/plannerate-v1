@@ -62,7 +62,7 @@ class ProductController extends Controller
                 },
                 fn ($query) => $query->latest(),
             )
-            ->paginate(10)
+            ->paginate($this->resolvePerPage($request, 10))
             ->withQueryString()
             ->through(fn (Product $product): array => [
                 'id' => $product->id,

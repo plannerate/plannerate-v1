@@ -96,6 +96,16 @@ final class PermissionName
 
     public const TENANT_STORES_DELETE = 'tenant.stores.delete';
 
+    public const TENANT_SALES_VIEW_ANY = 'tenant.sales.viewAny';
+
+    public const TENANT_SALES_VIEW = 'tenant.sales.view';
+
+    public const TENANT_SALES_CREATE = 'tenant.sales.create';
+
+    public const TENANT_SALES_UPDATE = 'tenant.sales.update';
+
+    public const TENANT_SALES_DELETE = 'tenant.sales.delete';
+
     public const TENANT_CLUSTERS_VIEW_ANY = 'tenant.clusters.viewAny';
 
     public const TENANT_CLUSTERS_VIEW = 'tenant.clusters.view';
@@ -206,6 +216,11 @@ final class PermissionName
             self::TENANT_STORES_CREATE,
             self::TENANT_STORES_UPDATE,
             self::TENANT_STORES_DELETE,
+            self::TENANT_SALES_VIEW_ANY,
+            self::TENANT_SALES_VIEW,
+            self::TENANT_SALES_CREATE,
+            self::TENANT_SALES_UPDATE,
+            self::TENANT_SALES_DELETE,
             self::TENANT_CLUSTERS_VIEW_ANY,
             self::TENANT_CLUSTERS_VIEW,
             self::TENANT_CLUSTERS_CREATE,

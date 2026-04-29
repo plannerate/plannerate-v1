@@ -39,7 +39,7 @@ class PermissionController extends Controller
             ->when($search !== '', fn ($query) => $query->where('name', 'like', '%'.$search.'%'))
             ->when($hasTypeFilter, fn ($query) => $query->where('type', $type))
             ->latest()
-            ->paginate(15)
+            ->paginate($this->resolvePerPage($request, 15))
             ->withQueryString()
             ->through(fn (Permission $permission): array => [
                 'id' => $permission->id,

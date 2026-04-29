@@ -47,7 +47,7 @@ class PlanogramController extends Controller
             ->when($hasStoreFilter, fn ($query) => $query->where('store_id', $storeId))
             ->when($hasCategoryFilter, fn ($query) => $query->where('category_id', $categoryId))
             ->latest()
-            ->paginate(10)
+            ->paginate($this->resolvePerPage($request, 10))
             ->withQueryString()
             ->through(fn (Planogram $planogram): array => [
                 'id' => $planogram->id,

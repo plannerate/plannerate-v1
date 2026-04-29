@@ -11,6 +11,7 @@ use App\Models\Planogram;
 use App\Models\Product;
 use App\Models\Provider;
 use App\Models\Role;
+use App\Models\Sale;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\User;
@@ -147,6 +148,14 @@ class SidebarNavigationService
                     ->icon('store')
                     ->authorize('viewAny', Store::class)
                     ->setOrder(40);
+            })
+            ->item('tenant.sales', function ($item) use ($subdomain): void {
+                $item
+                    ->label(__('app.tenant.sales.navigation'))
+                    ->href(route('tenant.sales.index', ['subdomain' => $subdomain], false))
+                    ->icon('badge-dollar-sign')
+                    ->authorize('viewAny', Sale::class)
+                    ->setOrder(45);
             })
             ->item('tenant.clusters', function ($item) use ($subdomain): void {
                 $item

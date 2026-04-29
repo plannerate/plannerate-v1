@@ -37,7 +37,7 @@ class PlanController extends Controller
             ->when($hasIsActiveFilter, fn ($query) => $query->where('is_active', $isActive === '1'))
             ->withCount('tenants')
             ->latest()
-            ->paginate(10)
+            ->paginate($this->resolvePerPage($request, 10))
             ->withQueryString()
             ->through(fn (Plan $plan): array => [
                 'id' => $plan->id,

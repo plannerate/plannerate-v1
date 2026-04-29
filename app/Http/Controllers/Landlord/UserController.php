@@ -53,7 +53,7 @@ class UserController extends Controller
                 ->where('roles.type', RbacType::LANDLORD)
                 ->orderBy('roles.name')])
             ->latest()
-            ->paginate(10)
+            ->paginate($this->resolvePerPage($request, 10))
             ->withQueryString()
             ->through(fn (User $user): array => [
                 'id' => $user->id,

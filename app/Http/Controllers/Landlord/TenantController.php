@@ -59,7 +59,7 @@ class TenantController extends Controller
             ->when($hasModuleFilter, fn ($query) => $query->whereHasActiveModule($module))
             ->with(['plan:id,name', 'primaryDomain:id,tenant_id,host,is_active', 'modules:id,slug,is_active'])
             ->latest()
-            ->paginate(10)
+            ->paginate($this->resolvePerPage($request, 10))
             ->withQueryString()
             ->through(fn (Tenant $tenant): array => [
                 'active_modules' => $this->tenantModuleService->tenantActiveModuleSlugs($tenant),
