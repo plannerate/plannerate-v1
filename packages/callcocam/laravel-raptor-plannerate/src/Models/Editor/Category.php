@@ -10,6 +10,8 @@ namespace Callcocam\LaravelRaptorPlannerate\Models\Editor;
 
 use App\Models\Traits\BelongsToTenant;
 use Callcocam\LaravelRaptorPlannerate\Models\Traits\HasCategory;
+use Callcocam\LaravelRaptorPlannerate\Models\Traits\UsesPlannerateTenantConnection;
+use Closure;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,7 +21,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
-    use BelongsToTenant, HasCategory, HasFactory, HasUlids, SoftDeletes;
+    use BelongsToTenant, HasCategory, HasFactory, HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
 
     protected $appends = ['mercadologico_cascading', 'hierarchy_path'];
 

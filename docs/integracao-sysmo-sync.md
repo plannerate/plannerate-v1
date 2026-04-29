@@ -67,6 +67,15 @@ Agendado em `routes/console.php`:
 - diario `07:30`: dispatch diario
 - diario `03:30`: manutencao noturna
 
+Servicos no `compose.yaml`:
+- `scheduler`
+  - executa `php artisan schedule:work`;
+  - e o responsavel por acionar os horarios definidos em `routes/console.php`.
+- `queue`
+  - executa `php artisan queue:work --queue=default --sleep=3 --tries=1 --timeout=650 --memory=1024`;
+  - processa os jobs de sync, pos-sync, notificacoes e broadcasts;
+  - usa `DB_QUEUE_RETRY_AFTER` maior que o timeout dos jobs longos.
+
 ## Runbook rapido
 
 ### 1) Carga inicial (bootstrap do tenant)
@@ -102,6 +111,7 @@ Efeito:
 - inclui dias com `failed/pending` na janela de lookback;
 - dispara sync de vendas e produtos.
 - executa a mesma pre-validacao de lojas usada no fluxo inicial.
+- envia `AppNotification` (`database` + `broadcast`) informando `Sincronização diária iniciada` quando a integracao e efetivamente enfileirada.
 - ao fim da cadeia principal, dispara pos-sync do tenant:
   - `sync:cleanup --tenant=<tenant_id> --all`;
   - `sync:products-from-ean-references --tenant=<tenant_id>`;
@@ -168,7 +178,8 @@ Regra:
 - considera vendas com `product_id` nulo e `codigo_erp` preenchido;
 - em MySQL/MariaDB usa `UPDATE ... JOIN` em lote;
 - em SQLite (testes) usa fallback por `UPDATE ... FROM`;
-- a regra de banco fica isolada em service para permitir futura execucao por fila.
+- hoje a regra de banco ainda esta no command;
+- proximo passo planejado: extrair para service para permitir futura execucao por fila.
 
 ## Fluxo de produtos
 
@@ -226,6 +237,13 @@ Regra:
 - monta uma cadeia de jobs de vendas/produtos por dia;
 - adiciona `RunTenantIntegrationPostSyncJob` ao final da cadeia.
 
+Notificacoes:
+- `DispatchDailyCommand` envia `Sincronização diária iniciada` para usuarios ativos do tenant quando a integracao passa na pre-validacao e e enfileirada;
+- `ValidateIntegrationStoresService` envia notificacao de erro quando lojas falham na pre-validacao;
+- `SyncTenantSalesDayJob` envia notificacao de sucesso/falha por dia de vendas;
+- `SyncTenantProductsDayJob` envia notificacao de sucesso/falha por dia de produtos;
+- `sync:cleanup` e `sync:link-sales` podem enviar notificacoes no pos-sync.
+
 ## Pos-sync da integracao
 
 `RunTenantIntegrationPostSyncJob` roda apos a cadeia principal de sync do tenant:
@@ -254,6 +272,8 @@ Observacao importante:
 - IDs deterministicos para `products` e `sales` (sem depender de `store_id` no caso de vendas);
 - controle por dia/recurso em `integration_sync_days`;
 - reprocessamento seguro de lacunas.
+- `withoutOverlapping()` evita sobreposicao dos schedules principais usando lock compartilhado do cache configurado;
+- subdominios nao disparam scheduler individualmente: o scheduler roda uma vez no container e consulta as integracoes ativas no landlord.
 
 ## Proximos passos recomendados
 

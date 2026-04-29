@@ -5,7 +5,7 @@ namespace App\Jobs\Integrations\Maintenance;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class RunTenantIntegrationPostSyncJob implements ShouldQueue
 {
@@ -17,9 +17,27 @@ class RunTenantIntegrationPostSyncJob implements ShouldQueue
 
     public function handle(): void
     {
-        Artisan::call('sync:cleanup', ['--tenant' => $this->tenantId, '--all' => true]);
-        Artisan::call('sync:products-from-ean-references', ['--tenant' => $this->tenantId]);
-        Artisan::call('sync:link-sales', ['--tenant' => $this->tenantId]);
-        Log::info('Tenant integration post sync job completed for tenant: '.$this->tenantId);
+        $this->callCommand('sync:cleanup', ['--tenant' => $this->tenantId, '--all' => true]);
+        $this->callCommand('sync:products-from-ean-references', ['--tenant' => $this->tenantId]);
+        $this->callCommand('sync:link-sales', ['--tenant' => $this->tenantId]);
+
+        RecalculateTenantMonthlySalesSummariesJob::dispatch($this->tenantId);
+    }
+
+    /**
+     * @param  array<string, mixed>  $parameters
+     */
+    private function callCommand(string $command, array $parameters): void
+    {
+        $exitCode = Artisan::call($command, $parameters);
+
+        if ($exitCode !== 0) {
+            throw new RuntimeException(sprintf(
+                'Command [%s] failed for tenant [%s] with exit code [%d].',
+                $command,
+                $this->tenantId,
+                $exitCode,
+            ));
+        }
     }
 }

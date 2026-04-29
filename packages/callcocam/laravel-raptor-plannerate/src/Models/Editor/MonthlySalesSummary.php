@@ -2,12 +2,15 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Models\Editor;
 
+use App\Models\Tenant;
 use App\Models\Traits\BelongsToTenant;
+use Callcocam\LaravelRaptorPlannerate\Models\Traits\UsesPlannerateTenantConnection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Model para sumarização mensal de vendas
@@ -26,7 +29,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class MonthlySalesSummary extends Model
 {
-    use BelongsToTenant, HasFactory, HasUlids, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
 
     /**
      * Nome da tabela
@@ -171,7 +174,7 @@ class MonthlySalesSummary extends Model
      */
     public function tenant()
     {
-        return $this->belongsTo(\App\Models\Tenant::class);
+        return $this->belongsTo(Tenant::class);
     }
 
     /**

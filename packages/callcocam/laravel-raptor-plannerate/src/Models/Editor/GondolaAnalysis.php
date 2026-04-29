@@ -3,6 +3,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Models\Editor;
 
 use App\Models\Traits\BelongsToTenant;
+use Callcocam\LaravelRaptorPlannerate\Models\Traits\UsesPlannerateTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class GondolaAnalysis extends Model
 {
-    use BelongsToTenant, HasFactory, HasUlids, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
 
     protected $fillable = [
         'gondola_id',

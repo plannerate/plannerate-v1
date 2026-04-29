@@ -9,6 +9,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Models\Editor;
 
 use App\Models\Traits\BelongsToTenant;
+use Callcocam\LaravelRaptorPlannerate\Models\Traits\UsesPlannerateTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
-    use BelongsToTenant, HasUlids, SoftDeletes;
+    use BelongsToTenant, HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
 
     protected $appends = ['image_url', 'formatted_height', 'formatted_width', 'formatted_depth', 'category_full_path'];
 

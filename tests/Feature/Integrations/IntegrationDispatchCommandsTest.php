@@ -7,6 +7,7 @@ use App\Jobs\Cleanup\DeactivateInactiveProductsJob;
 use App\Jobs\Cleanup\RestoreSoldProductsJob;
 use App\Jobs\Integrations\Dispatch\DispatchTenantIntegrationDailySyncJob;
 use App\Jobs\Integrations\Dispatch\DispatchTenantIntegrationInitialSyncJob;
+use App\Jobs\Integrations\Maintenance\RecalculateTenantMonthlySalesSummariesJob;
 use App\Jobs\Integrations\Maintenance\RunTenantIntegrationNightlyMaintenanceJob;
 use App\Jobs\Integrations\Maintenance\RunTenantIntegrationPostSyncJob;
 use App\Jobs\Integrations\Products\SyncTenantProductsDayJob;
@@ -22,6 +23,7 @@ use App\Services\Integrations\Orchestration\DispatchDailySyncService;
 use App\Services\Integrations\Orchestration\DispatchInitialSyncService;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
 use App\Services\Integrations\Support\IntegrationServiceResolver;
+use App\Services\Integrations\Support\RecalculateMonthlySalesSummariesService;
 use App\Services\Integrations\Support\SyncSalesProductReferencesService;
 use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Database\Connection;
@@ -308,7 +310,134 @@ test('initial sync chains post sync maintenance after initial jobs', function ()
     ]);
 });
 
-test('post sync maintenance job runs cleanup ean reference sync and link sales commands for tenant', function () {
+test('monthly sales recalculate command dispatches one job per tenant by default', function () {
+    Bus::fake();
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Monthly Dispatch',
+        'slug' => 'tenant-monthly-dispatch-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.mysql.database'),
+        'status' => 'active',
+    ]));
+
+    $this->artisan('monthly-sales:recalculate --month=2025-01')
+        ->assertSuccessful();
+
+    Bus::assertDispatched(
+        RecalculateTenantMonthlySalesSummariesJob::class,
+        fn (RecalculateTenantMonthlySalesSummariesJob $job): bool => $job->tenantId === (string) $tenant->id
+            && $job->month === '2025-01'
+    );
+});
+
+test('monthly sales recalculate command can run synchronously for manual execution', function () {
+    Bus::fake();
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Monthly Sync',
+        'slug' => 'tenant-monthly-sync-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.mysql.database'),
+        'status' => 'active',
+    ]));
+
+    $service = Mockery::mock(RecalculateMonthlySalesSummariesService::class);
+    $service->shouldReceive('recalculate')
+        ->once()
+        ->with(Mockery::on(fn (Tenant $selectedTenant): bool => $selectedTenant->is($tenant)), '2025-01')
+        ->andReturn([
+            'tenant_id' => (string) $tenant->id,
+            'tenant_name' => $tenant->name,
+            'sales_linked' => 1,
+            'deleted' => 2,
+            'inserted' => 3,
+            'summaries_linked' => 4,
+        ]);
+
+    app()->instance(RecalculateMonthlySalesSummariesService::class, $service);
+
+    $this->artisan(sprintf('monthly-sales:recalculate --tenant=%s --month=2025-01 --sync', $tenant->id))
+        ->assertSuccessful();
+
+    Bus::assertNotDispatched(RecalculateTenantMonthlySalesSummariesJob::class);
+});
+
+test('monthly sales recalculate service links sales and monthly summaries by codigo erp', function () {
+    config([
+        'multitenancy.switch_tenant_tasks' => [],
+        'multitenancy.tenant_database_connection_name' => null,
+    ]);
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Monthly Service',
+        'slug' => 'tenant-monthly-service-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.'.config('database.default').'.database'),
+        'status' => 'active',
+    ]));
+
+    $tenantConnectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+    $now = now();
+    $generator = app(DeterministicIdGenerator::class);
+    $productId = $generator->productId((string) $tenant->id, '7891234500993', '99501');
+
+    DB::connection($tenantConnectionName)->table('products')->insert([
+        'id' => $productId,
+        'tenant_id' => (string) $tenant->id,
+        'name' => 'Produto Monthly Service',
+        'ean' => '7891234500993',
+        'codigo_erp' => '99501',
+        'description' => null,
+        'brand' => null,
+        'unit_measure' => null,
+        'sales_status' => null,
+        'status' => 'synced',
+        'sync_source' => 'manual',
+        'sync_at' => $now,
+        'deleted_at' => null,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    DB::connection($tenantConnectionName)->table('sales')->insert([
+        'id' => $generator->saleId(
+            tenantId: (string) $tenant->id,
+            integrationId: (string) str()->ulid(),
+            storeDocument: '81342172000145',
+            codigoErp: '99501',
+            saleDate: '2025-01-23',
+            promotion: 'N',
+        ),
+        'tenant_id' => (string) $tenant->id,
+        'store_id' => null,
+        'product_id' => null,
+        'ean' => null,
+        'codigo_erp' => '99501',
+        'acquisition_cost' => 10,
+        'sale_price' => 15,
+        'sale_date' => '2025-01-23',
+        'promotion' => 'N',
+        'total_sale_quantity' => 2,
+        'total_sale_value' => 30,
+        'total_profit_margin' => 5,
+        'margem_contribuicao' => 8,
+        'extra_data' => null,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    $summary = app(RecalculateMonthlySalesSummariesService::class)->recalculate($tenant, '2025-01');
+    $linkedSale = DB::connection($tenantConnectionName)->table('sales')->where('tenant_id', (string) $tenant->id)->first();
+    $monthlySummary = DB::connection($tenantConnectionName)->table('monthly_sales_summaries')->where('tenant_id', (string) $tenant->id)->first();
+
+    expect($summary['inserted'])->toBe(1)
+        ->and($linkedSale?->product_id)->toBe($productId)
+        ->and($linkedSale?->ean)->toBe('7891234500993')
+        ->and($monthlySummary?->product_id)->toBe($productId)
+        ->and($monthlySummary?->ean)->toBe('7891234500993')
+        ->and((int) $monthlySummary?->total_sale_quantity)->toBe(2);
+});
+
+test('post sync maintenance job runs cleanup ean reference sync link sales and dispatches monthly recalc for tenant', function () {
+    Bus::fake();
     $tenantId = (string) str()->ulid();
 
     Artisan::shouldReceive('call')
@@ -327,6 +456,12 @@ test('post sync maintenance job runs cleanup ean reference sync and link sales c
         ->andReturn(0);
 
     (new RunTenantIntegrationPostSyncJob($tenantId))->handle();
+
+    Bus::assertDispatched(
+        RecalculateTenantMonthlySalesSummariesJob::class,
+        fn (RecalculateTenantMonthlySalesSummariesJob $job): bool => $job->tenantId === $tenantId
+            && $job->month === null
+    );
 });
 
 test('sales day job only syncs sales and leaves product linking to command', function () {

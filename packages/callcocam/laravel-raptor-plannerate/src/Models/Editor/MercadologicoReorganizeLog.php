@@ -2,13 +2,14 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Models\Editor;
 
+use Callcocam\LaravelRaptorPlannerate\Models\Traits\UsesPlannerateTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MercadologicoReorganizeLog extends Model
 {
-    use HasUlids, SoftDeletes;
+    use HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
 
     protected $table = 'mercadologico_reorganize_logs';
 

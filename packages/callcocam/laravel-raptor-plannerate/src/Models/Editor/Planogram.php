@@ -10,6 +10,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Models\Editor;
 
 use App\Models\Traits\BelongsToTenant;
 use Callcocam\LaravelRaptorPlannerate\Models\Traits\HasCategory;
+use Callcocam\LaravelRaptorPlannerate\Models\Traits\UsesPlannerateTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,7 +19,7 @@ use Illuminate\Support\Carbon;
 
 class Planogram extends Model
 {
-    use BelongsToTenant, HasCategory, HasFactory, HasUlids, SoftDeletes;
+    use BelongsToTenant, HasCategory, HasFactory, HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
 
     protected $appends = ['mercadologico_cascading', 'hierarchy_path', 'start_month', 'end_month'];
 
