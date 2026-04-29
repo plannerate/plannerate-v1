@@ -6,6 +6,7 @@ import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaCont
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { ColumnActions, ColumnHeader, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
@@ -110,9 +111,9 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="gondolasLoading">
-                        <td class="px-4 py-6 text-muted-foreground" colspan="6">Carregando gôndolas...</td>
-                    </tr>
+                    <template v-if="gondolasLoading">
+                        <TableLoadingSkeleton :columns="6" :rows="6" />
+                    </template>
                     <tr v-else-if="gondolasRows.length === 0">
                         <td class="px-4 py-6 text-muted-foreground" colspan="6">
                             {{ t('app.tenant.common.empty') }}

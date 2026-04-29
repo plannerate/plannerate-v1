@@ -7,6 +7,7 @@ import PlanogramController from '@/actions/App/Http/Controllers/Tenant/Planogram
 import WorkflowKanbanController from '@/actions/App/Http/Controllers/Tenant/WorkflowKanbanController';
 import ListTablePage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { ColumnActions, ColumnDate, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -202,11 +203,9 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="planogramsLoading">
-                        <td class="px-4 py-10 text-center text-muted-foreground" colspan="6">
-                            Carregando planogramas...
-                        </td>
-                    </tr>
+                    <template v-if="planogramsLoading">
+                        <TableLoadingSkeleton :columns="6" :rows="6" />
+                    </template>
                     <tr v-else-if="planogramsRows.length === 0">
                         <td class="px-4 py-10 text-center text-muted-foreground" colspan="6">
                             {{ t('app.tenant.common.empty') }}

@@ -6,6 +6,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import SaleController from '@/actions/App/Http/Controllers/Tenant/SaleController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { ColumnActions, ColumnLabel } from '@/components/table/columns';
 import ColumnHeader from '@/components/table/columns/ColumnHeader.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
@@ -173,11 +174,9 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="!props.sales">
-                        <td class="px-4 py-6 text-muted-foreground" colspan="6">
-                            Carregando vendas...
-                        </td>
-                    </tr>
+                    <template v-if="!props.sales">
+                        <TableLoadingSkeleton :columns="6" :rows="6" />
+                    </template>
                     <tr v-else-if="salesData.length === 0">
                         <td class="px-4 py-6 text-muted-foreground" colspan="6">
                             {{ t('app.tenant.common.empty') }}

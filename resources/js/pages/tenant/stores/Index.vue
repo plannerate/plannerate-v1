@@ -4,6 +4,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { ColumnActions, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
@@ -83,9 +84,9 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="storesLoading">
-                        <td class="px-4 py-6 text-muted-foreground" colspan="5">Carregando lojas...</td>
-                    </tr>
+                    <template v-if="storesLoading">
+                        <TableLoadingSkeleton :columns="5" :rows="6" />
+                    </template>
                     <tr v-else-if="storesRows.length === 0">
                         <td class="px-4 py-6 text-muted-foreground" colspan="5">
                             {{ t('app.tenant.common.empty') }}

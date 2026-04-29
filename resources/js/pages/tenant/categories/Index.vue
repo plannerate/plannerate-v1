@@ -4,6 +4,7 @@ import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryCo
 import ImportFileButton from '@/components/imports/ImportFileButton.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { ColumnActions, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -124,11 +125,9 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="categoriesLoading">
-                        <td class="px-4 py-8 text-center text-muted-foreground" colspan="5">
-                            Carregando categorias...
-                        </td>
-                    </tr>
+                    <template v-if="categoriesLoading">
+                        <TableLoadingSkeleton :columns="5" :rows="6" />
+                    </template>
                     <tr v-else-if="categoriesRows.length === 0">
                         <td class="px-4 py-8 text-center text-muted-foreground" colspan="5">
                             {{ t('app.tenant.common.empty') }}

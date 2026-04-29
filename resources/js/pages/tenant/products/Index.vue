@@ -6,6 +6,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import {
     ColumnActions,
     ColumnImage,
@@ -180,9 +181,9 @@ const pageMeta = useCrudPageMeta({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="productsLoading">
-                        <td class="px-4 py-6 text-muted-foreground" colspan="6">Carregando produtos...</td>
-                    </tr>
+                    <template v-if="productsLoading">
+                        <TableLoadingSkeleton :columns="6" :rows="6" />
+                    </template>
                     <tr v-else-if="productsRows.length === 0">
                         <td class="px-4 py-6 text-muted-foreground" colspan="6">
                             {{ t('app.tenant.common.empty') }}

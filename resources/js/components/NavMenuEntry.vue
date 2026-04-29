@@ -12,6 +12,7 @@ import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import type { SharedNavigationItem, SharedNavigationNode, SharedNavigationSubmenu } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import {
+    BadgeDollarSign,
     Blocks,
     Building2,
     ChevronRight,
@@ -49,6 +50,7 @@ const iconMap = {
     store: Store,
     truck: Truck,
     'layout-template': LayoutTemplate,
+    'badge-dollar-sign': BadgeDollarSign,
 } as const;
 
 const isItemNode = computed(() => props.node.type === 'item');
