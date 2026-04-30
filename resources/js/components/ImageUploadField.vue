@@ -234,24 +234,32 @@ async function fetchFromRepository(): Promise<boolean> {
     } catch (error) {
         debugHttpError(error, 'repository.fetch');
 
+        const repositoryRoute = imageRoutes.repository.fetch(props.subdomain);
         const typedError = error as {
             response?: {
                 status?: number;
                 config?: { method?: string; url?: string };
-                data?: { message?: string; errors?: unknown };
+                data?: { message?: string; errors?: unknown; debug?: unknown };
             };
         };
         const details = {
             status: typedError.response?.status ?? null,
             method: typedError.response?.config?.method ?? 'post',
-            url: typedError.response?.config?.url ?? tenantWayfinderPath(imageRoutes.repository.fetch(props.subdomain).url),
+            url: typedError.response?.config?.url ?? tenantWayfinderPath(repositoryRoute.url),
+            expectedAbsoluteUrl: repositoryRoute.url,
+            currentHost: typeof window !== 'undefined' ? window.location.host : null,
+            currentPath: typeof window !== 'undefined' ? window.location.pathname : null,
+            subdomain: props.subdomain,
             message: typedError.response?.data?.message ?? null,
             errors: typedError.response?.data?.errors ?? null,
+            backendDebug: typedError.response?.data?.debug ?? null,
         };
-        const primaryMessage = resolveHttpErrorMessage(
-            error,
-            t('app.tenant.products.form.image_repository.fetch_failed')
-        );
+        const primaryMessage = details.status === 404 && !details.message
+            ? t('app.tenant.products.form.image_repository.not_found')
+            : resolveHttpErrorMessage(
+                error,
+                t('app.tenant.products.form.image_repository.fetch_failed')
+            );
         emit('error', `${primaryMessage} | debug=${JSON.stringify(details)}`);
         return false;
     } finally {

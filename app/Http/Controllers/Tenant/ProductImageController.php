@@ -12,6 +12,7 @@ use App\Services\ProductRepositoryImageResolver;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -108,10 +109,19 @@ class ProductImageController extends Controller
     {
         $ean = (string) $request->string('ean');
         $result = $this->repositoryImageResolver->resolveByEan($ean);
- 
+        $resolutionDebug = $this->repositoryImageResolver->lastResolutionDebug();
+
         if ($result === null) {
+            Log::warning('ProductImageController.fetchFromRepository: imagem nao encontrada', [
+                'tenant_id' => $this->tenantId(),
+                'user_id' => $request->user()?->getAuthIdentifier(),
+                'ean' => $ean,
+                'resolution_debug' => $resolutionDebug,
+            ]);
+
             return response()->json([
                 'message' => __('app.tenant.products.form.image_repository.not_found'),
+                'debug' => $resolutionDebug,
             ], 404);
         }
 

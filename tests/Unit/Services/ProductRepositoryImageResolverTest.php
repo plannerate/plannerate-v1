@@ -63,6 +63,9 @@ test('service fetches product image from web when repository misses', function (
                 'image_front_url' => $webImageUrl,
             ],
         ], 200),
+        "https://world.openbeautyfacts.org/api/v2/product/{$ean}.json" => Http::response([], 404),
+        "https://world.openpetfoodfacts.org/api/v2/product/{$ean}.json" => Http::response([], 404),
+        "https://world.openproductsfacts.org/api/v2/product/{$ean}.json" => Http::response([], 404),
         $webImageUrl => Http::response($webImageBinary, 200),
         '*' => Http::response([], 404),
     ]);
@@ -73,6 +76,26 @@ test('service fetches product image from web when repository misses', function (
     expect($result)->not()->toBeNull();
     expect($result['path'])->toBe($webpPath);
     Storage::disk('public')->assertExists($webpPath);
+});
+
+test('service resolves image from side angle in repository when front is missing', function (): void {
+    Storage::fake('public');
+    Storage::fake('do');
+    Http::fake([
+        '*' => Http::response([], 404),
+    ]);
+
+    $ean = '7891222233334';
+    $sideWebpPath = "repositorioimagens/lado/{$ean}.webp";
+    $targetPath = "repositorioimagens/frente/{$ean}.webp";
+    Storage::disk('do')->put($sideWebpPath, 'binary-side-webp-content');
+
+    $service = new ProductRepositoryImageResolver;
+    $result = $service->resolveByEan($ean);
+
+    expect($result)->not()->toBeNull();
+    expect($result['path'])->toBe($targetPath);
+    Storage::disk('public')->assertExists($targetPath);
 });
 
 test('service converts png from repository to webp', function (): void {
