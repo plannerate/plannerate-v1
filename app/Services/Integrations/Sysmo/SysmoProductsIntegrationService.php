@@ -384,12 +384,35 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
             return 'GTIN/EAN ausente ou inválido';
         }
 
-        $requiredFlags = ['cadastro_ativo', 'ativo_na_empresa', 'pertence_ao_mix'];
+        /** @var array<int, string> $requiredFlags */
+        $requiredFlags = config('services.sysmo.products.required_flags', [
+            'cadastro_ativo',
+            'ativo_na_empresa',
+            'pertence_ao_mix',
+        ]);
 
         foreach ($requiredFlags as $flag) {
             $value = $this->getProcessedValue($flag, $rawItem, $item);
-            if ($value === 'N') {
-                return sprintf('Flag %s marcada como N', $flag);
+            if ($value === null) {
+                continue;
+            }
+
+            /** @var array<int, string> $allowedValues */
+            $allowedValues = array_values(array_filter(
+                config("services.sysmo.products.required_flag_allowed_values.{$flag}", []),
+                static fn (mixed $allowed): bool => is_string($allowed) && trim($allowed) !== '',
+            ));
+
+            if ($allowedValues === []) {
+                if ($value === 'N') {
+                    return sprintf('Flag %s marcada como N', $flag);
+                }
+
+                continue;
+            }
+
+            if (! in_array($value, $allowedValues, true)) {
+                return sprintf('Flag %s com valor invalido: %s', $flag, $value);
             }
         }
 

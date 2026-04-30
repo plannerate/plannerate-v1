@@ -40,6 +40,18 @@ return [
     ],
 
     'sysmo' => [
+        'products' => [
+            'required_flags' => [
+                'cadastro_ativo',
+                'ativo_na_empresa',
+                'pertence_ao_mix',
+            ],
+            'required_flag_allowed_values' => [
+                'cadastro_ativo' => ['S', '2'],
+                'ativo_na_empresa' => ['S'],
+                'pertence_ao_mix' => ['S'],
+            ],
+        ],
         'tenants' => [
             'bruda' => [
                 'auth_password' => env('SYSMO_BRUDA_AUTH_PASSWORD', ''),
