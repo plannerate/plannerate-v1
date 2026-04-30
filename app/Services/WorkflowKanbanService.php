@@ -10,10 +10,118 @@ use App\Models\User;
 use App\Models\WorkflowGondolaExecution;
 use App\Models\WorkflowHistory;
 use App\Models\WorkflowPlanogramStep;
+use App\Models\WorkflowTemplate;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class WorkflowKanbanService
 {
+    /**
+     * Build board data for the tenant using workflow templates as columns.
+     *
+     * @return array<int, array{step: array<string, mixed>, executions: array<int, array<string, mixed>>}>
+     */
+    public function buildBoardForTenant(
+        ?User $user = null,
+        ?string $planogramId = null,
+        ?string $storeId = null,
+        ?string $executionStatus = null,
+        ?string $gondolaSearch = null,
+    ): array {
+        $templates = WorkflowTemplate::query()
+            ->where('status', 'published')
+            ->orderBy('suggested_order')
+            ->get([
+                'id',
+                'name',
+                'description',
+                'color',
+                'icon',
+                'suggested_order',
+                'is_required_by_default',
+                'status',
+                'template_next_step_id',
+                'template_previous_step_id',
+            ]);
+
+        $steps = WorkflowPlanogramStep::query()
+            ->where('is_skipped', false)
+            ->when($planogramId, fn ($query) => $query->where('planogram_id', $planogramId))
+            ->when($storeId, fn ($query) => $query->whereHas('planogram', fn ($planogramQuery) => $planogramQuery->where('store_id', $storeId)))
+            ->get(['id', 'workflow_template_id'])
+            ->keyBy('id');
+
+        $stepIds = $steps->keys()->all();
+
+        $executions = WorkflowGondolaExecution::query()
+            ->whereIn('workflow_planogram_step_id', $stepIds)
+            ->with([
+                'gondola:id,name,location,planogram_id',
+                'gondola.planogram:id,name,store_id',
+                'currentResponsible:id,name',
+                'startedBy:id,name',
+                'step:id,name,workflow_template_id',
+            ])
+            ->when($executionStatus, fn ($query) => $query->where('status', $executionStatus))
+            ->when(
+                $gondolaSearch,
+                fn ($query) => $query->whereHas(
+                    'gondola',
+                    fn ($gondolaQuery) => $gondolaQuery->where('name', 'like', '%'.$gondolaSearch.'%')
+                )
+            )
+            ->get();
+
+        $executionsByTemplate = $executions
+            ->groupBy(fn (WorkflowGondolaExecution $execution): ?string => $steps->get($execution->workflow_planogram_step_id)?->workflow_template_id);
+
+        return $templates->map(function (WorkflowTemplate $template) use ($executionsByTemplate, $user) {
+            /** @var Collection<int, WorkflowGondolaExecution> $templateExecutions */
+            $templateExecutions = $executionsByTemplate->get($template->id, collect());
+
+            return [
+                'step' => [
+                    'id' => $template->id,
+                    'name' => $template->name,
+                    'description' => $template->description,
+                    'color' => $template->color,
+                    'icon' => $template->icon,
+                    'suggested_order' => $template->suggested_order,
+                    'is_required' => (bool) $template->is_required_by_default,
+                    'is_skipped' => false,
+                    'status' => $template->status,
+                    'template_next_step_id' => $template->template_next_step_id,
+                    'template_previous_step_id' => $template->template_previous_step_id,
+                ],
+                'executions' => $templateExecutions->map(fn (WorkflowGondolaExecution $exec) => [
+                    'id' => $exec->id,
+                    'gondola_id' => $exec->gondola_id,
+                    'gondola_name' => $exec->gondola?->name,
+                    'gondola_location' => $exec->gondola?->location,
+                    'planogram_name' => $exec->gondola?->planogram?->name,
+                    'step_name' => $exec->step?->name,
+                    'status' => $exec->status?->value,
+                    'assigned_to_user' => $exec->currentResponsible ? [
+                        'id' => $exec->currentResponsible->id,
+                        'name' => $exec->currentResponsible->name,
+                    ] : null,
+                    'started_by' => $exec->execution_started_by ? [
+                        'id' => $exec->execution_started_by,
+                        'name' => $exec->startedBy?->name,
+                    ] : null,
+                    'started_at' => $exec->started_at?->toIso8601String(),
+                    'sla_date' => $exec->sla_date?->toIso8601String(),
+                    'can_start' => $user?->can('start', $exec) ?? false,
+                    'can_pause' => $user?->can('pause', $exec) ?? false,
+                    'can_resume' => $user?->can('resume', $exec) ?? false,
+                    'can_complete' => $user?->can('complete', $exec) ?? false,
+                    'can_abandon' => $user?->can('abandon', $exec) ?? false,
+                    'can_move' => $user?->can('move', $exec) ?? false,
+                ])->values()->all(),
+            ];
+        })->values()->all();
+    }
+
     /**
      * Start a new execution for a gondola at the given step.
      */

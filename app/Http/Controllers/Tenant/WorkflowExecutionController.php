@@ -10,7 +10,9 @@ use App\Models\User;
 use App\Models\WorkflowGondolaExecution;
 use App\Models\WorkflowHistory;
 use App\Models\WorkflowPlanogramStep;
+use App\Models\WorkflowTemplate;
 use App\Services\WorkflowKanbanService;
+use App\Services\WorkflowPlanogramStepService;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,7 +21,10 @@ class WorkflowExecutionController extends Controller
 {
     use InteractsWithTenantContext;
 
-    public function __construct(private readonly WorkflowKanbanService $kanbanService) {}
+    public function __construct(
+        private readonly WorkflowKanbanService $kanbanService,
+        private readonly WorkflowPlanogramStepService $stepService,
+    ) {}
 
     public function store(Request $request, string $subdomain, Planogram $planogram): JsonResponse
     {
@@ -59,14 +64,17 @@ class WorkflowExecutionController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $targetStep = WorkflowPlanogramStep::findOrFail($request->string('target_step_id'));
         $currentStep = $execution->step()->first();
         $gondola = $execution->gondola()->first();
 
         abort_if($currentStep === null, 422, 'A execução não possui etapa atual válida.');
         abort_if($gondola === null, 422, 'A execução não possui gôndola válida.');
-        abort_if((string) $targetStep->planogram_id !== (string) $gondola->planogram_id, 422, 'A etapa de destino não pertence ao planograma desta gôndola.');
-        abort_if((bool) $targetStep->is_skipped, 422, 'A etapa de destino está desativada para este planograma.');
+
+        $planogram = Planogram::query()->findOrFail($gondola->planogram_id);
+        $this->stepService->syncForPlanogram($planogram);
+
+        $targetStepId = $request->string('target_step_id')->toString();
+        $targetStep = $this->resolveTargetStepForExecution($execution, $targetStepId);
 
         $execution = $this->kanbanService->moveToStep(
             $execution,
@@ -76,6 +84,40 @@ class WorkflowExecutionController extends Controller
         );
 
         return response()->json(['execution' => $execution->toArray()]);
+    }
+
+    private function resolveTargetStepForExecution(WorkflowGondolaExecution $execution, string $targetStepId): WorkflowPlanogramStep
+    {
+        $gondola = $execution->gondola()->firstOrFail();
+        $currentStep = $execution->step()->with('template:id,template_next_step_id,template_previous_step_id')->firstOrFail();
+
+        $targetStep = WorkflowPlanogramStep::query()->find($targetStepId);
+
+        if ($targetStep !== null) {
+            abort_if((string) $targetStep->planogram_id !== (string) $gondola->planogram_id, 422, 'A etapa de destino não pertence ao planograma desta gôndola.');
+            abort_if((bool) $targetStep->is_skipped, 422, 'A etapa de destino está desativada para este planograma.');
+
+            return $targetStep;
+        }
+
+        $targetTemplate = WorkflowTemplate::query()->findOrFail($targetStepId);
+
+        $allowedTemplateIds = collect([
+            $currentStep->template?->template_next_step_id,
+            $currentStep->template?->template_previous_step_id,
+        ])->filter()->values();
+
+        abort_if(! $allowedTemplateIds->contains($targetTemplate->id), 422, 'Movimento permitido apenas para a próxima ou etapa anterior do fluxo.');
+
+        $mappedStep = WorkflowPlanogramStep::query()
+            ->where('planogram_id', $gondola->planogram_id)
+            ->where('workflow_template_id', $targetTemplate->id)
+            ->first();
+
+        abort_if($mappedStep === null, 422, 'Etapa de destino não configurada para o planograma desta execução.');
+        abort_if((bool) $mappedStep->is_skipped, 422, 'A etapa de destino está desativada para este planograma.');
+
+        return $mappedStep;
     }
 
     public function start(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
