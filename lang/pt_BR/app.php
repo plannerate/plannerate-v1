@@ -743,10 +743,15 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 ],
                 'image_upload' => [
                     'select' => 'Selecionar imagem',
+                    'import_url' => 'Importar URL',
+                    'url_placeholder' => 'Cole a URL da imagem (https://...)',
                     'empty' => 'Nenhuma imagem carregada.',
                     'no_path' => 'Nenhum caminho salvo.',
                     'too_large' => 'Arquivo maior que :size MB.',
                     'upload_failed' => 'Nao foi possivel enviar a imagem.',
+                    'invalid_url' => 'Informe uma URL valida.',
+                    'invalid_url_image' => 'A URL informada nao retorna uma imagem valida.',
+                    'import_failed' => 'Nao foi possivel importar imagem pela URL.',
                 ],
                 'image_ai' => [
                     'action' => 'Ajustar com IA',
@@ -755,6 +760,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                     'status_failed' => 'Nao foi possivel consultar o status do ajuste.',
                     'failed' => 'Falha ao ajustar imagem com IA.',
                     'timeout' => 'Processamento da imagem excedeu o tempo limite.',
+                    'missing_api_key' => 'Imagem encontrada, mas a IA nao esta configurada (OPENAI_API_KEY).',
+                    'no_credits' => 'Imagem encontrada, mas a IA esta sem credito/limite no momento.',
                 ],
                 'image_repository' => [
                     'action' => 'Buscar por EAN',

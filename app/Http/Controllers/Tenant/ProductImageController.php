@@ -46,6 +46,7 @@ class ProductImageController extends Controller
             "products/uploads/{$tenantId}/",
             'repositorioimagens/frente/',
         ];
+
         $isAllowedPath = collect($allowedPrefixes)
             ->contains(fn (string $prefix): bool => Str::startsWith($path, $prefix));
 
