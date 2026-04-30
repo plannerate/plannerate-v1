@@ -31,6 +31,15 @@ type ProductRow = {
     status: 'draft' | 'published' | 'synced' | 'error';
     category: string | null;
     stores: string[];
+    dimensions: {
+        width: string | number | null;
+        height: string | number | null;
+        depth: string | number | null;
+        weight: string | number | null;
+        unit: string | null;
+    };
+    current_stock: string | number | null;
+    last_purchase_date: string | null;
 };
 
 const props = defineProps<{
@@ -61,6 +70,32 @@ const categoryLabel = computed(() => {
 
     return t('app.tenant.products.fields.category') + ' ✓';
 });
+
+const formatProductDimensions = (product: ProductRow): string | null => {
+    const { width, height, depth, unit } = product.dimensions;
+    const dimensions = [width, height, depth]
+        .filter((value): value is string | number => value !== null && String(value).trim() !== '')
+        .map((value) => String(value).trim());
+
+    if (dimensions.length === 0) {
+        return null;
+    }
+
+    const unitSuffix = unit && unit.trim() !== '' ? ` ${unit.trim()}` : '';
+
+    return `Dim: ${dimensions.join('x')}${unitSuffix}`;
+};
+
+const formatStockAndLastPurchase = (product: ProductRow): string | null => {
+    const currentStock = product.current_stock !== null && String(product.current_stock).trim() !== ''
+        ? `Estoque: ${product.current_stock}`
+        : null;
+    const lastPurchase = product.last_purchase_date
+        ? `Ult. compra: ${new Date(product.last_purchase_date).toLocaleDateString('pt-BR')}`
+        : null;
+
+    return [currentStock, lastPurchase].filter(Boolean).join(' | ') || null;
+};
 
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.products.title'),
@@ -207,7 +242,7 @@ const pageMeta = useCrudPageMeta({
                         <td class="px-4 py-3">
                             <ColumnLabel
                                 :label="product.name ?? '-'"
-                                :description="product.slug"
+                                :description="[product.slug, formatStockAndLastPurchase(product), formatProductDimensions(product)].filter(Boolean).join(' • ') || null"
                             />
                         </td>
                         <td class="px-4 py-3">{{ product.ean ?? '-' }}</td>

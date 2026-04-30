@@ -24,6 +24,11 @@ Schedule::command('logs:archive-and-clear --days=5')
     ->withoutOverlapping()
     ->name('logs-archive-and-clear');
 
+Schedule::command('sync:products-from-ean-references')
+    ->dailyAt('19:20')
+    ->withoutOverlapping()
+    ->name('sync-products-from-ean-references');
+
 // Schedule::call(function (): bool {
 //     Log::info('Scheduler test log executed.'. request()->getHost());
 

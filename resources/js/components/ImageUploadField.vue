@@ -40,6 +40,7 @@ const storedPath = ref<string>(props.initialPath ?? '');
 const isUploading = ref(false);
 const isProcessingAi = ref(false);
 const isFetchingRepository = ref(false);
+const isFetchingRepositoryWithAi = ref(false);
 
 const uploadHttp = useHttp<{ file: File | null }, { path?: string; public_url?: string }>({
     file: null,
@@ -77,7 +78,7 @@ function onFileChange(event: Event): void {
     }
 
     if (file.size > props.maxSizeMb * 1024 * 1024) {
-        const message = t('app.tenant.products.form.image_upload.too_large', { size: props.maxSizeMb });
+        const message = t('app.tenant.products.form.image_upload.too_large', { size: String(props.maxSizeMb) });
         emit('error', message);
         target.value = '';
 
@@ -122,9 +123,9 @@ async function uploadSelectedFile(): Promise<void> {
     }
 }
 
-async function processWithAi(): Promise<void> {
+async function processWithAi(): Promise<boolean> {
     if (!props.aiEnabled || storedPath.value === '' || isProcessingAi.value) {
-        return;
+        return false;
     }
 
     isProcessingAi.value = true;
@@ -141,18 +142,20 @@ async function processWithAi(): Promise<void> {
         }
 
         await pollAiStatus(payload.id);
+        return true;
     } catch (error) {
         const message = error instanceof Error
             ? error.message
             : t('app.tenant.products.form.image_ai.start_failed');
         emit('error', message);
         isProcessingAi.value = false;
+        return false;
     }
 }
 
-async function fetchFromRepository(): Promise<void> {
+async function fetchFromRepository(): Promise<boolean> {
     if (isFetchingRepository.value) {
-        return;
+        return false;
     }
 
     const currentEan = (props.ean ?? '').trim();
@@ -160,7 +163,7 @@ async function fetchFromRepository(): Promise<void> {
     if (currentEan === '') {
         emit('error', t('app.tenant.products.form.image_repository.ean_required'));
 
-        return;
+        return false;
     }
 
     isFetchingRepository.value = true;
@@ -183,10 +186,36 @@ async function fetchFromRepository(): Promise<void> {
         }
 
         emit('repositoryProcessed', payload.path);
+        return true;
     } catch {
         emit('error', t('app.tenant.products.form.image_repository.fetch_failed'));
+        return false;
     } finally {
         isFetchingRepository.value = false;
+    }
+}
+
+async function fetchFromRepositoryAndProcessWithAi(): Promise<void> {
+    if (
+        isFetchingRepositoryWithAi.value
+        || isFetchingRepository.value
+        || isProcessingAi.value
+    ) {
+        return;
+    }
+
+    isFetchingRepositoryWithAi.value = true;
+
+    try {
+        const fetched = await fetchFromRepository();
+
+        if (!fetched || !props.aiEnabled) {
+            return;
+        }
+
+        await processWithAi();
+    } finally {
+        isFetchingRepositoryWithAi.value = false;
     }
 }
 
@@ -232,7 +261,7 @@ async function pollAiStatus(operationId: string): Promise<void> {
         <Label :for="`${name}-file`">{{ label }}</Label>
 
         <div class="rounded-lg border border-border bg-muted/10 p-3">
-            <div class="mb-3 flex items-center gap-3">
+            <div class="mb-3 grid grid-cols-1 md:grid-cols-2 items-center gap-3">
                 <button
                     type="button"
                     class="inline-flex items-center rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
@@ -259,6 +288,16 @@ async function pollAiStatus(operationId: string): Promise<void> {
                     @click="fetchFromRepository"
                 >
                     {{ isFetchingRepository ? t('app.loading') : t('app.tenant.products.form.image_repository.action') }}
+                </button>
+
+                <button
+                    v-if="aiEnabled"
+                    type="button"
+                    class="inline-flex items-center rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+                    :disabled="isFetchingRepositoryWithAi || isFetchingRepository || isProcessingAi || (ean ?? '').trim() === ''"
+                    @click="fetchFromRepositoryAndProcessWithAi"
+                >
+                    {{ isFetchingRepositoryWithAi ? t('app.loading') : t('app.tenant.products.form.image_repository.action_with_ai') }}
                 </button>
             </div>
 

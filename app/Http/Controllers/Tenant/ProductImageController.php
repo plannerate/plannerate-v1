@@ -108,7 +108,7 @@ class ProductImageController extends Controller
     {
         $ean = (string) $request->string('ean');
         $result = $this->repositoryImageResolver->resolveByEan($ean);
-
+ 
         if ($result === null) {
             return response()->json([
                 'message' => __('app.tenant.products.form.image_repository.not_found'),
