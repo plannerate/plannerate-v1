@@ -30,7 +30,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-    <div class="flex h-full min-h-0 flex-1 overflow-x-auto overflow-y-hidden">
+    <div class="flex-1 overflow-x-auto overflow-y-hidden">
         <div class="flex h-full gap-3 px-4 py-3" style="min-width: max-content">
             <KanbanColumn
                 v-for="column in board"

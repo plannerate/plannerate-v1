@@ -51,7 +51,7 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
 
 <template>
     <div
-        class="flex h-[calc(100dvh-16.5rem)] max-h-[calc(100dvh-16.5rem)] w-72 shrink-0 flex-col rounded-lg border bg-card transition-all"
+        class="flex h-full w-72 shrink-0 flex-col rounded-lg border bg-card transition-all"
         :class="{ 'ring-2 ring-primary/30': isDragOver }"
         :style="{ borderTopWidth: '3px', borderTopColor: topColor }"
         @dragover.prevent="emit('dragover', column.step.id)"
@@ -81,7 +81,7 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
             />
         </div>
 
-        <div class="kanban-column-scroll flex-1 space-y-2 overflow-y-auto p-2">
+        <div class="flex-1 space-y-2 overflow-y-auto p-2">
             <template v-if="visibleExecutions.length > 0">
                 <KanbanCard
                     v-for="execution in visibleExecutions"
@@ -115,27 +115,3 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
         </div>
     </div>
 </template>
-
-<style scoped>
-.kanban-column-scroll {
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent) transparent;
-}
-
-.kanban-column-scroll::-webkit-scrollbar {
-    width: 6px;
-}
-
-.kanban-column-scroll::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.kanban-column-scroll::-webkit-scrollbar-thumb {
-    border-radius: 9999px;
-    background: color-mix(in oklab, var(--muted-foreground) 30%, transparent);
-}
-
-.kanban-column-scroll::-webkit-scrollbar-thumb:hover {
-    background: color-mix(in oklab, var(--muted-foreground) 45%, transparent);
-}
-</style>
