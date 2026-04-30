@@ -23,6 +23,7 @@ use App\Http\Controllers\Tenant\ProviderController;
 use App\Http\Controllers\Tenant\ReverbTestController;
 use App\Http\Controllers\Tenant\SaleController;
 use App\Http\Controllers\Tenant\StoreController;
+use App\Http\Controllers\Tenant\SystemLogController;
 use App\Http\Controllers\Tenant\WorkflowExecutionController;
 use App\Http\Controllers\Tenant\WorkflowKanbanController;
 use App\Http\Controllers\Tenant\WorkflowPlanogramStepController;
@@ -135,6 +136,10 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->names('products');
         Route::post('products/sync-single', [ProductController::class, 'syncSingle'])
             ->name('products.sync-single');
+        Route::get('system-logs', [SystemLogController::class, 'index'])
+            ->name('system-logs.index');
+        Route::delete('system-logs', [SystemLogController::class, 'clear'])
+            ->name('system-logs.clear');
 
         Route::resource('stores', StoreController::class)
             ->except(['show'])

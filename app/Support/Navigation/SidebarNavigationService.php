@@ -141,6 +141,14 @@ class SidebarNavigationService
                     ->authorize('viewAny', Product::class)
                     ->setOrder(30);
             })
+            ->item('tenant.system-logs', function ($item) use ($subdomain): void {
+                $item
+                    ->label('Logs do sistema')
+                    ->href(route('tenant.system-logs.index', ['subdomain' => $subdomain], false))
+                    ->icon('logs')
+                    ->authorize('viewAny', Product::class)
+                    ->setOrder(35);
+            })
             ->item('tenant.stores', function ($item) use ($subdomain): void {
                 $item
                     ->label(__('app.tenant.stores.navigation'))

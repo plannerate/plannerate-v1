@@ -4,8 +4,8 @@ import { Kanban, LayoutList, Map } from 'lucide-vue-next';
 import { computed } from 'vue';
 import WorkflowKanbanController from '@/actions/App/Http/Controllers/Tenant/WorkflowKanbanController';
 import { useT } from '@/composables/useT';
-import planograms from '@/routes/tenant/planograms';
 import { cn } from '@/lib/utils';
+import planograms from '@/routes/tenant/planograms';
 
 const props = withDefaults(defineProps<{
     subdomain: string;

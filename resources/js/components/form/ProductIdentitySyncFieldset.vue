@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import ProductEanSyncButton from '@/components/form/ProductEanSyncButton.vue';
-import { computed } from 'vue';
 
 const props = withDefaults(
     defineProps<{

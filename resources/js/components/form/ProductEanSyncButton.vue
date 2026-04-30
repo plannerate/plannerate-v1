@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
-import { computed, ref } from 'vue';
 
 type ErrorPayload = {
     message: string;

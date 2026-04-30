@@ -11,17 +11,17 @@ import type ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { ColumnActions, ColumnDate, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import Popover from '@/components/ui/popover/Popover.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
-import Popover from '@/components/ui/popover/Popover.vue';
-import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 
 type PlanogramRow = {
     id: string;

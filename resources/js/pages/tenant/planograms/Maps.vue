@@ -9,8 +9,8 @@ import NewActionButton from '@/components/NewActionButton.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { editor as tenantEditorPlanogramGondolas } from '@/routes/tenant/planograms/gondolas';
 import { dashboard } from '@/routes';
+import { editor as tenantEditorPlanogramGondolas } from '@/routes/tenant/planograms/gondolas';
 
 type StoreMapRegion = {
     id: string;
