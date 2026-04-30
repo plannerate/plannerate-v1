@@ -30,6 +30,7 @@ class UpdateProductRequest extends FormRequest
         $tenantId = $this->tenantId();
         $categoriesTable = $this->tenantTable('categories');
         $productsTable = $this->tenantTable('products');
+        $storesTable = $this->tenantTable('stores');
 
         return [
             'category_id' => ['nullable', 'ulid', Rule::exists($categoriesTable, 'id')->where('tenant_id', $tenantId)],
@@ -73,6 +74,8 @@ class UpdateProductRequest extends FormRequest
             'unit' => ['nullable', 'string', 'max:255'],
             'dimensions_status' => ['required', Rule::in(['draft', 'published'])],
             'dimensions_description' => ['nullable', 'string', 'max:255'],
+            'store_ids' => ['nullable', 'array'],
+            'store_ids.*' => ['ulid', Rule::exists($storesTable, 'id')->where('tenant_id', $tenantId)],
         ];
     }
 

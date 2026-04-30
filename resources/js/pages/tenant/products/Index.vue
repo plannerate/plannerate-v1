@@ -30,6 +30,7 @@ type ProductRow = {
     ean: string | null;
     status: 'draft' | 'published' | 'synced' | 'error';
     category: string | null;
+    stores: string[];
 };
 
 const props = defineProps<{
@@ -172,6 +173,9 @@ const pageMeta = useCrudPageMeta({
                         <ColumnHeader field="category">{{
                             t('app.tenant.products.fields.category')
                         }}</ColumnHeader>
+                        <th class="px-4 py-3 font-medium">
+                            Lojas
+                        </th>
                         <ColumnHeader field="status">{{
                             t('app.tenant.products.fields.status')
                         }}</ColumnHeader>
@@ -208,6 +212,9 @@ const pageMeta = useCrudPageMeta({
                         </td>
                         <td class="px-4 py-3">{{ product.ean ?? '-' }}</td>
                         <td class="px-4 py-3">{{ product.category ?? '-' }}</td>
+                        <td class="px-4 py-3">
+                            {{ product.stores.length > 0 ? product.stores.join(', ') : '-' }}
+                        </td>
                         <td class="px-4 py-3">
                             <ColumnStatusBadge :status="product.status" />
                         </td>

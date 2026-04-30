@@ -3,6 +3,7 @@ import { Form, Head, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import FormDecimalField from '@/components/form/FormDecimalField.vue';
+import ProductIdentitySyncFieldset from '@/components/form/ProductIdentitySyncFieldset.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormTabsBar from '@/components/form/FormTabsBar.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
@@ -61,6 +62,7 @@ type ProductPayload = {
     dimensions_status: 'draft' | 'published';
     dimensions_description: string | null;
     image_url: string | null;
+    store_ids?: string[];
 };
 
 type TabKey = 'identification' | 'market' | 'dimensions' | 'additional';
@@ -68,6 +70,7 @@ type TabKey = 'identification' | 'market' | 'dimensions' | 'additional';
 const props = defineProps<{
     subdomain: string;
     product: ProductPayload | null;
+    stores: Array<{ id: string; name: string; document: string | null }>;
 }>();
 
 const { t } = useT();
@@ -104,12 +107,14 @@ const localErrors = ref<Record<string, string>>({});
 
 const productName = ref(props.product?.name ?? '');
 const ean = ref(props.product?.ean ?? '');
+const codigoErp = ref(props.product?.codigo_erp ?? '');
 const productStatus = ref(props.product?.status ?? 'draft');
 const dimensionsStatus = ref(props.product?.dimensions_status ?? 'draft');
 const width = ref(toInputValue(props.product?.width));
 const height = ref(toInputValue(props.product?.height));
 const depth = ref(toInputValue(props.product?.depth));
 const weight = ref(toInputValue(props.product?.weight));
+const selectedStoreIds = ref<string[]>(props.product?.store_ids ?? []);
 
 function toInputValue(value: string | number | null | undefined): string {
     return value === null || value === undefined ? '' : String(value);
@@ -361,26 +366,20 @@ const pageMeta = useCrudPageMeta({
                                 :required="true"
                                 :placeholder="t('app.tenant.products.fields.name')"
                                 :error="resolveError('name', errors)"
-                                class="md:col-span-6"
-                            />
-                            <FormTextField
-                                id="ean"
-                                v-model="ean"
-                                name="ean"
-                                :label="t('app.tenant.products.form.ean')"
-                                :placeholder="t('app.tenant.products.form.ean')"
-                                :error="resolveError('ean', errors)"
-                                class="md:col-span-4"
-                            />
-                            <FormTextField
-                                id="codigo_erp"
-                                name="codigo_erp"
-                                :label="t('app.tenant.products.fields.codigo_erp')"
-                                :default-value="props.product?.codigo_erp ?? ''"
-                                :error="resolveError('codigo_erp', errors)"
-                                class="md:col-span-2"
+                                class="md:col-span-12"
                             />
                         </div>
+
+                        <ProductIdentitySyncFieldset
+                            :subdomain="props.subdomain"
+                            v-model:ean="ean"
+                            v-model:codigo-erp="codigoErp"
+                            :store-ids="selectedStoreIds"
+                            :ean-label="t('app.tenant.products.form.ean')"
+                            :codigo-erp-label="t('app.tenant.products.fields.codigo_erp')"
+                            :ean-error="resolveError('ean', errors)"
+                            :codigo-erp-error="resolveError('codigo_erp', errors)"
+                        />
 
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
                             <FormTextareaField
@@ -432,6 +431,38 @@ const pageMeta = useCrudPageMeta({
                                     {{ t('app.tenant.products.status_options.error') }}
                                 </option>
                             </FormSelectField>
+                        </div>
+
+                        <div
+                            class="rounded-lg border border-border/80 p-3"
+                        >
+                            <p class="mb-3 text-sm font-semibold">
+                                Lojas do produto
+                            </p>
+                            <div
+                                v-if="props.stores.length > 0"
+                                class="grid grid-cols-1 gap-2 md:grid-cols-2"
+                            >
+                                <label
+                                    v-for="store in props.stores"
+                                    :key="store.id"
+                                    class="flex items-start gap-2 rounded-md border border-border/60 px-2 py-2 text-sm"
+                                >
+                                    <input
+                                        v-model="selectedStoreIds"
+                                        type="checkbox"
+                                        name="store_ids[]"
+                                        :value="store.id"
+                                        class="mt-0.5 accent-primary"
+                                    />
+                                    <span>
+                                        {{ store.name }}{{ store.document ? ` - ${store.document}` : '' }}
+                                    </span>
+                                </label>
+                            </div>
+                            <p v-else class="text-xs text-muted-foreground">
+                                Nenhuma loja disponível para associação.
+                            </p>
                         </div>
                     </div>
 

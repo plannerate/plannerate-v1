@@ -133,6 +133,8 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::resource('products', ProductController::class)
             ->except(['show'])
             ->names('products');
+        Route::post('products/sync-single', [ProductController::class, 'syncSingle'])
+            ->name('products.sync-single');
 
         Route::resource('stores', StoreController::class)
             ->except(['show'])
