@@ -13,25 +13,6 @@ type MoveMessages = {
     skippedStep: string;
 };
 
-function resolveTargetStepId(column: BoardColumn, execution: Execution): string {
-    const refs = column.column_steps?.length
-        ? column.column_steps
-        : column.step_ids.map((id) => ({
-            id,
-            planogram_id: column.step.planogram_id ?? '',
-        }));
-
-    if (execution.planogram_id) {
-        const match = refs.find((r) => r.planogram_id === execution.planogram_id);
-
-        if (match) {
-            return match.id;
-        }
-    }
-
-    return column.step.id;
-}
-
 export function useKanbanMove(
     board: MaybeRefOrGetter<BoardColumn[]>,
     messages: MoveMessages,
@@ -93,7 +74,7 @@ export function useKanbanMove(
         return true;
     }
 
-    function onDragStart(execution: Execution): void {
+    function onDragStart(execution: Execution, stepId: string): void {
         if (!canMoveExecution(execution)) {
             onDenied(messages.mustBeStarted);
 
@@ -101,7 +82,7 @@ export function useKanbanMove(
         }
 
         draggingExecutionId.value = execution.id;
-        draggingFromStepId.value = execution.workflow_planogram_step_id;
+        draggingFromStepId.value = stepId;
     }
 
     function onDragOver(stepId: string): void {
@@ -120,33 +101,17 @@ export function useKanbanMove(
         }
     }
 
-    function resolveDrop(targetColumn: BoardColumn): MoveAttempt | null {
+    function resolveDrop(targetStepId: string): MoveAttempt | null {
         const executionId = draggingExecutionId.value;
         const fromStepId = draggingFromStepId.value;
 
-        if (!executionId || !fromStepId) {
+        if (!executionId || !fromStepId || fromStepId === targetStepId) {
             resetDrag();
 
             return null;
         }
 
-        const execution = findExecution(executionId);
-
-        if (!execution) {
-            resetDrag();
-
-            return null;
-        }
-
-        const targetStepId = resolveTargetStepId(targetColumn, execution);
-
-        if (fromStepId === targetStepId) {
-            resetDrag();
-
-            return null;
-        }
-
-        if (!canDropOnStep(targetColumn.step.id)) {
+        if (!canDropOnStep(targetStepId)) {
             resetDrag();
 
             return null;

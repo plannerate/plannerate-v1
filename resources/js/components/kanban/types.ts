@@ -5,17 +5,8 @@ export type AssignedUser = {
 
 export type KanbanExecutionAction = 'start' | 'pause' | 'resume' | 'complete' | 'abandon';
 
-export type ColumnStepRef = {
-    id: string;
-    planogram_id: string;
-};
-
 export type Execution = {
     id: string;
-    /** Etapa atual no BD (necessário para DnD com colunas fundidas). */
-    workflow_planogram_step_id: string;
-    /** Planograma da etapa atual (alinhado à gôndola). */
-    planogram_id: string | null;
     gondola_id: string;
     gondola_name: string | null;
     gondola_location: string | null;
@@ -36,7 +27,6 @@ export type Execution = {
 
 export type BoardStep = {
     id: string;
-    planogram_id?: string | null;
     name: string;
     description: string | null;
     color: string | null;
@@ -49,13 +39,7 @@ export type BoardStep = {
 
 export type BoardColumn = {
     step: BoardStep;
-    /** Uma entrada por planograma quando a coluna é fundida (“todos os planogramas”). */
-    column_steps: ColumnStepRef[];
-    /** One or more DB step ids (merged “all planograms” columns). */
-    step_ids: string[];
     executions: Execution[];
-    /** Total executions on step(s) before client filters (overdue / completed toggles). */
-    executions_count: number;
 };
 
 export type ExecutionDetails = {

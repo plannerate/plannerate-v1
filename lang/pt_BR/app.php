@@ -822,9 +822,6 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         ],
         'column' => [
             'empty' => 'Nenhuma gondola encontrada',
-            'load_error' => 'Nao foi possivel carregar os cards desta coluna.',
-            'retry' => 'Tentar novamente',
-            'loading_more' => 'Carregando mais...',
         ],
         'card' => [
             'unnamed_gondola' => 'Gondola sem nome',

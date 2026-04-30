@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
 import { Kanban } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import KanbanActionConfirmDialog from '@/components/kanban/KanbanActionConfirmDialog.vue';
 import KanbanBoard from '@/components/kanban/KanbanBoard.vue';
 import KanbanCardDetail from '@/components/kanban/KanbanCardDetail.vue';
 import KanbanFilters from '@/components/kanban/KanbanFilters.vue';
-import type { BoardColumn, Execution, KanbanExecutionAction, KanbanPageProps } from '@/components/kanban/types';
+import type { Execution, KanbanExecutionAction, KanbanPageProps } from '@/components/kanban/types';
 import KankanNavigationLinks from '@/components/KankanNavigationLinks.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
@@ -19,47 +19,6 @@ import type { Auth } from '@/types/auth';
 
 const props = defineProps<KanbanPageProps>();
 const page = usePage();
-
-const boardState = ref<BoardColumn[] | null>(null);
-
-watch(
-    () => props.board,
-    (board) => {
-        // Props do Inertia podem ser proxies reativos; `structuredClone` falha com DataCloneError.
-        boardState.value = board
-            ? (JSON.parse(JSON.stringify(board)) as BoardColumn[])
-            : null;
-    },
-    { immediate: true },
-);
-
-function replaceColumnExecutions(stepIds: string[], executions: Execution[]): void {
-    if (!boardState.value) {
-        return;
-    }
-
-    const key = [...stepIds].sort().join(',');
-
-    const column = boardState.value.find((c) => [...c.step_ids].sort().join(',') === key);
-
-    if (column) {
-        column.executions = executions;
-    }
-}
-
-function appendColumnExecutions(stepIds: string[], more: Execution[]): void {
-    if (!boardState.value) {
-        return;
-    }
-
-    const key = [...stepIds].sort().join(',');
-
-    const column = boardState.value.find((c) => [...c.step_ids].sort().join(',') === key);
-
-    if (column) {
-        column.executions = [...column.executions, ...more];
-    }
-}
 
 const { t } = useT();
 const currentUserId = (page.props.auth as Auth | undefined)?.user?.id ?? null;
@@ -118,7 +77,7 @@ const {
     onDragOver,
     onDragLeave,
     onDrop,
-} = useKanban(() => boardState.value, () => props.subdomain);
+} = useKanban(() => props.board, () => props.subdomain);
 
 function statusClass(status: string): string {
     return statusColors[status] ?? 'bg-muted text-muted-foreground';
@@ -247,9 +206,6 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
                 <KanbanBoard
                     :board="filteredBoard"
                     :subdomain="props.subdomain"
-                    :filters="props.filters"
-                    :replace-column-executions="replaceColumnExecutions"
-                    :append-column-executions="appendColumnExecutions"
                     :current-user-id="currentUserId"
                     :dragging-execution-id="draggingExecutionId"
                     :drag-over-step-id="dragOverStepId"

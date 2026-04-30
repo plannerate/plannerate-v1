@@ -79,7 +79,7 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
     };
 
     function statusLabel(status: string): string {
-        return t(`app.kanban.status.${status}`);
+        return t(`app.kanban.executions.status.${status}`);
     }
 
     function normalizedUrl(url: string): string {
@@ -108,7 +108,7 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
 
     function reloadBoard(): void {
         router.reload({
-            only: ['board', 'filters'],
+            only: ['board'],
         });
     }
 
@@ -247,8 +247,8 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
         await loadExecutionDetails(execution.id);
     }
 
-    async function onDrop(targetColumn: BoardColumn): Promise<void> {
-        const moveAttempt = resolveDrop(targetColumn);
+    async function onDrop(targetStepId: string): Promise<void> {
+        const moveAttempt = resolveDrop(targetStepId);
 
         if (!moveAttempt) {
             return;

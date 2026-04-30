@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Enums\WorkflowExecutionStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Planogram;
 use App\Models\Store;
@@ -11,6 +12,7 @@ use App\Services\WorkflowKanbanService;
 use App\Services\WorkflowPlanogramStepService;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,6 +28,7 @@ class WorkflowKanbanController extends Controller
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', WorkflowGondolaExecution::class);
+        $statusFilter = WorkflowExecutionStatus::tryFrom((string) $request->input('status'));
 
         $planograms = Planogram::query()
             ->with('store:id,name')
@@ -59,7 +62,7 @@ class WorkflowKanbanController extends Controller
 
             if ($planogram !== null) {
                 $this->stepService->syncForPlanogram($planogram);
-                $board = $this->kanbanService->buildColumnStructureForPlanogram($planogram);
+                $board = $this->kanbanService->buildBoardForPlanogram($planogram, $request->user());
                 $selectedPlanogram = [
                     'id' => $planogram->id,
                     'name' => $planogram->name,
@@ -71,10 +74,10 @@ class WorkflowKanbanController extends Controller
                 ->when($request->filled('store_id'), fn ($query) => $query->where('store_id', $request->input('store_id')))
                 ->orderBy('name')
                 ->get()
-                ->flatMap(function (Planogram $planogram): array {
+                ->flatMap(function (Planogram $planogram) use ($request): array {
                     $this->stepService->syncForPlanogram($planogram);
 
-                    return $this->kanbanService->buildColumnStructureForPlanogram($planogram);
+                    return $this->kanbanService->buildBoardForPlanogram($planogram, $request->user());
                 })
                 ->groupBy(
                     fn (array $column): string => sprintf(
@@ -85,23 +88,14 @@ class WorkflowKanbanController extends Controller
                 )
                 ->map(function ($columns): array {
                     $firstColumn = $columns->first();
-                    $stepIds = $columns
-                        ->pluck('step_ids')
-                        ->flatten()
-                        ->unique()
+                    $executions = $columns
+                        ->flatMap(fn (array $column): array => $column['executions'] ?? [])
                         ->values()
                         ->all();
-                    $executionsCount = (int) $columns->sum(fn (array $column): int => (int) ($column['executions_count'] ?? 0));
 
                     return [
                         'step' => $firstColumn['step'],
-                        'step_ids' => $stepIds,
-                        'column_steps' => $columns->map(fn (array $column): array => [
-                            'id' => $column['step']['id'],
-                            'planogram_id' => (string) ($column['step']['planogram_id'] ?? ''),
-                        ])->values()->all(),
-                        'executions' => [],
-                        'executions_count' => $executionsCount,
+                        'executions' => $executions,
                     ];
                 })
                 ->sortBy(fn (array $column): int => (int) ($column['step']['suggested_order'] ?? 0))
@@ -116,6 +110,22 @@ class WorkflowKanbanController extends Controller
                 ];
             }
         }
+
+        if ($board !== null && $statusFilter !== null) {
+            $board = collect($board)
+                ->map(function (array $column) use ($statusFilter): array {
+                    $column['executions'] = collect($column['executions'])
+                        ->filter(fn (array $execution): bool => ($execution['status'] ?? null) === $statusFilter->value)
+                        ->values()
+                        ->all();
+
+                    return $column;
+                })
+                ->values()
+                ->all();
+        }
+
+        Storage::put('board.json', json_encode($board));
 
         return Inertia::render('tenant/planograms/Kanban', [
             'subdomain' => $this->tenantSubdomain(),

@@ -174,25 +174,9 @@ test('kanban index filtra por status e carrega board sem planograma selecionado'
             ->where('selected_planogram.id', 'all')
             ->where('filters.status', 'active')
             ->has('board', 1)
-            ->where('board.0.executions', [])
-            ->where('board.0.executions_count', 2)
-            ->has('board.0.column_steps', 1)
-            ->where('board.0.column_steps.0.id', $step->id)
-            ->where('board.0.column_steps.0.planogram_id', (string) $planogram->id)
+            ->has('board.0.executions', 1)
+            ->where('board.0.executions.0.status', 'active')
         );
-
-    $query = http_build_query([
-        'step_ids' => [$step->id],
-        'status' => 'active',
-        'page' => 1,
-    ]);
-
-    $this->getJson(route('tenant.kanban.column-executions', [
-        'subdomain' => $context['subdomain'],
-    ]).'?'.$query)
-        ->assertOk()
-        ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.status', 'active');
 });
 
 test('rota planograms.kanban redireciona para kanban.index', function (): void {

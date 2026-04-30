@@ -5,9 +5,6 @@ import type { BoardColumn, Execution } from '@/components/kanban/types';
 defineProps<{
     board: BoardColumn[];
     subdomain: string;
-    filters: { planogram_id?: string; store_id?: string; gondola_search?: string; status?: string };
-    replaceColumnExecutions: (stepIds: string[], executions: Execution[]) => void;
-    appendColumnExecutions: (stepIds: string[], more: Execution[]) => void;
     currentUserId: string | null;
     draggingExecutionId: string | null;
     dragOverStepId: string | null;
@@ -19,10 +16,10 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-    dragstart: [execution: Execution];
+    dragstart: [execution: Execution, stepId: string];
     dragover: [stepId: string];
     dragleave: [stepId: string];
-    drop: [column: BoardColumn];
+    drop: [stepId: string];
     details: [execution: Execution];
     start: [execution: Execution];
     pause: [execution: Execution];
@@ -37,12 +34,9 @@ const emit = defineEmits<{
         <div class="flex h-full gap-3 px-4 py-3" style="min-width: max-content">
             <KanbanColumn
                 v-for="column in board"
-                :key="column.step_ids.join(',')"
+                :key="column.step.id"
                 :column="column"
                 :subdomain="subdomain"
-                :filters="filters"
-                :replace-column-executions="replaceColumnExecutions"
-                :append-column-executions="appendColumnExecutions"
                 :current-user-id="currentUserId"
                 :is-drag-over="dragOverStepId === column.step.id"
                 :dragging-execution-id="draggingExecutionId"
@@ -51,7 +45,7 @@ const emit = defineEmits<{
                 :status-label="statusLabel"
                 :format-date="formatDate"
                 :is-overdue="isOverdue"
-                @dragstart="emit('dragstart', $event)"
+                @dragstart="emit('dragstart', $event, column.step.id)"
                 @dragover="emit('dragover', $event)"
                 @dragleave="emit('dragleave', $event)"
                 @drop="emit('drop', $event)"
