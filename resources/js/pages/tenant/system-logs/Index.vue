@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import { computed, onMounted, ref } from 'vue';
 import SystemLogController from '@/actions/App/Http/Controllers/Tenant/SystemLogController';
 import DeleteButton from '@/components/DeleteButton.vue';
 import { Badge } from '@/components/ui/badge';
@@ -25,17 +26,78 @@ const props = defineProps<{
         key_only: boolean;
         from: string;
         to: string;
+        file: string;
     };
     summary: {
         total: number;
         filtered: number;
     };
     levels: string[];
+    files: string[];
 }>();
 
 const { t } = useT();
 const indexPath = SystemLogController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
 const clearPath = SystemLogController.clear.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const activeFilterParams = computed(() => ({
+    search: props.filters.search,
+    level: props.filters.level,
+    key_only: props.filters.key_only ? '1' : '',
+    file: props.filters.file,
+}));
+
+const clearHref = computed(() => {
+    const params = new URLSearchParams();
+
+    if (props.filters.file !== '') {
+        params.set('file', props.filters.file);
+    }
+
+    return params.toString() === '' ? clearPath : `${clearPath}?${params.toString()}`;
+});
+
+function formatDateTimeLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    const hour = `${date.getHours()}`.padStart(2, '0');
+    const minute = `${date.getMinutes()}`.padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hour}:${minute}`;
+}
+
+function buildPresetHref(hoursBack: number): string {
+    const now = new Date();
+    const from = new Date(now.getTime() - hoursBack * 60 * 60 * 1000);
+    const params = new URLSearchParams();
+
+    if (activeFilterParams.value.search !== '') {
+        params.set('search', activeFilterParams.value.search);
+    }
+
+    if (activeFilterParams.value.level !== '') {
+        params.set('level', activeFilterParams.value.level);
+    }
+
+    if (activeFilterParams.value.key_only !== '') {
+        params.set('key_only', activeFilterParams.value.key_only);
+    }
+
+    if (activeFilterParams.value.file !== '') {
+        params.set('file', activeFilterParams.value.file);
+    }
+
+    params.set('from', formatDateTimeLocal(from));
+    params.set('to', formatDateTimeLocal(now));
+
+    return `${indexPath}?${params.toString()}`;
+}
+
+const isMounted = ref(false);
+
+onMounted(() => {
+    isMounted.value = true;
+});
 
 const pageMeta = useCrudPageMeta({
     headTitle: 'Logs do sistema',
@@ -58,12 +120,23 @@ const pageMeta = useCrudPageMeta({
                     <Badge variant="outline">Total: {{ summary.total }}</Badge>
                     <Badge variant="secondary">Exibidos: {{ summary.filtered }}</Badge>
                 </div>
-                <DeleteButton :href="clearPath" label="todos os logs" :require-confirm-word="true">
+                <DeleteButton :href="clearHref" :label="props.filters.file" :require-confirm-word="true">
                     Limpar logs
                 </DeleteButton>
             </div>
 
             <form :action="indexPath" method="get" class="rounded-xl border border-sidebar-border/70 bg-background p-4 dark:border-sidebar-border">
+                <div v-if="isMounted" class="mb-3 flex flex-wrap gap-2">
+                    <a :href="buildPresetHref(24)" class="rounded-md border border-border px-2.5 py-1 text-xs text-foreground transition hover:bg-muted/50">
+                        Últimas 24h
+                    </a>
+                    <a :href="buildPresetHref(24 * 7)" class="rounded-md border border-border px-2.5 py-1 text-xs text-foreground transition hover:bg-muted/50">
+                        Últimos 7 dias
+                    </a>
+                    <a :href="buildPresetHref(24 * 30)" class="rounded-md border border-border px-2.5 py-1 text-xs text-foreground transition hover:bg-muted/50">
+                        Últimos 30 dias
+                    </a>
+                </div>
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
                     <input
                         type="text"
@@ -72,6 +145,15 @@ const pageMeta = useCrudPageMeta({
                         placeholder="Buscar por termo (SQLSTATE, sync, exception...)"
                         class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 md:col-span-6"
                     />
+                    <select
+                        name="file"
+                        :value="filters.file"
+                        class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 md:col-span-2"
+                    >
+                        <option v-for="file in files" :key="file" :value="file">
+                            {{ file }}
+                        </option>
+                    </select>
                     <select
                         name="level"
                         :value="filters.level"

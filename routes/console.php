@@ -19,10 +19,10 @@ Schedule::command('integrations:dispatch-nightly-maintenance')
     ->withoutOverlapping()
     ->name('integrations-nightly-maintenance');
 
-Schedule::command('logs:clean-old --days=5')
+Schedule::command('logs:archive-and-clear --days=5')
     ->dailyAt('03:45')
     ->withoutOverlapping()
-    ->name('logs-clean-old');
+    ->name('logs-archive-and-clear');
 
 // Schedule::call(function (): bool {
 //     Log::info('Scheduler test log executed.'. request()->getHost());
