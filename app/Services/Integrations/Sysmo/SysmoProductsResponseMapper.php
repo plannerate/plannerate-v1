@@ -3,10 +3,14 @@
 namespace App\Services\Integrations\Sysmo;
 
 use App\Services\Integrations\Mappers\ProductsResponseMapper;
-use Illuminate\Support\Carbon;
+use App\Services\Integrations\Sysmo\Concerns\NormalizesSysmoValues;
+use App\Services\Integrations\Sysmo\Concerns\PicksSysmoMappedValues;
 
 class SysmoProductsResponseMapper implements ProductsResponseMapper
 {
+    use NormalizesSysmoValues;
+    use PicksSysmoMappedValues;
+
     public function mapMany(array $items): array
     {
         return array_map(
@@ -150,48 +154,6 @@ class SysmoProductsResponseMapper implements ProductsResponseMapper
 
     /**
      * @param  array<string, mixed>  $item
-     * @param  array<int, string>  $keys
-     */
-    private function pickString(array $item, array $keys): ?string
-    {
-        foreach ($keys as $key) {
-            $value = $item[$key] ?? null;
-
-            if (is_string($value) && trim($value) !== '') {
-                return trim($value);
-            }
-
-            if (is_numeric($value)) {
-                return (string) $value;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @param  array<string, mixed>  $item
-     * @param  array<int, string>  $keys
-     */
-    private function pickFloat(array $item, array $keys): ?float
-    {
-        foreach ($keys as $key) {
-            $value = $item[$key] ?? null;
-
-            if (is_numeric($value)) {
-                return (float) $value;
-            }
-
-            if (is_string($value) && is_numeric(str_replace(',', '.', $value))) {
-                return (float) str_replace(',', '.', $value);
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @param  array<string, mixed>  $item
      * @param  array<int, string>  $paths
      */
     private function pickFloatFromPaths(array $item, array $paths): ?float
@@ -211,23 +173,6 @@ class SysmoProductsResponseMapper implements ProductsResponseMapper
         return null;
     }
 
-    private function normalizeCodigoErp(?string $codigoErp): ?string
-    {
-        if ($codigoErp === null) {
-            return null;
-        }
-
-        $codigoErp = trim($codigoErp);
-
-        $invalidValues = ['N/A', 'n/a', 'NA', 'na', 'NULL', 'null', 'NONE', 'none', '-', ''];
-
-        if (in_array($codigoErp, $invalidValues, true)) {
-            return null;
-        }
-
-        return $codigoErp;
-    }
-
     private function normalizeGtin(?string $gtin): ?string
     {
         if ($gtin === null) {
@@ -241,23 +186,5 @@ class SysmoProductsResponseMapper implements ProductsResponseMapper
         }
 
         return $digitsOnly;
-    }
-
-    private function normalizeDate(mixed $value): ?string
-    {
-        if (! is_string($value) && ! is_numeric($value)) {
-            return null;
-        }
-
-        $dateValue = trim((string) $value);
-        if ($dateValue === '') {
-            return null;
-        }
-
-        try {
-            return Carbon::parse($dateValue)->toDateString();
-        } catch (\Throwable) {
-            return null;
-        }
     }
 }

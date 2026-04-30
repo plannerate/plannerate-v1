@@ -6,12 +6,17 @@ use App\Models\TenantIntegration;
 use App\Services\Integrations\Contracts\SalesIntegrationService;
 use App\Services\Integrations\ExternalApiBaseService;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
+use App\Services\Integrations\Sysmo\Concerns\ExtractsSysmoPayloadItems;
+use App\Services\Integrations\Sysmo\Concerns\NormalizesSysmoValues;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SysmoSalesIntegrationService implements SalesIntegrationService
 {
+    use ExtractsSysmoPayloadItems;
+    use NormalizesSysmoValues;
+
     private const SALES_UPSERT_CHUNK_SIZE = 1000;
 
     public function __construct(
@@ -46,7 +51,7 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
             body: $requestBody,
         );
 
-        $mappedItems = $this->responseMapper->mapMany($this->extractItems($response->json()));
+        $mappedItems = $this->responseMapper->mapMany($this->extractItemsFromPayload($response->json()));
 
         $this->persistMappedSales(
             tenantId: (string) $integration->tenant_id,
@@ -182,71 +187,6 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
             );
         }
 
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function extractItems(mixed $payload): array
-    {
-        if (! is_array($payload)) {
-            return [];
-        }
-
-        if (is_array($payload['data'] ?? null)) {
-            /** @var array<int, array<string, mixed>> $data */
-            $data = array_values(array_filter($payload['data'], 'is_array'));
-
-            return $data;
-        }
-
-        if (is_array($payload['items'] ?? null)) {
-            /** @var array<int, array<string, mixed>> $items */
-            $items = array_values(array_filter($payload['items'], 'is_array'));
-
-            return $items;
-        }
-
-        if (is_array($payload['dados'] ?? null)) {
-            /** @var array<int, array<string, mixed>> $dados */
-            $dados = array_values(array_filter($payload['dados'], 'is_array'));
-
-            return $dados;
-        }
-
-        if (array_is_list($payload)) {
-            /** @var array<int, array<string, mixed>> $list */
-            $list = array_values(array_filter($payload, 'is_array'));
-
-            return $list;
-        }
-
-        return [];
-    }
-
-    private function normalizeString(mixed $value): ?string
-    {
-        if (! is_string($value) && ! is_numeric($value)) {
-            return null;
-        }
-
-        $normalized = trim((string) $value);
-
-        return $normalized !== '' ? $normalized : null;
-    }
-
-    private function normalizeDate(mixed $value): ?string
-    {
-        $dateValue = $this->normalizeString($value);
-        if ($dateValue === null) {
-            return null;
-        }
-
-        try {
-            return Carbon::parse($dateValue)->toDateString();
-        } catch (\Throwable) {
-            return null;
-        }
     }
 
     private function generateSaleId(

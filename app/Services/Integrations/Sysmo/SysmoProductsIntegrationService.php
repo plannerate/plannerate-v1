@@ -8,12 +8,19 @@ use App\Services\Integrations\Contracts\ProductsIntegrationService;
 use App\Services\Integrations\ExternalApiBaseService;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
 use App\Services\Integrations\Support\SyncSalesProductReferencesService;
+use App\Services\Integrations\Sysmo\Concerns\BuildsSysmoRequestBodies;
+use App\Services\Integrations\Sysmo\Concerns\ExtractsSysmoPayloadItems;
+use App\Services\Integrations\Sysmo\Concerns\NormalizesSysmoValues;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SysmoProductsIntegrationService implements ProductsIntegrationService
 {
+    use BuildsSysmoRequestBodies;
+    use ExtractsSysmoPayloadItems;
+    use NormalizesSysmoValues;
+
     /**
      * EANs monitorados temporariamente para diagnosticar recusas no fluxo de busca geral.
      *
@@ -83,7 +90,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
     public function fetchProducts(TenantIntegration $integration, array $filters = []): array
     {
         $payload = $this->requestProducts($integration, $filters);
-        $mappedItems = $this->responseMapper->mapMany($this->extractItems($payload));
+        $mappedItems = $this->responseMapper->mapMany($this->extractItemsFromPayload($payload));
 
         $this->persistMappedProducts(
             tenantId: (string) $integration->tenant_id,
@@ -134,17 +141,19 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         $productsRows = [];
         $invalidItemsCount = 0;
         $invalidItemsExamples = [];
+        $trackedRejectedItems = [];
 
         foreach ($mappedItems as $item) {
             $validationFailureReason = $this->getImportValidationFailureReason($item);
             if ($validationFailureReason !== null) {
                 $invalidItemsCount++;
-                $this->logTrackedRejectedEan(
+                $this->captureTrackedRejectedEan(
                     tenantId: $tenantId,
                     storeId: $storeId,
                     item: $item,
                     reason: $validationFailureReason,
                     stage: 'validate_import_data',
+                    trackedRejectedItems: $trackedRejectedItems,
                 );
 
                 if (count($invalidItemsExamples) < 5) {
@@ -164,7 +173,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
 
             if ($normalizedEan === null || $externalId === null) {
                 $invalidItemsCount++;
-                $this->logTrackedRejectedEan(
+                $this->captureTrackedRejectedEan(
                     tenantId: $tenantId,
                     storeId: $storeId,
                     item: $item,
@@ -172,6 +181,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
                         ? 'EAN normalizado ausente/invalidado apos mapeamento'
                         : 'codigo_erp ausente ou invalido',
                     stage: 'validate_identity',
+                    trackedRejectedItems: $trackedRejectedItems,
                 );
 
                 if (count($invalidItemsExamples) < 5) {
@@ -225,6 +235,8 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         }
 
         if ($productsRows === []) {
+            $this->flushTrackedRejectedEans($trackedRejectedItems);
+
             Log::warning('Sincronização de produtos não persistiu registros: nenhuma identidade válida encontrada.', [
                 'tenant_id' => $tenantId,
                 'store_id' => $storeId,
@@ -277,6 +289,8 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
                 ['last_synced_at', 'updated_at']
             );
         }
+
+        $this->flushTrackedRejectedEans($trackedRejectedItems);
     }
 
     public function finalizePersistedProductsSync(string $tenantId): void
@@ -387,19 +401,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
      */
     private function requestProducts(TenantIntegration $integration, array $filters): array
     {
-        $requestBody = [
-            'pagina' => (int) ($filters['page'] ?? 1),
-            'tamanho_pagina' => (int) ($filters['page_size'] ?? 1000),
-            'partner_key' => (string) ($filters['partner_key'] ?? ''),
-        ];
-
-        if (is_string($filters['date'] ?? null) && $filters['date'] !== '') {
-            $requestBody['data_ultima_alteracao'] = $filters['date'];
-        }
-
-        if (is_string($filters['empresa'] ?? null) && $filters['empresa'] !== '') {
-            $requestBody['empresa'] = $filters['empresa'];
-        }
+        $requestBody = $this->buildProductsRequestBody($filters);
 
         $response = $this->externalApiBaseService->request(
             integration: $integration,
@@ -409,86 +411,6 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         );
 
         return is_array($response->json()) ? $response->json() : [];
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function extractItems(mixed $payload): array
-    {
-        if (! is_array($payload)) {
-            return [];
-        }
-
-        if (is_array($payload['data'] ?? null)) {
-            /** @var array<int, array<string, mixed>> $data */
-            $data = array_values(array_filter($payload['data'], 'is_array'));
-
-            return $data;
-        }
-
-        if (is_array($payload['items'] ?? null)) {
-            /** @var array<int, array<string, mixed>> $items */
-            $items = array_values(array_filter($payload['items'], 'is_array'));
-
-            return $items;
-        }
-
-        if (is_array($payload['dados'] ?? null)) {
-            /** @var array<int, array<string, mixed>> $dados */
-            $dados = array_values(array_filter($payload['dados'], 'is_array'));
-
-            return $dados;
-        }
-
-        if (array_is_list($payload)) {
-            /** @var array<int, array<string, mixed>> $list */
-            $list = array_values(array_filter($payload, 'is_array'));
-
-            return $list;
-        }
-
-        return [];
-    }
-
-    private function normalizeString(mixed $value): ?string
-    {
-        if (! is_string($value) && ! is_numeric($value)) {
-            return null;
-        }
-
-        $normalized = trim((string) $value);
-
-        return $normalized !== '' ? $normalized : null;
-    }
-
-    private function normalizeFloat(mixed $value): ?float
-    {
-        if (is_numeric($value)) {
-            return (float) $value;
-        }
-
-        if (is_string($value)) {
-            $normalized = str_replace(',', '.', trim($value));
-
-            return is_numeric($normalized) ? (float) $normalized : null;
-        }
-
-        return null;
-    }
-
-    private function normalizeDate(mixed $value): ?string
-    {
-        $dateValue = $this->normalizeString($value);
-        if ($dateValue === null) {
-            return null;
-        }
-
-        try {
-            return Carbon::parse($dateValue)->toDateString();
-        } catch (\Throwable) {
-            return null;
-        }
     }
 
     private function normalizeEan(mixed $value): ?string
@@ -514,19 +436,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
      */
     private function validateCodigoErp(?string $codigoErp): ?string
     {
-        if ($codigoErp === null) {
-            return null;
-        }
-
-        $codigoErp = trim((string) $codigoErp);
-
-        $invalidValues = ['N/A', 'n/a', 'NA', 'na', 'NULL', 'null', 'NONE', 'none', '-', ''];
-
-        if (in_array($codigoErp, $invalidValues, true)) {
-            return null;
-        }
-
-        return $codigoErp;
+        return $this->normalizeCodigoErp($codigoErp);
     }
 
     private function generateProductId(?string $ean, string $tenantId, ?string $codigoErp): string
@@ -635,12 +545,13 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
     /**
      * @param  array<string, mixed>  $item
      */
-    private function logTrackedRejectedEan(
+    private function captureTrackedRejectedEan(
         string $tenantId,
         ?string $storeId,
         array $item,
         string $reason,
         string $stage,
+        array &$trackedRejectedItems,
     ): void {
         $rawItem = is_array($item['raw'] ?? null) ? $item['raw'] : [];
 
@@ -652,7 +563,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
             return;
         }
 
-        Log::warning('Produto monitorado recusado na busca geral da API.', [
+        $trackedRejectedItems[] = [
             'tenant_id' => $tenantId,
             'store_id' => $storeId,
             'stage' => $stage,
@@ -665,6 +576,21 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
                 'pertence_ao_mix' => $this->getProcessedValue('pertence_ao_mix', $rawItem, $item),
             ],
             'raw_gtins' => $rawItem['gtins'] ?? null,
+        ];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $trackedRejectedItems
+     */
+    private function flushTrackedRejectedEans(array $trackedRejectedItems): void
+    {
+        if ($trackedRejectedItems === []) {
+            return;
+        }
+
+        Log::warning('Produtos monitorados recusados na busca geral da API (resumo do lote).', [
+            'count' => count($trackedRejectedItems),
+            'items' => $trackedRejectedItems,
         ]);
     }
 }

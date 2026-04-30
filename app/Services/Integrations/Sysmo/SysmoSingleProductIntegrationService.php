@@ -5,10 +5,15 @@ namespace App\Services\Integrations\Sysmo;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\ExternalApiBaseService;
 use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
+use App\Services\Integrations\Sysmo\Concerns\BuildsSysmoRequestBodies;
+use App\Services\Integrations\Sysmo\Concerns\ExtractsSysmoPayloadItems;
 use RuntimeException;
 
 class SysmoSingleProductIntegrationService
 {
+    use BuildsSysmoRequestBodies;
+    use ExtractsSysmoPayloadItems;
+
     public function __construct(
         private readonly ExternalApiBaseService $externalApiBaseService,
         private readonly SysmoEndpoints $sysmoEndpoints,
@@ -30,15 +35,14 @@ class SysmoSingleProductIntegrationService
         $normalized = $this->configNormalizer->normalize($integration);
         $processing = is_array($normalized['processing'] ?? null) ? $normalized['processing'] : [];
 
-        $requestBody = [
-            'partner_key' => (string) ($filters['partner_key'] ?? $processing['partner_key'] ?? ''),
-            'empresa' => (string) ($filters['empresa'] ?? $processing['empresa'] ?? ''),
-            'produto' => $produtoValue,
-        ];
-
-        if (is_string($filters['somente_precos'] ?? null) && $filters['somente_precos'] !== '') {
-            $requestBody['somente_precos'] = $filters['somente_precos'];
-        }
+        $requestBody = $this->buildSingleProductRequestBody(
+            produto: $produtoValue,
+            filters: $filters,
+            defaults: [
+                'partner_key' => $processing['partner_key'] ?? '',
+                'empresa' => $processing['empresa'] ?? '',
+            ],
+        );
 
         $response = $this->externalApiBaseService->request(
             integration: $integration,
@@ -83,28 +87,19 @@ class SysmoSingleProductIntegrationService
      */
     private function extractItem(array $payload): ?array
     {
-        if (is_array($payload['data'] ?? null)) {
-            $data = $payload['data'];
-            if (array_is_list($data)) {
-                return isset($data[0]) && is_array($data[0]) ? $data[0] : null;
-            }
-
-            return $data;
+        if (is_array($payload['data'] ?? null) && ! array_is_list($payload['data'])) {
+            return $payload['data'];
         }
 
-        if (is_array($payload['dados'] ?? null)) {
-            $dados = $payload['dados'];
-            if (array_is_list($dados)) {
-                return isset($dados[0]) && is_array($dados[0]) ? $dados[0] : null;
-            }
-
-            return $dados;
+        if (is_array($payload['dados'] ?? null) && ! array_is_list($payload['dados'])) {
+            return $payload['dados'];
         }
 
-        if (is_array($payload)) {
-            return $payload;
+        $items = $this->extractItemsFromPayload($payload);
+        if ($items !== []) {
+            return $items[0] ?? null;
         }
 
-        return null;
+        return $payload !== [] ? $payload : null;
     }
 }
