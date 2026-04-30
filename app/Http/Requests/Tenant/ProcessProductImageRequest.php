@@ -19,7 +19,9 @@ class ProcessProductImageRequest extends FormRequest
             return false;
         }
 
-        return $user->can('create', Product::class) || $user->can('viewAny', Product::class);
+        return $user->can('create', Product::class)
+            || $user->can('viewAny', Product::class)
+            || $user->can('update', new Product);
     }
 
     /**

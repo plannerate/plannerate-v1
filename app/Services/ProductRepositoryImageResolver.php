@@ -2,7 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Product;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Encoders\WebpEncoder;
@@ -41,9 +42,23 @@ class ProductRepositoryImageResolver
         );
 
         if ($processedPath === null) {
-            $this->logMissingImage($normalizedEan);
+            $webFallbackPath = $this->resolveFromWeb(
+                ean: $normalizedEan,
+                targetPath: $webpPath,
+                width: $width,
+                height: $height,
+            );
 
-            return null;
+            if ($webFallbackPath === null) {
+                $this->logMissingImage($normalizedEan);
+
+                return null;
+            }
+
+            return [
+                'path' => $webFallbackPath,
+                'public_url' => Storage::disk('public')->url($webFallbackPath),
+            ];
         }
 
         return [
@@ -52,7 +67,7 @@ class ProductRepositoryImageResolver
         ];
     }
 
-    public function resolveForProduct(\Illuminate\Database\Eloquent\Model $product): ?string
+    public function resolveForProduct(Model $product): ?string
     {
         if (! $product->ean) {
             return null;
@@ -125,6 +140,106 @@ class ProductRepositoryImageResolver
                 'ean' => $ean,
                 'source_path' => $sourcePath,
                 'target_path' => $targetPath,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    protected function resolveFromWeb(
+        string $ean,
+        string $targetPath,
+        ?float $width,
+        ?float $height
+    ): ?string {
+        try {
+            $productResponse = Http::acceptJson()
+                ->timeout(6)
+                ->get("https://world.openfoodfacts.org/api/v2/product/{$ean}.json");
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if (! $productResponse->ok() || (int) data_get($productResponse->json(), 'status') !== 1) {
+            return null;
+        }
+
+        $imageUrl = collect([
+            data_get($productResponse->json(), 'product.image_front_url'),
+            data_get($productResponse->json(), 'product.image_url'),
+            data_get($productResponse->json(), 'product.image_front_small_url'),
+        ])->first(fn (mixed $url): bool => is_string($url) && trim($url) !== '');
+
+        if (! is_string($imageUrl) || trim($imageUrl) === '') {
+            return null;
+        }
+
+        try {
+            $imageResponse = Http::timeout(8)->get($imageUrl);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if (! $imageResponse->ok()) {
+            return null;
+        }
+
+        $binary = $imageResponse->body();
+
+        if (! is_string($binary) || $binary === '') {
+            return null;
+        }
+
+        return $this->processBinaryToWebp(
+            imageBinary: $binary,
+            targetPath: $targetPath,
+            width: $width,
+            height: $height,
+            ean: $ean,
+            sourceReference: $imageUrl,
+        );
+    }
+
+    protected function processBinaryToWebp(
+        string $imageBinary,
+        string $targetPath,
+        ?float $width,
+        ?float $height,
+        string $ean,
+        string $sourceReference
+    ): ?string {
+        $pixelMultiplier = 7;
+        $quality = 90;
+
+        try {
+            $image = Image::decodeBinary($imageBinary);
+
+            $resolvedWidth = $width;
+            $resolvedHeight = $height;
+
+            if (! is_numeric($resolvedWidth) || $resolvedWidth <= 0) {
+                $resolvedWidth = $image->width() / $pixelMultiplier;
+            }
+
+            if (! is_numeric($resolvedHeight) || $resolvedHeight <= 0) {
+                $resolvedHeight = $image->height() / $pixelMultiplier;
+            }
+
+            $targetWidth = (int) ($resolvedWidth * $pixelMultiplier);
+            $targetHeight = (int) ($resolvedHeight * $pixelMultiplier);
+
+            $image->resize($targetWidth, $targetHeight);
+            $encodedImage = $image->encode(new WebpEncoder($quality));
+
+            Storage::disk('public')->put($targetPath, (string) $encodedImage);
+
+            return $targetPath;
+        } catch (\Throwable $exception) {
+            Log::error('Falha ao processar imagem web por EAN', [
+                'ean' => $ean,
+                'target_path' => $targetPath,
+                'source' => $sourceReference,
                 'error' => $exception->getMessage(),
             ]);
 

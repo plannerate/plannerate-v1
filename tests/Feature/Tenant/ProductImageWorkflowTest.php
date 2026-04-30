@@ -8,12 +8,17 @@ use App\Models\User;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
 beforeEach(function (): void {
+    Http::fake([
+        '*' => Http::response([], 404),
+    ]);
+
     config()->set('permission.rbac_enabled', true);
 
     Artisan::call('migrate:fresh', [

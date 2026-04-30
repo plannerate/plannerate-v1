@@ -40,7 +40,6 @@ const storedPath = ref<string>(props.initialPath ?? '');
 const isUploading = ref(false);
 const isProcessingAi = ref(false);
 const isFetchingRepository = ref(false);
-const isFetchingRepositoryWithAi = ref(false);
 
 const uploadHttp = useHttp<{ file: File | null }, { path?: string; public_url?: string }>({
     file: null,
@@ -63,6 +62,51 @@ function toHttpRoute(route: { url: string; method: string }): UrlMethodPair {
         url: tenantWayfinderPath(route.url),
         method: route.method as UrlMethodPair['method'],
     };
+}
+
+function resolveHttpErrorMessage(error: unknown, fallback: string): string {
+    if (error && typeof error === 'object') {
+        const responseMessage = (error as {
+            response?: { data?: { message?: string } };
+        }).response?.data?.message;
+
+        if (typeof responseMessage === 'string' && responseMessage.trim() !== '') {
+            return responseMessage;
+        }
+    }
+
+    if (error instanceof Error && error.message.trim() !== '') {
+        return error.message;
+    }
+
+    return fallback;
+}
+
+function debugHttpError(error: unknown, context: string): void {
+    if (typeof console !== 'undefined') {
+        console.group(`[ImageUploadField] ${context}`);
+        console.error(error);
+
+        if (error && typeof error === 'object') {
+            const typedError = error as {
+                message?: string;
+                response?: {
+                    status?: number;
+                    statusText?: string;
+                    data?: unknown;
+                    config?: { method?: string; url?: string };
+                };
+            };
+            console.info('message', typedError.message ?? null);
+            console.info('status', typedError.response?.status ?? null);
+            console.info('statusText', typedError.response?.statusText ?? null);
+            console.info('method', typedError.response?.config?.method ?? null);
+            console.info('url', typedError.response?.config?.url ?? null);
+            console.info('response.data', typedError.response?.data ?? null);
+        }
+
+        console.groupEnd();
+    }
 }
 
 function openPicker(): void {
@@ -187,35 +231,31 @@ async function fetchFromRepository(): Promise<boolean> {
 
         emit('repositoryProcessed', payload.path);
         return true;
-    } catch {
-        emit('error', t('app.tenant.products.form.image_repository.fetch_failed'));
+    } catch (error) {
+        debugHttpError(error, 'repository.fetch');
+
+        const typedError = error as {
+            response?: {
+                status?: number;
+                config?: { method?: string; url?: string };
+                data?: { message?: string; errors?: unknown };
+            };
+        };
+        const details = {
+            status: typedError.response?.status ?? null,
+            method: typedError.response?.config?.method ?? 'post',
+            url: typedError.response?.config?.url ?? tenantWayfinderPath(imageRoutes.repository.fetch(props.subdomain).url),
+            message: typedError.response?.data?.message ?? null,
+            errors: typedError.response?.data?.errors ?? null,
+        };
+        const primaryMessage = resolveHttpErrorMessage(
+            error,
+            t('app.tenant.products.form.image_repository.fetch_failed')
+        );
+        emit('error', `${primaryMessage} | debug=${JSON.stringify(details)}`);
         return false;
     } finally {
         isFetchingRepository.value = false;
-    }
-}
-
-async function fetchFromRepositoryAndProcessWithAi(): Promise<void> {
-    if (
-        isFetchingRepositoryWithAi.value
-        || isFetchingRepository.value
-        || isProcessingAi.value
-    ) {
-        return;
-    }
-
-    isFetchingRepositoryWithAi.value = true;
-
-    try {
-        const fetched = await fetchFromRepository();
-
-        if (!fetched || !props.aiEnabled) {
-            return;
-        }
-
-        await processWithAi();
-    } finally {
-        isFetchingRepositoryWithAi.value = false;
     }
 }
 
@@ -288,16 +328,6 @@ async function pollAiStatus(operationId: string): Promise<void> {
                     @click="fetchFromRepository"
                 >
                     {{ isFetchingRepository ? t('app.loading') : t('app.tenant.products.form.image_repository.action') }}
-                </button>
-
-                <button
-                    v-if="aiEnabled"
-                    type="button"
-                    class="inline-flex items-center rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-                    :disabled="isFetchingRepositoryWithAi || isFetchingRepository || isProcessingAi || (ean ?? '').trim() === ''"
-                    @click="fetchFromRepositoryAndProcessWithAi"
-                >
-                    {{ isFetchingRepositoryWithAi ? t('app.loading') : t('app.tenant.products.form.image_repository.action_with_ai') }}
                 </button>
             </div>
 

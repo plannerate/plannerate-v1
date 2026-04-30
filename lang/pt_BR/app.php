@@ -758,7 +758,6 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 ],
                 'image_repository' => [
                     'action' => 'Buscar por EAN',
-                    'action_with_ai' => 'Buscar frente + IA',
                     'ean_required' => 'Informe o EAN para buscar uma imagem no repositorio.',
                     'not_found' => 'Nenhuma imagem encontrada no repositorio para este EAN.',
                     'fetch_failed' => 'Nao foi possivel buscar a imagem no repositorio.',
