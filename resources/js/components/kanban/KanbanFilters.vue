@@ -8,7 +8,8 @@ const props = defineProps<{
     subdomain: string;
     planograms: Array<{ id: string; name: string; store: string | null; store_id: string | null }>;
     stores: Array<{ id: string; name: string }>;
-    filters: { planogram_id?: string; store_id?: string; gondola_search?: string };
+    filters: { planogram_id?: string; store_id?: string; gondola_search?: string; status?: string };
+    statusOptions: Array<{ value: string; label: string }>;
     onlyOverdue: boolean;
     showCompleted: boolean;
 }>();
@@ -73,6 +74,22 @@ const filteredPlanograms = computed(() => {
                 <option value="">{{ t('app.kanban.filters.select_planogram') }}</option>
                 <option v-for="planogram in filteredPlanograms" :key="planogram.id" :value="planogram.id">
                     {{ planogram.name }}{{ planogram.store ? ` - ${planogram.store}` : '' }}
+                </option>
+            </select>
+        </div>
+
+        <div class="flex flex-col gap-1">
+            <label for="kanban-status" class="text-xs font-medium text-foreground">
+                {{ t('app.kanban.filters.status') }}
+            </label>
+            <select
+                id="kanban-status"
+                name="status"
+                :value="filters.status ?? ''"
+                class="h-9 min-w-44 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            >
+                <option v-for="option in statusOptions" :key="option.value || 'all'" :value="option.value">
+                    {{ option.label }}
                 </option>
             </select>
         </div>

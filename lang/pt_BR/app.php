@@ -799,6 +799,13 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'select_planogram' => 'Selecione um planograma para visualizar o board.',
         'empty_board' => 'Nenhuma execucao encontrada para este planograma.',
         'empty_steps' => 'Nenhuma etapa configurada para este planograma.',
+        'status' => [
+            'pending' => 'Pendente',
+            'active' => 'Em andamento',
+            'paused' => 'Pausado',
+            'completed' => 'Concluido',
+            'cancelled' => 'Cancelado',
+        ],
         'filters' => [
             'search_gondola' => 'Buscar gondola...',
             'search_gondola_short' => 'Buscar gondola',
@@ -808,6 +815,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'all_stores' => 'Todas',
             'planogram' => 'Planograma',
             'select_planogram' => 'Selecione um planograma',
+            'status' => 'Status',
+            'all_statuses' => 'Todos os status',
             'only_overdue' => 'Apenas atrasadas',
             'show_completed' => 'Mostrar concluidas',
         ],

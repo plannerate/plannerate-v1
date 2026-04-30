@@ -22,6 +22,14 @@ const page = usePage();
 
 const { t } = useT();
 const currentUserId = (page.props.auth as Auth | undefined)?.user?.id ?? null;
+const statusOptions = computed(() => [
+    { value: '', label: t('app.kanban.filters.all_statuses') },
+    { value: 'pending', label: t('app.kanban.status.pending') },
+    { value: 'active', label: t('app.kanban.status.active') },
+    { value: 'paused', label: t('app.kanban.status.paused') },
+    { value: 'completed', label: t('app.kanban.status.completed') },
+    { value: 'cancelled', label: t('app.kanban.status.cancelled') },
+]);
 const confirmOpen = ref(false);
 const pendingAction = ref<KanbanExecutionAction | null>(null);
 const pendingExecution = ref<Execution | null>(null);
@@ -163,13 +171,14 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
         </template>
         <KankanNavigationLinks :subdomain="props.subdomain" />
 
-        <div class="flex h-full flex-col">
+        <div class="flex min-h-0 flex-1 flex-col">
             <div class="border-b border-border bg-background px-4 py-3">
                 <KanbanFilters
                     :subdomain="props.subdomain"
                     :planograms="props.planograms"
                     :stores="props.stores"
                     :filters="props.filters"
+                    :status-options="statusOptions"
                     :only-overdue="onlyOverdue"
                     :show-completed="showCompleted"
                     @update:only-overdue="onlyOverdue = $event"
@@ -193,29 +202,30 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
                 <p class="text-sm">{{ t('app.kanban.empty_steps') }}</p>
             </div>
 
-            <KanbanBoard
-                v-else
-                :board="filteredBoard"
-                :subdomain="props.subdomain"
-                :current-user-id="currentUserId"
-                :dragging-execution-id="draggingExecutionId"
-                :drag-over-step-id="dragOverStepId"
-                :busy-execution-id="busyExecutionId"
-                :status-class="statusClass"
-                :status-label="statusLabel"
-                :format-date="formatDate"
-                :is-overdue="isOverdue"
-                @dragstart="onDragStart"
-                @dragover="onDragOver"
-                @dragleave="onDragLeave"
-                @drop="onDrop"
-                @details="openExecutionDetails"
-                @start="requestCardAction('start', $event)"
-                @pause="requestCardAction('pause', $event)"
-                @resume="requestCardAction('resume', $event)"
-                @complete="requestCardAction('complete', $event)"
-                @abandon="requestCardAction('abandon', $event)"
-            />
+            <div v-else class="min-h-0 h-[calc(100dvh-15rem)] flex-1 overflow-hidden">
+                <KanbanBoard
+                    :board="filteredBoard"
+                    :subdomain="props.subdomain"
+                    :current-user-id="currentUserId"
+                    :dragging-execution-id="draggingExecutionId"
+                    :drag-over-step-id="dragOverStepId"
+                    :busy-execution-id="busyExecutionId"
+                    :status-class="statusClass"
+                    :status-label="statusLabel"
+                    :format-date="formatDate"
+                    :is-overdue="isOverdue"
+                    @dragstart="onDragStart"
+                    @dragover="onDragOver"
+                    @dragleave="onDragLeave"
+                    @drop="onDrop"
+                    @details="openExecutionDetails"
+                    @start="requestCardAction('start', $event)"
+                    @pause="requestCardAction('pause', $event)"
+                    @resume="requestCardAction('resume', $event)"
+                    @complete="requestCardAction('complete', $event)"
+                    @abandon="requestCardAction('abandon', $event)"
+                />
+            </div>
         </div>
 
         <KanbanCardDetail

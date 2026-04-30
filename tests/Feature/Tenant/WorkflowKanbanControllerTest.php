@@ -1,12 +1,16 @@
 <?php
 
 use App\Jobs\ProvisionTenantDatabaseJob;
+use App\Models\Gondola;
 use App\Models\Module;
 use App\Models\Planogram;
 use App\Models\Role;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\WorkflowGondolaExecution;
+use App\Models\WorkflowPlanogramStep;
+use App\Models\WorkflowTemplate;
 use App\Support\Modules\ModuleSlug;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
@@ -98,6 +102,80 @@ test('kanban index filtra planogramas por store_id', function (): void {
         ->assertInertia(fn (Assert $page) => $page
             ->where('planograms', fn ($planograms) => count($planograms) === 1 && $planograms[0]['id'] === $planogramNaLoja->id
             )
+        );
+});
+
+test('kanban index filtra por status e carrega board sem planograma selecionado', function (): void {
+    $context = setupKanbanTenantCtx('kanban-ctrl-status');
+    $this->actingAs($context['user']);
+
+    $template = WorkflowTemplate::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'name' => 'Etapa Status',
+        'slug' => 'etapa-status-'.Str::lower(Str::random(6)),
+        'suggested_order' => 1,
+        'is_required_by_default' => true,
+        'status' => 'published',
+    ]);
+
+    $planogram = Planogram::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'name' => 'Planograma Status',
+        'slug' => 'planograma-status-'.Str::lower(Str::random(6)),
+        'type' => 'planograma',
+        'status' => 'draft',
+    ]);
+
+    $step = WorkflowPlanogramStep::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+        'workflow_template_id' => $template->id,
+        'name' => 'Etapa Execução',
+        'status' => 'published',
+        'suggested_order' => 1,
+        'is_required' => true,
+        'is_skipped' => false,
+    ]);
+
+    $gondola = Gondola::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+        'name' => 'Gondola Status',
+        'slug' => 'gondola-status-'.Str::lower(Str::random(6)),
+        'status' => 'draft',
+    ]);
+
+    WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondola->id,
+        'workflow_planogram_step_id' => $step->id,
+        'status' => 'active',
+        'current_responsible_id' => $context['user']->id,
+        'execution_started_by' => $context['user']->id,
+        'started_at' => now(),
+    ]);
+
+    WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondola->id,
+        'workflow_planogram_step_id' => $step->id,
+        'status' => 'paused',
+        'current_responsible_id' => $context['user']->id,
+        'execution_started_by' => $context['user']->id,
+        'started_at' => now(),
+    ]);
+
+    $this->get(route('tenant.kanban.index', [
+        'subdomain' => $context['subdomain'],
+        'status' => 'active',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('selected_planogram.id', 'all')
+            ->where('filters.status', 'active')
+            ->has('board', 1)
+            ->has('board.0.executions', 1)
+            ->where('board.0.executions.0.status', 'active')
         );
 });
 
