@@ -361,7 +361,9 @@ test('kanban board includes execution display fields for cards', function (): vo
         ->assertJsonPath('data.0.step_name', $step->name)
         ->assertJsonPath('data.0.started_by.id', $context['user']->id)
         ->assertJsonPath('data.0.can_pause', true)
-        ->assertJsonPath('data.0.can_move', true);
+        ->assertJsonPath('data.0.can_move', true)
+        ->assertJsonPath('data.0.workflow_planogram_step_id', $step->id)
+        ->assertJsonPath('data.0.planogram_id', (string) $planogram->id);
 });
 
 test('execution details returns allowed users and assign only accepts users allowed by step', function (): void {

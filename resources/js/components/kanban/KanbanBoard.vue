@@ -19,10 +19,10 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-    dragstart: [execution: Execution, stepId: string];
+    dragstart: [execution: Execution];
     dragover: [stepId: string];
     dragleave: [stepId: string];
-    drop: [stepId: string];
+    drop: [column: BoardColumn];
     details: [execution: Execution];
     start: [execution: Execution];
     pause: [execution: Execution];
@@ -51,7 +51,7 @@ const emit = defineEmits<{
                 :status-label="statusLabel"
                 :format-date="formatDate"
                 :is-overdue="isOverdue"
-                @dragstart="emit('dragstart', $event, column.step.id)"
+                @dragstart="emit('dragstart', $event)"
                 @dragover="emit('dragover', $event)"
                 @dragleave="emit('dragleave', $event)"
                 @drop="emit('drop', $event)"

@@ -34,10 +34,10 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-    dragstart: [execution: Execution, stepId: string];
+    dragstart: [execution: Execution];
     dragover: [stepId: string];
     dragleave: [stepId: string];
-    drop: [stepId: string];
+    drop: [column: BoardColumn];
     details: [execution: Execution];
     start: [execution: Execution];
     pause: [execution: Execution];
@@ -168,7 +168,7 @@ watch(filterSignature, () => {
         :style="{ borderTopWidth: '3px', borderTopColor: topColor }"
         @dragover.prevent="emit('dragover', column.step.id)"
         @dragleave="emit('dragleave', column.step.id)"
-        @drop.prevent="emit('drop', column.step.id)"
+        @drop.prevent="emit('drop', column)"
     >
         <div class="sticky top-0 z-10 space-y-2 rounded-t-lg border-b bg-card p-3">
             <div class="flex items-start justify-between gap-2">
@@ -229,7 +229,7 @@ watch(filterSignature, () => {
                     :status-label="statusLabel(execution.status)"
                     :formatted-sla-date="formatDate(execution.sla_date)"
                     :is-overdue="isOverdue(execution)"
-                    @dragstart="emit('dragstart', $event, column.step.id)"
+                    @dragstart="emit('dragstart', $event)"
                     @details="emit('details', $event)"
                     @start="emit('start', $event)"
                     @pause="emit('pause', $event)"

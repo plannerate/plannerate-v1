@@ -176,6 +176,9 @@ test('kanban index filtra por status e carrega board sem planograma selecionado'
             ->has('board', 1)
             ->where('board.0.executions', [])
             ->where('board.0.executions_count', 2)
+            ->has('board.0.column_steps', 1)
+            ->where('board.0.column_steps.0.id', $step->id)
+            ->where('board.0.column_steps.0.planogram_id', (string) $planogram->id)
         );
 
     $query = http_build_query([

@@ -96,6 +96,10 @@ class WorkflowKanbanController extends Controller
                     return [
                         'step' => $firstColumn['step'],
                         'step_ids' => $stepIds,
+                        'column_steps' => $columns->map(fn (array $column): array => [
+                            'id' => $column['step']['id'],
+                            'planogram_id' => (string) ($column['step']['planogram_id'] ?? ''),
+                        ])->values()->all(),
                         'executions' => [],
                         'executions_count' => $executionsCount,
                     ];

@@ -225,7 +225,7 @@ class WorkflowKanbanService
     /**
      * Kanban column shell: step metadata, step ids for API fetch, empty executions, total count.
      *
-     * @return array<int, array{step: array<string, mixed>, step_ids: array<int, string>, executions: array<int, array<string, mixed>>, executions_count: int}>
+     * @return array<int, array{step: array<string, mixed>, step_ids: array<int, string>, column_steps: array<int, array{id: string, planogram_id: string}>, executions: array<int, array<string, mixed>>, executions_count: int}>
      */
     public function buildColumnStructureForPlanogram(Planogram $planogram): array
     {
@@ -240,6 +240,12 @@ class WorkflowKanbanService
             return [
                 'step' => $this->stepToKanbanArray($step),
                 'step_ids' => [$step->id],
+                'column_steps' => [
+                    [
+                        'id' => $step->id,
+                        'planogram_id' => (string) $step->planogram_id,
+                    ],
+                ],
                 'executions' => [],
                 'executions_count' => (int) $step->executions_count,
             ];
@@ -263,6 +269,12 @@ class WorkflowKanbanService
             return [
                 'step' => $this->stepToKanbanArray($step),
                 'step_ids' => [$step->id],
+                'column_steps' => [
+                    [
+                        'id' => $step->id,
+                        'planogram_id' => (string) $step->planogram_id,
+                    ],
+                ],
                 'executions' => $step->executions
                     ->map(fn (WorkflowGondolaExecution $exec) => $this->mapExecutionToKanbanPayload($exec, $step, $user))
                     ->values()
@@ -343,6 +355,8 @@ class WorkflowKanbanService
     ): array {
         return [
             'id' => $exec->id,
+            'workflow_planogram_step_id' => $exec->workflow_planogram_step_id,
+            'planogram_id' => (string) $step->planogram_id,
             'gondola_id' => $exec->gondola_id,
             'gondola_name' => $exec->gondola?->name,
             'gondola_location' => $exec->gondola?->location,

@@ -247,8 +247,8 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
         await loadExecutionDetails(execution.id);
     }
 
-    async function onDrop(targetStepId: string): Promise<void> {
-        const moveAttempt = resolveDrop(targetStepId);
+    async function onDrop(targetColumn: BoardColumn): Promise<void> {
+        const moveAttempt = resolveDrop(targetColumn);
 
         if (!moveAttempt) {
             return;
