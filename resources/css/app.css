@@ -161,3 +161,42 @@
         @apply bg-background text-foreground;
     }
 }
+
+@layer utilities {
+    .kanban-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: hsl(215 16% 45% / 0.35) transparent;
+    }
+
+    .kanban-scrollbar::-webkit-scrollbar {
+        width: 7px;
+        height: 7px;
+    }
+
+    .kanban-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .kanban-scrollbar::-webkit-scrollbar-thumb {
+        background-color: hsl(215 16% 45% / 0.32);
+        border-radius: 9999px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+    }
+
+    .kanban-scrollbar:hover::-webkit-scrollbar-thumb {
+        background-color: hsl(215 16% 45% / 0.5);
+    }
+
+    .dark .kanban-scrollbar {
+        scrollbar-color: hsl(215 14% 65% / 0.3) transparent;
+    }
+
+    .dark .kanban-scrollbar::-webkit-scrollbar-thumb {
+        background-color: hsl(215 14% 65% / 0.26);
+    }
+
+    .dark .kanban-scrollbar:hover::-webkit-scrollbar-thumb {
+        background-color: hsl(215 14% 65% / 0.42);
+    }
+}

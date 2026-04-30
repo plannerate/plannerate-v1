@@ -51,7 +51,7 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
 
 <template>
     <div
-        class="flex h-full w-72 shrink-0 flex-col rounded-lg border bg-card transition-all"
+        class="flex h-full max-h-full w-72 shrink-0 flex-col overflow-hidden rounded-lg border bg-card transition-all"
         :class="{ 'ring-2 ring-primary/30': isDragOver }"
         :style="{ borderTopWidth: '3px', borderTopColor: topColor }"
         @dragover.prevent="emit('dragover', column.step.id)"
@@ -81,7 +81,7 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
             />
         </div>
 
-        <div class="flex-1 space-y-2 overflow-y-auto p-2">
+        <div class="kanban-scrollbar flex-1 space-y-2 overflow-y-auto p-2 pr-1">
             <template v-if="visibleExecutions.length > 0">
                 <KanbanCard
                     v-for="execution in visibleExecutions"

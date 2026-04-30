@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
 import { Kanban } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import KanbanActionConfirmDialog from '@/components/kanban/KanbanActionConfirmDialog.vue';
 import KanbanBoard from '@/components/kanban/KanbanBoard.vue';
@@ -26,6 +26,8 @@ const confirmOpen = ref(false);
 const pendingAction = ref<KanbanExecutionAction | null>(null);
 const pendingExecution = ref<Execution | null>(null);
 const pendingFromDetail = ref(false);
+const boardRegion = ref<HTMLElement | null>(null);
+const boardRegionHeight = ref('60vh');
 
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.kanban.title'),
@@ -74,6 +76,35 @@ const {
 function statusClass(status: string): string {
     return statusColors[status] ?? 'bg-muted text-muted-foreground';
 }
+
+function updateBoardRegionHeight(): void {
+    if (!boardRegion.value) {
+        return;
+    }
+
+    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+    const topOffset = Math.max(0, boardRegion.value.getBoundingClientRect().top);
+    const availableHeight = viewportHeight - topOffset - 12;
+    boardRegionHeight.value = `${Math.max(320, Math.floor(availableHeight))}px`;
+}
+
+onMounted(async () => {
+    await nextTick();
+    updateBoardRegionHeight();
+    window.addEventListener('resize', updateBoardRegionHeight);
+    window.addEventListener('orientationchange', updateBoardRegionHeight);
+    window.addEventListener('scroll', updateBoardRegionHeight, { passive: true });
+    window.visualViewport?.addEventListener('resize', updateBoardRegionHeight);
+    window.visualViewport?.addEventListener('scroll', updateBoardRegionHeight);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('resize', updateBoardRegionHeight);
+    window.removeEventListener('orientationchange', updateBoardRegionHeight);
+    window.removeEventListener('scroll', updateBoardRegionHeight);
+    window.visualViewport?.removeEventListener('resize', updateBoardRegionHeight);
+    window.visualViewport?.removeEventListener('scroll', updateBoardRegionHeight);
+});
 
 const confirmGondolaName = computed(() => (
     pendingFromDetail.value
@@ -163,7 +194,7 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
         </template>
         <KankanNavigationLinks :subdomain="props.subdomain" />
 
-        <div class="flex h-full flex-col">
+        <div class="flex h-full min-h-0 flex-col overflow-hidden">
             <div class="border-b border-border bg-background px-4 py-3">
                 <KanbanFilters
                     :subdomain="props.subdomain"
@@ -178,36 +209,43 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
             </div>
 
             <div
-                v-if="filteredBoard.length === 0"
-                class="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground"
+                ref="boardRegion"
+                class="min-h-0 flex-1 overflow-hidden"
+                :style="{ height: boardRegionHeight, maxHeight: boardRegionHeight }"
             >
-                <Kanban class="size-10 opacity-20" />
-                <p class="text-sm">{{ t('app.kanban.empty_steps') }}</p>
-            </div>
+                <div
+                    v-if="filteredBoard.length === 0"
+                    class="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground"
+                >
+                    <Kanban class="size-10 opacity-20" />
+                    <p class="text-sm">{{ t('app.kanban.empty_steps') }}</p>
+                </div>
 
-            <KanbanBoard
-                v-else
-                :board="filteredBoard"
-                :subdomain="props.subdomain"
-                :current-user-id="currentUserId"
-                :dragging-execution-id="draggingExecutionId"
-                :drag-over-step-id="dragOverStepId"
-                :busy-execution-id="busyExecutionId"
-                :status-class="statusClass"
-                :status-label="statusLabel"
-                :format-date="formatDate"
-                :is-overdue="isOverdue"
-                @dragstart="onDragStart"
-                @dragover="onDragOver"
-                @dragleave="onDragLeave"
-                @drop="onDrop"
-                @details="openExecutionDetails"
-                @start="requestCardAction('start', $event)"
-                @pause="requestCardAction('pause', $event)"
-                @resume="requestCardAction('resume', $event)"
-                @complete="requestCardAction('complete', $event)"
-                @abandon="requestCardAction('abandon', $event)"
-            />
+                <KanbanBoard
+                    v-else
+                    class="h-full min-h-0"
+                    :board="filteredBoard"
+                    :subdomain="props.subdomain"
+                    :current-user-id="currentUserId"
+                    :dragging-execution-id="draggingExecutionId"
+                    :drag-over-step-id="dragOverStepId"
+                    :busy-execution-id="busyExecutionId"
+                    :status-class="statusClass"
+                    :status-label="statusLabel"
+                    :format-date="formatDate"
+                    :is-overdue="isOverdue"
+                    @dragstart="onDragStart"
+                    @dragover="onDragOver"
+                    @dragleave="onDragLeave"
+                    @drop="onDrop"
+                    @details="openExecutionDetails"
+                    @start="requestCardAction('start', $event)"
+                    @pause="requestCardAction('pause', $event)"
+                    @resume="requestCardAction('resume', $event)"
+                    @complete="requestCardAction('complete', $event)"
+                    @abandon="requestCardAction('abandon', $event)"
+                />
+            </div>
         </div>
 
         <KanbanCardDetail
