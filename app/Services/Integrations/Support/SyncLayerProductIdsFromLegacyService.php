@@ -2,11 +2,18 @@
 
 namespace App\Services\Integrations\Support;
 
+use App\Models\TenantIntegration;
+use App\Services\Integrations\Sysmo\SysmoSingleProductIntegrationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class SyncLayerProductIdsFromLegacyService
 {
+    public function __construct(
+        private readonly SysmoSingleProductIntegrationService $singleProductIntegrationService,
+        private readonly DeterministicIdGenerator $deterministicIdGenerator,
+    ) {}
+
     public function countInvalidLayers(string $tenantConnectionName, string $tenantId): int
     {
         return (int) DB::connection($tenantConnectionName)
@@ -30,6 +37,11 @@ class SyncLayerProductIdsFromLegacyService
     {
         $tenantConnection = DB::connection($tenantConnectionName);
         $legacyConnection = DB::connection($legacyConnectionName);
+        $integration = TenantIntegration::query()
+            ->where('tenant_id', $tenantId)
+            ->where('integration_type', 'sysmo')
+            ->where('is_active', true)
+            ->first();
 
         $restoredProducts = $preview
             ? 0
@@ -67,19 +79,37 @@ class SyncLayerProductIdsFromLegacyService
             ->whereNull('l.deleted_at')
             ->whereNull('p.id')
             ->orderBy('l.id')
-            ->select(['l.id', 'l.product_id'])
+            ->leftJoin('segments as sg', 'sg.id', '=', 'l.segment_id')
+            ->leftJoin('shelves as sh', 'sh.id', '=', 'sg.shelf_id')
+            ->leftJoin('sections as sc', 'sc.id', '=', 'sh.section_id')
+            ->select([
+                'l.id',
+                'l.product_id',
+                DB::raw('COALESCE(l.gondola_id, sc.gondola_id) as resolved_gondola_id'),
+            ])
             ->chunk(500, function ($rows) use (
                 $tenantConnection,
                 $legacyConnection,
                 $legacyConnectionName,
                 $tenantId,
                 $preview,
+                $integration,
                 &$legacyMatched,
                 &$tenantMatched,
                 &$updated,
                 &$unresolvedLegacy,
                 &$unresolvedTenant
             ): void {
+                $storeDocumentByGondolaId = $this->resolveStoreDocumentByGondolaId(
+                    tenantConnectionName: $tenantConnection->getName(),
+                    gondolaIds: $rows
+                        ->pluck('resolved_gondola_id')
+                        ->filter(static fn ($id): bool => is_string($id) && $id !== '')
+                        ->unique()
+                        ->values()
+                        ->all(),
+                );
+
                 $legacyIds = $rows
                     ->pluck('product_id')
                     ->filter(static fn ($id) => is_string($id) && $id !== '')
@@ -99,7 +129,7 @@ class SyncLayerProductIdsFromLegacyService
                         static fn ($query) => $query->whereNull('deleted_at')
                     )
                     ->whereNotNull('ean')
-                    ->select(['id', 'ean'])
+                    ->select(['id', 'ean', 'description'])
                     ->get()
                     ->keyBy('id');
 
@@ -137,6 +167,16 @@ class SyncLayerProductIdsFromLegacyService
                     }
 
                     $tenantProduct = $tenantProductsByEan->get($legacyProduct->ean);
+                    if ((! $tenantProduct || ! is_string($tenantProduct->id) || $tenantProduct->id === '') && ! $preview) {
+                        $tenantProduct = $this->resolveProductForLayer(
+                            tenantConnectionName: $tenantConnection->getName(),
+                            tenantId: $tenantId,
+                            integration: $integration,
+                            legacyProduct: $legacyProduct,
+                            layerProductId: (string) $row->product_id,
+                            storeDocument: $storeDocumentByGondolaId[(string) ($row->resolved_gondola_id ?? '')] ?? null,
+                        );
+                    }
 
                     if (! $tenantProduct || ! is_string($tenantProduct->id) || $tenantProduct->id === '') {
                         $unresolvedTenant++;
@@ -180,6 +220,153 @@ class SyncLayerProductIdsFromLegacyService
             'unresolved_legacy' => $unresolvedLegacy,
             'unresolved_tenant' => $unresolvedTenant,
         ];
+    }
+
+    /**
+     * @param  array<int, string>  $gondolaIds
+     * @return array<string, string>
+     */
+    private function resolveStoreDocumentByGondolaId(string $tenantConnectionName, array $gondolaIds): array
+    {
+        if ($gondolaIds === []) {
+            return [];
+        }
+
+        return DB::connection($tenantConnectionName)
+            ->table('gondolas as g')
+            ->join('planograms as p', 'p.id', '=', 'g.planogram_id')
+            ->join('stores as s', 's.id', '=', 'p.store_id')
+            ->whereIn('g.id', $gondolaIds)
+            ->select(['g.id', 's.document'])
+            ->get()
+            ->mapWithKeys(fn (object $row): array => [
+                (string) $row->id => $this->normalizeEmpresaValue($row->document) ?? '',
+            ])
+            ->filter(static fn (string $document): bool => $document !== '')
+            ->all();
+    }
+
+    /**
+     * @param  object{id: string, ean: string, description: ?string}  $legacyProduct
+     */
+    private function resolveProductForLayer(
+        string $tenantConnectionName,
+        string $tenantId,
+        ?TenantIntegration $integration,
+        object $legacyProduct,
+        string $layerProductId,
+        ?string $storeDocument,
+    ): ?object {
+        $ean = trim((string) $legacyProduct->ean);
+        if ($ean === '') {
+            return null;
+        }
+
+        if ($integration instanceof TenantIntegration) {
+            try {
+                $result = $this->singleProductIntegrationService->fetchAndPersist(
+                    integration: $integration,
+                    produto: $ean,
+                    filters: [
+                        'empresa' => $storeDocument,
+                    ],
+                );
+
+                if (($result['found'] ?? false) === true) {
+                    $apiProduct = DB::connection($tenantConnectionName)
+                        ->table('products')
+                        ->where('tenant_id', $tenantId)
+                        ->where('ean', $ean)
+                        ->whereNull('deleted_at')
+                        ->select(['id', 'ean'])
+                        ->first();
+
+                    if ($apiProduct) {
+                        return $apiProduct;
+                    }
+                }
+            } catch (\Throwable) {
+                // Mantém fallback via base legada se API falhar.
+            }
+        }
+
+        $now = now();
+        $codigoErp = $layerProductId;
+        $productId = $this->deterministicIdGenerator->productId($tenantId, $ean, $codigoErp);
+        $productRow = $this->filterProductAttributesByExistingColumns($tenantConnectionName, [
+            'id' => $productId,
+            'tenant_id' => $tenantId,
+            'name' => is_string($legacyProduct->description ?? null) && trim((string) $legacyProduct->description) !== ''
+                ? trim((string) $legacyProduct->description)
+                : sprintf('Produto recuperado via base (%s)', $ean),
+            'slug' => null,
+            'ean' => $ean,
+            'codigo_erp' => $codigoErp,
+            'status' => 'synced',
+            'sync_source' => 'legacy-fallback',
+            'resolution_status' => 'legacy_fallback',
+            'resolution_details' => json_encode([
+                'strategy' => 'legacy_fallback_when_api_not_found',
+                'legacy_product_id' => $layerProductId,
+                'ean' => $ean,
+                'store_document' => $storeDocument,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'additional_information' => 'Produto criado por fallback da base legada após tentativa na API.',
+            'sync_at' => $now,
+            'deleted_at' => null,
+            'updated_at' => $now,
+            'created_at' => $now,
+        ]);
+
+        if ($productRow === []) {
+            return null;
+        }
+
+        $updateColumns = array_values(array_diff(array_keys($productRow), ['id']));
+
+        DB::connection($tenantConnectionName)->table('products')->upsert(
+            [$productRow],
+            ['id'],
+            $updateColumns
+        );
+
+        return DB::connection($tenantConnectionName)
+            ->table('products')
+            ->where('tenant_id', $tenantId)
+            ->where('id', $productId)
+            ->whereNull('deleted_at')
+            ->select(['id', 'ean'])
+            ->first();
+    }
+
+    private function normalizeEmpresaValue(mixed $value): ?string
+    {
+        if (! is_string($value) && ! is_numeric($value)) {
+            return null;
+        }
+
+        $digits = preg_replace('/\D+/', '', (string) $value) ?? '';
+
+        return $digits !== '' ? $digits : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    private function filterProductAttributesByExistingColumns(string $tenantConnectionName, array $attributes): array
+    {
+        static $columnsByConnection = [];
+
+        if (! isset($columnsByConnection[$tenantConnectionName])) {
+            $columnsByConnection[$tenantConnectionName] = Schema::connection($tenantConnectionName)->getColumnListing('products');
+        }
+
+        /** @var array<int, string> $columns */
+        $columns = $columnsByConnection[$tenantConnectionName];
+        $allowedColumns = array_flip($columns);
+
+        return array_intersect_key($attributes, $allowedColumns);
     }
 
     private function restoreSoftDeletedProductsReferencedByLayers(string $tenantConnectionName, string $tenantId): int

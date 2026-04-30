@@ -41,6 +41,29 @@ class ProductController extends Controller
             abort(404);
         }
 
+        $existingDeletedProduct = Product::withTrashed()
+            ->where('tenant_id', $tenantId)
+            ->whereNotNull('deleted_at')
+            ->where(function ($query) use ($validated): void {
+                $query->where('ean', (string) $validated['produto'])
+                    ->orWhere('codigo_erp', (string) $validated['produto']);
+            })
+            ->first();
+
+        if ($existingDeletedProduct instanceof Product) {
+            $existingDeletedProduct->restore();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => 'Produto restaurado com sucesso.',
+            ]);
+
+            return to_route('tenant.products.edit', [
+                ...$this->tenantRouteParameters(),
+                'product' => $existingDeletedProduct->id,
+            ]);
+        }
+
         $integration = TenantIntegration::query()
             ->where('tenant_id', $tenantId)
             ->where('integration_type', 'sysmo')

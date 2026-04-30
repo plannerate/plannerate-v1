@@ -10,6 +10,8 @@ class LayerOrphanProductsReportService
 {
     public function countOrphans(string $tenantConnectionName, string $tenantId): int
     {
+        $dedupeKeyExpression = "COALESCE(NULLIF(p_all.ean, ''), l.product_id)";
+
         return (int) DB::connection($tenantConnectionName)
             ->table('layers as l')
             ->leftJoin('products as p', function ($join) use ($tenantId): void {
@@ -17,11 +19,16 @@ class LayerOrphanProductsReportService
                     ->where('p.tenant_id', '=', $tenantId)
                     ->whereNull('p.deleted_at');
             })
+            ->leftJoin('products as p_all', function ($join) use ($tenantId): void {
+                $join->on('p_all.id', '=', 'l.product_id')
+                    ->where('p_all.tenant_id', '=', $tenantId);
+            })
             ->where('l.tenant_id', $tenantId)
             ->whereNotNull('l.product_id')
             ->whereNull('l.deleted_at')
             ->whereNull('p.id')
-            ->count('l.id');
+            ->selectRaw("COUNT(DISTINCT {$dedupeKeyExpression}) AS total")
+            ->value('total');
     }
 
     /**
@@ -29,6 +36,8 @@ class LayerOrphanProductsReportService
      */
     public function listOrphans(string $tenantConnectionName, string $tenantId, int $limit = 100): Collection
     {
+        $dedupeKeyExpression = "COALESCE(NULLIF(p_all.ean, ''), l.product_id)";
+
         return DB::connection($tenantConnectionName)
             ->table('layers as l')
             ->leftJoin('products as p', function ($join) use ($tenantId): void {
@@ -44,9 +53,16 @@ class LayerOrphanProductsReportService
             ->whereNotNull('l.product_id')
             ->whereNull('l.deleted_at')
             ->whereNull('p.id')
-            ->orderBy('l.id')
+            ->groupBy(DB::raw($dedupeKeyExpression))
+            ->orderByRaw('MIN(l.id)')
             ->limit(max($limit, 1))
-            ->get(['l.id as layer_id', 'l.segment_id', 'l.product_id', 'p_all.ean', 'l.updated_at']);
+            ->get([
+                DB::raw('MIN(l.id) as layer_id'),
+                DB::raw('MIN(l.segment_id) as segment_id'),
+                DB::raw('MIN(l.product_id) as product_id'),
+                DB::raw('MIN(p_all.ean) as ean'),
+                DB::raw('MAX(l.updated_at) as updated_at'),
+            ]);
     }
 
     /**

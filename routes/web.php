@@ -167,6 +167,10 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
 
         Route::get('planograms/maps', [PlanogramController::class, 'maps'])
             ->name('planograms.maps');
+        Route::get('planograms/orphan-layers', [PlanogramController::class, 'orphanLayers'])
+            ->name('planograms.orphan-layers');
+        Route::post('planograms/orphan-layers/sync-fix', [PlanogramController::class, 'syncOrphanLayers'])
+            ->name('planograms.orphan-layers.sync-fix');
 
         Route::resource('planograms/{planogram}/gondolas', GondolaController::class)
             ->except(['show'])

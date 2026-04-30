@@ -221,6 +221,44 @@ test('sync single redirects to edit when product is found', function (): void {
     ], false));
 });
 
+test('sync single restores deleted product and redirects to edit', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenant('tenant-sync-restore');
+    assignTenantAdminRole($user, $tenant->id);
+
+    $product = Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Produto Deletado',
+        'slug' => 'produto-deletado',
+        'ean' => '7896038308600',
+        'codigo_erp' => 'ERP-7896038308600',
+        'status' => 'draft',
+        'dimensions_status' => 'draft',
+    ]);
+
+    $product->delete();
+
+    $mockedService = Mockery::mock(SysmoSingleProductIntegrationService::class);
+    $mockedService->shouldNotReceive('fetchAndPersist');
+    $this->app->instance(SysmoSingleProductIntegrationService::class, $mockedService);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-sync-restore.'.config('app.landlord_domain')])
+        ->post(route('tenant.products.sync-single', ['subdomain' => 'tenant-sync-restore'], false), [
+            'produto' => '7896038308600',
+            'store_ids' => [],
+        ]);
+
+    $response->assertRedirect(route('tenant.products.edit', [
+        'subdomain' => 'tenant-sync-restore',
+        'product' => $product->id,
+    ], false));
+
+    expect(Product::withTrashed()->find($product->id)?->deleted_at)->toBeNull();
+});
+
 /**
  * @return array<string, mixed>
  */

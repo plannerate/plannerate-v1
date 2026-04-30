@@ -3,6 +3,7 @@
 use App\Services\Integrations\Support\SyncLayerProductIdsFromLegacyService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 beforeEach(function (): void {
     config([
@@ -253,4 +254,69 @@ test('service restaura produto local soft deleted referenciado por layer', funct
         'unresolved_tenant' => 0,
     ])
         ->and($product?->deleted_at)->toBeNull();
+});
+
+test('service cria produto via fallback legado quando api não encontra e tenant não possui ean', function (): void {
+    $tenantId = (string) str()->ulid();
+    $now = now();
+
+    DB::table('layers')->insert([
+        'id' => (string) str()->ulid(),
+        'tenant_id' => $tenantId,
+        'product_id' => '01LEGACYPRODUCT000000000777',
+        'status' => 'published',
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    $legacyPath = storage_path('framework/testing/legacy-layer-sync.sqlite');
+    if (! is_dir(dirname($legacyPath))) {
+        mkdir(dirname($legacyPath), 0777, true);
+    }
+    if (! file_exists($legacyPath)) {
+        touch($legacyPath);
+    }
+
+    config([
+        'database.connections.mysql_legacy' => [
+            'driver' => 'sqlite',
+            'database' => $legacyPath,
+            'prefix' => '',
+        ],
+    ]);
+
+    DB::purge('mysql_legacy');
+    $legacy = DB::connection('mysql_legacy');
+    $legacy->statement('DROP TABLE IF EXISTS products');
+    $legacy->statement('CREATE TABLE products (id VARCHAR(26) PRIMARY KEY, ean VARCHAR(255) NULL, description VARCHAR(255) NULL)');
+    $legacy->table('products')->insert([
+        'id' => '01LEGACYPRODUCT000000000777',
+        'ean' => '7891000000775',
+        'description' => 'Produto vindo do legado',
+    ]);
+
+    $summary = app(SyncLayerProductIdsFromLegacyService::class)->sync(
+        tenantConnectionName: (string) config('database.default'),
+        legacyConnectionName: 'mysql_legacy',
+        tenantId: $tenantId,
+        preview: false,
+    );
+
+    $createdProduct = DB::table('products')
+        ->where('tenant_id', $tenantId)
+        ->where('ean', '7891000000775')
+        ->first();
+
+    $layer = DB::table('layers')
+        ->where('tenant_id', $tenantId)
+        ->first();
+
+    expect($summary['updated'])->toBe(1)
+        ->and($createdProduct)->not->toBeNull()
+        ->and($createdProduct?->sync_source)->toBe('legacy-fallback')
+        ->and($layer?->product_id)->toBe((string) $createdProduct?->id);
+
+    if (Schema::hasColumn('products', 'resolution_status')) {
+        expect($createdProduct?->resolution_status)->toBe('legacy_fallback');
+    }
 });

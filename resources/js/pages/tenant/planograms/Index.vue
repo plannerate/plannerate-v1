@@ -108,6 +108,11 @@ const pageMeta = useCrudPageMeta({
         <KankanNavigationLinks :subdomain="props.subdomain" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
+                <Button variant="outline" as-child>
+                    <Link :href="PlanogramController.orphanLayers.url(props.subdomain)">
+                        Layers órfãs
+                    </Link>
+                </Button>
                 <NewActionButton :href="PlanogramController.create.url(props.subdomain)">
                     {{ t('app.tenant.planograms.actions.new') }}
                 </NewActionButton>

@@ -4,6 +4,7 @@ use App\Models\Category;
 use App\Models\Cluster;
 use App\Models\Gondola;
 use App\Models\Planogram;
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\Store;
 use App\Models\Tenant;
@@ -13,6 +14,7 @@ use App\Models\WorkflowPlanogramStep;
 use App\Models\WorkflowTemplate;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function (): void {
@@ -156,6 +158,87 @@ test('tenant planograms index is isolated by tenant_id', function (): void {
             ->component('tenant/planograms/Index')
             ->has('planograms.data', 1)
             ->where('planograms.data.0.slug', 'planograma-a'));
+});
+
+test('orphan layers page lists only invalid layers from current tenant', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenantA = makeTenantForPlanograms('tenant-planograms-orphans-a');
+    $tenantB = makeTenantForPlanograms('tenant-planograms-orphans-b');
+    assignTenantAdminRoleForPlanograms($user, $tenantA->id);
+
+    $validProduct = Product::query()->create([
+        'tenant_id' => $tenantA->id,
+        'name' => 'Produto válido',
+        'slug' => 'produto-valido-planograma',
+        'ean' => '7891000000119',
+        'codigo_erp' => 'ERP-PLAN-1',
+        'status' => 'published',
+        'dimensions_status' => 'published',
+    ]);
+
+    DB::table('layers')->insert([
+        [
+            'id' => (string) str()->ulid(),
+            'tenant_id' => $tenantA->id,
+            'segment_id' => (string) str()->ulid(),
+            'product_id' => '01ORPHANPRODUCT000000000001',
+            'status' => 'published',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'id' => (string) str()->ulid(),
+            'tenant_id' => $tenantA->id,
+            'segment_id' => (string) str()->ulid(),
+            'product_id' => $validProduct->id,
+            'status' => 'published',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'id' => (string) str()->ulid(),
+            'tenant_id' => $tenantB->id,
+            'segment_id' => (string) str()->ulid(),
+            'product_id' => '01ORPHANPRODUCT000000000099',
+            'status' => 'published',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-planograms-orphans-a.'.config('app.landlord_domain')])
+        ->get(route('tenant.planograms.orphan-layers', ['subdomain' => 'tenant-planograms-orphans-a'], false));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/planograms/OrphanLayers')
+            ->has('orphans.data', 1)
+            ->where('orphans.data.0.product_id_atual', '01ORPHANPRODUCT000000000001'));
+});
+
+test('orphan layers sync endpoint triggers tenant fix command', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForPlanograms('tenant-planograms-orphans-sync');
+    assignTenantAdminRoleForPlanograms($user, $tenant->id);
+
+    Artisan::shouldReceive('call')
+        ->once()
+        ->with('sync:layers-product-ids-from-legacy', [
+            '--tenant' => (string) $tenant->id,
+        ])
+        ->andReturn(0);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-planograms-orphans-sync.'.config('app.landlord_domain')])
+        ->post(route('tenant.planograms.orphan-layers.sync-fix', ['subdomain' => 'tenant-planograms-orphans-sync'], false));
+
+    $response->assertRedirect(route('tenant.planograms.orphan-layers', ['subdomain' => 'tenant-planograms-orphans-sync'], false));
 });
 
 test('maps returns store regions with active execution permissions', function (): void {

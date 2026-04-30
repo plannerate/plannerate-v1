@@ -44,6 +44,8 @@ class Product extends Model
         'sales_purchases',
         'status',
         'sync_source',
+        'resolution_status',
+        'resolution_details',
         'sync_at',
         'no_sales',
         'no_purchases',
@@ -97,6 +99,7 @@ class Product extends Model
             'weight' => 'decimal:2',
             'sync_at' => 'datetime',
             'last_purchase_date' => 'date',
+            'resolution_details' => 'array',
         ];
     }
 

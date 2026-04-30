@@ -15,6 +15,8 @@ use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -135,6 +137,88 @@ class PlanogramController extends Controller
                 'stores' => $this->mapStoresForSelect(),
             ],
         ]);
+    }
+
+    public function orphanLayers(Request $request): Response
+    {
+        $this->authorize('viewAny', Planogram::class);
+
+        $search = $this->requestString($request, 'search');
+        $perPage = $this->resolvePerPage($request, 10);
+        $tenantId = (string) $this->tenantId();
+        $tenantConnectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+
+        $orphans = DB::connection($tenantConnectionName)->table('layers as l')
+            ->leftJoin('products as p', function ($join) use ($tenantId): void {
+                $join->on('p.id', '=', 'l.product_id')
+                    ->where('p.tenant_id', '=', $tenantId)
+                    ->whereNull('p.deleted_at');
+            })
+            ->leftJoin('products as p_all', function ($join) use ($tenantId): void {
+                $join->on('p_all.id', '=', 'l.product_id')
+                    ->where('p_all.tenant_id', '=', $tenantId);
+            })
+            ->where('l.tenant_id', $tenantId)
+            ->whereNotNull('l.product_id')
+            ->whereNull('l.deleted_at')
+            ->whereNull('p.id')
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($where) use ($search): void {
+                    $where->where('l.id', 'like', '%'.$search.'%')
+                        ->orWhere('l.segment_id', 'like', '%'.$search.'%')
+                        ->orWhere('l.product_id', 'like', '%'.$search.'%')
+                        ->orWhere('p_all.ean', 'like', '%'.$search.'%');
+                });
+            })
+            ->orderByDesc('l.updated_at')
+            ->orderByDesc('l.id')
+            ->select([
+                'l.id as layer_id',
+                'l.segment_id',
+                'l.product_id',
+                'p_all.ean',
+                'l.updated_at',
+            ])
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(static fn (object $row): array => [
+                'layer_id' => (string) $row->layer_id,
+                'segment_id' => (string) $row->segment_id,
+                'product_id_atual' => (string) $row->product_id,
+                'ean' => is_string($row->ean) ? $row->ean : null,
+                'updated_at' => is_string($row->updated_at) ? $row->updated_at : null,
+            ]);
+
+        return Inertia::render('tenant/planograms/OrphanLayers', [
+            'subdomain' => $this->tenantSubdomain(),
+            'orphans' => $orphans,
+            'filters' => [
+                'search' => $search,
+            ],
+        ]);
+    }
+
+    public function syncOrphanLayers(): RedirectResponse
+    {
+        $this->authorize('viewAny', Planogram::class);
+
+        $tenantId = (string) $this->tenantId();
+        if ($tenantId === '') {
+            abort(404);
+        }
+
+        $exitCode = Artisan::call('sync:layers-product-ids-from-legacy', [
+            '--tenant' => $tenantId,
+        ]);
+
+        Inertia::flash('toast', [
+            'type' => $exitCode === 0 ? 'success' : 'error',
+            'message' => $exitCode === 0
+                ? 'Correção de layers órfãs iniciada/concluída com sucesso.'
+                : 'Falha ao executar correção de layers órfãs.',
+        ]);
+
+        return to_route('tenant.planograms.orphan-layers', $this->tenantRouteParameters());
     }
 
     /**
