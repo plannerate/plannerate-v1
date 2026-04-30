@@ -96,25 +96,30 @@ const filteredPlanograms = computed(() => {
             </select>
         </div>
 
-        <div class="flex flex-col justify-end gap-1.5 pb-0.5">
-            <label class="flex cursor-pointer items-center gap-2 text-xs text-foreground">
-                <input
-                    type="checkbox"
-                    :checked="onlyOverdue"
-                    class="h-4 w-4 rounded border-input"
-                    @change="emit('update:onlyOverdue', ($event.target as HTMLInputElement).checked)"
-                />
-                {{ t('app.kanban.filters.only_overdue') }}
-            </label>
-            <label class="flex cursor-pointer items-center gap-2 text-xs text-foreground">
-                <input
-                    type="checkbox"
-                    :checked="showCompleted"
-                    class="h-4 w-4 rounded border-input"
-                    @change="emit('update:showCompleted', ($event.target as HTMLInputElement).checked)"
-                />
-                {{ t('app.kanban.filters.show_completed') }}
-            </label>
-        </div>
+        <details class="min-w-44 rounded-lg border border-input bg-background px-3 py-2">
+            <summary class="cursor-pointer text-xs font-medium text-foreground">
+                {{ t('app.kanban.filters.display_options') }}
+            </summary>
+            <div class="mt-2 flex flex-col gap-1.5">
+                <label class="flex cursor-pointer items-center gap-2 text-xs text-foreground">
+                    <input
+                        type="checkbox"
+                        :checked="onlyOverdue"
+                        class="h-4 w-4 rounded border-input"
+                        @change="emit('update:onlyOverdue', ($event.target as HTMLInputElement).checked)"
+                    />
+                    {{ t('app.kanban.filters.only_overdue') }}
+                </label>
+                <label class="flex cursor-pointer items-center gap-2 text-xs text-foreground">
+                    <input
+                        type="checkbox"
+                        :checked="showCompleted"
+                        class="h-4 w-4 rounded border-input"
+                        @change="emit('update:showCompleted', ($event.target as HTMLInputElement).checked)"
+                    />
+                    {{ t('app.kanban.filters.show_completed') }}
+                </label>
+            </div>
+        </details>
     </ListFiltersBar>
 </template>

@@ -5,10 +5,14 @@ import { computed } from 'vue';
 import WorkflowKanbanController from '@/actions/App/Http/Controllers/Tenant/WorkflowKanbanController';
 import { useT } from '@/composables/useT';
 import planograms from '@/routes/tenant/planograms';
+import { cn } from '@/lib/utils';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     subdomain: string;
-}>();
+    class?: string;
+}>(), {
+    class: 'mx-2 mb-3 inline-flex items-center rounded-xl bg-muted p-1 ',
+});
 
 const page = usePage();
 const { t } = useT();
@@ -48,7 +52,10 @@ function linkClasses(isActive: boolean): string {
 </script>
 
 <template>
-    <nav class="mx-2 mb-3 inline-flex items-center rounded-xl bg-muted p-1" :aria-label="t('app.kanban.navigation_views')">
+    <nav
+        :class="cn( props.class)"
+        :aria-label="t('app.kanban.navigation_views')"
+    >
         <Link :href="listPath" :class="linkClasses(isListActive)">
             <LayoutList class="h-4 w-4" />
             <span>{{ t('app.kanban.navigation_list') }}</span>
