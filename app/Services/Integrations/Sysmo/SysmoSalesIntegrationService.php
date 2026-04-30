@@ -146,7 +146,7 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
         }
 
         if ($missingStoreDocumentCount > 0) {
-            Log::warning('Integrations sales skipped rows due to missing store document.', [
+            Log::warning('Sincronização de vendas ignorou linhas por ausência de documento da loja.', [
                 'tenant_id' => $tenantId,
                 'integration_id' => $integrationId,
                 'store_id' => $storeId,

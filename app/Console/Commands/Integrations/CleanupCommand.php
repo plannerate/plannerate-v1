@@ -401,12 +401,20 @@ class CleanupCommand extends Command
             ->table('products')
             ->where('tenant_id', $tenantId)
             ->whereNotNull('deleted_at')
-            ->whereExists(function ($query) use ($cutoffDate): void {
-                $query->select(DB::raw(1))
-                    ->from('sales')
-                    ->whereColumn('sales.product_id', 'products.id')
-                    ->whereColumn('sales.tenant_id', 'products.tenant_id')
-                    ->where('sales.sale_date', '>=', $cutoffDate);
+            ->where(function ($query) use ($cutoffDate): void {
+                $query->whereExists(function ($salesQuery) use ($cutoffDate): void {
+                    $salesQuery->select(DB::raw(1))
+                        ->from('sales')
+                        ->whereColumn('sales.product_id', 'products.id')
+                        ->whereColumn('sales.tenant_id', 'products.tenant_id')
+                        ->where('sales.sale_date', '>=', $cutoffDate);
+                })->orWhereExists(function ($layersQuery): void {
+                    $layersQuery->select(DB::raw(1))
+                        ->from('layers')
+                        ->whereColumn('layers.product_id', 'products.id')
+                        ->whereColumn('layers.tenant_id', 'products.tenant_id')
+                        ->whereNull('layers.deleted_at');
+                });
             })
             ->select('id', 'name', 'ean', 'deleted_at')
             ->get();
@@ -418,7 +426,7 @@ class CleanupCommand extends Command
             return ['count' => 0, 'ids' => []];
         }
 
-        $this->info("      {$count} produtos deletados com vendas");
+        $this->info("      {$count} produtos deletados com vendas recentes ou vinculados em layers");
 
         if ($preview) {
             foreach ($deletedWithSales->take(5) as $product) {
@@ -427,7 +435,7 @@ class CleanupCommand extends Command
             }
         }
 
-        Log::info('Produtos deletados com vendas identificados', [
+        Log::info('Produtos deletados com vendas/layers identificados', [
             'tenant_id' => $tenantId,
             'count' => $count,
             'days' => $days,

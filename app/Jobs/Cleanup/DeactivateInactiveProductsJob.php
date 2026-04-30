@@ -51,6 +51,13 @@ class DeactivateInactiveProductsJob implements NotTenantAware, ShouldQueue
                     ->where('tenant_id', $this->tenantId)
                     ->whereIn('id', $chunk)
                     ->whereNull('deleted_at')
+                    ->whereNotExists(function ($query): void {
+                        $query->select(DB::raw(1))
+                            ->from('layers')
+                            ->whereColumn('layers.product_id', 'products.id')
+                            ->whereColumn('layers.tenant_id', 'products.tenant_id')
+                            ->whereNull('layers.deleted_at');
+                    })
                     ->update([
                         'deleted_at' => now(),
                         'updated_at' => now(),

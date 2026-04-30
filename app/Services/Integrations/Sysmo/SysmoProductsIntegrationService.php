@@ -78,13 +78,15 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         $invalidItemsExamples = [];
 
         foreach ($mappedItems as $item) {
-            if (! $this->validateImportData($item)) {
+            $validationFailureReason = $this->getImportValidationFailureReason($item);
+            if ($validationFailureReason !== null) {
                 $invalidItemsCount++;
 
                 if (count($invalidItemsExamples) < 5) {
                     $invalidItemsExamples[] = [
                         'codigo_erp' => $item['external_id'] ?? null,
                         'ean' => $item['ean'] ?? null,
+                        'motivo' => $validationFailureReason,
                     ];
                 }
 
@@ -139,7 +141,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         }
 
         if ($invalidItemsCount > 0) {
-            Log::warning('Products sync skipped invalid item identities.', [
+            Log::warning('Sincronização de produtos ignorou itens com identidade inválida.', [
                 'tenant_id' => $tenantId,
                 'store_id' => $storeId,
                 'invalid_items_count' => $invalidItemsCount,
@@ -149,7 +151,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         }
 
         if ($productsRows === []) {
-            Log::warning('Products sync skipped persistence: no valid product identity.', [
+            Log::warning('Sincronização de produtos não persistiu registros: nenhuma identidade válida encontrada.', [
                 'tenant_id' => $tenantId,
                 'store_id' => $storeId,
                 'items_count' => count($mappedItems),
@@ -465,12 +467,20 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
      */
     private function validateImportData(array $item): bool
     {
+        return $this->getImportValidationFailureReason($item) === null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    private function getImportValidationFailureReason(array $item): ?string
+    {
         /** @var array<string, mixed> $rawItem */
         $rawItem = is_array($item['raw'] ?? null) ? $item['raw'] : [];
 
         $ean = $this->getProcessedGtin($rawItem, $item);
         if ($ean === null) {
-            return false;
+            return 'GTIN/EAN ausente ou inválido';
         }
 
         $requiredFlags = ['cadastro_ativo', 'ativo_na_empresa', 'pertence_ao_mix'];
@@ -478,11 +488,11 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         foreach ($requiredFlags as $flag) {
             $value = $this->getProcessedValue($flag, $rawItem, $item);
             if ($value === 'N') {
-                return false;
+                return sprintf('Flag %s marcada como N', $flag);
             }
         }
 
-        return true;
+        return null;
     }
 
     /**
