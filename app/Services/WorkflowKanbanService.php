@@ -10,6 +10,8 @@ use App\Models\User;
 use App\Models\WorkflowGondolaExecution;
 use App\Models\WorkflowHistory;
 use App\Models\WorkflowPlanogramStep;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 class WorkflowKanbanService
@@ -221,9 +223,33 @@ class WorkflowKanbanService
     }
 
     /**
+     * Kanban column shell: step metadata, step ids for API fetch, empty executions, total count.
+     *
+     * @return array<int, array{step: array<string, mixed>, step_ids: array<int, string>, executions: array<int, array<string, mixed>>, executions_count: int}>
+     */
+    public function buildColumnStructureForPlanogram(Planogram $planogram): array
+    {
+        $steps = $planogram->workflowSteps()
+            ->with(['template'])
+            ->withCount('executions')
+            ->where('is_skipped', false)
+            ->get()
+            ->sortBy('suggested_order');
+
+        return $steps->map(function (WorkflowPlanogramStep $step) {
+            return [
+                'step' => $this->stepToKanbanArray($step),
+                'step_ids' => [$step->id],
+                'executions' => [],
+                'executions_count' => (int) $step->executions_count,
+            ];
+        })->values()->all();
+    }
+
+    /**
      * Build board data for all gondola executions in a planogram, grouped by step.
      *
-     * @return array<int, array{step: array<string, mixed>, executions: array<int, array<string, mixed>>}>
+     * @return array<int, array{step: array<string, mixed>, step_ids: array<int, string>, executions: array<int, array<string, mixed>>, executions_count: int}>
      */
     public function buildBoardForPlanogram(Planogram $planogram, ?User $user = null): array
     {
@@ -235,44 +261,130 @@ class WorkflowKanbanService
 
         return $steps->map(function (WorkflowPlanogramStep $step) use ($user) {
             return [
-                'step' => [
-                    'id' => $step->id,
-                    'name' => $step->name,
-                    'description' => $step->description,
-                    'color' => $step->color,
-                    'icon' => $step->icon,
-                    'suggested_order' => $step->suggested_order,
-                    'is_required' => $step->is_required,
-                    'is_skipped' => $step->is_skipped,
-                    'status' => $step->status,
-                ],
-                'executions' => $step->executions->map(fn (WorkflowGondolaExecution $exec) => [
-                    'id' => $exec->id,
-                    'gondola_id' => $exec->gondola_id,
-                    'gondola_name' => $exec->gondola?->name,
-                    'gondola_location' => $exec->gondola?->location,
-                    'planogram_name' => $exec->gondola?->planogram?->name,
-                    'step_name' => $step->name,
-                    'status' => $exec->status?->value,
-                    'assigned_to_user' => $exec->currentResponsible ? [
-                        'id' => $exec->currentResponsible->id,
-                        'name' => $exec->currentResponsible->name,
-                    ] : null,
-                    'started_by' => $exec->execution_started_by ? [
-                        'id' => $exec->execution_started_by,
-                        'name' => $exec->startedBy?->name,
-                    ] : null,
-                    'started_at' => $exec->started_at?->toIso8601String(),
-                    'sla_date' => $exec->sla_date?->toIso8601String(),
-                    'can_start' => $user?->can('start', $exec) ?? false,
-                    'can_pause' => $user?->can('pause', $exec) ?? false,
-                    'can_resume' => $user?->can('resume', $exec) ?? false,
-                    'can_complete' => $user?->can('complete', $exec) ?? false,
-                    'can_abandon' => $user?->can('abandon', $exec) ?? false,
-                    'can_move' => $user?->can('move', $exec) ?? false,
-                ])->values()->all(),
+                'step' => $this->stepToKanbanArray($step),
+                'step_ids' => [$step->id],
+                'executions' => $step->executions
+                    ->map(fn (WorkflowGondolaExecution $exec) => $this->mapExecutionToKanbanPayload($exec, $step, $user))
+                    ->values()
+                    ->all(),
+                'executions_count' => $step->executions->count(),
             ];
         })->values()->all();
+    }
+
+    /**
+     * Paginate executions for one or more workflow step ids (merged kanban columns).
+     *
+     * @param  array<int, string>  $stepIds
+     */
+    public function paginateExecutionsForStepIds(
+        array $stepIds,
+        User $user,
+        ?WorkflowExecutionStatus $status,
+        ?string $gondolaSearch,
+        int $perPage = 20,
+        int $page = 1
+    ): LengthAwarePaginator {
+        $steps = WorkflowPlanogramStep::query()
+            ->whereIn('id', $stepIds)
+            ->get();
+
+        if ($steps->count() !== count(array_unique($stepIds))) {
+            abort(404);
+        }
+
+        $tenantId = $steps->first()?->tenant_id;
+
+        if ($tenantId === null || $steps->contains(fn (WorkflowPlanogramStep $s): bool => $s->tenant_id !== $tenantId)) {
+            abort(403);
+        }
+
+        $stepsById = $steps->keyBy('id');
+
+        $query = WorkflowGondolaExecution::query()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('workflow_planogram_step_id', $stepIds)
+            ->with(['gondola.planogram', 'currentResponsible', 'startedBy'])
+            ->when($status !== null, fn (Builder $q) => $q->where('status', $status))
+            ->when(
+                filled($gondolaSearch),
+                fn (Builder $q) => $q->whereHas(
+                    'gondola',
+                    fn (Builder $gq) => $gq->where('name', 'like', '%'.$gondolaSearch.'%')
+                )
+            )
+            ->orderByDesc('updated_at');
+
+        /** @var LengthAwarePaginator<int, WorkflowGondolaExecution> $paginator */
+        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+
+        $paginator->setCollection(
+            $paginator->getCollection()->map(function (WorkflowGondolaExecution $exec) use ($user, $stepsById) {
+                $step = $stepsById->get($exec->workflow_planogram_step_id);
+
+                if ($step === null) {
+                    throw new \LogicException('Workflow step not found for execution.');
+                }
+
+                return $this->mapExecutionToKanbanPayload($exec, $step, $user);
+            })
+        );
+
+        return $paginator;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function mapExecutionToKanbanPayload(
+        WorkflowGondolaExecution $exec,
+        WorkflowPlanogramStep $step,
+        ?User $user = null
+    ): array {
+        return [
+            'id' => $exec->id,
+            'gondola_id' => $exec->gondola_id,
+            'gondola_name' => $exec->gondola?->name,
+            'gondola_location' => $exec->gondola?->location,
+            'planogram_name' => $exec->gondola?->planogram?->name,
+            'step_name' => $step->name,
+            'status' => $exec->status?->value,
+            'assigned_to_user' => $exec->currentResponsible ? [
+                'id' => $exec->currentResponsible->id,
+                'name' => $exec->currentResponsible->name,
+            ] : null,
+            'started_by' => $exec->execution_started_by ? [
+                'id' => $exec->execution_started_by,
+                'name' => $exec->startedBy?->name,
+            ] : null,
+            'started_at' => $exec->started_at?->toIso8601String(),
+            'sla_date' => $exec->sla_date?->toIso8601String(),
+            'can_start' => $user?->can('start', $exec) ?? false,
+            'can_pause' => $user?->can('pause', $exec) ?? false,
+            'can_resume' => $user?->can('resume', $exec) ?? false,
+            'can_complete' => $user?->can('complete', $exec) ?? false,
+            'can_abandon' => $user?->can('abandon', $exec) ?? false,
+            'can_move' => $user?->can('move', $exec) ?? false,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function stepToKanbanArray(WorkflowPlanogramStep $step): array
+    {
+        return [
+            'id' => $step->id,
+            'planogram_id' => $step->planogram_id,
+            'name' => $step->name,
+            'description' => $step->description,
+            'color' => $step->color,
+            'icon' => $step->icon,
+            'suggested_order' => $step->suggested_order,
+            'is_required' => $step->is_required,
+            'is_skipped' => $step->is_skipped,
+            'status' => $step->status,
+        ];
     }
 
     private function recordHistory(

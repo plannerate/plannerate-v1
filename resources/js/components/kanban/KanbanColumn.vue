@@ -1,13 +1,28 @@
 <script setup lang="ts">
+import { useHttp } from '@inertiajs/vue3';
 import { Kanban } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import KanbanColumnExecutionsController from '@/actions/App/Http/Controllers/Tenant/KanbanColumnExecutionsController';
 import KanbanCard from '@/components/kanban/KanbanCard.vue';
 import type { BoardColumn, Execution } from '@/components/kanban/types';
 import { useT } from '@/composables/useT';
 
+type ColumnExecutionsResponse = {
+    data: Execution[];
+    meta: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+    };
+};
+
 const props = defineProps<{
     column: BoardColumn;
     subdomain: string;
+    filters: { planogram_id?: string; store_id?: string; gondola_search?: string; status?: string };
+    replaceColumnExecutions: (stepIds: string[], executions: Execution[]) => void;
+    appendColumnExecutions: (stepIds: string[], more: Execution[]) => void;
     currentUserId: string | null;
     isDragOver: boolean;
     draggingExecutionId: string | null;
@@ -33,6 +48,18 @@ const emit = defineEmits<{
 
 const columnSearch = ref('');
 const { t } = useT();
+const http = useHttp();
+
+const loading = ref(false);
+const loadingMore = ref(false);
+const loadError = ref(false);
+const currentPage = ref(1);
+const lastPage = ref(1);
+const totalFromApi = ref<number | null>(null);
+
+const filterSignature = computed(() => JSON.stringify(props.filters));
+
+const displayCount = computed(() => totalFromApi.value ?? props.column.executions_count);
 
 const visibleExecutions = computed(() => {
     const search = columnSearch.value.toLowerCase().trim();
@@ -47,6 +74,91 @@ const visibleExecutions = computed(() => {
 });
 
 const topColor = computed(() => props.column.step.color ?? '#64748b');
+
+function normalizedUrl(url: string): string {
+    return url.replace(/^\/\/[^/]+/, '');
+}
+
+function buildExecutionsUrl(page: number): string {
+    const base = KanbanColumnExecutionsController.url(props.subdomain);
+    const params = new URLSearchParams();
+
+    for (const id of props.column.step_ids) {
+        params.append('step_ids[]', id);
+    }
+
+    params.set('page', String(page));
+    params.set('per_page', '20');
+
+    if (props.filters.status) {
+        params.set('status', props.filters.status);
+    }
+
+    const gondola = props.filters.gondola_search?.trim();
+
+    if (gondola) {
+        params.set('gondola_search', gondola);
+    }
+
+    return `${normalizedUrl(base)}?${params.toString()}`;
+}
+
+async function fetchPage(page: number, append: boolean): Promise<void> {
+    if (append) {
+        loadingMore.value = true;
+    } else {
+        loading.value = true;
+    }
+
+    loadError.value = false;
+
+    try {
+        const url = buildExecutionsUrl(page);
+        const payload = (await http.get(url)) as ColumnExecutionsResponse;
+
+        lastPage.value = payload.meta.last_page;
+        currentPage.value = payload.meta.current_page;
+        totalFromApi.value = payload.meta.total;
+
+        if (append) {
+            props.appendColumnExecutions(props.column.step_ids, payload.data);
+        } else {
+            props.replaceColumnExecutions(props.column.step_ids, payload.data);
+        }
+    } catch {
+        loadError.value = true;
+    } finally {
+        loading.value = false;
+        loadingMore.value = false;
+    }
+}
+
+function onScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+
+    if (loadingMore.value || loading.value || currentPage.value >= lastPage.value) {
+        return;
+    }
+
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 80) {
+        void fetchPage(currentPage.value + 1, true);
+    }
+}
+
+function retryLoad(): void {
+    void fetchPage(1, false);
+}
+
+onMounted(() => {
+    void fetchPage(1, false);
+});
+
+watch(filterSignature, () => {
+    currentPage.value = 1;
+    lastPage.value = 1;
+    totalFromApi.value = null;
+    void fetchPage(1, false);
+});
 </script>
 
 <template>
@@ -69,7 +181,7 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
                     </p>
                 </div>
                 <span class="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                    {{ column.executions.length }}
+                    {{ displayCount }}
                 </span>
             </div>
 
@@ -81,8 +193,30 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
             />
         </div>
 
-        <div class="kanban-column-scroll flex-1 space-y-2 overflow-y-auto p-2">
-            <template v-if="visibleExecutions.length > 0">
+        <div
+            class="kanban-column-scroll flex-1 space-y-2 overflow-y-auto p-2"
+            @scroll.passive="onScroll"
+        >
+            <div v-if="loadError" class="rounded-md border border-destructive/40 bg-destructive/10 px-2 py-2 text-xs text-destructive">
+                {{ t('app.kanban.column.load_error') }}
+                <button
+                    type="button"
+                    class="mt-1 block font-medium underline"
+                    @click="retryLoad"
+                >
+                    {{ t('app.kanban.column.retry') }}
+                </button>
+            </div>
+
+            <template v-if="loading && column.executions.length === 0 && !loadError">
+                <div
+                    v-for="i in [1, 2, 3, 4]"
+                    :key="i"
+                    class="h-24 animate-pulse rounded-lg bg-muted/40"
+                />
+            </template>
+
+            <template v-else-if="visibleExecutions.length > 0">
                 <KanbanCard
                     v-for="execution in visibleExecutions"
                     :key="execution.id"
@@ -103,10 +237,13 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
                     @complete="emit('complete', $event)"
                     @abandon="emit('abandon', $event)"
                 />
+                <p v-if="loadingMore" class="py-2 text-center text-xs text-muted-foreground">
+                    {{ t('app.kanban.column.loading_more') }}
+                </p>
             </template>
 
             <div
-                v-else
+                v-else-if="!loading"
                 class="flex h-24 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/60 text-xs text-muted-foreground"
             >
                 <Kanban class="size-5 opacity-30" />

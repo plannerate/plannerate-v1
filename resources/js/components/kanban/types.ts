@@ -27,6 +27,7 @@ export type Execution = {
 
 export type BoardStep = {
     id: string;
+    planogram_id?: string | null;
     name: string;
     description: string | null;
     color: string | null;
@@ -39,7 +40,11 @@ export type BoardStep = {
 
 export type BoardColumn = {
     step: BoardStep;
+    /** One or more DB step ids (merged “all planograms” columns). */
+    step_ids: string[];
     executions: Execution[];
+    /** Total executions on step(s) before client filters (overdue / completed toggles). */
+    executions_count: number;
 };
 
 export type ExecutionDetails = {

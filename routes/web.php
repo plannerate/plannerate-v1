@@ -15,6 +15,7 @@ use App\Http\Controllers\Tenant\ClusterController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboardController;
 use App\Http\Controllers\Tenant\Editor\EditorPlanogramController;
 use App\Http\Controllers\Tenant\GondolaController;
+use App\Http\Controllers\Tenant\KanbanColumnExecutionsController;
 use App\Http\Controllers\Tenant\NotificationController;
 use App\Http\Controllers\Tenant\PlanogramController;
 use App\Http\Controllers\Tenant\ProductController;
@@ -194,6 +195,7 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
             // ── KANBAN ────────────────────────────────────────────────
             Route::get('kanban', [WorkflowKanbanController::class, 'index'])->name('kanban.index');
+            Route::get('kanban/column-executions', KanbanColumnExecutionsController::class)->name('kanban.column-executions');
 
             Route::post('kanban/{planogram}/executions', [WorkflowExecutionController::class, 'store'])
                 ->name('kanban.executions.store');

@@ -79,7 +79,7 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
     };
 
     function statusLabel(status: string): string {
-        return t(`app.kanban.executions.status.${status}`);
+        return t(`app.kanban.status.${status}`);
     }
 
     function normalizedUrl(url: string): string {
@@ -108,7 +108,7 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
 
     function reloadBoard(): void {
         router.reload({
-            only: ['board'],
+            only: ['board', 'filters'],
         });
     }
 
