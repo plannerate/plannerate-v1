@@ -5,6 +5,7 @@ import {
     Blocks,
     Building2,
     ChevronRight,
+    FileText,
     FolderKanban,
     FolderTree,
     KeyRound,
@@ -51,6 +52,7 @@ const iconMap = {
     truck: Truck,
     'layout-template': LayoutTemplate,
     'badge-dollar-sign': BadgeDollarSign,
+    'file-text': FileText,
 } as const;
 
 const isItemNode = computed(() => props.node.type === 'item');

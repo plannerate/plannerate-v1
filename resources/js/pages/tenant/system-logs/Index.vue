@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
-import { computed, onMounted, ref } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
+import { computed, onMounted, ref, watch } from 'vue';
 import SystemLogController from '@/actions/App/Http/Controllers/Tenant/SystemLogController';
 import DeleteButton from '@/components/DeleteButton.vue';
 import { Badge } from '@/components/ui/badge';
@@ -39,18 +39,35 @@ const props = defineProps<{
 const { t } = useT();
 const indexPath = SystemLogController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
 const clearPath = SystemLogController.clear.url(props.subdomain).replace(/^\/\/[^/]+/, '');
-const activeFilterParams = computed(() => ({
+const form = ref({
     search: props.filters.search,
-    level: props.filters.level,
-    key_only: props.filters.key_only ? '1' : '',
     file: props.filters.file,
-}));
+    level: props.filters.level,
+    from: props.filters.from,
+    to: props.filters.to,
+    key_only: props.filters.key_only,
+});
+
+watch(
+    () => props.filters,
+    (filters) => {
+        form.value = {
+            search: filters.search,
+            file: filters.file,
+            level: filters.level,
+            from: filters.from,
+            to: filters.to,
+            key_only: filters.key_only,
+        };
+    },
+    { deep: true },
+);
 
 const clearHref = computed(() => {
     const params = new URLSearchParams();
 
-    if (props.filters.file !== '') {
-        params.set('file', props.filters.file);
+    if (form.value.file !== '') {
+        params.set('file', form.value.file);
     }
 
     return params.toString() === '' ? clearPath : `${clearPath}?${params.toString()}`;
@@ -66,31 +83,29 @@ function formatDateTimeLocal(date: Date): string {
     return `${year}-${month}-${day}T${hour}:${minute}`;
 }
 
-function buildPresetHref(hoursBack: number): string {
+function applyFilters(): void {
+    router.get(indexPath, {
+        search: form.value.search || undefined,
+        file: form.value.file || undefined,
+        level: form.value.level || undefined,
+        from: form.value.from || undefined,
+        to: form.value.to || undefined,
+        key_only: form.value.key_only ? 1 : undefined,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+}
+
+function applyPreset(hoursBack: number): void {
     const now = new Date();
     const from = new Date(now.getTime() - hoursBack * 60 * 60 * 1000);
-    const params = new URLSearchParams();
 
-    if (activeFilterParams.value.search !== '') {
-        params.set('search', activeFilterParams.value.search);
-    }
+    form.value.from = formatDateTimeLocal(from);
+    form.value.to = formatDateTimeLocal(now);
 
-    if (activeFilterParams.value.level !== '') {
-        params.set('level', activeFilterParams.value.level);
-    }
-
-    if (activeFilterParams.value.key_only !== '') {
-        params.set('key_only', activeFilterParams.value.key_only);
-    }
-
-    if (activeFilterParams.value.file !== '') {
-        params.set('file', activeFilterParams.value.file);
-    }
-
-    params.set('from', formatDateTimeLocal(from));
-    params.set('to', formatDateTimeLocal(now));
-
-    return `${indexPath}?${params.toString()}`;
+    applyFilters();
 }
 
 const isMounted = ref(false);
@@ -125,29 +140,29 @@ const pageMeta = useCrudPageMeta({
                 </DeleteButton>
             </div>
 
-            <form :action="indexPath" method="get" class="rounded-xl border border-sidebar-border/70 bg-background p-4 dark:border-sidebar-border">
+            <form @submit.prevent="applyFilters" class="rounded-xl border border-sidebar-border/70 bg-background p-4 dark:border-sidebar-border">
                 <div v-if="isMounted" class="mb-3 flex flex-wrap gap-2">
-                    <a :href="buildPresetHref(24)" class="rounded-md border border-border px-2.5 py-1 text-xs text-foreground transition hover:bg-muted/50">
+                    <button type="button" class="rounded-md border border-border px-2.5 py-1 text-xs text-foreground transition hover:bg-muted/50" @click="applyPreset(24)">
                         Últimas 24h
-                    </a>
-                    <a :href="buildPresetHref(24 * 7)" class="rounded-md border border-border px-2.5 py-1 text-xs text-foreground transition hover:bg-muted/50">
+                    </button>
+                    <button type="button" class="rounded-md border border-border px-2.5 py-1 text-xs text-foreground transition hover:bg-muted/50" @click="applyPreset(24 * 7)">
                         Últimos 7 dias
-                    </a>
-                    <a :href="buildPresetHref(24 * 30)" class="rounded-md border border-border px-2.5 py-1 text-xs text-foreground transition hover:bg-muted/50">
+                    </button>
+                    <button type="button" class="rounded-md border border-border px-2.5 py-1 text-xs text-foreground transition hover:bg-muted/50" @click="applyPreset(24 * 30)">
                         Últimos 30 dias
-                    </a>
+                    </button>
                 </div>
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
                     <input
                         type="text"
                         name="search"
-                        :value="filters.search"
+                        v-model="form.search"
                         placeholder="Buscar por termo (SQLSTATE, sync, exception...)"
                         class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 md:col-span-6"
                     />
                     <select
                         name="file"
-                        :value="filters.file"
+                        v-model="form.file"
                         class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 md:col-span-2"
                     >
                         <option v-for="file in files" :key="file" :value="file">
@@ -156,7 +171,7 @@ const pageMeta = useCrudPageMeta({
                     </select>
                     <select
                         name="level"
-                        :value="filters.level"
+                        v-model="form.level"
                         class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 md:col-span-2"
                     >
                         <option value="">Todos os níveis</option>
@@ -167,17 +182,17 @@ const pageMeta = useCrudPageMeta({
                     <input
                         type="datetime-local"
                         name="from"
-                        :value="filters.from"
+                        v-model="form.from"
                         class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 md:col-span-2"
                     />
                     <input
                         type="datetime-local"
                         name="to"
-                        :value="filters.to"
+                        v-model="form.to"
                         class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 md:col-span-2"
                     />
                     <label class="flex items-center gap-2 rounded-lg border border-border px-3 text-sm md:col-span-2">
-                        <input type="checkbox" name="key_only" value="1" :checked="filters.key_only" class="accent-primary" />
+                        <input v-model="form.key_only" type="checkbox" name="key_only" value="1" class="accent-primary" />
                         Só pontos-chave
                     </label>
                     <button

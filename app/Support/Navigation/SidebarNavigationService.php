@@ -125,69 +125,84 @@ class SidebarNavigationService
                     ->authorize('viewAny', Tenant::class)
                     ->setOrder(10);
             })
-            ->item('tenant.categories', function ($item) use ($subdomain): void {
-                $item
-                    ->label(__('app.tenant.categories.navigation'))
-                    ->href(route('tenant.categories.index', ['subdomain' => $subdomain], false))
-                    ->icon('folder-tree')
-                    ->authorize('viewAny', Category::class)
-                    ->setOrder(20);
+            ->group('tenant.catalog', function ($group) use ($subdomain): void {
+                $group
+                    ->label('Catálogo')
+                    ->setOrder(20)
+                    ->item('tenant.products', function ($item) use ($subdomain): void {
+                        $item
+                            ->label(__('app.tenant.products.navigation'))
+                            ->href(route('tenant.products.index', ['subdomain' => $subdomain], false))
+                            ->icon('package')
+                            ->authorize('viewAny', Product::class)
+                            ->setOrder(10);
+                    })
+                    ->item('tenant.categories', function ($item) use ($subdomain): void {
+                        $item
+                            ->label(__('app.tenant.categories.navigation'))
+                            ->href(route('tenant.categories.index', ['subdomain' => $subdomain], false))
+                            ->icon('folder-tree')
+                            ->authorize('viewAny', Category::class)
+                            ->setOrder(20);
+                    });
             })
-            ->item('tenant.products', function ($item) use ($subdomain): void {
-                $item
-                    ->label(__('app.tenant.products.navigation'))
-                    ->href(route('tenant.products.index', ['subdomain' => $subdomain], false))
-                    ->icon('package')
-                    ->authorize('viewAny', Product::class)
-                    ->setOrder(30);
+            ->group('tenant.operational', function ($group) use ($subdomain): void {
+                $group
+                    ->label('Operacional')
+                    ->setOrder(30)
+                    ->item('tenant.stores', function ($item) use ($subdomain): void {
+                        $item
+                            ->label(__('app.tenant.stores.navigation'))
+                            ->href(route('tenant.stores.index', ['subdomain' => $subdomain], false))
+                            ->icon('store')
+                            ->authorize('viewAny', Store::class)
+                            ->setOrder(10);
+                    })
+                    ->item('tenant.sales', function ($item) use ($subdomain): void {
+                        $item
+                            ->label(__('app.tenant.sales.navigation'))
+                            ->href(route('tenant.sales.index', ['subdomain' => $subdomain], false))
+                            ->icon('badge-dollar-sign')
+                            ->authorize('viewAny', Sale::class)
+                            ->setOrder(20);
+                    })
+                    ->item('tenant.clusters', function ($item) use ($subdomain): void {
+                        $item
+                            ->label(__('app.tenant.clusters.navigation'))
+                            ->href(route('tenant.clusters.index', ['subdomain' => $subdomain], false))
+                            ->icon('blocks')
+                            ->authorize('viewAny', Cluster::class)
+                            ->setOrder(30);
+                    })
+                    ->item('tenant.providers', function ($item) use ($subdomain): void {
+                        $item
+                            ->label(__('app.tenant.providers.navigation'))
+                            ->href(route('tenant.providers.index', ['subdomain' => $subdomain], false))
+                            ->icon('truck')
+                            ->authorize('viewAny', Provider::class)
+                            ->setOrder(40);
+                    })
+                    ->item('tenant.planograms', function ($item) use ($subdomain): void {
+                        $item
+                            ->label(__('app.tenant.planograms.navigation'))
+                            ->href(route('tenant.planograms.index', ['subdomain' => $subdomain], false))
+                            ->icon('layout-template')
+                            ->authorize('viewAny', Planogram::class)
+                            ->setOrder(50);
+                    });
             })
-            ->item('tenant.system-logs', function ($item) use ($subdomain): void {
-                $item
-                    ->label('Logs do sistema')
-                    ->href(route('tenant.system-logs.index', ['subdomain' => $subdomain], false))
-                    ->icon('logs')
-                    ->authorize('viewAny', Product::class)
-                    ->setOrder(35);
-            })
-            ->item('tenant.stores', function ($item) use ($subdomain): void {
-                $item
-                    ->label(__('app.tenant.stores.navigation'))
-                    ->href(route('tenant.stores.index', ['subdomain' => $subdomain], false))
-                    ->icon('store')
-                    ->authorize('viewAny', Store::class)
-                    ->setOrder(40);
-            })
-            ->item('tenant.sales', function ($item) use ($subdomain): void {
-                $item
-                    ->label(__('app.tenant.sales.navigation'))
-                    ->href(route('tenant.sales.index', ['subdomain' => $subdomain], false))
-                    ->icon('badge-dollar-sign')
-                    ->authorize('viewAny', Sale::class)
-                    ->setOrder(45);
-            })
-            ->item('tenant.clusters', function ($item) use ($subdomain): void {
-                $item
-                    ->label(__('app.tenant.clusters.navigation'))
-                    ->href(route('tenant.clusters.index', ['subdomain' => $subdomain], false))
-                    ->icon('blocks')
-                    ->authorize('viewAny', Cluster::class)
-                    ->setOrder(50);
-            })
-            ->item('tenant.providers', function ($item) use ($subdomain): void {
-                $item
-                    ->label(__('app.tenant.providers.navigation'))
-                    ->href(route('tenant.providers.index', ['subdomain' => $subdomain], false))
-                    ->icon('truck')
-                    ->authorize('viewAny', Provider::class)
-                    ->setOrder(60);
-            })
-            ->item('tenant.planograms', function ($item) use ($subdomain): void {
-                $item
-                    ->label(__('app.tenant.planograms.navigation'))
-                    ->href(route('tenant.planograms.index', ['subdomain' => $subdomain], false))
-                    ->icon('layout-template')
-                    ->authorize('viewAny', Planogram::class)
-                    ->setOrder(70);
+            ->group('tenant.system', function ($group) use ($subdomain): void {
+                $group
+                    ->label('Sistema')
+                    ->setOrder(40)
+                    ->item('tenant.system-logs', function ($item) use ($subdomain): void {
+                        $item
+                            ->label('Logs do sistema')
+                            ->href(route('tenant.system-logs.index', ['subdomain' => $subdomain], false))
+                            ->icon('file-text')
+                            ->authorize('viewAny', Product::class)
+                            ->setOrder(10);
+                    });
             });
     }
 

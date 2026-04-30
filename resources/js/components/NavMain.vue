@@ -25,7 +25,9 @@ const groups = computed(() => props.nodes.filter((node): node is SharedNavigatio
     </SidebarGroup>
 
     <SidebarGroup v-for="group in groups" :key="group.key" class="px-2 py-0">
-        <SidebarGroupLabel>{{ group.title }}</SidebarGroupLabel>
+        <SidebarGroupLabel class="mb-1 mt-2 border-t border-sidebar-border/70 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {{ group.title }}
+        </SidebarGroupLabel>
         <SidebarGroupContent>
             <SidebarMenu>
                 <NavMenuEntry v-for="node in group.children" :key="node.key" :node="node" />
