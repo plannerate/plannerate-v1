@@ -280,6 +280,15 @@ class ProductController extends Controller
                     ->values()
                     ->all(),
                 'created_at' => $product->created_at?->toDateTimeString(),
+                'dimensions' => [
+                    'width' => $product->width,
+                    'height' => $product->height,
+                    'depth' => $product->depth,
+                    'weight' => $product->weight,
+                    'unit' => $product->unit,
+                ],
+                'current_stock' => $product->current_stock,
+                'last_purchase_date' => $product->last_purchase_date?->toDateTimeString(),
             ]);
     }
 
