@@ -10,6 +10,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\Edit
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Request de validação para salvar mudanças no planograma
@@ -33,8 +34,13 @@ class SaveChangesRequest extends FormRequest
      */
     public function rules(): array
     {
+        $tenantConnectionName = config('multitenancy.tenant_database_connection_name');
+        $gondolasTable = is_string($tenantConnectionName) && $tenantConnectionName !== ''
+            ? $tenantConnectionName.'.gondolas'
+            : 'gondolas';
+
         return [
-            'gondola_id' => 'required|string|exists:gondolas,id',
+            'gondola_id' => ['required', 'string', Rule::exists($gondolasTable, 'id')],
             'changes' => 'required|array|min:1',
             'changes.*.type' => [
                 'required',

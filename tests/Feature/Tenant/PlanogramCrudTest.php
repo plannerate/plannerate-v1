@@ -2,11 +2,15 @@
 
 use App\Models\Category;
 use App\Models\Cluster;
+use App\Models\Gondola;
 use App\Models\Planogram;
 use App\Models\Role;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\WorkflowGondolaExecution;
+use App\Models\WorkflowPlanogramStep;
+use App\Models\WorkflowTemplate;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -152,6 +156,114 @@ test('tenant planograms index is isolated by tenant_id', function (): void {
             ->component('tenant/planograms/Index')
             ->has('planograms.data', 1)
             ->where('planograms.data.0.slug', 'planograma-a'));
+});
+
+test('maps returns store regions with active execution permissions', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForPlanograms('tenant-planograms-maps');
+    assignTenantAdminRoleForPlanograms($user, $tenant->id);
+
+    $store = Store::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Loja Mapa',
+        'slug' => 'loja-mapa',
+        'status' => 'published',
+        'map_image_path' => 'store-maps/mapa-loja.png',
+        'map_regions' => [
+            [
+                'id' => 'regiao-1',
+                'x' => 40,
+                'y' => 20,
+                'width' => 120,
+                'height' => 80,
+                'shape' => 'rectangle',
+                'label' => 'G-01',
+            ],
+        ],
+    ]);
+
+    $cluster = Cluster::query()->create([
+        'tenant_id' => $tenant->id,
+        'store_id' => $store->id,
+        'name' => 'Cluster Mapa',
+        'slug' => 'cluster-mapa',
+        'status' => 'published',
+    ]);
+
+    $planogram = Planogram::query()->create([
+        'tenant_id' => $tenant->id,
+        'store_id' => $store->id,
+        'cluster_id' => $cluster->id,
+        'name' => 'Planograma Mapa',
+        'slug' => 'planograma-mapa',
+        'type' => 'planograma',
+        'status' => 'published',
+    ]);
+
+    $gondola = Gondola::query()->create([
+        'tenant_id' => $tenant->id,
+        'planogram_id' => $planogram->id,
+        'linked_map_gondola_id' => 'regiao-1',
+        'name' => 'Gondola 01',
+        'slug' => 'gondola-01',
+        'status' => 'published',
+    ]);
+
+    $store->update([
+        'map_regions' => [
+            [
+                'id' => 'regiao-1',
+                'x' => 40,
+                'y' => 20,
+                'width' => 120,
+                'height' => 80,
+                'shape' => 'rectangle',
+                'label' => 'G-01',
+            ],
+        ],
+    ]);
+
+    $template = WorkflowTemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Etapa Teste',
+        'slug' => 'etapa-teste',
+        'status' => 'published',
+        'suggested_order' => 1,
+    ]);
+
+    $step = WorkflowPlanogramStep::query()->create([
+        'tenant_id' => $tenant->id,
+        'planogram_id' => $planogram->id,
+        'workflow_template_id' => $template->id,
+        'name' => 'Etapa 1',
+        'status' => 'published',
+    ]);
+
+    WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $tenant->id,
+        'gondola_id' => $gondola->id,
+        'workflow_planogram_step_id' => $step->id,
+        'status' => 'active',
+        'execution_started_by' => $user->id,
+        'started_at' => now(),
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-planograms-maps.'.config('app.landlord_domain')])
+        ->get(route('tenant.planograms.maps', ['subdomain' => 'tenant-planograms-maps'], false));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/planograms/Maps')
+            ->has('store_maps', 1)
+            ->where('store_maps.0.name', 'Loja Mapa')
+            ->where('store_maps.0.can_edit_store', true)
+            ->where('store_maps.0.regions.0.gondola.id', $gondola->id)
+            ->where('store_maps.0.regions.0.gondola.execution_started', true)
+            ->where('store_maps.0.regions.0.gondola.can_open_editor', true));
 });
 
 test('planogram store validates related records ownership by tenant', function (): void {

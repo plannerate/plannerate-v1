@@ -14,6 +14,7 @@ use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class SectionController extends Controller
 {
@@ -192,8 +193,13 @@ class SectionController extends Controller
      */
     public function transfer(Request $request, string $sectionId)
     {
+        $tenantConnectionName = config('multitenancy.tenant_database_connection_name');
+        $gondolasTable = is_string($tenantConnectionName) && $tenantConnectionName !== ''
+            ? $tenantConnectionName.'.gondolas'
+            : 'gondolas';
+
         $validated = $request->validate([
-            'gondola_id' => 'required|string|exists:gondolas,id',
+            'gondola_id' => ['required', 'string', Rule::exists($gondolasTable, 'id')],
         ]);
 
         try {

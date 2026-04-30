@@ -7,12 +7,15 @@ use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\PlanogramStoreRequest;
 use App\Http\Requests\Tenant\PlanogramUpdateRequest;
 use App\Models\Cluster;
+use App\Models\Gondola;
 use App\Models\Planogram;
 use App\Models\Store;
+use App\Models\WorkflowGondolaExecution;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -110,13 +113,174 @@ class PlanogramController extends Controller
         return to_route('tenant.kanban.index', $this->tenantRouteParameters());
     }
 
-    public function maps(): Response
+    public function maps(Request $request): Response
     {
         $this->authorize('viewAny', Planogram::class);
 
+        $search = $this->requestString($request, 'search');
+        $storeId = $this->requestString($request, 'store_id');
+        $status = $this->requestEnum($request, 'status', ['all', 'clickable', 'pending', 'blocked']);
+        $onlyEditable = $request->boolean('only_editable');
+
         return Inertia::render('tenant/planograms/Maps', [
             'subdomain' => $this->tenantSubdomain(),
+            'store_maps' => $this->storeMaps($search, $storeId, $status, $onlyEditable),
+            'filters' => [
+                'search' => $search,
+                'store_id' => $storeId,
+                'status' => $status === '' ? 'all' : $status,
+                'only_editable' => $onlyEditable,
+            ],
+            'filter_options' => [
+                'stores' => $this->mapStoresForSelect(),
+            ],
         ]);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function storeMaps(string $search = '', string $storeId = '', string $status = 'all', bool $onlyEditable = false): array
+    {
+        $stores = Store::query()
+            ->whereNotNull('map_image_path')
+            ->whereNotNull('map_regions')
+            ->orderBy('name')
+            ->get(['id', 'name', 'map_image_path', 'map_regions']);
+
+        $regionIds = $stores
+            ->pluck('map_regions')
+            ->flatten(1)
+            ->pluck('id')
+            ->filter(fn (mixed $regionId): bool => is_string($regionId) && $regionId !== '')
+            ->unique()
+            ->values();
+
+        $gondolas = Gondola::query()
+            ->with('planogram:id,store_id')
+            ->whereIn('linked_map_gondola_id', $regionIds->all())
+            ->get(['id', 'name', 'planogram_id', 'linked_map_gondola_id'])
+            ->keyBy('linked_map_gondola_id');
+
+        $gondolaIds = $gondolas
+            ->pluck('id')
+            ->filter(fn (mixed $gondolaId): bool => is_string($gondolaId) && $gondolaId !== '')
+            ->values();
+
+        $activeExecutions = WorkflowGondolaExecution::query()
+            ->whereIn('gondola_id', $gondolaIds->all())
+            ->where('status', 'active')
+            ->orderByDesc('started_at')
+            ->get(['id', 'gondola_id', 'execution_started_by', 'status'])
+            ->groupBy('gondola_id')
+            ->map(fn ($executions) => $executions->first());
+
+        $normalizedStatus = in_array($status, ['all', 'clickable', 'pending', 'blocked'], true) ? $status : 'all';
+        $normalizedSearch = mb_strtolower(trim($search));
+
+        return $stores
+            ->map(function (Store $store) use ($gondolas, $activeExecutions): array {
+                $regions = collect($store->map_regions ?? [])
+                    ->filter(fn (mixed $region): bool => is_array($region))
+                    ->map(function (array $region) use ($gondolas, $activeExecutions): array {
+                        $regionId = is_string($region['id'] ?? null) ? $region['id'] : null;
+                        $gondola = $regionId ? $gondolas->get($regionId) : null;
+                        $execution = $gondola ? $activeExecutions->get($gondola->id) : null;
+                        $user = request()->user();
+                        $canUpdateGondola = $gondola && $user ? $user->can('update', $gondola) : false;
+                        $canViewGondola = $gondola && $user ? $user->can('view', $gondola) : false;
+                        $canOpenEditor = $canUpdateGondola && $execution !== null;
+
+                        return [
+                            'id' => (string) ($region['id'] ?? ''),
+                            'label' => is_string($region['label'] ?? null) ? $region['label'] : null,
+                            'x' => (int) ($region['x'] ?? 0),
+                            'y' => (int) ($region['y'] ?? 0),
+                            'width' => max(20, (int) ($region['width'] ?? 20)),
+                            'height' => max(20, (int) ($region['height'] ?? 20)),
+                            'shape' => in_array($region['shape'] ?? 'rectangle', ['rectangle', 'circle'], true)
+                                ? $region['shape']
+                                : 'rectangle',
+                            'gondola' => $gondola ? [
+                                'id' => $gondola->id,
+                                'name' => $gondola->name,
+                                'execution_id' => $execution?->id,
+                                'execution_started' => $execution !== null,
+                                'can_open_editor' => $canOpenEditor,
+                                'can_view' => $canViewGondola,
+                            ] : null,
+                        ];
+                    })
+                    ->values()
+                    ->all();
+
+                return [
+                    'id' => $store->id,
+                    'name' => $store->name,
+                    'can_edit_store' => request()->user()?->can('update', $store) ?? false,
+                    'map_image_url' => $store->map_image_path ? Storage::disk('public')->url($store->map_image_path) : null,
+                    'regions' => $regions,
+                ];
+            })
+            ->filter(function (array $store) use ($normalizedSearch, $storeId, $normalizedStatus, $onlyEditable): bool {
+                if ($store['map_image_url'] === null || count($store['regions']) === 0) {
+                    return false;
+                }
+
+                if ($normalizedSearch !== '' && ! str_contains(mb_strtolower((string) $store['name']), $normalizedSearch)) {
+                    return false;
+                }
+
+                if ($storeId !== '' && (string) $store['id'] !== $storeId) {
+                    return false;
+                }
+
+                if ($onlyEditable && ! $store['can_edit_store']) {
+                    return false;
+                }
+
+                if ($normalizedStatus === 'clickable') {
+                    return collect($store['regions'])->contains(function (array $region): bool {
+                        return (bool) data_get($region, 'gondola.execution_started')
+                            && ((bool) data_get($region, 'gondola.can_open_editor') || (bool) data_get($region, 'gondola.can_view'));
+                    });
+                }
+
+                if ($normalizedStatus === 'pending') {
+                    return collect($store['regions'])->contains(fn (array $region): bool => (bool) data_get($region, 'gondola') && ! (bool) data_get($region, 'gondola.execution_started'));
+                }
+
+                if ($normalizedStatus === 'blocked') {
+                    return collect($store['regions'])->contains(function (array $region): bool {
+                        if (! (bool) data_get($region, 'gondola.execution_started')) {
+                            return false;
+                        }
+
+                        return ! (bool) data_get($region, 'gondola.can_open_editor')
+                            && ! (bool) data_get($region, 'gondola.can_view');
+                    });
+                }
+
+                return true;
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array{id: string, name: string}>
+     */
+    private function mapStoresForSelect(): array
+    {
+        return Store::query()
+            ->whereNotNull('map_image_path')
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (Store $store): array => [
+                'id' => $store->id,
+                'name' => $store->name,
+            ])
+            ->all();
     }
 
     public function store(PlanogramStoreRequest $request): RedirectResponse

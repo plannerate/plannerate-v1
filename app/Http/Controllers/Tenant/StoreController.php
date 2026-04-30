@@ -251,8 +251,7 @@ class StoreController extends Controller
                     : 'rectangle',
                 'label' => $this->nullableMapString($region['label'] ?? null),
                 'type' => $this->nullableMapString($region['type'] ?? 'gondola') ?? 'gondola',
-                'color' => $this->nullableMapString($region['color'] ?? null),
-                'gondola_id' => $this->nullableMapString($region['gondola_id'] ?? null),
+                'color' => $this->nullableMapString($region['color'] ?? null), 
             ])
             ->values()
             ->all();
