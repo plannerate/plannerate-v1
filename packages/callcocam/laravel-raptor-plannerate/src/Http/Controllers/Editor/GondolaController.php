@@ -240,14 +240,19 @@ class GondolaController extends Controller
             );
         }
 
-        // Obter IDs de produtos já usados — gondola_id direto na tabela layers (sem JOINs)
-        // Cacheado por 2 min: muda apenas quando usuário move produtos no editor
+        // Obter IDs de produtos já usados na gôndola.
+        // Usa JOINs via segment -> shelf -> section para evitar depender de colunas
+        // auxiliares inexistentes em layers.
         $gondolaId = $gondola->id;
         $usedProductIds = Layer::query()
-            ->where('gondola_id', $gondolaId)
+            ->join('segments', 'segments.id', '=', 'layers.segment_id')
+            ->join('shelves', 'shelves.id', '=', 'segments.shelf_id')
+            ->join('sections', 'sections.id', '=', 'shelves.section_id')
+            ->where('sections.gondola_id', $gondolaId)
             ->whereNotNull('product_id')
+            ->whereNull('layers.deleted_at')
             ->distinct()
-            ->pluck('product_id')
+            ->pluck('layers.product_id')
             ->toArray();
 
         // Query de produtos
@@ -269,14 +274,16 @@ class GondolaController extends Controller
             });
         }
 
-        // Filtro de produtos usados — whereNotExists é muito mais rápido que whereNotIn
-        // com arrays grandes: MySQL usa o índice de gondola_id+product_id diretamente
+        // Filtro de produtos usados via cadeia relacional (layers -> segments -> shelves -> sections)
         if (! $showUsed) {
             $query->whereNotExists(function ($sub) use ($gondolaId): void {
                 $sub->select(DB::raw(1))
                     ->from('layers')
+                    ->join('segments', 'segments.id', '=', 'layers.segment_id')
+                    ->join('shelves', 'shelves.id', '=', 'segments.shelf_id')
+                    ->join('sections', 'sections.id', '=', 'shelves.section_id')
                     ->whereColumn('layers.product_id', 'products.id')
-                    ->where('layers.gondola_id', $gondolaId)
+                    ->where('sections.gondola_id', $gondolaId)
                     ->whereNull('layers.deleted_at');
             });
         }

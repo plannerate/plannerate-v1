@@ -57,9 +57,6 @@ class GondolaService
             'scale_factor' => $data['scaleFactor'] ?? 1,
             'flow' => $data['flow'] ?? 'left_to_right',
             'status' => $data['status'] ?? 'draft',
-            'height' => $data['height'] ?? 0,
-            'width' => $data['width'] ?? 0,
-            'depth' => $data['baseDepth'] ?? 0,
         ]);
     }
 
@@ -237,7 +234,6 @@ class GondolaService
     {
         $allowedFields = [
             'name',
-            'description',
             'status',
             'alignment',
             'scale_factor',

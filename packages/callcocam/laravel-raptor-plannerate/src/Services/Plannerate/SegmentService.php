@@ -240,7 +240,7 @@ class SegmentService
     public function update(string $segmentId, array $data): bool
     {
         // Campos permitidos (inclui shelf_id para mover segmento entre shelves)
-        $allowedFields = ['shelf_id', 'width', 'height', 'depth', 'position_x', 'position_y', 'ordering', 'alignment', 'spacing', 'quantity', 'deleted_at'];
+        $allowedFields = ['shelf_id', 'width', 'height', 'ordering', 'alignment', 'spacing', 'quantity', 'deleted_at'];
         $updates = array_intersect_key($data, array_flip($allowedFields));
 
         if (empty($updates)) {

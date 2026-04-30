@@ -79,7 +79,7 @@ class LayerService
         }
 
         // Filtra campos válidos do segment
-        $segmentFields = ['id', 'shelf_id', 'width', 'height', 'depth', 'position_x', 'position_y', 'ordering', 'alignment', 'spacing', 'quantity', 'deleted_at'];
+        $segmentFields = ['id', 'shelf_id', 'width', 'height', 'ordering', 'alignment', 'spacing', 'quantity', 'deleted_at'];
         $segmentData = array_intersect_key($segment, array_flip($segmentFields));
 
         // Cria segment
@@ -130,7 +130,7 @@ class LayerService
      */
     public function update(string $layerId, array $data): bool
     {
-        $allowedFields = ['position_x', 'position_y', 'position_z', 'quantity', 'rotation', 'deleted_at'];
+        $allowedFields = ['quantity', 'deleted_at'];
         $updates = array_intersect_key($data, array_flip($allowedFields));
 
         if (empty($updates)) {

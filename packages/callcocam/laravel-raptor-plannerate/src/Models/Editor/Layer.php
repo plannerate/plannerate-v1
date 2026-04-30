@@ -18,22 +18,6 @@ class Layer extends Model
 {
     use BelongsToTenant, HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
 
-    protected static function boot(): void
-    {
-        parent::boot();
-
-        // Auto-popula gondola_id a partir de segment→shelf→section para evitar JOINs na leitura
-        static::creating(function (self $layer): void {
-            if (! $layer->gondola_id && $layer->segment_id) {
-                $layer->gondola_id = $layer->getConnection()->table('segments')
-                    ->join('shelves', 'shelves.id', '=', 'segments.shelf_id')
-                    ->join('sections', 'sections.id', '=', 'shelves.section_id')
-                    ->where('segments.id', $layer->segment_id)
-                    ->value('sections.gondola_id');
-            }
-        });
-    }
-
     public function product()
     {
         return $this->belongsTo(Product::class);

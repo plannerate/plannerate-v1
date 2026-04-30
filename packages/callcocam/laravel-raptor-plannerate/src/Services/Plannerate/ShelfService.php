@@ -62,7 +62,7 @@ class ShelfService
     public function create(string $shelfId, array $data): bool
     {
         // Campos permitidos para criação
-        $allowedFields = ['section_id', 'shelf_position', 'shelf_width', 'shelf_height', 'shelf_depth', 'shelf_thickness', 'shelf_color', 'product_type', 'ordering', 'alignment', 'spacing'];
+        $allowedFields = ['section_id', 'shelf_position', 'shelf_width', 'shelf_height', 'shelf_depth', 'product_type', 'ordering', 'alignment', 'spacing'];
         $insertData = array_intersect_key($data, array_flip($allowedFields));
 
         // Validação: section_id é obrigatória
@@ -120,7 +120,7 @@ class ShelfService
             }
 
             // Filtra campos válidos do segment
-            $segmentFields = ['id', 'segment_position', 'width', 'height', 'depth', 'position_x', 'position_y', 'ordering', 'alignment', 'spacing', 'quantity'];
+            $segmentFields = ['id', 'width', 'height', 'ordering', 'alignment', 'spacing', 'quantity'];
             $segmentInsert = array_intersect_key($segmentData, array_flip($segmentFields));
 
             // Cria segment vinculado à shelf
@@ -153,7 +153,7 @@ class ShelfService
                 }
 
                 // Filtra campos válidos da layer
-                $layerFields = ['id', 'layer_position', 'product_id', 'height', 'alignment', 'spacing', 'quantity'];
+                $layerFields = ['id', 'product_id', 'height', 'alignment', 'spacing', 'quantity'];
                 $layerInsert = array_intersect_key($layerData, array_flip($layerFields));
 
                 // Cria layer vinculada ao segment

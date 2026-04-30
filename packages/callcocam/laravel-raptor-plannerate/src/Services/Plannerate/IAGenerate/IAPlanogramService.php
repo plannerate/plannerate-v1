@@ -399,7 +399,7 @@ class IAPlanogramService
 
         $categories = Category::on($this->plannerateTenantConnectionName())
             ->whereIn('id', $categoryIds)
-            ->get(['id', 'name', 'parent_id'])
+            ->get(['id', 'name', 'category_id'])
             ->toArray();
 
         return $categories;
