@@ -158,14 +158,6 @@ class SidebarNavigationService
                             ->authorize('viewAny', Store::class)
                             ->setOrder(10);
                     })
-                    ->item('tenant.sales', function ($item) use ($subdomain): void {
-                        $item
-                            ->label(__('app.tenant.sales.navigation'))
-                            ->href(route('tenant.sales.index', ['subdomain' => $subdomain], false))
-                            ->icon('badge-dollar-sign')
-                            ->authorize('viewAny', Sale::class)
-                            ->setOrder(20);
-                    })
                     ->item('tenant.clusters', function ($item) use ($subdomain): void {
                         $item
                             ->label(__('app.tenant.clusters.navigation'))
@@ -191,10 +183,23 @@ class SidebarNavigationService
                             ->setOrder(50);
                     });
             })
+            ->group('tenant.analytics', function ($group) use ($subdomain): void {
+                $group
+                    ->label('Analytics')
+                    ->setOrder(40)
+                    ->item('tenant.sales', function ($item) use ($subdomain): void {
+                        $item
+                            ->label(__('app.tenant.sales.navigation'))
+                            ->href(route('tenant.sales.index', ['subdomain' => $subdomain], false))
+                            ->icon('badge-dollar-sign')
+                            ->authorize('viewAny', Sale::class)
+                            ->setOrder(10);
+                    });
+            })
             ->group('tenant.system', function ($group) use ($subdomain): void {
                 $group
                     ->label('Sistema')
-                    ->setOrder(40)
+                    ->setOrder(50)
                     ->item('tenant.system-logs', function ($item) use ($subdomain): void {
                         $item
                             ->label('Logs do sistema')
