@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Contracts\ProductImageAiEditor;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\FetchRepositoryProductImageRequest;
 use App\Http\Requests\Tenant\ProcessProductImageRequest;
@@ -21,7 +22,8 @@ class ProductImageController extends Controller
     use InteractsWithTenantContext;
 
     public function __construct(
-        protected ProductRepositoryImageResolver $repositoryImageResolver
+        protected ProductRepositoryImageResolver $repositoryImageResolver,
+        protected ProductImageAiEditor $productImageAiEditor
     ) {}
 
     public function upload(UploadProductImageRequest $request): JsonResponse
@@ -108,6 +110,7 @@ class ProductImageController extends Controller
     public function fetchFromRepository(FetchRepositoryProductImageRequest $request): JsonResponse
     {
         $ean = (string) $request->string('ean');
+        $processWithAi = $request->boolean('process_with_ai');
         $result = $this->repositoryImageResolver->resolveByEan($ean);
         $resolutionDebug = $this->repositoryImageResolver->lastResolutionDebug();
 
@@ -123,6 +126,31 @@ class ProductImageController extends Controller
                 'message' => __('app.tenant.products.form.image_repository.not_found'),
                 'debug' => $resolutionDebug,
             ], 404);
+        }
+
+        if ($processWithAi && isset($result['path']) && is_string($result['path'])) {
+            try {
+                $processedTargetPath = sprintf(
+                    'products/processed/%s/%s-%s.webp',
+                    $this->tenantId(),
+                    $ean !== '' ? $ean : 'ean',
+                    Str::lower((string) Str::ulid()),
+                );
+                $processedPath = $this->productImageAiEditor->process($result['path'], $processedTargetPath);
+                $result['path'] = $processedPath;
+                $result['public_url'] = Storage::disk('public')->url($processedPath);
+                $result['ai_processed'] = true;
+            } catch (\Throwable $exception) {
+                Log::warning('ProductImageController.fetchFromRepository: falha ao processar imagem com IA', [
+                    'tenant_id' => $this->tenantId(),
+                    'user_id' => $request->user()?->getAuthIdentifier(),
+                    'ean' => $ean,
+                    'path' => $result['path'],
+                    'error' => $exception->getMessage(),
+                ]);
+                $result['ai_processed'] = false;
+                $result['ai_error'] = $exception->getMessage();
+            }
         }
 
         return response()->json($result);

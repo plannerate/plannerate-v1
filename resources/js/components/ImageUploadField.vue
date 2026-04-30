@@ -53,8 +53,9 @@ const statusHttp = useHttp<Record<string, never>, {
     public_url?: string;
     error_message?: string;
 }>({});
-const repositoryHttp = useHttp<{ ean: string }, { path?: string; public_url?: string }>({
+const repositoryHttp = useHttp<{ ean: string; process_with_ai: boolean }, { path?: string; public_url?: string; ai_processed?: boolean; ai_error?: string }>({
     ean: '',
+    process_with_ai: false,
 });
 
 function toHttpRoute(route: { url: string; method: string }): UrlMethodPair {
@@ -214,6 +215,7 @@ async function fetchFromRepository(): Promise<boolean> {
 
     try {
         repositoryHttp.ean = currentEan;
+        repositoryHttp.process_with_ai = props.aiEnabled;
 
         const payload = await repositoryHttp.submit(
             toHttpRoute(imageRoutes.repository.fetch(props.subdomain))
@@ -227,6 +229,12 @@ async function fetchFromRepository(): Promise<boolean> {
 
         if (typeof payload.public_url === 'string') {
             previewUrl.value = payload.public_url;
+        }
+
+        if (payload.ai_processed === true) {
+            emit('aiProcessed', payload.path);
+        } else if (typeof payload.ai_error === 'string' && payload.ai_error !== '') {
+            emit('error', payload.ai_error);
         }
 
         emit('repositoryProcessed', payload.path);
