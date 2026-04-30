@@ -15,7 +15,6 @@ use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -196,29 +195,6 @@ class PlanogramController extends Controller
                 'search' => $search,
             ],
         ]);
-    }
-
-    public function syncOrphanLayers(): RedirectResponse
-    {
-        $this->authorize('viewAny', Planogram::class);
-
-        $tenantId = (string) $this->tenantId();
-        if ($tenantId === '') {
-            abort(404);
-        }
-
-        $exitCode = Artisan::call('sync:layers-product-ids-from-legacy', [
-            '--tenant' => $tenantId,
-        ]);
-
-        Inertia::flash('toast', [
-            'type' => $exitCode === 0 ? 'success' : 'error',
-            'message' => $exitCode === 0
-                ? 'Correção de layers órfãs iniciada/concluída com sucesso.'
-                : 'Falha ao executar correção de layers órfãs.',
-        ]);
-
-        return to_route('tenant.planograms.orphan-layers', $this->tenantRouteParameters());
     }
 
     /**

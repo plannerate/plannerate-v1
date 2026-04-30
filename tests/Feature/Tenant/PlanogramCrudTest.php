@@ -220,27 +220,6 @@ test('orphan layers page lists only invalid layers from current tenant', functio
             ->where('orphans.data.0.product_id_atual', '01ORPHANPRODUCT000000000001'));
 });
 
-test('orphan layers sync endpoint triggers tenant fix command', function (): void {
-    $user = User::factory()->create();
-    $this->actingAs($user);
-
-    $tenant = makeTenantForPlanograms('tenant-planograms-orphans-sync');
-    assignTenantAdminRoleForPlanograms($user, $tenant->id);
-
-    Artisan::shouldReceive('call')
-        ->once()
-        ->with('sync:layers-product-ids-from-legacy', [
-            '--tenant' => (string) $tenant->id,
-        ])
-        ->andReturn(0);
-
-    $response = $this
-        ->withServerVariables(['HTTP_HOST' => 'tenant-planograms-orphans-sync.'.config('app.landlord_domain')])
-        ->post(route('tenant.planograms.orphan-layers.sync-fix', ['subdomain' => 'tenant-planograms-orphans-sync'], false));
-
-    $response->assertRedirect(route('tenant.planograms.orphan-layers', ['subdomain' => 'tenant-planograms-orphans-sync'], false));
-});
-
 test('maps returns store regions with active execution permissions', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);

@@ -53,14 +53,6 @@ const pageMeta = useCrudPageMeta({
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
                 <Link
-                    :href="PlanogramController.syncOrphanLayers.url(props.subdomain)"
-                    method="post"
-                    as="button"
-                    class="inline-flex h-9 items-center rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground transition hover:bg-muted"
-                >
-                    Corrigir layers órfãs
-                </Link>
-                <Link
                     :href="indexPath"
                     class="inline-flex h-9 items-center rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground transition hover:bg-muted"
                 >

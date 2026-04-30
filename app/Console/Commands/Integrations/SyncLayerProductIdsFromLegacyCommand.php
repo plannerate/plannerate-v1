@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Integrations;
 
+use App\Jobs\Integrations\Support\RunTenantLayerProductIdsSyncJob;
 use App\Models\Tenant;
 use App\Services\Integrations\Support\SyncLayerProductIdsFromLegacyService;
 use Illuminate\Console\Attributes\Description;
@@ -87,6 +88,19 @@ class SyncLayerProductIdsFromLegacyCommand extends Command
 
         if ($shouldSwitchTenantContext && $tenantDatabase === '') {
             $this->warn(sprintf('Tenant %s sem database configurado; sincronização ignorada.', $tenant->id));
+
+            return;
+        }
+
+        if (! $preview && ! $onlyInvalidCount) {
+            RunTenantLayerProductIdsSyncJob::dispatch(
+                tenantId: (string) $tenant->id,
+                tenantConnectionName: $tenantConnection,
+                executeInTenantContext: $shouldSwitchTenantContext,
+                preview: false,
+            );
+
+            $this->line(sprintf('%s: job de sincronização enfileirado.', $tenant->name));
 
             return;
         }

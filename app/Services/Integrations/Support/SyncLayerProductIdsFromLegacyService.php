@@ -223,6 +223,103 @@ class SyncLayerProductIdsFromLegacyService
     }
 
     /**
+     * @return array{updated: bool, unresolved_legacy: bool, unresolved_tenant: bool}
+     */
+    public function syncSingleInvalidLayer(
+        string $tenantConnectionName,
+        string $legacyConnectionName,
+        string $tenantId,
+        string $layerId,
+        string $legacyProductId,
+        ?string $resolvedGondolaId = null,
+    ): array {
+        $tenantConnection = DB::connection($tenantConnectionName);
+        $legacyConnection = DB::connection($legacyConnectionName);
+
+        $integration = TenantIntegration::query()
+            ->where('tenant_id', $tenantId)
+            ->where('integration_type', 'sysmo')
+            ->where('is_active', true)
+            ->first();
+
+        $legacyProduct = $legacyConnection
+            ->table('products')
+            ->where('id', $legacyProductId)
+            ->when(
+                Schema::connection($legacyConnectionName)->hasColumn('products', 'deleted_at'),
+                static fn ($query) => $query->whereNull('deleted_at')
+            )
+            ->whereNotNull('ean')
+            ->select(['id', 'ean', 'description'])
+            ->first();
+
+        if (! $legacyProduct || ! is_string($legacyProduct->ean) || $legacyProduct->ean === '') {
+            return [
+                'updated' => false,
+                'unresolved_legacy' => true,
+                'unresolved_tenant' => false,
+            ];
+        }
+
+        $tenantProduct = $tenantConnection
+            ->table('products')
+            ->where('tenant_id', $tenantId)
+            ->where('ean', $legacyProduct->ean)
+            ->whereNull('deleted_at')
+            ->select(['id', 'ean'])
+            ->first();
+
+        $storeDocumentByGondolaId = $this->resolveStoreDocumentByGondolaId(
+            tenantConnectionName: $tenantConnectionName,
+            gondolaIds: $resolvedGondolaId ? [$resolvedGondolaId] : [],
+        );
+
+        if (! $tenantProduct || ! is_string($tenantProduct->id) || $tenantProduct->id === '') {
+            $tenantProduct = $this->resolveProductForLayer(
+                tenantConnectionName: $tenantConnectionName,
+                tenantId: $tenantId,
+                integration: $integration,
+                legacyProduct: $legacyProduct,
+                layerProductId: $legacyProductId,
+                storeDocument: $storeDocumentByGondolaId[$resolvedGondolaId ?? ''] ?? null,
+            );
+        }
+
+        if (! $tenantProduct || ! is_string($tenantProduct->id) || $tenantProduct->id === '') {
+            return [
+                'updated' => false,
+                'unresolved_legacy' => false,
+                'unresolved_tenant' => true,
+            ];
+        }
+
+        if ($tenantProduct->id === $legacyProductId) {
+            return [
+                'updated' => false,
+                'unresolved_legacy' => false,
+                'unresolved_tenant' => false,
+            ];
+        }
+
+        $updated = $tenantConnection
+            ->table('layers')
+            ->where('id', $layerId)
+            ->where('tenant_id', $tenantId)
+            ->whereNull('deleted_at')
+            ->where('product_id', $legacyProductId)
+            ->update([
+                'product_id' => $tenantProduct->id,
+                'updated_at' => now(),
+            ]);
+
+        return [
+            'updated' => $updated > 0,
+            'unresolved_legacy' => false,
+            'unresolved_tenant' => false,
+        ];
+    }
+
+    /**
      * @param  array<int, string>  $gondolaIds
      * @return array<string, string>
      */
@@ -369,7 +466,7 @@ class SyncLayerProductIdsFromLegacyService
         return array_intersect_key($attributes, $allowedColumns);
     }
 
-    private function restoreSoftDeletedProductsReferencedByLayers(string $tenantConnectionName, string $tenantId): int
+    public function restoreSoftDeletedProductsReferencedByLayers(string $tenantConnectionName, string $tenantId): int
     {
         $tenantConnection = DB::connection($tenantConnectionName);
 
