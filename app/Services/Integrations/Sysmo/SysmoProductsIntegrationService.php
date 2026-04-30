@@ -21,64 +21,6 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
     use ExtractsSysmoPayloadItems;
     use NormalizesSysmoValues;
 
-    /**
-     * EANs monitorados temporariamente para diagnosticar recusas no fluxo de busca geral.
-     *
-     * @var array<int, string>
-     */
-    private const DEBUG_REJECTED_EANS = [
-        '7896032501010',
-        '7896084700157',
-        '7896272200261',
-        '7891150072466',
-        '7891150086456',
-        '7891150086500',
-        '7891150086432',
-        '7891150086449',
-        '7500435244619',
-        '7891150092716',
-        '7891150054561',
-        '7891150061965',
-        '7891150048485',
-        '7896040704120',
-        '7891150028883',
-        '7891150025288',
-        '7896075910022',
-        '7891022101003',
-        '7891242000025',
-        '7891022101478',
-        '7891035502231',
-        '7896115700187',
-        '7896063243026',
-        '7891000304808',
-        '7891000300602',
-        '7896348300895',
-        '7896348300918',
-        '7896089089905',
-        '7896089089912',
-        '7896045102990',
-        '7896005800706',
-        '7896045103003',
-        '7891000184004',
-        '7896045111398',
-        '7891000721834',
-        '7891000284230',
-        '7891000284155',
-        '7891000379691',
-        '7896004007649',
-        '7896004007632',
-        '7896202800318',
-        '7896104804414',
-        '7896104802496',
-        '7896653708928',
-        '7898915414776',
-        '7896180710043',
-        '7896016600104',
-        '7896004400136',
-        '7896411800062',
-        '7896411800017',
-    ];
-
     public function __construct(
         private readonly ExternalApiBaseService $externalApiBaseService,
         private readonly SysmoEndpoints $sysmoEndpoints,
@@ -141,21 +83,11 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         $productsRows = [];
         $invalidItemsCount = 0;
         $invalidItemsExamples = [];
-        $trackedRejectedItems = [];
 
         foreach ($mappedItems as $item) {
             $validationFailureReason = $this->getImportValidationFailureReason($item);
             if ($validationFailureReason !== null) {
                 $invalidItemsCount++;
-                $this->captureTrackedRejectedEan(
-                    tenantId: $tenantId,
-                    storeId: $storeId,
-                    item: $item,
-                    reason: $validationFailureReason,
-                    stage: 'validate_import_data',
-                    trackedRejectedItems: $trackedRejectedItems,
-                );
-
                 if (count($invalidItemsExamples) < 5) {
                     $invalidItemsExamples[] = [
                         'codigo_erp' => $item['external_id'] ?? null,
@@ -173,17 +105,6 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
 
             if ($normalizedEan === null || $externalId === null) {
                 $invalidItemsCount++;
-                $this->captureTrackedRejectedEan(
-                    tenantId: $tenantId,
-                    storeId: $storeId,
-                    item: $item,
-                    reason: $normalizedEan === null
-                        ? 'EAN normalizado ausente/invalidado apos mapeamento'
-                        : 'codigo_erp ausente ou invalido',
-                    stage: 'validate_identity',
-                    trackedRejectedItems: $trackedRejectedItems,
-                );
-
                 if (count($invalidItemsExamples) < 5) {
                     $invalidItemsExamples[] = [
                         'codigo_erp' => $item['external_id'] ?? null,
@@ -235,8 +156,6 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         }
 
         if ($productsRows === []) {
-            $this->flushTrackedRejectedEans($trackedRejectedItems);
-
             Log::warning('Sincronização de produtos não persistiu registros: nenhuma identidade válida encontrada.', [
                 'tenant_id' => $tenantId,
                 'store_id' => $storeId,
@@ -289,8 +208,6 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
                 ['last_synced_at', 'updated_at']
             );
         }
-
-        $this->flushTrackedRejectedEans($trackedRejectedItems);
     }
 
     public function finalizePersistedProductsSync(string $tenantId): void
@@ -540,57 +457,5 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         }
 
         return $this->normalizeString($gtins['gtin'] ?? null);
-    }
-
-    /**
-     * @param  array<string, mixed>  $item
-     */
-    private function captureTrackedRejectedEan(
-        string $tenantId,
-        ?string $storeId,
-        array $item,
-        string $reason,
-        string $stage,
-        array &$trackedRejectedItems,
-    ): void {
-        $rawItem = is_array($item['raw'] ?? null) ? $item['raw'] : [];
-
-        $processedEan = $this->getProcessedGtin($rawItem, $item);
-        $fallbackEan = $this->normalizeEan($item['ean'] ?? null);
-        $eanForTracking = $processedEan ?? $fallbackEan;
-
-        if ($eanForTracking === null || ! in_array($eanForTracking, self::DEBUG_REJECTED_EANS, true)) {
-            return;
-        }
-
-        $trackedRejectedItems[] = [
-            'tenant_id' => $tenantId,
-            'store_id' => $storeId,
-            'stage' => $stage,
-            'ean' => $eanForTracking,
-            'codigo_erp' => $this->normalizeString($item['external_id'] ?? null),
-            'reason' => $reason,
-            'flags' => [
-                'cadastro_ativo' => $this->getProcessedValue('cadastro_ativo', $rawItem, $item),
-                'ativo_na_empresa' => $this->getProcessedValue('ativo_na_empresa', $rawItem, $item),
-                'pertence_ao_mix' => $this->getProcessedValue('pertence_ao_mix', $rawItem, $item),
-            ],
-            'raw_gtins' => $rawItem['gtins'] ?? null,
-        ];
-    }
-
-    /**
-     * @param  array<int, array<string, mixed>>  $trackedRejectedItems
-     */
-    private function flushTrackedRejectedEans(array $trackedRejectedItems): void
-    {
-        if ($trackedRejectedItems === []) {
-            return;
-        }
-
-        Log::warning('Produtos monitorados recusados na busca geral da API (resumo do lote).', [
-            'count' => count($trackedRejectedItems),
-            'items' => $trackedRejectedItems,
-        ]);
     }
 }
