@@ -132,6 +132,122 @@ test('integrations dispatch initial command enqueues jobs for active integration
     Bus::assertDispatched(DispatchTenantIntegrationInitialSyncJob::class, 1);
 });
 
+test('integrations dispatch initial command supports resource option', function () {
+    Bus::fake();
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Initial Resource',
+        'slug' => 'tenant-initial-resource-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.mysql.database'),
+        'status' => 'active',
+    ]));
+
+    TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['sales_initial_days' => 30, 'products_initial_days' => 15]],
+        'is_active' => true,
+    ]);
+
+    $this->artisan('integrations:dispatch-initial --resource=sales')->assertSuccessful();
+
+    Bus::assertDispatched(
+        DispatchTenantIntegrationInitialSyncJob::class,
+        fn (DispatchTenantIntegrationInitialSyncJob $job): bool => $job->resource === 'sales'
+            && $job->ignoreSyncDaysCheck === false
+    );
+});
+
+test('integrations dispatch initial command supports ignore synced days option', function () {
+    Bus::fake();
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Initial Ignore Synced',
+        'slug' => 'tenant-initial-ignore-synced-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.mysql.database'),
+        'status' => 'active',
+    ]));
+
+    TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['sales_initial_days' => 30, 'products_initial_days' => 15]],
+        'is_active' => true,
+    ]);
+
+    $this->artisan('integrations:dispatch-initial --ignore-synced-days')->assertSuccessful();
+
+    Bus::assertDispatched(
+        DispatchTenantIntegrationInitialSyncJob::class,
+        fn (DispatchTenantIntegrationInitialSyncJob $job): bool => $job->resource === null
+            && $job->ignoreSyncDaysCheck === true
+    );
+});
+
+test('integrations dispatch daily command supports resource option', function () {
+    Bus::fake();
+    Notification::fake();
+    $tenantDatabase = tempnam(sys_get_temp_dir(), 'tenant_daily_resource_');
+    config([
+        'multitenancy.tenant_database_connection_name' => 'tenant',
+        'database.connections.tenant' => array_merge(config('database.connections.sqlite'), [
+            'database' => $tenantDatabase,
+        ]),
+    ]);
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Daily Resource',
+        'slug' => 'tenant-daily-resource-'.fake()->numberBetween(100, 999),
+        'database' => $tenantDatabase,
+        'status' => 'active',
+    ]));
+
+    $tenant->execute(function (): void {
+        if (! Schema::connection('tenant')->hasTable('users')) {
+            Schema::connection('tenant')->create('users', function (Blueprint $table): void {
+                $table->ulid('id')->primary();
+                $table->string('name');
+                $table->string('email')->unique();
+                $table->timestamp('email_verified_at')->nullable();
+                $table->string('password');
+                $table->rememberToken();
+                $table->text('two_factor_secret')->nullable();
+                $table->text('two_factor_recovery_codes')->nullable();
+                $table->timestamp('two_factor_confirmed_at')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+            });
+        }
+
+        User::factory()->create(['is_active' => true]);
+    });
+
+    TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['daily_lookback_days' => 7]],
+        'is_active' => true,
+    ]);
+
+    $this->artisan('integrations:dispatch-daily --resource=products')->assertSuccessful();
+
+    Bus::assertDispatched(
+        DispatchTenantIntegrationDailySyncJob::class,
+        fn (DispatchTenantIntegrationDailySyncJob $job): bool => $job->resource === 'products'
+    );
+});
+
+test('dispatch commands fail for invalid resource option', function () {
+    $this->artisan('integrations:dispatch-initial --resource=invalid')->assertFailed();
+    $this->artisan('integrations:dispatch-daily --resource=invalid')->assertFailed();
+});
+
 test('initial sync sales jobs are queued with tenant context', function () {
     config([
         'queue.default' => 'database',
@@ -278,6 +394,53 @@ test('initial sync skips sales dates already marked as success', function () {
 
     Bus::assertNotDispatched(SyncTenantSalesDayJob::class);
     Bus::assertNotDispatched(SyncTenantProductsDayJob::class);
+});
+
+test('initial sync can ignore synced days check when requested', function () {
+    Bus::fake();
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Initial Ignore Check',
+        'slug' => 'tenant-initial-ignore-check-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.mysql.database'),
+        'status' => 'active',
+    ]));
+
+    $integration = TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['sales_initial_days' => 1, 'products_initial_days' => 1]],
+        'is_active' => true,
+    ]);
+
+    $referenceDate = Carbon::yesterday()->toDateString();
+
+    IntegrationSyncDay::query()->create([
+        'tenant_integration_id' => $integration->id,
+        'resource' => 'sales',
+        'reference_date' => $referenceDate,
+        'status' => 'success',
+    ]);
+
+    IntegrationSyncDay::query()->create([
+        'tenant_integration_id' => $integration->id,
+        'resource' => 'products',
+        'reference_date' => $referenceDate,
+        'status' => 'success',
+    ]);
+
+    app(DispatchInitialSyncService::class)->dispatch(
+        integration: $integration,
+        ignoreSyncDaysCheck: true,
+    );
+
+    Bus::assertChained([
+        new SyncTenantSalesDayJob((string) $integration->id, $referenceDate, true),
+        new SyncTenantProductsDayJob((string) $integration->id, $referenceDate, true),
+        new RunTenantIntegrationPostSyncJob((string) $tenant->id),
+    ]);
 });
 
 test('initial sync chains post sync maintenance after initial jobs', function () {

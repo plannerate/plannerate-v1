@@ -9,13 +9,18 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('integrations:dispatch-initial {--tenant=}')]
+#[Signature('integrations:dispatch-initial {--tenant=} {--resource=all} {--ignore-synced-days}')]
 #[Description('Dispara sincronizacao inicial por dias para integracoes ativas')]
 class DispatchInitialCommand extends Command
 {
     public function handle(
         ValidateIntegrationStoresService $validateIntegrationStoresService,
     ): int {
+        $resource = $this->resolveResourceOption();
+        if ($resource === false) {
+            return self::FAILURE;
+        }
+
         $query = TenantIntegration::query()
             ->where('is_active', true);
 
@@ -33,7 +38,11 @@ class DispatchInitialCommand extends Command
                 continue;
             }
 
-            DispatchTenantIntegrationInitialSyncJob::dispatch($integration->id);
+            DispatchTenantIntegrationInitialSyncJob::dispatch(
+                $integration->id,
+                $resource,
+                (bool) $this->option('ignore-synced-days'),
+            );
             $this->line(sprintf('Initial sync dispatched for tenant %s', $integration->tenant_id));
         }
 
@@ -42,5 +51,22 @@ class DispatchInitialCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    private function resolveResourceOption(): string|null|false
+    {
+        $resource = strtolower((string) $this->option('resource'));
+
+        if ($resource === '' || $resource === 'all') {
+            return null;
+        }
+
+        if (! in_array($resource, ['sales', 'products'], true)) {
+            $this->error('Opcao --resource invalida. Use: sales, products ou all.');
+
+            return false;
+        }
+
+        return $resource;
     }
 }

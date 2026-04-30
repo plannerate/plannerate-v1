@@ -13,6 +13,8 @@ class DispatchTenantIntegrationInitialSyncJob implements ShouldQueue
 
     public function __construct(
         public string $integrationId,
+        public ?string $resource = null,
+        public bool $ignoreSyncDaysCheck = false,
     ) {}
 
     public function handle(DispatchInitialSyncService $dispatchInitialSyncService): void
@@ -26,6 +28,10 @@ class DispatchTenantIntegrationInitialSyncJob implements ShouldQueue
             return;
         }
 
-        $dispatchInitialSyncService->dispatch($integration);
+        $dispatchInitialSyncService->dispatch(
+            integration: $integration,
+            resource: $this->resource,
+            ignoreSyncDaysCheck: $this->ignoreSyncDaysCheck,
+        );
     }
 }

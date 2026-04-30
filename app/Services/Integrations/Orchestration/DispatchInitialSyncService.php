@@ -17,8 +17,11 @@ class DispatchInitialSyncService
         private readonly TenantIntegrationConfigNormalizer $configNormalizer,
     ) {}
 
-    public function dispatch(TenantIntegration $integration): void
-    {
+    public function dispatch(
+        TenantIntegration $integration,
+        ?string $resource = null,
+        bool $ignoreSyncDaysCheck = false,
+    ): void {
         $tenant = $integration->tenant;
         if (! $tenant) {
             return;
@@ -30,35 +33,45 @@ class DispatchInitialSyncService
         $salesInitialDays = max(1, (int) ($processing['sales_initial_days'] ?? 120));
 
         $salesStart = $yesterday->copy()->subDays($salesInitialDays - 1);
-        $tenant->execute(function () use ($integration, $salesStart, $yesterday): void {
+        $tenant->execute(function () use ($integration, $salesStart, $yesterday, $resource, $ignoreSyncDaysCheck): void {
             $jobs = [];
 
-            for ($date = $salesStart->copy(); $date->lte($yesterday); $date->addDay()) {
-                $referenceDate = $date->toDateString();
+            if ($resource === null || $resource === 'sales') {
+                for ($date = $salesStart->copy(); $date->lte($yesterday); $date->addDay()) {
+                    $referenceDate = $date->toDateString();
 
-                $alreadySynced = IntegrationSyncDay::query()
-                    ->where('tenant_integration_id', $integration->id)
-                    ->where('resource', 'sales')
-                    ->whereDate('reference_date', $referenceDate)
-                    ->where('status', 'success')
-                    ->exists();
+                    if (! $ignoreSyncDaysCheck) {
+                        $alreadySynced = IntegrationSyncDay::query()
+                            ->where('tenant_integration_id', $integration->id)
+                            ->where('resource', 'sales')
+                            ->whereDate('reference_date', $referenceDate)
+                            ->where('status', 'success')
+                            ->exists();
 
-                if ($alreadySynced) {
-                    continue;
+                        if ($alreadySynced) {
+                            continue;
+                        }
+                    }
+
+                    $jobs[] = new SyncTenantSalesDayJob((string) $integration->id, $referenceDate, true);
                 }
-
-                $jobs[] = new SyncTenantSalesDayJob((string) $integration->id, $referenceDate, true);
             }
 
             $productsReferenceDate = $yesterday->toDateString();
-            $productsAlreadySynced = IntegrationSyncDay::query()
-                ->where('tenant_integration_id', $integration->id)
-                ->where('resource', 'products')
-                ->where('status', 'success')
-                ->exists();
+            if ($resource === null || $resource === 'products') {
+                if ($ignoreSyncDaysCheck) {
+                    $jobs[] = new SyncTenantProductsDayJob((string) $integration->id, $productsReferenceDate, true);
+                } else {
+                    $productsAlreadySynced = IntegrationSyncDay::query()
+                        ->where('tenant_integration_id', $integration->id)
+                        ->where('resource', 'products')
+                        ->where('status', 'success')
+                        ->exists();
 
-            if (! $productsAlreadySynced) {
-                $jobs[] = new SyncTenantProductsDayJob((string) $integration->id, $productsReferenceDate, true);
+                    if (! $productsAlreadySynced) {
+                        $jobs[] = new SyncTenantProductsDayJob((string) $integration->id, $productsReferenceDate, true);
+                    }
+                }
             }
 
             if ($jobs === []) {

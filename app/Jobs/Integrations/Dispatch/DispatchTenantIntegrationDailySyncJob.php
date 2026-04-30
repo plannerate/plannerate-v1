@@ -13,6 +13,7 @@ class DispatchTenantIntegrationDailySyncJob implements ShouldQueue
 
     public function __construct(
         public string $integrationId,
+        public ?string $resource = null,
     ) {}
 
     public function handle(DispatchDailySyncService $dispatchDailySyncService): void
@@ -26,6 +27,9 @@ class DispatchTenantIntegrationDailySyncJob implements ShouldQueue
             return;
         }
 
-        $dispatchDailySyncService->dispatch($integration);
+        $dispatchDailySyncService->dispatch(
+            integration: $integration,
+            resource: $this->resource,
+        );
     }
 }

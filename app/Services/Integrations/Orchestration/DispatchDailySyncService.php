@@ -17,7 +17,7 @@ class DispatchDailySyncService
         private readonly TenantIntegrationConfigNormalizer $configNormalizer,
     ) {}
 
-    public function dispatch(TenantIntegration $integration): void
+    public function dispatch(TenantIntegration $integration, ?string $resource = null): void
     {
         $tenant = $integration->tenant;
         if (! $tenant) {
@@ -34,26 +34,33 @@ class DispatchDailySyncService
             $targetDates[] = $date->toDateString();
         }
 
-        $failedSalesDates = IntegrationSyncDay::query()
-            ->where('tenant_integration_id', $integration->id)
-            ->where('resource', 'sales')
-            ->whereBetween('reference_date', [$startDate->toDateString(), $yesterday->toDateString()])
-            ->whereIn('status', ['failed', 'pending'])
-            ->pluck('reference_date')
-            ->map(fn ($value): string => Carbon::parse((string) $value)->toDateString())
-            ->all();
+        $salesDatesToDispatch = [];
+        if ($resource === null || $resource === 'sales') {
+            $failedSalesDates = IntegrationSyncDay::query()
+                ->where('tenant_integration_id', $integration->id)
+                ->where('resource', 'sales')
+                ->whereBetween('reference_date', [$startDate->toDateString(), $yesterday->toDateString()])
+                ->whereIn('status', ['failed', 'pending'])
+                ->pluck('reference_date')
+                ->map(fn ($value): string => Carbon::parse((string) $value)->toDateString())
+                ->all();
 
-        $failedProductsDates = IntegrationSyncDay::query()
-            ->where('tenant_integration_id', $integration->id)
-            ->where('resource', 'products')
-            ->whereBetween('reference_date', [$startDate->toDateString(), $yesterday->toDateString()])
-            ->whereIn('status', ['failed', 'pending'])
-            ->pluck('reference_date')
-            ->map(fn ($value): string => Carbon::parse((string) $value)->toDateString())
-            ->all();
+            $salesDatesToDispatch = array_values(array_unique(array_merge($targetDates, $failedSalesDates)));
+        }
 
-        $salesDatesToDispatch = array_values(array_unique(array_merge($targetDates, $failedSalesDates)));
-        $productsDatesToDispatch = array_values(array_unique(array_merge($targetDates, $failedProductsDates)));
+        $productsDatesToDispatch = [];
+        if ($resource === null || $resource === 'products') {
+            $failedProductsDates = IntegrationSyncDay::query()
+                ->where('tenant_integration_id', $integration->id)
+                ->where('resource', 'products')
+                ->whereBetween('reference_date', [$startDate->toDateString(), $yesterday->toDateString()])
+                ->whereIn('status', ['failed', 'pending'])
+                ->pluck('reference_date')
+                ->map(fn ($value): string => Carbon::parse((string) $value)->toDateString())
+                ->all();
+
+            $productsDatesToDispatch = array_values(array_unique(array_merge($targetDates, $failedProductsDates)));
+        }
 
         sort($salesDatesToDispatch);
         sort($productsDatesToDispatch);

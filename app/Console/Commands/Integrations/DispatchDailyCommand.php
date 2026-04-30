@@ -14,12 +14,17 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Throwable;
 
-#[Signature('integrations:dispatch-daily {--tenant=}')]
+#[Signature('integrations:dispatch-daily {--tenant=} {--resource=all}')]
 #[Description('Dispara sincronizacao diaria e reprocessamento de lacunas')]
 class DispatchDailyCommand extends Command
 {
     public function handle(ValidateIntegrationStoresService $validateIntegrationStoresService): int
     {
+        $resource = $this->resolveResourceOption();
+        if ($resource === false) {
+            return self::FAILURE;
+        }
+
         $query = TenantIntegration::query()
             ->where('is_active', true);
 
@@ -38,7 +43,7 @@ class DispatchDailyCommand extends Command
             }
 
             $this->notifyDailySyncStarted($integration);
-            DispatchTenantIntegrationDailySyncJob::dispatch($integration->id);
+            DispatchTenantIntegrationDailySyncJob::dispatch($integration->id, $resource);
             $this->line(sprintf('Daily sync dispatched for tenant %s', $integration->tenant_id));
         }
 
@@ -47,6 +52,23 @@ class DispatchDailyCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    private function resolveResourceOption(): string|null|false
+    {
+        $resource = strtolower((string) $this->option('resource'));
+
+        if ($resource === '' || $resource === 'all') {
+            return null;
+        }
+
+        if (! in_array($resource, ['sales', 'products'], true)) {
+            $this->error('Opcao --resource invalida. Use: sales, products ou all.');
+
+            return false;
+        }
+
+        return $resource;
     }
 
     private function notifyDailySyncStarted(TenantIntegration $integration): void
