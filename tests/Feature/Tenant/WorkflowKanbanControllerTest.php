@@ -45,7 +45,7 @@ test('kanban index renderiza componente correto sem planograma selecionado', fun
             ->has('planograms')
             ->has('stores')
             ->has('users')
-            ->where('board', null)
+            ->where('board', [])
             ->where('selected_planogram', null)
         );
 });
@@ -128,6 +128,7 @@ function setupKanbanTenantCtx(string $subdomain): array
     ]);
 
     app()->instance((string) config('multitenancy.current_tenant_container_key', 'currentTenant'), $tenant);
+    migrateTenantSchema();
 
     $kanban = Module::query()->firstOrCreate([
         'slug' => ModuleSlug::KANBAN,
@@ -148,4 +149,14 @@ function setupKanbanTenantCtx(string $subdomain): array
         'tenant' => $tenant,
         'user' => $user,
     ];
+}
+
+function migrateTenantSchema(): void
+{
+    Artisan::call('migrate', [
+        '--database' => 'tenant',
+        '--path' => 'database/migrations',
+        '--force' => true,
+        '--no-interaction' => true,
+    ]);
 }
