@@ -47,7 +47,7 @@ return [
                 'pertence_ao_mix',
             ],
             'required_flag_allowed_values' => [
-                'cadastro_ativo' => ['S', '2'],
+                'cadastro_ativo' => ['S'],
                 'ativo_na_empresa' => ['S'],
                 'pertence_ao_mix' => ['S'],
             ],
