@@ -39,8 +39,7 @@ class LinkSalesProductsCommand extends Command
         $preview = $this->option('preview');
 
         if ($preview) {
-            $this->info('👁️  MODO PREVIEW - Nenhuma ação será executada');
-            $this->newLine();
+            $this->warn('MODO PREVIEW ativo: nenhuma alteração será aplicada.');
         }
 
         $results = [];
@@ -105,10 +104,6 @@ class LinkSalesProductsCommand extends Command
             foreach ($users as $user) {
                 $user->notify($notification);
             }
-            Log::info('Notificação de conclusão do sync:link-sales enviada', [
-                'users_count' => $users->count(),
-                'results_count' => count($results),
-            ]);
         } catch (\Throwable $e) {
             Log::warning('Falha ao enviar notificação de conclusão do sync:link-sales', [
                 'message' => $e->getMessage(),
@@ -123,11 +118,6 @@ class LinkSalesProductsCommand extends Command
      */
     protected function processTenant(Tenant $tenant, bool $preview): ?array
     {
-        $this->newLine();
-        $this->info('═══════════════════════════════════════════════════════');
-        $this->info("🏢 {$tenant->name}");
-        $this->info('═══════════════════════════════════════════════════════');
-
         $configuredTenantConnection = config('multitenancy.tenant_database_connection_name');
         $connection = (string) ($configuredTenantConnection ?: config('database.default'));
         $shouldSwitchTenantContext = is_string($configuredTenantConnection) && $configuredTenantConnection !== '';
@@ -173,33 +163,13 @@ class LinkSalesProductsCommand extends Command
             ->whereNotNull('codigo_erp')
             ->count();
 
-        $this->info("   📊 Vendas sem product_id: {$salesWithoutProduct}");
-
         if ($salesWithoutProduct === 0) {
-            $this->line('   ✓ Todas as vendas já estão vinculadas');
-
             return [
                 'tenant_name' => $tenant->name,
                 'linked' => 0,
                 'remaining' => 0,
             ];
         }
-
-        // 2. Contar produtos disponíveis (inclui soft-deleted)
-        $productsCount = DB::connection($connection)
-            ->table('products')
-            ->where('tenant_id', $tenantId)
-            ->whereNotNull('codigo_erp')
-            ->count();
-
-        $deletedProductsCount = DB::connection($connection)
-            ->table('products')
-            ->where('tenant_id', $tenantId)
-            ->whereNotNull('codigo_erp')
-            ->whereNotNull('deleted_at')
-            ->count();
-
-        $this->info("   📦 Produtos com codigo_erp: {$productsCount} ({$deletedProductsCount} soft-deleted)");
 
         if ($preview) {
             $this->showPreview($connection, $tenantId, $salesWithoutProduct);
@@ -212,11 +182,7 @@ class LinkSalesProductsCommand extends Command
         }
 
         // 3. Executar vinculação em batch usando UPDATE com JOIN
-        $this->info('   🔄 Vinculando vendas aos produtos...');
-
         $updated = $this->linkSalesToProducts($connection, $tenantId);
-
-        $this->info("   ✅ {$updated} vendas vinculadas");
 
         // 4. Verificar vendas que não puderam ser vinculadas
         $remaining = DB::connection($connection)
@@ -228,28 +194,7 @@ class LinkSalesProductsCommand extends Command
 
         if ($remaining > 0) {
             $this->warn("   ⚠️  {$remaining} vendas sem produto correspondente (codigo_erp não encontrado)");
-
-            // Listar alguns codigo_erp não encontrados
-            $orphanCodes = DB::connection($connection)
-                ->table('sales')
-                ->where('tenant_id', $tenantId)
-                ->whereNull('product_id')
-                ->whereNotNull('codigo_erp')
-                ->distinct()
-                ->limit(10)
-                ->pluck('codigo_erp');
-
-            $this->line('   Exemplos de codigo_erp sem produto:');
-            foreach ($orphanCodes as $code) {
-                $this->line("      - {$code}");
-            }
         }
-
-        Log::info('Vendas vinculadas aos produtos', [
-            'tenant_id' => $tenantId,
-            'updated' => $updated,
-            'remaining' => $remaining,
-        ]);
 
         return [
             'tenant_name' => $tenant->name,
@@ -270,22 +215,14 @@ class LinkSalesProductsCommand extends Command
             ->where('s.tenant_id', $tenantId)
             ->whereColumn('p.tenant_id', 's.tenant_id')
             ->whereNull('s.product_id')
-            ->select('s.codigo_erp', 'p.id as product_id', 'p.ean', 'p.name')
+            ->select(['s.codigo_erp', 'p.id as product_id', 'p.ean', 'p.name'])
             ->limit(10)
             ->get();
 
         if ($sampleSales->isEmpty()) {
-            $this->warn('   ⚠️  Nenhuma venda pode ser vinculada (produtos não encontrados)');
+            $this->warn('Nenhuma venda pode ser vinculada (produtos não encontrados).');
 
             return;
-        }
-
-        $this->newLine();
-        $this->info('   📋 Amostra de vinculações que seriam feitas:');
-
-        foreach ($sampleSales as $sale) {
-            $name = mb_substr($sale->name ?? 'Sem nome', 0, 35);
-            $this->line("      {$sale->codigo_erp} → {$sale->ean} | {$name}");
         }
 
         // Contar quantas poderiam ser vinculadas
@@ -297,12 +234,11 @@ class LinkSalesProductsCommand extends Command
             ->whereNull('s.product_id')
             ->count();
 
-        $this->newLine();
-        $this->info("   📊 Total que seriam vinculadas: {$linkable} de {$total}");
+        $this->info("Preview: {$linkable} de {$total} vendas podem ser vinculadas.");
 
         $notLinkable = $total - $linkable;
         if ($notLinkable > 0) {
-            $this->warn("   ⚠️  {$notLinkable} vendas não têm produto correspondente");
+            $this->warn("Preview: {$notLinkable} vendas não têm produto correspondente.");
         }
     }
 

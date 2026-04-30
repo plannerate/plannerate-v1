@@ -10,7 +10,6 @@ use App\Models\TenantIntegration;
 use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Log;
 
 class DispatchInitialSyncService
 {
@@ -61,11 +60,6 @@ class DispatchInitialSyncService
             $productsReferenceDate = $yesterday->toDateString();
             if ($resource === null || $resource === 'products') {
                 if ($ignoreSyncDaysCheck) {
-                    Log::info('Dispatch inicial de produtos forcado por --ignore-synced-days.', [
-                        'tenant_id' => (string) $integration->tenant_id,
-                        'tenant_integration_id' => (string) $integration->id,
-                        'reference_date' => $productsReferenceDate,
-                    ]);
                     $jobs[] = new SyncTenantProductsDayJob((string) $integration->id, $productsReferenceDate, true);
                 } else {
                     $productsAlreadySynced = IntegrationSyncDay::query()
@@ -75,28 +69,9 @@ class DispatchInitialSyncService
                         ->exists();
 
                     if (! $productsAlreadySynced) {
-                        Log::info('Dispatch inicial de produtos enfileirado.', [
-                            'tenant_id' => (string) $integration->tenant_id,
-                            'tenant_integration_id' => (string) $integration->id,
-                            'reference_date' => $productsReferenceDate,
-                            'reason' => 'nenhum dia de produtos com status success encontrado',
-                        ]);
                         $jobs[] = new SyncTenantProductsDayJob((string) $integration->id, $productsReferenceDate, true);
-                    } else {
-                        Log::warning('Dispatch inicial de produtos ignorado.', [
-                            'tenant_id' => (string) $integration->tenant_id,
-                            'tenant_integration_id' => (string) $integration->id,
-                            'reason' => 'ja existe sincronizacao de produtos com status success',
-                            'hint' => 'use --ignore-synced-days para forcar reprocessamento',
-                        ]);
                     }
                 }
-            } else {
-                Log::info('Dispatch inicial de produtos nao solicitado para esta execucao.', [
-                    'tenant_id' => (string) $integration->tenant_id,
-                    'tenant_integration_id' => (string) $integration->id,
-                    'resource_option' => $resource,
-                ]);
             }
 
             if ($jobs === []) {
