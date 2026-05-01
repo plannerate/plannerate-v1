@@ -51,6 +51,7 @@ const props = defineProps<{
     filters: {
         search: string;
         status: string;
+        trashed: 'without' | 'only' | 'with';
     };
     status_options: FilterOption[];
 }>();

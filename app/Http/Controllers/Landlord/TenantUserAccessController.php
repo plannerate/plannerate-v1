@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Landlord;
 
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\Tenant;
@@ -21,10 +22,12 @@ use Spatie\Multitenancy\Models\Tenant as CurrentTenantModel;
 
 class TenantUserAccessController extends Controller
 {
+    use InteractsWithTrashedFilter;
+
     /**
      * @var list<string>
      */
-    private const AVAILABLE_STATUS_FILTERS = ['all', 'active', 'inactive', 'deleted'];
+    private const AVAILABLE_STATUS_FILTERS = ['all', 'active', 'inactive', 'trashed'];
 
     /**
      * Show tenant user access management.
@@ -37,36 +40,37 @@ class TenantUserAccessController extends Controller
         $status = (string) $request->string('status');
         $statusFilter = in_array($status, self::AVAILABLE_STATUS_FILTERS, true) ? $status : 'all';
         $perPage = $this->resolvePerPage($request, 10);
+        $trashFilter = $this->resolveTrashedFilter($request);
+ 
 
         /** @var array{
          *     users: LengthAwarePaginator<array<string, mixed>>,
          *     activeCount: int
          * } $tenantUserData
          */
-        $tenantUserData = $this->runInTenantContext($tenant, function () use ($search, $statusFilter, $perPage): array {
+        $tenantUserData = $this->runInTenantContext($tenant, function () use ($search, $statusFilter, $perPage, $trashFilter): array {
             $query = TenantUser::query()
-                ->withTrashed()
                 ->when($search !== '', function ($query) use ($search): void {
                     $query->where(function ($where) use ($search): void {
                         $where
-                            ->where('name', 'like', '%'.$search.'%')
-                            ->orWhere('email', 'like', '%'.$search.'%');
+                            ->where('name', 'like', '%' . $search . '%')
+                            ->orWhere('email', 'like', '%' . $search . '%');
                     });
                 });
 
             if ($statusFilter === 'active') {
-                $query->whereNull('deleted_at')->where('is_active', true);
+                $query->where('is_active', true);
             } elseif ($statusFilter === 'inactive') {
-                $query->whereNull('deleted_at')->where('is_active', false);
-            } elseif ($statusFilter === 'deleted') {
-                $query->onlyTrashed();
+                $query->where('is_active', false);
+            } elseif ($trashFilter ) {
+                $this->applyTrashedToQuery($query, $trashFilter);
             }
 
             $users = $query
                 ->latest()
                 ->paginate($perPage)
                 ->withQueryString()
-                ->through(fn (TenantUser $user): array => [
+                ->through(fn(TenantUser $user): array => [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
@@ -87,14 +91,14 @@ class TenantUserAccessController extends Controller
             ->where('type', RbacType::TENANT)
             ->orderBy('name')
             ->get(['id', 'name'])
-            ->map(fn (Role $role): array => [
+            ->map(fn(Role $role): array => [
                 'id' => $role->id,
                 'name' => $role->name,
             ])
             ->all();
 
         $roleNamesByUser = $this->tenantRoleNamesByUser($tenant);
-        $users = $tenantUserData['users']->through(fn (array $user): array => [
+        $users = $tenantUserData['users']->through(fn(array $user): array => [
             ...$user,
             'role_names' => $roleNamesByUser[$user['id']] ?? [],
         ]);
@@ -127,12 +131,13 @@ class TenantUserAccessController extends Controller
             'filters' => [
                 'search' => $search,
                 'status' => $statusFilter,
+                'trashed' => $trashFilter,
             ],
             'status_options' => [
                 ['value' => 'all', 'label' => __('app.landlord.tenant_access.statuses.all')],
                 ['value' => 'active', 'label' => __('app.landlord.common.active')],
                 ['value' => 'inactive', 'label' => __('app.landlord.common.inactive')],
-                ['value' => 'deleted', 'label' => __('app.landlord.tenant_access.statuses.deleted')],
+                ['value' => 'trashed', 'label' => __('app.landlord.tenant_access.statuses.deleted')],
             ],
         ]);
     }
@@ -278,7 +283,7 @@ class TenantUserAccessController extends Controller
             ->orderBy('roles.name')
             ->get()
             ->groupBy('user_id')
-            ->map(fn ($rows): array => $rows->pluck('role_name')->values()->all())
+            ->map(fn($rows): array => $rows->pluck('role_name')->values()->all())
             ->all();
     }
 
@@ -306,7 +311,7 @@ class TenantUserAccessController extends Controller
             ]);
         }
 
-        $usersCount = $this->runInTenantContext($tenant, fn (): int => TenantUser::query()->count());
+        $usersCount = $this->runInTenantContext($tenant, fn(): int => TenantUser::query()->count());
 
         if ($usersCount >= $limit) {
             throw ValidationException::withMessages([
@@ -320,10 +325,18 @@ class TenantUserAccessController extends Controller
      */
     private function validateStorePayload(Request $request, Tenant $tenant): array
     {
-        return $this->runInTenantContext($tenant, function () use ($request): array {
+        $tenantConnection = $this->resolveTenantConnectionName();
+
+        return $this->runInTenantContext($tenant, function () use ($request, $tenantConnection): array {
             return Validator::make($request->all(), [
                 'name' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
+                'email' => [
+                    'required',
+                    'string',
+                    'email',
+                    'max:255',
+                    Rule::unique("{$tenantConnection}.users", 'email')->whereNull('deleted_at'),
+                ],
                 'password' => ['required', 'string', 'min:8', 'confirmed'],
                 'is_active' => ['sometimes', 'boolean'],
                 'role_names' => ['nullable', 'array'],
@@ -331,7 +344,7 @@ class TenantUserAccessController extends Controller
                     'string',
                     'distinct',
                     Rule::exists('landlord.roles', 'name')
-                        ->where(static fn ($query) => $query
+                        ->where(static fn($query) => $query
                             ->where('guard_name', 'web')
                             ->where('type', RbacType::TENANT)
                             ->whereNull('tenant_id')),
@@ -345,10 +358,20 @@ class TenantUserAccessController extends Controller
      */
     private function validateUpdatePayload(Request $request, Tenant $tenant, string $userId): array
     {
-        return $this->runInTenantContext($tenant, function () use ($request, $userId): array {
+        $tenantConnection = $this->resolveTenantConnectionName();
+
+        return $this->runInTenantContext($tenant, function () use ($request, $userId, $tenantConnection): array {
             return Validator::make($request->all(), [
                 'name' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId, (new TenantUser)->getKeyName())],
+                'email' => [
+                    'required',
+                    'string',
+                    'email',
+                    'max:255',
+                    Rule::unique("{$tenantConnection}.users", 'email')
+                        ->ignore($userId, (new TenantUser)->getKeyName())
+                        ->whereNull('deleted_at'),
+                ],
                 'password' => ['nullable', 'string', 'min:8', 'confirmed'],
                 'is_active' => ['sometimes', 'boolean'],
                 'role_names' => ['nullable', 'array'],
@@ -356,7 +379,7 @@ class TenantUserAccessController extends Controller
                     'string',
                     'distinct',
                     Rule::exists('landlord.roles', 'name')
-                        ->where(static fn ($query) => $query
+                        ->where(static fn($query) => $query
                             ->where('guard_name', 'web')
                             ->where('type', RbacType::TENANT)
                             ->whereNull('tenant_id')),
