@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Tenant;
+use App\Models\TenantIntegration;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Database\Connection;
@@ -57,12 +58,13 @@ class ImportLegacyTenantsCommand extends Command
 
         $this->newLine();
         $this->table(
-            ['Cliente', 'Tenant', 'DB', 'Usuários'],
+            ['Cliente', 'Tenant', 'DB', 'Usuários', 'Integrações'],
             array_map(fn ($r) => [
                 $r['client'],
                 $r['tenant'],
                 $r['database'],
                 $r['users'] > 0 ? "<fg=green>{$r['users']}</>" : ($r['skipped_users'] > 0 ? "<fg=yellow>{$r['skipped_users']} ignorados</>" : '0'),
+                $r['integrations'] > 0 ? "<fg=green>{$r['integrations']}</>" : '0',
             ], $results)
         );
 
@@ -139,14 +141,14 @@ class ImportLegacyTenantsCommand extends Command
         if ($this->option('dry-run')) {
             $this->line("     <fg=gray>[dry-run] Criaria tenant '{$slug}' com host '{$host}'</>");
 
-            return ['client' => $client->name, 'tenant' => $slug, 'database' => $database, 'users' => 0, 'skipped_users' => 0];
+            return ['client' => $client->name, 'tenant' => $slug, 'database' => $database, 'users' => 0, 'skipped_users' => 0, 'integrations' => 0];
         }
 
         // Validate database name safety
         if (! preg_match('/^[A-Za-z0-9_]+$/', $database)) {
             $this->warn("  ⚠️  Database inválido ignorado: {$database}");
 
-            return ['client' => $client->name, 'tenant' => $slug, 'database' => $database, 'users' => 0, 'skipped_users' => 0];
+            return ['client' => $client->name, 'tenant' => $slug, 'database' => $database, 'users' => 0, 'skipped_users' => 0, 'integrations' => 0];
         }
 
         $this->createTenantDatabase($database);
@@ -172,6 +174,8 @@ class ImportLegacyTenantsCommand extends Command
 
         $this->tenantMap[$client->id] = $tenant;
 
+        $integrationsImported = $this->importClientIntegrations($client, $tenant);
+
         $usersImported = 0;
         $usersSkipped = 0;
 
@@ -183,7 +187,7 @@ class ImportLegacyTenantsCommand extends Command
             }
         });
 
-        $this->line("     <fg=green>✓  {$tenant->name}</> ({$database}) — {$usersImported} usuário(s) importado(s)");
+        $this->line("     <fg=green>✓  {$tenant->name}</> ({$database}) — {$usersImported} usuário(s), {$integrationsImported} integração(ões)");
 
         return [
             'client' => $client->name,
@@ -191,6 +195,7 @@ class ImportLegacyTenantsCommand extends Command
             'database' => $database,
             'users' => $usersImported,
             'skipped_users' => $usersSkipped,
+            'integrations' => $integrationsImported,
         ];
     }
 
@@ -266,6 +271,99 @@ class ImportLegacyTenantsCommand extends Command
                 $this->line("  <fg=cyan>{$tenant->name}</>: {$imported} importado(s), {$skipped} ignorado(s)");
             });
         }
+    }
+
+    private function importClientIntegrations(object $client, Tenant $tenant): int
+    {
+        $legacyIntegrations = $this->legacy->table('client_integrations')
+            ->where('client_id', $client->id)
+            ->whereNull('deleted_at')
+            ->get();
+
+        $count = 0;
+
+        foreach ($legacyIntegrations as $ci) {
+            $authHeaders = $this->decodeJson($ci->authentication_headers);
+            $authBody = $this->decodeJson($ci->authentication_body);
+            $legacyConfig = $this->decodeJson($ci->config);
+
+            $username = (string) ($authHeaders['auth_username'] ?? '');
+            $password = (string) ($authHeaders['auth_password'] ?? '');
+
+            TenantIntegration::updateOrCreate(
+                [
+                    'tenant_id' => $tenant->id,
+                    'integration_type' => $ci->integration_type,
+                    'identifier' => $ci->identifier,
+                ],
+                [
+                    'external_name' => $ci->external_name,
+                    'external_name_ean' => $ci->external_name_ean,
+                    'external_name_status' => $ci->external_name_status,
+                    'external_name_sale_date' => $ci->external_name_sale_date,
+                    'http_method' => strtoupper((string) $ci->http_method),
+                    'api_url' => $ci->api_url,
+                    'authentication_headers' => $authHeaders,
+                    'authentication_body' => $authBody,
+                    'config' => [
+                        'processing' => [
+                            'days_to_maintain' => (int) ($legacyConfig['days_to_maintain'] ?? 120),
+                            'sales_retention_days' => (int) ($legacyConfig['days_to_maintain'] ?? 120),
+                            'sales_initial_days' => (int) ($legacyConfig['sales_initial_days'] ?? $legacyConfig['days_to_maintain'] ?? 120),
+                            'products_initial_days' => (int) ($legacyConfig['products_initial_days'] ?? $legacyConfig['days_to_maintain'] ?? 120),
+                            'daily_lookback_days' => (int) ($legacyConfig['daily_lookback_days'] ?? 7),
+                            'sales_page_size' => (int) ($legacyConfig['sales_page_size'] ?? 20000),
+                            'products_page_size' => (int) ($legacyConfig['products_page_size'] ?? 1000),
+                            'sales_tipo_consulta' => (string) ($legacyConfig['sales_tipo_consulta'] ?? 'produto'),
+                            'partner_key' => (string) ($authBody['partner_key'] ?? ''),
+                            'empresa' => (string) ($authBody['empresa'] ?? $ci->identifier ?? ''),
+                            'auto_processing_enabled' => (bool) ($legacyConfig['auto_processing_enabled'] ?? true),
+                            'processing_time' => (string) ($legacyConfig['processing_time'] ?? '02:00'),
+                            'initial_setup_date' => $legacyConfig['initial_setup_date'] ?? null,
+                        ],
+                        'auth' => [
+                            'type' => 'basic',
+                            'credentials' => [
+                                'username' => $username,
+                                'password' => $password,
+                            ],
+                        ],
+                        'connection' => [
+                            'base_url' => (string) ($ci->api_url ?? ''),
+                            'timeout' => 30,
+                            'connect_timeout' => 10,
+                            'verify_ssl' => true,
+                            'ping_path' => '/',
+                            'ping_method' => 'GET',
+                            'headers' => [],
+                        ],
+                    ],
+                    'is_active' => (bool) $ci->is_active,
+                    'last_sync' => $ci->last_sync,
+                ]
+            );
+
+            $count++;
+        }
+
+        return $count;
+    }
+
+    /** @return array<string, mixed> */
+    private function decodeJson(?string $json): array
+    {
+        if ($json === null || trim($json) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($json, true);
+
+        // Legacy data can be double-encoded (a JSON string containing another JSON string)
+        if (is_string($decoded)) {
+            $decoded = json_decode($decoded, true);
+        }
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     /**

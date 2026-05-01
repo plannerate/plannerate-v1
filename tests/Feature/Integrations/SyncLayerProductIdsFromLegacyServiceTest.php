@@ -256,7 +256,7 @@ test('service restaura produto local soft deleted referenciado por layer', funct
         ->and($product?->deleted_at)->toBeNull();
 });
 
-test('service cria produto via fallback legado quando api não encontra e tenant não possui ean', function (): void {
+test('service cria produto via fallback legado quando tenant não possui o ean', function (): void {
     $tenantId = (string) str()->ulid();
     $now = now();
 
