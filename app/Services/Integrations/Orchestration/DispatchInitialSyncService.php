@@ -76,19 +76,19 @@ class DispatchInitialSyncService
             }
 
             if ($resource === null || $resource === 'providers') {
-                if ($ignoreSyncDaysCheck) {
-                    $jobs[] = new SyncTenantProvidersJob((string) $integration->id, 1, true);
-                } else {
-                    $providersAlreadySynced = IntegrationSyncDay::query()
-                        ->where('tenant_integration_id', $integration->id)
-                        ->where('resource', 'providers')
-                        ->where('status', 'success')
-                        ->exists();
+                // if ($ignoreSyncDaysCheck) {
+                //     $jobs[] = new SyncTenantProvidersJob((string) $integration->id, 1, true);
+                // } else {
+                //     $providersAlreadySynced = IntegrationSyncDay::query()
+                //         ->where('tenant_integration_id', $integration->id)
+                //         ->where('resource', 'providers')
+                //         ->where('status', 'success')
+                //         ->exists();
 
-                    if (! $providersAlreadySynced) {
-                        $jobs[] = new SyncTenantProvidersJob((string) $integration->id, 1, true);
-                    }
-                }
+                //     if (! $providersAlreadySynced) {
+                //         $jobs[] = new SyncTenantProvidersJob((string) $integration->id, 1, true);
+                //     }
+                // }
             }
 
             if ($jobs === []) {

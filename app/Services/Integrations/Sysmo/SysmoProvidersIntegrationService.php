@@ -42,12 +42,31 @@ class SysmoProvidersIntegrationService implements ProvidersIntegrationService
             body: $requestBody,
         );
 
-        $mappedItems = $this->responseMapper->mapMany($this->extractItemsFromPayload($response->json()));
+        $responsePayload = $response->json();
+
+        Log::info('Sysmo providers API response received.', [
+            'integration_id' => (string) $integration->id,
+            'tenant_id' => (string) $integration->tenant_id,
+            'page' => $requestBody['pagina'],
+            'http_status' => $response->status(),
+            'total_paginas' => $responsePayload['total_paginas'] ?? null,
+            'dados_count' => is_array($responsePayload['dados'] ?? null) ? count($responsePayload['dados']) : null,
+            'raw_keys' => is_array($responsePayload) ? array_keys($responsePayload) : null,
+        ]);
+
+        $mappedItems = $this->responseMapper->mapMany($this->extractItemsFromPayload($responsePayload));
 
         $this->persistMappedProviders(
             tenantId: (string) $integration->tenant_id,
             mappedItems: $mappedItems,
         );
+
+        Log::info('Sysmo providers sync persisted.', [
+            'integration_id' => (string) $integration->id,
+            'tenant_id' => (string) $integration->tenant_id,
+            'page' => $requestBody['pagina'],
+            'mapped_count' => count($mappedItems),
+        ]);
 
         return $mappedItems;
     }

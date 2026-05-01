@@ -41,6 +41,11 @@ class SyncTenantProvidersJob implements ShouldQueue, TenantAware
             ->first();
 
         if (! $integration) {
+            Log::warning('Integrations providers sync aborted: integration not found or inactive.', [
+                'integration_id' => $this->integrationId,
+                'page' => $this->page,
+            ]);
+
             return;
         }
 
@@ -63,6 +68,13 @@ class SyncTenantProvidersJob implements ShouldQueue, TenantAware
             $processing = $configNormalizer->normalize($integration)['processing'];
             $pageSize = (int) ($processing['providers_page_size'] ?? 500);
 
+            Log::info('Integrations providers sync starting.', [
+                'integration_id' => $this->integrationId,
+                'tenant_id' => (string) $integration->tenant_id,
+                'page' => $this->page,
+                'page_size' => $pageSize,
+            ]);
+
             $providersService = $integrationServiceResolver->resolveProvidersService($integration);
 
             $items = $providersService->fetchProviders($integration, [
@@ -73,7 +85,20 @@ class SyncTenantProvidersJob implements ShouldQueue, TenantAware
 
             $itemsCount = count($items);
 
+            Log::info('Integrations providers sync page fetched.', [
+                'integration_id' => $this->integrationId,
+                'tenant_id' => (string) $integration->tenant_id,
+                'page' => $this->page,
+                'items_count' => $itemsCount,
+            ]);
+
             if ($itemsCount >= $pageSize && $this->page < self::MAX_PROGRESSIVE_PAGE) {
+                Log::info('Integrations providers sync dispatching next page.', [
+                    'integration_id' => $this->integrationId,
+                    'tenant_id' => (string) $integration->tenant_id,
+                    'next_page' => $this->page + 1,
+                ]);
+
                 SyncTenantProvidersJob::dispatch(
                     integrationId: (string) $integration->id,
                     page: $this->page + 1,
@@ -84,6 +109,12 @@ class SyncTenantProvidersJob implements ShouldQueue, TenantAware
             }
 
             $syncDay->markSuccess();
+
+            Log::info('Integrations providers sync completed successfully.', [
+                'integration_id' => $this->integrationId,
+                'tenant_id' => (string) $integration->tenant_id,
+                'last_page' => $this->page,
+            ]);
 
             if (! $this->suppressSuccessNotifications) {
                 broadcast(new IntegrationProcessFinished(
