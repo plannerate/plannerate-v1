@@ -4,6 +4,7 @@ namespace App\Services\Integrations\Orchestration;
 
 use App\Jobs\Integrations\Maintenance\RunTenantIntegrationPostSyncJob;
 use App\Jobs\Integrations\Products\SyncTenantProductsDayJob;
+use App\Jobs\Integrations\Providers\SyncTenantProvidersJob;
 use App\Jobs\Integrations\Sales\SyncTenantSalesDayJob;
 use App\Models\IntegrationSyncDay;
 use App\Models\TenantIntegration;
@@ -70,6 +71,22 @@ class DispatchInitialSyncService
 
                     if (! $productsAlreadySynced) {
                         $jobs[] = new SyncTenantProductsDayJob((string) $integration->id, $productsReferenceDate, true);
+                    }
+                }
+            }
+
+            if ($resource === null || $resource === 'providers') {
+                if ($ignoreSyncDaysCheck) {
+                    $jobs[] = new SyncTenantProvidersJob((string) $integration->id, 1, true);
+                } else {
+                    $providersAlreadySynced = IntegrationSyncDay::query()
+                        ->where('tenant_integration_id', $integration->id)
+                        ->where('resource', 'providers')
+                        ->where('status', 'success')
+                        ->exists();
+
+                    if (! $providersAlreadySynced) {
+                        $jobs[] = new SyncTenantProvidersJob((string) $integration->id, 1, true);
                     }
                 }
             }

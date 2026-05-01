@@ -6,6 +6,7 @@ use App\Models\TenantIntegration;
 use App\Services\Integrations\Orchestration\DispatchInitialSyncService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 
 class DispatchTenantIntegrationInitialSyncJob implements ShouldQueue
 {
@@ -30,6 +31,7 @@ class DispatchTenantIntegrationInitialSyncJob implements ShouldQueue
                 'resource' => $this->resource ?? 'all',
                 'ignore_synced_days' => $this->ignoreSyncDaysCheck,
             ]);
+
             return;
         }
 

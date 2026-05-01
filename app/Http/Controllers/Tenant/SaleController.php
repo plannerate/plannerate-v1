@@ -140,7 +140,7 @@ class SaleController extends Controller
 
     public function edit(string $subdomain, string $sale): Response
     {
-        unset($subdomain); 
+        unset($subdomain);
         $sale = Sale::query()->findOrFail($sale);
         $this->authorize('update', $sale);
 
@@ -166,9 +166,10 @@ class SaleController extends Controller
         ]);
     }
 
-    public function update(UpdateSaleRequest $request, string $subdomain, Sale $sale): RedirectResponse
+    public function update(UpdateSaleRequest $request, string $subdomain, string $sale): RedirectResponse
     {
         unset($subdomain);
+        $sale = Sale::query()->findOrFail($sale);
         $this->authorize('update', $sale);
 
         $sale->update($request->validated());
@@ -181,9 +182,10 @@ class SaleController extends Controller
         return to_route('tenant.sales.index', $this->tenantRouteParameters());
     }
 
-    public function destroy(string $subdomain, Sale $sale): RedirectResponse
+    public function destroy(string $subdomain, string $sale): RedirectResponse
     {
         unset($subdomain);
+        $sale = Sale::query()->findOrFail($sale);
         $this->authorize('delete', $sale);
 
         $sale->delete();

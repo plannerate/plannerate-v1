@@ -74,8 +74,8 @@ class DispatchInitialCommand extends Command
             return null;
         }
 
-        if (! in_array($resource, ['sales', 'products'], true)) {
-            $this->error('Opcao --resource invalida. Use: sales, products ou all.');
+        if (! in_array($resource, ['sales', 'products', 'providers'], true)) {
+            $this->error('Opcao --resource invalida. Use: sales, products, providers ou all.');
 
             return false;
         }

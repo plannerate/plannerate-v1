@@ -33,4 +33,18 @@ class DeterministicIdGenerator
 
         return 'S1'.strtoupper(substr($hash, 0, 24));
     }
+
+    public function providerId(string $tenantId, string $codigo): string
+    {
+        $hash = md5($tenantId.'|fornecedor|'.$codigo);
+
+        return 'F1'.strtoupper(substr($hash, 0, 24));
+    }
+
+    public function providerAddressId(string $tenantId, string $codigo): string
+    {
+        $hash = md5($tenantId.'|fornecedor-endereco|'.$codigo);
+
+        return 'FA'.strtoupper(substr($hash, 0, 24));
+    }
 }

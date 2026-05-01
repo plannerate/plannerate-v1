@@ -17,6 +17,7 @@ class SysmoEndpoints
         'sales' => 'sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos',
         'categories' => 'sysmo-integrador-api/api/integradorService/hubprodutos.listar_produtos',
         'suppliers' => 'sysmo-integrador-api/api/integradorService/hubfornecedores.listar_fornecedores',
+        'providers' => 'sysmo-integrador-api/api/integradorService/hubfornecedores.fornecedores',
         'customers' => 'sysmo-integrador-api/api/integradorService/hubclientes.listar_clientes',
     ];
 

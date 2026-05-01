@@ -11,6 +11,7 @@ use App\Jobs\Integrations\Maintenance\RecalculateTenantMonthlySalesSummariesJob;
 use App\Jobs\Integrations\Maintenance\RunTenantIntegrationNightlyMaintenanceJob;
 use App\Jobs\Integrations\Maintenance\RunTenantIntegrationPostSyncJob;
 use App\Jobs\Integrations\Products\SyncTenantProductsDayJob;
+use App\Jobs\Integrations\Providers\SyncTenantProvidersJob;
 use App\Jobs\Integrations\Sales\SyncTenantSalesDayJob;
 use App\Models\IntegrationSyncDay;
 use App\Models\Store;
@@ -439,6 +440,7 @@ test('initial sync can ignore synced days check when requested', function () {
     Bus::assertChained([
         new SyncTenantSalesDayJob((string) $integration->id, $referenceDate, true),
         new SyncTenantProductsDayJob((string) $integration->id, $referenceDate, true),
+        new SyncTenantProvidersJob((string) $integration->id, 1, true),
         new RunTenantIntegrationPostSyncJob((string) $tenant->id),
     ]);
 });
@@ -469,6 +471,7 @@ test('initial sync chains post sync maintenance after initial jobs', function ()
     Bus::assertChained([
         new SyncTenantSalesDayJob((string) $integration->id, $yesterday, true),
         new SyncTenantProductsDayJob((string) $integration->id, $yesterday, true),
+        new SyncTenantProvidersJob((string) $integration->id, 1, true),
         new RunTenantIntegrationPostSyncJob((string) $tenant->id),
     ]);
 });
@@ -746,6 +749,7 @@ test('initial sync dispatches products as single full sync bootstrap', function 
         new SyncTenantSalesDayJob((string) $integration->id, $previousDay, true),
         new SyncTenantSalesDayJob((string) $integration->id, $yesterday, true),
         new SyncTenantProductsDayJob((string) $integration->id, $yesterday, true),
+        new SyncTenantProvidersJob((string) $integration->id, 1, true),
         new RunTenantIntegrationPostSyncJob((string) $tenant->id),
     ]);
 });
