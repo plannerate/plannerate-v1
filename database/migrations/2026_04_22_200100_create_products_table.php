@@ -36,6 +36,8 @@ return new class extends Migration
             $table->string('sales_purchases')->nullable();
             $table->enum('status', ['draft', 'published', 'synced', 'error'])->default('draft');
             $table->string('sync_source')->nullable();
+            $table->string('resolution_status', 40)->nullable()->index();
+            $table->json('resolution_details')->nullable();
             $table->timestamp('sync_at')->nullable();
             $table->string('url')->nullable();
 
@@ -71,7 +73,8 @@ return new class extends Migration
 
             $table->unique(['tenant_id', 'ean']);
             $table->unique(['tenant_id', 'slug']);
-            $table->index(['sync_source', 'sync_at']); 
+            $table->index(['sync_source', 'sync_at']);
+            $table->index(['tenant_id', 'codigo_erp', 'deleted_at'], 'products_tenant_codigo_erp_deleted_at_idx');
         });
     }
 

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->foreignUlid('tenant_id')->nullable()->index();
             $table->foreignUlid('user_id')->nullable()->index();
-            $table->foreignUlid('section_id')->nullable();
+            $table->foreignUlid('section_id')->nullable()->index();
             $table->string('code', 50)->nullable()->unique();
             $table->string('product_type')->default('normal');
             $table->decimal('shelf_width', 10, 2)->default(4.00)->comment('Largura da prateleira em cm');

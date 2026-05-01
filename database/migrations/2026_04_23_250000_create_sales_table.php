@@ -18,21 +18,28 @@ return new class extends Migration
             $table->foreignUlid('product_id')->nullable()->comment('Identificador do produto');
             $table->string('ean', 13)->nullable();
             $table->string('codigo_erp')->nullable();
-            $table->decimal('acquisition_cost', 12, 2)->nullable()->comment("Custo de aquisição do produto");
-            $table->decimal('sale_price', 12, 2)->nullable()->comment("Preço de venda do produto");
-            $table->decimal('total_profit_margin', 12, 2)->nullable()->comment("Margem de lucro unitária");
-            $table->date('sale_date')->nullable()->comment("Data da venda");
+            $table->decimal('acquisition_cost', 12, 2)->nullable()->comment('Custo de aquisição do produto');
+            $table->decimal('sale_price', 12, 2)->nullable()->comment('Preço de venda do produto');
+            $table->decimal('total_profit_margin', 12, 2)->nullable()->comment('Margem de lucro unitária');
+            $table->date('sale_date')->nullable()->comment('Data da venda');
             $table->string('promotion')->nullable();
-            $table->decimal('total_sale_quantity', 10, 3)->nullable()->comment("Quantidade vendida (suporta vendas por peso)");
-            $table->decimal('total_sale_value', 12, 2)->nullable()->comment("Valor total da venda");
-            $table->decimal('margem_contribuicao', 15, 2)->nullable()->comment("Margem de Contribuição = total_sale_value - impostos - custo_medio");
-            $table->longText('extra_data')->nullable()->comment("Dados extras da API (empresa_id, promoção, impostos, etc.)");
+            $table->decimal('total_sale_quantity', 10, 3)->nullable()->comment('Quantidade vendida (suporta vendas por peso)');
+            $table->decimal('total_sale_value', 12, 2)->nullable()->comment('Valor total da venda');
+            $table->decimal('margem_contribuicao', 15, 2)->nullable()->comment('Margem de Contribuição = total_sale_value - impostos - custo_medio');
+            $table->longText('extra_data')->nullable()->comment('Dados extras da API (empresa_id, promoção, impostos, etc.)');
             $table->timestamps();
             $table->softDeletes();
-            
+
             $table->unique(['tenant_id', 'store_id', 'codigo_erp', 'sale_date', 'promotion']);
             $table->index(['product_id', 'margem_contribuicao']);
-        }); 
+            $table->index(['tenant_id', 'sale_date'], 'sales_tenant_sale_date_idx');
+            $table->index(['tenant_id', 'store_id', 'sale_date'], 'sales_tenant_store_sale_date_idx');
+            $table->index(['tenant_id', 'total_sale_quantity'], 'sales_tenant_total_sale_quantity_idx');
+            $table->index(['tenant_id', 'total_sale_value'], 'sales_tenant_total_sale_value_idx');
+            $table->index(['tenant_id', 'codigo_erp'], 'sales_tenant_codigo_erp_idx');
+            $table->index(['tenant_id', 'store_id', 'total_sale_quantity'], 'sales_tenant_store_total_sale_quantity_idx');
+            $table->index(['tenant_id', 'store_id', 'total_sale_value'], 'sales_tenant_store_total_sale_value_idx');
+        });
     }
 
     /**

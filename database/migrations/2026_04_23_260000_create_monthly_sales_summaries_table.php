@@ -28,6 +28,7 @@ return new class extends Migration
             $table->decimal('margem_contribuicao', 15, 2)->nullable()->comment("Soma das margens de contribuição do período (agregado das vendas)");
             $table->longText('extra_data')->nullable()->comment("Agregação dos dados extras do mês (empresa_id, promoção, impostos, etc.)");
             $table->timestamps();
+            $table->softDeletes();
             
             $table->unique(['tenant_id', 'store_id', 'codigo_erp', 'sale_month', 'promotion'], 'uq_monthly_sales');
             $table->index(['ean', 'sale_month'], 'idx_monthly_ean_month');

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->foreignUlid('tenant_id')->nullable()->index();
             $table->foreignUlid('user_id')->nullable()->index();
-            $table->foreignUlid('gondola_id');
+            $table->foreignUlid('gondola_id')->index();
             $table->string('name')->nullable();
             $table->string('code', 50)->nullable()->unique();
             $table->string('slug')->nullable()->unique();
@@ -36,7 +36,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
             // gondola_id sem FK constraint para suportar multi-database
-        }); 
+        });
     }
 
     /**

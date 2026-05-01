@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedInteger('estimated_duration_days')->nullable();
             $table->ulid('role_id')->nullable();
             $table->boolean('is_required')->default(true);
+            $table->boolean('is_skipped')->default(false);
             $table->string('status')->default('draft');
             $table->timestamps();
             $table->softDeletes();

@@ -15,8 +15,9 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->foreignUlid('tenant_id')->nullable()->index();
             $table->foreignUlid('user_id')->nullable()->index();
-            $table->foreignUlid('segment_id')->nullable();
-            $table->foreignUlid('product_id')->nullable();
+            $table->foreignUlid('segment_id')->nullable()->index();
+            $table->foreignUlid('gondola_id')->nullable()->index();
+            $table->foreignUlid('product_id')->nullable()->index();
             $table->decimal('height', 8, 2)->nullable()->comment('Altura do layer em cm');
             $table->decimal('distributed_width', 8, 2)->nullable()->comment('Largura calculada para distribuição em justify (em cm)');
             $table->integer('quantity')->default(1);

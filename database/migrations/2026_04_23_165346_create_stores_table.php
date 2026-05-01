@@ -23,6 +23,8 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->enum('status', ['draft', 'published'])->default('draft');
             $table->string('description')->nullable();
+            $table->string('map_image_path')->nullable();
+            $table->json('map_regions')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

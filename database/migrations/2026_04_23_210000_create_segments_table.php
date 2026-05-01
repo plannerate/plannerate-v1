@@ -15,9 +15,9 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->foreignUlid('tenant_id')->nullable()->index();
             $table->foreignUlid('user_id')->nullable()->index();
-            $table->foreignUlid('shelf_id')->nullable();
+            $table->foreignUlid('shelf_id')->nullable()->index();
             $table->integer('width')->nullable();
-            $table->decimal('distributed_width', 8, 2)->nullable()->comment("Largura calculada para distribuição em justify (em cm)");
+            $table->decimal('distributed_width', 8, 2)->nullable()->comment('Largura calculada para distribuição em justify (em cm)');
             $table->integer('height')->nullable();
             $table->integer('ordering')->default(0);
             $table->enum('alignment', ['left', 'right', 'center', 'justify'])->nullable();
@@ -28,7 +28,7 @@ return new class extends Migration
             $table->enum('status', ['draft', 'published'])->default('draft');
             $table->timestamps();
             $table->softDeletes();
-        }); 
+        });
     }
 
     /**

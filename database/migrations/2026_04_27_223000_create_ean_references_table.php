@@ -21,6 +21,15 @@ return new class extends Migration
             $table->string('packaging_size')->nullable();
             $table->string('measurement_unit')->nullable();
 
+            // Colunas de dimensions
+            $table->decimal('width', 10, 2)->nullable()->comment('Largura em cm (de dimensions)');
+            $table->decimal('height', 10, 2)->nullable()->comment('Altura em cm (de dimensions)');
+            $table->decimal('depth', 10, 2)->nullable()->comment('Profundidade em cm (de dimensions)');
+            $table->decimal('weight', 10, 2)->nullable()->comment('Peso em gramas (de dimensions)');
+            $table->string('unit')->default('cm')->comment('Unidade de medida (de dimensions)');
+            $table->boolean('has_dimensions')->default(false)->comment('True = Com dimensão (width, height, depth > 0); False = Sem dimensão');
+            $table->enum('dimension_status', ['draft', 'published'])->default('published')->comment('Status da dimensão (de dimensions)');
+
             $table->timestamps();
             $table->softDeletes();
 
