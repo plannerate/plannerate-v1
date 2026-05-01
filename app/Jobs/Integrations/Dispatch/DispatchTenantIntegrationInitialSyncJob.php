@@ -25,6 +25,11 @@ class DispatchTenantIntegrationInitialSyncJob implements ShouldQueue
             ->first();
 
         if (! $integration) {
+            Log::warning('Dispatch inicial ignorado por integracao inativa ou inexistente.', [
+                'tenant_integration_id' => $this->integrationId,
+                'resource' => $this->resource ?? 'all',
+                'ignore_synced_days' => $this->ignoreSyncDaysCheck,
+            ]);
             return;
         }
 

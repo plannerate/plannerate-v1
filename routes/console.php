@@ -25,7 +25,7 @@ Schedule::command('logs:archive-and-clear --days=5')
     ->name('logs-archive-and-clear');
 
 Schedule::command('sync:products-from-ean-references')
-    ->dailyAt('19:20')
+    ->dailyAt('09:20')
     ->withoutOverlapping()
     ->name('sync-products-from-ean-references');
 
