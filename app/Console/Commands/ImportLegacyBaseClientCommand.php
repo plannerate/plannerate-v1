@@ -24,15 +24,16 @@ class ImportLegacyBaseClientCommand extends Command
     protected $description = 'Importa dados de um cliente da base legada para o banco de um tenant';
 
     private array $tables = [
-        'stores',
+        // 'stores',
+        'clusters',
         // 'categories',
         // 'products',
-        'planograms',
-        'gondolas',
-        'sections',
-        'shelves',
-        'segments',
-        'layers',
+        // 'planograms',
+        // 'gondolas',
+        // 'sections',
+        // 'shelves',
+        // 'segments',
+        // 'layers',
         // 'sales',
         // 'purchases',
         // 'providers',
@@ -349,6 +350,8 @@ class ImportLegacyBaseClientCommand extends Command
             'layers' => $query->whereIn('segment_id', $this->getSegmentIds()),
 
             'stores' => $query->where('client_id', $this->client->id),
+
+            'clusters' => $query->where('client_id', $this->client->id),
 
             default => $query,
         };
