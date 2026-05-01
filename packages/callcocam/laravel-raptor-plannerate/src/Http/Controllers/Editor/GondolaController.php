@@ -36,9 +36,12 @@ class GondolaController extends Controller
         return route('tenant.planograms.index', ['record' => $gondola->planogram_id], false);
     }
 
-    protected function getSaveChangesRoute(Gondola $gondola): string
+    protected function getSaveChangesRoute(string $subdomain, Gondola $gondola): string
     {
-        return route('api.editor.gondolas.save-changes', ['gondola' => $gondola->id], false);
+        return route('api.editor.gondolas.save-changes', [
+            'subdomain' => $subdomain,
+            'gondola' => $gondola->id,
+        ], false);
     }
 
     public function edit(string $subdomain, string $record)
@@ -76,7 +79,7 @@ class GondolaController extends Controller
             'aiModelOptions' => $this->getAiModelOptions(),
             'strategyOptions' => $this->getStrategyOptions(),
             'backRoute' => $this->getBackRoute($gondola),
-            'saveChangesRoute' => $this->getSaveChangesRoute($gondola),
+            'saveChangesRoute' => $this->getSaveChangesRoute($subdomain, $gondola),
             'analysis' => [
                 'abc' => $abcAnalysis?->toAbcFormattedArray(),
                 'stock' => $stockAnalysis?->toStockFormattedArray(),

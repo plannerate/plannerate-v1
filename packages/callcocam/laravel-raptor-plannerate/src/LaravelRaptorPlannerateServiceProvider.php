@@ -2,6 +2,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate;
 
+use App\Http\Middleware\SetPermissionTeamContext;
 use Callcocam\LaravelRaptorPlannerate\Commands\Plannerate\TestAutoGenerateCommand;
 use Callcocam\LaravelRaptorPlannerate\Commands\SyncPlannerateMigrationsCommand;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
 class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
 {
@@ -64,7 +66,12 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
             return;
         }
 
-        Route::middleware(['web', 'auth'])
+        /*
+         * Estas rotas são consumidas no subdomínio do tenant (ex.: franciosi.app.test).
+         * Registrá-las apenas no domínio "central" faz o host do tenant retornar 404.
+         */
+        Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
+            ->middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
             ->group($editorRouteFile);
     }
 

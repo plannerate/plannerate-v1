@@ -24,7 +24,7 @@ import {
     Undo2,
     X,
 } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import AddModuleSheet from '@/components/plannerate/form/AddModuleSheet.vue';
 import TransferSectionDialog from '@/components/plannerate/sidebar/properties/partials/TransferSectionDialog.vue';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
@@ -115,6 +115,12 @@ const currentGondolaId = computed(() => editor.currentGondola.value?.id || '');
  * Valor padrão: 1 (100%)
  */
 const scale = computed(() => editor.scaleFactor.value || 1);
+
+const isMounted = ref(false);
+
+onMounted(() => {
+    isMounted.value = true;
+});
 
 /**
  * Display formatado da escala (ex: "2.5x")
@@ -642,7 +648,7 @@ return;
                 <ButtonWithTooltip
                     variant="outline"
                     size="icon"
-                    :disabled="!canUndo"
+                    :disabled="!isMounted || !canUndo"
                     tooltip="Desfazer (Ctrl+Z)"
                     @click="editor.undo()"
                 >
@@ -652,7 +658,7 @@ return;
                 <ButtonWithTooltip
                     variant="outline"
                     size="icon"
-                    :disabled="!canRedo"
+                    :disabled="!isMounted || !canRedo"
                     tooltip="Refazer (Ctrl+Shift+Z ou Ctrl+Y)"
                     @click="editor.redo()"
                 >
@@ -662,7 +668,7 @@ return;
                 <ButtonWithTooltip
                     variant="outline"
                     size="icon"
-                    :disabled="!canUndo && !canRedo"
+                    :disabled="!isMounted || (!canUndo && !canRedo)"
                     tooltip="Limpar Histórico"
                     @click="editor.clearHistory()"
                 >
@@ -696,7 +702,7 @@ return;
                 <ButtonWithTooltip
                     variant="default"
                     size="sm"
-                    :disabled="!hasChanges || isSaving"
+                    :disabled="!isMounted || !hasChanges || isSaving"
                     :tooltip="
                         hasChanges
                             ? `Salvar ${changeCount} alteraç${

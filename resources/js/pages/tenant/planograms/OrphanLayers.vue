@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import ListTablePage from '@/components/ListPage.vue';
 import type ListPage from '@/components/ListPage.vue';
@@ -10,7 +11,6 @@ import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
-import { ref } from 'vue';
 
 type OrphanLayerRow = {
     layer_id: string;

@@ -1,5 +1,6 @@
 import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { toast } from 'vue-sonner';
 import { update } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 
 export function useProductImage() {
@@ -37,7 +38,12 @@ export function useProductImage() {
                     isDownloading.value = false; 
                 },
                 onError: (errors) => {
+                    const firstError = Object.values(errors)[0];
+                    const message = typeof firstError === 'string'
+                        ? firstError
+                        : 'Não foi possível atualizar a imagem.';
                     console.error('Erro ao atualizar imagem:', errors);
+                    toast.error(message);
                     resolve(false);
                     isDownloading.value = false;
                 },

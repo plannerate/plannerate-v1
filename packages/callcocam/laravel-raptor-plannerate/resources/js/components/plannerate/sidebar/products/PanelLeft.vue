@@ -84,7 +84,7 @@ import ProductStats from './Stats.vue';
 interface Props {
     gondolaId: string;
     planogramId: string;
-    category: CategoryType;
+    category?: CategoryType | null;
 }
 
 const props = defineProps<Props>();

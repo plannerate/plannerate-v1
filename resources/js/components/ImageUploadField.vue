@@ -167,10 +167,11 @@ async function importFromUrl(): Promise<void> {
     }
 
     try {
-        // eslint-disable-next-line no-new
+         
         new URL(url);
     } catch {
         emit('error', t('app.tenant.products.form.image_upload.invalid_url'));
+
         return;
     }
 
@@ -263,6 +264,7 @@ async function processWithAi(): Promise<boolean> {
         }
 
         await pollAiStatus(payload.id);
+
         return true;
     } catch (error) {
         const message = error instanceof Error
@@ -270,6 +272,7 @@ async function processWithAi(): Promise<boolean> {
             : t('app.tenant.products.form.image_ai.start_failed');
         emit('error', message);
         isProcessingAi.value = false;
+
         return false;
     }
 }
@@ -314,6 +317,7 @@ async function fetchFromRepository(): Promise<boolean> {
         }
 
         emit('repositoryProcessed', payload.path);
+
         return true;
     } catch (error) {
         debugHttpError(error, 'repository.fetch');
@@ -338,6 +342,7 @@ async function fetchFromRepository(): Promise<boolean> {
             errors: typedError.response?.data?.errors ?? null,
             backendDebug: typedError.response?.data?.debug ?? null,
         };
+
         if (typeof console !== 'undefined') {
             console.info('[ImageUploadField] repository.fetch debug details', details);
         }
@@ -349,6 +354,7 @@ async function fetchFromRepository(): Promise<boolean> {
                 t('app.tenant.products.form.image_repository.fetch_failed')
             );
         emit('error', primaryMessage);
+
         return false;
     } finally {
         isFetchingRepository.value = false;

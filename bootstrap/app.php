@@ -9,6 +9,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Routing\Middleware\SubstituteBindings;
+use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,6 +20,16 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+
+        /*
+         * NeedsTenant antes de SubstituteBindings: o binding implícito (ex.: Product nas rotas api do editor)
+         * precisa do tenant atual e da conexão já trocada; caso contrário o modelo não é encontrado (404).
+         * SetPermissionTeamContext continua imediatamente antes de SubstituteBindings (após NeedsTenant).
+         */
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: NeedsTenant::class,
+        );
 
         $middleware->prependToPriorityList(
             before: SubstituteBindings::class,
