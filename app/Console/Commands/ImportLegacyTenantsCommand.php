@@ -75,6 +75,10 @@ class ImportLegacyTenantsCommand extends Command
 
         if (! $this->option('dry-run') && ! $this->option('skip-rbac')) {
             $this->newLine();
+            $this->info('📦 Configurando plans e modules...');
+            Artisan::call('db:seed', ['--class' => 'LandlordPlansAndModulesSeeder', '--force' => true, '--no-interaction' => true]);
+            $this->line(Artisan::output());
+
             $this->info('🔑 Executando LandlordRbacSeeder...');
             Artisan::call('db:seed', ['--class' => 'LandlordRbacSeeder', '--force' => true, '--no-interaction' => true]);
             $this->info('✅ RBAC atualizado.');
@@ -275,78 +279,75 @@ class ImportLegacyTenantsCommand extends Command
 
     private function importClientIntegrations(object $client, Tenant $tenant): int
     {
-        $legacyIntegrations = $this->legacy->table('client_integrations')
+        $ci = $this->legacy->table('client_integrations')
             ->where('client_id', $client->id)
             ->whereNull('deleted_at')
-            ->get();
+            ->orderBy('created_at')
+            ->first();
 
-        $count = 0;
-
-        foreach ($legacyIntegrations as $ci) {
-            $authHeaders = $this->decodeJson($ci->authentication_headers);
-            $authBody = $this->decodeJson($ci->authentication_body);
-            $legacyConfig = $this->decodeJson($ci->config);
-
-            $username = (string) ($authHeaders['auth_username'] ?? '');
-            $password = (string) ($authHeaders['auth_password'] ?? '');
-
-            TenantIntegration::updateOrCreate(
-                [
-                    'tenant_id' => $tenant->id,
-                    'integration_type' => $ci->integration_type,
-                    'identifier' => $ci->identifier,
-                ],
-                [
-                    'external_name' => $ci->external_name,
-                    'external_name_ean' => $ci->external_name_ean,
-                    'external_name_status' => $ci->external_name_status,
-                    'external_name_sale_date' => $ci->external_name_sale_date,
-                    'http_method' => strtoupper((string) $ci->http_method),
-                    'api_url' => $ci->api_url,
-                    'authentication_headers' => $authHeaders,
-                    'authentication_body' => $authBody,
-                    'config' => [
-                        'processing' => [
-                            'days_to_maintain' => (int) ($legacyConfig['days_to_maintain'] ?? 120),
-                            'sales_retention_days' => (int) ($legacyConfig['days_to_maintain'] ?? 120),
-                            'sales_initial_days' => (int) ($legacyConfig['sales_initial_days'] ?? $legacyConfig['days_to_maintain'] ?? 120),
-                            'products_initial_days' => (int) ($legacyConfig['products_initial_days'] ?? $legacyConfig['days_to_maintain'] ?? 120),
-                            'daily_lookback_days' => (int) ($legacyConfig['daily_lookback_days'] ?? 7),
-                            'sales_page_size' => (int) ($legacyConfig['sales_page_size'] ?? 20000),
-                            'products_page_size' => (int) ($legacyConfig['products_page_size'] ?? 1000),
-                            'sales_tipo_consulta' => (string) ($legacyConfig['sales_tipo_consulta'] ?? 'produto'),
-                            'partner_key' => (string) ($authBody['partner_key'] ?? ''),
-                            'empresa' => (string) ($authBody['empresa'] ?? $ci->identifier ?? ''),
-                            'auto_processing_enabled' => (bool) ($legacyConfig['auto_processing_enabled'] ?? true),
-                            'processing_time' => (string) ($legacyConfig['processing_time'] ?? '02:00'),
-                            'initial_setup_date' => $legacyConfig['initial_setup_date'] ?? null,
-                        ],
-                        'auth' => [
-                            'type' => 'basic',
-                            'credentials' => [
-                                'username' => $username,
-                                'password' => $password,
-                            ],
-                        ],
-                        'connection' => [
-                            'base_url' => (string) ($ci->api_url ?? ''),
-                            'timeout' => 30,
-                            'connect_timeout' => 10,
-                            'verify_ssl' => true,
-                            'ping_path' => '/',
-                            'ping_method' => 'GET',
-                            'headers' => [],
-                        ],
-                    ],
-                    'is_active' => (bool) $ci->is_active,
-                    'last_sync' => $ci->last_sync,
-                ]
-            );
-
-            $count++;
+        if (! $ci) {
+            return 0;
         }
 
-        return $count;
+        $authHeaders = $this->decodeJson($ci->authentication_headers);
+        $authBody = $this->decodeJson($ci->authentication_body);
+        $legacyConfig = $this->decodeJson($ci->config);
+
+        $username = (string) ($authHeaders['auth_username'] ?? '');
+        $password = (string) ($authHeaders['auth_password'] ?? '');
+
+        TenantIntegration::updateOrCreate(
+            ['tenant_id' => $tenant->id],
+            [
+                'integration_type' => $ci->integration_type,
+                'identifier' => (string) $client->id,
+                'external_name' => $ci->external_name,
+                'external_name_ean' => $ci->external_name_ean,
+                'external_name_status' => $ci->external_name_status,
+                'external_name_sale_date' => $ci->external_name_sale_date,
+                'http_method' => strtoupper((string) $ci->http_method),
+                'api_url' => $ci->api_url,
+                'authentication_headers' => $authHeaders,
+                'authentication_body' => $authBody,
+                'config' => [
+                    'processing' => [
+                        'days_to_maintain' => (int) ($legacyConfig['days_to_maintain'] ?? 120),
+                        'sales_retention_days' => (int) ($legacyConfig['days_to_maintain'] ?? 120),
+                        'sales_initial_days' => (int) ($legacyConfig['sales_initial_days'] ?? $legacyConfig['days_to_maintain'] ?? 120),
+                        'products_initial_days' => (int) ($legacyConfig['products_initial_days'] ?? $legacyConfig['days_to_maintain'] ?? 120),
+                        'daily_lookback_days' => (int) ($legacyConfig['daily_lookback_days'] ?? 7),
+                        'sales_page_size' => (int) ($legacyConfig['sales_page_size'] ?? 20000),
+                        'products_page_size' => (int) ($legacyConfig['products_page_size'] ?? 1000),
+                        'sales_tipo_consulta' => (string) ($legacyConfig['sales_tipo_consulta'] ?? 'produto'),
+                        'partner_key' => (string) ($authBody['partner_key'] ?? ''),
+                        'empresa' => (string) ($authBody['empresa'] ?? ''),
+                        'auto_processing_enabled' => (bool) ($legacyConfig['auto_processing_enabled'] ?? true),
+                        'processing_time' => (string) ($legacyConfig['processing_time'] ?? '02:00'),
+                        'initial_setup_date' => $legacyConfig['initial_setup_date'] ?? null,
+                    ],
+                    'auth' => [
+                        'type' => 'basic',
+                        'credentials' => [
+                            'username' => $username,
+                            'password' => $password,
+                        ],
+                    ],
+                    'connection' => [
+                        'base_url' => (string) ($ci->api_url ?? ''),
+                        'timeout' => 30,
+                        'connect_timeout' => 10,
+                        'verify_ssl' => true,
+                        'ping_path' => '/',
+                        'ping_method' => 'GET',
+                        'headers' => [],
+                    ],
+                ],
+                'is_active' => (bool) $ci->is_active,
+                'last_sync' => $ci->last_sync,
+            ]
+        );
+
+        return 1;
     }
 
     /** @return array<string, mixed> */
