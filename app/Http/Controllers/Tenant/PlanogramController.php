@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\PlanogramStoreRequest;
@@ -24,6 +25,7 @@ class PlanogramController extends Controller
 {
     use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
+    use InteractsWithTrashedFilter;
 
     public function index(Request $request): Response
     {
@@ -34,6 +36,7 @@ class PlanogramController extends Controller
         $type = $this->requestEnum($request, 'type', ['realograma', 'planograma']);
         $storeId = $this->requestString($request, 'store_id');
         $categoryId = $this->requestString($request, 'category_id');
+        $trashed = $this->resolveTrashedFilter($request);
 
         return $this->renderDeferredIndex('tenant/planograms/Index', 'planograms', fn (): LengthAwarePaginator => $this->planogramsPaginator(
             $search,
@@ -41,6 +44,7 @@ class PlanogramController extends Controller
             $type,
             $storeId,
             $categoryId,
+            $trashed,
             $this->resolvePerPage($request, 10),
         ), [
             'subdomain' => $this->tenantSubdomain(),
@@ -50,6 +54,7 @@ class PlanogramController extends Controller
                 'type' => $type,
                 'store_id' => $storeId,
                 'category_id' => $categoryId,
+                'trashed' => $trashed,
             ],
             'filter_options' => [
                 'stores' => $this->storesForSelect(),
@@ -63,9 +68,13 @@ class PlanogramController extends Controller
         string $type,
         string $storeId,
         string $categoryId,
+        string $trashed,
         int $perPage,
     ): LengthAwarePaginator {
-        return Planogram::query()
+        $query = Planogram::query();
+        $this->applyTrashedToQuery($query, $trashed);
+
+        return $query
             ->with(['store:id,name', 'cluster:id,name', 'category:id,name'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {

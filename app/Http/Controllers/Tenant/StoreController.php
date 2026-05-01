@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithAddress;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
@@ -24,6 +25,7 @@ class StoreController extends Controller
     use InteractsWithAddress;
     use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
+    use InteractsWithTrashedFilter;
 
     public function index(Request $request): Response
     {
@@ -31,23 +33,29 @@ class StoreController extends Controller
 
         $search = $this->requestString($request, 'search');
         $status = $this->requestEnum($request, 'status', ['draft', 'published']);
+        $trashed = $this->resolveTrashedFilter($request);
 
         return $this->renderDeferredIndex('tenant/stores/Index', 'stores', fn (): LengthAwarePaginator => $this->storesPaginator(
             $search,
             $status,
+            $trashed,
             $this->resolvePerPage($request, 10),
         ), [
             'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'status' => $status,
+                'trashed' => $trashed,
             ],
         ]);
     }
 
-    private function storesPaginator(string $search, string $status, int $perPage): LengthAwarePaginator
+    private function storesPaginator(string $search, string $status, string $trashed, int $perPage): LengthAwarePaginator
     {
-        return Store::query()
+        $query = Store::query();
+        $this->applyTrashedToQuery($query, $trashed);
+
+        return $query
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -251,7 +259,7 @@ class StoreController extends Controller
                     : 'rectangle',
                 'label' => $this->nullableMapString($region['label'] ?? null),
                 'type' => $this->nullableMapString($region['type'] ?? 'gondola') ?? 'gondola',
-                'color' => $this->nullableMapString($region['color'] ?? null), 
+                'color' => $this->nullableMapString($region['color'] ?? null),
             ])
             ->values()
             ->all();

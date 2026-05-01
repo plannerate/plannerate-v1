@@ -25,11 +25,12 @@ defineProps<{
         :clear-href="TenantUserAccessController.edit.url(tenantId)"
         search-name="search"
         :search-value="filters.search"
-        placeholder="Buscar por nome, email ou perfil..."
+        search-placeholder="Buscar por nome, email ou perfil..."
         :filter-label="filterLabel"
         :clear-label="clearLabel"
         :total="usersTotal"
         total-label="usuário"
+        :show-trashed-filter="false"
     >
         <select
             name="status"

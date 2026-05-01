@@ -45,6 +45,7 @@ const props = defineProps<{
         type: string;
         store_id: string;
         category_id: string;
+        trashed: 'without' | 'only' | 'with';
     };
     filter_options: {
         stores: Array<{ id: string; name: string }>;
@@ -129,6 +130,7 @@ const pageMeta = useCrudPageMeta({
             :search-placeholder="t('app.tenant.common.search')"
             :filter-label="t('app.tenant.common.filter')"
             :clear-label="t('app.tenant.common.clear_filters')"
+            :trashed-value="props.filters.trashed"
         >
             <template #filters>
                 <input type="hidden" name="category_id" :value="categoryId ?? ''" />

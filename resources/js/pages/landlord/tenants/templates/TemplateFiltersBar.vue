@@ -4,7 +4,7 @@ import ListFiltersBar from '@/components/ListFiltersBar.vue';
 
 defineProps<{
     tenantId: string;
-    filters: { search: string; status: string };
+    filters: { search: string; status: string; trashed: 'without' | 'only' | 'with' };
     filterLabel: string;
     clearLabel: string;
     total: number;
@@ -23,11 +23,12 @@ const statusOptions = [
         :clear-href="WorkflowTemplateController.index.url(tenantId).replace(/^\/\/[^/]+/, '')"
         search-name="search"
         :search-value="filters.search"
-        placeholder="Buscar por nome..."
+        search-placeholder="Buscar por nome..."
         :filter-label="filterLabel"
         :clear-label="clearLabel"
         :total="total"
         total-label="etapa"
+        :trashed-value="filters.trashed"
     >
         <select
             name="status"

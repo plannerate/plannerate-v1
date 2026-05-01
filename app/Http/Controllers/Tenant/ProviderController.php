@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithAddress;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
@@ -21,6 +22,7 @@ class ProviderController extends Controller
     use InteractsWithAddress;
     use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
+    use InteractsWithTrashedFilter;
 
     public function index(Request $request): Response
     {
@@ -28,23 +30,29 @@ class ProviderController extends Controller
 
         $search = $this->requestString($request, 'search');
         $isDefault = $this->requestEnum($request, 'is_default', ['0', '1']);
+        $trashed = $this->resolveTrashedFilter($request);
 
         return $this->renderDeferredIndex('tenant/providers/Index', 'providers', fn (): LengthAwarePaginator => $this->providersPaginator(
             $search,
             $isDefault,
+            $trashed,
             $this->resolvePerPage($request, 10),
         ), [
             'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'is_default' => $isDefault,
+                'trashed' => $trashed,
             ],
         ]);
     }
 
-    private function providersPaginator(string $search, string $isDefault, int $perPage): LengthAwarePaginator
+    private function providersPaginator(string $search, string $isDefault, string $trashed, int $perPage): LengthAwarePaginator
     {
-        return Provider::query()
+        $query = Provider::query();
+        $this->applyTrashedToQuery($query, $trashed);
+
+        return $query
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where

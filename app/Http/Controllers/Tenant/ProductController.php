@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\StoreProductRequest;
@@ -24,6 +25,7 @@ class ProductController extends Controller
 {
     use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
+    use InteractsWithTrashedFilter;
 
     public function syncSingle(Request $request, SysmoSingleProductIntegrationService $singleProductIntegrationService): RedirectResponse
     {
@@ -200,6 +202,7 @@ class ProductController extends Controller
         $search = $this->requestString($request, 'search');
         $status = $this->requestEnum($request, 'status', ['draft', 'published', 'synced', 'error']);
         $categoryId = $this->requestString($request, 'category_id');
+        $trashed = $this->resolveTrashedFilter($request);
         $requestedSort = trim((string) $request->query('sort', ''));
         $sort = in_array($requestedSort, ['name', 'ean', 'status', 'created_at', 'category'], true) ? $requestedSort : null;
         $requestedDirection = strtolower((string) $request->query('direction', 'asc'));
@@ -209,6 +212,7 @@ class ProductController extends Controller
             $search,
             $status,
             $categoryId,
+            $trashed,
             $sort,
             $direction,
             $this->resolvePerPage($request, 10),
@@ -218,6 +222,7 @@ class ProductController extends Controller
                 'search' => $search,
                 'status' => $status,
                 'category_id' => $categoryId,
+                'trashed' => $trashed,
             ],
             'filter_options' => [
                 'categories' => $this->categoriesForSelect(),
@@ -229,11 +234,15 @@ class ProductController extends Controller
         string $search,
         string $status,
         string $categoryId,
+        string $trashed,
         ?string $sort,
         string $direction,
         int $perPage,
     ): LengthAwarePaginator {
-        return Product::query()
+        $query = Product::query();
+        $this->applyTrashedToQuery($query, $trashed);
+
+        return $query
             ->with(['category:id,name', 'stores:id,name'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {

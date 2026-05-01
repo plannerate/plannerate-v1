@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\StoreSaleRequest;
@@ -19,6 +20,7 @@ class SaleController extends Controller
 {
     use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
+    use InteractsWithTrashedFilter;
 
     public function index(Request $request): Response
     {
@@ -32,10 +34,12 @@ class SaleController extends Controller
             : null;
         $requestedDirection = strtolower((string) $request->query('direction', 'desc'));
         $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'desc';
+        $trashed = $this->resolveTrashedFilter($request);
 
         return $this->renderDeferredIndex('tenant/sales/Index', 'sales', fn (): LengthAwarePaginator => $this->salesPaginator(
             $search,
             $storeId,
+            $trashed,
             $sort,
             $direction,
             $this->resolvePerPage($request, 10),
@@ -44,6 +48,7 @@ class SaleController extends Controller
             'filters' => [
                 'search' => $search,
                 'store_id' => $storeId,
+                'trashed' => $trashed,
             ],
             'filter_options' => [
                 'stores' => $this->storesForSelect(),
@@ -54,13 +59,17 @@ class SaleController extends Controller
     private function salesPaginator(
         string $search,
         string $storeId,
+        string $trashed,
         ?string $sort,
         string $direction,
         int $perPage,
     ): LengthAwarePaginator {
         $hasStoreFilter = $storeId !== '';
 
-        return Sale::query()
+        $query = Sale::query();
+        $this->applyTrashedToQuery($query, $trashed);
+
+        return $query
             ->with(['store:id,name'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {

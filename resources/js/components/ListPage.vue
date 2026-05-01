@@ -24,12 +24,16 @@ withDefaults(
         label?: string;
         maxWidth?: string;
         perPageOptions?: number[];
+        showTrashedFilter?: boolean;
+        trashedValue?: 'without' | 'only' | 'with';
     }>(),
     {
         searchName: 'search',
         searchValue: '',
         maxWidth: 'md:max-w-7xl',
         perPageOptions: () => [10, 25, 50, 100],
+        showTrashedFilter: true,
+        trashedValue: 'without',
     },
 );
 </script>
@@ -57,6 +61,8 @@ withDefaults(
             :clear-label="clearLabel"
             :per-page="meta.per_page"
             :per-page-options="perPageOptions"
+            :show-trashed-filter="showTrashedFilter"
+            :trashed-value="trashedValue"
         >
             <slot name="filters" />
         </ListFiltersBar>

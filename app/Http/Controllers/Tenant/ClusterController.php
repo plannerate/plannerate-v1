@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\ClusterStoreRequest;
@@ -19,6 +20,7 @@ class ClusterController extends Controller
 {
     use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
+    use InteractsWithTrashedFilter;
 
     public function index(Request $request): Response
     {
@@ -27,11 +29,13 @@ class ClusterController extends Controller
         $search = $this->requestString($request, 'search');
         $status = $this->requestEnum($request, 'status', ['draft', 'published']);
         $storeId = $this->requestString($request, 'store_id');
+        $trashed = $this->resolveTrashedFilter($request);
 
         return $this->renderDeferredIndex('tenant/clusters/Index', 'clusters', fn (): LengthAwarePaginator => $this->clustersPaginator(
             $search,
             $status,
             $storeId,
+            $trashed,
             $this->resolvePerPage($request, 10),
         ), [
             'subdomain' => $this->tenantSubdomain(),
@@ -39,6 +43,7 @@ class ClusterController extends Controller
                 'search' => $search,
                 'status' => $status,
                 'store_id' => $storeId,
+                'trashed' => $trashed,
             ],
             'filter_options' => [
                 'stores' => $this->storesForSelect(),
@@ -46,9 +51,12 @@ class ClusterController extends Controller
         ]);
     }
 
-    private function clustersPaginator(string $search, string $status, string $storeId, int $perPage): LengthAwarePaginator
+    private function clustersPaginator(string $search, string $status, string $storeId, string $trashed, int $perPage): LengthAwarePaginator
     {
-        return Cluster::query()
+        $query = Cluster::query();
+        $this->applyTrashedToQuery($query, $trashed);
+
+        return $query
             ->with(['store:id,name'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {

@@ -71,6 +71,7 @@ const pageMeta = useCrudPageMeta({
             search-placeholder="Buscar por layer, segmento, product_id ou EAN..."
             :filter-label="t('app.tenant.common.filter')"
             :clear-label="t('app.tenant.common.clear_filters')"
+            :show-trashed-filter="false"
         >
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">

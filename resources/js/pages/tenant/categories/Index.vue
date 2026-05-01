@@ -32,6 +32,7 @@ const props = defineProps<{
     filters: {
         search: string;
         status: string;
+        trashed: 'without' | 'only' | 'with';
     };
 }>();
 
@@ -100,6 +101,7 @@ const pageMeta = useCrudPageMeta({
             :search-placeholder="t('app.tenant.common.search')"
             :filter-label="t('app.tenant.common.filter')"
             :clear-label="t('app.tenant.common.clear_filters')"
+            :trashed-value="props.filters.trashed"
         >
             <template #filters>
                 <select

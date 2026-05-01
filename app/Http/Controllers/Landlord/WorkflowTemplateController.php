@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Landlord;
 
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\WorkflowTemplateStoreRequest;
 use App\Http\Requests\Landlord\WorkflowTemplateUpdateRequest;
@@ -20,6 +21,8 @@ use Spatie\Multitenancy\Models\Tenant as CurrentTenantModel;
 
 class WorkflowTemplateController extends Controller
 {
+    use InteractsWithTrashedFilter;
+
     public function index(Request $request, Tenant $tenant): Response
     {
         $this->authorize('update', $tenant);
@@ -28,13 +31,17 @@ class WorkflowTemplateController extends Controller
         $status = trim((string) $request->string('status'));
         $hasStatusFilter = in_array($status, ['draft', 'published'], true);
         $perPage = $this->resolvePerPage($request, 15);
+        $trashed = $this->resolveTrashedFilter($request);
 
         /** @var array{
          *     templates: LengthAwarePaginator<array<string, mixed>>,
          * } $data
          */
-        $data = $this->runInTenantContext($tenant, function () use ($search, $hasStatusFilter, $status, $perPage): array {
-            $templates = WorkflowTemplate::query()
+        $data = $this->runInTenantContext($tenant, function () use ($search, $hasStatusFilter, $status, $perPage, $trashed): array {
+            $query = WorkflowTemplate::query();
+            $this->applyTrashedToQuery($query, $trashed);
+
+            $templates = $query
                 ->when($search !== '', fn ($q) => $q->where('name', 'like', '%'.$search.'%'))
                 ->when($hasStatusFilter, fn ($q) => $q->where('status', $status))
                 ->with('suggestedUsers:id,name')
@@ -78,6 +85,7 @@ class WorkflowTemplateController extends Controller
             'filters' => [
                 'search' => $search,
                 'status' => $hasStatusFilter ? $status : '',
+                'trashed' => $trashed,
             ],
         ]);
     }

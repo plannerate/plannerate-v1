@@ -73,6 +73,7 @@ function formatPrice(cents: number): string {
         :search-placeholder="t('app.landlord.common.search')"
         :filter-label="t('app.landlord.common.filter')"
         :clear-label="t('app.landlord.common.clear_filters')"
+        :show-trashed-filter="false"
     >
         <template #filters>
             <select

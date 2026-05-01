@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Http\Requests\Tenant\ImportCategorySpreadsheetRequest;
@@ -23,6 +24,7 @@ class CategoryController extends Controller
 {
     use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
+    use InteractsWithTrashedFilter;
 
     private const MERCADOLOGICO_UI_LEVELS = 7;
 
@@ -91,23 +93,29 @@ class CategoryController extends Controller
 
         $search = $this->requestString($request, 'search');
         $status = $this->requestEnum($request, 'status', ['draft', 'published', 'importer']);
+        $trashed = $this->resolveTrashedFilter($request);
 
         return $this->renderDeferredIndex('tenant/categories/Index', 'categories', fn (): LengthAwarePaginator => $this->categoriesPaginator(
             $search,
             $status,
+            $trashed,
             $this->resolvePerPage($request, 10),
         ), [
             'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'status' => $status,
+                'trashed' => $trashed,
             ],
         ]);
     }
 
-    private function categoriesPaginator(string $search, string $status, int $perPage): LengthAwarePaginator
+    private function categoriesPaginator(string $search, string $status, string $trashed, int $perPage): LengthAwarePaginator
     {
-        return Category::query()
+        $query = Category::query();
+        $this->applyTrashedToQuery($query, $trashed);
+
+        return $query
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where

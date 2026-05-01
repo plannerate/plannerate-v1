@@ -259,6 +259,66 @@ test('sync single restores deleted product and redirects to edit', function (): 
     expect(Product::withTrashed()->find($product->id)?->deleted_at)->toBeNull();
 });
 
+test('product index trashed filter scopes soft deleted records', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenant('tenant-trashed-filter');
+    assignTenantAdminRole($user, $tenant->id);
+
+    $host = 'tenant-trashed-filter.'.config('app.landlord_domain');
+
+    $category = Category::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Cat',
+        'slug' => 'cat-trashed',
+        'status' => 'published',
+    ]);
+
+    Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'category_id' => $category->id,
+        'name' => 'Active Product',
+        'slug' => 'active-product',
+        'status' => 'published',
+        'dimensions_status' => 'published',
+    ]);
+
+    $deleted = Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'category_id' => $category->id,
+        'name' => 'Deleted Product',
+        'slug' => 'deleted-product',
+        'status' => 'published',
+        'dimensions_status' => 'published',
+    ]);
+    $deleted->delete();
+
+    $this->withServerVariables(['HTTP_HOST' => $host])
+        ->get(route('tenant.products.index', ['subdomain' => 'tenant-trashed-filter'], false))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/products/Index')
+            ->has('products.data', 1)
+            ->where('products.data.0.slug', 'active-product')
+            ->where('filters.trashed', 'without'));
+
+    $this->withServerVariables(['HTTP_HOST' => $host])
+        ->get(route('tenant.products.index', ['subdomain' => 'tenant-trashed-filter', 'trashed' => 'only'], false))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('products.data', 1)
+            ->where('products.data.0.slug', 'deleted-product')
+            ->where('filters.trashed', 'only'));
+
+    $this->withServerVariables(['HTTP_HOST' => $host])
+        ->get(route('tenant.products.index', ['subdomain' => 'tenant-trashed-filter', 'trashed' => 'with'], false))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('products.data', 2)
+            ->where('filters.trashed', 'with'));
+});
+
 /**
  * @return array<string, mixed>
  */

@@ -20,6 +20,10 @@ withDefaults(
         totalLabel?: string;
         perPage?: number;
         perPageOptions?: number[];
+        /** Quando true, exibe o filtro de registros excluídos (soft delete). */
+        showTrashedFilter?: boolean;
+        /** Valor atual do parâmetro `trashed` na query (sem enviar = não excluídos). */
+        trashedValue?: 'without' | 'only' | 'with';
     }>(),
     {
         searchName: 'search',
@@ -31,6 +35,8 @@ withDefaults(
         totalLabel: undefined,
         perPage: 10,
         perPageOptions: () => [10, 25, 50, 100],
+        showTrashedFilter: true,
+        trashedValue: 'without',
     },
 );
 
@@ -95,6 +101,22 @@ function onFormChange(event: Event): void {
                     class="h-9 w-full rounded-lg border-border bg-background pl-9 text-sm focus-visible:border-primary/60 focus-visible:ring-primary/20"
                     @input="onDebouncedSearchInput"
                 />
+            </div>
+
+            <div
+                v-if="showTrashedFilter"
+                class="flex min-w-44 flex-col gap-1"
+            >
+                <span class="text-xs text-muted-foreground">Excluídos</span>
+                <select
+                    name="trashed"
+                    class="h-9 rounded-lg border border-border bg-background px-2 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                    :value="trashedValue === 'without' ? '' : trashedValue"
+                >
+                    <option value="">Não excluídos</option>
+                    <option value="only">Só os excluídos</option>
+                    <option value="with">Incluir excluídos</option>
+                </select>
             </div>
 
             <!-- Extra filter fields (selects, etc.) -->

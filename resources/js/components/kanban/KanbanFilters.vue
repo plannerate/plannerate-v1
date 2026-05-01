@@ -42,6 +42,7 @@ const filteredPlanograms = computed(() => {
         :search-placeholder="t('app.kanban.filters.search_gondola')"
         :filter-label="t('app.kanban.filters.submit')"
         :clear-label="t('app.kanban.filters.clear')"
+        :show-trashed-filter="false"
     >
         <div class="flex flex-col gap-1">
             <label for="kanban-store" class="text-xs font-medium text-foreground">
