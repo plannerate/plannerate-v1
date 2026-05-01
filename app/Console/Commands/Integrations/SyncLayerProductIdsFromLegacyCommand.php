@@ -9,6 +9,7 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
 #[Signature('sync:layers-product-ids-from-legacy {--tenant= : ID do tenant específico} {--preview : Apenas mostra o que seria atualizado} {--only-invalid-count : Apenas conta layers inválidas por tenant}')]
@@ -46,6 +47,7 @@ class SyncLayerProductIdsFromLegacyCommand extends Command
         }
 
         $this->info('Sincronização de layers.product_id concluída.');
+
 
         return self::SUCCESS;
     }

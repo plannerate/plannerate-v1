@@ -59,7 +59,7 @@ class ImportLegacyTenantsCommand extends Command
         $this->newLine();
         $this->table(
             ['Cliente', 'Tenant', 'DB', 'Usuários', 'Integrações'],
-            array_map(fn ($r) => [
+            array_map(fn($r) => [
                 $r['client'],
                 $r['tenant'],
                 $r['database'],
@@ -99,7 +99,7 @@ class ImportLegacyTenantsCommand extends Command
 
             return true;
         } catch (\Exception $e) {
-            $this->error('❌ Falha na conexão com mysql_legacy: '.$e->getMessage());
+            $this->error('❌ Falha na conexão com mysql_legacy: ' . $e->getMessage());
 
             return false;
         }
@@ -136,7 +136,7 @@ class ImportLegacyTenantsCommand extends Command
     private function importClient(object $client): array
     {
         $slug = str($client->slug ?? $client->name)->slug('_')->replace('supermercado_', '')->replace('_supermercados', '')->replace('_ltda', '')->replace(' LTDA', '');
-        $database = 'tenant_'.$slug;
+        $database = 'tenant_' . $slug;
         $landlordDomain = config('app.landlord_domain', env('LANDLORD_DOMAIN', 'plannerate-v1.test'));
         $host = "{$slug}.{$landlordDomain}";
 
@@ -157,14 +157,21 @@ class ImportLegacyTenantsCommand extends Command
 
         $this->createTenantDatabase($database);
 
-        $tenant = Tenant::on('landlord')->updateOrCreate(
-            ['slug' => $slug],
-            [
-                'name' => $client->name,
-                'database' => $database,
-                'status' => 'active',
-            ]
-        );
+        $tenant = Tenant::on('landlord')
+            ->where('id', (string) $client->id)
+            ->orWhere('slug', $slug)
+            ->first() ?? new Tenant;
+
+        if (! $tenant->exists) {
+            $tenant->id = (string) $client->id;
+        }
+
+        $tenant->fill([
+            'name' => $client->name,
+            'slug' => $slug,
+            'database' => $database,
+            'status' => 'active',
+        ])->save();
 
         $tenant->domains()->updateOrCreate(
             ['tenant_id' => $tenant->id],
@@ -244,6 +251,7 @@ class ImportLegacyTenantsCommand extends Command
     private function importTenantSpecificUsers(int|string $clientId): array
     {
         $legacyUsers = $this->legacy->table('users')
+            ->whereNull('deleted_at')
             ->where('client_id', $clientId)
             ->get();
 
@@ -260,6 +268,7 @@ class ImportLegacyTenantsCommand extends Command
         }
 
         $globalUsers = $this->legacy->table('users')
+            ->whereNull('deleted_at')
             ->whereNull('client_id')
             ->get();
 

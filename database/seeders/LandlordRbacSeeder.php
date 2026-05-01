@@ -4,9 +4,12 @@ namespace Database\Seeders;
 
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\User;
 use App\Support\Authorization\PermissionName;
 use App\Support\Authorization\RbacType;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Spatie\Permission\PermissionRegistrar;
 
 class LandlordRbacSeeder extends Seeder
@@ -138,6 +141,19 @@ class LandlordRbacSeeder extends Seeder
             PermissionName::TENANT_KANBAN_EXECUTIONS_MANAGE,
             PermissionName::TENANT_KANBAN_EXECUTIONS_RESTORE,
         ]);
+
+        $adminUser = User::firstOrCreate(
+            ['email' => 'admin@plannerate.com.br'],
+            [
+                'name' => 'Proplanner Retail',
+                'email_verified_at' => now(),
+                'password' => Hash::make('password'),
+                'is_active' => true,
+            ]
+        );
+
+        setPermissionsTeamId(null);
+        $adminUser->syncRoles([$superAdminRole]);
 
         setPermissionsTeamId($currentTeamId);
         app(PermissionRegistrar::class)->forgetCachedPermissions();

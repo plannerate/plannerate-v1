@@ -14,7 +14,6 @@ use function Laravel\Prompts\search;
 class ImportLegacyBaseClientCommand extends Command
 {
     protected $signature = 'import:source-client
-        {client? : ID ou slug do cliente na base de origem (mysql_legacy — interativo se omitido)}
         {tenant? : ULID ou slug do tenant destino (interativo se omitido)}
         {--table= : Tabela especifica para importar (se nao setada, importa todas as tabelas)}
         {--dry-run : Mostra o que seria importado sem realmente importar}
@@ -65,7 +64,7 @@ class ImportLegacyBaseClientCommand extends Command
             return self::FAILURE;
         }
 
-        $client = $this->resolveClient();
+        $client = $this->resolveClientFromTenant();
         if (! $client) {
             return self::FAILURE;
         }
@@ -187,29 +186,22 @@ class ImportLegacyBaseClientCommand extends Command
         }
     }
 
-    private function resolveClient(): ?object
+    private function resolveClientFromTenant(): ?object
     {
-        $filter = $this->argument('client') ?? search(
-            label: 'Selecione o cliente na base legada',
-            options: fn (string $value) => $this->legacy->table('clients')
-                ->where('status', 'published')
-                ->where(
-                    fn ($q) => $q
-                        ->where('name', 'like', "%{$value}%")
-                        ->orWhere('slug', 'like', "%{$value}%")
-                )
-                ->pluck('name', 'id')
-                ->toArray(),
-            placeholder: 'Digite o nome ou slug...',
-        );
+        $identifier = $this->tenant->integration?->identifier;
 
-        $client = $this->legacy->table('clients')
-            ->where('status', 'published')
-            ->where(fn ($q) => $q->where('id', $filter)->orWhere('slug', $filter))
-            ->first();
+        if (! $identifier) {
+            $this->error("❌ Tenant '{$this->tenant->name}' não possui integração com identifier. Execute primeiro o import:legacy-tenants.");
+
+            return null;
+        }
+
+        $client = $this->legacy->table('clients')->where('id', $identifier)->first();
 
         if (! $client) {
-            $this->error("❌ Cliente não encontrado na base legada: {$filter}");
+            $this->error("❌ Cliente não encontrado na base legada com ID: {$identifier}");
+
+            return null;
         }
 
         return $client;
