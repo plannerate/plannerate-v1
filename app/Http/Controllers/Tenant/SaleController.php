@@ -138,9 +138,10 @@ class SaleController extends Controller
         return to_route('tenant.sales.index', $this->tenantRouteParameters());
     }
 
-    public function edit(string $subdomain, Sale $sale): Response
+    public function edit(string $subdomain, string $sale): Response
     {
-        unset($subdomain);
+        unset($subdomain); 
+        $sale = Sale::query()->findOrFail($sale);
         $this->authorize('update', $sale);
 
         return Inertia::render('tenant/sales/Form', [

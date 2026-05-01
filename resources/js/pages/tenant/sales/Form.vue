@@ -38,6 +38,31 @@ const props = defineProps<{
 const { t } = useT();
 const isEdit = computed(() => props.sale !== null);
 const salesIndexPath = SaleController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const salesCreatePath = SaleController.create.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const salesEditPath = computed(() => {
+    if (! props.sale) {
+        return salesCreatePath;
+    }
+
+    return SaleController.edit.url({ subdomain: props.subdomain, sale: props.sale.id }).replace(/^\/\/[^/]+/, '');
+});
+const salesFormPayload = computed(() => {
+    if (isEdit.value && props.sale) {
+        const form = SaleController.update.form({ subdomain: props.subdomain, sale: props.sale.id });
+
+        return {
+            ...form,
+            action: form.action.replace(/^\/\/[^/]+/, ''),
+        };
+    }
+
+    const form = SaleController.store.form(props.subdomain);
+
+    return {
+        ...form,
+        action: form.action.replace(/^\/\/[^/]+/, ''),
+    };
+});
 const pageMeta = useCrudPageMeta({
     headTitle: isEdit.value ? t('app.tenant.sales.actions.edit') : t('app.tenant.sales.actions.new'),
     title: isEdit.value ? t('app.tenant.sales.actions.edit') : t('app.tenant.sales.actions.new'),
@@ -47,9 +72,7 @@ const pageMeta = useCrudPageMeta({
         { title: t('app.tenant.sales.navigation'), href: salesIndexPath },
         {
             title: isEdit.value ? t('app.tenant.sales.actions.edit') : t('app.tenant.sales.actions.new'),
-            href: isEdit.value
-                ? SaleController.edit.url({ subdomain: props.subdomain, sale: props.sale!.id })
-                : SaleController.create.url(props.subdomain),
+            href: salesEditPath.value,
         },
     ],
 });
@@ -60,11 +83,7 @@ const pageMeta = useCrudPageMeta({
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <div class="p-4">
             <Form
-                v-bind="
-                    isEdit
-                        ? SaleController.update.form({ subdomain: props.subdomain, sale: props.sale!.id })
-                        : SaleController.store.form(props.subdomain)
-                "
+                v-bind="salesFormPayload"
                 v-slot="{ errors, processing }"
             >
                 <FormCard

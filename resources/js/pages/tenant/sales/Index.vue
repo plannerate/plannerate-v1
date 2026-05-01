@@ -40,6 +40,7 @@ const props = defineProps<{
 
 const { t } = useT();
 const salesIndexPath = SaleController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const salesCreatePath = SaleController.create.url(props.subdomain).replace(/^\/\/[^/]+/, '');
 const loadingSalesMeta: Omit<Paginator<SaleRow>, 'data'> = {
     links: [],
     from: null,
@@ -116,7 +117,7 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton :href="SaleController.create.url(props.subdomain)">
+                <NewActionButton :href="salesCreatePath">
                     {{ t('app.tenant.sales.actions.new') }}
                 </NewActionButton>
             </div>
@@ -210,8 +211,8 @@ const pageMeta = useCrudPageMeta({
                         <td class="px-4 py-3 font-medium text-foreground">{{ formatCurrency(sale.total_sale_value) }}</td>
                         <td class="px-4 py-3 text-right">
                             <ColumnActions
-                                :edit-href="SaleController.edit.url({ subdomain: props.subdomain, sale: sale.id })"
-                                :delete-href="SaleController.destroy.url({ subdomain: props.subdomain, sale: sale.id })"
+                                :edit-href="SaleController.edit.url({ subdomain: props.subdomain, sale: sale.id }).replace(/^\/\/[^/]+/, '')"
+                                :delete-href="SaleController.destroy.url({ subdomain: props.subdomain, sale: sale.id }).replace(/^\/\/[^/]+/, '')"
                                 :delete-label="sale.codigo_erp ?? undefined"
                                 :require-confirm-word="true"
                             />
