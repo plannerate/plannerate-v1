@@ -30,7 +30,7 @@ defineProps<{
         :clear-label="clearLabel"
         :total="usersTotal"
         total-label="usuário"
-        :show-trashed-filter="false"
+        :show-trashed-filter="true"
     >
         <select
             name="status"

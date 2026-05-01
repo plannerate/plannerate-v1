@@ -20,6 +20,7 @@ return new class extends Migration
             $table->unsignedInteger('user_limit')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::connection('landlord')->create('modules', function (Blueprint $table): void {
@@ -28,21 +29,24 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
-            $table->timestamps();
+            $table->timestamps();   
+            $table->softDeletes();
         });
 
         Schema::connection('landlord')->create('tenants', function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->string('name');
             $table->string('slug')->unique();
+            $table->string('email')->nullable()->unique();
+            $table->string('phone')->nullable(); 
+            $table->string('logo')->nullable();
             $table->string('database')->unique();
             $table->string('status')->default('provisioning');
-            $table->foreignUlid('plan_id')->nullable()->constrained('plans')->nullOnDelete();
-            $table->unsignedInteger('user_limit')->nullable();
+            $table->foreignUlid('plan_id')->nullable()->constrained('plans')->nullOnDelete(); 
             $table->timestamp('provisioned_at')->nullable();
             $table->text('provisioning_error')->nullable();
             $table->timestamps();
-
+            $table->softDeletes();
             $table->index('status');
         });
 
@@ -61,8 +65,7 @@ return new class extends Migration
         Schema::connection('landlord')->create('tenant_modules', function (Blueprint $table): void {
             $table->foreignUlid('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->foreignUlid('module_id')->constrained('modules')->cascadeOnDelete();
-            $table->timestamps();
-
+            $table->timestamps(); 
             $table->unique(['tenant_id', 'module_id']);
         });
 
@@ -74,7 +77,7 @@ return new class extends Migration
             $table->json('credentials')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-
+            $table->softDeletes();
             $table->index(['tenant_id', 'provider']);
         });
     }

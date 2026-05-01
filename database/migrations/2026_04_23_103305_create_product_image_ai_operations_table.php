@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('status')->default('queued');
             $table->text('error_message')->nullable();
             $table->timestamps();
-
+            $table->softDeletes();
             $table->index(['tenant_id', 'status']);
         });
     }

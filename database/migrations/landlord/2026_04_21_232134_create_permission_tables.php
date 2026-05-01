@@ -27,6 +27,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('guard_name');
             $table->timestamps();
+            $table->softDeletes();
             $table->unique(['guard_name', 'name', 'type'], 'permissions_guard_name_type_unique');
         });
 
@@ -38,6 +39,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('guard_name');
             $table->timestamps();
+            $table->softDeletes();
             $table->unique([$teamForeignKey, 'guard_name', 'name', 'type'], 'roles_team_name_guard_type_unique');
         });
 
