@@ -109,24 +109,40 @@ jobs:
             fi
             APP_DIR="/opt/plannerate/${APP_SLUG}"
             cd "${APP_DIR}"
-            docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
-              for attempt in 1 2 3 4 5; do
-                if curl -fsS http://127.0.0.1/up >/dev/null; then
-                  echo "Health check passed on /up (attempt ${attempt})"
+            health_ok=0
+            for outer_attempt in 1 2 3 4 5; do
+              if docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
+                for attempt in 1 2 3 4 5; do
+                  if curl -fsS http://127.0.0.1/up >/dev/null; then
+                    echo "Health check passed on /up (attempt ${attempt})"
+                    exit 0
+                  fi
+                  echo "Health check /up failed (attempt ${attempt}), retrying..."
+                  sleep 3
+                done
+
+                if curl -fsSI http://127.0.0.1/ >/dev/null; then
+                  echo "Warning: /up failed but / responded successfully"
                   exit 0
                 fi
-                echo "Health check /up failed (attempt ${attempt}), retrying..."
-                sleep 3
-              done
 
-              if curl -fsSI http://127.0.0.1/ >/dev/null; then
-                echo "Warning: /up failed but / responded successfully"
-                exit 0
+                echo "Health check failed for both /up and /"
+                echo "---- /up response body ----"
+                curl -sS http://127.0.0.1/up || true
+                exit 1
+              '; then
+                health_ok=1
+                break
               fi
 
-              echo "Health check failed for both /up and /"
-              echo "---- /up response body ----"
-              curl -sS http://127.0.0.1/up || true
+              echo "Health check command failed at container level (attempt ${outer_attempt}), retrying..."
+              docker compose -p "plannerate-${APP_SLUG}" ps || true
+              sleep 4
+            done
+
+            if [[ "${health_ok}" -ne 1 ]]; then
+              echo "Health check failed after retries"
+              docker compose -p "plannerate-${APP_SLUG}" logs app --tail=120 || true
               exit 1
-            '
+            fi
             echo "Health check finished inside app container for ${APP_SLUG}"
