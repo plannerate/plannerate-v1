@@ -142,15 +142,15 @@ else
 fi
 
 log_info "Configuring firewall rules"
-run_cmd "ufw --force default deny incoming"
-run_cmd "ufw --force default allow outgoing"
-run_cmd "ufw --force allow 22/tcp"
+run_cmd "ufw default deny incoming"
+run_cmd "ufw default allow outgoing"
+run_cmd "ufw allow 22/tcp"
 
 if [[ "${DB_MODE}" == "externo" ]]; then
     if [[ "${DB_ENGINE}" == "mysql" ]]; then
-        run_cmd "ufw --force allow from ${DB_ALLOWED_CIDR} to any port 3306 proto tcp"
+        run_cmd "ufw allow from ${DB_ALLOWED_CIDR} to any port 3306 proto tcp"
     else
-        run_cmd "ufw --force allow from ${DB_ALLOWED_CIDR} to any port 5432 proto tcp"
+        run_cmd "ufw allow from ${DB_ALLOWED_CIDR} to any port 5432 proto tcp"
     fi
 else
     log_info "DB_MODE=local, database port not exposed via firewall"
