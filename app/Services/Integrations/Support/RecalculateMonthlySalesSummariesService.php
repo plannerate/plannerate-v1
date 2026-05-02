@@ -109,7 +109,7 @@ class RecalculateMonthlySalesSummariesService
         return match ($driver) {
             'pgsql' => "DATE_TRUNC('month', {$column})::date",
             'sqlite' => "date({$column}, 'start of month')",
-            default => "DATE_FORMAT({$column}, '%Y-%m-01')",
+            default => "DATE_TRUNC('month', {$column})::date",
         };
     }
 
@@ -118,37 +118,13 @@ class RecalculateMonthlySalesSummariesService
         return match ($driver) {
             'pgsql' => "TO_CHAR({$column}, 'YYYY-MM') = ?",
             'sqlite' => "strftime('%Y-%m', {$column}) = ?",
-            default => "DATE_FORMAT({$column}, '%Y-%m') = ?",
+            default => "TO_CHAR({$column}, 'YYYY-MM') = ?",
         };
     }
 
     private function linkSalesToProducts(string $connection, string $tenantId): int
     {
         $database = DB::connection($connection);
-        $driver = $database->getDriverName();
-
-        if (in_array($driver, ['mysql', 'mariadb'], true)) {
-            return $database->affectingStatement('
-                UPDATE sales
-                INNER JOIN products p
-                    ON p.tenant_id = sales.tenant_id
-                   AND p.codigo_erp = sales.codigo_erp
-                   AND p.deleted_at IS NULL
-                SET
-                    sales.product_id = p.id,
-                    sales.ean = p.ean,
-                    sales.updated_at = CURRENT_TIMESTAMP
-                WHERE sales.tenant_id = ?
-                  AND sales.codigo_erp IS NOT NULL
-                  AND sales.deleted_at IS NULL
-                  AND (
-                    sales.product_id IS NULL
-                    OR sales.ean IS NULL
-                    OR sales.product_id <> p.id
-                    OR COALESCE(sales.ean, \'\') <> COALESCE(p.ean, \'\')
-                  )
-            ', [$tenantId]);
-        }
 
         return $database->affectingStatement('
             UPDATE sales
@@ -217,29 +193,6 @@ class RecalculateMonthlySalesSummariesService
     private function linkMonthlySalesSummariesToProducts(string $connection, string $tenantId): int
     {
         $database = DB::connection($connection);
-        $driver = $database->getDriverName();
-
-        if (in_array($driver, ['mysql', 'mariadb'], true)) {
-            return $database->affectingStatement('
-                UPDATE monthly_sales_summaries
-                INNER JOIN products p
-                    ON p.tenant_id = monthly_sales_summaries.tenant_id
-                   AND p.codigo_erp = monthly_sales_summaries.codigo_erp
-                   AND p.deleted_at IS NULL
-                SET
-                    monthly_sales_summaries.product_id = p.id,
-                    monthly_sales_summaries.ean = p.ean,
-                    monthly_sales_summaries.updated_at = CURRENT_TIMESTAMP
-                WHERE monthly_sales_summaries.tenant_id = ?
-                  AND monthly_sales_summaries.codigo_erp IS NOT NULL
-                  AND (
-                    monthly_sales_summaries.product_id IS NULL
-                    OR monthly_sales_summaries.ean IS NULL
-                    OR monthly_sales_summaries.product_id <> p.id
-                    OR COALESCE(monthly_sales_summaries.ean, \'\') <> COALESCE(p.ean, \'\')
-                  )
-            ', [$tenantId]);
-        }
 
         return $database->affectingStatement('
             UPDATE monthly_sales_summaries

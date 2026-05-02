@@ -12,12 +12,12 @@ return new class extends Migration
     {
         $templatesTable = 'workflow_templates';
 
-        Schema::create($templatesTable, function (Blueprint $table) use ($templatesTable) {
+        Schema::create($templatesTable, function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->ulid('user_id')->nullable();
             $table->ulid('tenant_id')->nullable();
-            $table->foreignUlid('template_next_step_id')->nullable()->constrained($templatesTable)->nullOnDelete();
-            $table->foreignUlid('template_previous_step_id')->nullable()->constrained($templatesTable)->nullOnDelete();
+            $table->foreignUlid('template_next_step_id')->nullable();
+            $table->foreignUlid('template_previous_step_id')->nullable();
             $table->string('name');
             $table->string('slug')->unique();
             $table->text('description')->nullable();
@@ -30,6 +30,18 @@ return new class extends Migration
             $table->string('status')->default('draft');
             $table->timestamps();
             $table->softDeletes();
+        });
+
+        Schema::table($templatesTable, function (Blueprint $table) use ($templatesTable): void {
+            $table->foreign('template_next_step_id')
+                ->references('id')
+                ->on($templatesTable)
+                ->nullOnDelete();
+
+            $table->foreign('template_previous_step_id')
+                ->references('id')
+                ->on($templatesTable)
+                ->nullOnDelete();
         });
     }
 

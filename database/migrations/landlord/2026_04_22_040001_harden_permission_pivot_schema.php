@@ -27,11 +27,7 @@ return new class extends Migration
             return;
         }
 
-        try {
-            DB::connection($this->connection)->statement(sprintf('ALTER TABLE `%s` DROP PRIMARY KEY', $table));
-        } catch (Throwable) {
-            // Ignore when there is no primary key on the legacy id column.
-        }
+        $this->dropPrimaryKeyIfExists($table);
 
         try {
             Schema::connection($this->connection)->table($table, function (Blueprint $blueprint): void {
@@ -40,13 +36,37 @@ return new class extends Migration
 
             return;
         } catch (Throwable) {
-            // If we cannot drop it in this engine version, keep it nullable to avoid insert failures.
-        }
-
-        try {
-            DB::connection($this->connection)->statement(sprintf('ALTER TABLE `%s` MODIFY `id` CHAR(26) NULL', $table));
-        } catch (Throwable) {
             // no-op fallback
+        }
+    }
+
+    private function dropPrimaryKeyIfExists(string $table): void
+    {
+        $connection = DB::connection($this->connection);
+
+        if ($connection->getDriverName() === 'pgsql') {
+            $constraints = $connection->select(
+                'SELECT constraint_name
+                 FROM information_schema.table_constraints
+                 WHERE table_schema = current_schema()
+                   AND table_name = ?
+                   AND constraint_type = ?
+                 LIMIT 1',
+                [$table, 'PRIMARY KEY'],
+            );
+
+            if ($constraints === []) {
+                return;
+            }
+
+            $constraintName = (string) ($constraints[0]->constraint_name ?? '');
+            if ($constraintName === '') {
+                return;
+            }
+
+            $connection->statement(sprintf('ALTER TABLE "%s" DROP CONSTRAINT "%s"', $table, $constraintName));
+
+            return;
         }
     }
 };

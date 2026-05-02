@@ -11,12 +11,6 @@ final class DatabaseCreator
     {
         $driver = $connection->getDriverName();
 
-        if (in_array($driver, ['mysql', 'mariadb'], true)) {
-            $connection->statement(sprintf('CREATE DATABASE IF NOT EXISTS `%s`', str_replace('`', '``', $database)));
-
-            return;
-        }
-
         if ($driver === 'pgsql') {
             $databaseExists = $connection->table('pg_database')
                 ->where('datname', $database)

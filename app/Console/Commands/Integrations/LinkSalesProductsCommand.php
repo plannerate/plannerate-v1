@@ -248,25 +248,6 @@ class LinkSalesProductsCommand extends Command
     protected function linkSalesToProducts(string $connection, string $tenantId): int
     {
         $database = DB::connection($connection);
-        $driver = $database->getDriverName();
-
-        if (in_array($driver, ['mysql', 'mariadb'], true)) {
-            $sql = '
-                UPDATE sales
-                INNER JOIN products p
-                    ON p.tenant_id = sales.tenant_id
-                   AND p.codigo_erp = sales.codigo_erp
-                SET
-                    sales.product_id = p.id,
-                    sales.ean = p.ean,
-                    sales.updated_at = CURRENT_TIMESTAMP
-                WHERE sales.tenant_id = ?
-                  AND sales.product_id IS NULL
-                  AND sales.codigo_erp IS NOT NULL
-            ';
-
-            return $database->affectingStatement($sql, [$tenantId]);
-        }
 
         $sql = '
             UPDATE sales 

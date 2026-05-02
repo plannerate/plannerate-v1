@@ -31,9 +31,9 @@ class SyncProductsFromEanReferencesService
             ];
         }
 
-        $updated = in_array($connection->getDriverName(), ['mysql', 'mariadb'], true)
-            ? $this->syncWithBulkUpdate($tenantConnectionName, $tenantId)
-            : $this->syncWithCursor($tenantConnectionName, $tenantId);
+        $updated = $connection->getDriverName() === 'sqlite'
+            ? $this->syncWithCursor($tenantConnectionName, $tenantId)
+            : $this->syncWithBulkUpdate($tenantConnectionName, $tenantId);
 
         return [
             'matched' => $matched,
@@ -75,15 +75,9 @@ class SyncProductsFromEanReferencesService
     private function syncWithBulkUpdate(string $tenantConnectionName, string $tenantId): int
     {
         $connection = DB::connection($tenantConnectionName);
-        $productsTable = $connection->getTablePrefix().'products';
-        $referencesTable = $connection->getTablePrefix().'ean_references';
 
         $sql = "
-            UPDATE {$productsTable} p
-            INNER JOIN {$referencesTable} r
-                ON r.tenant_id = p.tenant_id
-               AND r.ean = p.ean
-               AND r.deleted_at IS NULL
+            UPDATE products p
             SET p.category_id = CASE
                     WHEN (p.category_id IS NULL OR p.category_id = '') AND r.category_id IS NOT NULL
                     THEN r.category_id
@@ -155,7 +149,11 @@ class SyncProductsFromEanReferencesService
                     ELSE p.dimension_status
                 END,
                 p.updated_at = ?
-            WHERE p.tenant_id = ?
+                        FROM ean_references r
+                        WHERE r.tenant_id = p.tenant_id
+                            AND r.ean = p.ean
+                            AND r.deleted_at IS NULL
+                            AND p.tenant_id = ?
               AND (
                   ((p.category_id IS NULL OR p.category_id = '') AND r.category_id IS NOT NULL)
                   OR ((p.description IS NULL OR p.description = '') AND r.reference_description IS NOT NULL AND r.reference_description <> '')

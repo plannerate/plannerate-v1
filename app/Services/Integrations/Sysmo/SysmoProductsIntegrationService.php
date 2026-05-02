@@ -220,32 +220,8 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         $now = Carbon::now();
 
         $connection = DB::connection($tenantConnectionName);
-        $driver = $connection->getDriverName();
 
-        if (in_array($driver, ['mysql', 'mariadb'], true)) {
-            $productsTable = $connection->getTablePrefix().'products';
-            $referencesTable = $connection->getTablePrefix().'ean_references';
-
-            $connection->update(
-                "
-                UPDATE {$productsTable} p
-                INNER JOIN {$referencesTable} r
-                    ON r.tenant_id = p.tenant_id
-                   AND r.ean = p.ean
-                   AND r.deleted_at IS NULL
-                SET p.category_id = COALESCE(r.category_id, p.category_id),
-                    p.description = COALESCE(r.reference_description, p.description),
-                    p.brand = COALESCE(r.brand, p.brand),
-                    p.subbrand = COALESCE(r.subbrand, p.subbrand),
-                    p.packaging_type = COALESCE(r.packaging_type, p.packaging_type),
-                    p.packaging_size = COALESCE(r.packaging_size, p.packaging_size),
-                    p.measurement_unit = COALESCE(r.measurement_unit, p.measurement_unit),
-                    p.updated_at = ?
-                WHERE p.tenant_id = ?
-                ",
-                [$now, $tenantId],
-            );
-        } else {
+        if ($connection->getDriverName() === 'sqlite') {
             $products = $connection->table('products')
                 ->where('tenant_id', $tenantId)
                 ->orderBy('id')
@@ -303,6 +279,27 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
                         ->update($updates);
                 }
             }
+
+        } else {
+            $connection->update(
+                '
+                UPDATE products p
+                SET category_id = COALESCE(r.category_id, p.category_id),
+                    description = COALESCE(r.reference_description, p.description),
+                    brand = COALESCE(r.brand, p.brand),
+                    subbrand = COALESCE(r.subbrand, p.subbrand),
+                    packaging_type = COALESCE(r.packaging_type, p.packaging_type),
+                    packaging_size = COALESCE(r.packaging_size, p.packaging_size),
+                    measurement_unit = COALESCE(r.measurement_unit, p.measurement_unit),
+                    updated_at = ?
+                FROM ean_references r
+                WHERE r.tenant_id = p.tenant_id
+                  AND r.ean = p.ean
+                  AND r.deleted_at IS NULL
+                  AND p.tenant_id = ?
+                ',
+                [$now, $tenantId],
+            );
         }
 
         $this->syncSalesProductReferencesService->syncAllByCodigoErp(

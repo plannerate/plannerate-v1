@@ -75,11 +75,11 @@ return [
             ]) : [],
         ],
         'tenant' => $buildDatabaseConnection(
-            env('DB_TENANT_CONNECTION', env('DB_CONNECTION', 'mysql')),
+            env('DB_TENANT_CONNECTION', env('DB_CONNECTION', 'pgsql')),
             [
                 'url' => env('DB_TENANT_URL', env('DB_URL')),
                 'host' => $resolveScopedEnv('DB_TENANT_HOST', 'DB_HOST', '127.0.0.1'),
-                'port' => $resolveScopedEnv('DB_TENANT_PORT', 'DB_PORT', '3306'),
+                'port' => $resolveScopedEnv('DB_TENANT_PORT', 'DB_PORT', '5432'),
                 'database' => env('DB_TENANT_DATABASE', env('DB_DATABASE', 'laravel')),
                 'username' => $resolveScopedEnv('DB_TENANT_USERNAME', 'DB_USERNAME', 'root'),
                 'password' => $resolveScopedEnv('DB_TENANT_PASSWORD', 'DB_PASSWORD', ''),
@@ -92,11 +92,11 @@ return [
             ],
         ),
         'landlord' => $buildDatabaseConnection(
-            env('DB_LANDLORD_CONNECTION', env('DB_CONNECTION', 'mysql')),
+            env('DB_LANDLORD_CONNECTION', env('DB_CONNECTION', 'pgsql')),
             [
                 'url' => env('DB_LANDLORD_URL', env('DB_URL')),
                 'host' => $resolveScopedEnv('DB_LANDLORD_HOST', 'DB_HOST', '127.0.0.1'),
-                'port' => $resolveScopedEnv('DB_LANDLORD_PORT', 'DB_PORT', '3306'),
+                'port' => $resolveScopedEnv('DB_LANDLORD_PORT', 'DB_PORT', '5432'),
                 'database' => env('DB_LANDLORD_DATABASE', env('DB_DATABASE', 'laravel')),
                 'username' => $resolveScopedEnv('DB_LANDLORD_USERNAME', 'DB_USERNAME', 'root'),
                 'password' => $resolveScopedEnv('DB_LANDLORD_PASSWORD', 'DB_PASSWORD', ''),

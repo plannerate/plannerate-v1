@@ -133,6 +133,7 @@ class RecalculateMonthlySalesSummaries extends Command
     private function verifySummaries(string $connection, ?string $tenantId, ?string $month): int
     {
         $this->info('🔍 Verificando integridade dos dados...');
+        $driver = DB::connection($connection)->getDriverName();
 
         // Calcula totais diretamente no banco para evitar esgotamento de memória
         $this->info('📊 Calculando totais de sales...');
@@ -152,7 +153,7 @@ class RecalculateMonthlySalesSummaries extends Command
         }
 
         if ($month) {
-            $salesTotals->whereRaw("DATE_FORMAT(sale_date, '%Y-%m') = ?", [$month]);
+            $salesTotals->whereRaw($this->monthFilterExpression($driver, 'sale_date'), [$month]);
         }
 
         $salesTotal = $salesTotals->first();
@@ -173,7 +174,7 @@ class RecalculateMonthlySalesSummaries extends Command
         }
 
         if ($month) {
-            $summaryTotals->whereRaw("DATE_FORMAT(sale_month, '%Y-%m') = ?", [$month]);
+            $summaryTotals->whereRaw($this->monthFilterExpression($driver, 'sale_month'), [$month]);
         }
 
         $summaryTotal = $summaryTotals->first();
@@ -250,5 +251,14 @@ class RecalculateMonthlySalesSummaries extends Command
         );
 
         return 1;
+    }
+
+    private function monthFilterExpression(string $driver, string $column): string
+    {
+        return match ($driver) {
+            'pgsql' => "TO_CHAR({$column}, 'YYYY-MM') = ?",
+            'sqlite' => "strftime('%Y-%m', {$column}) = ?",
+            default => "TO_CHAR({$column}, 'YYYY-MM') = ?",
+        };
     }
 }

@@ -25,25 +25,21 @@ class SyncSalesProductReferencesService
         }
 
         $connection = DB::connection($tenantConnectionName);
-        $driver = $connection->getDriverName();
 
-        if (in_array($driver, ['mysql', 'mariadb'], true)) {
-            $salesTable = $connection->getTablePrefix().'sales';
-            $productsTable = $connection->getTablePrefix().'products';
-
+        if ($connection->getDriverName() !== 'sqlite') {
             foreach (array_chunk($erpCodes, self::ERP_CHUNK_SIZE) as $erpChunk) {
                 $inPlaceholders = implode(', ', array_fill(0, count($erpChunk), '?'));
 
                 $sql = "
-                    UPDATE {$salesTable} s
-                    INNER JOIN {$productsTable} p
-                        ON p.tenant_id = s.tenant_id
-                       AND p.codigo_erp = s.codigo_erp
-                       AND p.deleted_at IS NULL
-                    SET s.product_id = p.id,
-                        s.ean = p.ean,
-                        s.updated_at = ?
+                    UPDATE sales s
+                    SET product_id = p.id,
+                        ean = p.ean,
+                        updated_at = ?
+                    FROM products p
                     WHERE s.tenant_id = ?
+                      AND p.tenant_id = s.tenant_id
+                      AND p.codigo_erp = s.codigo_erp
+                      AND p.deleted_at IS NULL
                       AND s.codigo_erp IN ({$inPlaceholders})
                       AND (
                           s.product_id IS NULL
@@ -87,22 +83,18 @@ class SyncSalesProductReferencesService
         Carbon $now,
     ): void {
         $connection = DB::connection($tenantConnectionName);
-        $driver = $connection->getDriverName();
 
-        if (in_array($driver, ['mysql', 'mariadb'], true)) {
-            $salesTable = $connection->getTablePrefix().'sales';
-            $productsTable = $connection->getTablePrefix().'products';
-
+        if ($connection->getDriverName() !== 'sqlite') {
             $sql = "
-                UPDATE {$salesTable} s
-                INNER JOIN {$productsTable} p
-                    ON p.tenant_id = s.tenant_id
-                   AND p.codigo_erp = s.codigo_erp
-                   AND p.deleted_at IS NULL
-                SET s.product_id = p.id,
-                    s.ean = p.ean,
-                    s.updated_at = ?
+                UPDATE sales s
+                SET product_id = p.id,
+                    ean = p.ean,
+                    updated_at = ?
+                FROM products p
                 WHERE s.tenant_id = ?
+                  AND p.tenant_id = s.tenant_id
+                  AND p.codigo_erp = s.codigo_erp
+                  AND p.deleted_at IS NULL
                   AND (
                       s.product_id IS NULL
                       OR s.ean IS NULL

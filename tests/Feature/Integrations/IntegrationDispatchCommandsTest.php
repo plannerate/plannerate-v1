@@ -115,7 +115,7 @@ test('integrations dispatch initial command enqueues jobs for active integration
     $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Initial',
         'slug' => 'tenant-initial-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
     ]));
 
@@ -139,7 +139,7 @@ test('integrations dispatch initial command supports resource option', function 
     $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Initial Resource',
         'slug' => 'tenant-initial-resource-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
     ]));
 
@@ -167,7 +167,7 @@ test('integrations dispatch initial command supports ignore synced days option',
     $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Initial Ignore Synced',
         'slug' => 'tenant-initial-ignore-synced-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
     ]));
 
@@ -259,7 +259,7 @@ test('initial sync sales jobs are queued with tenant context', function () {
     $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Initial Context',
         'slug' => 'tenant-initial-context-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
     ]));
 
@@ -296,7 +296,7 @@ test('daily sync sales jobs are queued with tenant context', function () {
     $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Daily Context',
         'slug' => 'tenant-daily-context-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
     ]));
 
@@ -329,7 +329,7 @@ test('daily sync chains post sync maintenance after sales and products jobs', fu
     $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Daily Post Sync',
         'slug' => 'tenant-daily-post-sync-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
     ]));
 
@@ -362,7 +362,7 @@ test('initial sync skips sales dates already marked as success', function () {
     $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Initial Skip',
         'slug' => 'tenant-initial-skip-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
     ]));
 
@@ -403,7 +403,7 @@ test('initial sync can ignore synced days check when requested', function () {
     $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Initial Ignore Check',
         'slug' => 'tenant-initial-ignore-check-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
     ]));
 
@@ -451,7 +451,7 @@ test('initial sync chains post sync maintenance after initial jobs', function ()
     $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Initial Post Sync',
         'slug' => 'tenant-initial-post-sync-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
     ]));
 
@@ -482,7 +482,7 @@ test('monthly sales recalculate command dispatches one job per tenant by default
     $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Monthly Dispatch',
         'slug' => 'tenant-monthly-dispatch-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
     ]));
 
@@ -502,7 +502,7 @@ test('monthly sales recalculate command can run synchronously for manual executi
     $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Monthly Sync',
         'slug' => 'tenant-monthly-sync-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
     ]));
 
@@ -725,7 +725,7 @@ test('initial sync dispatches products as single full sync bootstrap', function 
     $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Products Bootstrap',
         'slug' => 'tenant-products-bootstrap-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
     ]));
 
@@ -791,7 +791,7 @@ test('integrations nightly maintenance command enqueues maintenance job', functi
     $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Maintenance',
         'slug' => 'tenant-maintenance-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
     ]));
 
@@ -960,20 +960,16 @@ test('link sales products command uses tenant option without client context', fu
         ->and($untouchedSale?->ean)->toBeNull();
 });
 
-test('link sales products command uses mysql update join syntax', function () {
+test('link sales products command uses update from syntax', function () {
     $tenantId = '01kqaxz6d322qnsapct4q5cvbx';
     $connection = Mockery::mock(Connection::class);
-
-    $connection->shouldReceive('getDriverName')
-        ->once()
-        ->andReturn('mysql');
 
     $connection->shouldReceive('affectingStatement')
         ->once()
         ->with(
             Mockery::on(fn (string $sql): bool => str_contains($sql, 'UPDATE sales')
-                && str_contains($sql, 'INNER JOIN products p')
-                && ! str_contains($sql, 'FROM products p')),
+                && str_contains($sql, 'FROM products p')
+                && ! str_contains($sql, 'INNER JOIN products p')),
             [$tenantId],
         )
         ->andReturn(10);
