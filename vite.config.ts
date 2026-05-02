@@ -6,6 +6,8 @@ import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
 import path from 'path';
 
+const enableWayfinder = process.env.VITE_ENABLE_WAYFINDER !== 'false';
+
 export default defineConfig({
     plugins: [
         laravel({
@@ -22,9 +24,13 @@ export default defineConfig({
                 },
             },
         }),
-        wayfinder({
-            formVariants: true,
-        }),
+        ...(enableWayfinder
+            ? [
+                  wayfinder({
+                      formVariants: true,
+                  }),
+              ]
+            : []),
     ],
     optimizeDeps: {
         include: [ 
