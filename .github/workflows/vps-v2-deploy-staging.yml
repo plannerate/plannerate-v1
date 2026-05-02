@@ -49,8 +49,21 @@ jobs:
             export IMAGE_TAG
             docker compose -p "plannerate-${APP_SLUG}" pull
             docker compose -p "plannerate-${APP_SLUG}" up -d --force-recreate
-            if ! docker compose -p "plannerate-${APP_SLUG}" run --rm --no-deps -e BROADCAST_CONNECTION=log app php artisan migrate --force; then
-              echo "Migration failed in ${APP_SLUG} (continuing deploy)"
+            migration_ok=0
+            for attempt in 1 2 3 4 5; do
+              if docker compose -p "plannerate-${APP_SLUG}" run --rm --no-deps -e BROADCAST_CONNECTION=log app php artisan migrate --force; then
+                migration_ok=1
+                echo "Migration succeeded on attempt ${attempt}"
+                break
+              fi
+              echo "Migration failed on attempt ${attempt}; waiting before retry..."
+              sleep 5
+            done
+
+            if [[ "${migration_ok}" -ne 1 ]]; then
+              echo "Migration failed in ${APP_SLUG} after retries"
+              docker compose -p "plannerate-${APP_SLUG}" logs app --tail=120 || true
+              exit 1
             fi
             docker compose -p "plannerate-${APP_SLUG}" run --rm --no-deps -e BROADCAST_CONNECTION=log app sh -lc '
               php artisan config:clear
