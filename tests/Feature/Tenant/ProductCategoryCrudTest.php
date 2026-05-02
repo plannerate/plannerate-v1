@@ -322,38 +322,44 @@ test('product index trashed filter scopes soft deleted records', function (): vo
 /**
  * @return array<string, mixed>
  */
-function tenantDatabaseAttributes(): array
-{
-    $defaultConnection = (string) config('database.default');
+if (! function_exists('tenantDatabaseAttributes')) {
+    function tenantDatabaseAttributes(): array
+    {
+        $defaultConnection = (string) config('database.default');
 
-    return (array) config("database.connections.{$defaultConnection}");
+        return (array) config("database.connections.{$defaultConnection}");
+    }
 }
 
-function makeTenant(string $subdomain): Tenant
-{
-    $databaseAttributes = tenantDatabaseAttributes();
+if (! function_exists('makeTenant')) {
+    function makeTenant(string $subdomain): Tenant
+    {
+        $databaseAttributes = tenantDatabaseAttributes();
 
-    $tenant = Tenant::query()->create([
-        'name' => strtoupper($subdomain),
-        'slug' => $subdomain,
-        'database' => (string) ($databaseAttributes['database'] ?? 'database.sqlite'),
-        'status' => 'active',
-    ]);
+        $tenant = Tenant::query()->create([
+            'name' => strtoupper($subdomain),
+            'slug' => $subdomain,
+            'database' => (string) ($databaseAttributes['database'] ?? 'database.sqlite'),
+            'status' => 'active',
+        ]);
 
-    $tenant->domains()->create([
-        'host' => $subdomain.'.'.config('app.landlord_domain'),
-        'type' => 'subdomain',
-        'is_primary' => true,
-        'is_active' => true,
-    ]);
+        $tenant->domains()->create([
+            'host' => $subdomain.'.'.config('app.landlord_domain'),
+            'type' => 'subdomain',
+            'is_primary' => true,
+            'is_active' => true,
+        ]);
 
-    return $tenant;
+        return $tenant;
+    }
 }
 
-function assignTenantAdminRole(User $user, string $tenantId): void
-{
-    $role = Role::query()->where('system_name', 'tenant-admin')->firstOrFail();
+if (! function_exists('assignTenantAdminRole')) {
+    function assignTenantAdminRole(User $user, string $tenantId): void
+    {
+        $role = Role::query()->where('system_name', 'tenant-admin')->firstOrFail();
 
-    setPermissionsTeamId($tenantId);
-    $user->assignRole($role);
+        setPermissionsTeamId($tenantId);
+        $user->assignRole($role);
+    }
 }

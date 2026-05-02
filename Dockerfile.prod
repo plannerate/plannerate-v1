@@ -47,17 +47,28 @@ WORKDIR /var/www
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        git \
-        unzip \
-        curl \
-        libzip-dev \
-        libpq-dev \
-        libpng-dev \
-        libjpeg62-turbo-dev \
-        libfreetype6-dev \
+        git unzip curl \
+        libzip-dev libpq-dev libsqlite3-dev \
+        libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+        libcurl4-openssl-dev libonig-dev libxml2-dev libicu-dev \
+        libldap2-dev libssl-dev libreadline-dev pkg-config \
+        libmagickwand-dev libmemcached-dev \
+        $PHPIZE_DEPS \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql pdo_pgsql bcmath pcntl zip gd \
-    && rm -rf /var/lib/apt/lists/*
+    && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu \
+    && docker-php-ext-install \
+        pdo_mysql pdo_pgsql pdo_sqlite \
+        bcmath pcntl zip gd \
+        intl soap mbstring xml curl ldap readline \
+    && pecl install igbinary \
+    && pecl install msgpack \
+    && pecl install -D 'enable-igbinary="yes" enable-lzf="no" enable-zstd="no"' redis \
+    && pecl install imagick \
+    && pecl install memcached \
+    && pecl install swoole \
+    && pecl install pcov \
+    && docker-php-ext-enable igbinary msgpack redis imagick memcached swoole pcov \
+    && rm -rf /var/lib/apt/lists/* /tmp/pear
 
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
