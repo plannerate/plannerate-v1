@@ -33,6 +33,10 @@
         <link rel="icon" href="/img/logo.jpg" sizes="any">
         <link rel="icon" href="/img/logo.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/img/logo.jpg">
+        <meta name="plannerate-reverb-key" content="{{ env('REVERB_APP_KEY') }}">
+        <meta name="plannerate-reverb-host" content="{{ env('REVERB_HOST') }}">
+        <meta name="plannerate-reverb-port" content="{{ env('REVERB_PORT', 8080) }}">
+        <meta name="plannerate-reverb-scheme" content="{{ env('REVERB_SCHEME', 'http') }}">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
