@@ -29,6 +29,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: mbstring, xml, ctype, intl, pdo, pdo_sqlite, sqlite3, pdo_mysql, pdo_pgsql, gd, zip, bcmath, curl
           tools: composer:v2
           coverage: xdebug
 
