@@ -36,7 +36,9 @@ jobs:
             export IMAGE_TAG
             docker compose pull
             docker compose up -d --force-recreate
-            docker compose run --rm --no-deps -e BROADCAST_CONNECTION=log app php artisan migrate --force
+            if ! docker compose run --rm --no-deps -e BROADCAST_CONNECTION=log app php artisan migrate --force; then
+              echo "Migration failed in staging (continuing deploy)"
+            fi
             docker compose run --rm --no-deps -e BROADCAST_CONNECTION=log app php artisan optimize:clear
             docker compose ps
 
