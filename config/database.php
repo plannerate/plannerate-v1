@@ -4,16 +4,6 @@ use App\Support\Database\DatabaseConnectionConfigBuilder;
 use Illuminate\Support\Str;
 use Pdo\Mysql;
 
-$resolveScopedEnv = static function (string $scopedKey, string $fallbackKey, mixed $default = null): mixed {
-    return env($scopedKey, env($fallbackKey, $default));
-};
-
-$databaseConnectionConfigBuilder = new DatabaseConnectionConfigBuilder;
-
-$buildDatabaseConnection = static function (string $driver, array $config) use ($databaseConnectionConfigBuilder): array {
-    return $databaseConnectionConfigBuilder->build($driver, $config);
-};
-
 return [
 
     /*
@@ -74,38 +64,37 @@ return [
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
-        'tenant' => $buildDatabaseConnection(
+
+        'tenant' => (new DatabaseConnectionConfigBuilder)->build(
             env('DB_TENANT_CONNECTION', env('DB_CONNECTION', 'pgsql')),
             [
                 'url' => env('DB_TENANT_URL', env('DB_URL')),
-                'host' => $resolveScopedEnv('DB_TENANT_HOST', 'DB_HOST', '127.0.0.1'),
-                'port' => $resolveScopedEnv('DB_TENANT_PORT', 'DB_PORT', '5432'),
+                'host' => env('DB_TENANT_HOST', env('DB_HOST', '127.0.0.1')),
+                'port' => env('DB_TENANT_PORT', env('DB_PORT', '5432')),
                 'database' => env('DB_TENANT_DATABASE', env('DB_DATABASE', 'laravel')),
-                'username' => $resolveScopedEnv('DB_TENANT_USERNAME', 'DB_USERNAME', 'root'),
-                'password' => $resolveScopedEnv('DB_TENANT_PASSWORD', 'DB_PASSWORD', ''),
+                'username' => env('DB_TENANT_USERNAME', env('DB_USERNAME', 'root')),
+                'password' => env('DB_TENANT_PASSWORD', env('DB_PASSWORD', '')),
                 'unix_socket' => env('DB_TENANT_SOCKET', env('DB_SOCKET', '')),
-                'charset' => $resolveScopedEnv('DB_TENANT_CHARSET', 'DB_CHARSET'),
-                'collation' => $resolveScopedEnv('DB_TENANT_COLLATION', 'DB_COLLATION'),
+                'charset' => env('DB_TENANT_CHARSET', env('DB_CHARSET')),
+                'collation' => env('DB_TENANT_COLLATION', env('DB_COLLATION')),
                 'search_path' => env('DB_TENANT_SCHEMA', env('DB_SCHEMA')),
                 'sslmode' => env('DB_TENANT_SSLMODE', env('DB_SSLMODE')),
-                'mysql_ssl_ca' => env('DB_TENANT_MYSQL_ATTR_SSL_CA', env('MYSQL_ATTR_SSL_CA')),
             ],
         ),
-        'landlord' => $buildDatabaseConnection(
+        'landlord' => (new DatabaseConnectionConfigBuilder)->build(
             env('DB_LANDLORD_CONNECTION', env('DB_CONNECTION', 'pgsql')),
             [
                 'url' => env('DB_LANDLORD_URL', env('DB_URL')),
-                'host' => $resolveScopedEnv('DB_LANDLORD_HOST', 'DB_HOST', '127.0.0.1'),
-                'port' => $resolveScopedEnv('DB_LANDLORD_PORT', 'DB_PORT', '5432'),
+                'host' => env('DB_LANDLORD_HOST', env('DB_HOST', '127.0.0.1')),
+                'port' => env('DB_LANDLORD_PORT', env('DB_PORT', '5432')),
                 'database' => env('DB_LANDLORD_DATABASE', env('DB_DATABASE', 'laravel')),
-                'username' => $resolveScopedEnv('DB_LANDLORD_USERNAME', 'DB_USERNAME', 'root'),
-                'password' => $resolveScopedEnv('DB_LANDLORD_PASSWORD', 'DB_PASSWORD', ''),
+                'username' => env('DB_LANDLORD_USERNAME', env('DB_USERNAME', 'root')),
+                'password' => env('DB_LANDLORD_PASSWORD', env('DB_PASSWORD', '')),
                 'unix_socket' => env('DB_LANDLORD_SOCKET', env('DB_SOCKET', '')),
-                'charset' => $resolveScopedEnv('DB_LANDLORD_CHARSET', 'DB_CHARSET'),
-                'collation' => $resolveScopedEnv('DB_LANDLORD_COLLATION', 'DB_COLLATION'),
+                'charset' => env('DB_LANDLORD_CHARSET', env('DB_CHARSET')),
+                'collation' => env('DB_LANDLORD_COLLATION', env('DB_COLLATION')),
                 'search_path' => env('DB_LANDLORD_SCHEMA', env('DB_SCHEMA')),
                 'sslmode' => env('DB_LANDLORD_SSLMODE', env('DB_SSLMODE')),
-                'mysql_ssl_ca' => env('DB_LANDLORD_MYSQL_ATTR_SSL_CA', env('MYSQL_ATTR_SSL_CA')),
             ],
         ),
         'mysql_legacy' => [
