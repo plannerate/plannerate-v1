@@ -6,13 +6,15 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected string $connection = 'tenant';
+
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        if (!Schema::hasTable('addresses')) {
-            Schema::create('addresses', function (Blueprint $table): void {
+        if (!Schema::connection($this->connection)->hasTable('addresses')) {
+            Schema::connection($this->connection)->create('addresses', function (Blueprint $table): void {
                 $table->ulid('id')->primary();
                 $table->string('type')->nullable();
                 $table->ulid('tenant_id')->nullable()->index();
@@ -45,6 +47,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('addresses');
+        Schema::connection($this->connection)->dropIfExists('addresses');
     }
 };
