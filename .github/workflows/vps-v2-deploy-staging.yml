@@ -30,7 +30,8 @@ jobs:
             cd /opt/staging
             IMAGE_TAG="${{ github.event.inputs.image_tag }}"
             if [[ -z "${IMAGE_TAG}" || "${IMAGE_TAG}" == "null" ]]; then
-              IMAGE_TAG="sha-${{ github.event.workflow_run.head_sha }}"
+              HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+              IMAGE_TAG="sha-${HEAD_SHA:0:7}"
             fi
             export IMAGE_TAG
             docker compose pull
