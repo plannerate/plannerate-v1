@@ -6,9 +6,11 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected string $connection = 'tenant';
+
     public function up(): void
     {
-        Schema::create('workflow_template_users', function (Blueprint $table) { 
+        Schema::create('workflow_template_users', function (Blueprint $table) {
             $table->foreignUlid('workflow_template_id')->constrained('workflow_templates')->cascadeOnDelete();
             $table->ulid('user_id');
             $table->timestamps();

@@ -6,9 +6,11 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected string $connection = 'tenant';
+
     public function up(): void
     {
-        Schema::create('workflow_planogram_step_users', function (Blueprint $table) { 
+        Schema::create('workflow_planogram_step_users', function (Blueprint $table) {
             $table->foreignUlid('workflow_planogram_step_id')->constrained('workflow_planogram_steps')->cascadeOnDelete();
             $table->ulid('user_id');
             $table->timestamps();

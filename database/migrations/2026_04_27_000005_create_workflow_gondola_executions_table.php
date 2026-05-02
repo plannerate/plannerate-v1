@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected string $connection = 'tenant';
+
     public function up(): void
     {
         Schema::create('workflow_gondola_executions', function (Blueprint $table) {
