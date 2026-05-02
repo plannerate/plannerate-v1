@@ -146,34 +146,12 @@ return new class extends Migration
                 ->update(['type' => RbacType::LANDLORD]);
         }
 
-        if (DB::connection($this->connection)->getDriverName() === 'mysql') {
-            DB::connection($this->connection)->statement('ALTER TABLE `permissions` MODIFY `type` VARCHAR(50) NOT NULL');
-            DB::connection($this->connection)->statement('ALTER TABLE `roles` MODIFY `type` VARCHAR(50) NOT NULL');
-        }
+        $this->setTypeColumnsNotNull();
 
-        try {
-            DB::connection($this->connection)->statement('ALTER TABLE `permissions` DROP INDEX `permissions_name_guard_name_unique`');
-        } catch (Throwable) {
-            // index does not exist in this environment
-        }
-
-        try {
-            DB::connection($this->connection)->statement('ALTER TABLE `roles` DROP INDEX `roles_team_name_guard_unique`');
-        } catch (Throwable) {
-            // index does not exist in this environment
-        }
-
-        try {
-            DB::connection($this->connection)->statement('ALTER TABLE `permissions` DROP INDEX `permissions_guard_name_type_unique`');
-        } catch (Throwable) {
-            // index already missing
-        }
-
-        try {
-            DB::connection($this->connection)->statement('ALTER TABLE `roles` DROP INDEX `roles_team_name_guard_type_unique`');
-        } catch (Throwable) {
-            // index already missing
-        }
+        $this->dropUniqueIndexIfExists('permissions', 'permissions_name_guard_name_unique');
+        $this->dropUniqueIndexIfExists('roles', 'roles_team_name_guard_unique');
+        $this->dropUniqueIndexIfExists('permissions', 'permissions_guard_name_type_unique');
+        $this->dropUniqueIndexIfExists('roles', 'roles_team_name_guard_type_unique');
 
         if (! $this->hasUniqueIndex('permissions', 'permissions_guard_name_type_unique')) {
             Schema::connection($this->connection)->table('permissions', function (Blueprint $table): void {
@@ -201,23 +179,9 @@ return new class extends Migration
             return;
         }
 
-        try {
-            DB::connection($this->connection)->statement('ALTER TABLE `permissions` DROP INDEX `permissions_guard_name_type_unique`');
-        } catch (Throwable) {
-            // no-op
-        }
-
-        try {
-            DB::connection($this->connection)->statement('ALTER TABLE `roles` DROP INDEX `roles_team_name_guard_type_unique`');
-        } catch (Throwable) {
-            // no-op
-        }
-
-        try {
-            DB::connection($this->connection)->statement('ALTER TABLE `roles` DROP INDEX `roles_system_name_unique`');
-        } catch (Throwable) {
-            // no-op
-        }
+        $this->dropUniqueIndexIfExists('permissions', 'permissions_guard_name_type_unique');
+        $this->dropUniqueIndexIfExists('roles', 'roles_team_name_guard_type_unique');
+        $this->dropUniqueIndexIfExists('roles', 'roles_system_name_unique');
 
         if (Schema::connection($this->connection)->hasColumn('roles', 'system_name')) {
             Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
@@ -261,9 +225,48 @@ return new class extends Migration
             return false;
         }
 
+        if ($driver === 'pgsql') {
+            $matches = DB::connection($this->connection)
+                ->select(
+                    'SELECT 1 FROM pg_indexes WHERE schemaname = current_schema() AND tablename = ? AND indexname = ? LIMIT 1',
+                    [$table, $index],
+                );
+
+            return $matches !== [];
+        }
+
         $matches = DB::connection($this->connection)
             ->select('SHOW INDEX FROM `'.$table.'` WHERE Key_name = ?', [$index]);
 
         return $matches !== [];
+    }
+
+    private function dropUniqueIndexIfExists(string $table, string $index): void
+    {
+        if (! $this->hasUniqueIndex($table, $index)) {
+            return;
+        }
+
+        Schema::connection($this->connection)->table($table, function (Blueprint $table) use ($index): void {
+            $table->dropUnique($index);
+        });
+    }
+
+    private function setTypeColumnsNotNull(): void
+    {
+        $connection = DB::connection($this->connection);
+        $driver = $connection->getDriverName();
+
+        if (in_array($driver, ['mysql', 'mariadb'], true)) {
+            $connection->statement('ALTER TABLE `permissions` MODIFY `type` VARCHAR(50) NOT NULL');
+            $connection->statement('ALTER TABLE `roles` MODIFY `type` VARCHAR(50) NOT NULL');
+
+            return;
+        }
+
+        if ($driver === 'pgsql') {
+            $connection->statement('ALTER TABLE "permissions" ALTER COLUMN "type" SET NOT NULL');
+            $connection->statement('ALTER TABLE "roles" ALTER COLUMN "type" SET NOT NULL');
+        }
     }
 };

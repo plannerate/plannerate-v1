@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\User;
+use App\Support\Database\DatabaseCreator;
 use Illuminate\Console\Command;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Artisan;
@@ -59,7 +60,7 @@ class ImportLegacyTenantsCommand extends Command
         $this->newLine();
         $this->table(
             ['Cliente', 'Tenant', 'DB', 'Usuários', 'Integrações'],
-            array_map(fn($r) => [
+            array_map(fn ($r) => [
                 $r['client'],
                 $r['tenant'],
                 $r['database'],
@@ -99,7 +100,7 @@ class ImportLegacyTenantsCommand extends Command
 
             return true;
         } catch (\Exception $e) {
-            $this->error('❌ Falha na conexão com mysql_legacy: ' . $e->getMessage());
+            $this->error('❌ Falha na conexão com mysql_legacy: '.$e->getMessage());
 
             return false;
         }
@@ -136,7 +137,7 @@ class ImportLegacyTenantsCommand extends Command
     private function importClient(object $client): array
     {
         $slug = str($client->slug ?? $client->name)->slug('_')->replace('supermercado_', '')->replace('_supermercados', '')->replace('_ltda', '')->replace(' LTDA', '');
-        $database = 'tenant_' . $slug;
+        $database = 'tenant_'.$slug;
         $landlordDomain = config('app.landlord_domain', env('LANDLORD_DOMAIN', 'plannerate-v1.test'));
         $host = "{$slug}.{$landlordDomain}";
 
@@ -212,13 +213,7 @@ class ImportLegacyTenantsCommand extends Command
 
     private function createTenantDatabase(string $database): void
     {
-        $landlord = DB::connection('landlord');
-
-        if (! in_array($landlord->getDriverName(), ['mysql', 'mariadb'], true)) {
-            return;
-        }
-
-        $landlord->statement(sprintf('CREATE DATABASE IF NOT EXISTS `%s`', $database));
+        app(DatabaseCreator::class)->ensureExists(DB::connection('landlord'), $database);
     }
 
     private function runMigrationsIfNeeded(): void

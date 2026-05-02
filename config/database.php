@@ -1,7 +1,18 @@
 <?php
 
+use App\Support\Database\DatabaseConnectionConfigBuilder;
 use Illuminate\Support\Str;
 use Pdo\Mysql;
+
+$resolveScopedEnv = static function (string $scopedKey, string $fallbackKey, mixed $default = null): mixed {
+    return env($scopedKey, env($fallbackKey, $default));
+};
+
+$databaseConnectionConfigBuilder = new DatabaseConnectionConfigBuilder;
+
+$buildDatabaseConnection = static function (string $driver, array $config) use ($databaseConnectionConfigBuilder): array {
+    return $databaseConnectionConfigBuilder->build($driver, $config);
+};
 
 return [
 
@@ -63,44 +74,40 @@ return [
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
-        'tenant' => [
-            'driver' => env('DB_TENANT_CONNECTION', 'mysql'),
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_TENANT_DATABASE', env('DB_DATABASE', 'laravel')),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
-        ],
-        'landlord' => [
-            'driver' => env('DB_LANDLORD_CONNECTION', 'mysql'),
-            'url' => env('DB_URL'),
-            'host' => env('DB_LANDLORD_HOST', '127.0.0.1'),
-            'port' => env('DB_LANDLORD_PORT', '3306'),
-            'database' => env('DB_LANDLORD_DATABASE', 'laravel'),
-            'username' => env('DB_LANDLORD_USERNAME', 'root'),
-            'password' => env('DB_LANDLORD_PASSWORD', ''),
-            'unix_socket' => env('DB_LANDLORD_SOCKET', ''),
-            'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
-        ],
+        'tenant' => $buildDatabaseConnection(
+            env('DB_TENANT_CONNECTION', env('DB_CONNECTION', 'mysql')),
+            [
+                'url' => env('DB_TENANT_URL', env('DB_URL')),
+                'host' => $resolveScopedEnv('DB_TENANT_HOST', 'DB_HOST', '127.0.0.1'),
+                'port' => $resolveScopedEnv('DB_TENANT_PORT', 'DB_PORT', '3306'),
+                'database' => env('DB_TENANT_DATABASE', env('DB_DATABASE', 'laravel')),
+                'username' => $resolveScopedEnv('DB_TENANT_USERNAME', 'DB_USERNAME', 'root'),
+                'password' => $resolveScopedEnv('DB_TENANT_PASSWORD', 'DB_PASSWORD', ''),
+                'unix_socket' => env('DB_TENANT_SOCKET', env('DB_SOCKET', '')),
+                'charset' => $resolveScopedEnv('DB_TENANT_CHARSET', 'DB_CHARSET'),
+                'collation' => $resolveScopedEnv('DB_TENANT_COLLATION', 'DB_COLLATION'),
+                'search_path' => env('DB_TENANT_SCHEMA', env('DB_SCHEMA')),
+                'sslmode' => env('DB_TENANT_SSLMODE', env('DB_SSLMODE')),
+                'mysql_ssl_ca' => env('DB_TENANT_MYSQL_ATTR_SSL_CA', env('MYSQL_ATTR_SSL_CA')),
+            ],
+        ),
+        'landlord' => $buildDatabaseConnection(
+            env('DB_LANDLORD_CONNECTION', env('DB_CONNECTION', 'mysql')),
+            [
+                'url' => env('DB_LANDLORD_URL', env('DB_URL')),
+                'host' => $resolveScopedEnv('DB_LANDLORD_HOST', 'DB_HOST', '127.0.0.1'),
+                'port' => $resolveScopedEnv('DB_LANDLORD_PORT', 'DB_PORT', '3306'),
+                'database' => env('DB_LANDLORD_DATABASE', env('DB_DATABASE', 'laravel')),
+                'username' => $resolveScopedEnv('DB_LANDLORD_USERNAME', 'DB_USERNAME', 'root'),
+                'password' => $resolveScopedEnv('DB_LANDLORD_PASSWORD', 'DB_PASSWORD', ''),
+                'unix_socket' => env('DB_LANDLORD_SOCKET', env('DB_SOCKET', '')),
+                'charset' => $resolveScopedEnv('DB_LANDLORD_CHARSET', 'DB_CHARSET'),
+                'collation' => $resolveScopedEnv('DB_LANDLORD_COLLATION', 'DB_COLLATION'),
+                'search_path' => env('DB_LANDLORD_SCHEMA', env('DB_SCHEMA')),
+                'sslmode' => env('DB_LANDLORD_SSLMODE', env('DB_SSLMODE')),
+                'mysql_ssl_ca' => env('DB_LANDLORD_MYSQL_ATTR_SSL_CA', env('MYSQL_ATTR_SSL_CA')),
+            ],
+        ),
         'mysql_legacy' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),

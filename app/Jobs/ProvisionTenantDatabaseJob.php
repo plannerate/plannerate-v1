@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Tenant;
+use App\Support\Database\DatabaseCreator;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Artisan;
@@ -23,11 +24,10 @@ class ProvisionTenantDatabaseJob implements NotTenantAware, ShouldQueue
     {
         $connectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: 'tenant');
         $originalDatabase = config("database.connections.{$connectionName}.database");
+        $landlordConnection = DB::connection('landlord');
 
         try {
-            DB::connection('landlord')->statement(
-                sprintf('CREATE DATABASE IF NOT EXISTS `%s`', $this->tenant->database)
-            );
+            app(DatabaseCreator::class)->ensureExists($landlordConnection, $this->tenant->database);
 
             config(["database.connections.{$connectionName}.database" => $this->tenant->database]);
             DB::purge($connectionName);

@@ -23,6 +23,7 @@ services:
             - sail
         depends_on:
             - mysql
+            - postgres
             - mailpit
             - redis
     mysql:
@@ -48,6 +49,24 @@ services:
                 - mysqladmin
                 - ping
                 - '-p${DB_PASSWORD}'
+            retries: 3
+            timeout: 5s
+    postgres:
+        image: 'postgres:17-alpine'
+        ports:
+            - '${FORWARD_POSTGRES_PORT:-5432}:5432'
+        environment:
+            POSTGRES_DB: '${POSTGRES_DB:-landlord}'
+            POSTGRES_USER: '${POSTGRES_USER:-sail}'
+            POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-password}'
+        volumes:
+            - 'sail-postgres:/var/lib/postgresql/data'
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD-SHELL
+                - 'pg_isready -U ${POSTGRES_USER:-sail} -d ${POSTGRES_DB:-landlord}'
             retries: 3
             timeout: 5s
     phpmyadmin:
@@ -105,6 +124,7 @@ services:
             - sail
         depends_on:
             - mysql
+            - postgres
             - redis
         restart: unless-stopped
     queue:
@@ -126,6 +146,7 @@ services:
             - sail
         depends_on:
             - mysql
+            - postgres
             - redis
         restart: unless-stopped
     scheduler:
@@ -146,6 +167,7 @@ services:
             - sail
         depends_on:
             - mysql
+            - postgres
             - redis
         restart: unless-stopped
 networks:
@@ -153,6 +175,8 @@ networks:
         driver: bridge
 volumes:
     sail-mysql:
+        driver: local
+    sail-postgres:
         driver: local
     sail-redis:
         driver: local
