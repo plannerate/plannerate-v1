@@ -30,13 +30,4 @@ yarn-error.log
 /vps-deployment-packagevps-deployment-v2/manifest.env
 /errors
 
-
-install -d -m 700 -o deploy -g deploy /home/deploy/.ssh
-cat >> /home/deploy/.ssh/authorized_keys <<'EOF'
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ2NFWWGZ5S6KuQNrznaSnr0Tan40YFpoVx2aQwaTLoI plannerate/plannerate-v1-deploy
-EOF
-chown deploy:deploy /home/deploy/.ssh/authorized_keys
-chmod 600 /home/deploy/.ssh/authorized_keys
-
-
-ssh -i ~/.ssh/id_ed25519_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ2NFWWGZ5S6KuQNrznaSnr0Tan40YFpoVx2aQwaTLoI plannerate/plannerate-v1-deploy deploy@177.7.58.29
+ 
