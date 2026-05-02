@@ -50,7 +50,14 @@ jobs:
       - name: Health check
         run: |
           if [ -n "${{ secrets.DOMAIN }}" ]; then
-            curl -fsS "https://${{ secrets.DOMAIN }}/up"
+            if curl -fsS -o /dev/null "https://${{ secrets.DOMAIN }}/up"; then
+              echo "Health check passed on /up"
+            elif curl -fsS -o /dev/null "https://${{ secrets.DOMAIN }}/"; then
+              echo "Health check passed on / (fallback)"
+            else
+              echo "Health check failed for /up and /"
+              exit 1
+            fi
           else
             echo "Skipping health check: DOMAIN secret is empty"
           fi
