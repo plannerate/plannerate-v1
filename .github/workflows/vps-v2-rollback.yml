@@ -42,5 +42,19 @@ jobs:
             '
             docker compose -p "plannerate-${APP_SLUG}" ps
 
-      - name: Health check
-        run: curl -fsS https://${{ secrets.DOMAIN }}/up
+      - name: Health check (inside app container)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.APP_HOST }}
+          username: ${{ secrets.APP_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            APP_SLUG="${{ github.event.inputs.app_slug }}"
+            if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
+              APP_SLUG="staging"
+            fi
+            APP_DIR="/opt/plannerate/${APP_SLUG}"
+            cd "${APP_DIR}"
+            docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc 'curl -fsS http://127.0.0.1/up >/dev/null'
+            echo "Health check passed inside app container for ${APP_SLUG}"
