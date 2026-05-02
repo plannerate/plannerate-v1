@@ -20,15 +20,25 @@ COPY composer.json composer.lock ./
 COPY packages ./packages
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
+FROM php:8.4-cli-bookworm AS wayfinder
+WORKDIR /app
+COPY . .
+COPY --from=vendor /app/vendor ./vendor
+RUN printf 'APP_NAME=Plannerate\nAPP_ENV=local\nAPP_KEY=base64:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa=\nAPP_DEBUG=false\n' > .env \
+    && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
+    && rm -f bootstrap/cache/*.php \
+    && php artisan wayfinder:generate --with-form
+
 FROM node:22-alpine AS frontend
 WORKDIR /app
-
 ENV VITE_ENABLE_WAYFINDER=false
 
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 COPY --from=vendor /app/vendor ./vendor
+COPY --from=wayfinder /app/resources/js/routes ./resources/js/routes
+COPY --from=wayfinder /app/resources/js/wayfinder ./resources/js/wayfinder
 RUN npm run build
 
 FROM php:8.4-cli-bookworm
