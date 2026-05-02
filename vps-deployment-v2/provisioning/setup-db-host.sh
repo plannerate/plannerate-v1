@@ -65,10 +65,6 @@ if [[ "${DB_ENGINE}" == "mysql" ]]; then
 
     if [[ "${DRY_RUN}" != "true" ]]; then
         MYSQL_BIND_ADDRESS="0.0.0.0"
-        if [[ "${DB_MODE}" == "local" ]]; then
-            MYSQL_BIND_ADDRESS="127.0.0.1"
-        fi
-
         cat > /etc/mysql/mysql.conf.d/zz-vps-v2.cnf <<CFG
 [mysqld]
 bind-address = ${MYSQL_BIND_ADDRESS}
@@ -86,6 +82,13 @@ CREATE USER IF NOT EXISTS '${DB_USER}'@'${DB_ALLOWED_HOST}' IDENTIFIED BY '${DB_
 GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'${DB_ALLOWED_HOST}';
 FLUSH PRIVILEGES;
 SQL
+        if [[ "${DB_MODE}" == "local" ]]; then
+            mysql -uroot <<SQL
+CREATE USER IF NOT EXISTS '${DB_USER}'@'172.%' IDENTIFIED BY '${DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'172.%';
+FLUSH PRIVILEGES;
+SQL
+        fi
 
         write_file_secure "/root/.db-credentials-v2" "root:root" "600" "DB_ENGINE=mysql
 MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
@@ -100,10 +103,6 @@ elif [[ "${DB_ENGINE}" == "pgsql" ]]; then
     if [[ "${DRY_RUN}" != "true" ]]; then
         PG_VERSION=$(ls /etc/postgresql | sort -V | tail -n1)
         PG_LISTEN_ADDRESSES="'*'"
-        if [[ "${DB_MODE}" == "local" ]]; then
-            PG_LISTEN_ADDRESSES="'localhost'"
-        fi
-
         cat > "/etc/postgresql/${PG_VERSION}/main/conf.d/vps-v2.conf" <<CFG
 listen_addresses = ${PG_LISTEN_ADDRESSES}
 max_connections = 300
@@ -111,6 +110,8 @@ CFG
 
         if [[ "${DB_MODE}" == "externo" ]]; then
             echo "host all all ${DB_ALLOWED_CIDR} scram-sha-256" >> "/etc/postgresql/${PG_VERSION}/main/pg_hba.conf"
+        else
+            echo "host all all 172.16.0.0/12 scram-sha-256" >> "/etc/postgresql/${PG_VERSION}/main/pg_hba.conf"
         fi
     fi
 
@@ -153,7 +154,11 @@ if [[ "${DB_MODE}" == "externo" ]]; then
         run_cmd "ufw allow from ${DB_ALLOWED_CIDR} to any port 5432 proto tcp"
     fi
 else
-    log_info "DB_MODE=local, database port not exposed via firewall"
+    if [[ "${DB_ENGINE}" == "mysql" ]]; then
+        run_cmd "ufw allow from 172.16.0.0/12 to any port 3306 proto tcp"
+    else
+        run_cmd "ufw allow from 172.16.0.0/12 to any port 5432 proto tcp"
+    fi
 fi
 run_cmd "ufw --force enable"
 

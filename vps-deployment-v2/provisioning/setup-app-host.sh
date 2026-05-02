@@ -42,7 +42,8 @@ REVERB_APP_SECRET="${REVERB_APP_SECRET:-$(random_secret)}"
 APP_KEY="${APP_KEY:-base64:$(openssl rand -base64 32)}"
 
 if [[ "${DB_MODE}" == "local" ]]; then
-    DB_HOST="${DB_HOST:-127.0.0.1}"
+    DB_HOST="${DB_HOST:-host.docker.internal}"
+    DB_LANDLORD_HOST="${DB_LANDLORD_HOST:-host.docker.internal}"
     if [[ -z "${DB_PORT}" ]]; then
         if [[ "${DB_ENGINE}" == "pgsql" ]]; then
             DB_PORT="5432"

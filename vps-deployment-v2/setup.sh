@@ -103,7 +103,7 @@ ask_choice DB_MODE "Banco é local na mesma VPS ou externo?" "${DB_MODE:-local}"
 ask DB_ENGINE "Engine (mysql|pgsql)" "${DB_ENGINE:-${DB_ENGINE_STAGING:-mysql}}"
 
 if [[ "${DB_MODE}" == "local" ]]; then
-    DB_HOST="${DB_HOST:-127.0.0.1}"
+    DB_HOST="${DB_HOST:-host.docker.internal}"
     if [[ "${DB_ENGINE}" == "pgsql" ]]; then
         DB_PORT="${DB_PORT:-5432}"
     else

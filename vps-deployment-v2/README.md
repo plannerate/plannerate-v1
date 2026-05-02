@@ -124,6 +124,19 @@ Causa: Traefik tentou emitir cert sem DNS pronto.
 Correção: criar registros DNS, aguardar janela de retry e reiniciar Traefik.
 Prevenção: `install-monitoring-on-host.sh` valida DNS antes de subir monitoring.
 
+### 8) `SQLSTATE[HY000] [2002] Connection timed out` no migrate
+Causa: app em container sem rota/permit para MySQL local no host.
+Correção:
+```bash
+cd /opt/plannerate/<APP_SLUG>
+grep -E '^(DB_HOST|DB_LANDLORD_HOST|DB_CONNECTION)=' .env
+# esperado para local:
+# DB_HOST=host.docker.internal
+# DB_LANDLORD_HOST=host.docker.internal
+# DB_CONNECTION=landlord
+```
+Prevenção: compose já publica `host.docker.internal:host-gateway` e `setup-db-host.sh` libera `172.16.0.0/12` para porta do banco em `DB_MODE=local`.
+
 ## DNS/ACME Guardrails
 Antes de monitoring/reverb público:
 - criar `A/AAAA` para:
