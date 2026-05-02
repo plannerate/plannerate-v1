@@ -301,6 +301,7 @@ if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
         gh secret set APP_USER         --repo "$repo" --env "$env" --body "$DEPLOY_USER"       >/dev/null
         gh secret set SSH_PRIVATE_KEY  --repo "$repo" --env "$env" --body "$DEPLOY_PRIVATE_KEY" >/dev/null
         gh secret set SSH_KNOWN_HOSTS  --repo "$repo" --env "$env" --body "$VPS_KNOWN_HOSTS"  >/dev/null
+        gh secret set DOMAIN           --repo "$repo" --env "$env" --body "$host_domain"       >/dev/null
         gh variable set DOMAIN         --repo "$repo" --env "$env" --body "$host_domain"       >/dev/null
         ok "  [${env}] secrets configurados."
     done
@@ -319,8 +320,8 @@ else
     echo ""
     echo "$VPS_KNOWN_HOSTS"
     echo ""
-    echo -e "  ${BOLD}Variables (staging):${RESET}  DOMAIN = ${DOMAIN_STG}"
-    echo -e "  ${BOLD}Variables (production):${RESET} DOMAIN = ${DOMAIN_PROD}"
+    echo -e "  ${BOLD}Secret/Variable (staging):${RESET}  DOMAIN = ${DOMAIN_STG}"
+    echo -e "  ${BOLD}Secret/Variable (production):${RESET} DOMAIN = ${DOMAIN_PROD}"
     echo ""
     pause "Configure os secrets acima e pressione ENTER para continuar."
 fi
