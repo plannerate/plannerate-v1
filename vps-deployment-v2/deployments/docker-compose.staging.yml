@@ -1,0 +1,123 @@
+services:
+  app:
+    image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:-latest}
+    container_name: plannerate-stg-app
+    restart: always
+    env_file:
+      - ./.env
+    volumes:
+      - ./.env:/var/www/.env:ro
+    networks:
+      - stg-network
+      - traefik-global
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-global"
+      - "traefik.http.routers.stg-app.rule=Host(`${DOMAIN}`) || HostRegexp(`{subdomain:[a-z0-9-]+}.${DOMAIN}`)"
+      - "traefik.http.routers.stg-app.entrypoints=websecure"
+      - "traefik.http.routers.stg-app.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.stg-app.priority=20"
+      - "traefik.http.services.stg-app.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.stg-sec.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.stg-sec.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.stg-sec.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.stg-sec.headers.frameDeny=true"
+      - "traefik.http.routers.stg-app.middlewares=stg-sec"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/up"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  queue:
+    image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:-latest}
+    container_name: plannerate-stg-queue
+    restart: always
+    env_file:
+      - ./.env
+    volumes:
+      - ./.env:/var/www/.env:ro
+    command: php artisan horizon
+    networks:
+      - stg-network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  scheduler:
+    image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:-latest}
+    container_name: plannerate-stg-scheduler
+    restart: always
+    env_file:
+      - ./.env
+    volumes:
+      - ./.env:/var/www/.env:ro
+    command: php artisan schedule:work
+    networks:
+      - stg-network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  reverb:
+    image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:-latest}
+    container_name: plannerate-stg-reverb
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    volumes:
+      - ./.env:/var/www/.env:ro
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    networks:
+      - stg-network
+      - traefik-global
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-global"
+      - "traefik.http.routers.stg-reverb.rule=Host(`${REVERB_DOMAIN}`)"
+      - "traefik.http.routers.stg-reverb.entrypoints=websecure"
+      - "traefik.http.routers.stg-reverb.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.stg-reverb.priority=25"
+      - "traefik.http.services.stg-reverb.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.stg-reverb-ratelimit.ratelimit.average=90"
+      - "traefik.http.middlewares.stg-reverb-ratelimit.ratelimit.burst=180"
+      - "traefik.http.middlewares.stg-reverb-inflight.inflightreq.amount=60"
+      - "traefik.http.routers.stg-reverb.middlewares=stg-reverb-ratelimit,stg-reverb-inflight"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: plannerate-stg-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}
+      --maxmemory 1gb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - stg_redis_data:/data
+    networks:
+      - stg-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ${REDIS_PASSWORD:+-a $REDIS_PASSWORD} ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  stg-network:
+    driver: bridge
+  traefik-global:
+    external: true
+
+volumes:
+  stg_redis_data:
+    driver: local

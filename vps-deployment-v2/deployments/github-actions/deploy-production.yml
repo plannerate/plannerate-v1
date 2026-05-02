@@ -1,0 +1,36 @@
+name: deploy-production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy"
+        required: true
+        default: "latest"
+
+env:
+  DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/production' }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy production stack
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.APP_HOST }}
+          username: ${{ secrets.APP_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            cd ${{ env.DEPLOY_PATH }}
+            export IMAGE_TAG=${{ github.event.inputs.image_tag }}
+            docker compose pull
+            docker compose up -d --force-recreate
+            docker compose exec -T app php artisan migrate --force
+            docker compose exec -T app php artisan optimize:clear
+            docker compose ps
+
+      - name: Health check
+        run: curl -fsS https://${{ secrets.DOMAIN }}/up

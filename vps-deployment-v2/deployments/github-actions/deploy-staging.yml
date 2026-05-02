@@ -1,0 +1,42 @@
+name: deploy-staging
+
+on:
+  workflow_run:
+    workflows: ["build-push-image"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy"
+        required: true
+        default: "latest"
+
+env:
+  DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/staging' }}
+
+jobs:
+  deploy:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Deploy staging stack
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.APP_HOST }}
+          username: ${{ secrets.APP_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            cd ${{ env.DEPLOY_PATH }}
+            export IMAGE_TAG=${{ github.event.inputs.image_tag || 'latest' }}
+            docker compose pull
+            docker compose up -d --force-recreate
+            docker compose exec -T app php artisan migrate --force
+            docker compose exec -T app php artisan optimize:clear
+            docker compose ps
+
+      - name: Health check
+        run: curl -fsS https://${{ secrets.DOMAIN }}/up

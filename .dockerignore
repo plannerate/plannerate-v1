@@ -1,0 +1,17 @@
+.git
+.github
+.vscode
+.agents
+.claude
+.cursor
+.codex
+node_modules
+vendor
+storage/logs
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+storage/debugbar
+.env
+.env.*
+vps-deployment-package/.git
