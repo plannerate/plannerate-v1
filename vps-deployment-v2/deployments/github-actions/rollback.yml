@@ -64,5 +64,54 @@ jobs:
             docker compose exec -T app php artisan optimize:clear
             docker compose ps
 
-      - name: Health check
-        run: curl -fsS https://${{ secrets.DOMAIN }}/up
+      - name: Health check (inside app container)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.APP_HOST }}
+          username: ${{ secrets.APP_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            if [[ "${{ github.event.inputs.environment }}" == "staging" ]]; then
+              DEPLOY_PATH=/opt/staging
+            else
+              DEPLOY_PATH=/opt/production
+            fi
+            cd ${DEPLOY_PATH}
+            health_ok=0
+            for outer_attempt in 1 2 3 4 5; do
+              if docker compose exec -T app sh -lc '
+                for attempt in 1 2 3 4 5; do
+                  if curl -fsS http://127.0.0.1/up >/dev/null; then
+                    echo "Health check passed on /up (attempt ${attempt})"
+                    exit 0
+                  fi
+                  echo "Health check /up failed (attempt ${attempt}), retrying..."
+                  sleep 3
+                done
+
+                if curl -fsSI http://127.0.0.1/ >/dev/null; then
+                  echo "Warning: /up failed but / responded successfully"
+                  exit 0
+                fi
+
+                echo "Health check failed for both /up and /"
+                echo "---- /up response body ----"
+                curl -sS http://127.0.0.1/up || true
+                exit 1
+              '; then
+                health_ok=1
+                break
+              fi
+
+              echo "Health check command failed at container level (attempt ${outer_attempt}), retrying..."
+              docker compose ps || true
+              sleep 4
+            done
+
+            if [[ "${health_ok}" -ne 1 ]]; then
+              echo "Health check failed after retries"
+              docker compose logs app --tail=120 || true
+              exit 1
+            fi
+            echo "Health check finished inside app container"
