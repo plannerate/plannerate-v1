@@ -36,8 +36,8 @@ jobs:
             export IMAGE_TAG
             docker compose pull
             docker compose up -d --force-recreate
-            docker compose exec -T app php artisan migrate --force
-            docker compose exec -T app php artisan optimize:clear
+            docker compose run --rm --no-deps app php artisan migrate --force
+            docker compose run --rm --no-deps app php artisan optimize:clear
             docker compose ps
 
       - name: Health check
