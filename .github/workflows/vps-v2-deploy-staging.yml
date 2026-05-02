@@ -39,7 +39,17 @@ jobs:
             if ! docker compose run --rm --no-deps -e BROADCAST_CONNECTION=log app php artisan migrate --force; then
               echo "Migration failed in staging (continuing deploy)"
             fi
-            docker compose run --rm --no-deps -e BROADCAST_CONNECTION=log app php artisan optimize:clear
+            docker compose run --rm --no-deps -e BROADCAST_CONNECTION=log app sh -lc '
+              php artisan config:clear
+              php artisan cache:clear
+              php artisan event:clear
+              php artisan route:clear
+              if [ -d resources/views ]; then
+                php artisan view:clear
+              else
+                echo "Skipping view:clear (resources/views not found)"
+              fi
+            '
             docker compose ps
 
       - name: Health check
