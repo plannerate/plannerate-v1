@@ -259,7 +259,7 @@ function createTenantForIntegration(): Tenant
         return Tenant::query()->create([
             'name' => 'Tenant Integracao',
             'slug' => 'tenant-integracao-'.fake()->numberBetween(100, 999),
-            'database' => (string) config('database.connections.mysql.database'),
+            'database' => (string) config('database.connections.landlord.database'),
             'status' => 'active',
         ]);
     });

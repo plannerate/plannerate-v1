@@ -7,12 +7,12 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 source "${SCRIPT_DIR}/common.sh"
 
 MANIFEST_PATH="${1:-}"
-DB_ENGINE="${DB_ENGINE:-mysql}"
+DB_ENGINE="${DB_ENGINE:-pgsql}"
 DB_MODE="${DB_MODE:-local}"
 DRY_RUN="${DRY_RUN:-false}"
 
 if [[ -z "${MANIFEST_PATH}" ]]; then
-    log_error "Usage: DB_ENGINE=mysql|pgsql ./setup-db-host.sh /path/to/manifest.env"
+    log_error "Usage: DB_ENGINE=pgsql|mysql ./setup-db-host.sh /path/to/manifest.env"
     exit 1
 fi
 
@@ -90,7 +90,7 @@ FLUSH PRIVILEGES;
 SQL
         fi
 
-        write_file_secure "/root/.db-credentials-v2" "root:root" "600" "DB_ENGINE=mysql
+        write_file_secure "/root/.db-credentials-v2" "root:root" "600" "DB_ENGINE=pgsql
 MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
 DB_NAME=${DB_NAME}
 DB_USER=${DB_USER}

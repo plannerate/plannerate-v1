@@ -7,10 +7,15 @@ use App\Models\TenantUser;
 use App\Models\User;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Multitenancy\Models\Tenant as CurrentTenantModel;
 
 beforeEach(function (): void {
+    config([
+        'app.key' => 'base64:'.base64_encode(random_bytes(32)),
+    ]);
+
     Artisan::call('migrate:fresh', [
         '--database' => 'landlord',
         '--path' => 'database/migrations/landlord',
@@ -18,13 +23,15 @@ beforeEach(function (): void {
         '--no-interaction' => true,
     ]);
 
-    Artisan::call('migrate:fresh', [
-        '--database' => 'mysql',
-        '--path' => 'database/migrations',
-        '--realpath' => false,
-        '--force' => true,
-        '--no-interaction' => true,
-    ]);
+    if (! Schema::connection('tenant')->hasTable('users')) {
+        Artisan::call('migrate', [
+            '--database' => 'tenant',
+            '--path' => 'database/migrations',
+            '--realpath' => false,
+            '--force' => true,
+            '--no-interaction' => true,
+        ]);
+    }
 
     Artisan::call('db:seed', [
         '--class' => LandlordRbacSeeder::class,
@@ -284,13 +291,13 @@ function createTenantWithPlan(int $limit): Tenant
         'is_active' => true,
     ]);
 
-    $tenant = Tenant::query()->create([
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Teste',
         'slug' => 'tenant-teste-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
         'plan_id' => $plan->id,
-    ]);
+    ]));
 
     $tenant->domains()->create([
         'host' => 'tenant-'.fake()->numberBetween(100, 999).'.'.config('app.landlord_domain'),
@@ -304,13 +311,13 @@ function createTenantWithPlan(int $limit): Tenant
 
 function createTenantWithoutPlan(): Tenant
 {
-    $tenant = Tenant::query()->create([
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
         'name' => 'Tenant Sem Plano',
         'slug' => 'tenant-sem-plano-'.fake()->numberBetween(100, 999),
-        'database' => (string) config('database.connections.mysql.database'),
+        'database' => (string) config('database.connections.landlord.database'),
         'status' => 'active',
         'plan_id' => null,
-    ]);
+    ]));
 
     $tenant->domains()->create([
         'host' => 'sem-plano-'.fake()->numberBetween(100, 999).'.'.config('app.landlord_domain'),

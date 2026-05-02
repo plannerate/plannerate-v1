@@ -236,7 +236,10 @@ return new class extends Migration
         }
 
         $matches = DB::connection($this->connection)
-            ->select('SHOW INDEX FROM `'.$table.'` WHERE Key_name = ?', [$index]);
+            ->select(
+                'SELECT 1 FROM pg_indexes WHERE schemaname = current_schema() AND tablename = ? AND indexname = ? LIMIT 1',
+                [$table, $index],
+            );
 
         return $matches !== [];
     }
@@ -256,13 +259,6 @@ return new class extends Migration
     {
         $connection = DB::connection($this->connection);
         $driver = $connection->getDriverName();
-
-        if (in_array($driver, ['mysql', 'mariadb'], true)) {
-            $connection->statement('ALTER TABLE `permissions` MODIFY `type` VARCHAR(50) NOT NULL');
-            $connection->statement('ALTER TABLE `roles` MODIFY `type` VARCHAR(50) NOT NULL');
-
-            return;
-        }
 
         if ($driver === 'pgsql') {
             $connection->statement('ALTER TABLE "permissions" ALTER COLUMN "type" SET NOT NULL');

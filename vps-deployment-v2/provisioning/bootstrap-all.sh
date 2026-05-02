@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 MANIFEST_PATH="${1:-}"
-DB_ENGINE="${DB_ENGINE:-mysql}"
+DB_ENGINE="${DB_ENGINE:-pgsql}"
 
 if [[ -z "${MANIFEST_PATH}" ]]; then
     echo "Usage: ./bootstrap-all.sh /path/to/manifest.env"

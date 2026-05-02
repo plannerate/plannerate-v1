@@ -100,7 +100,7 @@ ask VPS_HOST "IP do App VPS" "${VPS_HOST:-}"
 ask VPS_USER "Usuário SSH root no VPS" "${VPS_USER:-root}"
 ask DEPLOY_USER "Usuário de deploy" "${DEPLOY_USER:-deploy}"
 ask_choice DB_MODE "Banco é local na mesma VPS ou externo?" "${DB_MODE:-local}" local externo
-ask DB_ENGINE "Engine (mysql|pgsql)" "${DB_ENGINE:-${DB_ENGINE_STAGING:-mysql}}"
+ask DB_ENGINE "Engine (pgsql|mysql)" "${DB_ENGINE:-${DB_ENGINE_STAGING:-pgsql}}"
 
 if [[ "${DB_MODE}" == "local" ]]; then
     DB_HOST="${DB_HOST:-host.docker.internal}"
