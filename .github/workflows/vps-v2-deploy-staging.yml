@@ -49,15 +49,5 @@ jobs:
 
       - name: Health check
         run: |
-          if [ -n "${{ secrets.DOMAIN }}" ]; then
-            if curl -fsS -o /dev/null "https://${{ secrets.DOMAIN }}/up"; then
-              echo "Health check passed on /up"
-            elif curl -fsS -o /dev/null "https://${{ secrets.DOMAIN }}/"; then
-              echo "Health check passed on / (fallback)"
-            else
-              echo "Health check failed for /up and /"
-              exit 1
-            fi
-          else
-            echo "Skipping health check: DOMAIN secret is empty"
-          fi
+          curl -fsS -o /dev/null "https://plannerate.com.br/up"
+          echo "Health check passed: https://plannerate.com.br/up"
