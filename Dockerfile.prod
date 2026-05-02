@@ -51,7 +51,7 @@ RUN apt-get update \
         libzip-dev libpq-dev libsqlite3-dev \
         libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
         libcurl4-openssl-dev libonig-dev libxml2-dev libicu-dev \
-        libldap2-dev libssl-dev libreadline-dev pkg-config \
+        libldap2-dev libssl-dev pkg-config \
         libmagickwand-dev libmemcached-dev \
         $PHPIZE_DEPS \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -59,7 +59,7 @@ RUN apt-get update \
     && docker-php-ext-install \
         pdo_mysql pdo_pgsql pdo_sqlite \
         bcmath pcntl zip gd \
-        intl soap mbstring xml curl ldap readline \
+        intl soap mbstring xml curl ldap \
     && pecl install igbinary \
     && pecl install msgpack \
     && pecl install -D 'enable-igbinary="yes" enable-lzf="no" enable-zstd="no"' redis \
