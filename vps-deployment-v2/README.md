@@ -1,237 +1,132 @@
-# VPS Deployment v2 — Guia de Implantação
+# VPS Deployment v2
 
-Deploy completo para staging + produção no mesmo VPS, com banco externo, Traefik, monitoramento e backups automáticos.
+Provisionamento e deploy multi-instância por `APP_SLUG` no mesmo VPS, com foco em staging estável (`dev -> staging`) e produção preparada para ativação futura.
 
----
+## Resumo Operacional
+- App principal de uma instância: `DOMAIN_LANDLORD` (ex.: `siga.dev.br`).
+- Caminho da instância: `/opt/plannerate/<APP_SLUG>`.
+- Monitoring da instância: `/opt/monitoring/<APP_SLUG>`.
+- Traefik compartilhado: `/opt/traefik`.
+- Deploy automático: branch `dev` -> workflow de staging.
+- Health check do CI: interno no container (`http://127.0.0.1/up`).
 
-## Visão Geral da Arquitetura
-
-```
-Internet
-   │
-   ▼
-Traefik (80/443 + Let's Encrypt)
-   ├── plannerate.com.br         → Production stack
-   ├── plannerate.xyz            → Staging stack
-   ├── grafana.plannerate.com.br
-   └── prometheus.plannerate.com.br
-
-App VPS (Ubuntu 24.04)
-   ├── /opt/production/   (app, queue, scheduler, reverb, redis)
-   ├── /opt/staging/      (app, queue, scheduler, reverb, redis)
-   ├── /opt/traefik/
-   └── /opt/monitoring/   (Prometheus, Grafana, Alertmanager, Node Exporter)
-
-DB VPS (separado)
-   ├── plannerate_production
-   └── plannerate_staging
-```
-
----
-
-## Pré-requisitos
-
-| Item | Detalhe |
-|------|---------|
-| App VPS | Ubuntu 24.04, mín. 20 GB disco, 2 GB RAM |
-| DB VPS | Ubuntu 24.04 com MySQL 8+ ou PostgreSQL 15+ |
-| Domínio | DNS apontando para o IP do App VPS |
-| GitHub | Repositório com Actions habilitado |
-| `ssh-keygen`, `ssh-keyscan` | Disponíveis na máquina local |
-| `gh` CLI (opcional) | Para configurar secrets automaticamente |
-
----
-
-## Setup em um comando
-
+## Fluxo Recomendado
+1. Preparar DNS do domínio raiz da instância (`DOMAIN_LANDLORD`) para o IP do VPS.
+2. Rodar setup:
 ```bash
 bash vps-deployment-v2/setup.sh
 ```
+3. Durante o setup:
+- informar `APP_SLUG` (ex.: `staging`)
+- informar `DOMAIN_LANDLORD`
+- permitir provisionamento e instalação de compose
+4. Push em `dev` para validar build+deploy.
 
-O wizard interativo vai guiar cada etapa:
+## Regras Importantes
+- `APP_SLUG` é obrigatório como identificador lógico de instância.
+- `queue` usa `php artisan queue:work` (não depende de Horizon).
+- Não subir monitoring antes de DNS dos subdomínios estar pronto.
+- Dashboard auth do Traefik com `$` precisa de escape (`$$`).
 
-### O que ele faz
+## Variáveis-Chave
+- `APP_SLUG`: nome da instância (pasta/projeto docker/routers).
+- `DOMAIN_LANDLORD`: domínio raiz da app da instância.
+- `GHCR_REPO`: imagem no GHCR.
+- `DB_*`, `REDIS_PASSWORD`, `REVERB_*`: runtime da instância.
 
-1. **Coleta as informações** — pergunta projeto, domínios, VPS, banco, DO Spaces, webhooks, Grafana
-2. **Gera a chave SSH de deploy** automaticamente
-3. **Exibe a chave pública** e pede para você colar no GitHub → aguarda ENTER
-4. **Configura secrets no GitHub** automaticamente (se `gh` CLI estiver autenticado)
-5. **Salva o `manifest.env`** com todas as variáveis (permissão 600, adicionado ao `.gitignore`)
-6. **Provisiona o App VPS** via SSH (opcional, pergunta antes)
-
-### Exemplo de execução
-
-```
-▶ FASE 1 — Projeto e domínios
-  Nome do projeto [plannerate]: plannerate
-  GitHub org/usuário: callcocam
-  Nome do repositório: plannerate-v1
-  Domínio produção: plannerate.com.br
-  Domínio staging:   plannerate.xyz
-  Domínio Grafana:   grafana.plannerate.com.br
-  Domínio Prometheus: prometheus.plannerate.com.br
-  ...
-
-▶ FASE 7 — Chave SSH de deploy
-  ✔ Chave gerada: ~/.ssh/id_ed25519_plannerate-v1_deploy
-
-▶ FASE 8 — Adicione a chave pública como Deploy Key no GitHub
-  Abra: https://github.com/callcocam/plannerate-v1/settings/keys/new
-  ─────────────────────────────────────────────────
-  ssh-ed25519 AAAA... callcocam/plannerate-v1-deploy
-  ─────────────────────────────────────────────────
-  Pressione ENTER para continuar...     ← aguarda você colar e salvar
-
-▶ FASE 9 — Configurar Secrets e Variables no GitHub
-  ✔ [staging] secrets configurados.
-  ✔ [production] secrets configurados.
-
-▶ FASE 11 — Provisionar o App VPS
-  Provisionar o App VPS agora? [S/n]: s
-  ...
-```
-
----
-
-## Após o setup.sh — Passos finais
-
-### Provisionar o DB VPS
-
+## Validação Pós-Provisionamento
+### Local (máquina de operação)
 ```bash
-bash vps-deployment-v2/provisioning/setup-db-host.sh --manifest vps-deployment-v2/manifest.env
+ssh -i ~/.ssh/id_ed25519_<repo>_deploy deploy@<VPS_IP>
 ```
 
-### Instalar os Compose Files no VPS
-
+### No VPS
 ```bash
-START_SERVICES=true bash vps-deployment-v2/automation/install-compose-on-host.sh --manifest vps-deployment-v2/manifest.env
+cd /opt/plannerate/<APP_SLUG>
+docker compose -p plannerate-<APP_SLUG> ps
+docker compose -p plannerate-<APP_SLUG> exec -T app sh -lc 'curl -fsS http://127.0.0.1/up >/dev/null && echo OK'
 ```
 
-Serviços iniciados:
-- **Traefik** → reverse proxy + TLS automático
-- **Production** → app, queue, scheduler, reverb, redis
-- **Staging** → idem, com configurações mais leves
-
-### Instalar o Monitoramento
-
+### Traefik
 ```bash
-bash vps-deployment-v2/automation/install-monitoring-on-host.sh --manifest vps-deployment-v2/manifest.env
+cd /opt/traefik
+docker compose ps
+ss -tulpen | grep -E ':80|:443'
 ```
 
-Sobe: Prometheus, Grafana, Alertmanager, Node Exporter, cAdvisor, Blackbox Exporter.
+## Deploy Diário
+1. Commit/push em `dev`.
+2. Confirmar `vps-v2-build-push` OK.
+3. Confirmar `vps-v2-deploy-staging` OK.
+4. Verificar stack no VPS e logs se necessário.
 
-Acesse em `https://grafana.plannerate.com.br` após a instalação.
-
-### Configurar Backups
-
+## Incidentes Reais e Prevenção
+### 1) `ssh: unable to authenticate`
+Sintoma: GitHub Action falha no `appleboy/ssh-action`.
+Causa: `deploy` sem `authorized_keys` ou chave divergente.
+Correção:
 ```bash
-bash vps-deployment-v2/automation/install-backup-cron.sh --manifest vps-deployment-v2/manifest.env
+install -d -m 700 -o deploy -g deploy /home/deploy/.ssh
+cat >> /home/deploy/.ssh/authorized_keys  # colar chave pública
+chmod 600 /home/deploy/.ssh/authorized_keys
+chown -R deploy:deploy /home/deploy/.ssh
 ```
+Prevenção: usar `setup-app-host.sh` + `bootstrap-github.sh`.
 
-Backups enviados para DO Spaces em `.sql.gz`, retenção de 14 dias por padrão.
-
-### Configurar Health Check Periódico
-
+### 2) `WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED`
+Causa: host key do servidor alterada.
+Correção local:
 ```bash
-bash vps-deployment-v2/automation/install-health-cron.sh --manifest vps-deployment-v2/manifest.env
+ssh-keygen -f '/home/<user>/.ssh/known_hosts' -R '<VPS_IP>'
+ssh-keyscan -H <VPS_IP> >> /home/<user>/.ssh/known_hosts
 ```
+Prevenção: atualizar também `SSH_KNOWN_HOSTS` no environment `staging`.
 
-Verifica: Docker daemon, containers, endpoints HTTP, cron, disco e memória.
+### 3) `No APP_KEY variable was found` / `.env` read-only
+Causa: tentar `key:generate` dentro de container com bind read-only.
+Correção: gerar `APP_KEY` no host e re-subir stack.
+Prevenção: `setup-app-host.sh` já escreve `APP_KEY`.
 
----
+### 4) Reverb/Pusher null key (`auth_key null`)
+Causa: `REVERB_APP_KEY/SECRET/ID` ausentes.
+Correção: definir vars no `.env` da instância e recriar containers.
+Prevenção: `setup-app-host.sh` já escreve `REVERB_APP_*`.
 
-## Deploy via GitHub Actions
+### 5) `404` no `/up` público durante deploy
+Causa frequente: dependência de DNS/CDN no health check do workflow.
+Correção: health check interno do container no CI.
+Prevenção: manter workflow com check interno (`127.0.0.1/up`).
 
-Após o setup inicial, os deploys acontecem automaticamente:
+### 6) `Command "horizon" is not defined`
+Causa: imagem sem Horizon instalado.
+Correção: usar `queue:work`.
+Prevenção: compose padrão já usa `queue:work --sleep=3 --tries=3 --max-time=3600`.
 
-| Evento | Comportamento |
-|--------|--------------|
-| Push na `main` | Build da imagem + deploy automático em staging |
-| Workflow manual | Deploy em produção (requer aprovação do environment) |
-| Rollback | Workflow manual — escolha o environment e a tag da imagem |
+### 7) ACME `NXDOMAIN` + `429 rateLimited`
+Causa: Traefik tentou emitir cert sem DNS pronto.
+Correção: criar registros DNS, aguardar janela de retry e reiniciar Traefik.
+Prevenção: `install-monitoring-on-host.sh` valida DNS antes de subir monitoring.
 
----
+## DNS/ACME Guardrails
+Antes de monitoring/reverb público:
+- criar `A/AAAA` para:
+  - `grafana.<DOMAIN_LANDLORD>`
+  - `prometheus.<DOMAIN_LANDLORD>`
+  - `alerts.<DOMAIN_LANDLORD>`
+  - `reverb.<DOMAIN_LANDLORD>` (se ativo)
+  - `traefik.<DOMAIN_LANDLORD>` (se dashboard público)
 
-## Operações do Dia a Dia
-
-### Verificar saúde do VPS
-
+## Comandos Úteis
 ```bash
-bash vps-deployment-v2/automation/vps-health-check.sh --manifest manifest.env
+# bootstrap de secrets/vars no GitHub
+automation/bootstrap-github.sh vps-deployment-v2/manifest.env
+
+# instalar compose no host
+APP_SLUG=staging automation/install-compose-on-host.sh
+
+# instalar monitoring (com validação DNS)
+APP_SLUG=staging automation/install-monitoring-on-host.sh vps-deployment-v2/manifest.env staging
+
+# health check completo
+automation/vps-health-check.sh vps-deployment-v2/manifest.env staging
 ```
-
-### Testar webhooks de alerta
-
-```bash
-# Envia mensagem de teste para todos os webhooks configurados
-bash vps-deployment-v2/automation/test-webhooks.sh --manifest manifest.env
-
-# Só exibe os comandos sem enviar
-bash vps-deployment-v2/automation/test-webhooks.sh --manifest manifest.env --dry-run
-```
-
-### Restaurar um backup
-
-```bash
-bash vps-deployment-v2/automation/restore-db.sh \
-  --manifest manifest.env \
-  --file backups/production/plannerate_production_2026-05-01.sql.gz
-```
-
----
-
-## Estrutura de Arquivos
-
-```
-vps-deployment-v2/
-├── provisioning/
-│   ├── common.sh               # Funções compartilhadas
-│   ├── validate-prereqs.sh     # Checagem de pré-requisitos
-│   ├── setup-app-host.sh       # Provisiona App VPS
-│   ├── setup-db-host.sh        # Provisiona DB VPS
-│   └── bootstrap-all.sh        # Executa tudo em sequência
-│
-├── deployments/
-│   ├── docker-compose.production.yml
-│   ├── docker-compose.staging.yml
-│   ├── traefik/
-│   │   └── docker-compose.yml
-│   └── monitoring/
-│       ├── docker-compose.yml
-│       ├── prometheus.yml
-│       ├── alerts.yml
-│       ├── alertmanager.yml
-│       └── blackbox.yml
-│
-├── automation/
-│   ├── bootstrap-github.sh         # Configura GitHub
-│   ├── install-compose-on-host.sh  # Instala compose files no VPS
-│   ├── install-monitoring-on-host.sh
-│   ├── backup-db.sh                # Backup para DO Spaces
-│   ├── restore-db.sh               # Restauração de backup
-│   ├── run-backup-all.sh           # Backup staging + production
-│   ├── install-backup-cron.sh      # Agenda cron de backup
-│   ├── vps-health-check.sh         # Health check completo
-│   ├── install-health-cron.sh      # Agenda cron de health check
-│   └── test-webhooks.sh            # Testa webhooks de alerta
-│
-└── templates/
-    ├── manifest.example.env        # Template de configuração
-    ├── .env.production.example
-    └── .env.staging.example
-```
-
----
-
-## Alertas
-
-Os alertas são roteados por severidade para webhooks distintos:
-
-| Severidade | Webhook | Quando |
-|-----------|---------|--------|
-| `critical` | `ALERT_WEBHOOK_CRITICAL_URL` | CPU >85%, memória >90%, app fora do ar |
-| `warning` | `ALERT_WEBHOOK_WARNING_URL` | Disco <15%, serviços degradados |
-| `default` | `ALERT_WEBHOOK_DEFAULT_URL` | Demais alertas do Alertmanager |
-| backup | `BACKUP_ALERT_WEBHOOK_URL` | Falha no backup |
-
-Compatível com Discord e Slack.

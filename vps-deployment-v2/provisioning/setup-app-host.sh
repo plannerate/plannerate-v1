@@ -28,6 +28,10 @@ DB_USER="${DB_USER:-${DB_USER_STAGING:-${DB_USER_PRODUCTION:-plannerate_${APP_SL
 DB_PASSWORD="${DB_PASSWORD:-${DB_PASSWORD_STAGING:-${DB_PASSWORD_PRODUCTION:-$(random_secret)}}}"
 REDIS_PASSWORD="${REDIS_PASSWORD:-${REDIS_PASSWORD_STAGING:-${REDIS_PASSWORD_PRODUCTION:-$(random_secret)}}}"
 REVERB_DOMAIN="${REVERB_DOMAIN:-reverb.${DOMAIN_LANDLORD}}"
+REVERB_APP_ID="${REVERB_APP_ID:-${APP_SLUG}}"
+REVERB_APP_KEY="${REVERB_APP_KEY:-$(random_secret)}"
+REVERB_APP_SECRET="${REVERB_APP_SECRET:-$(random_secret)}"
+APP_KEY="${APP_KEY:-base64:$(openssl rand -base64 32)}"
 
 required_vars=(PROJECT_NAME DEPLOY_USER ACME_EMAIL GHCR_REPO GITHUB_DEPLOY_PUBLIC_KEY)
 for var_name in "${required_vars[@]}"; do
@@ -57,7 +61,7 @@ run_cmd() {
 log_info "Installing base packages"
 run_cmd "apt-get update -qq"
 run_cmd "DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq"
-run_cmd "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ca-certificates curl gnupg lsb-release ufw fail2ban jq unzip mysql-client postgresql-client"
+run_cmd "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ca-certificates curl gnupg lsb-release ufw fail2ban jq unzip openssl mysql-client postgresql-client"
 
 log_info "Installing Docker engine"
 run_cmd "install -m 0755 -d /etc/apt/keyrings"
@@ -73,6 +77,18 @@ if ! id "${DEPLOY_USER}" >/dev/null 2>&1; then
 fi
 run_cmd "usermod -aG docker ${DEPLOY_USER}"
 
+log_info "Preparing SSH access for deploy user"
+run_cmd "install -d -m 700 -o ${DEPLOY_USER} -g ${DEPLOY_USER} /home/${DEPLOY_USER}/.ssh"
+run_cmd "touch /home/${DEPLOY_USER}/.ssh/authorized_keys"
+run_cmd "chown ${DEPLOY_USER}:${DEPLOY_USER} /home/${DEPLOY_USER}/.ssh/authorized_keys"
+run_cmd "chmod 600 /home/${DEPLOY_USER}/.ssh/authorized_keys"
+
+if [[ "${DRY_RUN}" != "true" ]]; then
+    if ! grep -Fq "${GITHUB_DEPLOY_PUBLIC_KEY}" "/home/${DEPLOY_USER}/.ssh/authorized_keys"; then
+        printf '%s\n' "${GITHUB_DEPLOY_PUBLIC_KEY}" >> "/home/${DEPLOY_USER}/.ssh/authorized_keys"
+    fi
+fi
+
 log_info "Preparing filesystem layout"
 run_cmd "mkdir -p ${APP_DIR} /opt/traefik/letsencrypt /opt/backups /opt/monitoring/${APP_SLUG}"
 run_cmd "chown -R ${DEPLOY_USER}:${DEPLOY_USER} ${APP_DIR}"
@@ -82,8 +98,17 @@ run_cmd "chmod 600 /opt/traefik/letsencrypt/acme.json"
 run_cmd "docker network create traefik-global >/dev/null 2>&1 || true"
 
 if [[ "${DRY_RUN}" != "true" ]]; then
+    if [[ -z "${TRAEFIK_DASHBOARD_BASICAUTH:-}" ]]; then
+        TRAEFIK_DASHBOARD_USER="${TRAEFIK_DASHBOARD_USER:-admin}"
+        TRAEFIK_DASHBOARD_PASS="${TRAEFIK_DASHBOARD_PASS:-$(random_secret)}"
+        _salt="$(openssl rand -base64 6)"
+        _hash="$(openssl passwd -apr1 -salt "${_salt}" "${TRAEFIK_DASHBOARD_PASS}")"
+        TRAEFIK_DASHBOARD_BASICAUTH="${TRAEFIK_DASHBOARD_USER}:${_hash//\$/\$\$}"
+    fi
+
     write_file_secure "${APP_DIR}/.env" "${DEPLOY_USER}:${DEPLOY_USER}" "600" "APP_ENV=staging
 APP_DEBUG=false
+APP_KEY=${APP_KEY}
 APP_URL=https://${DOMAIN_LANDLORD}
 DOMAIN=${DOMAIN_LANDLORD}
 DOMAIN_LANDLORD=${DOMAIN_LANDLORD}
@@ -103,12 +128,22 @@ CACHE_STORE=redis
 SESSION_DRIVER=redis
 BROADCAST_CONNECTION=reverb
 REVERB_HOST=${REVERB_DOMAIN}
+REVERB_APP_ID=${REVERB_APP_ID}
+REVERB_APP_KEY=${REVERB_APP_KEY}
+REVERB_APP_SECRET=${REVERB_APP_SECRET}
+REVERB_SERVER_HOST=0.0.0.0
+REVERB_SERVER_PORT=8080
 REVERB_PORT=443
 REVERB_SCHEME=https
 REVERB_DOMAIN=${REVERB_DOMAIN}
 VITE_REVERB_HOST=${REVERB_DOMAIN}
 VITE_REVERB_PORT=443
 VITE_REVERB_SCHEME=https
+"
+
+    write_file_secure "/opt/traefik/.env" "root:root" "600" "ACME_EMAIL=${ACME_EMAIL}
+TRAEFIK_DASHBOARD_HOST=${TRAEFIK_DASHBOARD_HOST:-traefik.${DOMAIN_LANDLORD}}
+TRAEFIK_DASHBOARD_BASICAUTH=${TRAEFIK_DASHBOARD_BASICAUTH}
 "
 fi
 

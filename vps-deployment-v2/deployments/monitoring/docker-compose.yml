@@ -18,11 +18,12 @@ services:
     labels:
       - 'traefik.enable=true'
       - 'traefik.docker.network=traefik-global'
-      - 'traefik.http.routers.prometheus.rule=Host(`${PROMETHEUS_DOMAIN}`)'
-      - 'traefik.http.routers.prometheus.entrypoints=websecure'
-      - 'traefik.http.routers.prometheus.tls.certresolver=letsencrypt'
-      - 'traefik.http.routers.prometheus.priority=14'
-      - 'traefik.http.services.prometheus.loadbalancer.server.port=9090'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-prometheus.rule=Host(`${PROMETHEUS_DOMAIN}`)'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-prometheus.entrypoints=websecure'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-prometheus.tls=true'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-prometheus.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-prometheus.priority=14'
+      - 'traefik.http.services.${APP_SLUG:-staging}-prometheus.loadbalancer.server.port=9090'
 
   alertmanager:
     image: prom/alertmanager:v0.28.1
@@ -40,11 +41,12 @@ services:
     labels:
       - 'traefik.enable=true'
       - 'traefik.docker.network=traefik-global'
-      - 'traefik.http.routers.alertmanager.rule=Host(`${ALERTMANAGER_DOMAIN}`)'
-      - 'traefik.http.routers.alertmanager.entrypoints=websecure'
-      - 'traefik.http.routers.alertmanager.tls.certresolver=letsencrypt'
-      - 'traefik.http.routers.alertmanager.priority=14'
-      - 'traefik.http.services.alertmanager.loadbalancer.server.port=9093'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-alertmanager.rule=Host(`${ALERTMANAGER_DOMAIN}`)'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-alertmanager.entrypoints=websecure'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-alertmanager.tls=true'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-alertmanager.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-alertmanager.priority=14'
+      - 'traefik.http.services.${APP_SLUG:-staging}-alertmanager.loadbalancer.server.port=9093'
 
   grafana:
     image: grafana/grafana:12.0.2
@@ -62,11 +64,12 @@ services:
     labels:
       - 'traefik.enable=true'
       - 'traefik.docker.network=traefik-global'
-      - 'traefik.http.routers.grafana.rule=Host(`${GRAFANA_DOMAIN}`)'
-      - 'traefik.http.routers.grafana.entrypoints=websecure'
-      - 'traefik.http.routers.grafana.tls.certresolver=letsencrypt'
-      - 'traefik.http.routers.grafana.priority=15'
-      - 'traefik.http.services.grafana.loadbalancer.server.port=3000'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-grafana.rule=Host(`${GRAFANA_DOMAIN}`)'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-grafana.entrypoints=websecure'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-grafana.tls=true'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-grafana.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-grafana.priority=15'
+      - 'traefik.http.services.${APP_SLUG:-staging}-grafana.loadbalancer.server.port=3000'
 
   node-exporter:
     image: prom/node-exporter:v1.9.1

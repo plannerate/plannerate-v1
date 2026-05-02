@@ -17,6 +17,8 @@ load_manifest "${MANIFEST_PATH}"
 require_commands gh ssh-keygen ssh-keyscan
 
 DOMAIN_LANDLORD="${DOMAIN_LANDLORD:-${DOMAIN_STAGING:-${DOMAIN_PRODUCTION:-}}}"
+APP_SLUG="${APP_SLUG:-staging}"
+VPS_DEPLOY_USER="${VPS_DEPLOY_USER:-${DEPLOY_USER:-}}"
 
 required_vars=(
     GITHUB_OWNER
@@ -97,7 +99,7 @@ set_secret "SSH_KNOWN_HOSTS" "${known_hosts}" "staging"
 set_secret "DOMAIN" "${DOMAIN_LANDLORD}" "staging"
 
 log_info "Setting staging environment variables"
-set_var "DEPLOY_PATH" "/opt/plannerate/staging" "staging"
+set_var "DEPLOY_PATH" "/opt/plannerate/${APP_SLUG}" "staging"
 set_var "COMPOSE_FILE" "docker-compose.staging.yml" "staging"
 
 log_success "GitHub bootstrap completed"

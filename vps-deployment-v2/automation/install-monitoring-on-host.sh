@@ -18,7 +18,7 @@ fi
 
 require_root
 load_manifest "${MANIFEST_PATH}"
-require_commands install cp sed docker
+require_commands install cp sed docker getent
 
 DOMAIN_LANDLORD="${DOMAIN_LANDLORD:-${DOMAIN_STAGING:-${DOMAIN_PRODUCTION:-}}}"
 if [[ -z "${DOMAIN_LANDLORD}" ]]; then
@@ -57,9 +57,24 @@ prometheus_domain="prometheus.${DOMAIN_LANDLORD}"
 alertmanager_domain="alerts.${DOMAIN_LANDLORD}"
 prometheus_retention="${PROMETHEUS_RETENTION:-15d}"
 
+ensure_domain_resolves() {
+    local host="$1"
+    if getent ahosts "${host}" >/dev/null 2>&1; then
+        log_success "DNS OK: ${host}"
+        return
+    fi
+    log_error "DNS missing for ${host}. Create A/AAAA record before enabling monitoring to avoid ACME rate-limit."
+    exit 1
+}
+
+ensure_domain_resolves "${grafana_domain}"
+ensure_domain_resolves "${prometheus_domain}"
+ensure_domain_resolves "${alertmanager_domain}"
+
 write_file_secure "${monitoring_dir}/.env" "root:root" "600" "GRAFANA_DOMAIN=${grafana_domain}
 PROMETHEUS_DOMAIN=${prometheus_domain}
 ALERTMANAGER_DOMAIN=${alertmanager_domain}
+APP_SLUG=${APP_SLUG}
 GRAFANA_ADMIN_USER=${grafana_user}
 GRAFANA_ADMIN_PASSWORD=${grafana_pass}
 PROMETHEUS_RETENTION=${prometheus_retention}
