@@ -8,6 +8,7 @@ source "${SCRIPT_DIR}/common.sh"
 
 MANIFEST_PATH="${1:-}"
 DB_ENGINE="${DB_ENGINE:-mysql}"
+DB_MODE="${DB_MODE:-local}"
 DRY_RUN="${DRY_RUN:-false}"
 
 if [[ -z "${MANIFEST_PATH}" ]]; then
@@ -22,9 +23,11 @@ DB_NAME="${DB_NAME:-${DB_NAME_STAGING:-${DB_NAME_PRODUCTION:-}}}"
 DB_USER="${DB_USER:-${DB_USER_STAGING:-${DB_USER_PRODUCTION:-}}}"
 DB_PASSWORD="${DB_PASSWORD:-${DB_PASSWORD_STAGING:-${DB_PASSWORD_PRODUCTION:-}}}"
 
-required_vars=(
-    DB_ALLOWED_CIDR
-)
+required_vars=()
+
+if [[ "${DB_MODE}" == "externo" ]]; then
+    required_vars+=(DB_ALLOWED_CIDR)
+fi
 
 for var_name in "${required_vars[@]}"; do
     if [[ -z "${!var_name:-}" ]]; then
@@ -46,7 +49,11 @@ run_cmd() {
     fi
 }
 
-DB_ALLOWED_HOST="${DB_ALLOWED_HOST:-%}"
+if [[ "${DB_MODE}" == "local" ]]; then
+    DB_ALLOWED_HOST="${DB_ALLOWED_HOST:-localhost}"
+else
+    DB_ALLOWED_HOST="${DB_ALLOWED_HOST:-%}"
+fi
 
 run_cmd "apt-get update -qq"
 run_cmd "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ufw fail2ban rsync"
@@ -57,9 +64,14 @@ if [[ "${DB_ENGINE}" == "mysql" ]]; then
     run_cmd "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq mysql-server"
 
     if [[ "${DRY_RUN}" != "true" ]]; then
+        MYSQL_BIND_ADDRESS="0.0.0.0"
+        if [[ "${DB_MODE}" == "local" ]]; then
+            MYSQL_BIND_ADDRESS="127.0.0.1"
+        fi
+
         cat > /etc/mysql/mysql.conf.d/zz-vps-v2.cnf <<CFG
 [mysqld]
-bind-address = 0.0.0.0
+bind-address = ${MYSQL_BIND_ADDRESS}
 max_connections = 300
 innodb_buffer_pool_size = 1G
 CFG
@@ -87,12 +99,19 @@ elif [[ "${DB_ENGINE}" == "pgsql" ]]; then
 
     if [[ "${DRY_RUN}" != "true" ]]; then
         PG_VERSION=$(ls /etc/postgresql | sort -V | tail -n1)
+        PG_LISTEN_ADDRESSES="'*'"
+        if [[ "${DB_MODE}" == "local" ]]; then
+            PG_LISTEN_ADDRESSES="'localhost'"
+        fi
+
         cat > "/etc/postgresql/${PG_VERSION}/main/conf.d/vps-v2.conf" <<CFG
-listen_addresses = '*'
+listen_addresses = ${PG_LISTEN_ADDRESSES}
 max_connections = 300
 CFG
 
-        echo "host all all ${DB_ALLOWED_CIDR} scram-sha-256" >> "/etc/postgresql/${PG_VERSION}/main/pg_hba.conf"
+        if [[ "${DB_MODE}" == "externo" ]]; then
+            echo "host all all ${DB_ALLOWED_CIDR} scram-sha-256" >> "/etc/postgresql/${PG_VERSION}/main/pg_hba.conf"
+        fi
     fi
 
     run_cmd "systemctl restart postgresql"
@@ -122,14 +141,19 @@ else
     exit 1
 fi
 
-log_info "Configuring firewall for database traffic"
+log_info "Configuring firewall rules"
 run_cmd "ufw --force default deny incoming"
 run_cmd "ufw --force default allow outgoing"
 run_cmd "ufw --force allow 22/tcp"
-if [[ "${DB_ENGINE}" == "mysql" ]]; then
-    run_cmd "ufw --force allow from ${DB_ALLOWED_CIDR} to any port 3306 proto tcp"
+
+if [[ "${DB_MODE}" == "externo" ]]; then
+    if [[ "${DB_ENGINE}" == "mysql" ]]; then
+        run_cmd "ufw --force allow from ${DB_ALLOWED_CIDR} to any port 3306 proto tcp"
+    else
+        run_cmd "ufw --force allow from ${DB_ALLOWED_CIDR} to any port 5432 proto tcp"
+    fi
 else
-    run_cmd "ufw --force allow from ${DB_ALLOWED_CIDR} to any port 5432 proto tcp"
+    log_info "DB_MODE=local, database port not exposed via firewall"
 fi
 run_cmd "ufw --force enable"
 
