@@ -48,4 +48,9 @@ jobs:
             docker compose ps
 
       - name: Health check
-        run: curl -fsS https://${{ secrets.DOMAIN }}/up
+        run: |
+          if [ -n "${{ secrets.DOMAIN }}" ]; then
+            curl -fsS "https://${{ secrets.DOMAIN }}/up"
+          else
+            echo "Skipping health check: DOMAIN secret is empty"
+          fi
