@@ -5,6 +5,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MANIFEST_OUT="${SCRIPT_DIR}/manifest.env"
+REMOTE_WORKDIR="/tmp/vps-deployment-v2"
 
 if [[ -f "${MANIFEST_OUT}" ]]; then
     # shellcheck disable=SC1090
@@ -159,13 +160,14 @@ if ask_yn "Provisionar App VPS agora?"; then
 fi
 
 if ask_yn "Instalar compose files no VPS agora?"; then
-    scp -o StrictHostKeyChecking=accept-new -r "${SCRIPT_DIR}/." "${VPS_USER}@${VPS_HOST}:/root/vps-deployment-v2/"
-    ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' bash /root/vps-deployment-v2/automation/install-compose-on-host.sh"
+    ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_WORKDIR}'"
+    scp -o StrictHostKeyChecking=accept-new -r "${SCRIPT_DIR}/." "${VPS_USER}@${VPS_HOST}:${REMOTE_WORKDIR}/"
+    ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' bash ${REMOTE_WORKDIR}/automation/install-compose-on-host.sh"
     ok "Compose files instalados"
 fi
 
 if ask_yn "Instalar monitoramento dessa app agora?"; then
-    ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' bash /root/vps-deployment-v2/automation/install-monitoring-on-host.sh /root/vps-deployment-v2/manifest.env '${APP_SLUG}'"
+    ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' bash ${REMOTE_WORKDIR}/automation/install-monitoring-on-host.sh ${REMOTE_WORKDIR}/manifest.env '${APP_SLUG}'"
     ok "Monitoramento instalado para ${APP_SLUG}"
 fi
 
