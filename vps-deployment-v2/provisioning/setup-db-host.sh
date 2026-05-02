@@ -99,10 +99,18 @@ CFG
 
     if [[ "${DRY_RUN}" != "true" ]]; then
         sudo -u postgres psql <<SQL
-CREATE DATABASE ${DB_NAME};
-CREATE USER ${DB_USER} WITH ENCRYPTED PASSWORD '${DB_PASSWORD}';
-GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
+DO \$\$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${DB_USER}') THEN
+        CREATE ROLE ${DB_USER} LOGIN PASSWORD '${DB_PASSWORD}';
+    ELSE
+        ALTER ROLE ${DB_USER} WITH LOGIN PASSWORD '${DB_PASSWORD}';
+    END IF;
+END
+\$\$;
 SQL
+        sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | grep -q 1 || sudo -u postgres createdb "${DB_NAME}"
+        sudo -u postgres psql -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};"
 
         write_file_secure "/root/.db-credentials-v2" "root:root" "600" "DB_ENGINE=pgsql
 DB_NAME=${DB_NAME}

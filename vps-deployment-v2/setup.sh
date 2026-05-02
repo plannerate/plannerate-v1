@@ -56,6 +56,28 @@ ask_yn() {
     [[ "${yn,,}" == "s" || "${yn,,}" == "y" ]]
 }
 
+ask_choice() {
+    local var_name="$1" prompt="$2" default="$3"
+    shift 3
+    local options=("$@")
+    local options_label
+    options_label="$(IFS='/'; echo "${options[*]}")"
+    local input
+
+    while true; do
+        echo -ne "  ${BOLD}${prompt}${RESET} ${DIM}[${options_label}] (padrão: ${default})${RESET}: "
+        read -r input
+        input="${input:-$default}"
+        for option in "${options[@]}"; do
+            if [[ "${input}" == "${option}" ]]; then
+                printf -v "${var_name}" '%s' "${input}"
+                return 0
+            fi
+        done
+        warn "Opção inválida: ${input}"
+    done
+}
+
 random_secret() { openssl rand -base64 48 | tr -d '=+/' | cut -c1-40; }
 emit_manifest_var() { printf '%s=%q\n' "$1" "${2:-}"; }
 
@@ -77,14 +99,43 @@ step "VPS e banco"
 ask VPS_HOST "IP do App VPS" "${VPS_HOST:-}"
 ask VPS_USER "Usuário SSH root no VPS" "${VPS_USER:-root}"
 ask DEPLOY_USER "Usuário de deploy" "${DEPLOY_USER:-deploy}"
+ask_choice DB_MODE "Banco é local na mesma VPS ou externo?" "${DB_MODE:-local}" local externo
 ask DB_ENGINE "Engine (mysql|pgsql)" "${DB_ENGINE:-${DB_ENGINE_STAGING:-mysql}}"
-ask DB_HOST "IP do DB VPS" "${DB_HOST:-${DB_HOST_STAGING:-}}"
-ask DB_PORT "Porta DB" "${DB_PORT:-${DB_PORT_STAGING:-3306}}"
-ask DB_ROOT_USER "Usuário root do banco" "${DB_ROOT_USER:-root}"
-ask_secret_default DB_ROOT_PASS "Senha root do banco" "${DB_ROOT_PASS:-}"
+
+if [[ "${DB_MODE}" == "local" ]]; then
+    DB_HOST="${DB_HOST:-127.0.0.1}"
+    if [[ "${DB_ENGINE}" == "pgsql" ]]; then
+        DB_PORT="${DB_PORT:-5432}"
+    else
+        DB_PORT="${DB_PORT:-3306}"
+    fi
+    DB_ROOT_USER="${DB_ROOT_USER:-root}"
+    DB_ROOT_PASS="${DB_ROOT_PASS:-}"
+else
+    ask DB_HOST "IP/host do banco externo" "${DB_HOST:-${DB_HOST_STAGING:-}}"
+    if [[ "${DB_ENGINE}" == "pgsql" ]]; then
+        ask DB_PORT "Porta DB externa" "${DB_PORT:-5432}"
+    else
+        ask DB_PORT "Porta DB externa" "${DB_PORT:-3306}"
+    fi
+    ask DB_ROOT_USER "Usuário admin do banco externo (referência)" "${DB_ROOT_USER:-root}"
+    ask_secret_default DB_ROOT_PASS "Senha admin do banco externo (referência)" "${DB_ROOT_PASS:-}"
+fi
 ask DB_NAME "Nome do banco (${APP_SLUG})" "${DB_NAME:-${DB_NAME_STAGING:-${PROJECT_NAME}_${APP_SLUG}}}"
 ask DB_USER "Usuário DB (${APP_SLUG})" "${DB_USER:-${DB_USER_STAGING:-${PROJECT_NAME}_${APP_SLUG}_user}}"
 ask_secret_default DB_PASSWORD "Senha DB (${APP_SLUG})" "${DB_PASSWORD:-${DB_PASSWORD_STAGING:-}}"
+
+if [[ "${DB_MODE}" == "externo" ]]; then
+    step "Configuração manual do banco externo"
+    echo "  Configure no banco externo antes de continuar:"
+    echo "  - Engine: ${DB_ENGINE}"
+    echo "  - Host: ${DB_HOST}"
+    echo "  - Port: ${DB_PORT}"
+    echo "  - Database: ${DB_NAME}"
+    echo "  - Username: ${DB_USER}"
+    echo "  - Password: ${DB_PASSWORD}"
+    read -r -p "Pressione ENTER após concluir a configuração no banco externo..."
+fi
 
 step "Chave SSH deploy"
 KEY_DIR="${HOME}/.ssh"
@@ -134,6 +185,7 @@ REDIS_PASSWORD="${REDIS_PASSWORD:-${REDIS_PASSWORD_STAGING:-$(random_secret)}}"
     emit_manifest_var VPS_USER "$VPS_USER"
     emit_manifest_var DEPLOY_USER "$DEPLOY_USER"
     emit_manifest_var VPS_DEPLOY_USER "$DEPLOY_USER"
+    emit_manifest_var DB_MODE "$DB_MODE"
     emit_manifest_var GITHUB_DEPLOY_PUBLIC_KEY "$DEPLOY_PUBLIC_KEY"
     emit_manifest_var DB_ENGINE "$DB_ENGINE"
     emit_manifest_var DB_HOST "$DB_HOST"
@@ -161,6 +213,10 @@ if ask_yn "Provisionar App VPS agora?"; then
     scp -o StrictHostKeyChecking=accept-new -r "${SCRIPT_DIR}/provisioning/." "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/"
     scp -o StrictHostKeyChecking=accept-new "${MANIFEST_OUT}" "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/manifest.env"
     ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "bash /tmp/vps-provisioning/validate-prereqs.sh /tmp/vps-provisioning/manifest.env"
+    if [[ "${DB_MODE}" == "local" ]]; then
+        ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "DB_ENGINE='${DB_ENGINE}' bash /tmp/vps-provisioning/setup-db-host.sh /tmp/vps-provisioning/manifest.env"
+        ok "Banco local provisionado (${DB_ENGINE})"
+    fi
     ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' bash /tmp/vps-provisioning/setup-app-host.sh /tmp/vps-provisioning/manifest.env"
     ok "App VPS provisionado"
 fi

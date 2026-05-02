@@ -20,6 +20,7 @@ load_manifest "${MANIFEST_PATH}"
 APP_SLUG="${APP_SLUG:-${APP_NAME:-staging}}"
 APP_DIR="/opt/plannerate/${APP_SLUG}"
 DOMAIN_LANDLORD="${DOMAIN_LANDLORD:-${DOMAIN_STAGING:-${DOMAIN_PRODUCTION:-}}}"
+DB_MODE="${DB_MODE:-local}"
 DB_ENGINE="${DB_ENGINE:-${DB_ENGINE_STAGING:-${DB_ENGINE_PRODUCTION:-mysql}}}"
 DB_HOST="${DB_HOST:-${DB_HOST_STAGING:-${DB_HOST_PRODUCTION:-}}}"
 DB_PORT="${DB_PORT:-${DB_PORT_STAGING:-${DB_PORT_PRODUCTION:-}}}"
@@ -38,6 +39,17 @@ REVERB_APP_ID="${REVERB_APP_ID:-${APP_SLUG}}"
 REVERB_APP_KEY="${REVERB_APP_KEY:-$(random_secret)}"
 REVERB_APP_SECRET="${REVERB_APP_SECRET:-$(random_secret)}"
 APP_KEY="${APP_KEY:-base64:$(openssl rand -base64 32)}"
+
+if [[ "${DB_MODE}" == "local" ]]; then
+    DB_HOST="${DB_HOST:-127.0.0.1}"
+    if [[ -z "${DB_PORT}" ]]; then
+        if [[ "${DB_ENGINE}" == "pgsql" ]]; then
+            DB_PORT="5432"
+        else
+            DB_PORT="3306"
+        fi
+    fi
+fi
 
 required_vars=(PROJECT_NAME DEPLOY_USER ACME_EMAIL GHCR_REPO GITHUB_DEPLOY_PUBLIC_KEY)
 for var_name in "${required_vars[@]}"; do

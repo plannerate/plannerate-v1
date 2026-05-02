@@ -19,6 +19,9 @@ bash vps-deployment-v2/setup.sh
 3. Durante o setup:
 - informar `APP_SLUG` (ex.: `staging`)
 - informar `DOMAIN_LANDLORD`
+- escolher `DB_MODE`:
+  - `local`: provisiona MySQL/PostgreSQL automaticamente na VPS e cria database/user
+  - `externo`: exibe credenciais esperadas e aguarda ENTER após configuração manual
 - permitir provisionamento e instalação de compose
 4. Push em `dev` para validar build+deploy.
 
