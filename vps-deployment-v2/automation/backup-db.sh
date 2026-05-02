@@ -7,39 +7,29 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 source "${SCRIPT_DIR}/../provisioning/common.sh"
 
 MANIFEST_PATH="${1:-}"
-TARGET_ENV="${2:-production}"
 RETENTION_DAYS="${RETENTION_DAYS:-14}"
 BACKUP_ROOT="${BACKUP_ROOT:-/opt/backups/db}"
+TARGET_ENV="staging"
 
 if [[ -z "${MANIFEST_PATH}" ]]; then
-    log_error "Usage: ./backup-db.sh /path/to/manifest.env production|staging"
+    log_error "Usage: ./backup-db.sh /path/to/manifest.env"
     exit 1
 fi
 
 load_manifest "${MANIFEST_PATH}"
 require_commands gzip date find mkdir aws curl
 
-if [[ "${TARGET_ENV}" != "production" && "${TARGET_ENV}" != "staging" ]]; then
-    log_error "Invalid env: ${TARGET_ENV}. Use production or staging."
-    exit 1
-fi
+DB_ENGINE="${DB_ENGINE:-${DB_ENGINE_STAGING:-${DB_ENGINE_PRODUCTION:-mysql}}}"
+DB_HOST="${DB_HOST:-${DB_HOST_STAGING:-${DB_HOST_PRODUCTION:-}}}"
+DB_PORT="${DB_PORT:-${DB_PORT_STAGING:-${DB_PORT_PRODUCTION:-}}}"
+DB_NAME="${DB_NAME:-${DB_NAME_STAGING:-${DB_NAME_PRODUCTION:-}}}"
+DB_USER="${DB_USER:-${DB_USER_STAGING:-${DB_USER_PRODUCTION:-}}}"
+DB_PASSWORD="${DB_PASSWORD:-${DB_PASSWORD_STAGING:-${DB_PASSWORD_PRODUCTION:-}}}"
+BACKUP_TABLES="${BACKUP_TABLES:-${BACKUP_TABLES_STAGING:-${BACKUP_TABLES_PRODUCTION:-}}}"
 
-if [[ "${TARGET_ENV}" == "production" ]]; then
-    DB_ENGINE="${DB_ENGINE_PRODUCTION:-mysql}"
-    DB_HOST="${DB_HOST_PRODUCTION}"
-    DB_PORT="${DB_PORT_PRODUCTION}"
-    DB_NAME="${DB_NAME_PRODUCTION}"
-    DB_USER="${DB_USER_PRODUCTION}"
-    DB_PASSWORD="${DB_PASSWORD_PRODUCTION}"
-    BACKUP_TABLES="${BACKUP_TABLES_PRODUCTION:-}"
-else
-    DB_ENGINE="${DB_ENGINE_STAGING:-mysql}"
-    DB_HOST="${DB_HOST_STAGING}"
-    DB_PORT="${DB_PORT_STAGING}"
-    DB_NAME="${DB_NAME_STAGING}"
-    DB_USER="${DB_USER_STAGING}"
-    DB_PASSWORD="${DB_PASSWORD_STAGING}"
-    BACKUP_TABLES="${BACKUP_TABLES_STAGING:-}"
+if [[ -z "${DB_HOST}" || -z "${DB_NAME}" || -z "${DB_USER}" || -z "${DB_PASSWORD}" ]]; then
+    log_error "Missing DB settings in manifest."
+    exit 1
 fi
 
 BACKUP_S3_ENDPOINT="${BACKUP_S3_ENDPOINT:-}"
@@ -65,10 +55,7 @@ send_backup_fail_alert() {
     local payload
     payload=$(printf '{"text":"[plannerate-v2][backup-fail][%s] %s"}' "${TARGET_ENV}" "${message}")
 
-    curl -fsS -X POST \
-        -H 'Content-Type: application/json' \
-        -d "${payload}" \
-        "${BACKUP_ALERT_WEBHOOK_URL}" >/dev/null || true
+    curl -fsS -X POST -H 'Content-Type: application/json' -d "${payload}" "${BACKUP_ALERT_WEBHOOK_URL}" >/dev/null || true
 }
 
 on_error() {
@@ -99,38 +86,19 @@ fi
 
 if [[ "${DB_ENGINE}" == "mysql" ]]; then
     require_commands mysqldump
-    mysql_dump_cmd=(
-        mysqldump
-        --single-transaction
-        --quick
-        --host="${DB_HOST}"
-        --port="${DB_PORT}"
-        --user="${DB_USER}"
-        "${DB_NAME}"
-    )
-
+    mysql_dump_cmd=(mysqldump --single-transaction --quick --host="${DB_HOST}" --port="${DB_PORT}" --user="${DB_USER}" "${DB_NAME}")
     if (( ${#tables[@]} > 0 )); then
         mysql_dump_cmd+=("${tables[@]}")
     fi
-
     MYSQL_PWD="${DB_PASSWORD}" "${mysql_dump_cmd[@]}" | gzip -9 > "${output_file}"
 elif [[ "${DB_ENGINE}" == "pgsql" ]]; then
     require_commands pg_dump
-    pg_dump_cmd=(
-        pg_dump
-        --host="${DB_HOST}"
-        --port="${DB_PORT}"
-        --username="${DB_USER}"
-        --format=plain
-        "${DB_NAME}"
-    )
-
+    pg_dump_cmd=(pg_dump --host="${DB_HOST}" --port="${DB_PORT}" --username="${DB_USER}" --format=plain "${DB_NAME}")
     if (( ${#tables[@]} > 0 )); then
         for table_name in "${tables[@]}"; do
             pg_dump_cmd+=("-t" "${table_name}")
         done
     fi
-
     PGPASSWORD="${DB_PASSWORD}" "${pg_dump_cmd[@]}" | gzip -9 > "${output_file}"
 else
     log_error "Unsupported DB engine: ${DB_ENGINE}"
@@ -138,9 +106,7 @@ else
 fi
 
 s3_key="${BACKUP_S3_PREFIX}/${TARGET_ENV}/$(basename "${output_file}")"
-AWS_ACCESS_KEY_ID="${BACKUP_S3_ACCESS_KEY_ID}" \
-AWS_SECRET_ACCESS_KEY="${BACKUP_S3_SECRET_ACCESS_KEY}" \
-AWS_DEFAULT_REGION="${BACKUP_S3_REGION}" \
+AWS_ACCESS_KEY_ID="${BACKUP_S3_ACCESS_KEY_ID}" AWS_SECRET_ACCESS_KEY="${BACKUP_S3_SECRET_ACCESS_KEY}" AWS_DEFAULT_REGION="${BACKUP_S3_REGION}" \
 aws --endpoint-url "${BACKUP_S3_ENDPOINT}" s3 cp "${output_file}" "s3://${BACKUP_S3_BUCKET}/${s3_key}" --only-show-errors
 
 find "${backup_dir}" -type f -name '*.sql.gz' -mtime +"${RETENTION_DAYS}" -delete

@@ -3,21 +3,18 @@ name: vps-v2-rollback
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: Environment to rollback
-        required: true
-        type: choice
-        options:
-          - staging
-          - production
       image_tag:
         description: Previous image tag (example sha-abcdef1)
         required: true
+      app_slug:
+        description: App slug/path (example staging, production, client-a)
+        required: false
+        default: staging
 
 jobs:
   rollback:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
+    environment: staging
     steps:
       - name: Rollback deploy
         uses: appleboy/ssh-action@v1.2.0
@@ -27,23 +24,23 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
-            if [[ "${{ github.event.inputs.environment }}" == "staging" ]]; then
-              DEPLOY_PATH=/opt/staging
-            else
-              DEPLOY_PATH=/opt/production
+            APP_SLUG="${{ github.event.inputs.app_slug }}"
+            if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
+              APP_SLUG="staging"
             fi
-            cd ${DEPLOY_PATH}
+            APP_DIR="/opt/plannerate/${APP_SLUG}"
+            cd "${APP_DIR}"
             export IMAGE_TAG=${{ github.event.inputs.image_tag }}
-            docker compose pull
-            docker compose up -d --force-recreate
-            docker compose exec -T app php artisan migrate --force
-            docker compose exec -T app sh -lc '
+            docker compose -p "plannerate-${APP_SLUG}" pull
+            docker compose -p "plannerate-${APP_SLUG}" up -d --force-recreate
+            docker compose -p "plannerate-${APP_SLUG}" exec -T app php artisan migrate --force
+            docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
               php artisan config:clear
               php artisan cache:clear
               php artisan event:clear
               php artisan route:clear
             '
-            docker compose ps
+            docker compose -p "plannerate-${APP_SLUG}" ps
 
       - name: Health check
         run: curl -fsS https://${{ secrets.DOMAIN }}/up

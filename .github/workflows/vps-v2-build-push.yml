@@ -3,6 +3,7 @@ name: vps-v2-build-push
 on:
   push:
     branches:
+      - dev
       - main
   workflow_dispatch:
 

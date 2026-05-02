@@ -17,22 +17,30 @@ fi
 require_root
 load_manifest "${MANIFEST_PATH}"
 
-required_vars=(
-    PROJECT_NAME
-    DEPLOY_USER
-    DOMAIN_PRODUCTION
-    DOMAIN_STAGING
-    ACME_EMAIL
-    GHCR_REPO
-    GITHUB_DEPLOY_PUBLIC_KEY
-)
+APP_SLUG="${APP_SLUG:-${APP_NAME:-staging}}"
+APP_DIR="/opt/plannerate/${APP_SLUG}"
+DOMAIN_LANDLORD="${DOMAIN_LANDLORD:-${DOMAIN_STAGING:-${DOMAIN_PRODUCTION:-}}}"
+DB_ENGINE="${DB_ENGINE:-${DB_ENGINE_STAGING:-${DB_ENGINE_PRODUCTION:-mysql}}}"
+DB_HOST="${DB_HOST:-${DB_HOST_STAGING:-${DB_HOST_PRODUCTION:-}}}"
+DB_PORT="${DB_PORT:-${DB_PORT_STAGING:-${DB_PORT_PRODUCTION:-}}}"
+DB_NAME="${DB_NAME:-${DB_NAME_STAGING:-${DB_NAME_PRODUCTION:-plannerate_${APP_SLUG}}}}"
+DB_USER="${DB_USER:-${DB_USER_STAGING:-${DB_USER_PRODUCTION:-plannerate_${APP_SLUG}_user}}}"
+DB_PASSWORD="${DB_PASSWORD:-${DB_PASSWORD_STAGING:-${DB_PASSWORD_PRODUCTION:-$(random_secret)}}}"
+REDIS_PASSWORD="${REDIS_PASSWORD:-${REDIS_PASSWORD_STAGING:-${REDIS_PASSWORD_PRODUCTION:-$(random_secret)}}}"
+REVERB_DOMAIN="${REVERB_DOMAIN:-reverb.${DOMAIN_LANDLORD}}"
 
+required_vars=(PROJECT_NAME DEPLOY_USER ACME_EMAIL GHCR_REPO GITHUB_DEPLOY_PUBLIC_KEY)
 for var_name in "${required_vars[@]}"; do
     if [[ -z "${!var_name:-}" ]]; then
         log_error "Missing required variable in manifest: ${var_name}"
         exit 1
     fi
 done
+
+if [[ -z "${DOMAIN_LANDLORD}" || -z "${DB_HOST}" || -z "${DB_NAME}" || -z "${DB_USER}" || -z "${DB_PASSWORD}" ]]; then
+    log_error "Missing DOMAIN_LANDLORD/DB settings in manifest."
+    exit 1
+fi
 
 if [[ "${DRY_RUN}" == "true" ]]; then
     log_info "DRY_RUN=true; command execution is disabled."
@@ -51,58 +59,6 @@ run_cmd "apt-get update -qq"
 run_cmd "DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq"
 run_cmd "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ca-certificates curl gnupg lsb-release ufw fail2ban jq unzip mysql-client postgresql-client"
 
-install_aws_cli() {
-    if command -v aws >/dev/null 2>&1; then
-        log_info "AWS CLI already installed"
-        return
-    fi
-
-    log_info "Installing AWS CLI"
-    if [[ "${DRY_RUN}" == "true" ]]; then
-        printf '[DRY_RUN] %s\n' "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq awscli"
-        printf '[DRY_RUN] %s\n' "curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/awscliv2.zip"
-        printf '[DRY_RUN] %s\n' "unzip -q -o /tmp/awscliv2.zip -d /tmp"
-        printf '[DRY_RUN] %s\n' "/tmp/aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update"
-        return
-    fi
-
-    if DEBIAN_FRONTEND=noninteractive apt-get install -y -qq awscli >/dev/null 2>&1; then
-        log_success "AWS CLI installed via apt"
-        return
-    fi
-
-    local arch
-    arch="$(uname -m)"
-    local bundle_url=""
-
-    case "${arch}" in
-        x86_64)
-            bundle_url="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
-            ;;
-        aarch64|arm64)
-            bundle_url="https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip"
-            ;;
-        *)
-            log_error "Unsupported architecture for AWS CLI bundle: ${arch}"
-            exit 1
-            ;;
-    esac
-
-    curl -fsSL "${bundle_url}" -o /tmp/awscliv2.zip
-    unzip -q -o /tmp/awscliv2.zip -d /tmp
-    /tmp/aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
-    rm -rf /tmp/aws /tmp/awscliv2.zip
-
-    if ! command -v aws >/dev/null 2>&1; then
-        log_error "AWS CLI installation failed"
-        exit 1
-    fi
-
-    log_success "AWS CLI installed via official bundle"
-}
-
-install_aws_cli
-
 log_info "Installing Docker engine"
 run_cmd "install -m 0755 -d /etc/apt/keyrings"
 run_cmd "rm -f /etc/apt/keyrings/docker.gpg"
@@ -117,143 +73,44 @@ if ! id "${DEPLOY_USER}" >/dev/null 2>&1; then
 fi
 run_cmd "usermod -aG docker ${DEPLOY_USER}"
 
-log_info "Preparing SSH access for deploy user"
-run_cmd "install -d -m 700 -o ${DEPLOY_USER} -g ${DEPLOY_USER} /home/${DEPLOY_USER}/.ssh"
-run_cmd "touch /home/${DEPLOY_USER}/.ssh/authorized_keys"
-run_cmd "chown ${DEPLOY_USER}:${DEPLOY_USER} /home/${DEPLOY_USER}/.ssh/authorized_keys"
-run_cmd "chmod 600 /home/${DEPLOY_USER}/.ssh/authorized_keys"
-
-if [[ "${DRY_RUN}" != "true" ]]; then
-    if ! grep -Fq "${GITHUB_DEPLOY_PUBLIC_KEY}" "/home/${DEPLOY_USER}/.ssh/authorized_keys"; then
-        printf '%s\n' "${GITHUB_DEPLOY_PUBLIC_KEY}" >> "/home/${DEPLOY_USER}/.ssh/authorized_keys"
-    fi
-fi
-
-log_info "Applying SSH hardening"
-run_cmd "sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config"
-run_cmd "sed -i 's/^#\?PermitRootLogin .*/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config"
-run_cmd "systemctl restart ssh || systemctl restart sshd"
-
-log_info "Configuring firewall"
-run_cmd "ufw default deny incoming"
-run_cmd "ufw default allow outgoing"
-run_cmd "ufw allow 22/tcp"
-run_cmd "ufw allow 80/tcp"
-run_cmd "ufw allow 443/tcp"
-run_cmd "ufw --force enable"
-
 log_info "Preparing filesystem layout"
-run_cmd "mkdir -p /opt/production /opt/staging /opt/traefik/letsencrypt /opt/backups /opt/monitoring"
-run_cmd "chown -R ${DEPLOY_USER}:${DEPLOY_USER} /opt/production /opt/staging"
-run_cmd "chmod 750 /opt/production /opt/staging"
+run_cmd "mkdir -p ${APP_DIR} /opt/traefik/letsencrypt /opt/backups /opt/monitoring/${APP_SLUG}"
+run_cmd "chown -R ${DEPLOY_USER}:${DEPLOY_USER} ${APP_DIR}"
+run_cmd "chmod 750 ${APP_DIR}"
 run_cmd "touch /opt/traefik/letsencrypt/acme.json"
 run_cmd "chmod 600 /opt/traefik/letsencrypt/acme.json"
-
-log_info "Creating Docker network for Traefik"
 run_cmd "docker network create traefik-global >/dev/null 2>&1 || true"
 
-log_info "Generating runtime secrets"
-REDIS_PASSWORD_PRODUCTION="${REDIS_PASSWORD_PRODUCTION:-$(random_secret)}"
-REDIS_PASSWORD_STAGING="${REDIS_PASSWORD_STAGING:-$(random_secret)}"
-REVERB_DOMAIN_PRODUCTION="${REVERB_DOMAIN_PRODUCTION:-reverb.${DOMAIN_PRODUCTION}}"
-REVERB_DOMAIN_STAGING="${REVERB_DOMAIN_STAGING:-reverb.${DOMAIN_STAGING}}"
-GRAFANA_ADMIN_USER="${GRAFANA_ADMIN_USER:-admin}"
-GRAFANA_ADMIN_PASSWORD="${GRAFANA_ADMIN_PASSWORD:-$(random_secret)}"
-GRAFANA_DOMAIN="${GRAFANA_DOMAIN:-grafana.${DOMAIN_PRODUCTION}}"
-PROMETHEUS_DOMAIN="${PROMETHEUS_DOMAIN:-prometheus.${DOMAIN_PRODUCTION}}"
-ALERTMANAGER_DOMAIN="${ALERTMANAGER_DOMAIN:-alerts.${DOMAIN_PRODUCTION}}"
-PROMETHEUS_RETENTION="${PROMETHEUS_RETENTION:-15d}"
-ALERT_WEBHOOK_DEFAULT_URL="${ALERT_WEBHOOK_DEFAULT_URL:-http://127.0.0.1:65535}"
-ALERT_WEBHOOK_WARNING_URL="${ALERT_WEBHOOK_WARNING_URL:-${ALERT_WEBHOOK_DEFAULT_URL}}"
-ALERT_WEBHOOK_CRITICAL_URL="${ALERT_WEBHOOK_CRITICAL_URL:-${ALERT_WEBHOOK_DEFAULT_URL}}"
-
-# Generate Traefik dashboard basicauth if not provided
-if [[ -z "${TRAEFIK_DASHBOARD_BASICAUTH:-}" ]]; then
-    TRAEFIK_DASHBOARD_USER="${TRAEFIK_DASHBOARD_USER:-admin}"
-    TRAEFIK_DASHBOARD_PASS="${TRAEFIK_DASHBOARD_PASS:-$(random_secret)}"
-    # Generate APR1-MD5 hash compatible with Traefik basicauth using openssl
-    _salt="$(openssl rand -base64 6)"
-    _hash="$(openssl passwd -apr1 -salt "${_salt}" "${TRAEFIK_DASHBOARD_PASS}")"
-    # Escape $ for Docker Compose env var (each $ must become $$)
-    TRAEFIK_DASHBOARD_BASICAUTH="${TRAEFIK_DASHBOARD_USER}:${_hash//\$/\$\$}"
-    log_info "Traefik dashboard user: ${TRAEFIK_DASHBOARD_USER} / password stored in /opt/traefik/.env"
-fi
-
 if [[ "${DRY_RUN}" != "true" ]]; then
-    write_file_secure "/opt/production/.env" "${DEPLOY_USER}:${DEPLOY_USER}" "600" "APP_ENV=production
+    write_file_secure "${APP_DIR}/.env" "${DEPLOY_USER}:${DEPLOY_USER}" "600" "APP_ENV=staging
 APP_DEBUG=false
-APP_URL=https://${DOMAIN_PRODUCTION}
-DOMAIN=${DOMAIN_PRODUCTION}
+APP_URL=https://${DOMAIN_LANDLORD}
+DOMAIN=${DOMAIN_LANDLORD}
+DOMAIN_LANDLORD=${DOMAIN_LANDLORD}
+APP_SLUG=${APP_SLUG}
 GHCR_REPO=${GHCR_REPO}
-DB_CONNECTION=${DB_ENGINE_PRODUCTION:-mysql}
-DB_HOST=${DB_HOST_PRODUCTION}
-DB_PORT=${DB_PORT_PRODUCTION}
-DB_DATABASE=${DB_NAME_PRODUCTION}
-DB_USERNAME=${DB_USER_PRODUCTION}
-DB_PASSWORD=${DB_PASSWORD_PRODUCTION}
+DB_CONNECTION=${DB_ENGINE}
+DB_HOST=${DB_HOST}
+DB_PORT=${DB_PORT}
+DB_DATABASE=${DB_NAME}
+DB_USERNAME=${DB_USER}
+DB_PASSWORD=${DB_PASSWORD}
 REDIS_HOST=redis
-REDIS_PASSWORD=${REDIS_PASSWORD_PRODUCTION}
+REDIS_PASSWORD=${REDIS_PASSWORD}
 REDIS_PORT=6379
 QUEUE_CONNECTION=redis
 CACHE_STORE=redis
 SESSION_DRIVER=redis
 BROADCAST_CONNECTION=reverb
-REVERB_HOST=${REVERB_DOMAIN_PRODUCTION}
+REVERB_HOST=${REVERB_DOMAIN}
 REVERB_PORT=443
 REVERB_SCHEME=https
-REVERB_DOMAIN=${REVERB_DOMAIN_PRODUCTION}
-VITE_REVERB_HOST=${REVERB_DOMAIN_PRODUCTION}
+REVERB_DOMAIN=${REVERB_DOMAIN}
+VITE_REVERB_HOST=${REVERB_DOMAIN}
 VITE_REVERB_PORT=443
 VITE_REVERB_SCHEME=https
-"
-
-    write_file_secure "/opt/staging/.env" "${DEPLOY_USER}:${DEPLOY_USER}" "600" "APP_ENV=staging
-APP_DEBUG=false
-APP_URL=https://${DOMAIN_STAGING}
-DOMAIN=${DOMAIN_STAGING}
-GHCR_REPO=${GHCR_REPO}
-DB_CONNECTION=${DB_ENGINE_STAGING:-mysql}
-DB_HOST=${DB_HOST_STAGING}
-DB_PORT=${DB_PORT_STAGING}
-DB_DATABASE=${DB_NAME_STAGING}
-DB_USERNAME=${DB_USER_STAGING}
-DB_PASSWORD=${DB_PASSWORD_STAGING}
-REDIS_HOST=redis
-REDIS_PASSWORD=${REDIS_PASSWORD_STAGING}
-REDIS_PORT=6379
-QUEUE_CONNECTION=redis
-CACHE_STORE=redis
-SESSION_DRIVER=redis
-BROADCAST_CONNECTION=reverb
-REVERB_HOST=${REVERB_DOMAIN_STAGING}
-REVERB_PORT=443
-REVERB_SCHEME=https
-REVERB_DOMAIN=${REVERB_DOMAIN_STAGING}
-VITE_REVERB_HOST=${REVERB_DOMAIN_STAGING}
-VITE_REVERB_PORT=443
-VITE_REVERB_SCHEME=https
-"
-
-    write_file_secure "/opt/traefik/.env" "root:root" "600" "ACME_EMAIL=${ACME_EMAIL}
-DOMAIN_PRODUCTION=${DOMAIN_PRODUCTION}
-DOMAIN_STAGING=${DOMAIN_STAGING}
-TRAEFIK_DASHBOARD_HOST=${TRAEFIK_DASHBOARD_HOST:-traefik.${DOMAIN_PRODUCTION}}
-TRAEFIK_DASHBOARD_USER=${TRAEFIK_DASHBOARD_USER:-admin}
-TRAEFIK_DASHBOARD_PASS=${TRAEFIK_DASHBOARD_PASS:-}
-TRAEFIK_DASHBOARD_BASICAUTH=${TRAEFIK_DASHBOARD_BASICAUTH}
-"
-
-    write_file_secure "/opt/monitoring/.env" "root:root" "600" "GRAFANA_DOMAIN=${GRAFANA_DOMAIN}
-PROMETHEUS_DOMAIN=${PROMETHEUS_DOMAIN}
-ALERTMANAGER_DOMAIN=${ALERTMANAGER_DOMAIN}
-GRAFANA_ADMIN_USER=${GRAFANA_ADMIN_USER}
-GRAFANA_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
-PROMETHEUS_RETENTION=${PROMETHEUS_RETENTION}
-ALERT_WEBHOOK_DEFAULT_URL=${ALERT_WEBHOOK_DEFAULT_URL}
-ALERT_WEBHOOK_WARNING_URL=${ALERT_WEBHOOK_WARNING_URL}
-ALERT_WEBHOOK_CRITICAL_URL=${ALERT_WEBHOOK_CRITICAL_URL}
 "
 fi
 
-log_success "App host provisioning completed"
-log_info "Next step: copy compose files into /opt/production and /opt/staging, then start stacks."
+log_success "App host provisioning completed for ${APP_SLUG}"
+log_info "App directory: ${APP_DIR}"

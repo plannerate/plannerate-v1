@@ -18,14 +18,12 @@ fi
 require_root
 load_manifest "${MANIFEST_PATH}"
 
+DB_NAME="${DB_NAME:-${DB_NAME_STAGING:-${DB_NAME_PRODUCTION:-}}}"
+DB_USER="${DB_USER:-${DB_USER_STAGING:-${DB_USER_PRODUCTION:-}}}"
+DB_PASSWORD="${DB_PASSWORD:-${DB_PASSWORD_STAGING:-${DB_PASSWORD_PRODUCTION:-}}}"
+
 required_vars=(
     DB_ALLOWED_CIDR
-    DB_NAME_PRODUCTION
-    DB_USER_PRODUCTION
-    DB_PASSWORD_PRODUCTION
-    DB_NAME_STAGING
-    DB_USER_STAGING
-    DB_PASSWORD_STAGING
 )
 
 for var_name in "${required_vars[@]}"; do
@@ -34,6 +32,11 @@ for var_name in "${required_vars[@]}"; do
         exit 1
     fi
 done
+
+if [[ -z "${DB_NAME}" || -z "${DB_USER}" || -z "${DB_PASSWORD}" ]]; then
+    log_error "Missing DB_NAME/DB_USER/DB_PASSWORD (or legacy staging/production DB vars)."
+    exit 1
+fi
 
 run_cmd() {
     if [[ "${DRY_RUN}" == "true" ]]; then
@@ -54,35 +57,28 @@ if [[ "${DB_ENGINE}" == "mysql" ]]; then
     run_cmd "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq mysql-server"
 
     if [[ "${DRY_RUN}" != "true" ]]; then
-        cat > /etc/mysql/mysql.conf.d/zz-vps-v2.cnf <<EOF
+        cat > /etc/mysql/mysql.conf.d/zz-vps-v2.cnf <<CFG
 [mysqld]
 bind-address = 0.0.0.0
 max_connections = 300
 innodb_buffer_pool_size = 1G
-EOF
+CFG
     fi
 
     run_cmd "systemctl restart mysql"
 
     if [[ "${DRY_RUN}" != "true" ]]; then
         mysql -uroot <<SQL
-CREATE DATABASE IF NOT EXISTS ${DB_NAME_PRODUCTION} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE IF NOT EXISTS ${DB_NAME_STAGING} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-    CREATE USER IF NOT EXISTS '${DB_USER_PRODUCTION}'@'${DB_ALLOWED_HOST}' IDENTIFIED BY '${DB_PASSWORD_PRODUCTION}';
-    CREATE USER IF NOT EXISTS '${DB_USER_STAGING}'@'${DB_ALLOWED_HOST}' IDENTIFIED BY '${DB_PASSWORD_STAGING}';
-    GRANT ALL PRIVILEGES ON ${DB_NAME_PRODUCTION}.* TO '${DB_USER_PRODUCTION}'@'${DB_ALLOWED_HOST}';
-    GRANT ALL PRIVILEGES ON ${DB_NAME_STAGING}.* TO '${DB_USER_STAGING}'@'${DB_ALLOWED_HOST}';
+CREATE DATABASE IF NOT EXISTS ${DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS '${DB_USER}'@'${DB_ALLOWED_HOST}' IDENTIFIED BY '${DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'${DB_ALLOWED_HOST}';
 FLUSH PRIVILEGES;
 SQL
-    fi
 
-    if [[ "${DRY_RUN}" != "true" ]]; then
         write_file_secure "/root/.db-credentials-v2" "root:root" "600" "DB_ENGINE=mysql
 MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-DB_NAME_PRODUCTION=${DB_NAME_PRODUCTION}
-DB_USER_PRODUCTION=${DB_USER_PRODUCTION}
-DB_NAME_STAGING=${DB_NAME_STAGING}
-DB_USER_STAGING=${DB_USER_STAGING}
+DB_NAME=${DB_NAME}
+DB_USER=${DB_USER}
 "
     fi
 elif [[ "${DB_ENGINE}" == "pgsql" ]]; then
@@ -91,10 +87,10 @@ elif [[ "${DB_ENGINE}" == "pgsql" ]]; then
 
     if [[ "${DRY_RUN}" != "true" ]]; then
         PG_VERSION=$(ls /etc/postgresql | sort -V | tail -n1)
-        cat > "/etc/postgresql/${PG_VERSION}/main/conf.d/vps-v2.conf" <<EOF
+        cat > "/etc/postgresql/${PG_VERSION}/main/conf.d/vps-v2.conf" <<CFG
 listen_addresses = '*'
 max_connections = 300
-EOF
+CFG
 
         echo "host all all ${DB_ALLOWED_CIDR} scram-sha-256" >> "/etc/postgresql/${PG_VERSION}/main/pg_hba.conf"
     fi
@@ -103,19 +99,14 @@ EOF
 
     if [[ "${DRY_RUN}" != "true" ]]; then
         sudo -u postgres psql <<SQL
-CREATE DATABASE ${DB_NAME_PRODUCTION};
-CREATE DATABASE ${DB_NAME_STAGING};
-CREATE USER ${DB_USER_PRODUCTION} WITH ENCRYPTED PASSWORD '${DB_PASSWORD_PRODUCTION}';
-CREATE USER ${DB_USER_STAGING} WITH ENCRYPTED PASSWORD '${DB_PASSWORD_STAGING}';
-GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME_PRODUCTION} TO ${DB_USER_PRODUCTION};
-GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME_STAGING} TO ${DB_USER_STAGING};
+CREATE DATABASE ${DB_NAME};
+CREATE USER ${DB_USER} WITH ENCRYPTED PASSWORD '${DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
 SQL
 
         write_file_secure "/root/.db-credentials-v2" "root:root" "600" "DB_ENGINE=pgsql
-DB_NAME_PRODUCTION=${DB_NAME_PRODUCTION}
-DB_USER_PRODUCTION=${DB_USER_PRODUCTION}
-DB_NAME_STAGING=${DB_NAME_STAGING}
-DB_USER_STAGING=${DB_USER_STAGING}
+DB_NAME=${DB_NAME}
+DB_USER=${DB_USER}
 "
     fi
 else

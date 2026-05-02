@@ -10,16 +10,24 @@ on:
         description: Image tag to deploy (example sha-abcdef1)
         required: false
         default: latest
+      app_slug:
+        description: App slug/path (example staging, production, client-a)
+        required: false
+        default: staging
 
 jobs:
   deploy:
     if: >
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'dev'
+      )
     runs-on: ubuntu-latest
     environment: staging
     steps:
-      - name: Deploy staging
+      - name: Deploy app
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.APP_HOST }}
@@ -27,27 +35,32 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
-            cd /opt/staging
+            APP_SLUG="${{ github.event.inputs.app_slug }}"
+            if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
+              APP_SLUG="staging"
+            fi
+            APP_DIR="/opt/plannerate/${APP_SLUG}"
+            cd "${APP_DIR}"
             IMAGE_TAG="${{ github.event.inputs.image_tag }}"
             if [[ -z "${IMAGE_TAG}" || "${IMAGE_TAG}" == "null" ]]; then
               HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
               IMAGE_TAG="sha-${HEAD_SHA:0:7}"
             fi
             export IMAGE_TAG
-            docker compose pull
-            docker compose up -d --force-recreate
-            if ! docker compose run --rm --no-deps -e BROADCAST_CONNECTION=log app php artisan migrate --force; then
-              echo "Migration failed in staging (continuing deploy)"
+            docker compose -p "plannerate-${APP_SLUG}" pull
+            docker compose -p "plannerate-${APP_SLUG}" up -d --force-recreate
+            if ! docker compose -p "plannerate-${APP_SLUG}" run --rm --no-deps -e BROADCAST_CONNECTION=log app php artisan migrate --force; then
+              echo "Migration failed in ${APP_SLUG} (continuing deploy)"
             fi
-            docker compose run --rm --no-deps -e BROADCAST_CONNECTION=log app sh -lc '
+            docker compose -p "plannerate-${APP_SLUG}" run --rm --no-deps -e BROADCAST_CONNECTION=log app sh -lc '
               php artisan config:clear
               php artisan cache:clear
               php artisan event:clear
               php artisan route:clear
             '
-            docker compose ps
+            docker compose -p "plannerate-${APP_SLUG}" ps
 
       - name: Health check
         run: |
-          curl -fsS -o /dev/null "https://plannerate.com.br/up"
-          echo "Health check passed: https://plannerate.com.br/up"
+          curl -fsS -o /dev/null "https://${{ secrets.DOMAIN }}/up"
+          echo "Health check passed: https://${{ secrets.DOMAIN }}/up"

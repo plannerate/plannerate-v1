@@ -13,7 +13,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-global"
-      - "traefik.http.routers.prod-app.rule=Host(`${DOMAIN}`) || HostRegexp(`{subdomain:[a-z0-9-]+}.${DOMAIN}`)"
+      - "traefik.http.routers.prod-app.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.prod-app.entrypoints=websecure"
       - "traefik.http.routers.prod-app.tls.certresolver=letsencrypt"
       - "traefik.http.routers.prod-app.priority=30"

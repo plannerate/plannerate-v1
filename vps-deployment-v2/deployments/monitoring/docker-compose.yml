@@ -1,7 +1,6 @@
 services:
   prometheus:
     image: prom/prometheus:v3.4.2
-    container_name: plannerate-prometheus
     restart: unless-stopped
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -27,7 +26,6 @@ services:
 
   alertmanager:
     image: prom/alertmanager:v0.28.1
-    container_name: plannerate-alertmanager
     restart: unless-stopped
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
@@ -50,7 +48,6 @@ services:
 
   grafana:
     image: grafana/grafana:12.0.2
-    container_name: plannerate-grafana
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
@@ -73,7 +70,6 @@ services:
 
   node-exporter:
     image: prom/node-exporter:v1.9.1
-    container_name: plannerate-node-exporter
     restart: unless-stopped
     command:
       - '--path.rootfs=/host'
@@ -84,7 +80,6 @@ services:
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.52.0
-    container_name: plannerate-cadvisor
     restart: unless-stopped
     privileged: true
     devices:
@@ -99,7 +94,6 @@ services:
 
   blackbox-exporter:
     image: prom/blackbox-exporter:v0.27.0
-    container_name: plannerate-blackbox-exporter
     restart: unless-stopped
     command:
       - '--config.file=/etc/blackbox_exporter/config.yml'

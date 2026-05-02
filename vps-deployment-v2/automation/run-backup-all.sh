@@ -11,8 +11,6 @@ if [[ -z "${MANIFEST_PATH}" ]]; then
 fi
 
 RETENTION_DAYS="${RETENTION_DAYS:-14}"
+"${SCRIPT_DIR}/backup-db.sh" "${MANIFEST_PATH}"
 
-"${SCRIPT_DIR}/backup-db.sh" "${MANIFEST_PATH}" production
-"${SCRIPT_DIR}/backup-db.sh" "${MANIFEST_PATH}" staging
-
-echo "Backups completed for production and staging"
+echo "Backup completed for staging"

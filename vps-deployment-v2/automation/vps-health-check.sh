@@ -7,6 +7,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 source "${SCRIPT_DIR}/../provisioning/common.sh"
 
 MANIFEST_PATH="${1:-}"
+APP_SLUG="${APP_SLUG:-${2:-staging}}"
 
 if [[ -z "${MANIFEST_PATH}" ]]; then
     log_error "Usage: ./vps-health-check.sh /path/to/manifest.env"
@@ -16,22 +17,13 @@ fi
 load_manifest "${MANIFEST_PATH}"
 require_commands docker curl df free awk grep date
 
+DOMAIN_LANDLORD="${DOMAIN_LANDLORD:-${DOMAIN_STAGING:-${DOMAIN_PRODUCTION:-}}}"
+
 fail_count=0
 warn_count=0
-
-ok() {
-    echo "[OK] $*"
-}
-
-warn() {
-    echo "[WARN] $*"
-    warn_count=$((warn_count + 1))
-}
-
-fail() {
-    echo "[FAIL] $*"
-    fail_count=$((fail_count + 1))
-}
+ok() { echo "[OK] $*"; }
+warn() { echo "[WARN] $*"; warn_count=$((warn_count + 1)); }
+fail() { echo "[FAIL] $*"; fail_count=$((fail_count + 1)); }
 
 check_compose_service_running() {
     local compose_dir="$1"
@@ -72,27 +64,26 @@ fi
 
 echo "--- Core stacks ---"
 check_compose_service_running "/opt/traefik" "traefik"
-check_compose_service_running "/opt/production" "app"
-check_compose_service_running "/opt/production" "queue"
-check_compose_service_running "/opt/production" "scheduler"
-check_compose_service_running "/opt/production" "reverb"
-check_compose_service_running "/opt/staging" "app"
-check_compose_service_running "/opt/staging" "queue"
-check_compose_service_running "/opt/staging" "scheduler"
-check_compose_service_running "/opt/staging" "reverb"
+check_compose_service_running "/opt/plannerate/${APP_SLUG}" "app"
+check_compose_service_running "/opt/plannerate/${APP_SLUG}" "queue"
+check_compose_service_running "/opt/plannerate/${APP_SLUG}" "scheduler"
+check_compose_service_running "/opt/plannerate/${APP_SLUG}" "reverb"
 
-if [[ -f "/opt/monitoring/docker-compose.yml" ]]; then
-    check_compose_service_running "/opt/monitoring" "prometheus"
-    check_compose_service_running "/opt/monitoring" "grafana"
-    check_compose_service_running "/opt/monitoring" "alertmanager"
-    check_compose_service_running "/opt/monitoring" "node-exporter"
+if [[ -f "/opt/monitoring/${APP_SLUG}/docker-compose.yml" ]]; then
+    check_compose_service_running "/opt/monitoring/${APP_SLUG}" "prometheus"
+    check_compose_service_running "/opt/monitoring/${APP_SLUG}" "grafana"
+    check_compose_service_running "/opt/monitoring/${APP_SLUG}" "alertmanager"
+    check_compose_service_running "/opt/monitoring/${APP_SLUG}" "node-exporter"
 else
-    warn "Monitoring stack not installed in /opt/monitoring"
+    warn "Monitoring stack not installed in /opt/monitoring/${APP_SLUG}"
 fi
 
 echo "--- HTTP health endpoints ---"
-check_http "https://${DOMAIN_PRODUCTION}/up" "Production app"
-check_http "https://${DOMAIN_STAGING}/up" "Staging app"
+if [[ -n "${DOMAIN_LANDLORD}" ]]; then
+    check_http "https://${DOMAIN_LANDLORD}/up" "Staging landlord app"
+else
+    warn "DOMAIN_LANDLORD not configured"
+fi
 
 if [[ -n "${GRAFANA_DOMAIN:-}" ]]; then
     check_http "https://${GRAFANA_DOMAIN}" "Grafana"
@@ -146,9 +137,7 @@ echo "Failures: ${fail_count}"
 if [[ "${fail_count}" -gt 0 ]]; then
     exit 2
 fi
-
 if [[ "${warn_count}" -gt 0 ]]; then
     exit 1
 fi
-
 exit 0

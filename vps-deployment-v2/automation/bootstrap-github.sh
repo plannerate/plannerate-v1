@@ -16,14 +16,14 @@ fi
 load_manifest "${MANIFEST_PATH}"
 require_commands gh ssh-keygen ssh-keyscan
 
+DOMAIN_LANDLORD="${DOMAIN_LANDLORD:-${DOMAIN_STAGING:-${DOMAIN_PRODUCTION:-}}}"
+
 required_vars=(
     GITHUB_OWNER
     GITHUB_REPO_NAME
     VPS_HOST
     VPS_DEPLOY_USER
     GHCR_REPO
-    DOMAIN_PRODUCTION
-    DOMAIN_STAGING
 )
 
 for var_name in "${required_vars[@]}"; do
@@ -32,6 +32,11 @@ for var_name in "${required_vars[@]}"; do
         exit 1
     fi
 done
+
+if [[ -z "${DOMAIN_LANDLORD}" ]]; then
+    log_error "Missing required domain variable: DOMAIN_LANDLORD (or DOMAIN_STAGING fallback)."
+    exit 1
+fi
 
 repo="${GITHUB_OWNER}/${GITHUB_REPO_NAME}"
 key_dir="${HOME}/.ssh"
@@ -52,9 +57,8 @@ fi
 log_info "Uploading deploy key to repository"
 gh repo deploy-key add "${pub_key_path}" --repo "${repo}" --title "deploy-key-vps-v2" --allow-write >/dev/null 2>&1 || true
 
-log_info "Creating GitHub environments"
+log_info "Creating GitHub environment: staging"
 gh api --method PUT "repos/${repo}/environments/staging" >/dev/null
-gh api --method PUT "repos/${repo}/environments/production" >/dev/null
 
 known_hosts=$(ssh-keyscan -H "${VPS_HOST}" 2>/dev/null)
 
@@ -82,34 +86,19 @@ set_var() {
     fi
 }
 
-log_info "Setting shared secrets"
-set_secret "VPS_HOST" "${VPS_HOST}"
-set_secret "VPS_USER" "${VPS_DEPLOY_USER}"
-set_secret "SSH_PRIVATE_KEY" "$(cat "${priv_key_path}")"
-set_secret "SSH_KNOWN_HOSTS" "${known_hosts}"
+log_info "Setting shared variables"
+set_var "GHCR_REPO" "${GHCR_REPO}"
 
 log_info "Setting staging environment secrets"
 set_secret "APP_HOST" "${VPS_HOST}" "staging"
 set_secret "APP_USER" "${VPS_DEPLOY_USER}" "staging"
 set_secret "SSH_PRIVATE_KEY" "$(cat "${priv_key_path}")" "staging"
 set_secret "SSH_KNOWN_HOSTS" "${known_hosts}" "staging"
-set_secret "DOMAIN" "${DOMAIN_STAGING}" "staging"
+set_secret "DOMAIN" "${DOMAIN_LANDLORD}" "staging"
 
-log_info "Setting production environment secrets"
-set_secret "APP_HOST" "${VPS_HOST}" "production"
-set_secret "APP_USER" "${VPS_DEPLOY_USER}" "production"
-set_secret "SSH_PRIVATE_KEY" "$(cat "${priv_key_path}")" "production"
-set_secret "SSH_KNOWN_HOSTS" "${known_hosts}" "production"
-set_secret "DOMAIN" "${DOMAIN_PRODUCTION}" "production"
-
-log_info "Setting shared variables"
-set_var "GHCR_REPO" "${GHCR_REPO}"
-
-log_info "Setting environment variables"
-set_var "DEPLOY_PATH" "/opt/staging" "staging"
-set_var "DEPLOY_PATH" "/opt/production" "production"
+log_info "Setting staging environment variables"
+set_var "DEPLOY_PATH" "/opt/plannerate/staging" "staging"
 set_var "COMPOSE_FILE" "docker-compose.staging.yml" "staging"
-set_var "COMPOSE_FILE" "docker-compose.production.yml" "production"
 
 log_success "GitHub bootstrap completed"
 log_info "Private key stored at: ${priv_key_path}"

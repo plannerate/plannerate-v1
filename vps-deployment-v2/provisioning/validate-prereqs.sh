@@ -19,11 +19,10 @@ ensure_linux_ubuntu
 
 MIN_DISK_GB="${MIN_DISK_GB:-20}"
 SSH_PORT="${SSH_PORT:-22}"
+DOMAIN_LANDLORD="${DOMAIN_LANDLORD:-${DOMAIN_STAGING:-${DOMAIN_PRODUCTION:-}}}"
 
 required_manifest_vars=(
     PROJECT_NAME
-    DOMAIN_PRODUCTION
-    DOMAIN_STAGING
     DEPLOY_USER
     GHCR_REPO
 )
@@ -34,6 +33,11 @@ for var_name in "${required_manifest_vars[@]}"; do
         exit 1
     fi
 done
+
+if [[ -z "${DOMAIN_LANDLORD}" ]]; then
+    log_error "Missing domain variable: DOMAIN_LANDLORD (or legacy DOMAIN_STAGING/DOMAIN_PRODUCTION)."
+    exit 1
+fi
 
 available_kb=$(df --output=avail / | tail -n1 | awk '{print $1}')
 required_kb=$((MIN_DISK_GB * 1024 * 1024))
