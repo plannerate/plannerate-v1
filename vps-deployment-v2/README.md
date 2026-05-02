@@ -137,6 +137,28 @@ grep -E '^(DB_HOST|DB_LANDLORD_HOST|DB_CONNECTION)=' .env
 ```
 Prevenção: compose já publica `host.docker.internal:host-gateway` e `setup-db-host.sh` libera `172.16.0.0/12` para porta do banco em `DB_MODE=local`.
 
+### 9) `Please provide a valid cache path`
+Causa: diretórios de cache/views não existentes ou sem permissão no container.
+Correção:
+```bash
+docker compose -p plannerate-<APP_SLUG> exec -T app sh -lc '
+  mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions bootstrap/cache
+  chmod -R ug+rwX storage bootstrap/cache
+  chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+'
+```
+Prevenção: workflows de deploy/rollback já executam essa preparação antes das migrações.
+
+### 10) `Redis connection [landlord] not configured`
+Causa: `SESSION_DRIVER=redis` com `SESSION_CONNECTION=landlord` (valor default do projeto), mas Redis só tem conexões `default` e `cache`.
+Correção:
+```bash
+sed -i 's/^SESSION_CONNECTION=.*/SESSION_CONNECTION=default/' /opt/plannerate/<APP_SLUG>/.env
+grep -q '^REDIS_CACHE_CONNECTION=' /opt/plannerate/<APP_SLUG>/.env || echo 'REDIS_CACHE_CONNECTION=cache' >> /opt/plannerate/<APP_SLUG>/.env
+docker compose -p plannerate-<APP_SLUG> up -d --force-recreate
+```
+Prevenção: `setup-app-host.sh` já escreve `SESSION_CONNECTION=default` e `REDIS_CACHE_CONNECTION=cache`.
+
 ## DNS/ACME Guardrails
 Antes de monitoring/reverb público:
 - criar `A/AAAA` para:

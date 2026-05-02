@@ -111,6 +111,7 @@ fi
 
 log_info "Preparing filesystem layout"
 run_cmd "mkdir -p ${APP_DIR} /opt/traefik/letsencrypt /opt/backups /opt/monitoring/${APP_SLUG}"
+run_cmd "mkdir -p ${APP_DIR}/storage/framework/views ${APP_DIR}/storage/framework/cache ${APP_DIR}/storage/framework/sessions ${APP_DIR}/bootstrap/cache"
 run_cmd "chown -R ${DEPLOY_USER}:${DEPLOY_USER} ${APP_DIR}"
 run_cmd "chmod 750 ${APP_DIR}"
 run_cmd "touch /opt/traefik/letsencrypt/acme.json"
@@ -154,6 +155,9 @@ REDIS_PORT=6379
 QUEUE_CONNECTION=redis
 CACHE_STORE=redis
 SESSION_DRIVER=redis
+SESSION_CONNECTION=default
+REDIS_CACHE_CONNECTION=cache
+REDIS_CACHE_LOCK_CONNECTION=default
 BROADCAST_CONNECTION=reverb
 REVERB_HOST=${REVERB_DOMAIN}
 REVERB_APP_ID=${REVERB_APP_ID}

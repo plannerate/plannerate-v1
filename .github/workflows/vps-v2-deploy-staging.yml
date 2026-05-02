@@ -52,6 +52,11 @@ jobs:
             export IMAGE_TAG
             docker compose -p "plannerate-${APP_SLUG}" pull
             docker compose -p "plannerate-${APP_SLUG}" up -d --force-recreate
+            docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
+              mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions bootstrap/cache
+              chmod -R ug+rwX storage bootstrap/cache
+              chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+            '
             migration_ok=0
             for attempt in 1 2 3 4 5; do
               if docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
