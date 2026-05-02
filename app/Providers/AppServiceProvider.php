@@ -60,9 +60,34 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->ensureRuntimeDirectories();
         Tenant::observe(TenantObserver::class);
         $this->registerPolicies();
         $this->configureDefaults();
+    }
+
+    /**
+     * Ensure runtime cache directories exist and view cache path is always valid.
+     */
+    protected function ensureRuntimeDirectories(): void
+    {
+        $paths = [
+            storage_path('framework/cache'),
+            storage_path('framework/sessions'),
+            storage_path('framework/views'),
+            base_path('bootstrap/cache'),
+        ];
+
+        foreach ($paths as $path) {
+            if (! is_dir($path)) {
+                @mkdir($path, 0775, true);
+            }
+        }
+
+        $compiledPath = config('view.compiled');
+        if (! is_string($compiledPath) || trim($compiledPath) === '') {
+            config(['view.compiled' => storage_path('framework/views')]);
+        }
     }
 
     /**

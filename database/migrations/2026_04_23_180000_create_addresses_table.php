@@ -6,14 +6,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    protected string $connection = 'tenant';
+    protected $connection = 'tenant';
 
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        if (!Schema::connection($this->connection)->hasTable('addresses')) {
+        if (! Schema::connection($this->connection)->hasTable('addresses')) {
             Schema::connection($this->connection)->create('addresses', function (Blueprint $table): void {
                 $table->ulid('id')->primary();
                 $table->string('type')->nullable();
