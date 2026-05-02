@@ -3,7 +3,7 @@ name: build-push-image
 on:
   push:
     branches:
-      - main
+      - dev
   workflow_dispatch:
 
 env:
@@ -12,6 +12,7 @@ env:
 
 jobs:
   build:
+    if: github.ref_name == 'dev'
     runs-on: ubuntu-latest
     permissions:
       contents: read
