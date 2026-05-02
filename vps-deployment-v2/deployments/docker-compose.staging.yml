@@ -1,7 +1,6 @@
 services:
   app:
     image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:-latest}
-    container_name: plannerate-stg-app
     restart: always
     env_file:
       - ./.env
@@ -13,16 +12,17 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-global"
-      - "traefik.http.routers.stg-app.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.stg-app.entrypoints=websecure"
-      - "traefik.http.routers.stg-app.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.stg-app.priority=20"
-      - "traefik.http.services.stg-app.loadbalancer.server.port=80"
-      - "traefik.http.middlewares.stg-sec.headers.stsSeconds=31536000"
-      - "traefik.http.middlewares.stg-sec.headers.browserXssFilter=true"
-      - "traefik.http.middlewares.stg-sec.headers.contentTypeNosniff=true"
-      - "traefik.http.middlewares.stg-sec.headers.frameDeny=true"
-      - "traefik.http.routers.stg-app.middlewares=stg-sec"
+      - "traefik.http.routers.${APP_SLUG:-staging}-app.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.${APP_SLUG:-staging}-app.entrypoints=websecure"
+      - "traefik.http.routers.${APP_SLUG:-staging}-app.tls=true"
+      - "traefik.http.routers.${APP_SLUG:-staging}-app.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${APP_SLUG:-staging}-app.priority=20"
+      - "traefik.http.services.${APP_SLUG:-staging}-app.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.${APP_SLUG:-staging}-sec.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.${APP_SLUG:-staging}-sec.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.${APP_SLUG:-staging}-sec.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.${APP_SLUG:-staging}-sec.headers.frameDeny=true"
+      - "traefik.http.routers.${APP_SLUG:-staging}-app.middlewares=${APP_SLUG:-staging}-sec"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/up"]
       interval: 15s
@@ -35,7 +35,6 @@ services:
 
   queue:
     image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:-latest}
-    container_name: plannerate-stg-queue
     restart: always
     env_file:
       - ./.env
@@ -50,7 +49,6 @@ services:
 
   scheduler:
     image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:-latest}
-    container_name: plannerate-stg-scheduler
     restart: always
     env_file:
       - ./.env
@@ -65,7 +63,6 @@ services:
 
   reverb:
     image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:-latest}
-    container_name: plannerate-stg-reverb
     restart: unless-stopped
     env_file:
       - ./.env
@@ -78,22 +75,22 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-global"
-      - "traefik.http.routers.stg-reverb.rule=Host(`${REVERB_DOMAIN}`)"
-      - "traefik.http.routers.stg-reverb.entrypoints=websecure"
-      - "traefik.http.routers.stg-reverb.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.stg-reverb.priority=25"
-      - "traefik.http.services.stg-reverb.loadbalancer.server.port=8080"
-      - "traefik.http.middlewares.stg-reverb-ratelimit.ratelimit.average=90"
-      - "traefik.http.middlewares.stg-reverb-ratelimit.ratelimit.burst=180"
-      - "traefik.http.middlewares.stg-reverb-inflight.inflightreq.amount=60"
-      - "traefik.http.routers.stg-reverb.middlewares=stg-reverb-ratelimit,stg-reverb-inflight"
+      - "traefik.http.routers.${APP_SLUG:-staging}-reverb.rule=Host(`${REVERB_DOMAIN}`)"
+      - "traefik.http.routers.${APP_SLUG:-staging}-reverb.entrypoints=websecure"
+      - "traefik.http.routers.${APP_SLUG:-staging}-reverb.tls=true"
+      - "traefik.http.routers.${APP_SLUG:-staging}-reverb.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${APP_SLUG:-staging}-reverb.priority=25"
+      - "traefik.http.services.${APP_SLUG:-staging}-reverb.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.${APP_SLUG:-staging}-reverb-ratelimit.ratelimit.average=90"
+      - "traefik.http.middlewares.${APP_SLUG:-staging}-reverb-ratelimit.ratelimit.burst=180"
+      - "traefik.http.middlewares.${APP_SLUG:-staging}-reverb-inflight.inflightreq.amount=60"
+      - "traefik.http.routers.${APP_SLUG:-staging}-reverb.middlewares=${APP_SLUG:-staging}-reverb-ratelimit,${APP_SLUG:-staging}-reverb-inflight"
     depends_on:
       redis:
         condition: service_healthy
 
   redis:
     image: redis:7-alpine
-    container_name: plannerate-stg-redis
     restart: unless-stopped
     command: >
       redis-server
