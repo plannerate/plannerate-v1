@@ -33,7 +33,26 @@ jobs:
             export IMAGE_TAG=${{ github.event.inputs.image_tag }}
             docker compose -p "plannerate-${APP_SLUG}" pull
             docker compose -p "plannerate-${APP_SLUG}" up -d --force-recreate
-            docker compose -p "plannerate-${APP_SLUG}" exec -T app php artisan migrate --force
+            docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
+              set -e
+              php artisan migrate --force --database=landlord --path=database/migrations/landlord
+
+              set +e
+              TENANTS_OUTPUT="$(php artisan tenants:artisan "migrate --force --database=tenant" 2>&1)"
+              TENANTS_STATUS=$?
+              set -e
+
+              if [ "${TENANTS_STATUS}" -ne 0 ]; then
+                if echo "${TENANTS_OUTPUT}" | grep -q "No tenant(s) found."; then
+                  echo "No tenants found yet; skipping tenant migrations."
+                else
+                  echo "${TENANTS_OUTPUT}"
+                  exit "${TENANTS_STATUS}"
+                fi
+              else
+                echo "${TENANTS_OUTPUT}"
+              fi
+            '
             docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
               php artisan config:clear
               php artisan cache:clear

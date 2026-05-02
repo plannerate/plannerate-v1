@@ -54,7 +54,26 @@ jobs:
             docker compose -p "plannerate-${APP_SLUG}" up -d --force-recreate
             migration_ok=0
             for attempt in 1 2 3 4 5; do
-              if docker compose -p "plannerate-${APP_SLUG}" run --rm --no-deps -e BROADCAST_CONNECTION=log app php artisan migrate --force; then
+              if docker compose -p "plannerate-${APP_SLUG}" run --rm --no-deps -e BROADCAST_CONNECTION=log app sh -lc '
+                set -e
+                php artisan migrate --force --database=landlord --path=database/migrations/landlord
+
+                set +e
+                TENANTS_OUTPUT="$(php artisan tenants:artisan "migrate --force --database=tenant" 2>&1)"
+                TENANTS_STATUS=$?
+                set -e
+
+                if [ "${TENANTS_STATUS}" -ne 0 ]; then
+                  if echo "${TENANTS_OUTPUT}" | grep -q "No tenant(s) found."; then
+                    echo "No tenants found yet; skipping tenant migrations."
+                  else
+                    echo "${TENANTS_OUTPUT}"
+                    exit "${TENANTS_STATUS}"
+                  fi
+                else
+                  echo "${TENANTS_OUTPUT}"
+                fi
+              '; then
                 migration_ok=1
                 echo "Migration succeeded on attempt ${attempt}"
                 break

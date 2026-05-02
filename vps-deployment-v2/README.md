@@ -27,6 +27,7 @@ bash vps-deployment-v2/setup.sh
 - `queue` usa `php artisan queue:work` (não depende de Horizon).
 - Não subir monitoring antes de DNS dos subdomínios estar pronto.
 - Dashboard auth do Traefik com `$` precisa de escape (`$$`).
+- Migrações seguem Spatie Multitenancy: landlord primeiro, tenants depois.
 
 ## Variáveis-Chave
 - `APP_SLUG`: nome da instância (pasta/projeto docker/routers).
@@ -59,6 +60,19 @@ ss -tulpen | grep -E ':80|:443'
 2. Confirmar `vps-v2-build-push` OK.
 3. Confirmar `vps-v2-deploy-staging` OK.
 4. Verificar stack no VPS e logs se necessário.
+
+## Migrações Multi-Tenancy (Spatie)
+Ordem obrigatória no deploy:
+1. Landlord:
+```bash
+php artisan migrate --force --database=landlord --path=database/migrations/landlord
+```
+2. Tenants:
+```bash
+php artisan tenants:artisan "migrate --force --database=tenant"
+```
+
+Se ainda não existir tenant cadastrado, o deploy continua sem falhar e apenas registra `No tenants found yet; skipping tenant migrations.`.
 
 ## Incidentes Reais e Prevenção
 ### 1) `ssh: unable to authenticate`
