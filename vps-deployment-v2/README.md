@@ -159,6 +159,18 @@ docker compose -p plannerate-<APP_SLUG> up -d --force-recreate
 ```
 Prevenção: `setup-app-host.sh` já escreve `SESSION_CONNECTION=default` e `REDIS_CACHE_CONNECTION=cache`.
 
+### 11) `GET /dashboard 404` no domínio principal
+Causa: `LANDLORD_DOMAIN` ausente/incorreto no `.env`, então as rotas com `Route::domain(config('app.landlord_domain'))` não casam no host real.
+Correção:
+```bash
+sed -i 's/^LANDLORD_DOMAIN=.*/LANDLORD_DOMAIN=siga.dev.br/' /opt/plannerate/<APP_SLUG>/.env || echo 'LANDLORD_DOMAIN=siga.dev.br' >> /opt/plannerate/<APP_SLUG>/.env
+sed -i 's|^APP_URL=.*|APP_URL=https://siga.dev.br|' /opt/plannerate/<APP_SLUG>/.env
+sed -i 's|^ASSET_URL=.*|ASSET_URL=https://siga.dev.br|' /opt/plannerate/<APP_SLUG>/.env
+docker compose -p plannerate-<APP_SLUG> exec -T app php artisan optimize:clear
+docker compose -p plannerate-<APP_SLUG> up -d --force-recreate
+```
+Prevenção: `setup-app-host.sh` já escreve `LANDLORD_DOMAIN=${DOMAIN_LANDLORD}`.
+
 ## DNS/ACME Guardrails
 Antes de monitoring/reverb público:
 - criar `A/AAAA` para:
