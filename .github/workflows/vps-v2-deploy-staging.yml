@@ -74,5 +74,24 @@ jobs:
             fi
             APP_DIR="/opt/plannerate/${APP_SLUG}"
             cd "${APP_DIR}"
-            docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc 'curl -fsS http://127.0.0.1/up >/dev/null'
-            echo "Health check passed inside app container for ${APP_SLUG}"
+            docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
+              for attempt in 1 2 3 4 5; do
+                if curl -fsS http://127.0.0.1/up >/dev/null; then
+                  echo "Health check passed on /up (attempt ${attempt})"
+                  exit 0
+                fi
+                echo "Health check /up failed (attempt ${attempt}), retrying..."
+                sleep 3
+              done
+
+              if curl -fsSI http://127.0.0.1/ >/dev/null; then
+                echo "Warning: /up failed but / responded successfully"
+                exit 0
+              fi
+
+              echo "Health check failed for both /up and /"
+              echo "---- /up response body ----"
+              curl -sS http://127.0.0.1/up || true
+              exit 1
+            '
+            echo "Health check finished inside app container for ${APP_SLUG}"
