@@ -49,7 +49,59 @@ run_cmd() {
 log_info "Installing base packages"
 run_cmd "apt-get update -qq"
 run_cmd "DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq"
-run_cmd "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ca-certificates curl gnupg lsb-release ufw fail2ban jq awscli mysql-client postgresql-client"
+run_cmd "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ca-certificates curl gnupg lsb-release ufw fail2ban jq unzip mysql-client postgresql-client"
+
+install_aws_cli() {
+    if command -v aws >/dev/null 2>&1; then
+        log_info "AWS CLI already installed"
+        return
+    fi
+
+    log_info "Installing AWS CLI"
+    if [[ "${DRY_RUN}" == "true" ]]; then
+        printf '[DRY_RUN] %s\n' "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq awscli"
+        printf '[DRY_RUN] %s\n' "curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/awscliv2.zip"
+        printf '[DRY_RUN] %s\n' "unzip -q -o /tmp/awscliv2.zip -d /tmp"
+        printf '[DRY_RUN] %s\n' "/tmp/aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update"
+        return
+    fi
+
+    if DEBIAN_FRONTEND=noninteractive apt-get install -y -qq awscli >/dev/null 2>&1; then
+        log_success "AWS CLI installed via apt"
+        return
+    fi
+
+    local arch
+    arch="$(uname -m)"
+    local bundle_url=""
+
+    case "${arch}" in
+        x86_64)
+            bundle_url="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+            ;;
+        aarch64|arm64)
+            bundle_url="https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip"
+            ;;
+        *)
+            log_error "Unsupported architecture for AWS CLI bundle: ${arch}"
+            exit 1
+            ;;
+    esac
+
+    curl -fsSL "${bundle_url}" -o /tmp/awscliv2.zip
+    unzip -q -o /tmp/awscliv2.zip -d /tmp
+    /tmp/aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
+    rm -rf /tmp/aws /tmp/awscliv2.zip
+
+    if ! command -v aws >/dev/null 2>&1; then
+        log_error "AWS CLI installation failed"
+        exit 1
+    fi
+
+    log_success "AWS CLI installed via official bundle"
+}
+
+install_aws_cli
 
 log_info "Installing Docker engine"
 run_cmd "install -m 0755 -d /etc/apt/keyrings"
@@ -83,11 +135,11 @@ run_cmd "sed -i 's/^#\?PermitRootLogin .*/PermitRootLogin prohibit-password/' /e
 run_cmd "systemctl restart ssh || systemctl restart sshd"
 
 log_info "Configuring firewall"
-run_cmd "ufw --force default deny incoming"
-run_cmd "ufw --force default allow outgoing"
-run_cmd "ufw --force allow 22/tcp"
-run_cmd "ufw --force allow 80/tcp"
-run_cmd "ufw --force allow 443/tcp"
+run_cmd "ufw default deny incoming"
+run_cmd "ufw default allow outgoing"
+run_cmd "ufw allow 22/tcp"
+run_cmd "ufw allow 80/tcp"
+run_cmd "ufw allow 443/tcp"
 run_cmd "ufw --force enable"
 
 log_info "Preparing filesystem layout"
@@ -114,6 +166,18 @@ PROMETHEUS_RETENTION="${PROMETHEUS_RETENTION:-15d}"
 ALERT_WEBHOOK_DEFAULT_URL="${ALERT_WEBHOOK_DEFAULT_URL:-http://127.0.0.1:65535}"
 ALERT_WEBHOOK_WARNING_URL="${ALERT_WEBHOOK_WARNING_URL:-${ALERT_WEBHOOK_DEFAULT_URL}}"
 ALERT_WEBHOOK_CRITICAL_URL="${ALERT_WEBHOOK_CRITICAL_URL:-${ALERT_WEBHOOK_DEFAULT_URL}}"
+
+# Generate Traefik dashboard basicauth if not provided
+if [[ -z "${TRAEFIK_DASHBOARD_BASICAUTH:-}" ]]; then
+    TRAEFIK_DASHBOARD_USER="${TRAEFIK_DASHBOARD_USER:-admin}"
+    TRAEFIK_DASHBOARD_PASS="${TRAEFIK_DASHBOARD_PASS:-$(random_secret)}"
+    # Generate APR1-MD5 hash compatible with Traefik basicauth using openssl
+    _salt="$(openssl rand -base64 6)"
+    _hash="$(openssl passwd -apr1 -salt "${_salt}" "${TRAEFIK_DASHBOARD_PASS}")"
+    # Escape $ for Docker Compose env var (each $ must become $$)
+    TRAEFIK_DASHBOARD_BASICAUTH="${TRAEFIK_DASHBOARD_USER}:${_hash//\$/\$\$}"
+    log_info "Traefik dashboard user: ${TRAEFIK_DASHBOARD_USER} / password stored in /opt/traefik/.env"
+fi
 
 if [[ "${DRY_RUN}" != "true" ]]; then
     write_file_secure "/opt/production/.env" "${DEPLOY_USER}:${DEPLOY_USER}" "600" "APP_ENV=production
@@ -174,6 +238,8 @@ VITE_REVERB_SCHEME=https
 DOMAIN_PRODUCTION=${DOMAIN_PRODUCTION}
 DOMAIN_STAGING=${DOMAIN_STAGING}
 TRAEFIK_DASHBOARD_HOST=${TRAEFIK_DASHBOARD_HOST:-traefik.${DOMAIN_PRODUCTION}}
+TRAEFIK_DASHBOARD_USER=${TRAEFIK_DASHBOARD_USER:-admin}
+TRAEFIK_DASHBOARD_PASS=${TRAEFIK_DASHBOARD_PASS:-}
 TRAEFIK_DASHBOARD_BASICAUTH=${TRAEFIK_DASHBOARD_BASICAUTH}
 "
 
