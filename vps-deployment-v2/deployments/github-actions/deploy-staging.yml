@@ -37,6 +37,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
+            echo "WORKFLOW_VERSION=deploy-staging-landlord-only-2026-05-03"
             cd ${{ env.DEPLOY_PATH }}
             export IMAGE_TAG=${{ github.event.inputs.image_tag || 'latest' }}
             docker compose pull

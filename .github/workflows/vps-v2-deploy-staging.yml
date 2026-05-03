@@ -38,6 +38,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
+            echo "WORKFLOW_VERSION=vps-v2-deploy-staging-landlord-only-2026-05-03"
             APP_SLUG="${{ github.event.inputs.app_slug }}"
             if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
               APP_SLUG="staging"
