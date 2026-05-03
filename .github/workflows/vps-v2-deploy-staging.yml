@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: Image tag to deploy (example sha-abcdef1). Leave empty to use workflow_run head SHA.
+        description: Image tag to deploy (example staging-abcdef1). Leave empty to derive from branch/channel.
         required: false
         default: ""
       app_slug:
@@ -53,6 +53,13 @@ jobs:
             exit 1
           fi
 
+          DEPLOY_CHANNEL="${BRANCH_SLUG}"
+          if [[ "${BRANCH_NAME}" == "dev" ]]; then
+            DEPLOY_CHANNEL="staging"
+          elif [[ "${BRANCH_NAME}" == "main" ]]; then
+            DEPLOY_CHANNEL="production"
+          fi
+
           DEFAULT_APP_SLUG=""
           if [[ -f "vps-deployment-v2/manifest.env" ]]; then
             DEFAULT_APP_SLUG="$(grep -E '^APP_SLUG=' vps-deployment-v2/manifest.env | tail -n1 | cut -d'=' -f2- | tr -d '"' | xargs || true)"
@@ -76,12 +83,13 @@ jobs:
 
           IMAGE_TAG="${{ github.event.inputs.image_tag }}"
           if [[ -z "${IMAGE_TAG}" || "${IMAGE_TAG}" == "null" ]]; then
-            IMAGE_TAG="${BRANCH_SLUG}-${HEAD_SHA:0:7}"
+            IMAGE_TAG="${DEPLOY_CHANNEL}-${HEAD_SHA:0:7}"
           fi
 
           {
             echo "branch_name=${BRANCH_NAME}"
             echo "branch_slug=${BRANCH_SLUG}"
+            echo "deploy_channel=${DEPLOY_CHANNEL}"
             echo "app_slug=${APP_SLUG}"
             echo "image_tag=${IMAGE_TAG}"
           } >> "${GITHUB_OUTPUT}"
@@ -113,6 +121,7 @@ jobs:
             echo "Deploy context:"
             echo "  branch_name=${BRANCH_NAME}"
             echo "  branch_slug=${BRANCH_SLUG}"
+            echo "  deploy_channel=${{ steps.context.outputs.deploy_channel }}"
             echo "  app_slug=${APP_SLUG}"
             echo "  image_tag=${IMAGE_TAG}"
 
