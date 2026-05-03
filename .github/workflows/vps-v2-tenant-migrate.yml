@@ -1,0 +1,63 @@
+name: vps-v2-tenant-migrate
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_slug:
+        description: App slug/path (example staging, production, client-a)
+        required: false
+        default: staging
+      fail_when_no_tenants:
+        description: Fail workflow if no tenants are found
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  migrate-tenants:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Run tenant migrations
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.APP_HOST }}
+          username: ${{ secrets.APP_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            APP_SLUG="${{ github.event.inputs.app_slug }}"
+            if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
+              APP_SLUG="staging"
+            fi
+
+            APP_DIR="/opt/plannerate/${APP_SLUG}"
+            cd "${APP_DIR}"
+
+            docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
+              set -e
+              php artisan optimize:clear
+            '
+
+            set +e
+            TENANTS_OUTPUT="$(docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '\''php artisan tenants:artisan "migrate --force --database=tenant"'\'' 2>&1)"
+            TENANTS_STATUS=$?
+            set -e
+
+            if [ "${TENANTS_STATUS}" -ne 0 ]; then
+              if echo "${TENANTS_OUTPUT}" | grep -q "No tenant(s) found."; then
+                echo "${TENANTS_OUTPUT}"
+                if [[ "${{ github.event.inputs.fail_when_no_tenants }}" == "true" ]]; then
+                  echo "No tenants found and fail_when_no_tenants=true."
+                  exit 1
+                fi
+                exit 0
+              fi
+
+              echo "${TENANTS_OUTPUT}"
+              exit "${TENANTS_STATUS}"
+            fi
+
+            echo "${TENANTS_OUTPUT}"
+            docker compose -p "plannerate-${APP_SLUG}" exec -T app php artisan optimize:clear
+            docker compose -p "plannerate-${APP_SLUG}" ps
