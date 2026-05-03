@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: Image tag to deploy (example sha-abcdef1)
+        description: Image tag to deploy (example sha-abcdef1). Leave empty to use workflow_run head SHA.
         required: false
-        default: latest
+        default: ""
       app_slug:
         description: App slug/path (example staging, production, client-a)
         required: false
