@@ -49,12 +49,17 @@ jobs:
             MANIFEST_DOMAIN="$(grep -E '^DOMAIN_LANDLORD=' vps-deployment-v2/manifest.env | tail -n1 | cut -d'=' -f2- | tr -d '"' | xargs || true)"
           fi
 
-          if [[ -n "${MANIFEST_DOMAIN}" ]]; then
-            WAYFINDER_APP_URL="https://${BRANCH_SLUG}.${MANIFEST_DOMAIN}"
-          else
-            echo "Warning: DOMAIN_LANDLORD not found in vps-deployment-v2/manifest.env; using branch-local fallback for Wayfinder generation."
-            WAYFINDER_APP_URL="https://${BRANCH_SLUG}.invalid"
+          if [[ -z "${MANIFEST_DOMAIN}" ]]; then
+            echo "Missing DOMAIN_LANDLORD in vps-deployment-v2/manifest.env"
+            exit 1
           fi
+
+          WAYFINDER_APP_URL="https://${BRANCH_SLUG}.${MANIFEST_DOMAIN}"
+          if [[ "${WAYFINDER_APP_URL}" == *"localhost"* ]]; then
+            echo "Invalid WAYFINDER_APP_URL resolved to localhost: ${WAYFINDER_APP_URL}"
+            exit 1
+          fi
+          echo "Resolved WAYFINDER_APP_URL=${WAYFINDER_APP_URL}"
 
           TAG_SHA="sha-${SHORT_SHA}"
           TAG_BRANCH_SHA="${BRANCH_SLUG}-${SHORT_SHA}"

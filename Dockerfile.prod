@@ -25,7 +25,9 @@ WORKDIR /app
 ARG WAYFINDER_APP_URL=https://localhost
 COPY . .
 COPY --from=vendor /app/vendor ./vendor
-RUN printf 'APP_NAME=Plannerate\nAPP_ENV=production\nAPP_KEY=base64:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa=\nAPP_DEBUG=false\nAPP_URL=%s\n' "$WAYFINDER_APP_URL" > .env \
+RUN if [ -z "$WAYFINDER_APP_URL" ]; then echo "WAYFINDER_APP_URL is empty"; exit 1; fi \
+    && case "$WAYFINDER_APP_URL" in *localhost*) echo "WAYFINDER_APP_URL cannot point to localhost: $WAYFINDER_APP_URL"; exit 1;; esac \
+    && printf 'APP_NAME=Plannerate\nAPP_ENV=production\nAPP_KEY=base64:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa=\nAPP_DEBUG=false\nAPP_URL=%s\n' "$WAYFINDER_APP_URL" > .env \
     && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
     && rm -f bootstrap/cache/*.php \
     && php artisan wayfinder:generate --with-form
