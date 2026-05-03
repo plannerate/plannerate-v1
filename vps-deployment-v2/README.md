@@ -186,7 +186,7 @@ Antes de monitoring/reverb público:
 automation/bootstrap-github.sh vps-deployment-v2/manifest.env
 
 # instalar compose no host
-APP_SLUG=staging automation/install-compose-on-host.sh
+APP_SLUG=staging START_SERVICES=true automation/install-compose-on-host.sh
 
 # instalar monitoring (com validação DNS)
 APP_SLUG=staging automation/install-monitoring-on-host.sh vps-deployment-v2/manifest.env staging

@@ -224,8 +224,8 @@ fi
 if ask_yn "Instalar compose files no VPS agora?"; then
     ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_WORKDIR}'"
     scp -o StrictHostKeyChecking=accept-new -r "${SCRIPT_DIR}/." "${VPS_USER}@${VPS_HOST}:${REMOTE_WORKDIR}/"
-    ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' bash ${REMOTE_WORKDIR}/automation/install-compose-on-host.sh"
-    ok "Compose files instalados"
+    ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' START_SERVICES='true' bash ${REMOTE_WORKDIR}/automation/install-compose-on-host.sh"
+    ok "Compose files instalados e serviços iniciais (Traefik/app) iniciados"
 fi
 
 if ask_yn "Instalar monitoramento dessa app agora?"; then
