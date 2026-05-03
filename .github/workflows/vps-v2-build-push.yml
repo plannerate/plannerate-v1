@@ -32,15 +32,8 @@ jobs:
 
       - name: Resolve branch context
         id: context
-        env:
-          BASE_STAGING_DOMAIN: ${{ vars.BASE_STAGING_DOMAIN }}
         run: |
           set -euo pipefail
-
-          if [[ -z "${BASE_STAGING_DOMAIN}" ]]; then
-            echo "Missing vars.BASE_STAGING_DOMAIN"
-            exit 1
-          fi
 
           BRANCH_NAME="${GITHUB_REF_NAME}"
           BRANCH_SLUG="$(echo "${BRANCH_NAME}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g' | cut -c1-63)"
@@ -51,7 +44,17 @@ jobs:
           fi
 
           SHORT_SHA="${GITHUB_SHA:0:7}"
-          WAYFINDER_APP_URL="https://${BRANCH_SLUG}.${BASE_STAGING_DOMAIN}"
+          MANIFEST_DOMAIN=""
+          if [[ -f "vps-deployment-v2/manifest.env" ]]; then
+            MANIFEST_DOMAIN="$(grep -E '^DOMAIN_LANDLORD=' vps-deployment-v2/manifest.env | tail -n1 | cut -d'=' -f2- | tr -d '"' | xargs || true)"
+          fi
+
+          if [[ -n "${MANIFEST_DOMAIN}" ]]; then
+            WAYFINDER_APP_URL="https://${BRANCH_SLUG}.${MANIFEST_DOMAIN}"
+          else
+            echo "Warning: DOMAIN_LANDLORD not found in vps-deployment-v2/manifest.env; using branch-local fallback for Wayfinder generation."
+            WAYFINDER_APP_URL="https://${BRANCH_SLUG}.invalid"
+          fi
 
           TAG_SHA="sha-${SHORT_SHA}"
           TAG_BRANCH_SHA="${BRANCH_SLUG}-${SHORT_SHA}"

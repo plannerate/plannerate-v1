@@ -23,6 +23,40 @@ jobs:
       group: rollback-${{ github.event.inputs.app_slug || github.event.inputs.branch_name || github.ref_name }}
       cancel-in-progress: false
     steps:
+      - name: Resolve rollback context
+        id: context
+        run: |
+          set -euo pipefail
+
+          BRANCH_NAME="${{ github.event.inputs.branch_name }}"
+          if [[ -z "${BRANCH_NAME}" || "${BRANCH_NAME}" == "null" ]]; then
+            BRANCH_NAME="${{ github.ref_name }}"
+          fi
+
+          BRANCH_SLUG="$(echo "${BRANCH_NAME}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g' | cut -c1-63)"
+          if [[ -z "${BRANCH_SLUG}" ]]; then
+            echo "Unable to derive BRANCH_SLUG from branch '${BRANCH_NAME}'"
+            exit 1
+          fi
+
+          APP_SLUG="${{ github.event.inputs.app_slug }}"
+          if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
+            APP_SLUG="${BRANCH_SLUG}"
+          fi
+          if [[ ! "${APP_SLUG}" =~ ^[a-z0-9-]{1,63}$ ]]; then
+            echo "Invalid APP_SLUG '${APP_SLUG}'. Use [a-z0-9-], max 63 chars."
+            exit 1
+          fi
+
+          IMAGE_TAG="${{ github.event.inputs.image_tag }}"
+
+          {
+            echo "branch_name=${BRANCH_NAME}"
+            echo "branch_slug=${BRANCH_SLUG}"
+            echo "app_slug=${APP_SLUG}"
+            echo "image_tag=${IMAGE_TAG}"
+          } >> "${GITHUB_OUTPUT}"
+
       - name: Rollback deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -32,25 +66,9 @@ jobs:
           script: |
             set -euo pipefail
 
-            BRANCH_NAME="${{ github.event.inputs.branch_name }}"
-            if [[ -z "${BRANCH_NAME}" || "${BRANCH_NAME}" == "null" ]]; then
-              BRANCH_NAME="${{ github.ref_name }}"
-            fi
-            BRANCH_SLUG="$(echo "${BRANCH_NAME}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g' | cut -c1-63)"
-            if [[ -z "${BRANCH_SLUG}" ]]; then
-              echo "Unable to derive BRANCH_SLUG from branch '${BRANCH_NAME}'"
-              exit 1
-            fi
-
-            APP_SLUG="${{ github.event.inputs.app_slug }}"
-            if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
-              APP_SLUG="${BRANCH_SLUG}"
-            fi
-
-            if [[ ! "${APP_SLUG}" =~ ^[a-z0-9-]{1,63}$ ]]; then
-              echo "Invalid APP_SLUG '${APP_SLUG}'. Use [a-z0-9-], max 63 chars."
-              exit 1
-            fi
+            BRANCH_NAME="${{ steps.context.outputs.branch_name }}"
+            BRANCH_SLUG="${{ steps.context.outputs.branch_slug }}"
+            APP_SLUG="${{ steps.context.outputs.app_slug }}"
 
             APP_DIR="/opt/plannerate/${APP_SLUG}"
             if [[ ! -d "${APP_DIR}" ]]; then
@@ -58,7 +76,7 @@ jobs:
               exit 1
             fi
 
-            IMAGE_TAG="${{ github.event.inputs.image_tag }}"
+            IMAGE_TAG="${{ steps.context.outputs.image_tag }}"
             if [[ "${IMAGE_TAG}" != "${APP_SLUG}-"* && "${IMAGE_TAG}" != "branch-${APP_SLUG}-latest" ]]; then
               echo "Invalid image_tag '${IMAGE_TAG}' for app_slug '${APP_SLUG}'."
               echo "Expected '${APP_SLUG}-<shortsha>' or 'branch-${APP_SLUG}-latest'."
@@ -100,15 +118,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
-            BRANCH_NAME="${{ github.event.inputs.branch_name }}"
-            if [[ -z "${BRANCH_NAME}" || "${BRANCH_NAME}" == "null" ]]; then
-              BRANCH_NAME="${{ github.ref_name }}"
-            fi
-            BRANCH_SLUG="$(echo "${BRANCH_NAME}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g' | cut -c1-63)"
-            APP_SLUG="${{ github.event.inputs.app_slug }}"
-            if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
-              APP_SLUG="${BRANCH_SLUG}"
-            fi
+            APP_SLUG="${{ steps.context.outputs.app_slug }}"
             APP_DIR="/opt/plannerate/${APP_SLUG}"
             if [[ ! -d "${APP_DIR}" ]]; then
               echo "Missing APP_DIR '${APP_DIR}'."
