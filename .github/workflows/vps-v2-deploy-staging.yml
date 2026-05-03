@@ -196,6 +196,11 @@ jobs:
               php artisan event:clear
               php artisan route:clear
             '
+
+            echo "IMAGE_TAG=${IMAGE_TAG}" > .last-deployed-tag
+            echo "DEPLOYED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> .last-deployed-tag
+            echo "APP_SLUG=${APP_SLUG}" >> .last-deployed-tag
+
             docker compose -p "plannerate-${APP_SLUG}" ps
 
       - name: Health check (inside app container)

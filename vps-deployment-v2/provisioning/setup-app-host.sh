@@ -19,6 +19,14 @@ load_manifest "${MANIFEST_PATH}"
 
 APP_SLUG="${APP_SLUG:-${APP_NAME:-staging}}"
 APP_DIR="/opt/plannerate/${APP_SLUG}"
+APP_ENV="${APP_ENV:-}"
+if [[ -z "${APP_ENV}" ]]; then
+    if [[ "${APP_SLUG}" == "production" ]]; then
+        APP_ENV="production"
+    else
+        APP_ENV="staging"
+    fi
+fi
 DOMAIN_LANDLORD="${DOMAIN_LANDLORD:-${DOMAIN_STAGING:-${DOMAIN_PRODUCTION:-}}}"
 DB_MODE="${DB_MODE:-local}"
 DB_ENGINE="${DB_ENGINE:-${DB_ENGINE_STAGING:-${DB_ENGINE_PRODUCTION:-pgsql}}}"
@@ -135,7 +143,7 @@ if [[ "${DRY_RUN}" != "true" ]]; then
         TRAEFIK_DASHBOARD_BASICAUTH="${TRAEFIK_DASHBOARD_USER}:${_hash//\$/\$\$}"
     fi
 
-    write_file_secure "${APP_DIR}/.env" "${DEPLOY_USER}:${DEPLOY_USER}" "600" "APP_ENV=staging
+    write_file_secure "${APP_DIR}/.env" "${DEPLOY_USER}:${DEPLOY_USER}" "600" "APP_ENV=${APP_ENV}
 APP_DEBUG=false
 APP_KEY=${APP_KEY}
 APP_URL=https://${DOMAIN_LANDLORD}
@@ -184,6 +192,7 @@ VITE_REVERB_HOST=${REVERB_DOMAIN}
 VITE_REVERB_PORT=443
 VITE_REVERB_SCHEME=https
 VITE_REVERB_APP_KEY=${REVERB_APP_KEY}
+IMAGE_TAG=latest
 "
 
     write_file_secure "/opt/traefik/.env" "root:root" "600" "ACME_EMAIL=${ACME_EMAIL}
