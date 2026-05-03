@@ -147,7 +147,7 @@ import {
     CardContent,
 } from '@/components/ui/card';
 import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis';
-import { wayfinderPath } from '@/libs/wayfinderPath';
+import { wayfinderPath } from '../../../libs/wayfinderPath';
 
 interface Planogram {
     id: string;

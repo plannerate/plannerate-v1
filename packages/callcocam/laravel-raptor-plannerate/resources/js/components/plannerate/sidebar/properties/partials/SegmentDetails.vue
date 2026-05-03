@@ -141,7 +141,7 @@ import { router } from '@inertiajs/vue3';
 import { ArrowLeft, ArrowRight, Box, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
-import { wayfinderPath } from '@/libs/wayfinderPath';
+import { wayfinderPath } from '../../../../../libs/wayfinderPath';
 import { deleteImage } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';

@@ -2,7 +2,7 @@ import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { update } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
-import { wayfinderPath } from '@/libs/wayfinderPath';
+import { wayfinderPath } from '../../libs/wayfinderPath';
 
 export function useProductImage() {
     const isDownloading = ref(false);

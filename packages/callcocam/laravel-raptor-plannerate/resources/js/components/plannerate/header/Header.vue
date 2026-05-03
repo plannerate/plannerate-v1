@@ -4,7 +4,7 @@ import { ArrowLeft, Edit, Plus, RefreshCcw, Upload } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import GondolaCreateStepper from '@/components/plannerate/form/GondolaCreateStepper.vue';
 import GondolaEditForm from '@/components/plannerate/form/GondolaEditForm.vue';
-import { wayfinderPath } from '@/libs/wayfinderPath';
+import { wayfinderPath } from '../../../libs/wayfinderPath';
 import {
     AlertDialog,
     AlertDialogAction,

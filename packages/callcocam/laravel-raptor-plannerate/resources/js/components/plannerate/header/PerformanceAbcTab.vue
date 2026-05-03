@@ -137,7 +137,7 @@ import {
     CardContent,
 } from '@/components/ui/card';
 import { useAbcClassification } from '@/composables/plannerate/useAbcClassification';
-import { wayfinderPath } from '@/libs/wayfinderPath';
+import { wayfinderPath } from '../../../libs/wayfinderPath';
 
 interface Planogram {
     id: string;

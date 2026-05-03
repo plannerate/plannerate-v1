@@ -7,7 +7,7 @@ import { toast } from 'vue-sonner';
 import { updateImages } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramKeyboard } from '@/composables/plannerate/usePlanogramKeyboard';
-import { wayfinderPath } from '@/libs/wayfinderPath';
+import { wayfinderPath } from '../../libs/wayfinderPath';
 import Canvas from './Canvas.vue';
 import ConfirmDeleteDialog from './editor/ConfirmDeleteDialog.vue';
 import DuplicateSectionDialog from './editor/DuplicateSectionDialog.vue';

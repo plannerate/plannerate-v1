@@ -124,7 +124,7 @@ import { ImageIcon, Loader2, Trash2, Upload, X } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import { Cropper } from 'vue-advanced-cropper';
 import { toast } from 'vue-sonner';
-import { wayfinderPath } from '@/libs/wayfinderPath';
+import { wayfinderPath } from '../../../../../libs/wayfinderPath';
 import { uploadImage, deleteImage } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 import { Button } from '@/components/ui/button';
 import {
