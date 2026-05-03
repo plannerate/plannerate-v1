@@ -25,6 +25,7 @@ class ProvisionTenantDatabaseJob implements NotTenantAware, ShouldQueue
         $connectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: 'tenant');
         $originalDatabase = config("database.connections.{$connectionName}.database");
         $landlordConnection = DB::connection('landlord');
+        $landlordDatabase = DB::connection('landlord')->getDatabaseName();
 
         try {
             app(DatabaseCreator::class)->ensureExists($landlordConnection, $this->tenant->database);
@@ -32,8 +33,20 @@ class ProvisionTenantDatabaseJob implements NotTenantAware, ShouldQueue
             config(["database.connections.{$connectionName}.database" => $this->tenant->database]);
             DB::purge($connectionName);
 
+            $resolvedTenantDatabase = DB::connection($connectionName)->getDatabaseName();
+
+            if ($resolvedTenantDatabase !== $this->tenant->database || $resolvedTenantDatabase === $landlordDatabase) {
+                throw new \RuntimeException(sprintf(
+                    'Invalid tenant connection resolution. Expected "%s", got "%s".',
+                    $this->tenant->database,
+                    (string) $resolvedTenantDatabase,
+                ));
+            }
+
             Artisan::call('migrate', [
                 '--database' => $connectionName,
+                '--path' => database_path('migrations'),
+                '--realpath' => true,
                 '--force' => true,
             ]);
 

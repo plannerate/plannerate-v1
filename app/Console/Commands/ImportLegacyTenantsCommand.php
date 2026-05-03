@@ -219,9 +219,27 @@ class ImportLegacyTenantsCommand extends Command
     private function runMigrationsIfNeeded(): void
     {
         $tenantConnection = (string) (config('multitenancy.tenant_database_connection_name') ?? config('database.default'));
+        $tenantDatabase = Tenant::current()?->database;
 
         if ($tenantConnection === '') {
             throw new InvalidArgumentException('Tenant connection name is not configured.');
+        }
+
+        if (! is_string($tenantDatabase) || $tenantDatabase === '') {
+            throw new InvalidArgumentException('Current tenant database is not available for migration.');
+        }
+
+        config(["database.connections.{$tenantConnection}.database" => $tenantDatabase]);
+        DB::purge($tenantConnection);
+
+        $resolvedTenantDatabase = DB::connection($tenantConnection)->getDatabaseName();
+
+        if ($resolvedTenantDatabase !== $tenantDatabase) {
+            throw new InvalidArgumentException(sprintf(
+                'Tenant connection resolved to "%s" instead of "%s".',
+                (string) $resolvedTenantDatabase,
+                $tenantDatabase,
+            ));
         }
 
         if (Schema::connection($tenantConnection)->hasTable('users')) {
@@ -230,7 +248,8 @@ class ImportLegacyTenantsCommand extends Command
 
         Artisan::call('migrate', [
             '--database' => $tenantConnection,
-            '--path' => 'database/migrations',
+            '--path' => database_path('migrations'),
+            '--realpath' => true,
             '--force' => true,
             '--no-interaction' => true,
         ]);
