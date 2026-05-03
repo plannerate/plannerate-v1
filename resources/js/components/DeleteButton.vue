@@ -13,6 +13,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 const CONFIRM_WORDS = ['EXCLUIR', 'DELETAR', 'CONFIRMAR', 'REMOVER'] as const;
 
@@ -54,7 +55,7 @@ return;
 }
 
     isDeleting.value = true;
-    router.delete(props.href, {
+    router.delete(tenantWayfinderPath(props.href), {
         onFinish: () => {
             isDeleting.value = false;
             isOpen.value = false;

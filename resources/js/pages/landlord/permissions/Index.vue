@@ -9,6 +9,7 @@ import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import type { Paginator } from '@/types';
 
 type PermissionRow = {
@@ -107,13 +108,13 @@ const pageMeta = useCrudPageMeta({
                     <td class="px-4 py-3 text-right">
                         <div class="inline-flex items-center gap-2">
                             <Button variant="outline" size="sm" as-child>
-                                <Link :href="PermissionController.edit.url(permission.id)">
+                                <Link :href="tenantWayfinderPath(PermissionController.edit.url(permission.id))">
                                     {{ t('app.landlord.common.edit') }}
                                 </Link>
                             </Button>
                             <Button v-if="!permission.is_protected" variant="destructive" size="sm" as-child>
                                 <Link
-                                    :href="PermissionController.destroy.url(permission.id)"
+                                    :href="tenantWayfinderPath(PermissionController.destroy.url(permission.id))"
                                     method="delete"
                                     as="button"
                                 >
