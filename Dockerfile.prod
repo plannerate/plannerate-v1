@@ -22,9 +22,11 @@ RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoload
 
 FROM php:8.4-cli-bookworm AS wayfinder
 WORKDIR /app
+ARG WAYFINDER_LANDLORD_DOMAIN=siga.dev.br
 COPY . .
 COPY --from=vendor /app/vendor ./vendor
-RUN printf 'APP_NAME=Plannerate\nAPP_ENV=production\nAPP_KEY=base64:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa=\nAPP_DEBUG=false\nAPP_URL=\n' > .env \
+RUN if [ -z "$WAYFINDER_LANDLORD_DOMAIN" ]; then echo "WAYFINDER_LANDLORD_DOMAIN is empty"; exit 1; fi \
+    && printf 'APP_NAME=Plannerate\nAPP_ENV=production\nAPP_KEY=base64:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa=\nAPP_DEBUG=false\nAPP_URL=\nLANDLORD_DOMAIN=%s\n' "$WAYFINDER_LANDLORD_DOMAIN" > .env \
     && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
     && rm -f bootstrap/cache/*.php \
     && php artisan wayfinder:generate --with-form
