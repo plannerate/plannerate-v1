@@ -1,8 +1,6 @@
 <?php
 
-use App\Support\Database\DatabaseConnectionConfigBuilder;
 use Illuminate\Support\Str;
-use Pdo\Mysql;
 
 return [
 
@@ -33,6 +31,52 @@ return [
 
     'connections' => [
 
+        'pgsql' => [
+            'driver' => 'pgsql',
+            'url' => env('DB_URL'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '5432'),
+            'database' => env('DB_DATABASE', 'laravel'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => env('DB_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => 'prefer',
+        ],
+
+
+        'landlord' => [
+            'driver' => 'pgsql',
+            'url' => env('DB_LANDLORD_URL'),
+            'host' => env('DB_LANDLORD_HOST', '127.0.0.1'),
+            'port' => env('DB_LANDLORD_PORT', '5432'),
+            'database' => env('DB_LANDLORD_DATABASE', 'laravel'),
+            'username' => env('DB_LANDLORD_USERNAME', 'root'),
+            'password' => env('DB_LANDLORD_PASSWORD', ''),
+            'charset' => env('DB_LANDLORD_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+        ],
+
+        'tenant' => [
+            'driver' => 'pgsql',
+            'url' => env('DB_TENANT_URL'),
+            'host' => env('DB_TENANT_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('DB_TENANT_PORT', env('DB_PORT', '5432')),
+            'database' => env('DB_TENANT_DATABASE', 'laravel'),
+            'username' => env('DB_TENANT_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('DB_TENANT_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => env('DB_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => 'prefer',
+        ],
+
+
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),
@@ -61,52 +105,28 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
-
-        'tenant' => (new DatabaseConnectionConfigBuilder)->build(
-            env('DB_TENANT_CONNECTION', env('DB_CONNECTION', 'pgsql')),
-            [
-                'url' => env('DB_TENANT_URL', env('DB_URL')),
-                'host' => env('DB_TENANT_HOST', env('DB_HOST', '127.0.0.1')),
-                'port' => env('DB_TENANT_PORT', env('DB_PORT', '5432')),
-                'database' => env('DB_TENANT_DATABASE', env('DB_DATABASE', 'laravel')),
-                'username' => env('DB_TENANT_USERNAME', env('DB_USERNAME', 'root')),
-                'password' => env('DB_TENANT_PASSWORD', env('DB_PASSWORD', '')),
-                'unix_socket' => env('DB_TENANT_SOCKET', env('DB_SOCKET', '')),
-                'charset' => env('DB_TENANT_CHARSET', env('DB_CHARSET')),
-                'collation' => env('DB_TENANT_COLLATION', env('DB_COLLATION')),
-                'search_path' => env('DB_TENANT_SCHEMA', env('DB_SCHEMA')),
-                'sslmode' => env('DB_TENANT_SSLMODE', env('DB_SSLMODE')),
-            ],
-        ),
-        'landlord' => (new DatabaseConnectionConfigBuilder)->build(
-            env('DB_LANDLORD_CONNECTION', env('DB_CONNECTION', 'pgsql')),
-            [
-                'url' => env('DB_LANDLORD_URL', env('DB_URL')),
-                'host' => env('DB_LANDLORD_HOST', env('DB_HOST', '127.0.0.1')),
-                'port' => env('DB_LANDLORD_PORT', env('DB_PORT', '5432')),
-                'database' => env('DB_LANDLORD_DATABASE', env('DB_DATABASE', 'laravel')),
-                'username' => env('DB_LANDLORD_USERNAME', env('DB_USERNAME', 'root')),
-                'password' => env('DB_LANDLORD_PASSWORD', env('DB_PASSWORD', '')),
-                'unix_socket' => env('DB_LANDLORD_SOCKET', env('DB_SOCKET', '')),
-                'charset' => env('DB_LANDLORD_CHARSET', env('DB_CHARSET')),
-                'collation' => env('DB_LANDLORD_COLLATION', env('DB_COLLATION')),
-                'search_path' => env('DB_LANDLORD_SCHEMA', env('DB_SCHEMA')),
-                'sslmode' => env('DB_LANDLORD_SSLMODE', env('DB_SSLMODE')),
-            ],
-        ),
         'mysql_legacy' => [
             'driver' => 'mysql',
-            'url' => env('DB_URL'),
-            'host' => env('DB_LEGACY_HOST', '127.0.0.1'),
-            'port' => env('DB_LEGACY_PORT', '3306'),
-            'database' => env('DB_LEGACY_DATABASE', 'base'),
-            'username' => env('DB_LEGACY_USERNAME', 'sail'),
-            'password' => env('DB_LEGACY_PASSWORD', 'password'),
+            'url' => env('LEGACY_DB_URL'),
+            'host' => env('LEGACY_DB_HOST', '127.0.0.1'),
+            'port' => env('LEGACY_DB_PORT', '3306'),
+            'database' => env('LEGACY_DB_DATABASE', 'legacy'),
+            'username' => env('LEGACY_DB_USERNAME', 'legacy'),
+            'password' => env('LEGACY_DB_PASSWORD', ''),
+            'unix_socket' => env('LEGACY_DB_SOCKET', ''),
+            'charset' => env('LEGACY_DB_CHARSET', 'utf8mb4'),
+            'collation' => env('LEGACY_DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('LEGACY_MYSQL_ATTR_SSL_CA'),
+            ]) : [],
         ],
-
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),
@@ -123,23 +143,8 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
-        ],
-
-        'pgsql' => [
-            'driver' => 'pgsql',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'charset' => env('DB_CHARSET', 'utf8'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'search_path' => 'public',
-            'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
         'sqlsrv' => [
@@ -192,7 +197,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')) . '-database-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 
