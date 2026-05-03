@@ -47,9 +47,18 @@ jobs:
             exit 1
           fi
 
+          DEFAULT_APP_SLUG=""
+          if [[ -f "vps-deployment-v2/manifest.env" ]]; then
+            DEFAULT_APP_SLUG="$(grep -E '^APP_SLUG=' vps-deployment-v2/manifest.env | tail -n1 | cut -d'=' -f2- | tr -d '"' | xargs || true)"
+          fi
+
           APP_SLUG="${{ github.event.inputs.app_slug }}"
           if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
-            APP_SLUG="${BRANCH_SLUG}"
+            if [[ -n "${DEFAULT_APP_SLUG}" ]]; then
+              APP_SLUG="${DEFAULT_APP_SLUG}"
+            else
+              APP_SLUG="${BRANCH_SLUG}"
+            fi
           fi
           if [[ ! "${APP_SLUG}" =~ ^[a-z0-9-]{1,63}$ ]]; then
             echo "Invalid APP_SLUG '${APP_SLUG}'. Use [a-z0-9-], max 63 chars."
