@@ -38,7 +38,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
-            echo "WORKFLOW_VERSION=vps-v2-deploy-staging-landlord-only-2026-05-03"
+            echo "WORKFLOW_VERSION=vps-v2-deploy-staging-fix-db-connection-env-2026-05-03"
             APP_SLUG="${{ github.event.inputs.app_slug }}"
             if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
               APP_SLUG="staging"
@@ -89,7 +89,7 @@ jobs:
             for attempt in 1 2 3 4 5; do
               if docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
                 set -e
-                DB_CONNECTION=landlord DB_DATABASE="${DB_LANDLORD_DATABASE:-$DB_DATABASE}" php artisan migrate --force --database=landlord --path=database/migrations/landlord
+                php artisan migrate --force --database=landlord --path=database/migrations/landlord
               '; then
                 migration_ok=1
                 echo "Migration succeeded on attempt ${attempt}"
