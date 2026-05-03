@@ -2,6 +2,7 @@ import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { update } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
+import { wayfinderPath } from '@/libs/wayfinderPath';
 
 export function useProductImage() {
     const isDownloading = ref(false);
@@ -30,7 +31,7 @@ export function useProductImage() {
             const formData = new FormData();
             formData.append('product_id', productId);
 
-            router.post(updateAction.url(), formData, {
+            router.post(wayfinderPath(updateAction.url()), formData, {
                 preserveState: false,
                 preserveScroll: true,
                 onSuccess: () => {

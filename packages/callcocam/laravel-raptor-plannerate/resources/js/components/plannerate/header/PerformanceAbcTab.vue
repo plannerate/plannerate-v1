@@ -137,6 +137,7 @@ import {
     CardContent,
 } from '@/components/ui/card';
 import { useAbcClassification } from '@/composables/plannerate/useAbcClassification';
+import { wayfinderPath } from '@/libs/wayfinderPath';
 
 interface Planogram {
     id: string;
@@ -280,7 +281,7 @@ const handleParamsSubmit = (data: typeof form.value): void => {
     hasCalculated.value = true;
 
     router.post(
-        calculateAbcApi.url({ gondola: props.gondolaId }),
+        wayfinderPath(calculateAbcApi.url({ gondola: props.gondolaId })),
         form.value,
         {
             preserveState: true,

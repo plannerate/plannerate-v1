@@ -4,6 +4,7 @@ import { ArrowLeft, Edit, Plus, RefreshCcw, Upload } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import GondolaCreateStepper from '@/components/plannerate/form/GondolaCreateStepper.vue';
 import GondolaEditForm from '@/components/plannerate/form/GondolaEditForm.vue';
+import { wayfinderPath } from '@/libs/wayfinderPath';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -203,7 +204,7 @@ function cancelUpdateGondolaImages() {
 
                 <Link 
                     v-if="backRoute"
-                    :href="backRoute"
+                    :href="wayfinderPath(backRoute)"
                     class="flex items-center gap-2 text-sm text-muted-foreground hover:text-muted-foreground/80 cursor-pointer"
                 >
                     <ArrowLeft class="size-4" />

@@ -124,6 +124,7 @@ import { ImageIcon, Loader2, Trash2, Upload, X } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import { Cropper } from 'vue-advanced-cropper';
 import { toast } from 'vue-sonner';
+import { wayfinderPath } from '@/libs/wayfinderPath';
 import { uploadImage, deleteImage } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 import { Button } from '@/components/ui/button';
 import {
@@ -330,7 +331,7 @@ async function handleUploadImage() {
         formData.append('product_id', props.product.id);
 
         // Faz upload via Inertia
-        router.post(uploadImage.url(props.product), formData, {
+        router.post(wayfinderPath(uploadImage.url(props.product)), formData, {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
@@ -378,7 +379,7 @@ async function handleDeleteImage() {
 
     try {
         // Envia requisição para remover a imagem (marcar image_url como null)
-        router.delete(deleteImage.url(props.product.id), {
+        router.delete(wayfinderPath(deleteImage.url(props.product.id)), {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {

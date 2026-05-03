@@ -147,6 +147,7 @@ import {
     CardContent,
 } from '@/components/ui/card';
 import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis';
+import { wayfinderPath } from '@/libs/wayfinderPath';
 
 interface Planogram {
     id: string;
@@ -270,7 +271,7 @@ const handleParamsSubmit = (data: typeof form.value): void => {
     hasCalculated.value = true;
 
     router.post(
-        calculateTargetStockApi.url({ gondola: props.gondolaId }),
+        wayfinderPath(calculateTargetStockApi.url({ gondola: props.gondolaId })),
         form.value,
         {
             preserveState: true,
