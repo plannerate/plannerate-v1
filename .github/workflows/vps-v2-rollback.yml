@@ -6,15 +6,22 @@ on:
       image_tag:
         description: Previous image tag (example sha-abcdef1)
         required: true
+      branch_name:
+        description: Branch name for rollback context (optional; defaults to selected ref)
+        required: false
+        default: ""
       app_slug:
         description: App slug/path (example staging, production, client-a)
         required: false
-        default: staging
+        default: ""
 
 jobs:
   rollback:
     runs-on: ubuntu-latest
     environment: staging
+    concurrency:
+      group: rollback-${{ github.event.inputs.app_slug || github.event.inputs.branch_name || github.ref_name }}
+      cancel-in-progress: false
     steps:
       - name: Rollback deploy
         uses: appleboy/ssh-action@v1.2.0
@@ -24,13 +31,48 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
+
+            BRANCH_NAME="${{ github.event.inputs.branch_name }}"
+            if [[ -z "${BRANCH_NAME}" || "${BRANCH_NAME}" == "null" ]]; then
+              BRANCH_NAME="${{ github.ref_name }}"
+            fi
+            BRANCH_SLUG="$(echo "${BRANCH_NAME}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g' | cut -c1-63)"
+            if [[ -z "${BRANCH_SLUG}" ]]; then
+              echo "Unable to derive BRANCH_SLUG from branch '${BRANCH_NAME}'"
+              exit 1
+            fi
+
             APP_SLUG="${{ github.event.inputs.app_slug }}"
             if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
-              APP_SLUG="staging"
+              APP_SLUG="${BRANCH_SLUG}"
             fi
+
+            if [[ ! "${APP_SLUG}" =~ ^[a-z0-9-]{1,63}$ ]]; then
+              echo "Invalid APP_SLUG '${APP_SLUG}'. Use [a-z0-9-], max 63 chars."
+              exit 1
+            fi
+
             APP_DIR="/opt/plannerate/${APP_SLUG}"
+            if [[ ! -d "${APP_DIR}" ]]; then
+              echo "Missing APP_DIR '${APP_DIR}'."
+              exit 1
+            fi
+
+            IMAGE_TAG="${{ github.event.inputs.image_tag }}"
+            if [[ "${IMAGE_TAG}" != "${APP_SLUG}-"* && "${IMAGE_TAG}" != "branch-${APP_SLUG}-latest" ]]; then
+              echo "Invalid image_tag '${IMAGE_TAG}' for app_slug '${APP_SLUG}'."
+              echo "Expected '${APP_SLUG}-<shortsha>' or 'branch-${APP_SLUG}-latest'."
+              exit 1
+            fi
+
+            echo "Rollback context:"
+            echo "  branch_name=${BRANCH_NAME}"
+            echo "  branch_slug=${BRANCH_SLUG}"
+            echo "  app_slug=${APP_SLUG}"
+            echo "  image_tag=${IMAGE_TAG}"
+
             cd "${APP_DIR}"
-            export IMAGE_TAG=${{ github.event.inputs.image_tag }}
+            export IMAGE_TAG
             docker compose -p "plannerate-${APP_SLUG}" pull
             docker compose -p "plannerate-${APP_SLUG}" up -d --force-recreate
             docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
@@ -58,11 +100,20 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
+            BRANCH_NAME="${{ github.event.inputs.branch_name }}"
+            if [[ -z "${BRANCH_NAME}" || "${BRANCH_NAME}" == "null" ]]; then
+              BRANCH_NAME="${{ github.ref_name }}"
+            fi
+            BRANCH_SLUG="$(echo "${BRANCH_NAME}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g' | cut -c1-63)"
             APP_SLUG="${{ github.event.inputs.app_slug }}"
             if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
-              APP_SLUG="staging"
+              APP_SLUG="${BRANCH_SLUG}"
             fi
             APP_DIR="/opt/plannerate/${APP_SLUG}"
+            if [[ ! -d "${APP_DIR}" ]]; then
+              echo "Missing APP_DIR '${APP_DIR}'."
+              exit 1
+            fi
             cd "${APP_DIR}"
             health_ok=0
             for outer_attempt in 1 2 3 4 5; do

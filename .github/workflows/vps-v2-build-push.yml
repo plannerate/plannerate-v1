@@ -3,7 +3,7 @@ name: vps-v2-build-push
 on:
   push:
     branches:
-      - dev
+      - '**'
   workflow_dispatch:
 
 env:
@@ -12,7 +12,6 @@ env:
 
 jobs:
   build:
-    if: github.ref_name == 'dev'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -31,14 +30,55 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha,prefix=sha-
-            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Resolve branch context
+        id: context
+        env:
+          BASE_STAGING_DOMAIN: ${{ vars.BASE_STAGING_DOMAIN }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${BASE_STAGING_DOMAIN}" ]]; then
+            echo "Missing vars.BASE_STAGING_DOMAIN"
+            exit 1
+          fi
+
+          BRANCH_NAME="${GITHUB_REF_NAME}"
+          BRANCH_SLUG="$(echo "${BRANCH_NAME}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g' | cut -c1-63)"
+
+          if [[ -z "${BRANCH_SLUG}" ]]; then
+            echo "Unable to derive BRANCH_SLUG from branch '${BRANCH_NAME}'"
+            exit 1
+          fi
+
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          WAYFINDER_APP_URL="https://${BRANCH_SLUG}.${BASE_STAGING_DOMAIN}"
+
+          TAG_SHA="sha-${SHORT_SHA}"
+          TAG_BRANCH_SHA="${BRANCH_SLUG}-${SHORT_SHA}"
+          TAG_BRANCH_LATEST="branch-${BRANCH_SLUG}-latest"
+
+          {
+            echo "branch_name=${BRANCH_NAME}"
+            echo "branch_slug=${BRANCH_SLUG}"
+            echo "short_sha=${SHORT_SHA}"
+            echo "wayfinder_app_url=${WAYFINDER_APP_URL}"
+            echo "tag_sha=${TAG_SHA}"
+            echo "tag_branch_sha=${TAG_BRANCH_SHA}"
+            echo "tag_branch_latest=${TAG_BRANCH_LATEST}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Prepare image tags
+        id: tags
+        run: |
+          set -euo pipefail
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          {
+            echo "value<<EOF"
+            echo "${IMAGE}:${{ steps.context.outputs.tag_sha }}"
+            echo "${IMAGE}:${{ steps.context.outputs.tag_branch_sha }}"
+            echo "${IMAGE}:${{ steps.context.outputs.tag_branch_latest }}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -47,8 +87,7 @@ jobs:
           file: ./Dockerfile.prod
           push: true
           build-args: |
-            WAYFINDER_APP_URL=${{ vars.APP_URL_STAGING || 'https://siga.dev.br' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+            WAYFINDER_APP_URL=${{ steps.context.outputs.wayfinder_app_url }}
+          tags: ${{ steps.tags.outputs.value }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

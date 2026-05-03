@@ -3,10 +3,14 @@ name: vps-v2-tenant-migrate
 on:
   workflow_dispatch:
     inputs:
+      branch_name:
+        description: Branch name for migration context (optional; defaults to selected ref)
+        required: false
+        default: ""
       app_slug:
         description: App slug/path (example staging, production, client-a)
         required: false
-        default: staging
+        default: ""
       fail_when_no_tenants:
         description: Fail workflow if no tenants are found
         required: false
@@ -17,6 +21,9 @@ jobs:
   migrate-tenants:
     runs-on: ubuntu-latest
     environment: staging
+    concurrency:
+      group: migrate-tenants-${{ github.event.inputs.app_slug || github.event.inputs.branch_name || github.ref_name }}
+      cancel-in-progress: false
     steps:
       - name: Run tenant migrations
         uses: appleboy/ssh-action@v1.2.0
@@ -26,12 +33,37 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
+
+            BRANCH_NAME="${{ github.event.inputs.branch_name }}"
+            if [[ -z "${BRANCH_NAME}" || "${BRANCH_NAME}" == "null" ]]; then
+              BRANCH_NAME="${{ github.ref_name }}"
+            fi
+            BRANCH_SLUG="$(echo "${BRANCH_NAME}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g' | cut -c1-63)"
+            if [[ -z "${BRANCH_SLUG}" ]]; then
+              echo "Unable to derive BRANCH_SLUG from branch '${BRANCH_NAME}'"
+              exit 1
+            fi
+
             APP_SLUG="${{ github.event.inputs.app_slug }}"
             if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
-              APP_SLUG="staging"
+              APP_SLUG="${BRANCH_SLUG}"
+            fi
+
+            if [[ ! "${APP_SLUG}" =~ ^[a-z0-9-]{1,63}$ ]]; then
+              echo "Invalid APP_SLUG '${APP_SLUG}'. Use [a-z0-9-], max 63 chars."
+              exit 1
             fi
 
             APP_DIR="/opt/plannerate/${APP_SLUG}"
+            if [[ ! -d "${APP_DIR}" ]]; then
+              echo "Missing APP_DIR '${APP_DIR}'."
+              exit 1
+            fi
+
+            echo "Tenant migrate context:"
+            echo "  branch_name=${BRANCH_NAME}"
+            echo "  branch_slug=${BRANCH_SLUG}"
+            echo "  app_slug=${APP_SLUG}"
             cd "${APP_DIR}"
 
             docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '

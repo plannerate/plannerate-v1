@@ -13,22 +13,21 @@ on:
       app_slug:
         description: App slug/path (example staging, production, client-a)
         required: false
-        default: staging
+        default: ""
 
 jobs:
   deploy:
     if: >
-      (
-        github.event_name == 'workflow_dispatch' &&
-        github.ref_name == 'dev'
-      ) ||
+      github.event_name == 'workflow_dispatch' ||
       (
         github.event_name == 'workflow_run' &&
-        github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_branch == 'dev'
+        github.event.workflow_run.conclusion == 'success'
       )
     runs-on: ubuntu-latest
     environment: staging
+    concurrency:
+      group: deploy-${{ github.event.inputs.app_slug || github.event.workflow_run.head_branch || github.ref_name }}
+      cancel-in-progress: false
     steps:
       - name: Deploy app
         uses: appleboy/ssh-action@v1.2.0
@@ -38,18 +37,50 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
-            echo "WORKFLOW_VERSION=vps-v2-deploy-staging-fix-db-connection-env-2026-05-03"
+            echo "WORKFLOW_VERSION=vps-v2-deploy-staging-branch-aware-2026-05-03"
+
+            BRANCH_NAME="${{ github.ref_name }}"
+            HEAD_SHA="${{ github.sha }}"
+            if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+              BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
+              HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+            fi
+
+            BRANCH_SLUG="$(echo "${BRANCH_NAME}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g' | cut -c1-63)"
+            if [[ -z "${BRANCH_SLUG}" ]]; then
+              echo "Unable to derive BRANCH_SLUG from branch '${BRANCH_NAME}'"
+              exit 1
+            fi
+
             APP_SLUG="${{ github.event.inputs.app_slug }}"
             if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
-              APP_SLUG="staging"
+              APP_SLUG="${BRANCH_SLUG}"
             fi
+
+            if [[ ! "${APP_SLUG}" =~ ^[a-z0-9-]{1,63}$ ]]; then
+              echo "Invalid APP_SLUG '${APP_SLUG}'. Use [a-z0-9-], max 63 chars."
+              exit 1
+            fi
+
             APP_DIR="/opt/plannerate/${APP_SLUG}"
+            if [[ ! -d "${APP_DIR}" ]]; then
+              echo "Missing APP_DIR '${APP_DIR}'. Provision this branch/app first."
+              exit 1
+            fi
+
             cd "${APP_DIR}"
+
             IMAGE_TAG="${{ github.event.inputs.image_tag }}"
             if [[ -z "${IMAGE_TAG}" || "${IMAGE_TAG}" == "null" ]]; then
-              HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
-              IMAGE_TAG="sha-${HEAD_SHA:0:7}"
+              IMAGE_TAG="${BRANCH_SLUG}-${HEAD_SHA:0:7}"
             fi
+
+            echo "Deploy context:"
+            echo "  branch_name=${BRANCH_NAME}"
+            echo "  branch_slug=${BRANCH_SLUG}"
+            echo "  app_slug=${APP_SLUG}"
+            echo "  image_tag=${IMAGE_TAG}"
+
             export IMAGE_TAG
             docker compose -p "plannerate-${APP_SLUG}" pull
             docker compose -p "plannerate-${APP_SLUG}" up -d --force-recreate
@@ -120,11 +151,21 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
+            BRANCH_NAME="${{ github.ref_name }}"
+            if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+              BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
+            fi
+            BRANCH_SLUG="$(echo "${BRANCH_NAME}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g' | cut -c1-63)"
+
             APP_SLUG="${{ github.event.inputs.app_slug }}"
             if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
-              APP_SLUG="staging"
+              APP_SLUG="${BRANCH_SLUG}"
             fi
             APP_DIR="/opt/plannerate/${APP_SLUG}"
+            if [[ ! -d "${APP_DIR}" ]]; then
+              echo "Missing APP_DIR '${APP_DIR}'."
+              exit 1
+            fi
             cd "${APP_DIR}"
             health_ok=0
             for outer_attempt in 1 2 3 4 5; do
