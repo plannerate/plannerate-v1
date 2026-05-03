@@ -129,8 +129,15 @@ BEGIN
 END
 \$\$;
 SQL
-        sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | grep -q 1 || sudo -u postgres createdb "${DB_NAME}"
+        sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | grep -q 1 || sudo -u postgres createdb --owner="${DB_USER}" "${DB_NAME}"
         sudo -u postgres psql -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};"
+        sudo -u postgres psql -d "${DB_NAME}" <<SQL
+GRANT USAGE, CREATE ON SCHEMA public TO ${DB_USER};
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${DB_USER};
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ${DB_USER};
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ${DB_USER};
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ${DB_USER};
+SQL
 
         write_file_secure "/root/.db-credentials-v2" "root:root" "600" "DB_ENGINE=pgsql
 DB_NAME=${DB_NAME}
