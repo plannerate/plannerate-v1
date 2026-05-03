@@ -65,7 +65,8 @@ ss -tulpen | grep -E ':80|:443'
 4. Verificar stack no VPS e logs se necessário.
 
 ## Migrações Multi-Tenancy (Spatie)
-Ordem obrigatória no deploy:
+No workflow de staging atual, o deploy executa apenas migração landlord.
+Ordem recomendada para execução manual:
 1. Landlord:
 ```bash
 php artisan migrate --force --database=landlord --path=database/migrations/landlord
@@ -74,8 +75,6 @@ php artisan migrate --force --database=landlord --path=database/migrations/landl
 ```bash
 php artisan tenants:artisan "migrate --force --database=tenant"
 ```
-
-Se ainda não existir tenant cadastrado, o deploy continua sem falhar e apenas registra `No tenants found yet; skipping tenant migrations.`.
 
 ## Incidentes Reais e Prevenção
 ### 1) `ssh: unable to authenticate`
@@ -166,8 +165,7 @@ Se `DB_LANDLORD_DATABASE=plannerate_stg` e `DB_LANDLORD_USERNAME=plannerate_stg`
 
 Estratégia aplicada no `vps-deployment-v2` (para ambientes com nomes diferentes):
 - o provisionamento não deve mais gravar `DB_TENANT_DATABASE=null` no bootstrap inicial;
-- na ausência de tenant current, o bootstrap usa temporariamente o banco landlord da instância para evitar DSN inválido no PostgreSQL;
-- o workflow de deploy também normaliza `DB_TENANT_DATABASE` quando encontrar valor vazio ou `null` em ambientes antigos.
+- na ausência de tenant current, o bootstrap usa temporariamente o banco landlord da instância para evitar DSN inválido no PostgreSQL.
 
 Se precisar conferir a origem do problema no código da app:
 ```bash

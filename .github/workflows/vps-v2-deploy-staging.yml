@@ -88,33 +88,7 @@ jobs:
             for attempt in 1 2 3 4 5; do
               if docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
                 set -e
-                TENANT_DATABASE="${DB_TENANT_DATABASE:-}"
-                if [[ -z "${TENANT_DATABASE}" || "${TENANT_DATABASE}" == "null" ]]; then
-                  TENANT_DATABASE="${DB_LANDLORD_DATABASE:-$DB_DATABASE}"
-                fi
-
-                DB_CONNECTION=landlord DB_DATABASE="${DB_LANDLORD_DATABASE:-$DB_DATABASE}" DB_TENANT_DATABASE="${TENANT_DATABASE}" php artisan migrate --force --database=landlord --path=database/migrations/landlord
-
-                if ! php artisan tinker --execute "use Illuminate\\Support\\Facades\\Schema; exit(Schema::connection(\"landlord\")->hasTable(\"tenants\") ? 0 : 1);" >/dev/null 2>&1; then
-                  echo "Landlord table tenants not found yet; skipping tenant migrations during bootstrap."
-                  exit 0
-                fi
-
-                set +e
-                TENANTS_OUTPUT="$(DB_TENANT_DATABASE="${TENANT_DATABASE}" php artisan tenants:artisan "migrate --force --database=tenant" 2>&1)"
-                TENANTS_STATUS=$?
-                set -e
-
-                if [ "${TENANTS_STATUS}" -ne 0 ]; then
-                  if echo "${TENANTS_OUTPUT}" | grep -q "No tenant(s) found."; then
-                    echo "No tenants found yet; skipping tenant migrations."
-                  else
-                    echo "${TENANTS_OUTPUT}"
-                    exit "${TENANTS_STATUS}"
-                  fi
-                else
-                  echo "${TENANTS_OUTPUT}"
-                fi
+                DB_CONNECTION=landlord DB_DATABASE="${DB_LANDLORD_DATABASE:-$DB_DATABASE}" php artisan migrate --force --database=landlord --path=database/migrations/landlord
               '; then
                 migration_ok=1
                 echo "Migration succeeded on attempt ${attempt}"
