@@ -139,6 +139,7 @@ class ImportLegacyBaseClientCommand extends Command
         );
 
         $tenant = Tenant::on('landlord')
+            ->with('integration')
             ->where(fn ($q) => $q->where('id', $filter)->orWhere('slug', $filter))
             ->first();
 
@@ -351,7 +352,8 @@ class ImportLegacyBaseClientCommand extends Command
 
             'stores' => $query->where('client_id', $this->client->id),
 
-            'clusters' => $query->where('client_id', $this->client->id)->orWhereNull('store_id'),
+            'clusters' => $query->where('client_id', $this->client->id)
+                ->whereNotNull('store_id'),
 
             default => $query,
         };
@@ -430,8 +432,9 @@ class ImportLegacyBaseClientCommand extends Command
     private function prepareRow(array $row, array $columns): array
     {
         // Garante tenant_id correto em todas as tabelas que o possuem no destino
+        // tenant_id = client_id da base legada
         if (in_array('tenant_id', $columns)) {
-            $row['tenant_id'] = $this->tenant->id;
+            $row['tenant_id'] = $this->client->id;
         }
 
         // Filter to only destination columns
