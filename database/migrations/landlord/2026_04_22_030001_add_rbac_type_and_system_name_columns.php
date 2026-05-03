@@ -148,41 +148,15 @@ return new class extends Migration
 
         $this->setTypeColumnsNotNull();
 
-        $driver = DB::connection($this->connection)->getDriverName();
+        DB::connection($this->connection)->statement('ALTER TABLE "permissions" DROP CONSTRAINT IF EXISTS "permissions_name_guard_name_unique"');
+        DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_team_name_guard_unique"');
+        DB::connection($this->connection)->statement('ALTER TABLE "permissions" DROP CONSTRAINT IF EXISTS "permissions_guard_name_type_unique"');
+        DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_team_name_guard_type_unique"');
+        DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_system_name_unique"');
 
-        if ($driver === 'pgsql') {
-            DB::connection($this->connection)->statement('DROP INDEX IF EXISTS "permissions_name_guard_name_unique"');
-            DB::connection($this->connection)->statement('DROP INDEX IF EXISTS "roles_team_name_guard_unique"');
-            DB::connection($this->connection)->statement('DROP INDEX IF EXISTS "permissions_guard_name_type_unique"');
-            DB::connection($this->connection)->statement('DROP INDEX IF EXISTS "roles_team_name_guard_type_unique"');
-
-            DB::connection($this->connection)->statement('CREATE UNIQUE INDEX IF NOT EXISTS "permissions_guard_name_type_unique" ON "permissions" ("guard_name", "name", "type")');
-            DB::connection($this->connection)->statement('CREATE UNIQUE INDEX IF NOT EXISTS "roles_team_name_guard_type_unique" ON "roles" ("tenant_id", "guard_name", "name", "type")');
-            DB::connection($this->connection)->statement('CREATE UNIQUE INDEX IF NOT EXISTS "roles_system_name_unique" ON "roles" ("system_name")');
-        } else {
-            $this->dropUniqueIndexIfExists('permissions', 'permissions_name_guard_name_unique');
-            $this->dropUniqueIndexIfExists('roles', 'roles_team_name_guard_unique');
-            $this->dropUniqueIndexIfExists('permissions', 'permissions_guard_name_type_unique');
-            $this->dropUniqueIndexIfExists('roles', 'roles_team_name_guard_type_unique');
-
-            if (! $this->hasUniqueIndex('permissions', 'permissions_guard_name_type_unique')) {
-                Schema::connection($this->connection)->table('permissions', function (Blueprint $table): void {
-                    $table->unique(['guard_name', 'name', 'type'], 'permissions_guard_name_type_unique');
-                });
-            }
-
-            if (! $this->hasUniqueIndex('roles', 'roles_team_name_guard_type_unique')) {
-                Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
-                    $table->unique(['tenant_id', 'guard_name', 'name', 'type'], 'roles_team_name_guard_type_unique');
-                });
-            }
-
-            if (! $this->hasUniqueIndex('roles', 'roles_system_name_unique')) {
-                Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
-                    $table->unique('system_name', 'roles_system_name_unique');
-                });
-            }
-        }
+        DB::connection($this->connection)->statement('ALTER TABLE "permissions" ADD CONSTRAINT "permissions_guard_name_type_unique" UNIQUE ("guard_name", "name", "type")');
+        DB::connection($this->connection)->statement('ALTER TABLE "roles" ADD CONSTRAINT "roles_team_name_guard_type_unique" UNIQUE ("tenant_id", "guard_name", "name", "type")');
+        DB::connection($this->connection)->statement('ALTER TABLE "roles" ADD CONSTRAINT "roles_system_name_unique" UNIQUE ("system_name")');
     }
 
     public function down(): void
@@ -192,17 +166,9 @@ return new class extends Migration
             return;
         }
 
-        $driver = DB::connection($this->connection)->getDriverName();
-
-        if ($driver === 'pgsql') {
-            DB::connection($this->connection)->statement('DROP INDEX IF EXISTS "permissions_guard_name_type_unique"');
-            DB::connection($this->connection)->statement('DROP INDEX IF EXISTS "roles_team_name_guard_type_unique"');
-            DB::connection($this->connection)->statement('DROP INDEX IF EXISTS "roles_system_name_unique"');
-        } else {
-            $this->dropUniqueIndexIfExists('permissions', 'permissions_guard_name_type_unique');
-            $this->dropUniqueIndexIfExists('roles', 'roles_team_name_guard_type_unique');
-            $this->dropUniqueIndexIfExists('roles', 'roles_system_name_unique');
-        }
+        DB::connection($this->connection)->statement('ALTER TABLE "permissions" DROP CONSTRAINT IF EXISTS "permissions_guard_name_type_unique"');
+        DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_team_name_guard_type_unique"');
+        DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_system_name_unique"');
 
         if (Schema::connection($this->connection)->hasColumn('roles', 'system_name')) {
             Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
@@ -222,73 +188,14 @@ return new class extends Migration
             });
         }
 
-        if ($driver === 'pgsql') {
-            DB::connection($this->connection)->statement('CREATE UNIQUE INDEX IF NOT EXISTS "permissions_name_guard_name_unique" ON "permissions" ("name", "guard_name")');
-            DB::connection($this->connection)->statement('CREATE UNIQUE INDEX IF NOT EXISTS "roles_team_name_guard_unique" ON "roles" ("tenant_id", "name", "guard_name")');
-        } else {
-            Schema::connection($this->connection)->table('permissions', function (Blueprint $table): void {
-                $table->unique(['name', 'guard_name']);
-            });
-
-            Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
-                $table->unique(['tenant_id', 'name', 'guard_name'], 'roles_team_name_guard_unique');
-            });
-        }
-    }
-
-    private function hasUniqueIndex(string $table, string $index): bool
-    {
-        $driver = DB::connection($this->connection)->getDriverName();
-
-        if ($driver === 'sqlite') {
-            $rows = DB::connection($this->connection)->select("PRAGMA index_list({$table})");
-            foreach ($rows as $row) {
-                if ($row->name === $index) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        if ($driver === 'pgsql') {
-            $matches = DB::connection($this->connection)
-                ->select(
-                    'SELECT 1 FROM pg_indexes WHERE schemaname = current_schema() AND tablename = ? AND indexname = ? LIMIT 1',
-                    [$table, $index],
-                );
-
-            return $matches !== [];
-        }
-
-        $matches = DB::connection($this->connection)
-            ->select(
-                'SELECT 1 FROM pg_indexes WHERE schemaname = current_schema() AND tablename = ? AND indexname = ? LIMIT 1',
-                [$table, $index],
-            );
-
-        return $matches !== [];
-    }
-
-    private function dropUniqueIndexIfExists(string $table, string $index): void
-    {
-        if (! $this->hasUniqueIndex($table, $index)) {
-            return;
-        }
-
-        Schema::connection($this->connection)->table($table, function (Blueprint $table) use ($index): void {
-            $table->dropUnique($index);
-        });
+        DB::connection($this->connection)->statement('ALTER TABLE "permissions" ADD CONSTRAINT "permissions_name_guard_name_unique" UNIQUE ("name", "guard_name")');
+        DB::connection($this->connection)->statement('ALTER TABLE "roles" ADD CONSTRAINT "roles_team_name_guard_unique" UNIQUE ("tenant_id", "name", "guard_name")');
     }
 
     private function setTypeColumnsNotNull(): void
     {
         $connection = DB::connection($this->connection);
-        $driver = $connection->getDriverName();
-
-        if ($driver === 'pgsql') {
-            $connection->statement('ALTER TABLE "permissions" ALTER COLUMN "type" SET NOT NULL');
-            $connection->statement('ALTER TABLE "roles" ALTER COLUMN "type" SET NOT NULL');
-        }
+        $connection->statement('ALTER TABLE "permissions" ALTER COLUMN "type" SET NOT NULL');
+        $connection->statement('ALTER TABLE "roles" ALTER COLUMN "type" SET NOT NULL');
     }
 };
