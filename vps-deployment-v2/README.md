@@ -7,8 +7,10 @@ Provisionamento e deploy multi-instância por `APP_SLUG` no mesmo VPS, com foco 
 - Caminho da instância: `/opt/plannerate/<APP_SLUG>`.
 - Monitoring da instância: `/opt/monitoring/<APP_SLUG>`.
 - Traefik compartilhado: `/opt/traefik`.
-- Deploy automático: branch `dev` -> workflow de staging.
+- Deploy automático: branch `dev` -> workflow de staging (branch `main` -> futuro workflow de produção).
 - Health check do CI: interno no container (`http://127.0.0.1/up`).
+- Tags de imagem: `staging-<sha>` + `branch-staging-latest` (build de `dev`); `production-<sha>` + `branch-production-latest` (build de `main`).
+- **Wayfinder**: URLs são geradas em build-time a partir de `DOMAIN_LANDLORD` do `manifest.env`. Alterações no domínio requerem rebuild da imagem.
 
 ## Fluxo Recomendado
 1. Preparar DNS do domínio raiz da instância (`DOMAIN_LANDLORD`) para o IP do VPS.
@@ -34,9 +36,19 @@ bash vps-deployment-v2/setup.sh
 
 ## Variáveis-Chave
 - `APP_SLUG`: nome da instância (pasta/projeto docker/routers).
-- `DOMAIN_LANDLORD`: domínio raiz da app da instância.
+- `DOMAIN_LANDLORD`: domínio raiz da app da instância. Usado em runtime **e** em build-time (via `WAYFINDER_LANDLORD_DOMAIN`) para gerar as URLs do Wayfinder no JS bundle. Deve estar correto no `manifest.env` antes do build.
 - `GHCR_REPO`: imagem no GHCR.
 - `DB_*`, `REDIS_PASSWORD`, `REVERB_*`: runtime da instância.
+
+### Pipeline CI/CD
+| Branch | DEPLOY_CHANNEL | Formato de tag |
+|--------|---------------|----------------|
+| `dev`  | `staging`     | `staging-<sha>`, `branch-staging-latest` |
+| `main` | `production`  | `production-<sha>`, `branch-production-latest` |
+
+- `vps-v2-build-push` dispara apenas em push para `dev` (por ora).
+- `vps-v2-deploy-staging` só executa se `head_branch == 'dev'` (filtro no trigger + condição do job).
+- O workflow lê `DOMAIN_LANDLORD` de `vps-deployment-v2/manifest.env` e passa como `WAYFINDER_LANDLORD_DOMAIN` build-arg ao Docker. Se esse valor estiver ausente ou errado, o JS bundle conterá URLs `//localhost/...`.
 
 ## Validação Pós-Provisionamento
 ### Local (máquina de operação)
@@ -196,6 +208,18 @@ grep -q '^REDIS_CACHE_CONNECTION=' /opt/plannerate/<APP_SLUG>/.env || echo 'REDI
 docker compose -p plannerate-<APP_SLUG> up -d --force-recreate
 ```
 Prevenção: `setup-app-host.sh` já escreve `SESSION_CONNECTION=default` e `REDIS_CACHE_CONNECTION=cache`.
+
+### 12) URLs `//localhost/...` ou `//siga.dev.br/...` erradas nos assets JS (Wayfinder)
+Sintoma: requests do frontend vão para `//localhost/api/...` ou para o domínio errado; visível no Network tab ou `browser-logs`.
+Causa: `php artisan wayfinder:generate` é executado durante o Docker build (estágio `wayfinder`). As funções TypeScript geradas contêm a URL base derivada de `config('app.landlord_domain')`, que por sua vez lê `LANDLORD_DOMAIN` no `.env`. Se essa variável não for injetada na build, o fallback é `localhost` ou o default hardcoded em `config/app.php`.
+Correção: garantir que `DOMAIN_LANDLORD` esteja definido em `vps-deployment-v2/manifest.env` e fazer novo push em `dev` para forçar rebuild da imagem:
+```bash
+# verificar manifest
+grep DOMAIN_LANDLORD vps-deployment-v2/manifest.env
+# forçar rebuild
+git commit --allow-empty -m "chore: rebuild wayfinder URLs" && git push origin dev
+```
+Prevenção: o workflow `vps-v2-build-push` lê `DOMAIN_LANDLORD` do `manifest.env` e passa como `WAYFINDER_LANDLORD_DOMAIN` build-arg. O `Dockerfile.prod` falha explicitamente se esse valor estiver vazio.
 
 ### 11) `GET /dashboard 404` no domínio principal
 Causa: `LANDLORD_DOMAIN` ausente/incorreto no `.env`, então as rotas com `Route::domain(config('app.landlord_domain'))` não casam no host real.
