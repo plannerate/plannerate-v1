@@ -78,6 +78,17 @@ ask_choice() {
     done
 }
 
+refresh_known_host() {
+    local host="$1"
+
+    if [[ -z "${host}" ]]; then
+        return 0
+    fi
+
+    ssh-keygen -R "${host}" -f "${HOME}/.ssh/known_hosts" >/dev/null 2>&1 || true
+    ssh-keygen -R "[${host}]:22" -f "${HOME}/.ssh/known_hosts" >/dev/null 2>&1 || true
+}
+
 random_secret() { openssl rand -base64 48 | tr -d '=+/' | cut -c1-40; }
 emit_manifest_var() { printf '%s=%q\n' "$1" "${2:-}"; }
 
@@ -151,6 +162,7 @@ mkdir -p "${KEY_DIR}" && chmod 700 "${KEY_DIR}"
 if [[ ! -f "$KEY_PATH" ]]; then
     ssh-keygen -t ed25519 -f "$KEY_PATH" -N "" -C "${GITHUB_OWNER}/${GITHUB_REPO}-deploy" -q
 fi
+refresh_known_host "${VPS_HOST}"
 DEPLOY_PUBLIC_KEY="$(cat "${KEY_PATH}.pub")"
 DEPLOY_PRIVATE_KEY="$(cat "${KEY_PATH}")"
 VPS_KNOWN_HOSTS="$(ssh-keyscan -H "${VPS_HOST}" 2>/dev/null || true)"
