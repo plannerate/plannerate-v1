@@ -148,27 +148,40 @@ return new class extends Migration
 
         $this->setTypeColumnsNotNull();
 
-        $this->dropUniqueIndexIfExists('permissions', 'permissions_name_guard_name_unique');
-        $this->dropUniqueIndexIfExists('roles', 'roles_team_name_guard_unique');
-        $this->dropUniqueIndexIfExists('permissions', 'permissions_guard_name_type_unique');
-        $this->dropUniqueIndexIfExists('roles', 'roles_team_name_guard_type_unique');
+        $driver = DB::connection($this->connection)->getDriverName();
 
-        if (! $this->hasUniqueIndex('permissions', 'permissions_guard_name_type_unique')) {
-            Schema::connection($this->connection)->table('permissions', function (Blueprint $table): void {
-                $table->unique(['guard_name', 'name', 'type'], 'permissions_guard_name_type_unique');
-            });
-        }
+        if ($driver === 'pgsql') {
+            DB::connection($this->connection)->statement('DROP INDEX IF EXISTS "permissions_name_guard_name_unique"');
+            DB::connection($this->connection)->statement('DROP INDEX IF EXISTS "roles_team_name_guard_unique"');
+            DB::connection($this->connection)->statement('DROP INDEX IF EXISTS "permissions_guard_name_type_unique"');
+            DB::connection($this->connection)->statement('DROP INDEX IF EXISTS "roles_team_name_guard_type_unique"');
 
-        if (! $this->hasUniqueIndex('roles', 'roles_team_name_guard_type_unique')) {
-            Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
-                $table->unique(['tenant_id', 'guard_name', 'name', 'type'], 'roles_team_name_guard_type_unique');
-            });
-        }
+            DB::connection($this->connection)->statement('CREATE UNIQUE INDEX IF NOT EXISTS "permissions_guard_name_type_unique" ON "permissions" ("guard_name", "name", "type")');
+            DB::connection($this->connection)->statement('CREATE UNIQUE INDEX IF NOT EXISTS "roles_team_name_guard_type_unique" ON "roles" ("tenant_id", "guard_name", "name", "type")');
+            DB::connection($this->connection)->statement('CREATE UNIQUE INDEX IF NOT EXISTS "roles_system_name_unique" ON "roles" ("system_name")');
+        } else {
+            $this->dropUniqueIndexIfExists('permissions', 'permissions_name_guard_name_unique');
+            $this->dropUniqueIndexIfExists('roles', 'roles_team_name_guard_unique');
+            $this->dropUniqueIndexIfExists('permissions', 'permissions_guard_name_type_unique');
+            $this->dropUniqueIndexIfExists('roles', 'roles_team_name_guard_type_unique');
 
-        if (! $this->hasUniqueIndex('roles', 'roles_system_name_unique')) {
-            Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
-                $table->unique('system_name', 'roles_system_name_unique');
-            });
+            if (! $this->hasUniqueIndex('permissions', 'permissions_guard_name_type_unique')) {
+                Schema::connection($this->connection)->table('permissions', function (Blueprint $table): void {
+                    $table->unique(['guard_name', 'name', 'type'], 'permissions_guard_name_type_unique');
+                });
+            }
+
+            if (! $this->hasUniqueIndex('roles', 'roles_team_name_guard_type_unique')) {
+                Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
+                    $table->unique(['tenant_id', 'guard_name', 'name', 'type'], 'roles_team_name_guard_type_unique');
+                });
+            }
+
+            if (! $this->hasUniqueIndex('roles', 'roles_system_name_unique')) {
+                Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
+                    $table->unique('system_name', 'roles_system_name_unique');
+                });
+            }
         }
     }
 
@@ -179,9 +192,17 @@ return new class extends Migration
             return;
         }
 
-        $this->dropUniqueIndexIfExists('permissions', 'permissions_guard_name_type_unique');
-        $this->dropUniqueIndexIfExists('roles', 'roles_team_name_guard_type_unique');
-        $this->dropUniqueIndexIfExists('roles', 'roles_system_name_unique');
+        $driver = DB::connection($this->connection)->getDriverName();
+
+        if ($driver === 'pgsql') {
+            DB::connection($this->connection)->statement('DROP INDEX IF EXISTS "permissions_guard_name_type_unique"');
+            DB::connection($this->connection)->statement('DROP INDEX IF EXISTS "roles_team_name_guard_type_unique"');
+            DB::connection($this->connection)->statement('DROP INDEX IF EXISTS "roles_system_name_unique"');
+        } else {
+            $this->dropUniqueIndexIfExists('permissions', 'permissions_guard_name_type_unique');
+            $this->dropUniqueIndexIfExists('roles', 'roles_team_name_guard_type_unique');
+            $this->dropUniqueIndexIfExists('roles', 'roles_system_name_unique');
+        }
 
         if (Schema::connection($this->connection)->hasColumn('roles', 'system_name')) {
             Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
@@ -201,13 +222,18 @@ return new class extends Migration
             });
         }
 
-        Schema::connection($this->connection)->table('permissions', function (Blueprint $table): void {
-            $table->unique(['name', 'guard_name']);
-        });
+        if ($driver === 'pgsql') {
+            DB::connection($this->connection)->statement('CREATE UNIQUE INDEX IF NOT EXISTS "permissions_name_guard_name_unique" ON "permissions" ("name", "guard_name")');
+            DB::connection($this->connection)->statement('CREATE UNIQUE INDEX IF NOT EXISTS "roles_team_name_guard_unique" ON "roles" ("tenant_id", "name", "guard_name")');
+        } else {
+            Schema::connection($this->connection)->table('permissions', function (Blueprint $table): void {
+                $table->unique(['name', 'guard_name']);
+            });
 
-        Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
-            $table->unique(['tenant_id', 'name', 'guard_name'], 'roles_team_name_guard_unique');
-        });
+            Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
+                $table->unique(['tenant_id', 'name', 'guard_name'], 'roles_team_name_guard_unique');
+            });
+        }
     }
 
     private function hasUniqueIndex(string $table, string $index): bool
