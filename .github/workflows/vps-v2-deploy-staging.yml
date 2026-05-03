@@ -54,13 +54,16 @@ jobs:
           if [[ -f "vps-deployment-v2/manifest.env" ]]; then
             DEFAULT_APP_SLUG="$(grep -E '^APP_SLUG=' vps-deployment-v2/manifest.env | tail -n1 | cut -d'=' -f2- | tr -d '"' | xargs || true)"
           fi
+          if [[ -z "${DEFAULT_APP_SLUG}" ]]; then
+            DEFAULT_APP_SLUG="staging"
+          fi
 
           APP_SLUG="${{ github.event.inputs.app_slug }}"
           if [[ -z "${APP_SLUG}" || "${APP_SLUG}" == "null" ]]; then
             if [[ -n "${DEFAULT_APP_SLUG}" ]]; then
               APP_SLUG="${DEFAULT_APP_SLUG}"
             else
-              APP_SLUG="${BRANCH_SLUG}"
+              APP_SLUG="staging"
             fi
           fi
           if [[ ! "${APP_SLUG}" =~ ^[a-z0-9-]{1,63}$ ]]; then
