@@ -3,7 +3,7 @@ name: vps-v2-build-push
 on:
   push:
     branches:
-      - '**'
+      - dev
   workflow_dispatch:
 
 env:
@@ -44,6 +44,12 @@ jobs:
           fi
 
           SHORT_SHA="${GITHUB_SHA:0:7}"
+          DEPLOY_CHANNEL="${BRANCH_SLUG}"
+          if [[ "${BRANCH_NAME}" == "dev" ]]; then
+            DEPLOY_CHANNEL="staging"
+          elif [[ "${BRANCH_NAME}" == "main" ]]; then
+            DEPLOY_CHANNEL="production"
+          fi
           MANIFEST_DOMAIN=""
           if [[ -f "vps-deployment-v2/manifest.env" ]]; then
             MANIFEST_DOMAIN="$(grep -E '^DOMAIN_LANDLORD=' vps-deployment-v2/manifest.env | tail -n1 | cut -d'=' -f2- | tr -d '"' | xargs || true)"
@@ -61,18 +67,17 @@ jobs:
           fi
           echo "Resolved WAYFINDER_APP_URL=${WAYFINDER_APP_URL}"
 
-          TAG_SHA="sha-${SHORT_SHA}"
-          TAG_BRANCH_SHA="${BRANCH_SLUG}-${SHORT_SHA}"
-          TAG_BRANCH_LATEST="branch-${BRANCH_SLUG}-latest"
+          TAG_CHANNEL_SHA="${DEPLOY_CHANNEL}-${SHORT_SHA}"
+          TAG_CHANNEL_LATEST="branch-${DEPLOY_CHANNEL}-latest"
 
           {
             echo "branch_name=${BRANCH_NAME}"
             echo "branch_slug=${BRANCH_SLUG}"
+            echo "deploy_channel=${DEPLOY_CHANNEL}"
             echo "short_sha=${SHORT_SHA}"
             echo "wayfinder_app_url=${WAYFINDER_APP_URL}"
-            echo "tag_sha=${TAG_SHA}"
-            echo "tag_branch_sha=${TAG_BRANCH_SHA}"
-            echo "tag_branch_latest=${TAG_BRANCH_LATEST}"
+            echo "tag_channel_sha=${TAG_CHANNEL_SHA}"
+            echo "tag_channel_latest=${TAG_CHANNEL_LATEST}"
           } >> "${GITHUB_OUTPUT}"
 
       - name: Prepare image tags
@@ -82,9 +87,8 @@ jobs:
           IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
           {
             echo "value<<EOF"
-            echo "${IMAGE}:${{ steps.context.outputs.tag_sha }}"
-            echo "${IMAGE}:${{ steps.context.outputs.tag_branch_sha }}"
-            echo "${IMAGE}:${{ steps.context.outputs.tag_branch_latest }}"
+            echo "${IMAGE}:${{ steps.context.outputs.tag_channel_sha }}"
+            echo "${IMAGE}:${{ steps.context.outputs.tag_channel_latest }}"
             echo "EOF"
           } >> "${GITHUB_OUTPUT}"
 
