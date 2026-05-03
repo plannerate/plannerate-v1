@@ -4,14 +4,127 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 ROOT_DIR="$(cd -- "${SCRIPT_DIR}/.." >/dev/null 2>&1 && pwd)"
-MANIFEST_PATH="${1:-${ROOT_DIR}/manifest.env}"
-APP_SLUG="${2:-staging}"
+DEFAULT_MANIFEST_PATH="${ROOT_DIR}/manifest.env"
+MANIFEST_PATH="${DEFAULT_MANIFEST_PATH}"
+APP_SLUG="staging"
+APP_DIR="/opt/plannerate/${APP_SLUG}"
+APP_ENV_PATH="${APP_DIR}/.env"
+SSH_HOST=""
+SSH_USER=""
+SSH_PORT="22"
+SSH_KEY_PATH=""
+
+usage() {
+  cat <<'USAGE'
+Uso:
+  run-legacy-import.sh [manifest_path] [app_slug]
+  run-legacy-import.sh --manifest /caminho/manifest.env --app-slug staging
+  run-legacy-import.sh --ssh-host HOST --ssh-user USER [--ssh-key /caminho/chave] [--ssh-port 22] [--manifest ...] [--app-slug ...]
+
+Exemplo (rodando local e executando na VPS):
+  ./run-legacy-import.sh \
+    --ssh-host 203.0.113.10 \
+    --ssh-user deploy \
+    --ssh-key ~/.ssh/id_rsa \
+    --app-slug staging \
+    --manifest ./vps-deployment-v2/manifest.env
+USAGE
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --manifest)
+      MANIFEST_PATH="$2"
+      shift 2
+      ;;
+    --app-slug)
+      APP_SLUG="$2"
+      shift 2
+      ;;
+    --ssh-host)
+      SSH_HOST="$2"
+      shift 2
+      ;;
+    --ssh-user)
+      SSH_USER="$2"
+      shift 2
+      ;;
+    --ssh-port)
+      SSH_PORT="$2"
+      shift 2
+      ;;
+    --ssh-key)
+      SSH_KEY_PATH="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      if [[ "${MANIFEST_PATH}" == "${DEFAULT_MANIFEST_PATH}" ]]; then
+        MANIFEST_PATH="$1"
+      elif [[ "${APP_SLUG}" == "staging" ]]; then
+        APP_SLUG="$1"
+      else
+        echo "Argumento desconhecido: $1"
+        usage
+        exit 1
+      fi
+      shift
+      ;;
+  esac
+done
+
 APP_DIR="/opt/plannerate/${APP_SLUG}"
 APP_ENV_PATH="${APP_DIR}/.env"
 
+if [[ -n "${SSH_HOST}" ]]; then
+  if [[ -z "${SSH_USER}" ]]; then
+    echo "Quando usar --ssh-host, informe também --ssh-user."
+    exit 1
+  fi
+
+  if [[ ! -f "${MANIFEST_PATH}" ]]; then
+    echo "Manifest local não encontrado: ${MANIFEST_PATH}"
+    exit 1
+  fi
+
+  if ! command -v ssh >/dev/null 2>&1; then
+    echo "ssh não encontrado na máquina local."
+    exit 1
+  fi
+
+  if ! command -v scp >/dev/null 2>&1; then
+    echo "scp não encontrado na máquina local."
+    exit 1
+  fi
+
+  ssh_opts=(-p "${SSH_PORT}" -o StrictHostKeyChecking=accept-new)
+  scp_opts=(-P "${SSH_PORT}" -o StrictHostKeyChecking=accept-new)
+  if [[ -n "${SSH_KEY_PATH}" ]]; then
+    ssh_opts+=(-i "${SSH_KEY_PATH}")
+    scp_opts+=(-i "${SSH_KEY_PATH}")
+  fi
+
+  remote_tmp_dir="/tmp/plannerate-legacy-import-$$"
+  remote_manifest="${remote_tmp_dir}/manifest.env"
+
+  ssh "${ssh_opts[@]}" "${SSH_USER}@${SSH_HOST}" "mkdir -p '${remote_tmp_dir}'"
+  scp "${scp_opts[@]}" "${MANIFEST_PATH}" "${SSH_USER}@${SSH_HOST}:${remote_manifest}"
+
+  ssh "${ssh_opts[@]}" "${SSH_USER}@${SSH_HOST}" "bash -s -- '${remote_manifest}' '${APP_SLUG}'" < "$0"
+
+  scp "${scp_opts[@]}" "${SSH_USER}@${SSH_HOST}:${remote_manifest}" "${MANIFEST_PATH}"
+  ssh "${ssh_opts[@]}" "${SSH_USER}@${SSH_HOST}" "rm -rf '${remote_tmp_dir}'"
+
+  echo "Execução remota finalizada e manifest local atualizado."
+  exit 0
+fi
+
 if [[ ! -f "${MANIFEST_PATH}" ]]; then
   echo "Manifest não encontrado: ${MANIFEST_PATH}"
-  echo "Uso: $0 /caminho/manifest.env [app_slug]"
+  usage
   exit 1
 fi
 
