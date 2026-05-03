@@ -40,7 +40,7 @@ jobs:
             '
 
             set +e
-            TENANTS_OUTPUT="$(docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '\''php artisan tenants:artisan "migrate --force --database=tenant"'\'' 2>&1)"
+            TENANTS_OUTPUT="$(docker compose -p "plannerate-${APP_SLUG}" exec -T app php artisan tenants:artisan "migrate --force --database=tenant" 2>&1)"
             TENANTS_STATUS=$?
             set -e
 
