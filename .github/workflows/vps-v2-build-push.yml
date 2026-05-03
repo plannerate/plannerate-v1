@@ -46,6 +46,8 @@ jobs:
           context: .
           file: ./Dockerfile.prod
           push: true
+          build-args: |
+            WAYFINDER_APP_URL=${{ vars.APP_URL_STAGING || 'https://siga.dev.br' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

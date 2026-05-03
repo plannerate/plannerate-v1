@@ -22,9 +22,10 @@ RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoload
 
 FROM php:8.4-cli-bookworm AS wayfinder
 WORKDIR /app
+ARG WAYFINDER_APP_URL=https://localhost
 COPY . .
 COPY --from=vendor /app/vendor ./vendor
-RUN printf 'APP_NAME=Plannerate\nAPP_ENV=local\nAPP_KEY=base64:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa=\nAPP_DEBUG=false\n' > .env \
+RUN printf 'APP_NAME=Plannerate\nAPP_ENV=production\nAPP_KEY=base64:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa=\nAPP_DEBUG=false\nAPP_URL=%s\n' "$WAYFINDER_APP_URL" > .env \
     && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
     && rm -f bootstrap/cache/*.php \
     && php artisan wayfinder:generate --with-form
