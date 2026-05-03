@@ -6,20 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected $connection = 'landlord';
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        if (! Schema::connection('landlord')->hasTable('tenant_modules')) {
+        if (! Schema::connection($this->connection)->hasTable('tenant_modules')) {
             return;
         }
 
-        if (! Schema::connection('landlord')->hasColumn('tenant_modules', 'id')) {
+        if (! Schema::connection($this->connection)->hasColumn('tenant_modules', 'id')) {
             return;
         }
 
-        Schema::connection('landlord')->table('tenant_modules', function (Blueprint $table): void {
+        Schema::connection($this->connection)->table('tenant_modules', function (Blueprint $table): void {
             $table->dropPrimary();
             $table->dropColumn('id');
         });
@@ -30,15 +31,15 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (! Schema::connection('landlord')->hasTable('tenant_modules')) {
+        if (! Schema::connection($this->connection)->hasTable('tenant_modules')) {
             return;
         }
 
-        if (Schema::connection('landlord')->hasColumn('tenant_modules', 'id')) {
+        if (Schema::connection($this->connection)->hasColumn('tenant_modules', 'id')) {
             return;
         }
 
-        Schema::connection('landlord')->table('tenant_modules', function (Blueprint $table): void {
+        Schema::connection($this->connection)->table('tenant_modules', function (Blueprint $table): void {
             $table->ulid('id')->first();
             $table->primary('id');
         });

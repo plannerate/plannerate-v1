@@ -6,12 +6,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected $connection = 'landlord';
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::connection('landlord')->create('integration_sync_days', function (Blueprint $table): void {
+        Schema::connection($this->connection)->create('integration_sync_days', function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->foreignUlid('tenant_integration_id')->constrained('tenant_integrations')->cascadeOnDelete();
             $table->string('resource', 32);
@@ -39,6 +40,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::connection('landlord')->dropIfExists('integration_sync_days');
+        Schema::connection($this->connection)->dropIfExists('integration_sync_days');
     }
 };

@@ -6,12 +6,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected $connection = 'landlord';
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::connection('landlord')->create('plans', function (Blueprint $table): void {
+        Schema::connection($this->connection)->create('plans', function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->string('name');
             $table->string('slug')->unique();
@@ -23,7 +24,7 @@ return new class extends Migration
             $table->softDeletes();
         });
 
-        Schema::connection('landlord')->create('modules', function (Blueprint $table): void {
+        Schema::connection($this->connection)->create('modules', function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->string('name');
             $table->string('slug')->unique();
@@ -33,7 +34,7 @@ return new class extends Migration
             $table->softDeletes();
         });
 
-        Schema::connection('landlord')->create('tenants', function (Blueprint $table): void {
+        Schema::connection($this->connection)->create('tenants', function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->string('name');
             $table->string('slug')->unique();
@@ -50,7 +51,7 @@ return new class extends Migration
             $table->index('status');
         });
 
-        Schema::connection('landlord')->create('tenant_domains', function (Blueprint $table): void {
+        Schema::connection($this->connection)->create('tenant_domains', function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->foreignUlid('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->string('host')->unique();
@@ -62,14 +63,14 @@ return new class extends Migration
             $table->unique('tenant_id');
         });
 
-        Schema::connection('landlord')->create('tenant_modules', function (Blueprint $table): void {
+        Schema::connection($this->connection)->create('tenant_modules', function (Blueprint $table): void {
             $table->foreignUlid('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->foreignUlid('module_id')->constrained('modules')->cascadeOnDelete();
             $table->timestamps(); 
             $table->unique(['tenant_id', 'module_id']);
         });
 
-        Schema::connection('landlord')->create('tenant_external_api_configs', function (Blueprint $table): void {
+        Schema::connection($this->connection)->create('tenant_external_api_configs', function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->foreignUlid('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->string('provider');
@@ -87,11 +88,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::connection('landlord')->dropIfExists('tenant_external_api_configs');
-        Schema::connection('landlord')->dropIfExists('tenant_modules');
-        Schema::connection('landlord')->dropIfExists('tenant_domains');
-        Schema::connection('landlord')->dropIfExists('tenants');
-        Schema::connection('landlord')->dropIfExists('modules');
-        Schema::connection('landlord')->dropIfExists('plans');
+        Schema::connection($this->connection)->dropIfExists('tenant_external_api_configs');
+        Schema::connection($this->connection)->dropIfExists('tenant_modules');
+        Schema::connection($this->connection)->dropIfExists('tenant_domains');
+        Schema::connection($this->connection)->dropIfExists('tenants');
+        Schema::connection($this->connection)->dropIfExists('modules');
+        Schema::connection($this->connection)->dropIfExists('plans');
     }
 };

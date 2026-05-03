@@ -6,12 +6,15 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+
+    protected $connection = 'landlord';
+
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::connection('landlord')->create('tenant_integrations', function (Blueprint $table): void {
+        Schema::connection($this->connection)->create('tenant_integrations', function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->foreignUlid('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->string('integration_type');
@@ -41,6 +44,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::connection('landlord')->dropIfExists('tenant_integrations');
+        Schema::connection($this->connection)->dropIfExists('tenant_integrations');
     }
 };

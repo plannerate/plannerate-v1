@@ -6,12 +6,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected $connection = 'landlord';
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::connection($this->connection)->create('users', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->string('name');
             $table->string('email')->unique();
@@ -22,13 +23,13 @@ return new class extends Migration
             $table->softDeletes();
         });
 
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
+        Schema::connection($this->connection)->create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
             $table->timestamp('created_at')->nullable();
         });
 
-        Schema::create('sessions', function (Blueprint $table) {
+        Schema::connection($this->connection)->create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->foreignUlid('user_id')->nullable()->index();
             $table->string('ip_address', 45)->nullable();
@@ -43,8 +44,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
-        Schema::dropIfExists('sessions');
+        Schema::connection($this->connection)->dropIfExists('users');
+        Schema::connection($this->connection)->dropIfExists('password_reset_tokens');
+        Schema::connection($this->connection)->dropIfExists('sessions');
     }
 };

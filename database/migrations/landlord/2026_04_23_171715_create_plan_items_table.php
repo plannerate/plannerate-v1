@@ -6,9 +6,11 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected $connection = 'landlord';
+
     public function up(): void
     {
-        Schema::connection('landlord')->create('plan_items', function (Blueprint $table): void {
+        Schema::connection($this->connection)->create('plan_items', function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->foreignUlid('plan_id')->constrained('plans')->cascadeOnDelete();
             $table->string('key', 100);
@@ -26,6 +28,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::connection('landlord')->dropIfExists('plan_items');
+        Schema::connection($this->connection)->dropIfExists('plan_items');
     }
 };
