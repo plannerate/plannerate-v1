@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
 import { Edit, Trash2 } from 'lucide-vue-next';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
+import WayfinderLink from '@/components/WayfinderLink.vue';
 import type { TemplateRow } from './Index.vue';
 
 defineProps<{
@@ -89,7 +89,7 @@ const statusClasses: Record<string, string> = {
                         <Edit class="size-3" />
                         Editar
                     </button>
-                    <Link
+                    <WayfinderLink
                         :href="WorkflowTemplateController.destroy.url({ tenant: tenantId, template: template.id })"
                         method="delete"
                         as="button"
@@ -97,7 +97,7 @@ const statusClasses: Record<string, string> = {
                     >
                         <Trash2 class="size-3" />
                         Excluir
-                    </Link>
+                    </WayfinderLink>
                 </div>
             </div>
         </div>

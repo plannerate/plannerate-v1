@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import PermissionController from '@/actions/App/Http/Controllers/Landlord/PermissionController';
+import WayfinderLink from '@/components/WayfinderLink.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
@@ -9,7 +10,6 @@ import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import type { Paginator } from '@/types';
 
 type PermissionRow = {
@@ -108,18 +108,18 @@ const pageMeta = useCrudPageMeta({
                     <td class="px-4 py-3 text-right">
                         <div class="inline-flex items-center gap-2">
                             <Button variant="outline" size="sm" as-child>
-                                <Link :href="tenantWayfinderPath(PermissionController.edit.url(permission.id))">
+                                <WayfinderLink :href="PermissionController.edit.url(permission.id)">
                                     {{ t('app.landlord.common.edit') }}
-                                </Link>
+                                </WayfinderLink>
                             </Button>
                             <Button v-if="!permission.is_protected" variant="destructive" size="sm" as-child>
-                                <Link
-                                    :href="tenantWayfinderPath(PermissionController.destroy.url(permission.id))"
+                                <WayfinderLink
+                                    :href="PermissionController.destroy.url(permission.id)"
                                     method="delete"
                                     as="button"
                                 >
                                     {{ t('app.landlord.common.delete') }}
-                                </Link>
+                                </WayfinderLink>
                             </Button>
                         </div>
                     </td>

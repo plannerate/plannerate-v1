@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
+import WayfinderLink from '@/components/WayfinderLink.vue';
 import { computed, ref } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
@@ -283,13 +284,13 @@ const pageMeta = useCrudPageMeta({
                             </span>
                         </div>
                     </div>
-                    <a
+                    <WayfinderLink
                         v-if="storeMap.can_edit_store"
                         :href="StoreController.edit.url({ subdomain: props.subdomain, store: storeMap.id })"
                         class="inline-flex h-8 items-center rounded-md border border-border px-3 text-xs font-medium text-foreground transition hover:bg-muted"
                     >
                         Editar loja
-                    </a>
+                    </WayfinderLink>
                 </div>
 
                 <div class="overflow-hidden rounded-md border border-border bg-muted/20 p-2">

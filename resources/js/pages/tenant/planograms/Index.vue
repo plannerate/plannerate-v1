@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { ChevronDown, LayoutTemplate, SlidersHorizontal, Store, X } from 'lucide-vue-next';
 import { computed, nextTick, ref, watch } from 'vue';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
@@ -9,6 +9,7 @@ import KankanNavigationLinks from '@/components/KankanNavigationLinks.vue';
 import ListTablePage from '@/components/ListPage.vue';
 import type ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import WayfinderLink from '@/components/WayfinderLink.vue';
 import { ColumnActions, ColumnDate, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
@@ -110,9 +111,9 @@ const pageMeta = useCrudPageMeta({
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
                 <Button variant="outline" as-child>
-                    <Link :href="PlanogramController.orphanLayers.url(props.subdomain)">
+                    <WayfinderLink :href="PlanogramController.orphanLayers.url(props.subdomain)">
                         Layers órfãs
-                    </Link>
+                    </WayfinderLink>
                 </Button>
                 <NewActionButton :href="PlanogramController.create.url(props.subdomain)">
                     {{ t('app.tenant.planograms.actions.new') }}
@@ -266,9 +267,9 @@ const pageMeta = useCrudPageMeta({
                                 :require-confirm-word="true"
                             >
                                 <Button variant="outline" size="sm" as-child>
-                                    <Link :href="planogramWorkflowHref(planogram.id)">
+                                    <WayfinderLink :href="planogramWorkflowHref(planogram.id)">
                                         {{ t('app.tenant.planograms.actions.view_gondolas') }}
-                                    </Link>
+                                    </WayfinderLink>
                                 </Button>
                             </ColumnActions>
                         </td>

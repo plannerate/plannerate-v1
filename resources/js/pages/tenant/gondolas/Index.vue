@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { PanelTop } from 'lucide-vue-next';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import WayfinderLink from '@/components/WayfinderLink.vue';
 import { ColumnActions, ColumnHeader, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Button } from '@/components/ui/button';
@@ -69,7 +70,7 @@ const pageMeta = useCrudPageMeta({
         <template #header-actions>
             <div class="flex items-center gap-2">
                 <Button variant="outline" size="sm" as-child>
-                    <Link :href="planogramsIndexPath">{{ t('app.actions.back') }}</Link>
+                    <WayfinderLink :href="planogramsIndexPath">{{ t('app.actions.back') }}</WayfinderLink>
                 </Button>
                 <NewActionButton
                     :href="GondolaController.create.url({

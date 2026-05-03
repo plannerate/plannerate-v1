@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
 import { Eye } from 'lucide-vue-next';
+import WayfinderLink from '@/components/WayfinderLink.vue';
 import { Button } from '@/components/ui/button';
 
 defineProps<{
@@ -10,9 +10,9 @@ defineProps<{
 
 <template>
     <Button variant="ghost" size="sm" as-child>
-        <Link :href="href" class="inline-flex items-center gap-1.5">
+        <WayfinderLink :href="href" class="inline-flex items-center gap-1.5">
             <Eye class="size-3.5" />
             <slot>Ver</slot>
-        </Link>
+        </WayfinderLink>
     </Button>
 </template>

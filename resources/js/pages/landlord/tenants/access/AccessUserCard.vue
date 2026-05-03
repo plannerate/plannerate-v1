@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
 import { Edit, Ban, Trash2, RotateCcw, Mail } from 'lucide-vue-next';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
+import WayfinderLink from '@/components/WayfinderLink.vue';
 import { useT } from '@/composables/useT';
 
 type UserAccessRow = {
@@ -121,7 +121,7 @@ function getUserInitials(name: string): string {
                 </button>
 
                 <!-- Toggle active -->
-                <Link
+                <WayfinderLink
                     v-if="!user.deleted_at"
                     :href="TenantUserAccessController.toggleActive.url({ tenant: tenantId, userId: user.id })"
                     method="patch"
@@ -131,11 +131,11 @@ function getUserInitials(name: string): string {
                     :title="user.is_active ? t('app.landlord.common.inactive') : t('app.landlord.common.active')"
                 >
                     <Ban class="size-4" />
-                </Link>
+                </WayfinderLink>
             </div>
 
             <!-- Delete / Restore -->
-            <Link
+                <WayfinderLink
                 v-if="!user.deleted_at"
                 :href="TenantUserAccessController.destroy.url({ tenant: tenantId, userId: user.id })"
                 method="delete"
@@ -144,9 +144,9 @@ function getUserInitials(name: string): string {
                 :title="t('app.landlord.common.delete')"
             >
                 <Trash2 class="size-4" />
-            </Link>
+            </WayfinderLink>
 
-            <Link
+            <WayfinderLink
                 v-if="user.deleted_at"
                 :href="TenantUserAccessController.restore.url({ tenant: tenantId, userId: user.id })"
                 method="patch"
@@ -155,7 +155,7 @@ function getUserInitials(name: string): string {
                 :title="t('app.actions.restore')"
             >
                 <RotateCcw class="size-4" />
-            </Link>
+            </WayfinderLink>
         </div>
     </div>
 </template>

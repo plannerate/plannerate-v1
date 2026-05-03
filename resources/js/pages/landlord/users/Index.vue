@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import UserController from '@/actions/App/Http/Controllers/Landlord/UserController';
+import WayfinderLink from '@/components/WayfinderLink.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
@@ -123,18 +124,18 @@ const pageMeta = useCrudPageMeta({
                     <td class="px-4 py-3 text-right">
                         <div class="inline-flex items-center gap-2">
                             <Button variant="outline" size="sm" as-child>
-                                <Link :href="UserController.edit.url(user.id)">
+                                <WayfinderLink :href="UserController.edit.url(user.id)">
                                     {{ t('app.landlord.common.edit') }}
-                                </Link>
+                                </WayfinderLink>
                             </Button>
                             <Button variant="destructive" size="sm" as-child>
-                                <Link
+                                <WayfinderLink
                                     :href="UserController.destroy.url(user.id)"
                                     method="delete"
                                     as="button"
                                 >
                                     {{ t('app.landlord.common.delete') }}
-                                </Link>
+                                </WayfinderLink>
                             </Button>
                         </div>
                     </td>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import WayfinderLink from '@/components/WayfinderLink.vue';
 import { Button } from '@/components/ui/button';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 const props = defineProps<{
     href: string;
@@ -10,8 +9,8 @@ const props = defineProps<{
 
 <template>
     <Button variant="gradient" size="pill-sm" as-child>
-        <Link :href="tenantWayfinderPath(props.href)">
+        <WayfinderLink :href="props.href">
             <slot />
-        </Link>
+        </WayfinderLink>
     </Button>
 </template>
