@@ -351,7 +351,7 @@ class ImportLegacyBaseClientCommand extends Command
 
             'stores' => $query->where('client_id', $this->client->id),
 
-            'clusters' => $query->where('client_id', $this->client->id),
+            'clusters' => $query->where('client_id', $this->client->id)->orWhereNull('store_id'),
 
             default => $query,
         };
