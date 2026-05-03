@@ -50,23 +50,6 @@ jobs:
           elif [[ "${BRANCH_NAME}" == "main" ]]; then
             DEPLOY_CHANNEL="production"
           fi
-          MANIFEST_DOMAIN=""
-          if [[ -f "vps-deployment-v2/manifest.env" ]]; then
-            MANIFEST_DOMAIN="$(grep -E '^DOMAIN_LANDLORD=' vps-deployment-v2/manifest.env | tail -n1 | cut -d'=' -f2- | tr -d '"' | xargs || true)"
-          fi
-
-          if [[ -z "${MANIFEST_DOMAIN}" ]]; then
-            echo "Missing DOMAIN_LANDLORD in vps-deployment-v2/manifest.env"
-            exit 1
-          fi
-
-          WAYFINDER_APP_URL="https://${BRANCH_SLUG}.${MANIFEST_DOMAIN}"
-          if [[ "${WAYFINDER_APP_URL}" == *"localhost"* ]]; then
-            echo "Invalid WAYFINDER_APP_URL resolved to localhost: ${WAYFINDER_APP_URL}"
-            exit 1
-          fi
-          echo "Resolved WAYFINDER_APP_URL=${WAYFINDER_APP_URL}"
-
           TAG_CHANNEL_SHA="${DEPLOY_CHANNEL}-${SHORT_SHA}"
           TAG_CHANNEL_LATEST="branch-${DEPLOY_CHANNEL}-latest"
 
@@ -75,7 +58,6 @@ jobs:
             echo "branch_slug=${BRANCH_SLUG}"
             echo "deploy_channel=${DEPLOY_CHANNEL}"
             echo "short_sha=${SHORT_SHA}"
-            echo "wayfinder_app_url=${WAYFINDER_APP_URL}"
             echo "tag_channel_sha=${TAG_CHANNEL_SHA}"
             echo "tag_channel_latest=${TAG_CHANNEL_LATEST}"
           } >> "${GITHUB_OUTPUT}"
@@ -98,8 +80,6 @@ jobs:
           context: .
           file: ./Dockerfile.prod
           push: true
-          build-args: |
-            WAYFINDER_APP_URL=${{ steps.context.outputs.wayfinder_app_url }}
           tags: ${{ steps.tags.outputs.value }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
