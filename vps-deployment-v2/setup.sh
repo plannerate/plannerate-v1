@@ -125,6 +125,8 @@ ask DB_NAME "Nome do banco (${APP_SLUG})" "${DB_NAME:-${DB_NAME_STAGING:-${PROJE
 ask DB_USER "Usuário DB (${APP_SLUG})" "${DB_USER:-${DB_USER_STAGING:-${PROJECT_NAME}_${APP_SLUG}_user}}"
 ask_secret_default DB_PASSWORD "Senha DB (${APP_SLUG})" "${DB_PASSWORD:-${DB_PASSWORD_STAGING:-}}"
 
+DB_TENANT_DATABASE="${DB_TENANT_DATABASE:-${DB_NAME}}"
+
 if [[ "${DB_MODE}" == "externo" ]]; then
     step "Configuração manual do banco externo"
     echo "  Configure no banco externo antes de continuar:"
@@ -197,7 +199,7 @@ REDIS_PASSWORD="${REDIS_PASSWORD:-${REDIS_PASSWORD_STAGING:-$(random_secret)}}"
     emit_manifest_var DB_NAME "$DB_NAME"
     emit_manifest_var DB_USER "$DB_USER"
     emit_manifest_var DB_PASSWORD "$DB_PASSWORD"
-    emit_manifest_var DB_TENANT_DATABASE "null"
+    emit_manifest_var DB_TENANT_DATABASE "$DB_TENANT_DATABASE"
     emit_manifest_var DB_LANDLORD_HOST "$DB_HOST"
     emit_manifest_var DB_LANDLORD_PORT "$DB_PORT"
     emit_manifest_var DB_LANDLORD_DATABASE "$DB_NAME"
