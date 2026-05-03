@@ -66,7 +66,7 @@ return [
             'url' => env('DB_TENANT_URL'),
             'host' => env('DB_TENANT_HOST', env('DB_HOST', '127.0.0.1')),
             'port' => env('DB_TENANT_PORT', env('DB_PORT', '5432')),
-            'database' => env('DB_TENANT_DATABASE', 'laravel'),
+            'database' => env('DB_TENANT_DATABASE', null),
             'username' => env('DB_TENANT_USERNAME', env('DB_USERNAME', 'root')),
             'password' => env('DB_TENANT_PASSWORD', env('DB_PASSWORD', '')),
             'charset' => env('DB_CHARSET', 'utf8'),

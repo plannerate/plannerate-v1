@@ -137,6 +137,43 @@ grep -E '^(DB_HOST|DB_LANDLORD_HOST|DB_CONNECTION)=' .env
 ```
 Prevenção: compose já publica `host.docker.internal:host-gateway` e `setup-db-host.sh` libera `172.16.0.0/12` para porta do banco em `DB_MODE=local`.
 
+### 8.1) PostgreSQL tentando conectar no banco com nome do usuário (`plannerate_stg`)
+Causa raiz: a doc do Spatie para múltiplos bancos recomenda deixar a conexão `tenant` com `database = null`. Isso funciona quando a conexão `tenant` só é usada depois que existe um tenant atual e o `SwitchTenantDatabaseTask` já trocou o database dinamicamente. Neste projeto, porém, há código e migrations tenant-first que podem tocar a conexão `tenant` antes desse contexto existir.
+
+No PostgreSQL, quando a conexão é aberta com `database = null`, o driver tenta usar o nome do usuário como `dbname`. Se o usuário for `plannerate_stg`, o erro vira:
+```text
+SQLSTATE[08006] [7] FATAL: database "plannerate_stg" does not exist
+```
+
+Pontos de código relevantes no projeto:
+- `config/database.php`: a conexão `tenant` lê `DB_TENANT_DATABASE`; se vier `null`, a configuração final fica sem database definido.
+- `config/multitenancy.php`: `tenant_database_connection_name = 'tenant'` e `SwitchTenantDatabaseTask::class` só corrigem a conexão quando há tenant current.
+- `database/migrations/2026_04_22_200000_create_categories_table.php`: a migration tenant já nasce com `protected $connection = 'tenant';`.
+- `app/Models/Traits/UsesTenantConnection.php`: modelos tenant retornam sempre a conexão configurada como `tenant`.
+- `app/Models/Category.php`: exemplo concreto de model tenant que usa `UsesTenantConnection`.
+
+Diagnóstico rápido no container:
+```bash
+docker compose -p plannerate-<APP_SLUG> exec -T app php artisan tinker --execute '
+dump(config("database.connections.tenant"));
+'
+```
+
+Se o retorno mostrar `"database" => null`, o ambiente ainda está vulnerável a esse problema.
+
+Estratégia aplicada no `vps-deployment-v2`:
+- o provisionamento não deve mais gravar `DB_TENANT_DATABASE=null` no bootstrap inicial;
+- na ausência de tenant current, o bootstrap usa temporariamente o banco landlord da instância para evitar DSN inválido no PostgreSQL;
+- o workflow de deploy também normaliza `DB_TENANT_DATABASE` quando encontrar valor vazio ou `null` em ambientes antigos.
+
+Se precisar conferir a origem do problema no código da app:
+```bash
+sed -n '58,74p' config/database.php
+sed -n '43,45p' config/multitenancy.php
+sed -n '1,40p' database/migrations/2026_04_22_200000_create_categories_table.php
+sed -n '1,40p' app/Models/Traits/UsesTenantConnection.php
+```
+
 ### 9) `Please provide a valid cache path`
 Causa: diretórios de cache/views não existentes ou sem permissão no container.
 Correção:
