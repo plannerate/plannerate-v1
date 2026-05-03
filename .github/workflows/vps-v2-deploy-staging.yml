@@ -63,6 +63,11 @@ jobs:
                 set -e
                 php artisan migrate --force --database=landlord --path=database/migrations/landlord
 
+                if ! php artisan tinker --execute "use Illuminate\\Support\\Facades\\Schema; exit(Schema::connection(\"landlord\")->hasTable(\"tenants\") ? 0 : 1);" >/dev/null 2>&1; then
+                  echo "Landlord table tenants not found yet; skipping tenant migrations during bootstrap."
+                  exit 0
+                fi
+
                 set +e
                 TENANTS_OUTPUT="$(php artisan tenants:artisan "migrate --force --database=tenant" 2>&1)"
                 TENANTS_STATUS=$?
