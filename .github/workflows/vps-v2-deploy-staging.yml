@@ -59,6 +59,10 @@ jobs:
             '
             docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
               set -e
+              php artisan optimize:clear
+            '
+            docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
+              set -e
               if [ ! -f .env ]; then
                 echo "Missing .env in ${PWD}. Expected deploy env file."
                 exit 1
