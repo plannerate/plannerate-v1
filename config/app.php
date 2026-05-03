@@ -52,9 +52,9 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
+    'url' => env('APP_URL', 'https://siga.dev.br'),
 
-    'landlord_domain' => env('LANDLORD_DOMAIN', 'localhost'),
+    'landlord_domain' => env('LANDLORD_DOMAIN', 'siga.dev.br'),
 
     /*
     |--------------------------------------------------------------------------
