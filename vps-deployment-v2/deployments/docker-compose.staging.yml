@@ -14,11 +14,11 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-global"
-      - "traefik.http.routers.${APP_SLUG:-staging}-app.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.${APP_SLUG:-staging}-app.rule=Host(`${DOMAIN}`) || HostRegexp(`{subdomain:[a-z0-9-]+}.${DOMAIN}`)"
       - "traefik.http.routers.${APP_SLUG:-staging}-app.entrypoints=websecure"
       - "traefik.http.routers.${APP_SLUG:-staging}-app.tls=true"
       - "traefik.http.routers.${APP_SLUG:-staging}-app.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.${APP_SLUG:-staging}-app.priority=20"
+      - "traefik.http.routers.${APP_SLUG:-staging}-app.priority=10"
       - "traefik.http.services.${APP_SLUG:-staging}-app.loadbalancer.server.port=80"
       - "traefik.http.middlewares.${APP_SLUG:-staging}-sec.headers.stsSeconds=31536000"
       - "traefik.http.middlewares.${APP_SLUG:-staging}-sec.headers.browserXssFilter=true"
