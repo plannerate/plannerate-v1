@@ -161,7 +161,10 @@ dump(config("database.connections.tenant"));
 
 Se o retorno mostrar `"database" => null`, o ambiente ainda está vulnerável a esse problema.
 
-Estratégia aplicada no `vps-deployment-v2`:
+**Solução mais simples (recomendada):** usar o mesmo nome para o banco e o usuário PostgreSQL.
+Se `DB_LANDLORD_DATABASE=plannerate_stg` e `DB_LANDLORD_USERNAME=plannerate_stg`, o fallback do PostgreSQL (`dbname = username`) passa a funcionar corretamente — a conexão `tenant` com `database = null` conecta no banco correto sem precisar de workaround. Isso elimina o problema na raiz, sem necessidade de tratar `null` no workflow.
+
+Estratégia aplicada no `vps-deployment-v2` (para ambientes com nomes diferentes):
 - o provisionamento não deve mais gravar `DB_TENANT_DATABASE=null` no bootstrap inicial;
 - na ausência de tenant current, o bootstrap usa temporariamente o banco landlord da instância para evitar DSN inválido no PostgreSQL;
 - o workflow de deploy também normaliza `DB_TENANT_DATABASE` quando encontrar valor vazio ou `null` em ambientes antigos.

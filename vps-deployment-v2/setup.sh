@@ -122,7 +122,12 @@ else
     ask_secret_default DB_ROOT_PASS "Senha admin do banco externo (referência)" "${DB_ROOT_PASS:-}"
 fi
 ask DB_NAME "Nome do banco (${APP_SLUG})" "${DB_NAME:-${DB_NAME_STAGING:-${PROJECT_NAME}_${APP_SLUG}}}"
-ask DB_USER "Usuário DB (${APP_SLUG})" "${DB_USER:-${DB_USER_STAGING:-${PROJECT_NAME}_${APP_SLUG}_user}}"
+if [[ "${DB_ENGINE}" == "pgsql" ]]; then
+    DB_USER_DEFAULT="${DB_USER:-${DB_USER_STAGING:-${DB_NAME}}}"
+else
+    DB_USER_DEFAULT="${DB_USER:-${DB_USER_STAGING:-${PROJECT_NAME}_${APP_SLUG}_user}}"
+fi
+ask DB_USER "Usuário DB (${APP_SLUG})" "${DB_USER_DEFAULT}"
 ask_secret_default DB_PASSWORD "Senha DB (${APP_SLUG})" "${DB_PASSWORD:-${DB_PASSWORD_STAGING:-}}"
 
 DB_TENANT_DATABASE="${DB_TENANT_DATABASE:-${DB_NAME}}"
