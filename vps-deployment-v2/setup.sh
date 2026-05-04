@@ -391,6 +391,8 @@ if ${SSH_ROOT} -o ConnectTimeout=8 -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "e
     _root_ssh_ok=true
 fi
 
+_install_compose=false
+
 if [[ "${_root_ssh_ok}" == "true" ]]; then
     if ask_yn "Provisionar App VPS agora?"; then
         ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "mkdir -p /tmp/vps-provisioning"
@@ -403,17 +405,18 @@ if [[ "${_root_ssh_ok}" == "true" ]]; then
         fi
         ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' bash /tmp/vps-provisioning/setup-app-host.sh /tmp/vps-provisioning/manifest.env"
         ok "App VPS provisionado — root SSH desabilitado, use a chave admin daqui em diante"
+        _install_compose=true
     fi
 else
     warn "SSH root não acessível em ${VPS_HOST} (já provisionado ou senha incorreta)."
     info "Pulando provisionamento — prosseguindo com etapas que usam a chave admin."
 fi
 
-if ask_yn "Instalar compose files no VPS agora?"; then
+if [[ "${_install_compose}" == "true" ]] || ask_yn "Instalar compose files e iniciar Traefik no VPS agora?"; then
     ${SSH_DEPLOY} "${DEPLOY_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_WORKDIR}'"
     ${SCP_DEPLOY} -r "${SCRIPT_DIR}/." "${DEPLOY_USER}@${VPS_HOST}:${REMOTE_WORKDIR}/"
     ${SSH_DEPLOY} "${DEPLOY_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' START_SERVICES='true' sudo bash ${REMOTE_WORKDIR}/automation/install-compose-on-host.sh"
-    ok "Compose files instalados e serviços iniciais (Traefik/app) iniciados"
+    ok "Compose files instalados — Traefik e app iniciados"
 fi
 
 if ask_yn "Instalar monitoramento dessa app agora?"; then
