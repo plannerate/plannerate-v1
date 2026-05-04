@@ -78,77 +78,77 @@ class SyncProductsFromEanReferencesService
 
         $sql = "
             UPDATE products p
-            SET p.category_id = CASE
+            SET category_id = CASE
                     WHEN (p.category_id IS NULL OR p.category_id = '') AND r.category_id IS NOT NULL
                     THEN r.category_id
                     ELSE p.category_id
                 END,
-                p.description = CASE
+                description = CASE
                     WHEN (p.description IS NULL OR p.description = '') AND r.reference_description IS NOT NULL AND r.reference_description <> ''
                     THEN r.reference_description
                     ELSE p.description
                 END,
-                p.brand = CASE
+                brand = CASE
                     WHEN (p.brand IS NULL OR p.brand = '') AND r.brand IS NOT NULL AND r.brand <> ''
                     THEN r.brand
                     ELSE p.brand
                 END,
-                p.subbrand = CASE
+                subbrand = CASE
                     WHEN (p.subbrand IS NULL OR p.subbrand = '') AND r.subbrand IS NOT NULL AND r.subbrand <> ''
                     THEN r.subbrand
                     ELSE p.subbrand
                 END,
-                p.packaging_type = CASE
+                packaging_type = CASE
                     WHEN (p.packaging_type IS NULL OR p.packaging_type = '') AND r.packaging_type IS NOT NULL AND r.packaging_type <> ''
                     THEN r.packaging_type
                     ELSE p.packaging_type
                 END,
-                p.packaging_size = CASE
+                packaging_size = CASE
                     WHEN (p.packaging_size IS NULL OR p.packaging_size = '') AND r.packaging_size IS NOT NULL AND r.packaging_size <> ''
                     THEN r.packaging_size
                     ELSE p.packaging_size
                 END,
-                p.measurement_unit = CASE
+                measurement_unit = CASE
                     WHEN (p.measurement_unit IS NULL OR p.measurement_unit = '') AND r.measurement_unit IS NOT NULL AND r.measurement_unit <> ''
                     THEN r.measurement_unit
                     ELSE p.measurement_unit
                 END,
-                p.width = CASE
+                width = CASE
                     WHEN p.width IS NULL AND r.width IS NOT NULL
                     THEN r.width
                     ELSE p.width
                 END,
-                p.height = CASE
+                height = CASE
                     WHEN p.height IS NULL AND r.height IS NOT NULL
                     THEN r.height
                     ELSE p.height
                 END,
-                p.depth = CASE
+                depth = CASE
                     WHEN p.depth IS NULL AND r.depth IS NOT NULL
                     THEN r.depth
                     ELSE p.depth
                 END,
-                p.weight = CASE
+                weight = CASE
                     WHEN p.weight IS NULL AND r.weight IS NOT NULL
                     THEN r.weight
                     ELSE p.weight
                 END,
-                p.unit = CASE
+                unit = CASE
                     WHEN (p.unit IS NULL OR p.unit = '') AND r.unit IS NOT NULL AND r.unit <> ''
                     THEN r.unit
                     ELSE p.unit
                 END,
-                p.has_dimensions = CASE
+                has_dimensions = CASE
                     WHEN (p.width IS NULL OR p.height IS NULL OR p.depth IS NULL)
                     THEN r.has_dimensions
                     ELSE p.has_dimensions
                 END,
-                p.dimension_status = CASE
+                dimension_status = CASE
                     WHEN (p.dimension_status IS NULL OR p.dimension_status = '') AND r.dimension_status IS NOT NULL AND r.dimension_status <> ''
                     THEN r.dimension_status
                     ELSE p.dimension_status
                 END,
-                p.updated_at = ?
+                updated_at = ?
                         FROM ean_references r
                         WHERE r.tenant_id = p.tenant_id
                             AND r.ean = p.ean
