@@ -94,6 +94,10 @@ run_cmd() {
     fi
 }
 
+log_info "Waiting for apt lock (unattended-upgrades may be running)"
+run_cmd "systemctl stop unattended-upgrades 2>/dev/null || true"
+run_cmd "while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 2; done"
+
 log_info "Installing base packages"
 run_cmd "apt-get update -qq"
 run_cmd "DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq"
