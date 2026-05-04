@@ -144,12 +144,22 @@ fi
 log_info "Hardening SSH — disabling root login and password auth"
 if [[ "${DRY_RUN}" != "true" ]]; then
     SSHD_CFG="/etc/ssh/sshd_config"
-    sed -i '/^#\?PermitRootLogin/d' "${SSHD_CFG}"
-    sed -i '/^#\?PasswordAuthentication/d' "${SSHD_CFG}"
-    sed -i '/^#\?MaxAuthTries/d' "${SSHD_CFG}"
+    SSHD_BACKUP="/etc/ssh/sshd_config.bak-vps-v2"
+    cp "${SSHD_CFG}" "${SSHD_BACKUP}"
+
+    # Remove existing directives (both commented and active)
+    grep -Ev '^#?\s*(PermitRootLogin|PasswordAuthentication|MaxAuthTries)\b' "${SSHD_BACKUP}" > "${SSHD_CFG}"
+
     printf '\n# Added by vps-deployment-v2 setup\nPermitRootLogin no\nPasswordAuthentication no\nMaxAuthTries 3\n' >> "${SSHD_CFG}"
-    systemctl restart ssh 2>/dev/null || systemctl restart sshd
-    log_warn "Root SSH login is now DISABLED. Use '${DEPLOY_USER}' for future connections."
+
+    if ! sshd -t -f "${SSHD_CFG}"; then
+        log_error "sshd_config inválido — restaurando backup e abortando hardening"
+        cp "${SSHD_BACKUP}" "${SSHD_CFG}"
+    else
+        systemctl restart ssh 2>/dev/null || systemctl restart sshd
+        log_warn "Root SSH login is now DISABLED. Use '${DEPLOY_USER}' for future connections."
+        log_info "Backup da config original em ${SSHD_BACKUP}"
+    fi
 fi
 
 log_info "Configuring firewall (UFW)"
