@@ -18,13 +18,13 @@ use Illuminate\Validation\ValidationException;
 
 class ProductImageController extends Controller
 {
-    public function update(Request $request, ProductRepositoryImageResolver $imageResolver)
+    public function update(Request $request, ProductRepositoryImageResolver $imageResolver, string $subdomain)
     {
         $request->validate([
-            'product_id' => 'required|exists:products,id',
+            'product_id' => 'required|string',
         ]);
 
-        $product = Product::find($request->product_id);
+        $product = Product::query()->whereKey((string) $request->product_id)->first();
         if (! $product) {
             return redirect()->back()->withErrors(['product_id' => 'Produto não encontrado!']);
         }

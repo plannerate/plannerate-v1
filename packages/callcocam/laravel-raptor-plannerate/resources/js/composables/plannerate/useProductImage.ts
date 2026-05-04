@@ -31,7 +31,9 @@ export function useProductImage() {
             const formData = new FormData();
             formData.append('product_id', productId);
 
-            router.post(wayfinderPath(updateAction.url()), formData, {
+            router.post(wayfinderPath(updateAction.url({
+                subdomain: window.location.hostname.split('.')[0],
+            })), formData, {
                 preserveState: false,
                 preserveScroll: true,
                 onSuccess: () => {

@@ -12,7 +12,7 @@ class ProductSalesController extends Controller
     /**
      * Retorna resumo agregado de vendas do produto
      */
-    public function summary(string $productId): JsonResponse
+    public function summary(string $subdomain, string $productId): JsonResponse
     {
         $product = Product::findOrFail($productId);
 
