@@ -385,17 +385,27 @@ SCP_ROOT="scp -o StrictHostKeyChecking=accept-new"
 SSH_DEPLOY="ssh -o StrictHostKeyChecking=accept-new -i ${ADMIN_KEY_PATH}"
 SCP_DEPLOY="scp -o StrictHostKeyChecking=accept-new -i ${ADMIN_KEY_PATH}"
 
-if ask_yn "Provisionar App VPS agora?"; then
-    ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "mkdir -p /tmp/vps-provisioning"
-    ${SCP_ROOT} -r "${SCRIPT_DIR}/provisioning/." "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/"
-    ${SCP_ROOT} "${MANIFEST_OUT}" "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/manifest.env"
-    ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "bash /tmp/vps-provisioning/validate-prereqs.sh /tmp/vps-provisioning/manifest.env"
-    if [[ "${DB_MODE}" == "local" ]]; then
-        ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "DB_ENGINE='${DB_ENGINE}' bash /tmp/vps-provisioning/setup-db-host.sh /tmp/vps-provisioning/manifest.env"
-        ok "Banco local provisionado (${DB_ENGINE})"
+_root_ssh_ok=false
+if ${SSH_ROOT} -o ConnectTimeout=8 -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "exit 0" >/dev/null 2>&1; then
+    _root_ssh_ok=true
+fi
+
+if [[ "${_root_ssh_ok}" == "true" ]]; then
+    if ask_yn "Provisionar App VPS agora?"; then
+        ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "mkdir -p /tmp/vps-provisioning"
+        ${SCP_ROOT} -r "${SCRIPT_DIR}/provisioning/." "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/"
+        ${SCP_ROOT} "${MANIFEST_OUT}" "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/manifest.env"
+        ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "bash /tmp/vps-provisioning/validate-prereqs.sh /tmp/vps-provisioning/manifest.env"
+        if [[ "${DB_MODE}" == "local" ]]; then
+            ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "DB_ENGINE='${DB_ENGINE}' bash /tmp/vps-provisioning/setup-db-host.sh /tmp/vps-provisioning/manifest.env"
+            ok "Banco local provisionado (${DB_ENGINE})"
+        fi
+        ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' bash /tmp/vps-provisioning/setup-app-host.sh /tmp/vps-provisioning/manifest.env"
+        ok "App VPS provisionado — root SSH desabilitado, use a chave admin daqui em diante"
     fi
-    ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' bash /tmp/vps-provisioning/setup-app-host.sh /tmp/vps-provisioning/manifest.env"
-    ok "App VPS provisionado — root SSH desabilitado, use a chave admin daqui em diante"
+else
+    warn "SSH root não acessível em ${VPS_HOST} (já provisionado ou senha incorreta)."
+    info "Pulando provisionamento — prosseguindo com etapas que usam a chave admin."
 fi
 
 if ask_yn "Instalar compose files no VPS agora?"; then
