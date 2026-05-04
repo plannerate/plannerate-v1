@@ -55,11 +55,12 @@ else
     DB_ALLOWED_HOST="${DB_ALLOWED_HOST:-%}"
 fi
 
-log_info "Waiting for apt lock (unattended-upgrades may be running)"
-run_cmd "systemctl stop unattended-upgrades 2>/dev/null || true"
-run_cmd "while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 2; done"
+log_info "Stopping unattended-upgrades and waiting for apt lock"
+run_cmd "systemctl stop unattended-upgrades apt-daily.service apt-daily-upgrade.service 2>/dev/null || true"
+run_cmd "systemctl kill --kill-who=all apt-daily.service apt-daily-upgrade.service 2>/dev/null || true"
+run_cmd "while fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock >/dev/null 2>&1; do echo 'waiting for apt lock...'; sleep 3; done"
 
-run_cmd "apt-get update -qq"
+run_cmd "apt-get -o DpkgLock::Timeout=120 update -qq"
 run_cmd "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ufw fail2ban rsync"
 
 if [[ "${DB_ENGINE}" == "mysql" ]]; then

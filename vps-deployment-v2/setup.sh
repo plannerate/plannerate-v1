@@ -385,9 +385,9 @@ ssh-keygen -R "${VPS_HOST}" >/dev/null 2>&1 || true
 
 # SSH helpers — provisioning usa root (StrictHostKeyChecking=no: máquina nova pode ter key diferente)
 # pós-prov usa deploy+chave admin (accept-new: key já conhecida após provisionar)
-SSH_ROOT="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+SSH_ROOT="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=6"
 SCP_ROOT="scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-SSH_DEPLOY="ssh -o StrictHostKeyChecking=accept-new -i ${ADMIN_KEY_PATH}"
+SSH_DEPLOY="ssh -o StrictHostKeyChecking=accept-new -i ${ADMIN_KEY_PATH} -o ServerAliveInterval=30 -o ServerAliveCountMax=6"
 SCP_DEPLOY="scp -o StrictHostKeyChecking=accept-new -i ${ADMIN_KEY_PATH}"
 
 # Detecta estado da VPS: deploy+chave já funciona (pós-prov) ou precisa provisionar
