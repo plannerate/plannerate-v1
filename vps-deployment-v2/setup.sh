@@ -141,9 +141,11 @@ ask ACME_EMAIL "E-mail para Let's Encrypt" "${ACME_EMAIL:-}"
 step "VPS e banco"
 ask VPS_HOST "IP do App VPS" "${VPS_HOST:-}"
 ask VPS_USER "Usuário SSH root no VPS" "${VPS_USER:-root}"
-ask DEPLOY_USER "Usuário de deploy" "${DEPLOY_USER:-deploy}"
-info "Senha usada para acesso via console da VPS (backup — SSH usa chave)."
-ask_secret_suggest DEPLOY_USER_PASS "Senha do usuário ${DEPLOY_USER:-deploy}" "${DEPLOY_USER_PASS:-}"
+ask DEPLOY_USER "Usuário de deploy (root = mais simples, deploy = mais seguro)" "${DEPLOY_USER:-root}"
+if [[ "${DEPLOY_USER}" != "root" ]]; then
+    info "Senha usada para acesso via console da VPS (backup — SSH usa chave)."
+    ask_secret_suggest DEPLOY_USER_PASS "Senha do usuário ${DEPLOY_USER}" "${DEPLOY_USER_PASS:-}"
+fi
 ask_choice DB_MODE "Banco é local na mesma VPS ou externo?" "${DB_MODE:-local}" local externo
 ask DB_ENGINE "Engine (pgsql|mysql)" "${DB_ENGINE:-${DB_ENGINE_STAGING:-pgsql}}"
 

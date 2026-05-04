@@ -94,10 +94,12 @@ run_cmd() {
     fi
 }
 
-log_info "Stopping unattended-upgrades and waiting for apt lock"
+log_info "Killing unattended-upgrades and releasing apt lock"
 run_cmd "systemctl stop unattended-upgrades apt-daily.service apt-daily-upgrade.service 2>/dev/null || true"
 run_cmd "systemctl kill --kill-who=all apt-daily.service apt-daily-upgrade.service 2>/dev/null || true"
-run_cmd "while fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock >/dev/null 2>&1; do echo 'waiting for apt lock...'; sleep 3; done"
+run_cmd "fuser -k /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock 2>/dev/null || true"
+run_cmd "sleep 2"
+run_cmd "dpkg --configure -a 2>/dev/null || true"
 
 log_info "Installing base packages"
 run_cmd "apt-get -o DpkgLock::Timeout=120 update"
@@ -113,53 +115,81 @@ run_cmd "echo 'deb [arch='\"$(dpkg --print-architecture)\"' signed-by=/etc/apt/k
 run_cmd "apt-get update -qq"
 run_cmd "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
 
-if ! id "${DEPLOY_USER}" >/dev/null 2>&1; then
-    run_cmd "useradd -m -s /bin/bash ${DEPLOY_USER}"
-fi
-run_cmd "usermod -aG docker ${DEPLOY_USER}"
-if [[ "${DRY_RUN}" != "true" && -n "${DEPLOY_USER_PASS:-}" ]]; then
-    printf '%s:%s\n' "${DEPLOY_USER}" "${DEPLOY_USER_PASS}" | chpasswd
-    log_info "Senha definida para ${DEPLOY_USER} (acesso via console)"
-fi
+if [[ "${DEPLOY_USER}" == "root" ]]; then
+    log_info "DEPLOY_USER=root — pulando criação de usuário, sudoers e hardening SSH"
+    DEPLOY_HOME="/root"
+    run_cmd "usermod -aG docker root 2>/dev/null || true"
 
-log_info "Preparing SSH access for deploy user"
-run_cmd "install -d -m 700 -o ${DEPLOY_USER} -g ${DEPLOY_USER} /home/${DEPLOY_USER}/.ssh"
-run_cmd "touch /home/${DEPLOY_USER}/.ssh/authorized_keys"
-run_cmd "chown ${DEPLOY_USER}:${DEPLOY_USER} /home/${DEPLOY_USER}/.ssh/authorized_keys"
-run_cmd "chmod 600 /home/${DEPLOY_USER}/.ssh/authorized_keys"
-
-if [[ "${DRY_RUN}" != "true" ]]; then
-    if ! grep -Fq "${GITHUB_DEPLOY_PUBLIC_KEY}" "/home/${DEPLOY_USER}/.ssh/authorized_keys"; then
-        printf '%s\n' "${GITHUB_DEPLOY_PUBLIC_KEY}" >> "/home/${DEPLOY_USER}/.ssh/authorized_keys"
-        log_info "Chave deploy adicionada ao authorized_keys do ${DEPLOY_USER}"
+    log_info "Adding deploy key to root authorized_keys"
+    run_cmd "install -d -m 700 /root/.ssh"
+    run_cmd "touch /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys"
+    if [[ "${DRY_RUN}" != "true" ]]; then
+        if ! grep -Fq "${GITHUB_DEPLOY_PUBLIC_KEY}" /root/.ssh/authorized_keys; then
+            printf '%s\n' "${GITHUB_DEPLOY_PUBLIC_KEY}" >> /root/.ssh/authorized_keys
+            log_info "Chave deploy adicionada ao authorized_keys do root"
+        fi
     fi
-fi
 
-log_info "Granting passwordless sudo to ${DEPLOY_USER}"
-if [[ "${DRY_RUN}" != "true" ]]; then
-    printf '%s ALL=(ALL) NOPASSWD:ALL\n' "${DEPLOY_USER}" > /etc/sudoers.d/vps-v2-deploy
-    chmod 440 /etc/sudoers.d/vps-v2-deploy
-    visudo -cf /etc/sudoers.d/vps-v2-deploy || { rm -f /etc/sudoers.d/vps-v2-deploy; log_error "sudoers inválido"; exit 1; }
-fi
+    log_info "Hardening SSH — disabling password auth, keeping root login via key"
+    if [[ "${DRY_RUN}" != "true" ]]; then
+        SSHD_CFG="/etc/ssh/sshd_config"
+        SSHD_BACKUP="/etc/ssh/sshd_config.bak-vps-v2"
+        cp "${SSHD_CFG}" "${SSHD_BACKUP}"
+        grep -Ev '^#?\s*(PermitRootLogin|PasswordAuthentication|MaxAuthTries)\b' "${SSHD_BACKUP}" > "${SSHD_CFG}"
+        printf '\n# Added by vps-deployment-v2 setup\nPermitRootLogin prohibit-password\nPasswordAuthentication no\nMaxAuthTries 3\n' >> "${SSHD_CFG}"
+        if ! sshd -t -f "${SSHD_CFG}"; then
+            log_error "sshd_config inválido — restaurando backup"
+            cp "${SSHD_BACKUP}" "${SSHD_CFG}"
+        else
+            systemctl restart ssh 2>/dev/null || systemctl restart sshd
+            log_info "SSH hardened: PasswordAuthentication no, PermitRootLogin prohibit-password"
+        fi
+    fi
+else
+    DEPLOY_HOME="/home/${DEPLOY_USER}"
+    if ! id "${DEPLOY_USER}" >/dev/null 2>&1; then
+        run_cmd "useradd -m -s /bin/bash ${DEPLOY_USER}"
+    fi
+    run_cmd "usermod -aG docker ${DEPLOY_USER}"
+    if [[ "${DRY_RUN}" != "true" && -n "${DEPLOY_USER_PASS:-}" ]]; then
+        printf '%s:%s\n' "${DEPLOY_USER}" "${DEPLOY_USER_PASS}" | chpasswd
+        log_info "Senha definida para ${DEPLOY_USER} (acesso via console)"
+    fi
 
-log_info "Hardening SSH — disabling root login and password auth"
-if [[ "${DRY_RUN}" != "true" ]]; then
-    SSHD_CFG="/etc/ssh/sshd_config"
-    SSHD_BACKUP="/etc/ssh/sshd_config.bak-vps-v2"
-    cp "${SSHD_CFG}" "${SSHD_BACKUP}"
+    log_info "Preparing SSH access for deploy user"
+    run_cmd "install -d -m 700 -o ${DEPLOY_USER} -g ${DEPLOY_USER} ${DEPLOY_HOME}/.ssh"
+    run_cmd "touch ${DEPLOY_HOME}/.ssh/authorized_keys"
+    run_cmd "chown ${DEPLOY_USER}:${DEPLOY_USER} ${DEPLOY_HOME}/.ssh/authorized_keys"
+    run_cmd "chmod 600 ${DEPLOY_HOME}/.ssh/authorized_keys"
+    if [[ "${DRY_RUN}" != "true" ]]; then
+        if ! grep -Fq "${GITHUB_DEPLOY_PUBLIC_KEY}" "${DEPLOY_HOME}/.ssh/authorized_keys"; then
+            printf '%s\n' "${GITHUB_DEPLOY_PUBLIC_KEY}" >> "${DEPLOY_HOME}/.ssh/authorized_keys"
+            log_info "Chave deploy adicionada ao authorized_keys do ${DEPLOY_USER}"
+        fi
+    fi
 
-    # Remove existing directives (both commented and active)
-    grep -Ev '^#?\s*(PermitRootLogin|PasswordAuthentication|MaxAuthTries)\b' "${SSHD_BACKUP}" > "${SSHD_CFG}"
+    log_info "Granting passwordless sudo to ${DEPLOY_USER}"
+    if [[ "${DRY_RUN}" != "true" ]]; then
+        printf '%s ALL=(ALL) NOPASSWD:ALL\n' "${DEPLOY_USER}" > /etc/sudoers.d/vps-v2-deploy
+        chmod 440 /etc/sudoers.d/vps-v2-deploy
+        visudo -cf /etc/sudoers.d/vps-v2-deploy || { rm -f /etc/sudoers.d/vps-v2-deploy; log_error "sudoers inválido"; exit 1; }
+    fi
 
-    printf '\n# Added by vps-deployment-v2 setup\nPermitRootLogin no\nPasswordAuthentication no\nMaxAuthTries 3\n' >> "${SSHD_CFG}"
-
-    if ! sshd -t -f "${SSHD_CFG}"; then
-        log_error "sshd_config inválido — restaurando backup e abortando hardening"
-        cp "${SSHD_BACKUP}" "${SSHD_CFG}"
-    else
-        systemctl restart ssh 2>/dev/null || systemctl restart sshd
-        log_warn "Root SSH login is now DISABLED. Use '${DEPLOY_USER}' for future connections."
-        log_info "Backup da config original em ${SSHD_BACKUP}"
+    log_info "Hardening SSH — disabling root login and password auth"
+    if [[ "${DRY_RUN}" != "true" ]]; then
+        SSHD_CFG="/etc/ssh/sshd_config"
+        SSHD_BACKUP="/etc/ssh/sshd_config.bak-vps-v2"
+        cp "${SSHD_CFG}" "${SSHD_BACKUP}"
+        grep -Ev '^#?\s*(PermitRootLogin|PasswordAuthentication|MaxAuthTries)\b' "${SSHD_BACKUP}" > "${SSHD_CFG}"
+        printf '\n# Added by vps-deployment-v2 setup\nPermitRootLogin no\nPasswordAuthentication no\nMaxAuthTries 3\n' >> "${SSHD_CFG}"
+        if ! sshd -t -f "${SSHD_CFG}"; then
+            log_error "sshd_config inválido — restaurando backup e abortando hardening"
+            cp "${SSHD_BACKUP}" "${SSHD_CFG}"
+        else
+            systemctl restart ssh 2>/dev/null || systemctl restart sshd
+            log_warn "Root SSH login is now DISABLED. Use '${DEPLOY_USER}' for future connections."
+            log_info "Backup da config original em ${SSHD_BACKUP}"
+        fi
     fi
 fi
 
@@ -200,7 +230,7 @@ fi
 log_info "Preparing filesystem layout"
 run_cmd "mkdir -p ${APP_DIR} /opt/traefik/letsencrypt /opt/backups /opt/monitoring/${APP_SLUG}"
 run_cmd "mkdir -p ${APP_DIR}/storage/framework/views ${APP_DIR}/storage/framework/cache ${APP_DIR}/storage/framework/sessions ${APP_DIR}/bootstrap/cache"
-run_cmd "chown -R ${DEPLOY_USER}:${DEPLOY_USER} ${APP_DIR}"
+run_cmd "chown -R ${DEPLOY_USER}:${DEPLOY_USER} ${APP_DIR} 2>/dev/null || chown -R root:root ${APP_DIR}"
 run_cmd "chmod 750 ${APP_DIR}"
 run_cmd "touch /opt/traefik/letsencrypt/acme.json"
 run_cmd "chmod 600 /opt/traefik/letsencrypt/acme.json"

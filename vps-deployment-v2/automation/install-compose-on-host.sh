@@ -14,7 +14,11 @@ if [[ "${EUID}" -ne 0 ]]; then
     exit 1
 fi
 
-install -d -m 750 -o "${DEPLOY_USER}" -g "${DEPLOY_USER}" "${APP_DIR}"
+if [[ "${DEPLOY_USER}" == "root" ]]; then
+    install -d -m 750 "${APP_DIR}"
+else
+    install -d -m 750 -o "${DEPLOY_USER}" -g "${DEPLOY_USER}" "${APP_DIR}"
+fi
 install -d -m 755 /opt/traefik
 install -d -m 700 /opt/traefik/letsencrypt
 touch /opt/traefik/letsencrypt/acme.json
