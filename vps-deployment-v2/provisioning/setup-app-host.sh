@@ -112,6 +112,10 @@ if ! id "${DEPLOY_USER}" >/dev/null 2>&1; then
     run_cmd "useradd -m -s /bin/bash ${DEPLOY_USER}"
 fi
 run_cmd "usermod -aG docker ${DEPLOY_USER}"
+if [[ "${DRY_RUN}" != "true" && -n "${DEPLOY_USER_PASS:-}" ]]; then
+    printf '%s:%s\n' "${DEPLOY_USER}" "${DEPLOY_USER_PASS}" | chpasswd
+    log_info "Senha definida para ${DEPLOY_USER} (acesso via console)"
+fi
 
 log_info "Preparing SSH access for deploy user"
 run_cmd "install -d -m 700 -o ${DEPLOY_USER} -g ${DEPLOY_USER} /home/${DEPLOY_USER}/.ssh"
