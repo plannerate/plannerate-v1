@@ -6,7 +6,7 @@ use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\Tenant;
-use App\Models\TenantUser;
+use App\Models\User;
 use App\Support\Authorization\RbacType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,7 +41,6 @@ class TenantUserAccessController extends Controller
         $statusFilter = in_array($status, self::AVAILABLE_STATUS_FILTERS, true) ? $status : 'all';
         $perPage = $this->resolvePerPage($request, 10);
         $trashFilter = $this->resolveTrashedFilter($request);
- 
 
         /** @var array{
          *     users: LengthAwarePaginator<array<string, mixed>>,
@@ -49,12 +48,12 @@ class TenantUserAccessController extends Controller
          * } $tenantUserData
          */
         $tenantUserData = $this->runInTenantContext($tenant, function () use ($search, $statusFilter, $perPage, $trashFilter): array {
-            $query = TenantUser::query()
+            $query = User::query()
                 ->when($search !== '', function ($query) use ($search): void {
                     $query->where(function ($where) use ($search): void {
                         $where
-                            ->where('name', 'like', '%' . $search . '%')
-                            ->orWhere('email', 'like', '%' . $search . '%');
+                            ->where('name', 'like', '%'.$search.'%')
+                            ->orWhere('email', 'like', '%'.$search.'%');
                     });
                 });
 
@@ -62,7 +61,7 @@ class TenantUserAccessController extends Controller
                 $query->where('is_active', true);
             } elseif ($statusFilter === 'inactive') {
                 $query->where('is_active', false);
-            } elseif ($trashFilter ) {
+            } elseif ($trashFilter) {
                 $this->applyTrashedToQuery($query, $trashFilter);
             }
 
@@ -70,7 +69,7 @@ class TenantUserAccessController extends Controller
                 ->latest()
                 ->paginate($perPage)
                 ->withQueryString()
-                ->through(fn(TenantUser $user): array => [
+                ->through(fn (User $user): array => [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
@@ -81,7 +80,7 @@ class TenantUserAccessController extends Controller
 
             return [
                 'users' => $users,
-                'activeCount' => TenantUser::query()->count(),
+                'activeCount' => User::query()->count(),
             ];
         });
 
@@ -91,14 +90,14 @@ class TenantUserAccessController extends Controller
             ->where('type', RbacType::TENANT)
             ->orderBy('name')
             ->get(['id', 'name'])
-            ->map(fn(Role $role): array => [
+            ->map(fn (Role $role): array => [
                 'id' => $role->id,
                 'name' => $role->name,
             ])
             ->all();
 
         $roleNamesByUser = $this->tenantRoleNamesByUser($tenant);
-        $users = $tenantUserData['users']->through(fn(array $user): array => [
+        $users = $tenantUserData['users']->through(fn (array $user): array => [
             ...$user,
             'role_names' => $roleNamesByUser[$user['id']] ?? [],
         ]);
@@ -153,7 +152,7 @@ class TenantUserAccessController extends Controller
         $validated = $this->validateStorePayload($request, $tenant);
 
         $this->runInTenantContext($tenant, function () use ($validated, $tenant): void {
-            $tenantUser = TenantUser::query()->create([
+            $tenantUser = User::query()->create([
                 ...Arr::except($validated, ['role_names']),
                 'is_active' => (bool) ($validated['is_active'] ?? true),
             ]);
@@ -179,7 +178,7 @@ class TenantUserAccessController extends Controller
         $validated = $this->validateUpdatePayload($request, $tenant, $userId);
 
         $this->runInTenantContext($tenant, function () use ($validated, $tenant, $userId): void {
-            $tenantUser = TenantUser::query()->findOrFail($userId);
+            $tenantUser = User::query()->findOrFail($userId);
             $password = $validated['password'] ?? null;
 
             $tenantUser->update([
@@ -211,7 +210,7 @@ class TenantUserAccessController extends Controller
         ]);
 
         $this->runInTenantContext($tenant, function () use ($validated, $userId): void {
-            $tenantUser = TenantUser::query()->findOrFail($userId);
+            $tenantUser = User::query()->findOrFail($userId);
             $tenantUser->update([
                 'is_active' => (bool) $validated['is_active'],
             ]);
@@ -233,7 +232,7 @@ class TenantUserAccessController extends Controller
         $this->authorize('update', $tenant);
 
         $this->runInTenantContext($tenant, function () use ($userId): void {
-            $tenantUser = TenantUser::query()->findOrFail($userId);
+            $tenantUser = User::query()->findOrFail($userId);
             $tenantUser->delete();
         });
 
@@ -253,7 +252,7 @@ class TenantUserAccessController extends Controller
         $this->authorize('update', $tenant);
 
         $this->runInTenantContext($tenant, function () use ($userId): void {
-            $tenantUser = TenantUser::query()->withTrashed()->findOrFail($userId);
+            $tenantUser = User::query()->withTrashed()->findOrFail($userId);
 
             if ($tenantUser->trashed()) {
                 $tenantUser->restore();
@@ -278,24 +277,53 @@ class TenantUserAccessController extends Controller
             ->join('model_has_roles', 'model_has_roles.role_id', '=', 'roles.id')
             ->where('roles.type', RbacType::TENANT)
             ->whereNull('roles.tenant_id')
-            ->where('model_has_roles.model_type', TenantUser::class)
+            ->where('model_has_roles.model_type', User::class)
             ->where('model_has_roles.tenant_id', $tenant->id)
             ->orderBy('roles.name')
             ->get()
             ->groupBy('user_id')
-            ->map(fn($rows): array => $rows->pluck('role_name')->values()->all())
+            ->map(fn ($rows): array => $rows->pluck('role_name')->values()->all())
             ->all();
     }
 
     /**
      * @param  list<string>  $roleNames
      */
-    private function syncTenantRoles(Tenant $tenant, TenantUser $tenantUser, array $roleNames): void
+    private function syncTenantRoles(Tenant $tenant, User $tenantUser, array $roleNames): void
     {
-        $currentTeamId = getPermissionsTeamId();
-        setPermissionsTeamId($tenant->id);
-        $tenantUser->syncRoles($roleNames);
-        setPermissionsTeamId($currentTeamId);
+        // Get role IDs from names
+        $roleIds = DB::connection('landlord')
+            ->table('roles')
+            ->whereIn('name', $roleNames)
+            ->pluck('id')
+            ->all();
+
+        // Prepare records to sync
+        $records = collect($roleIds)->map(fn ($roleId) => [
+            'role_id' => $roleId,
+            'model_type' => User::class,
+            'model_id' => $tenantUser->id,
+            'tenant_id' => $tenant->id,
+        ])->all();
+
+        // Remove old role assignments for this user/tenant
+        DB::connection('landlord')
+            ->table('model_has_roles')
+            ->where('model_type', User::class)
+            ->where('model_id', $tenantUser->id)
+            ->where('tenant_id', $tenant->id)
+            ->delete();
+
+        // Insert new role assignments
+        if (! empty($records)) {
+            DB::connection('landlord')
+                ->table('model_has_roles')
+                ->insert($records);
+        }
+
+        // Clear cached roles
+        $tenantUser->unsetRelation('roles');
+        $tenantUser->unsetRelation('permissions');
     }
 
     /**
@@ -311,7 +339,7 @@ class TenantUserAccessController extends Controller
             ]);
         }
 
-        $usersCount = $this->runInTenantContext($tenant, fn(): int => TenantUser::query()->count());
+        $usersCount = $this->runInTenantContext($tenant, fn (): int => User::query()->count());
 
         if ($usersCount >= $limit) {
             throw ValidationException::withMessages([
@@ -344,7 +372,7 @@ class TenantUserAccessController extends Controller
                     'string',
                     'distinct',
                     Rule::exists('landlord.roles', 'name')
-                        ->where(static fn($query) => $query
+                        ->where(static fn ($query) => $query
                             ->where('guard_name', 'web')
                             ->where('type', RbacType::TENANT)
                             ->whereNull('tenant_id')),
@@ -369,7 +397,7 @@ class TenantUserAccessController extends Controller
                     'email',
                     'max:255',
                     Rule::unique("{$tenantConnection}.users", 'email')
-                        ->ignore($userId, (new TenantUser)->getKeyName())
+                        ->ignore($userId, (new User)->getKeyName())
                         ->whereNull('deleted_at'),
                 ],
                 'password' => ['nullable', 'string', 'min:8', 'confirmed'],
@@ -379,7 +407,7 @@ class TenantUserAccessController extends Controller
                     'string',
                     'distinct',
                     Rule::exists('landlord.roles', 'name')
-                        ->where(static fn($query) => $query
+                        ->where(static fn ($query) => $query
                             ->where('guard_name', 'web')
                             ->where('type', RbacType::TENANT)
                             ->whereNull('tenant_id')),

@@ -3,7 +3,6 @@
 use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Tenant;
-use App\Models\TenantUser;
 use App\Models\User;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
@@ -119,7 +118,7 @@ test('can create tenant user with tenant roles', function () {
     $response->assertRedirect();
 
     $tenant->makeCurrent();
-    $tenantUser = TenantUser::query()->where('email', 'novo@tenant.test')->first();
+    $tenantUser = User::query()->where('email', 'novo@tenant.test')->first();
     CurrentTenantModel::forgetCurrent();
 
     expect($tenantUser)->not()->toBeNull();
@@ -127,7 +126,7 @@ test('can create tenant user with tenant roles', function () {
     $this->assertDatabaseHas('model_has_roles', [
         'tenant_id' => $tenant->id,
         'role_id' => $role->id,
-        'model_type' => TenantUser::class,
+        'model_type' => User::class,
         'model_id' => $tenantUser->id,
     ], 'landlord');
 });

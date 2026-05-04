@@ -146,6 +146,10 @@ final class PermissionName
 
     public const TENANT_GONDOLAS_DELETE = 'tenant.gondolas.delete';
 
+    public const TENANT_GONDOLAS_AUTOGENERATE = 'tenant.gondolas.autogenerate';
+
+    public const TENANT_GONDOLAS_AUTOGENERATE_IA = 'tenant.gondolas.autogenerate.ia';
+
     public const LANDLORD_KANBAN_TEMPLATES_VIEW_ANY = 'landlord.kanban.templates.viewAny';
 
     public const LANDLORD_KANBAN_TEMPLATES_CREATE = 'landlord.kanban.templates.create';
@@ -241,6 +245,8 @@ final class PermissionName
             self::TENANT_GONDOLAS_CREATE,
             self::TENANT_GONDOLAS_UPDATE,
             self::TENANT_GONDOLAS_DELETE,
+            self::TENANT_GONDOLAS_AUTOGENERATE,
+            self::TENANT_GONDOLAS_AUTOGENERATE_IA,
             self::LANDLORD_KANBAN_TEMPLATES_VIEW_ANY,
             self::LANDLORD_KANBAN_TEMPLATES_CREATE,
             self::LANDLORD_KANBAN_TEMPLATES_UPDATE,

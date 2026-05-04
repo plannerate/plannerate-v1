@@ -9,6 +9,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
 use App\Models\Tenant;
+use App\Support\Authorization\PermissionName;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\Editor\StoreGondolaRequest;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\Editor\UpdateGondolaRequest;
@@ -85,11 +86,11 @@ class GondolaController extends Controller
                 'stock' => $stockAnalysis?->toStockFormattedArray(),
             ],
             'permissions' => [
-                'can_create_gondola' => $this->canCreateGondola($gondola->planogram), // Pode ser ajustado para verificar permissões reais
-                'can_update_gondola' => auth()->user()->can('tenant.gondolas.edit'),
-                'can_remove_gondola' => auth()->user()->can('tenant.gondolas.delete'), // Exemplo: só pode remover se não tiver seções
-                'can_autogenate_gondola' => auth()->user()->can('tenant.gondolas.autogenerate'), // Permissão para autogerar gôndola
-                'can_autogenate_gondola_ia' => auth()->user()->can('tenant.gondolas.autogenerate.ia'), // Permissão para autogerar gôndola IA
+                'can_create_gondola' => $this->canCreateGondola($gondola->planogram),
+                'can_update_gondola' => auth()->user()->can(PermissionName::TENANT_GONDOLAS_UPDATE),
+                'can_remove_gondola' => auth()->user()->can(PermissionName::TENANT_GONDOLAS_DELETE),
+                'can_autogenate_gondola' => auth()->user()->can(PermissionName::TENANT_GONDOLAS_AUTOGENERATE),
+                'can_autogenate_gondola_ia' => auth()->user()->can(PermissionName::TENANT_GONDOLAS_AUTOGENERATE_IA),
             ],
         ]);
     }
@@ -490,6 +491,6 @@ class GondolaController extends Controller
 
     protected function canCreateGondola($model): bool
     {
-        return auth()->user()->can('tenant.gondolas.create');
+        return auth()->user()->can(PermissionName::TENANT_GONDOLAS_CREATE);
     }
 }
