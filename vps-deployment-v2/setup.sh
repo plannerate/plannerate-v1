@@ -49,20 +49,21 @@ ask_secret_default() {
 
 ask_secret_suggest() {
     local var_name="$1" prompt="$2" existing="${3:-}"
-    local suggestion
-    suggestion="$(random_secret)"
+    local suggestion hint
+    suggestion="$(suggest_password)"
 
+    echo -e "  ${DIM}Sugestão: ${CYAN}${suggestion}${RESET}"
     if [[ -n "${existing}" ]]; then
-        echo -ne "  ${BOLD}${prompt}${RESET} ${DIM}[ENTER para manter a atual]${RESET}: "
-        read -rs input
-        echo ""
-        input="${input:-${existing}}"
+        hint="ENTER para manter a atual, ou cole a sugestão"
     else
-        echo -e "  ${DIM}Sugestão: ${CYAN}${suggestion}${RESET}"
-        echo -ne "  ${BOLD}${prompt}${RESET} ${DIM}[ENTER para usar a sugestão acima]${RESET}: "
-        read -rs input
-        echo ""
-        input="${input:-${suggestion}}"
+        hint="ENTER para usar a sugestão"
+    fi
+    echo -ne "  ${BOLD}${prompt}${RESET} ${DIM}[${hint}]${RESET}: "
+    read -rs input
+    echo ""
+
+    if [[ -z "${input}" ]]; then
+        input="${existing:-${suggestion}}"
     fi
 
     while [[ -z "$input" ]]; do
@@ -116,6 +117,11 @@ refresh_known_host() {
 }
 
 random_secret() { openssl rand -base64 48 | tr -d '=+/' | cut -c1-40; }
+suggest_password() {
+    local p
+    p="$(openssl rand -base64 24 | tr -d '=+/' | cut -c1-20)"
+    echo "${p:0:5}-${p:5:5}-${p:10:5}-${p:15:5}"
+}
 emit_manifest_var() { printf '%s=%q\n' "$1" "${2:-}"; }
 
 clear
