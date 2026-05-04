@@ -29,6 +29,85 @@ class SyncLayerProductIdsFromLegacyService
     }
 
     /**
+     * Sync rápido usando layers.ean já populado — uma bulk UPDATE por chunk, sem consultar a base legada.
+     *
+     * @return array{updated: int, unresolved: int}
+     */
+    public function syncFromEan(string $tenantConnectionName, string $tenantId, bool $preview = false): array
+    {
+        $tenantConnection = DB::connection($tenantConnectionName);
+        $updated = 0;
+        $unresolved = 0;
+
+        // Apenas layers com ean preenchido e product_id inválido/ausente
+        $tenantConnection
+            ->table('layers as l')
+            ->leftJoin('products as p', function ($join) use ($tenantId): void {
+                $join->on('p.id', '=', 'l.product_id')
+                    ->where('p.tenant_id', '=', $tenantId)
+                    ->whereNull('p.deleted_at');
+            })
+            ->where('l.tenant_id', $tenantId)
+            ->whereNotNull('l.ean')
+            ->where('l.ean', '!=', '')
+            ->whereNull('l.deleted_at')
+            ->whereNull('p.id')
+            ->orderBy('l.id')
+            ->select(['l.id', 'l.ean'])
+            ->chunk(1000, function ($rows) use ($tenantConnection, $tenantId, $preview, &$updated, &$unresolved): void {
+                $eans = $rows->pluck('ean')->unique()->values()->all();
+
+                $productsByEan = $tenantConnection
+                    ->table('products')
+                    ->where('tenant_id', $tenantId)
+                    ->whereIn('ean', $eans)
+                    ->whereNull('deleted_at')
+                    ->select(['id', 'ean'])
+                    ->get()
+                    ->keyBy('ean');
+
+                $updatesByLayer = [];
+
+                foreach ($rows as $row) {
+                    $product = $productsByEan->get((string) $row->ean);
+
+                    if (! $product || ! is_string($product->id) || $product->id === '') {
+                        $unresolved++;
+
+                        continue;
+                    }
+
+                    $updatesByLayer[(string) $row->id] = $product->id;
+                }
+
+                $updated += count($updatesByLayer);
+
+                if ($preview || $updatesByLayer === []) {
+                    return;
+                }
+
+                foreach (array_chunk($updatesByLayer, 500, true) as $batch) {
+                    $ids = array_keys($batch);
+                    // Constrói CASE para bulk update eficiente
+                    $cases = implode(' ', array_map(
+                        static fn (string $layerId, string $productId): string => sprintf("WHEN '%s' THEN '%s'", $layerId, $productId),
+                        array_keys($batch),
+                        array_values($batch),
+                    ));
+
+                    $tenantConnection->statement(sprintf(
+                        "UPDATE layers SET product_id = CASE id %s END, updated_at = NOW() WHERE id IN ('%s') AND tenant_id = '%s'",
+                        $cases,
+                        implode("','", $ids),
+                        $tenantId,
+                    ));
+                }
+            });
+
+        return ['updated' => $updated, 'unresolved' => $unresolved];
+    }
+
+    /**
      * @return array{invalid_layers: int, restored_products: int, legacy_matched: int, tenant_matched: int, updated: int, unresolved_legacy: int, unresolved_tenant: int}
      */
     public function sync(string $tenantConnectionName, string $legacyConnectionName, string $tenantId, bool $preview = false): array

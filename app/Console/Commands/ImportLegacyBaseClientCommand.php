@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Tenant;
+use App\Services\Integrations\Support\DeterministicIdGenerator;
 use Illuminate\Console\Command;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Config;
@@ -34,7 +35,7 @@ class ImportLegacyBaseClientCommand extends Command
         'shelves',
         'segments',
         'layers',
-        'sales',
+        // 'sales',
         // 'purchases',
         // 'providers',
         // 'store_maps',
@@ -81,7 +82,10 @@ class ImportLegacyBaseClientCommand extends Command
         $results = [];
 
         foreach ($tables as $table) {
-            $stats = $this->importTable($table);
+            $stats = $table === 'layers'
+                ? $this->importLayers()
+                : $this->importTable($table);
+
             if ($stats !== null) {
                 $results[] = $stats;
             }
@@ -92,7 +96,7 @@ class ImportLegacyBaseClientCommand extends Command
         if (! empty($results)) {
             $this->table(
                 ['Tabela', 'Origem', 'Importados', 'Ignorados'],
-                array_map(fn ($r) => [
+                array_map(fn($r) => [
                     $r['table'],
                     $r['total'],
                     $r['imported'] > 0 ? "<fg=green>{$r['imported']}</>" : '0',
@@ -117,7 +121,7 @@ class ImportLegacyBaseClientCommand extends Command
 
             return true;
         } catch (\Exception $e) {
-            $this->error('❌ Falha na conexão com mysql_legacy: '.$e->getMessage());
+            $this->error('❌ Falha na conexão com mysql_legacy: ' . $e->getMessage());
 
             return false;
         }
@@ -127,9 +131,9 @@ class ImportLegacyBaseClientCommand extends Command
     {
         $filter = $this->argument('tenant') ?? search(
             label: 'Selecione o tenant de destino',
-            options: fn (string $value) => Tenant::on('landlord')
+            options: fn(string $value) => Tenant::on('landlord')
                 ->where(
-                    fn ($q) => $q
+                    fn($q) => $q
                         ->where('name', 'like', "%{$value}%")
                         ->orWhere('slug', 'like', "%{$value}%")
                 )
@@ -140,7 +144,7 @@ class ImportLegacyBaseClientCommand extends Command
 
         $tenant = Tenant::on('landlord')
             ->with('integration')
-            ->where(fn ($q) => $q->where('id', $filter)->orWhere('slug', $filter))
+            ->where(fn($q) => $q->where('id', $filter)->orWhere('slug', $filter))
             ->first();
 
         if (! $tenant) {
@@ -182,7 +186,7 @@ class ImportLegacyBaseClientCommand extends Command
 
             return true;
         } catch (\Exception $e) {
-            $this->error("❌ Não foi possível conectar a '{$this->tenant->database}': ".$e->getMessage());
+            $this->error("❌ Não foi possível conectar a '{$this->tenant->database}': " . $e->getMessage());
 
             return false;
         }
@@ -262,9 +266,9 @@ class ImportLegacyBaseClientCommand extends Command
 
         $this->output->progressStart($remoteCount);
 
-        $query->when($hasId, fn ($q) => $q->orderBy('id'))
+        $query->when($hasId, fn($q) => $q->orderBy('id'))
             ->chunk(500, function ($records) use ($table, $targetColumns, $hasId, &$imported, &$skipped) {
-                $rows = $records->map(fn ($r) => $this->prepareRow((array) $r, $targetColumns));
+                $rows = $records->map(fn($r) => $this->prepareRow((array) $r, $targetColumns));
 
                 if ($hasId && ! $this->option('fresh')) {
                     $existingIds = $this->tenantDb->table($table)
@@ -273,7 +277,7 @@ class ImportLegacyBaseClientCommand extends Command
                         ->toArray();
 
                     $skipped += count($existingIds);
-                    $rows = $rows->filter(fn ($r) => ! in_array($r['id'], $existingIds));
+                    $rows = $rows->filter(fn($r) => ! in_array($r['id'], $existingIds));
                 }
 
                 if ($rows->isNotEmpty()) {
@@ -348,7 +352,13 @@ class ImportLegacyBaseClientCommand extends Command
 
             'segments' => $query->whereIn('shelf_id', $this->getShelfIds()),
 
-            'layers' => $query->whereIn('segment_id', $this->getSegmentIds()),
+            'layers' => $query
+                ->whereIn('layers.segment_id', $this->getSegmentIds())
+                ->leftJoin('products as lp', 'lp.id', '=', 'layers.product_id')
+                ->select([
+                    'layers.*',
+                    DB::raw('lp.ean as ean'),
+                ]),
 
             'stores' => $query->where('client_id', $this->client->id),
 
@@ -427,6 +437,112 @@ class ImportLegacyBaseClientCommand extends Command
             ->whereIn('store_id', $this->getStoreIds())
             ->pluck('id')
             ->toArray();
+    }
+
+    /** @return array{table: string, total: int, imported: int, skipped: int}|null */
+    private function importLayers(): ?array
+    {
+        $table = 'layers';
+
+        if (! Schema::connection('mysql_legacy')->hasTable($table)) {
+            return null;
+        }
+
+        if (! Schema::connection('tenant_import')->hasTable($table)) {
+            $this->warn("  ⚠️  {$table}: tabela não encontrada no banco do tenant");
+
+            return null;
+        }
+
+        $query = $this->buildQuery($table);
+        $remoteCount = (clone $query)->count();
+
+        if ($this->option('dry-run')) {
+            $localCount = $this->tenantDb->table($table)->count();
+            $this->line("  📊 <fg=cyan>{$table}</>: {$remoteCount} na origem, {$localCount} no destino");
+
+            return ['table' => $table, 'total' => $remoteCount, 'imported' => 0, 'skipped' => 0];
+        }
+
+        if ($remoteCount === 0) {
+            $this->line("  <fg=gray>–  {$table}: sem registros</>");
+
+            return null;
+        }
+
+        $this->line("  <fg=cyan>↓  {$table}</>: {$remoteCount} registros encontrados");
+
+        if ($this->option('fresh')) {
+            $this->tenantDb->table($table)->truncate();
+        }
+        $this->tenantDb->table($table)->truncate();
+
+        $targetColumns = Schema::connection('tenant_import')->getColumnListing($table);
+        $hasEan = in_array('ean', $targetColumns);
+        $hasGondolaId = in_array('gondola_id', $targetColumns);
+        $imported = 0;
+        $skipped = 0;
+
+        $this->output->progressStart($remoteCount);
+
+        $generator = app(DeterministicIdGenerator::class);
+        $tenantId = (string) $this->client->id;
+
+        // Monta mapa segment_id → gondola_id uma única vez antes dos chunks
+        $gondolaBySegment = $this->legacy
+            ->table('segments as sg')
+            ->join('shelves as sh', 'sh.id', '=', 'sg.shelf_id')
+            ->join('sections as sc', 'sc.id', '=', 'sh.section_id')
+            ->whereIn('sg.id', $this->getSegmentIds())
+            ->whereNotNull('sc.gondola_id')
+            ->pluck('sc.gondola_id', 'sg.id')
+            ->all();
+
+        $query->orderBy('layers.id')
+            ->chunk(500, function ($records) use ($table, $targetColumns, $hasEan, $hasGondolaId, $generator, $tenantId, $gondolaBySegment, &$imported, &$skipped): void {
+                $rows = $records->map(function ($record) use ($targetColumns, $hasEan, $hasGondolaId, $generator, $tenantId, $gondolaBySegment): array {
+                    $row = $this->prepareRow((array) $record, $targetColumns);
+
+                    $ean = is_string($record->ean ?? null) ? trim($record->ean) : '';
+
+                    // Gera product_id deterministico via EAN (sem consultar o banco)
+                    $row['product_id'] = $ean !== ''
+                        ? $generator->productId($tenantId, $ean, null)
+                        : null;
+
+                    // Salva o ean na layer se a coluna existir
+                    if ($hasEan && $ean !== '') {
+                        $row['ean'] = $ean;
+                    }
+
+                    // Preenche gondola_id via mapa segment_id → gondola_id
+                    if ($hasGondolaId) {
+                        $segmentId = is_string($record->segment_id ?? null) ? $record->segment_id : '';
+                        $row['gondola_id'] = $gondolaBySegment[$segmentId] ?? null;
+                    }
+
+                    return $row;
+                });
+
+                $existingIds = $this->tenantDb->table($table)
+                    ->whereIn('id', $rows->pluck('id'))
+                    ->pluck('id')
+                    ->toArray();
+
+                $skipped += count($existingIds);
+                $rows = $rows->filter(fn($r) => ! in_array($r['id'], $existingIds));
+
+                if ($rows->isNotEmpty()) {
+                    $this->tenantDb->table($table)->insertOrIgnore($rows->values()->toArray());
+                    $imported += $rows->count();
+                }
+
+                $this->output->progressAdvance($records->count());
+            });
+
+        $this->output->progressFinish();
+
+        return ['table' => $table, 'total' => $remoteCount, 'imported' => $imported, 'skipped' => $skipped];
     }
 
     private function prepareRow(array $row, array $columns): array

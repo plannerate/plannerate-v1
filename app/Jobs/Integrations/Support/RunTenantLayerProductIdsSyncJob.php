@@ -9,7 +9,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
 
@@ -17,15 +16,16 @@ class RunTenantLayerProductIdsSyncJob implements NotTenantAware, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 3;
+    public int $tries = 1;
 
-    public int $timeout = 1200;
+    public int $timeout = 7200;
 
     public function __construct(
         public string $tenantId,
         public string $tenantConnectionName,
         public bool $executeInTenantContext = true,
         public bool $preview = false,
+        public bool $useEanFastPath = true,
     ) {}
 
     public function handle(SyncLayerProductIdsFromLegacyService $syncLayerProductIdsFromLegacyService): void
@@ -40,70 +40,35 @@ class RunTenantLayerProductIdsSyncJob implements NotTenantAware, ShouldQueue
         }
 
         $run = function () use ($syncLayerProductIdsFromLegacyService): void {
-            if ($this->preview) {
-                $summary = $syncLayerProductIdsFromLegacyService->sync(
+            if ($this->useEanFastPath) {
+                $summary = $syncLayerProductIdsFromLegacyService->syncFromEan(
                     tenantConnectionName: $this->tenantConnectionName,
-                    legacyConnectionName: 'mysql_legacy',
                     tenantId: $this->tenantId,
-                    preview: true,
+                    preview: $this->preview,
                 );
 
-                Log::info('Preview de sincronização de product_id em layers concluído.', [
+                Log::info('Sincronização rápida (ean) de product_id em layers concluída.', [
                     'tenant_id' => $this->tenantId,
                     'tenant_connection' => $this->tenantConnectionName,
+                    'preview' => $this->preview,
                     'summary' => $summary,
                 ]);
 
                 return;
             }
 
-            $restoredProducts = $syncLayerProductIdsFromLegacyService->restoreSoftDeletedProductsReferencedByLayers(
+            $summary = $syncLayerProductIdsFromLegacyService->sync(
                 tenantConnectionName: $this->tenantConnectionName,
+                legacyConnectionName: 'mysql_legacy',
                 tenantId: $this->tenantId,
+                preview: $this->preview,
             );
 
-            $dispatchedItems = 0;
-
-            DB::connection($this->tenantConnectionName)
-                ->table('layers as l')
-                ->leftJoin('products as p', function ($join): void {
-                    $join->on('p.id', '=', 'l.product_id')
-                        ->where('p.tenant_id', '=', $this->tenantId)
-                        ->whereNull('p.deleted_at');
-                })
-                ->leftJoin('segments as sg', 'sg.id', '=', 'l.segment_id')
-                ->leftJoin('shelves as sh', 'sh.id', '=', 'sg.shelf_id')
-                ->leftJoin('sections as sc', 'sc.id', '=', 'sh.section_id')
-                ->where('l.tenant_id', $this->tenantId)
-                ->whereNotNull('l.product_id')
-                ->whereNull('l.deleted_at')
-                ->whereNull('p.id')
-                ->orderBy('l.id')
-                ->select([
-                    'l.id',
-                    'l.product_id',
-                    DB::raw('COALESCE(l.gondola_id, sc.gondola_id) as resolved_gondola_id'),
-                ])
-                ->chunk(500, function ($rows) use (&$dispatchedItems): void {
-                    foreach ($rows as $row) {
-                        RunLayerProductIdSyncItemJob::dispatch(
-                            tenantId: $this->tenantId,
-                            tenantConnectionName: $this->tenantConnectionName,
-                            layerId: (string) $row->id,
-                            legacyProductId: (string) $row->product_id,
-                            resolvedGondolaId: is_string($row->resolved_gondola_id) ? $row->resolved_gondola_id : null,
-                            executeInTenantContext: true,
-                        );
-
-                        $dispatchedItems++;
-                    }
-                });
-
-            Log::info('Sincronização de product_id em layers enfileirada por item.', [
+            Log::info('Sincronização de product_id em layers concluída.', [
                 'tenant_id' => $this->tenantId,
                 'tenant_connection' => $this->tenantConnectionName,
-                'restored_products' => $restoredProducts,
-                'dispatched_items' => $dispatchedItems,
+                'preview' => $this->preview,
+                'summary' => $summary,
             ]);
         };
 
