@@ -244,17 +244,37 @@ fi
 repo="${GITHUB_OWNER}/${GITHUB_REPO}"
 
 if [[ "${GH_OK}" == "true" ]]; then
-    # Adiciona deploy key via API (idempotente — verifica se já existe)
+    # Adiciona deploy key via API (idempotente — compara conteúdo da chave)
     KEY_TITLE="${GITHUB_OWNER}/${GITHUB_REPO}-deploy"
-    existing_key_id="$(gh api "repos/${repo}/keys" --jq ".[] | select(.title==\"${KEY_TITLE}\") | .id" 2>/dev/null || true)"
+    DEPLOY_KEY_B64="$(echo "${DEPLOY_PUBLIC_KEY}" | awk '{print $2}')"
+    existing_key_id="$(gh api "repos/${repo}/keys" 2>/dev/null \
+        | grep -B2 "${DEPLOY_KEY_B64}" \
+        | grep '"id"' | head -1 | grep -oE '[0-9]+' || true)"
+
     if [[ -n "${existing_key_id}" ]]; then
-        ok "Deploy key já existe no GitHub (id=${existing_key_id})"
+        ok "Deploy key já existe no repositório (id=${existing_key_id})"
     else
-        gh api --method POST "repos/${repo}/keys" \
+        gh_err_file="$(mktemp)"
+        if gh api --method POST "repos/${repo}/keys" \
             --field title="${KEY_TITLE}" \
             --field key="${DEPLOY_PUBLIC_KEY}" \
-            --field read_only=true >/dev/null
-        ok "Deploy key adicionada ao GitHub"
+            --field read_only=true >/dev/null 2>"${gh_err_file}"; then
+            ok "Deploy key adicionada ao GitHub"
+        else
+            gh_err="$(cat "${gh_err_file}")"
+            rm -f "${gh_err_file}"
+            if echo "${gh_err}" | grep -qi "already_in_use"; then
+                warn "Chave já está em uso em outro repositório ou conta GitHub."
+                warn "Opções:"
+                warn "  1. Delete a chave antiga: gh api --method DELETE 'user/keys/<id>'"
+                warn "  2. Ou gere uma nova: rm ${KEY_PATH} ${KEY_PATH}.pub e reexecute o wizard"
+            else
+                warn "Erro ao adicionar deploy key: ${gh_err}"
+                warn "Adicione manualmente: https://github.com/${repo}/settings/keys/new"
+                warn "Chave: ${DEPLOY_PUBLIC_KEY}"
+            fi
+        fi
+        rm -f "${gh_err_file}"
     fi
 
     # Cria environment e configura secrets/variables
