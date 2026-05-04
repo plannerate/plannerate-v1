@@ -181,18 +181,51 @@ if [[ "${DB_MODE}" == "externo" ]]; then
     read -r -p "Pressione ENTER após concluir a configuração no banco externo..."
 fi
 
-step "Chave SSH deploy"
+step "Chaves SSH"
 KEY_DIR="${HOME}/.ssh"
-KEY_PATH="${KEY_DIR}/id_ed25519_${GITHUB_REPO}_deploy"
 mkdir -p "${KEY_DIR}" && chmod 700 "${KEY_DIR}"
-if [[ ! -f "$KEY_PATH" ]]; then
-    ssh-keygen -t ed25519 -f "$KEY_PATH" -N "" -C "${GITHUB_OWNER}/${GITHUB_REPO}-deploy" -q
+
+# --- chave deploy (GitHub Actions CI/CD) ---
+KEY_PATH="${KEY_DIR}/id_ed25519_${GITHUB_REPO}_deploy"
+if [[ ! -f "${KEY_PATH}" ]]; then
+    ssh-keygen -t ed25519 -f "${KEY_PATH}" -N "" -C "${GITHUB_OWNER}/${GITHUB_REPO}-deploy" -q
+    ok "Chave deploy gerada: ${KEY_PATH}"
+else
+    ok "Chave deploy existente: ${KEY_PATH}"
 fi
-refresh_known_host "${VPS_HOST}"
 DEPLOY_PUBLIC_KEY="$(cat "${KEY_PATH}.pub")"
 DEPLOY_PRIVATE_KEY="$(cat "${KEY_PATH}")"
+
+# --- chave admin (acesso operator à VPS) ---
+ADMIN_KEY_PATH="${KEY_DIR}/id_ed25519_${GITHUB_REPO}_admin"
+if [[ ! -f "${ADMIN_KEY_PATH}" ]]; then
+    ssh-keygen -t ed25519 -f "${ADMIN_KEY_PATH}" -N "" -C "${GITHUB_OWNER}/${GITHUB_REPO}-admin" -q
+    ok "Chave admin gerada: ${ADMIN_KEY_PATH}"
+else
+    ok "Chave admin existente: ${ADMIN_KEY_PATH}"
+fi
+ADMIN_PUBLIC_KEY="$(cat "${ADMIN_KEY_PATH}.pub")"
+
+# --- ~/.ssh/config: entrada para a VPS ---
+SSH_CONFIG="${HOME}/.ssh/config"
+touch "${SSH_CONFIG}" && chmod 600 "${SSH_CONFIG}"
+# Remove entrada anterior do mesmo host (evita duplicatas em re-execução)
+awk -v host="${VPS_HOST}" '
+    /^Host / { in_block = ($2 == host); if (in_block) next }
+    in_block && /^[[:space:]]/ { next }
+    { in_block = 0; print }
+' "${SSH_CONFIG}" > "${SSH_CONFIG}.tmp" && mv "${SSH_CONFIG}.tmp" "${SSH_CONFIG}"
+cat >> "${SSH_CONFIG}" << SSHCFG
+
+Host ${VPS_HOST}
+    User ${DEPLOY_USER}
+    IdentityFile ${ADMIN_KEY_PATH}
+    StrictHostKeyChecking accept-new
+SSHCFG
+ok "~/.ssh/config atualizado — ssh ${DEPLOY_USER}@${VPS_HOST} já funciona com a chave admin"
+
+refresh_known_host "${VPS_HOST}"
 VPS_KNOWN_HOSTS="$(ssh-keyscan -H "${VPS_HOST}" 2>/dev/null || true)"
-ok "Chave pronta: ${KEY_PATH}"
 
 step "Adicione a deploy key no GitHub"
 echo "https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/settings/keys/new"
@@ -232,6 +265,7 @@ ask_secret_suggest REDIS_PASSWORD "Senha Redis" "${REDIS_PASSWORD:-${REDIS_PASSW
     emit_manifest_var VPS_DEPLOY_USER "$DEPLOY_USER"
     emit_manifest_var DB_MODE "$DB_MODE"
     emit_manifest_var GITHUB_DEPLOY_PUBLIC_KEY "$DEPLOY_PUBLIC_KEY"
+    emit_manifest_var ADMIN_PUBLIC_KEY "$ADMIN_PUBLIC_KEY"
     emit_manifest_var DB_ENGINE "$DB_ENGINE"
     emit_manifest_var DB_HOST "$DB_HOST"
     emit_manifest_var DB_PORT "$DB_PORT"
@@ -281,3 +315,8 @@ fi
 echo ""
 ok "Setup concluído. Fluxo ativo: dev -> staging"
 info "Produção futura: /opt/plannerate/production"
+echo ""
+echo -e "  ${BOLD}Acesso à VPS:${RESET}"
+echo -e "  ${CYAN}ssh ${DEPLOY_USER}@${VPS_HOST}${RESET}"
+info "  Chave admin: ${ADMIN_KEY_PATH}"
+info "  Chave deploy (CI/CD): ${KEY_PATH}"
