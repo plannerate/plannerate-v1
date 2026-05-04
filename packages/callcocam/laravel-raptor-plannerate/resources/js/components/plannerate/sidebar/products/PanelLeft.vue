@@ -84,6 +84,7 @@ import ProductStats from './Stats.vue';
 interface Props {
     gondolaId: string;
     planogramId: string;
+    subdomain: string;
     category?: CategoryType | null;
 }
 
@@ -117,6 +118,7 @@ const {
 } = useProductsPanel({
     gondolaId: props.gondolaId,
     planogramId: props.planogramId,
+    subdomain: props.subdomain,
     category: props.category,
     scrollContainer,
 });

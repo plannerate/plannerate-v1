@@ -331,6 +331,7 @@ const category = computed(() => {
                 :open="storedProductsPanel"
                 :gondola-id="record.id"
                 :planogram-id="record.planogram_id"
+                :subdomain="resolvedSubdomain"
                 :category="category"
                 @close="closeProducts"
                 @reload-function="setReloadFunction"

@@ -87,10 +87,10 @@ class GondolaController extends Controller
             ],
             'permissions' => [
                 'can_create_gondola' => $this->canCreateGondola($gondola->planogram),
-                'can_update_gondola' => auth()->user()->can(PermissionName::TENANT_GONDOLAS_UPDATE),
-                'can_remove_gondola' => auth()->user()->can(PermissionName::TENANT_GONDOLAS_DELETE),
-                'can_autogenate_gondola' => auth()->user()->can(PermissionName::TENANT_GONDOLAS_AUTOGENERATE),
-                'can_autogenate_gondola_ia' => auth()->user()->can(PermissionName::TENANT_GONDOLAS_AUTOGENERATE_IA),
+                'can_update_gondola' => auth()?->user()?->can(PermissionName::TENANT_GONDOLAS_UPDATE),
+                'can_remove_gondola' => auth()?->user()?->can(PermissionName::TENANT_GONDOLAS_DELETE),
+                'can_autogenate_gondola' => auth()?->user()?->can(PermissionName::TENANT_GONDOLAS_AUTOGENERATE),
+                'can_autogenate_gondola_ia' => auth()?->user()?->can(PermissionName::TENANT_GONDOLAS_AUTOGENERATE_IA),
             ],
         ]);
     }
@@ -103,12 +103,12 @@ class GondolaController extends Controller
         // Cria a gôndola sempre
         $gondola = app(GondolaService::class)->createGondolaWithStructure($planogramModel, $request->validated());
 
-
         return redirect()->back()->with('success', 'Gôndola criada com sucesso!');
     }
 
-    public function update(string $gondola, UpdateGondolaRequest $request)
+    public function update(string $subdomain, string $gondola, UpdateGondolaRequest $request)
     {
+        unset($subdomain);
         $gondolaModel = Gondola::findOrFail($gondola);
 
         $gondolaModel->update([
@@ -123,8 +123,9 @@ class GondolaController extends Controller
         return redirect()->back()->with('success', 'Gôndola atualizada com sucesso!');
     }
 
-    public function destroy($gondola)
+    public function destroy(string $subdomain, string $gondola)
     {
+        unset($subdomain);
         $gondolaModel = Gondola::findOrFail($gondola);
         $planogramId = $gondolaModel->planogram_id;
 
@@ -150,8 +151,9 @@ class GondolaController extends Controller
     /**
      * Retorna as seções de uma gôndola (apenas não deletadas)
      */
-    public function sections($gondola)
+    public function sections(string $subdomain, string $gondola)
     {
+        unset($subdomain);
         $gondolaModel = Gondola::find($gondola);
 
         if (! $gondolaModel) {
@@ -187,7 +189,7 @@ class GondolaController extends Controller
             return User::select('id', 'name')
                 ->orderBy('name')
                 ->get()
-                ->map(static fn($user): array => [
+                ->map(static fn ($user): array => [
                     'id' => $user->id,
                     'name' => $user->name,
                 ])
@@ -196,15 +198,16 @@ class GondolaController extends Controller
         });
     }
 
-    public function products($planogram, $record)
+    public function products(string $subdomain, string $planogram, string $gondola)
     {
-        $gondola = Gondola::find($record);
-        if (! $gondola) {
+        unset($subdomain, $planogram);
+        $gondolaModel = Gondola::find($gondola);
+        if (! $gondolaModel) {
             return response()->json(['error' => 'Gondola not found'], 404);
         }
 
         // Carregar planogram uma única vez antes de qualquer acesso
-        $gondola->loadMissing(['planogram']);
+        $gondolaModel->loadMissing(['planogram']);
 
         // Parâmetros de filtro e paginação
         $page = request()->input('page', 1);
@@ -212,7 +215,7 @@ class GondolaController extends Controller
         $search = request()->input('search', '');
         $showUsed = request()->boolean('show_used', false);
         $withDimensions = request()->boolean('with_dimensions', true);
-        $categoryId = request()->input('category', $gondola->planogram->category_id);
+        $categoryId = request()->input('category', $gondolaModel->planogram->category_id);
 
         // Cache key único incluindo filtros
         // $cacheKey = sprintf(
@@ -249,7 +252,7 @@ class GondolaController extends Controller
         // Obter IDs de produtos já usados na gôndola.
         // Usa JOINs via segment -> shelf -> section para evitar depender de colunas
         // auxiliares inexistentes em layers.
-        $gondolaId = $gondola->id;
+        $gondolaId = $gondolaModel->id;
         $usedProductIds = Layer::query()
             ->join('segments', 'segments.id', '=', 'layers.segment_id')
             ->join('shelves', 'shelves.id', '=', 'segments.shelf_id')
@@ -360,8 +363,9 @@ class GondolaController extends Controller
         ]);
     }
 
-    public function updateImages($gondola)
+    public function updateImages(string $subdomain, string $gondola)
     {
+        unset($subdomain);
         $gondolaModel = Gondola::with('planogram')->find($gondola);
         if (! $gondolaModel) {
             return redirect()->back()->with('error', 'Gôndola não encontrada.');
@@ -374,9 +378,9 @@ class GondolaController extends Controller
         $productIds = Gondola::with('sections.shelves.segments.layer')
             ->find($gondola)
             ->sections
-            ->flatMap(fn($section) => $section->shelves)
-            ->flatMap(fn($shelf) => $shelf->segments)
-            ->map(fn($segment) => $segment->layer?->product_id)
+            ->flatMap(fn ($section) => $section->shelves)
+            ->flatMap(fn ($shelf) => $shelf->segments)
+            ->map(fn ($segment) => $segment->layer?->product_id)
             ->filter()
             ->unique()
             ->values()
@@ -404,7 +408,7 @@ class GondolaController extends Controller
 
         return redirect()->back()->with(
             'success',
-            'Atualização de imagens em segundo plano iniciada. ' . count($eans) . ' produto(s) na fila.'
+            'Atualização de imagens em segundo plano iniciada. '.count($eans).' produto(s) na fila.'
         );
     }
 

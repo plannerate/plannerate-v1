@@ -1,11 +1,13 @@
 import { onMounted, reactive, ref, watch  } from 'vue';
 import type {Ref} from 'vue';
 import type { Category, Product } from '@/types/planogram';
+import { products as productsRoute } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
 
 interface UseProductsPanelOptions {
     gondolaId: string;
     category?: Category;
     planogramId: string;
+    subdomain: string;
     scrollContainer: Ref<HTMLElement | null>;
 }
 
@@ -57,8 +59,9 @@ return;
                 category: filters.category.toString(),
             });
 
+            const url = productsRoute.url({ subdomain: options.subdomain, planogram: options.planogramId, gondola: options.gondolaId });
             const response = await fetch(
-                `/api/plannograma/${options.planogramId}/editor/gondolas/${options.gondolaId}/products?${params}`,
+                `${url}?${params}`,
                 {
                     headers: {
                         Accept: 'application/json',

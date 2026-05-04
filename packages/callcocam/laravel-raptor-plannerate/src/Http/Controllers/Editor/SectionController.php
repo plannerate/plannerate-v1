@@ -8,6 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
+use App\Models\Tenant;
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
@@ -30,7 +31,7 @@ class SectionController extends Controller
         return 'tenant';
     }
 
-    public function store(Request $request, string $gondolaId)
+    public function store(Request $request, string $gondola)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -54,13 +55,13 @@ class SectionController extends Controller
             $this->plannerateTenantDatabase()->beginTransaction();
 
             // Obter próximo ordering
-            $maxOrdering = Section::where('gondola_id', $gondolaId)->max('ordering') ?? -1;
+            $maxOrdering = Section::where('gondola_id', $gondola)->max('ordering') ?? -1;
 
             // Criar a seção
             $section = Section::create([
-                'tenant_id' => tenant_id(),
+                'tenant_id' => Tenant::current()?->getKey(),
                 'user_id' => auth()->id(),
-                'gondola_id' => $gondolaId,
+                'gondola_id' => $gondola,
                 'name' => $validated['name'],
                 'width' => $validated['width'],
                 'height' => $validated['height'],
@@ -90,7 +91,7 @@ class SectionController extends Controller
 
             for ($i = 0; $i < $numShelves; $i++) {
                 Shelf::create([
-                    'tenant_id' => tenant_id(),
+                    'tenant_id' => Tenant::current()?->getKey(),
                     'user_id' => auth()->id(),
                     'section_id' => $section->id,
                     'code' => 'SHELF-'.$section->id.'-'.($i + 1),
