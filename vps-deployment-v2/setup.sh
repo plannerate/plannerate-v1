@@ -235,26 +235,59 @@ ok "~/.ssh/config atualizado — ssh ${DEPLOY_USER}@${VPS_HOST} já funciona com
 refresh_known_host "${VPS_HOST}"
 VPS_KNOWN_HOSTS="$(ssh-keyscan -H "${VPS_HOST}" 2>/dev/null || true)"
 
-step "Adicione a deploy key no GitHub"
-echo "https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/settings/keys/new"
-echo "${DEPLOY_PUBLIC_KEY}"
-read -r -p "Pressione ENTER após salvar a chave..."
+step "Configurar GitHub (deploy key + secrets)"
+GH_OK=false
+if command -v gh &>/dev/null && gh auth status --hostname github.com &>/dev/null 2>&1; then
+    GH_OK=true
+fi
 
-step "Configurar GitHub Secrets (staging)"
-if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
-    repo="${GITHUB_OWNER}/${GITHUB_REPO}"
+repo="${GITHUB_OWNER}/${GITHUB_REPO}"
+
+if [[ "${GH_OK}" == "true" ]]; then
+    # Adiciona deploy key via API (idempotente — verifica se já existe)
+    KEY_TITLE="${GITHUB_OWNER}/${GITHUB_REPO}-deploy"
+    existing_key_id="$(gh api "repos/${repo}/keys" --jq ".[] | select(.title==\"${KEY_TITLE}\") | .id" 2>/dev/null || true)"
+    if [[ -n "${existing_key_id}" ]]; then
+        ok "Deploy key já existe no GitHub (id=${existing_key_id})"
+    else
+        gh api --method POST "repos/${repo}/keys" \
+            --field title="${KEY_TITLE}" \
+            --field key="${DEPLOY_PUBLIC_KEY}" \
+            --field read_only=true >/dev/null
+        ok "Deploy key adicionada ao GitHub"
+    fi
+
+    # Cria environment e configura secrets/variables
     gh api --method PUT "repos/${repo}/environments/staging" --silent >/dev/null 2>&1 || true
-    gh secret set APP_HOST --repo "$repo" --env staging --body "$VPS_HOST" >/dev/null
-    gh secret set APP_USER --repo "$repo" --env staging --body "$DEPLOY_USER" >/dev/null
-    gh secret set SSH_PRIVATE_KEY --repo "$repo" --env staging --body "$DEPLOY_PRIVATE_KEY" >/dev/null
-    gh secret set SSH_KNOWN_HOSTS --repo "$repo" --env staging --body "$VPS_KNOWN_HOSTS" >/dev/null
-    gh secret set DOMAIN --repo "$repo" --env staging --body "$DOMAIN_LANDLORD" >/dev/null
-    gh variable set GHCR_REPO --repo "$repo" --body "$GHCR_REPO" >/dev/null
-    gh variable set DEPLOY_PATH --repo "$repo" --env staging --body "/opt/plannerate/${APP_SLUG}" >/dev/null
-    gh variable set COMPOSE_FILE --repo "$repo" --env staging --body "docker-compose.staging.yml" >/dev/null
+    gh secret set APP_HOST          --repo "$repo" --env staging --body "$VPS_HOST"        >/dev/null
+    gh secret set APP_USER          --repo "$repo" --env staging --body "$DEPLOY_USER"     >/dev/null
+    gh secret set SSH_PRIVATE_KEY   --repo "$repo" --env staging --body "$DEPLOY_PRIVATE_KEY" >/dev/null
+    gh secret set SSH_KNOWN_HOSTS   --repo "$repo" --env staging --body "$VPS_KNOWN_HOSTS" >/dev/null
+    gh secret set DOMAIN            --repo "$repo" --env staging --body "$DOMAIN_LANDLORD" >/dev/null
+    gh variable set GHCR_REPO       --repo "$repo"               --body "$GHCR_REPO"       >/dev/null
+    gh variable set DEPLOY_PATH     --repo "$repo" --env staging  --body "/opt/plannerate/${APP_SLUG}" >/dev/null
+    gh variable set COMPOSE_FILE    --repo "$repo" --env staging  --body "docker-compose.staging.yml"  >/dev/null
     ok "Secrets/variables de staging configurados"
 else
-    warn "gh CLI não autenticado; configure secrets manualmente depois."
+    warn "gh CLI não autenticado. Configure manualmente:"
+    echo ""
+    echo -e "  ${BOLD}1. Deploy key${RESET} — https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/settings/keys/new"
+    echo "     Título: ${GITHUB_OWNER}/${GITHUB_REPO}-deploy"
+    echo "     Chave:  ${DEPLOY_PUBLIC_KEY}"
+    echo ""
+    echo -e "  ${BOLD}2. Secrets${RESET} (environment: staging)"
+    echo "     APP_HOST         = ${VPS_HOST}"
+    echo "     APP_USER         = ${DEPLOY_USER}"
+    echo "     SSH_PRIVATE_KEY  = (conteúdo de ${KEY_PATH})"
+    echo "     SSH_KNOWN_HOSTS  = (saída de: ssh-keyscan -H ${VPS_HOST})"
+    echo "     DOMAIN           = ${DOMAIN_LANDLORD}"
+    echo ""
+    echo -e "  ${BOLD}3. Variables${RESET}"
+    echo "     GHCR_REPO    = ${GHCR_REPO}"
+    echo "     DEPLOY_PATH  = /opt/plannerate/${APP_SLUG}"
+    echo "     COMPOSE_FILE = docker-compose.staging.yml"
+    echo ""
+    read -r -p "  Pressione ENTER após configurar manualmente..."
 fi
 
 step "Salvar manifest.env"
