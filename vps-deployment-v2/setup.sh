@@ -142,6 +142,21 @@ step "VPS e banco"
 ask VPS_HOST "IP do App VPS" "${VPS_HOST:-}"
 ask VPS_USER "Usuário SSH root no VPS" "${VPS_USER:-root}"
 ask DEPLOY_USER "Usuário de deploy (root = mais simples, deploy = mais seguro)" "${DEPLOY_USER:-root}"
+
+is_placeholder_vps_host() {
+    local host="$1"
+    [[ -z "${host}" ]] && return 0
+    [[ "${host}" == "203.0.113.10" ]] && return 0
+    [[ "${host}" == "198.51.100.10" ]] && return 0
+    [[ "${host}" == "192.0.2.10" ]] && return 0
+    [[ "${host}" == *"example.com"* ]] && return 0
+    return 1
+}
+
+while is_placeholder_vps_host "${VPS_HOST}"; do
+    warn "VPS_HOST está com valor de exemplo (${VPS_HOST}). Informe o IP/host real da sua VPS."
+    ask VPS_HOST "IP do App VPS" ""
+done
 if [[ "${DEPLOY_USER}" != "root" ]]; then
     info "Senha usada para acesso via console da VPS (backup — SSH usa chave)."
     ask_secret_suggest DEPLOY_USER_PASS "Senha do usuário ${DEPLOY_USER}" "${DEPLOY_USER_PASS:-}"
@@ -150,7 +165,8 @@ ask_choice DB_MODE "Banco é local na mesma VPS ou externo?" "${DB_MODE:-local}"
 ask DB_ENGINE "Engine (pgsql|mysql)" "${DB_ENGINE:-${DB_ENGINE_STAGING:-pgsql}}"
 
 if [[ "${DB_MODE}" == "local" ]]; then
-    DB_HOST="${DB_HOST:-host.docker.internal}"
+    DB_LOCAL_HOST_DEFAULT="${DB_LOCAL_HOST_FALLBACK:-host.docker.internal}"
+    DB_HOST="${DB_LOCAL_HOST_DEFAULT}"
     if [[ "${DB_ENGINE}" == "pgsql" ]]; then
         DB_PORT="${DB_PORT:-5432}"
     else
@@ -346,7 +362,7 @@ ask_secret_suggest REDIS_PASSWORD "Senha Redis" "${REDIS_PASSWORD:-${REDIS_PASSW
     emit_manifest_var VPS_HOST "$VPS_HOST"
     emit_manifest_var VPS_USER "$VPS_USER"
     emit_manifest_var DEPLOY_USER "$DEPLOY_USER"
-    emit_manifest_var DEPLOY_USER_PASS "$DEPLOY_USER_PASS"
+    emit_manifest_var DEPLOY_USER_PASS "${DEPLOY_USER_PASS:-}"
     emit_manifest_var VPS_DEPLOY_USER "$DEPLOY_USER"
     emit_manifest_var DB_MODE "$DB_MODE"
     emit_manifest_var GITHUB_DEPLOY_PUBLIC_KEY "$DEPLOY_PUBLIC_KEY"
@@ -361,12 +377,16 @@ ask_secret_suggest REDIS_PASSWORD "Senha Redis" "${REDIS_PASSWORD:-${REDIS_PASSW
     emit_manifest_var DB_USER "$DB_USER"
     emit_manifest_var DB_PASSWORD "$DB_PASSWORD"
     emit_manifest_var DB_TENANT_DATABASE "$DB_TENANT_DATABASE"
-    emit_manifest_var DB_LANDLORD_HOST "$DB_HOST"
+    emit_manifest_var DB_LANDLORD_HOST "${DB_HOST}"
     emit_manifest_var DB_LANDLORD_PORT "$DB_PORT"
     emit_manifest_var DB_LANDLORD_DATABASE "$DB_NAME"
     emit_manifest_var DB_LANDLORD_USERNAME "$DB_USER"
     emit_manifest_var DB_LANDLORD_PASSWORD "$DB_PASSWORD"
     emit_manifest_var REDIS_PASSWORD "$REDIS_PASSWORD"
+    emit_manifest_var ENABLE_PGADMIN "${ENABLE_PGADMIN:-false}"
+    emit_manifest_var PGADMIN_DOMAIN "${PGADMIN_DOMAIN:-pgadmin.${DOMAIN_LANDLORD}}"
+    emit_manifest_var PGADMIN_DEFAULT_EMAIL "${PGADMIN_DEFAULT_EMAIL:-admin@${DOMAIN_LANDLORD}}"
+    emit_manifest_var PGADMIN_DEFAULT_PASSWORD "${PGADMIN_DEFAULT_PASSWORD:-}"
 } > "$MANIFEST_OUT"
 chmod 600 "$MANIFEST_OUT"
 ok "manifest salvo em ${MANIFEST_OUT}"
@@ -391,6 +411,29 @@ _install_compose=false
 
 if [[ "${_deploy_ssh_ok}" == "false" ]]; then
     if ask_yn "Provisionar App VPS agora?"; then
+        PROVISION_MODE="normal"
+        ask_choice PROVISION_MODE "Modo de provisionamento (normal|reset)" "normal" normal reset
+
+        if [[ "${PROVISION_MODE}" == "reset" ]]; then
+            warn "Reset da instância '${APP_SLUG}': remove /opt/plannerate/${APP_SLUG} e /opt/monitoring/${APP_SLUG} (não remove banco)"
+            ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "
+                set -euo pipefail
+                APP_SLUG='${APP_SLUG}'
+
+                if [ -d \"/opt/plannerate/\${APP_SLUG}\" ] && [ -f \"/opt/plannerate/\${APP_SLUG}/docker-compose.yml\" ]; then
+                    cd \"/opt/plannerate/\${APP_SLUG}\" && docker compose -p \"plannerate-\${APP_SLUG}\" down --remove-orphans || true
+                fi
+
+                if [ -d \"/opt/monitoring/\${APP_SLUG}\" ] && [ -f \"/opt/monitoring/\${APP_SLUG}/docker-compose.yml\" ]; then
+                    cd \"/opt/monitoring/\${APP_SLUG}\" && docker compose -p \"plannerate-monitoring-\${APP_SLUG}\" down --remove-orphans || true
+                fi
+
+                rm -rf \"/opt/plannerate/\${APP_SLUG}\" \"/opt/monitoring/\${APP_SLUG}\"
+                mkdir -p \"/opt/plannerate/\${APP_SLUG}\" \"/opt/monitoring/\${APP_SLUG}\"
+            "
+            ok "Reset concluído para ${APP_SLUG}"
+        fi
+
         ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "mkdir -p /tmp/vps-provisioning"
         ${SCP_ROOT} -r "${SCRIPT_DIR}/provisioning/." "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/"
         ${SCP_ROOT} "${MANIFEST_OUT}" "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/manifest.env"

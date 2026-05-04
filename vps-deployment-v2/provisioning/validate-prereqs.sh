@@ -20,6 +20,10 @@ ensure_linux_ubuntu
 MIN_DISK_GB="${MIN_DISK_GB:-20}"
 SSH_PORT="${SSH_PORT:-22}"
 DOMAIN_LANDLORD="${DOMAIN_LANDLORD:-${DOMAIN_STAGING:-${DOMAIN_PRODUCTION:-}}}"
+DB_MODE="${DB_MODE:-local}"
+DB_HOST="${DB_HOST:-}"
+DB_LANDLORD_HOST="${DB_LANDLORD_HOST:-${DB_HOST}}"
+DB_LOCAL_HOST_FALLBACK="${DB_LOCAL_HOST_FALLBACK:-172.17.0.1}"
 
 log_info "Verificando variáveis obrigatórias no manifest"
 required_manifest_vars=(
@@ -38,6 +42,23 @@ done
 if [[ -z "${DOMAIN_LANDLORD}" ]]; then
     log_error "Domínio não definido — precisa de DOMAIN_LANDLORD no manifest."
     exit 1
+fi
+
+if [[ "${DB_MODE}" == "local" ]]; then
+    is_allowed_local_db_host() {
+        local host="$1"
+        [[ "${host}" == "host.docker.internal" || "${host}" == "${DB_LOCAL_HOST_FALLBACK}" ]]
+    }
+
+    if ! is_allowed_local_db_host "${DB_HOST}"; then
+        log_error "DB_MODE=local exige DB_HOST=host.docker.internal ou ${DB_LOCAL_HOST_FALLBACK}. Valor atual: '${DB_HOST:-<vazio>}'"
+        exit 1
+    fi
+
+    if ! is_allowed_local_db_host "${DB_LANDLORD_HOST}"; then
+        log_error "DB_MODE=local exige DB_LANDLORD_HOST=host.docker.internal ou ${DB_LOCAL_HOST_FALLBACK}. Valor atual: '${DB_LANDLORD_HOST:-<vazio>}'"
+        exit 1
+    fi
 fi
 
 log_info "Verificando espaço em disco — mínimo ${MIN_DISK_GB}GB necessários"

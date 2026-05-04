@@ -14,6 +14,8 @@ Provisionamento e deploy multi-instância por `APP_SLUG` no mesmo VPS, com foco 
 
 ## Fluxo Recomendado
 1. Preparar DNS do domínio raiz da instância (`DOMAIN_LANDLORD`) para o IP do VPS.
+   - Em Cloudflare, iniciar com `DNS only` (nuvem cinza) para evitar atrito de ACME/WebSocket.
+   - Criar `A` para raiz e `A` curinga (`*.<DOMAIN_LANDLORD>`) para tenants por subdomínio.
 2. Rodar setup:
 ```bash
 bash vps-deployment-v2/setup.sh
@@ -146,6 +148,7 @@ grep -E '^(DB_HOST|DB_LANDLORD_HOST|DB_CONNECTION)=' .env
 # DB_LANDLORD_HOST=host.docker.internal
 # DB_CONNECTION=landlord
 ```
+Se `host.docker.internal` não resolver na VPS, use fallback `172.17.0.1` (ou ajuste `DB_LOCAL_HOST_FALLBACK` no manifest).
 Prevenção: compose já publica `host.docker.internal:host-gateway` e `setup-db-host.sh` libera `172.16.0.0/12` para porta do banco em `DB_MODE=local`.
 
 ### 8.1) PostgreSQL tentando conectar no banco com nome do usuário (`plannerate_stg`)
@@ -241,6 +244,18 @@ Antes de monitoring/reverb público:
   - `alerts.<DOMAIN_LANDLORD>`
   - `reverb.<DOMAIN_LANDLORD>` (se ativo)
   - `traefik.<DOMAIN_LANDLORD>` (se dashboard público)
+  - `pgadmin.<DOMAIN_LANDLORD>` (se `ENABLE_PGADMIN=true` em `dev/staging`)
+
+## pgAdmin Opcional (dev/staging)
+- Habilitar no manifest:
+```bash
+ENABLE_PGADMIN=true
+PGADMIN_DOMAIN=pgadmin.<DOMAIN_LANDLORD>
+PGADMIN_DEFAULT_EMAIL=admin@<DOMAIN_LANDLORD>
+PGADMIN_DEFAULT_PASSWORD=<senha-forte>
+```
+- O instalador de monitoring só habilita pgAdmin para `APP_SLUG=dev` ou `APP_SLUG=staging`.
+- Em produção (`APP_SLUG=production`), `ENABLE_PGADMIN=true` é ignorado por segurança.
 
 ## Comandos Úteis
 ```bash
