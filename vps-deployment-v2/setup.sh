@@ -193,7 +193,7 @@ step "Chaves SSH"
 KEY_DIR="${HOME}/.ssh"
 mkdir -p "${KEY_DIR}" && chmod 700 "${KEY_DIR}"
 
-# --- chave deploy (GitHub Actions CI/CD) ---
+# --- chave deploy (GitHub Actions CI/CD + acesso operator) ---
 KEY_PATH="${KEY_DIR}/id_ed25519_${GITHUB_REPO}_deploy"
 if [[ ! -f "${KEY_PATH}" ]]; then
     ssh-keygen -t ed25519 -f "${KEY_PATH}" -N "" -C "${GITHUB_OWNER}/${GITHUB_REPO}-deploy" -q
@@ -203,16 +203,6 @@ else
 fi
 DEPLOY_PUBLIC_KEY="$(cat "${KEY_PATH}.pub")"
 DEPLOY_PRIVATE_KEY="$(cat "${KEY_PATH}")"
-
-# --- chave admin (acesso operator à VPS) ---
-ADMIN_KEY_PATH="${KEY_DIR}/id_ed25519_${GITHUB_REPO}_admin"
-if [[ ! -f "${ADMIN_KEY_PATH}" ]]; then
-    ssh-keygen -t ed25519 -f "${ADMIN_KEY_PATH}" -N "" -C "${GITHUB_OWNER}/${GITHUB_REPO}-admin" -q
-    ok "Chave admin gerada: ${ADMIN_KEY_PATH}"
-else
-    ok "Chave admin existente: ${ADMIN_KEY_PATH}"
-fi
-ADMIN_PUBLIC_KEY="$(cat "${ADMIN_KEY_PATH}.pub")"
 
 # --- ~/.ssh/config: entrada para a VPS ---
 SSH_CONFIG="${HOME}/.ssh/config"
@@ -227,10 +217,10 @@ cat >> "${SSH_CONFIG}" << SSHCFG
 
 Host ${VPS_HOST}
     User ${DEPLOY_USER}
-    IdentityFile ${ADMIN_KEY_PATH}
+    IdentityFile ${KEY_PATH}
     StrictHostKeyChecking accept-new
 SSHCFG
-ok "~/.ssh/config atualizado — ssh ${DEPLOY_USER}@${VPS_HOST} já funciona com a chave admin"
+ok "~/.ssh/config atualizado — ssh ${DEPLOY_USER}@${VPS_HOST} já funciona com a chave deploy"
 
 refresh_known_host "${VPS_HOST}"
 VPS_KNOWN_HOSTS="$(ssh-keyscan -H "${VPS_HOST}" 2>/dev/null || true)"
@@ -358,7 +348,6 @@ ask_secret_suggest REDIS_PASSWORD "Senha Redis" "${REDIS_PASSWORD:-${REDIS_PASSW
     emit_manifest_var VPS_DEPLOY_USER "$DEPLOY_USER"
     emit_manifest_var DB_MODE "$DB_MODE"
     emit_manifest_var GITHUB_DEPLOY_PUBLIC_KEY "$DEPLOY_PUBLIC_KEY"
-    emit_manifest_var ADMIN_PUBLIC_KEY "$ADMIN_PUBLIC_KEY"
     emit_manifest_var DB_ENGINE "$DB_ENGINE"
     emit_manifest_var DB_HOST "$DB_HOST"
     emit_manifest_var DB_PORT "$DB_PORT"
@@ -387,8 +376,8 @@ ssh-keygen -R "${VPS_HOST}" >/dev/null 2>&1 || true
 # pós-prov usa deploy+chave admin (accept-new: key já conhecida após provisionar)
 SSH_ROOT="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ServerAliveCountMax=6"
 SCP_ROOT="scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-SSH_DEPLOY="ssh -o StrictHostKeyChecking=accept-new -i ${ADMIN_KEY_PATH} -o ServerAliveInterval=30 -o ServerAliveCountMax=6"
-SCP_DEPLOY="scp -o StrictHostKeyChecking=accept-new -i ${ADMIN_KEY_PATH}"
+SSH_DEPLOY="ssh -o StrictHostKeyChecking=accept-new -i ${KEY_PATH} -o ServerAliveInterval=30 -o ServerAliveCountMax=6"
+SCP_DEPLOY="scp -o StrictHostKeyChecking=accept-new -i ${KEY_PATH}"
 
 # Detecta estado da VPS: deploy+chave já funciona (pós-prov) ou precisa provisionar
 _deploy_ssh_ok=false
@@ -434,5 +423,4 @@ info "Produção futura: /opt/plannerate/production"
 echo ""
 echo -e "  ${BOLD}Acesso à VPS:${RESET}"
 echo -e "  ${CYAN}ssh ${DEPLOY_USER}@${VPS_HOST}${RESET}"
-info "  Chave admin: ${ADMIN_KEY_PATH}"
-info "  Chave deploy (CI/CD): ${KEY_PATH}"
+info "  Chave deploy (CI/CD + operator): ${KEY_PATH}"

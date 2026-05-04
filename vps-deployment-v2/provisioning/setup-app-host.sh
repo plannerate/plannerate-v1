@@ -131,11 +131,7 @@ run_cmd "chmod 600 /home/${DEPLOY_USER}/.ssh/authorized_keys"
 if [[ "${DRY_RUN}" != "true" ]]; then
     if ! grep -Fq "${GITHUB_DEPLOY_PUBLIC_KEY}" "/home/${DEPLOY_USER}/.ssh/authorized_keys"; then
         printf '%s\n' "${GITHUB_DEPLOY_PUBLIC_KEY}" >> "/home/${DEPLOY_USER}/.ssh/authorized_keys"
-    fi
-    ADMIN_PUBLIC_KEY="${ADMIN_PUBLIC_KEY:-}"
-    if [[ -n "${ADMIN_PUBLIC_KEY}" ]] && ! grep -Fq "${ADMIN_PUBLIC_KEY}" "/home/${DEPLOY_USER}/.ssh/authorized_keys"; then
-        printf '%s\n' "${ADMIN_PUBLIC_KEY}" >> "/home/${DEPLOY_USER}/.ssh/authorized_keys"
-        log_info "Chave admin adicionada ao authorized_keys do ${DEPLOY_USER}"
+        log_info "Chave deploy adicionada ao authorized_keys do ${DEPLOY_USER}"
     fi
 fi
 
