@@ -313,9 +313,10 @@ if [[ "${GH_OK}" == "true" ]]; then
     gh_secret DOMAIN          "${DOMAIN_LANDLORD}"    staging
 
     info "Configurando variables..."
-    gh_var GHCR_REPO    "${GHCR_REPO}"
-    gh_var DEPLOY_PATH  "/opt/plannerate/${APP_SLUG}" staging
-    gh_var COMPOSE_FILE "docker-compose.staging.yml"  staging
+    gh_var DOMAIN_LANDLORD "${DOMAIN_LANDLORD}"
+    gh_var GHCR_REPO       "${GHCR_REPO}"
+    gh_var DEPLOY_PATH     "/opt/plannerate/${APP_SLUG}" staging
+    gh_var COMPOSE_FILE    "docker-compose.staging.yml"  staging
 
     ok "Secrets/variables de staging configurados"
 else

@@ -52,12 +52,9 @@ jobs:
             DEPLOY_CHANNEL="production"
           fi
 
-          MANIFEST_DOMAIN=""
-          if [[ -f "vps-deployment-v2/manifest.env" ]]; then
-            MANIFEST_DOMAIN="$(grep -E '^DOMAIN_LANDLORD=' vps-deployment-v2/manifest.env | tail -n1 | cut -d'=' -f2- | tr -d '"' | xargs || true)"
-          fi
+          MANIFEST_DOMAIN="${{ vars.DOMAIN_LANDLORD }}"
           if [[ -z "${MANIFEST_DOMAIN}" ]]; then
-            echo "Missing DOMAIN_LANDLORD in vps-deployment-v2/manifest.env"
+            echo "Missing DOMAIN_LANDLORD: set it as a GitHub repository variable (gh variable set DOMAIN_LANDLORD --repo <owner/repo> --body <domain>)"
             exit 1
           fi
 
