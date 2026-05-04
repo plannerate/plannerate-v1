@@ -380,9 +380,13 @@ ask_secret_suggest REDIS_PASSWORD "Senha Redis" "${REDIS_PASSWORD:-${REDIS_PASSW
 chmod 600 "$MANIFEST_OUT"
 ok "manifest salvo em ${MANIFEST_OUT}"
 
-# SSH helpers — provisioning usa root (antes do hardening), pós-prov usa deploy+chave admin
-SSH_ROOT="ssh -o StrictHostKeyChecking=accept-new"
-SCP_ROOT="scp -o StrictHostKeyChecking=accept-new"
+# Limpar host key antiga (máquina pode ter sido recriada)
+ssh-keygen -R "${VPS_HOST}" >/dev/null 2>&1 || true
+
+# SSH helpers — provisioning usa root (StrictHostKeyChecking=no: máquina nova pode ter key diferente)
+# pós-prov usa deploy+chave admin (accept-new: key já conhecida após provisionar)
+SSH_ROOT="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+SCP_ROOT="scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 SSH_DEPLOY="ssh -o StrictHostKeyChecking=accept-new -i ${ADMIN_KEY_PATH}"
 SCP_DEPLOY="scp -o StrictHostKeyChecking=accept-new -i ${ADMIN_KEY_PATH}"
 
