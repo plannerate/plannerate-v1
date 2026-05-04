@@ -23,6 +23,22 @@ class Gondola extends Model
 
     // Não em $appends para evitar execução automática em cada instância carregada
     // O accessor ainda funciona ao ser acessado explicitamente
+    protected $fillable = [
+        'tenant_id',
+        'planogram_id',
+        'user_id',
+        'name',
+        'slug',
+        'num_modulos',
+        'location',
+        'side',
+        'flow',
+        'alignment',
+        'scale_factor',
+        'linked_map_gondola_id',
+        'linked_map_gondola_category',
+        'status',
+    ];
 
     protected function casts(): array
     {

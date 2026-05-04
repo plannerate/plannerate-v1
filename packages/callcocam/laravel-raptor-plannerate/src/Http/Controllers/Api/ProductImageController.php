@@ -40,7 +40,7 @@ class ProductImageController extends Controller
     /**
      * Upload manual de imagem do produto
      */
-    public function uploadImage(UploadProductImageRequest $request, string $product)
+    public function uploadImage(UploadProductImageRequest $request, string $subdomain, string $product)
     {
         $productModel = Product::query()->whereKey($product)->first();
 

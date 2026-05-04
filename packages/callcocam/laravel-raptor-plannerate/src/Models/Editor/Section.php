@@ -22,6 +22,24 @@ class Section extends Model
 
     protected $hidden = ['gondola'];
 
+    protected $fillable = [
+        'tenant_id',
+        'gondola_id',
+        'name',
+        'code',
+        'ordering',
+        'width',
+        'height',
+        'base_width',
+        'base_height',
+        'base_depth',
+        'cremalheira_width',
+        'hole_height',
+        'hole_width',
+        'hole_spacing',
+        'settings',
+    ];
+
     protected function casts(): array
     {
         return [

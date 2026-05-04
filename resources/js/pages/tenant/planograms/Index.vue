@@ -235,7 +235,7 @@ const pageMeta = useCrudPageMeta({
                         <!-- Tipo -->
                         <td class="px-4 py-3">
                             <Badge variant="secondary" class="capitalize">
-                                {{ planogram.id }}
+                                {{ planogram.type }}
                             </Badge>
                         </td>
 

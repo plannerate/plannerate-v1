@@ -18,6 +18,19 @@ class Shelf extends Model
 {
     use BelongsToTenant, HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
 
+    protected $fillable = [
+        'tenant_id',
+        'section_id',
+        'code',
+        'ordering',
+        'shelf_position',
+        'shelf_width',
+        'shelf_height',
+        'shelf_depth',
+        'product_type',
+        'settings',
+    ];
+
     protected function casts(): array
     {
         return [

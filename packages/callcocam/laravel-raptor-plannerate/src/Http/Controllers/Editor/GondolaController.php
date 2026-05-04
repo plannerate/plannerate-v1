@@ -22,6 +22,8 @@ use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram as EditorPlanogram;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Segment;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\User;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\GondolaPayloadService;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\GondolaService;
@@ -375,16 +377,25 @@ class GondolaController extends Controller
             return redirect()->back()->with('error', 'Planograma da gôndola não encontrado.');
         }
 
-        $productIds = Gondola::with('sections.shelves.segments.layer')
-            ->find($gondola)
-            ->sections
-            ->flatMap(fn ($section) => $section->shelves)
-            ->flatMap(fn ($shelf) => $shelf->segments)
-            ->map(fn ($segment) => $segment->layer?->product_id)
-            ->filter()
-            ->unique()
-            ->values()
-            ->all();
+        $sectionIds = Section::query()
+            ->where('gondola_id', $gondolaModel->id)
+            ->pluck('id');
+
+        $shelfIds = Shelf::query()
+            ->whereIn('section_id', $sectionIds)
+            ->pluck('id');
+
+        $segmentIds = Segment::query()
+            ->whereIn('shelf_id', $shelfIds)
+            ->pluck('id');
+
+        $productIds = Layer::query()
+            ->whereIn('segment_id', $segmentIds)
+            ->whereNotNull('product_id')
+            ->whereNull('deleted_at')
+            ->distinct()
+            ->pluck('product_id')
+            ->toArray();
 
         $eans = Product::query()
             ->whereIn('id', $productIds)
