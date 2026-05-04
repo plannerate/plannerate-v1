@@ -141,7 +141,7 @@ if [[ "${DRY_RUN}" != "true" ]]; then
     sed -i '/^#\?PasswordAuthentication/d' "${SSHD_CFG}"
     sed -i '/^#\?MaxAuthTries/d' "${SSHD_CFG}"
     printf '\n# Added by vps-deployment-v2 setup\nPermitRootLogin no\nPasswordAuthentication no\nMaxAuthTries 3\n' >> "${SSHD_CFG}"
-    systemctl restart sshd
+    systemctl restart ssh 2>/dev/null || systemctl restart sshd
     log_warn "Root SSH login is now DISABLED. Use '${DEPLOY_USER}' for future connections."
 fi
 
