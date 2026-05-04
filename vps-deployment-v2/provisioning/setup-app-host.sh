@@ -100,9 +100,9 @@ run_cmd "systemctl kill --kill-who=all apt-daily.service apt-daily-upgrade.servi
 run_cmd "while fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock >/dev/null 2>&1; do echo 'waiting for apt lock...'; sleep 3; done"
 
 log_info "Installing base packages"
-run_cmd "apt-get -o DpkgLock::Timeout=120 update -qq"
-run_cmd "DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq"
-run_cmd "DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ca-certificates curl gnupg lsb-release ufw fail2ban jq unzip openssl mysql-client postgresql-client"
+run_cmd "apt-get -o DpkgLock::Timeout=120 update"
+run_cmd "DEBIAN_FRONTEND=noninteractive apt-get upgrade -y"
+run_cmd "DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl gnupg lsb-release ufw fail2ban jq unzip openssl mysql-client postgresql-client"
 
 log_info "Installing Docker engine"
 run_cmd "install -m 0755 -d /etc/apt/keyrings"
