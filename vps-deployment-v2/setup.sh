@@ -47,6 +47,32 @@ ask_secret_default() {
     printf -v "$var_name" '%s' "$input"
 }
 
+ask_secret_suggest() {
+    local var_name="$1" prompt="$2" existing="${3:-}"
+    local suggestion
+    suggestion="$(random_secret)"
+
+    if [[ -n "${existing}" ]]; then
+        echo -ne "  ${BOLD}${prompt}${RESET} ${DIM}[ENTER para manter a atual]${RESET}: "
+        read -rs input
+        echo ""
+        input="${input:-${existing}}"
+    else
+        echo -e "  ${DIM}Sugestão: ${CYAN}${suggestion}${RESET}"
+        echo -ne "  ${BOLD}${prompt}${RESET} ${DIM}[ENTER para usar a sugestão acima]${RESET}: "
+        read -rs input
+        echo ""
+        input="${input:-${suggestion}}"
+    fi
+
+    while [[ -z "$input" ]]; do
+        echo -ne "  ${RED}Obrigatório.${RESET} ${BOLD}${prompt}${RESET}: "
+        read -rs input
+        echo ""
+    done
+    printf -v "$var_name" '%s' "$input"
+}
+
 ask_yn() {
     local prompt="$1" default="${2:-s}" opts="S/n"
     [[ "$default" == "n" ]] && opts="s/N"
@@ -121,7 +147,7 @@ if [[ "${DB_MODE}" == "local" ]]; then
         DB_PORT="${DB_PORT:-3306}"
     fi
     DB_ROOT_USER="${DB_ROOT_USER:-root}"
-    DB_ROOT_PASS="${DB_ROOT_PASS:-}"
+    ask_secret_suggest DB_ROOT_PASS "Senha root do banco local (para provisionar)" "${DB_ROOT_PASS:-}"
 else
     ask DB_HOST "IP/host do banco externo" "${DB_HOST:-${DB_HOST_STAGING:-}}"
     if [[ "${DB_ENGINE}" == "pgsql" ]]; then
@@ -130,7 +156,7 @@ else
         ask DB_PORT "Porta DB externa" "${DB_PORT:-3306}"
     fi
     ask DB_ROOT_USER "Usuário admin do banco externo (referência)" "${DB_ROOT_USER:-root}"
-    ask_secret_default DB_ROOT_PASS "Senha admin do banco externo (referência)" "${DB_ROOT_PASS:-}"
+    ask_secret_suggest DB_ROOT_PASS "Senha admin do banco externo (referência)" "${DB_ROOT_PASS:-}"
 fi
 ask DB_NAME "Nome do banco (${APP_SLUG})" "${DB_NAME:-${DB_NAME_STAGING:-${PROJECT_NAME}_${APP_SLUG}}}"
 if [[ "${DB_ENGINE}" == "pgsql" ]]; then
@@ -139,7 +165,7 @@ else
     DB_USER_DEFAULT="${DB_USER:-${DB_USER_STAGING:-${PROJECT_NAME}_${APP_SLUG}_user}}"
 fi
 ask DB_USER "Usuário DB (${APP_SLUG})" "${DB_USER_DEFAULT}"
-ask_secret_default DB_PASSWORD "Senha DB (${APP_SLUG})" "${DB_PASSWORD:-${DB_PASSWORD_STAGING:-}}"
+ask_secret_suggest DB_PASSWORD "Senha DB (${APP_SLUG})" "${DB_PASSWORD:-${DB_PASSWORD_STAGING:-}}"
 
 DB_TENANT_DATABASE="${DB_TENANT_DATABASE:-${DB_NAME}}"
 
@@ -191,7 +217,7 @@ else
 fi
 
 step "Salvar manifest.env"
-REDIS_PASSWORD="${REDIS_PASSWORD:-${REDIS_PASSWORD_STAGING:-$(random_secret)}}"
+ask_secret_suggest REDIS_PASSWORD "Senha Redis" "${REDIS_PASSWORD:-${REDIS_PASSWORD_STAGING:-}}"
 {
     emit_manifest_var PROJECT_NAME "$PROJECT_NAME"
     emit_manifest_var APP_SLUG "$APP_SLUG"
