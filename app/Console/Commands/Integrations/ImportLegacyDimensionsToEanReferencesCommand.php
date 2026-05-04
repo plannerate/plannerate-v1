@@ -115,7 +115,7 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
                         $hasDimensions = $width > 0 && $height > 0 && $depth > 0;
                         $dimensionStatus = $this->normalizeDimensionStatus($row->status, $hasDimensions);
 
-                        $payload[] = [
+                        $payload[$ean] = [
                             'id' => (string) Str::ulid(),
                             'tenant_id' => (string) $tenant->id,
                             'ean' => $ean,
@@ -136,7 +136,7 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
                         DB::connection('tenant')
                             ->table('ean_references')
                             ->upsert(
-                                $payload,
+                                array_values($payload),
                                 ['tenant_id', 'ean'],
                                 ['width', 'height', 'depth', 'weight', 'unit', 'has_dimensions', 'dimension_status', 'updated_at', 'deleted_at']
                             );
@@ -197,7 +197,7 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
                 $hasDimensions = $width > 0 && $height > 0 && $depth > 0;
                 $dimensionStatus = $this->normalizeDimensionStatus($row->status, $hasDimensions);
 
-                $payload[] = [
+                $payload[$ean] = [
                     'id' => (string) Str::ulid(),
                     'tenant_id' => $tenantId,
                     'ean' => $ean,
@@ -218,7 +218,7 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
                 DB::connection('tenant')
                     ->table('ean_references')
                     ->upsert(
-                        $payload,
+                        array_values($payload),
                         ['tenant_id', 'ean'],
                         ['width', 'height', 'depth', 'weight', 'unit', 'has_dimensions', 'dimension_status', 'updated_at', 'deleted_at']
                     );
