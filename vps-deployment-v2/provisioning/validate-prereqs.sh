@@ -21,6 +21,7 @@ MIN_DISK_GB="${MIN_DISK_GB:-20}"
 SSH_PORT="${SSH_PORT:-22}"
 DOMAIN_LANDLORD="${DOMAIN_LANDLORD:-${DOMAIN_STAGING:-${DOMAIN_PRODUCTION:-}}}"
 
+log_info "Verificando variáveis obrigatórias no manifest"
 required_manifest_vars=(
     PROJECT_NAME
     DEPLOY_USER
@@ -29,40 +30,42 @@ required_manifest_vars=(
 
 for var_name in "${required_manifest_vars[@]}"; do
     if [[ -z "${!var_name:-}" ]]; then
-        log_error "Missing required variable in manifest: ${var_name}"
+        log_error "Variável obrigatória ausente no manifest: ${var_name}"
         exit 1
     fi
 done
 
 if [[ -z "${DOMAIN_LANDLORD}" ]]; then
-    log_error "Missing domain variable: DOMAIN_LANDLORD (or legacy DOMAIN_STAGING/DOMAIN_PRODUCTION)."
+    log_error "Domínio não definido — precisa de DOMAIN_LANDLORD no manifest."
     exit 1
 fi
 
+log_info "Verificando espaço em disco — mínimo ${MIN_DISK_GB}GB necessários"
 available_kb=$(df --output=avail / | tail -n1 | awk '{print $1}')
 required_kb=$((MIN_DISK_GB * 1024 * 1024))
 if (( available_kb < required_kb )); then
-    log_error "Not enough disk space. Required ${MIN_DISK_GB}GB on root volume."
+    log_error "Espaço insuficiente no disco raiz. São necessários pelo menos ${MIN_DISK_GB}GB."
     exit 1
 fi
-log_success "Disk check passed"
+log_success "Espaço em disco OK"
 
 if ss -tuln | grep -q ':80 '; then
-    log_warn "Port 80 is in use. Ensure this is expected before provisioning Traefik."
+    log_warn "Porta 80 em uso — certifique-se que isso é esperado antes de subir o Traefik."
 fi
 
 if ss -tuln | grep -q ':443 '; then
-    log_warn "Port 443 is in use. Ensure this is expected before provisioning Traefik."
+    log_warn "Porta 443 em uso — certifique-se que isso é esperado antes de subir o Traefik."
 fi
 
 if ! ss -tuln | grep -q ":${SSH_PORT} "; then
-    log_warn "SSH port ${SSH_PORT} is not currently listening."
+    log_warn "SSH não está escutando na porta ${SSH_PORT} — verifique se o acesso remoto está ok."
 fi
 
+log_info "Testando acesso ao GitHub Container Registry (ghcr.io)"
 if ! curl -fsSL https://ghcr.io >/dev/null 2>&1; then
-    log_warn "Cannot reach ghcr.io. Image pulls may fail later."
+    log_warn "Não foi possível alcançar ghcr.io — o pull da imagem pode falhar depois."
 else
-    log_success "Outbound access to GHCR confirmed"
+    log_success "Acesso ao GHCR confirmado"
 fi
 
-log_success "Validation completed"
+log_success "Pré-requisitos validados — tudo certo pra continuar"

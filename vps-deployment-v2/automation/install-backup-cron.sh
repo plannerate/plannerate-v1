@@ -26,6 +26,7 @@ BACKUP_CRON_MONTH="${BACKUP_CRON_MONTH:-*}"
 BACKUP_CRON_DAY_OF_WEEK="${BACKUP_CRON_DAY_OF_WEEK:-*}"
 BACKUP_LOG_DIR="${BACKUP_LOG_DIR:-/var/log/plannerate}"
 
+log_info "Preparando diretório de log do backup em ${BACKUP_LOG_DIR}"
 mkdir -p "${BACKUP_LOG_DIR}"
 chmod 750 "${BACKUP_LOG_DIR}"
 
@@ -44,6 +45,6 @@ filtered_cron="$(printf '%s\n' "${existing_cron}" | awk '!/run-backup-all\.sh/')
     printf '%s\n' "${cron_line}"
 } | sed '/^$/N;/^\n$/D' | crontab -u "${CRON_USER}" -
 
-log_success "Backup cron installed for user ${CRON_USER}"
-log_info "Schedule: ${BACKUP_CRON_MINUTE} ${BACKUP_CRON_HOUR} ${BACKUP_CRON_DAY_OF_MONTH} ${BACKUP_CRON_MONTH} ${BACKUP_CRON_DAY_OF_WEEK}"
-log_info "Log file: ${BACKUP_LOG_DIR}/backup-cron.log"
+log_success "Cron de backup instalado para o usuário '${CRON_USER}'"
+log_info "Agendamento: ${BACKUP_CRON_MINUTE} ${BACKUP_CRON_HOUR} ${BACKUP_CRON_DAY_OF_MONTH} ${BACKUP_CRON_MONTH} ${BACKUP_CRON_DAY_OF_WEEK} (formato cron padrão)"
+log_info "Log do backup: ${BACKUP_LOG_DIR}/backup-cron.log"

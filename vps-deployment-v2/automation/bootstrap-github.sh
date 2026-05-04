@@ -45,23 +45,26 @@ key_dir="${HOME}/.ssh"
 priv_key_path="${key_dir}/id_ed25519_${GITHUB_REPO_NAME}_deploy"
 pub_key_path="${priv_key_path}.pub"
 
-log_info "Checking gh auth"
+log_info "Verificando autenticação no GitHub CLI (gh) — precisa estar logado"
 gh auth status >/dev/null
 
 mkdir -p "${key_dir}"
 chmod 700 "${key_dir}"
 
 if [[ ! -f "${priv_key_path}" ]]; then
-    log_info "Generating dedicated deploy key"
+    log_info "Gerando chave de deploy ed25519 para o repositório ${repo}"
     ssh-keygen -t ed25519 -f "${priv_key_path}" -N "" -C "${repo}-deploy"
+else
+    log_info "Chave de deploy já existe em ${priv_key_path} — reutilizando"
 fi
 
-log_info "Uploading deploy key to repository"
+log_info "Fazendo upload da chave pública para o repositório no GitHub"
 gh repo deploy-key add "${pub_key_path}" --repo "${repo}" --title "deploy-key-vps-v2" --allow-write >/dev/null 2>&1 || true
 
-log_info "Creating GitHub environment: staging"
+log_info "Criando ambiente 'staging' no GitHub (se já existir, sem problema)"
 gh api --method PUT "repos/${repo}/environments/staging" >/dev/null
 
+log_info "Coletando known_hosts da VPS ${VPS_HOST} — necessário pro GitHub Actions não reclamar de host desconhecido"
 known_hosts=$(ssh-keyscan -H "${VPS_HOST}" 2>/dev/null)
 
 set_secret() {
@@ -88,19 +91,19 @@ set_var() {
     fi
 }
 
-log_info "Setting shared variables"
+log_info "Definindo variável compartilhada: GHCR_REPO (repositório de imagens Docker)"
 set_var "GHCR_REPO" "${GHCR_REPO}"
 
-log_info "Setting staging environment secrets"
+log_info "Configurando secrets do ambiente 'staging' no GitHub — IP, usuário, chave SSH e domínio"
 set_secret "APP_HOST" "${VPS_HOST}" "staging"
 set_secret "APP_USER" "${VPS_DEPLOY_USER}" "staging"
 set_secret "SSH_PRIVATE_KEY" "$(cat "${priv_key_path}")" "staging"
 set_secret "SSH_KNOWN_HOSTS" "${known_hosts}" "staging"
 set_secret "DOMAIN" "${DOMAIN_LANDLORD}" "staging"
 
-log_info "Setting staging environment variables"
+log_info "Definindo variáveis do ambiente 'staging' — caminho de deploy e arquivo compose"
 set_var "DEPLOY_PATH" "/opt/plannerate/${APP_SLUG}" "staging"
 set_var "COMPOSE_FILE" "docker-compose.staging.yml" "staging"
 
-log_success "GitHub bootstrap completed"
-log_info "Private key stored at: ${priv_key_path}"
+log_success "GitHub configurado! O Actions já consegue fazer deploy via SSH."
+log_info "Chave privada local: ${priv_key_path}"

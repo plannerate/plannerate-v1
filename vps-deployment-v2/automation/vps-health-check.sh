@@ -52,17 +52,19 @@ check_http() {
     fi
 }
 
-echo "=== VPS Health Check ==="
-echo "Time: $(date -Iseconds)"
+echo "=== Verificação de saúde da VPS ==="
+echo "Horário: $(date -Iseconds)"
 
-echo "--- Docker daemon ---"
+echo ""
+echo "--- Docker ---"
 if docker info >/dev/null 2>&1; then
-    ok "Docker daemon reachable"
+    ok "Docker daemon acessível"
 else
-    fail "Docker daemon not reachable"
+    fail "Docker daemon não está respondendo"
 fi
 
-echo "--- Core stacks ---"
+echo ""
+echo "--- Serviços principais ---"
 check_compose_service_running "/opt/traefik" "traefik"
 check_compose_service_running "/opt/plannerate/${APP_SLUG}" "app"
 check_compose_service_running "/opt/plannerate/${APP_SLUG}" "queue"
@@ -70,19 +72,22 @@ check_compose_service_running "/opt/plannerate/${APP_SLUG}" "scheduler"
 check_compose_service_running "/opt/plannerate/${APP_SLUG}" "reverb"
 
 if [[ -f "/opt/monitoring/${APP_SLUG}/docker-compose.yml" ]]; then
+    echo ""
+    echo "--- Monitoramento ---"
     check_compose_service_running "/opt/monitoring/${APP_SLUG}" "prometheus"
     check_compose_service_running "/opt/monitoring/${APP_SLUG}" "grafana"
     check_compose_service_running "/opt/monitoring/${APP_SLUG}" "alertmanager"
     check_compose_service_running "/opt/monitoring/${APP_SLUG}" "node-exporter"
 else
-    warn "Monitoring stack not installed in /opt/monitoring/${APP_SLUG}"
+    warn "Stack de monitoramento não instalada em /opt/monitoring/${APP_SLUG}"
 fi
 
-echo "--- HTTP health endpoints ---"
+echo ""
+echo "--- Endpoints HTTP ---"
 if [[ -n "${DOMAIN_LANDLORD}" ]]; then
-    check_http "https://${DOMAIN_LANDLORD}/up" "Staging landlord app"
+    check_http "https://${DOMAIN_LANDLORD}/up" "App landlord (${DOMAIN_LANDLORD})"
 else
-    warn "DOMAIN_LANDLORD not configured"
+    warn "DOMAIN_LANDLORD não configurado — pulando verificação HTTP"
 fi
 
 if [[ -n "${GRAFANA_DOMAIN:-}" ]]; then
@@ -97,47 +102,53 @@ if [[ -n "${ALERTMANAGER_DOMAIN:-}" ]]; then
     check_http "https://${ALERTMANAGER_DOMAIN}/-/ready" "Alertmanager"
 fi
 
-echo "--- Backup and cron ---"
+echo ""
+echo "--- Backup ---"
 if crontab -l 2>/dev/null | grep -q "run-backup-all.sh"; then
-    ok "Backup cron installed"
+    ok "Cron de backup instalado"
 else
-    fail "Backup cron not installed"
+    fail "Cron de backup NÃO instalado — rode install-backup-cron.sh"
 fi
 
 latest_backup=$(find /opt/backups/db -type f -name '*.sql.gz' -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -1 | awk '{print $2}')
 if [[ -n "${latest_backup:-}" ]]; then
-    ok "Latest local backup: ${latest_backup}"
+    ok "Último backup local: ${latest_backup}"
 else
-    warn "No local backup file found in /opt/backups/db"
+    warn "Nenhum backup encontrado em /opt/backups/db — esperado se o cron ainda não rodou"
 fi
 
-echo "--- Host resources ---"
+echo ""
+echo "--- Recursos do host ---"
 disk_used_pct=$(df -P / | awk 'NR==2{gsub(/%/,"",$5); print $5}')
 if [[ -n "${disk_used_pct}" && "${disk_used_pct}" -ge 90 ]]; then
-    fail "Disk usage critical on / (${disk_used_pct}%)"
+    fail "Disco CRÍTICO em / (${disk_used_pct}%) — libere espaço urgente"
 elif [[ -n "${disk_used_pct}" && "${disk_used_pct}" -ge 80 ]]; then
-    warn "Disk usage high on / (${disk_used_pct}%)"
+    warn "Disco alto em / (${disk_used_pct}%) — fique de olho"
 else
-    ok "Disk usage healthy on / (${disk_used_pct}%)"
+    ok "Disco saudável em / (${disk_used_pct}%)"
 fi
 
 mem_used_pct=$(free | awk '/Mem:/ {printf("%d", ($3/$2)*100)}')
 if [[ -n "${mem_used_pct}" && "${mem_used_pct}" -ge 95 ]]; then
-    fail "Memory usage critical (${mem_used_pct}%)"
+    fail "Memória CRÍTICA (${mem_used_pct}%) — risco de OOM killer"
 elif [[ -n "${mem_used_pct}" && "${mem_used_pct}" -ge 85 ]]; then
-    warn "Memory usage high (${mem_used_pct}%)"
+    warn "Memória alta (${mem_used_pct}%) — monitore"
 else
-    ok "Memory usage healthy (${mem_used_pct}%)"
+    ok "Memória saudável (${mem_used_pct}%)"
 fi
 
-echo "--- Summary ---"
-echo "Warnings: ${warn_count}"
-echo "Failures: ${fail_count}"
+echo ""
+echo "--- Resumo ---"
+echo "Avisos: ${warn_count}"
+echo "Falhas: ${fail_count}"
 
 if [[ "${fail_count}" -gt 0 ]]; then
+    echo "Status: FALHOU — verifique os itens marcados com [FAIL] acima"
     exit 2
 fi
 if [[ "${warn_count}" -gt 0 ]]; then
+    echo "Status: OK COM AVISOS"
     exit 1
 fi
+echo "Status: TUDO CERTO"
 exit 0

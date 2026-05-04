@@ -41,7 +41,8 @@ BACKUP_S3_SECRET_ACCESS_KEY="${BACKUP_S3_SECRET_ACCESS_KEY:-}"
 BACKUP_ALERT_WEBHOOK_URL="${BACKUP_ALERT_WEBHOOK_URL:-}"
 
 if [[ -z "${BACKUP_S3_ENDPOINT}" || -z "${BACKUP_S3_BUCKET}" || -z "${BACKUP_S3_ACCESS_KEY_ID}" || -z "${BACKUP_S3_SECRET_ACCESS_KEY}" ]]; then
-    log_error "Missing S3/DO Spaces backup settings in manifest (endpoint, bucket, access key and secret key)."
+    log_error "Variáveis de backup DO Spaces ausentes no manifest (endpoint, bucket, chave e segredo)."
+    log_error "Preencha o bloco BACKUP_S3_* no manifest.env antes de rodar este script."
     exit 1
 fi
 
@@ -70,6 +71,7 @@ trap 'on_error $? $LINENO' ERR
 backup_dir="${BACKUP_ROOT}/${TARGET_ENV}"
 mkdir -p "${backup_dir}"
 
+log_info "Iniciando backup do banco '${DB_NAME}' (${DB_ENGINE}) → ${BACKUP_S3_BUCKET}"
 ts="$(date +%Y%m%d-%H%M%S)"
 output_file="${backup_dir}/${DB_NAME}-${ts}.sql.gz"
 
@@ -105,14 +107,16 @@ else
     exit 1
 fi
 
+log_info "Enviando backup para DO Spaces: s3://${BACKUP_S3_BUCKET}/${BACKUP_S3_PREFIX}/${TARGET_ENV}/"
 s3_key="${BACKUP_S3_PREFIX}/${TARGET_ENV}/$(basename "${output_file}")"
 AWS_ACCESS_KEY_ID="${BACKUP_S3_ACCESS_KEY_ID}" AWS_SECRET_ACCESS_KEY="${BACKUP_S3_SECRET_ACCESS_KEY}" AWS_DEFAULT_REGION="${BACKUP_S3_REGION}" \
 aws --endpoint-url "${BACKUP_S3_ENDPOINT}" s3 cp "${output_file}" "s3://${BACKUP_S3_BUCKET}/${s3_key}" --only-show-errors
 
+log_info "Limpando backups locais com mais de ${RETENTION_DAYS} dias"
 find "${backup_dir}" -type f -name '*.sql.gz' -mtime +"${RETENTION_DAYS}" -delete
 
-log_success "Backup created: ${output_file}"
-log_success "Backup uploaded: s3://${BACKUP_S3_BUCKET}/${s3_key}"
+log_success "Backup criado: ${output_file}"
+log_success "Backup enviado: s3://${BACKUP_S3_BUCKET}/${s3_key}"
 if (( ${#tables[@]} > 0 )); then
-    log_info "Table filter used: ${BACKUP_TABLES}"
+    log_info "Filtro de tabelas aplicado: ${BACKUP_TABLES}"
 fi
