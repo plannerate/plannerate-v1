@@ -44,6 +44,7 @@ interface ProductImagesUpdatedPayload {
 
 interface AuthPageProps {
     [key: string]: unknown;
+    subdomain?: string;
     auth?: {
         user?: {
             id?: string;
@@ -54,6 +55,20 @@ interface AuthPageProps {
 const props = defineProps<Props>();
 const page = usePage<AuthPageProps>();
 const isBrowser = typeof window !== 'undefined';
+
+const resolvedSubdomain = computed(() => {
+    const subdomainFromPage = page.props.subdomain?.toString().trim();
+
+    if (subdomainFromPage) {
+        return subdomainFromPage;
+    }
+
+    if (!isBrowser) {
+        return '';
+    }
+
+    return window.location.hostname.split('.')[0] || '';
+});
 // Usa o composable para gerenciar o estado
 const editor = usePlanogramEditor();
 const authUserId = computed(() => page.props.auth?.user?.id);
@@ -161,13 +176,14 @@ return;
 
 const handleUpdateGondolaImages = () => {
     const gondolaId = props.record?.id;
+    const subdomain = resolvedSubdomain.value;
 
-    if (!gondolaId) {
-return;
-}
+    if (!gondolaId || !subdomain) {
+        return;
+    }
 
     router.post(
-        wayfinderPath(updateImages.url(gondolaId)),
+        wayfinderPath(updateImages.url({ subdomain, gondola: gondolaId })),
         {},
         {
             preserveScroll: true,

@@ -125,9 +125,9 @@
 </template> 
 
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { BarChart3, Calendar, Settings } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { calculateAbcApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 import AbcParamsModal from '@/components/plannerate/analysis/AbcParamsModal.vue';
 import AbcResultsList from '@/components/plannerate/analysis/AbcResultsList.vue';
@@ -168,6 +168,22 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<Emits>();
+const page = usePage<{ subdomain?: string }>();
+const isBrowser = typeof window !== 'undefined';
+
+const resolvedSubdomain = computed(() => {
+    const subdomainFromPage = page.props.subdomain?.toString().trim();
+
+    if (subdomainFromPage) {
+        return subdomainFromPage;
+    }
+
+    if (!isBrowser) {
+        return '';
+    }
+
+    return window.location.hostname.split('.')[0] || '';
+});
 
 const loading = ref(props.loading);
 const results = ref(props.results);
@@ -271,7 +287,9 @@ return monthString;
 };
 
 const handleParamsSubmit = (data: typeof form.value): void => {
-    if (!props.gondolaId) {
+    const subdomain = resolvedSubdomain.value;
+
+    if (!props.gondolaId || !subdomain) {
         return;
     }
 
@@ -281,7 +299,7 @@ const handleParamsSubmit = (data: typeof form.value): void => {
     hasCalculated.value = true;
 
     router.post(
-        wayfinderPath(calculateAbcApi.url({ gondola: props.gondolaId })),
+        wayfinderPath(calculateAbcApi.url({ subdomain, gondola: props.gondolaId })),
         form.value,
         {
             preserveState: true,
