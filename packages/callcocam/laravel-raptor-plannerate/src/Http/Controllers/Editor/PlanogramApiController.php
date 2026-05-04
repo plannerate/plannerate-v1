@@ -8,6 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
+use App\Models\Tenant;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
 use Illuminate\Http\JsonResponse;
@@ -21,8 +22,16 @@ class PlanogramApiController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $tenantId = Tenant::current()?->getKey();
+
+        if (! is_string($tenantId) || $tenantId === '') {
+            return response()->json([
+                'data' => [],
+            ]);
+        }
+
         $query = Planogram::query()
-            ->where('tenant_id', tenant_id())
+            ->where('tenant_id', $tenantId)
             ->select('id', 'name', 'description', 'status')
             ->orderBy('name');
 
@@ -38,8 +47,16 @@ class PlanogramApiController extends Controller
      */
     public function gondolas(Request $request, string $planogramId): JsonResponse
     {
+        $tenantId = Tenant::current()?->getKey();
+
+        if (! is_string($tenantId) || $tenantId === '') {
+            return response()->json([
+                'data' => [],
+            ]);
+        }
+
         $gondolas = Gondola::query()
-            ->where('tenant_id', tenant_id())
+            ->where('tenant_id', $tenantId)
             ->where('planogram_id', $planogramId)
             ->select('id', 'name', 'planogram_id')
             ->orderBy('name')

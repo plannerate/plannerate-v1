@@ -95,17 +95,19 @@ class GondolaController extends Controller
         ]);
     }
 
-    public function store(StoreGondolaRequest $request, $planogram)
+    public function store(StoreGondolaRequest $request, string $subdomain, string $planogram)
     {
+        unset($subdomain); // Subdomínio é desnecessário para criação de gôndola, pois o planograma já pertence a um tenant específico.
         $planogramModel = Planogram::findOrFail($planogram);
 
         // Cria a gôndola sempre
         $gondola = app(GondolaService::class)->createGondolaWithStructure($planogramModel, $request->validated());
 
+
         return redirect()->back()->with('success', 'Gôndola criada com sucesso!');
     }
 
-    public function update($gondola, UpdateGondolaRequest $request)
+    public function update(string $gondola, UpdateGondolaRequest $request)
     {
         $gondolaModel = Gondola::findOrFail($gondola);
 
@@ -185,7 +187,7 @@ class GondolaController extends Controller
             return User::select('id', 'name')
                 ->orderBy('name')
                 ->get()
-                ->map(static fn ($user): array => [
+                ->map(static fn($user): array => [
                     'id' => $user->id,
                     'name' => $user->name,
                 ])
@@ -372,9 +374,9 @@ class GondolaController extends Controller
         $productIds = Gondola::with('sections.shelves.segments.layer')
             ->find($gondola)
             ->sections
-            ->flatMap(fn ($section) => $section->shelves)
-            ->flatMap(fn ($shelf) => $shelf->segments)
-            ->map(fn ($segment) => $segment->layer?->product_id)
+            ->flatMap(fn($section) => $section->shelves)
+            ->flatMap(fn($shelf) => $shelf->segments)
+            ->map(fn($segment) => $segment->layer?->product_id)
             ->filter()
             ->unique()
             ->values()
@@ -402,7 +404,7 @@ class GondolaController extends Controller
 
         return redirect()->back()->with(
             'success',
-            'Atualização de imagens em segundo plano iniciada. '.count($eans).' produto(s) na fila.'
+            'Atualização de imagens em segundo plano iniciada. ' . count($eans) . ' produto(s) na fila.'
         );
     }
 

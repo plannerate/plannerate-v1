@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
+import { useForm, usePage } from '@inertiajs/vue3';
 import { Check, ChevronLeft, ChevronRight, Circle, Dot } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import { store as storeGondolaRoute } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -60,6 +61,45 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 const isBrowser = typeof window !== 'undefined';
+const page = usePage<{ 
+    subdomain?: string;
+    record?: {
+        planogram_id?: string;
+        planogram?: {
+            id?: string;
+        };
+    };
+}>();
+
+const resolvedPlanogramId = computed(() => {
+    const planogramIdFromProps = props.planogramId?.toString().trim();
+
+    if (planogramIdFromProps) {
+        return planogramIdFromProps;
+    }
+
+    const planogramIdFromRecord = page.props.record?.planogram_id?.toString().trim();
+
+    if (planogramIdFromRecord) {
+        return planogramIdFromRecord;
+    }
+
+    return page.props.record?.planogram?.id?.toString().trim() || '';
+});
+
+const resolvedSubdomain = computed(() => {
+    const subdomainFromPage = page.props.subdomain?.toString().trim();
+
+    if (subdomainFromPage) {
+        return subdomainFromPage;
+    }
+
+    if (!isBrowser) {
+        return '';
+    }
+
+    return window.location.hostname.split('.')[0] || '';
+});
 
 // Current step
 const currentStep = ref(1);
@@ -335,12 +375,20 @@ const handleClose = () => {
 };
 
 const handleSubmit = () => {
-    if (!props.planogramId) {
-return;
-}
- 
+    const planogramId = resolvedPlanogramId.value;
+    const subdomain = resolvedSubdomain.value;
 
-    form.post(`/api/editor/planograms/${props.planogramId}/gondolas`, {
+    if (!planogramId || !subdomain) {
+        console.error('Não foi possível resolver subdomínio/planograma para criar gôndola.', {
+            planogramId,
+            subdomain,
+            propsPlanogramId: props.planogramId,
+        });
+
+        return;
+    }
+ 
+    form.post(storeGondolaRoute.url({ subdomain, planogram: planogramId }), {
         preserveScroll: true,
         preserveState: false,
         onSuccess: () => {
