@@ -134,6 +134,10 @@ if [[ "${DRY_RUN}" != "true" ]]; then
     fi
 fi
 
+log_info "Granting passwordless sudo to ${DEPLOY_USER}"
+run_cmd "echo '${DEPLOY_USER} ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vps-v2-deploy"
+run_cmd "chmod 440 /etc/sudoers.d/vps-v2-deploy"
+
 log_info "Hardening SSH — disabling root login and password auth"
 if [[ "${DRY_RUN}" != "true" ]]; then
     SSHD_CFG="/etc/ssh/sshd_config"

@@ -296,28 +296,34 @@ ask_secret_suggest REDIS_PASSWORD "Senha Redis" "${REDIS_PASSWORD:-${REDIS_PASSW
 chmod 600 "$MANIFEST_OUT"
 ok "manifest salvo em ${MANIFEST_OUT}"
 
+# SSH helpers — provisioning usa root (antes do hardening), pós-prov usa deploy+chave admin
+SSH_ROOT="ssh -o StrictHostKeyChecking=accept-new"
+SCP_ROOT="scp -o StrictHostKeyChecking=accept-new"
+SSH_DEPLOY="ssh -o StrictHostKeyChecking=accept-new -i ${ADMIN_KEY_PATH}"
+SCP_DEPLOY="scp -o StrictHostKeyChecking=accept-new -i ${ADMIN_KEY_PATH}"
+
 if ask_yn "Provisionar App VPS agora?"; then
-    ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "mkdir -p /tmp/vps-provisioning"
-    scp -o StrictHostKeyChecking=accept-new -r "${SCRIPT_DIR}/provisioning/." "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/"
-    scp -o StrictHostKeyChecking=accept-new "${MANIFEST_OUT}" "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/manifest.env"
-    ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "bash /tmp/vps-provisioning/validate-prereqs.sh /tmp/vps-provisioning/manifest.env"
+    ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "mkdir -p /tmp/vps-provisioning"
+    ${SCP_ROOT} -r "${SCRIPT_DIR}/provisioning/." "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/"
+    ${SCP_ROOT} "${MANIFEST_OUT}" "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/manifest.env"
+    ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "bash /tmp/vps-provisioning/validate-prereqs.sh /tmp/vps-provisioning/manifest.env"
     if [[ "${DB_MODE}" == "local" ]]; then
-        ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "DB_ENGINE='${DB_ENGINE}' bash /tmp/vps-provisioning/setup-db-host.sh /tmp/vps-provisioning/manifest.env"
+        ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "DB_ENGINE='${DB_ENGINE}' bash /tmp/vps-provisioning/setup-db-host.sh /tmp/vps-provisioning/manifest.env"
         ok "Banco local provisionado (${DB_ENGINE})"
     fi
-    ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' bash /tmp/vps-provisioning/setup-app-host.sh /tmp/vps-provisioning/manifest.env"
-    ok "App VPS provisionado"
+    ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' bash /tmp/vps-provisioning/setup-app-host.sh /tmp/vps-provisioning/manifest.env"
+    ok "App VPS provisionado — root SSH desabilitado, use a chave admin daqui em diante"
 fi
 
 if ask_yn "Instalar compose files no VPS agora?"; then
-    ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_WORKDIR}'"
-    scp -o StrictHostKeyChecking=accept-new -r "${SCRIPT_DIR}/." "${VPS_USER}@${VPS_HOST}:${REMOTE_WORKDIR}/"
-    ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' START_SERVICES='true' bash ${REMOTE_WORKDIR}/automation/install-compose-on-host.sh"
+    ${SSH_DEPLOY} "${DEPLOY_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_WORKDIR}'"
+    ${SCP_DEPLOY} -r "${SCRIPT_DIR}/." "${DEPLOY_USER}@${VPS_HOST}:${REMOTE_WORKDIR}/"
+    ${SSH_DEPLOY} "${DEPLOY_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' START_SERVICES='true' sudo bash ${REMOTE_WORKDIR}/automation/install-compose-on-host.sh"
     ok "Compose files instalados e serviços iniciais (Traefik/app) iniciados"
 fi
 
 if ask_yn "Instalar monitoramento dessa app agora?"; then
-    ssh -o StrictHostKeyChecking=accept-new "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' bash ${REMOTE_WORKDIR}/automation/install-monitoring-on-host.sh ${REMOTE_WORKDIR}/manifest.env '${APP_SLUG}'"
+    ${SSH_DEPLOY} "${DEPLOY_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' sudo bash ${REMOTE_WORKDIR}/automation/install-monitoring-on-host.sh ${REMOTE_WORKDIR}/manifest.env '${APP_SLUG}'"
     ok "Monitoramento instalado para ${APP_SLUG}"
 fi
 
