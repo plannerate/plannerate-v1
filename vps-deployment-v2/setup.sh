@@ -278,15 +278,45 @@ if [[ "${GH_OK}" == "true" ]]; then
     fi
 
     # Cria environment e configura secrets/variables
-    gh api --method PUT "repos/${repo}/environments/staging" --silent >/dev/null 2>&1 || true
-    gh secret set APP_HOST          --repo "$repo" --env staging --body "$VPS_HOST"        >/dev/null
-    gh secret set APP_USER          --repo "$repo" --env staging --body "$DEPLOY_USER"     >/dev/null
-    gh secret set SSH_PRIVATE_KEY   --repo "$repo" --env staging --body "$DEPLOY_PRIVATE_KEY" >/dev/null
-    gh secret set SSH_KNOWN_HOSTS   --repo "$repo" --env staging --body "$VPS_KNOWN_HOSTS" >/dev/null
-    gh secret set DOMAIN            --repo "$repo" --env staging --body "$DOMAIN_LANDLORD" >/dev/null
-    gh variable set GHCR_REPO       --repo "$repo"               --body "$GHCR_REPO"       >/dev/null
-    gh variable set DEPLOY_PATH     --repo "$repo" --env staging  --body "/opt/plannerate/${APP_SLUG}" >/dev/null
-    gh variable set COMPOSE_FILE    --repo "$repo" --env staging  --body "docker-compose.staging.yml"  >/dev/null
+    gh api --method PUT "repos/${repo}/environments/staging" >/dev/null 2>&1 || true
+
+    gh_secret() {
+        local name="$1" value="$2" env="${3:-}"
+        if [[ -z "${value}" ]]; then
+            warn "Secret ${name} está vazio — pulando (configure manualmente se necessário)"
+            return 0
+        fi
+        if [[ -n "${env}" ]]; then
+            printf '%s' "${value}" | gh secret set "${name}" --repo "${repo}" --env "${env}"
+        else
+            printf '%s' "${value}" | gh secret set "${name}" --repo "${repo}"
+        fi
+    }
+    gh_var() {
+        local name="$1" value="$2" env="${3:-}"
+        if [[ -z "${value}" ]]; then
+            warn "Variable ${name} está vazia — pulando"
+            return 0
+        fi
+        if [[ -n "${env}" ]]; then
+            gh variable set "${name}" --repo "${repo}" --env "${env}" --body "${value}"
+        else
+            gh variable set "${name}" --repo "${repo}" --body "${value}"
+        fi
+    }
+
+    info "Configurando secrets..."
+    gh_secret APP_HOST        "${VPS_HOST}"           staging
+    gh_secret APP_USER        "${DEPLOY_USER}"        staging
+    gh_secret SSH_PRIVATE_KEY "${DEPLOY_PRIVATE_KEY}" staging
+    gh_secret SSH_KNOWN_HOSTS "${VPS_KNOWN_HOSTS}"    staging
+    gh_secret DOMAIN          "${DOMAIN_LANDLORD}"    staging
+
+    info "Configurando variables..."
+    gh_var GHCR_REPO    "${GHCR_REPO}"
+    gh_var DEPLOY_PATH  "/opt/plannerate/${APP_SLUG}" staging
+    gh_var COMPOSE_FILE "docker-compose.staging.yml"  staging
+
     ok "Secrets/variables de staging configurados"
 else
     warn "gh CLI não autenticado. Configure manualmente:"
