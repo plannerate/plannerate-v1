@@ -125,6 +125,41 @@ if [[ "${DRY_RUN}" != "true" ]]; then
     fi
 fi
 
+log_info "Hardening SSH — disabling root login and password auth"
+if [[ "${DRY_RUN}" != "true" ]]; then
+    SSHD_CFG="/etc/ssh/sshd_config"
+    sed -i '/^#\?PermitRootLogin/d' "${SSHD_CFG}"
+    sed -i '/^#\?PasswordAuthentication/d' "${SSHD_CFG}"
+    sed -i '/^#\?MaxAuthTries/d' "${SSHD_CFG}"
+    printf '\n# Added by vps-deployment-v2 setup\nPermitRootLogin no\nPasswordAuthentication no\nMaxAuthTries 3\n' >> "${SSHD_CFG}"
+    systemctl restart sshd
+    log_warn "Root SSH login is now DISABLED. Use '${DEPLOY_USER}' for future connections."
+fi
+
+log_info "Configuring firewall (UFW)"
+run_cmd "ufw default deny incoming"
+run_cmd "ufw default allow outgoing"
+run_cmd "ufw allow 22/tcp"
+run_cmd "ufw allow 80/tcp"
+run_cmd "ufw allow 443/tcp"
+run_cmd "ufw --force enable"
+
+log_info "Configuring fail2ban (SSH jail)"
+if [[ "${DRY_RUN}" != "true" ]]; then
+    mkdir -p /etc/fail2ban/jail.d
+    cat > /etc/fail2ban/jail.d/vps-v2-ssh.local << 'CFG'
+[sshd]
+enabled  = true
+port     = ssh
+filter   = sshd
+maxretry = 5
+bantime  = 3600
+findtime = 600
+CFG
+    systemctl enable fail2ban >/dev/null 2>&1
+    systemctl restart fail2ban
+fi
+
 log_info "Preparing filesystem layout"
 run_cmd "mkdir -p ${APP_DIR} /opt/traefik/letsencrypt /opt/backups /opt/monitoring/${APP_SLUG}"
 run_cmd "mkdir -p ${APP_DIR}/storage/framework/views ${APP_DIR}/storage/framework/cache ${APP_DIR}/storage/framework/sessions ${APP_DIR}/bootstrap/cache"

@@ -169,4 +169,20 @@ else
 fi
 run_cmd "ufw --force enable"
 
+log_info "Configuring fail2ban (SSH jail)"
+if [[ "${DRY_RUN}" != "true" ]]; then
+    mkdir -p /etc/fail2ban/jail.d
+    cat > /etc/fail2ban/jail.d/vps-v2-ssh.local << 'CFG'
+[sshd]
+enabled  = true
+port     = ssh
+filter   = sshd
+maxretry = 5
+bantime  = 3600
+findtime = 600
+CFG
+    systemctl enable fail2ban >/dev/null 2>&1
+    systemctl restart fail2ban
+fi
+
 log_success "DB host provisioning completed"
