@@ -235,5 +235,6 @@ log_info "  1. Confirme no manifest.env: DB_MODE=externo, DB_HOST=${DB_HOST_ARG}
 if [[ "${NEW_PASSWORDS}" == "true" ]]; then
     log_info "  2. Novas senhas gravadas no manifest.env — faça commit se estiver em repositório privado"
 fi
-log_info "  3. Para mudar o app de local → externo, re-provisione ou atualize o .env manualmente:"
-log_info "     ssh plannerate-v2-vps 'sed -i s|DB_HOST=.*|DB_HOST=${DB_HOST_ARG}| /opt/plannerate/${APP_SLUG}/.env && docker compose -f /opt/plannerate/${APP_SLUG}/docker-compose.yml up -d'"
+log_info "  3. Para mudar o app de local → externo, atualize o .env na VPS do app:"
+log_info "     ssh plannerate-v2-vps \"sed -i 's|^DB_HOST=.*|DB_HOST=${DB_HOST_ARG}|' /opt/plannerate/${APP_SLUG}/.env\""
+log_info "     ssh plannerate-v2-vps \"cd /opt/plannerate/${APP_SLUG} && docker compose up -d\""

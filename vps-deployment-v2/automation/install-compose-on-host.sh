@@ -3,13 +3,17 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-ROOT_DIR="$(cd -- "${SCRIPT_DIR}/.." >/dev/null 2>&1 && pwd)"
-# shellcheck disable=SC1091
-source "${SCRIPT_DIR}/../provisioning/common.sh"
+# ROOT_DIR pode ser sobrescrito via variável de ambiente (útil quando o script é copiado pra /tmp/)
+ROOT_DIR="${ROOT_DIR:-$(cd -- "${SCRIPT_DIR}/.." >/dev/null 2>&1 && pwd)}"
 
 MANIFEST_PATH="${1:-}"
 if [[ -n "${MANIFEST_PATH}" ]]; then
-    load_manifest "${MANIFEST_PATH}"
+    if [[ ! -f "${MANIFEST_PATH}" ]]; then
+        echo "[ERRO] Manifest não encontrado: ${MANIFEST_PATH}"
+        exit 1
+    fi
+    # shellcheck disable=SC1090
+    source "${MANIFEST_PATH}"
     echo "[INFO] Manifest carregado: ${MANIFEST_PATH}"
 fi
 

@@ -4,12 +4,12 @@
 # Migrates from root-only access to a dedicated deploy user.
 # Run this on the VPS AFTER the app is confirmed working as root.
 #
-# Usage (from your local machine):
-#   ssh plannerate-v2-vps 'bash -s' < automation/switch-to-deploy-user.sh /root/manifest.env
-#
-# Or upload manifest first:
+# Uso (da sua máquina local, dentro de ~/projects/plannerate-v1):
 #   scp vps-deployment-v2/manifest.env plannerate-v2-vps:/root/manifest.env
-#   ssh plannerate-v2-vps bash /root/switch-to-deploy-user.sh /root/manifest.env
+#   scp vps-deployment-v2/automation/switch-to-deploy-user.sh plannerate-v2-vps:/tmp/
+#   ssh plannerate-v2-vps bash /tmp/switch-to-deploy-user.sh /root/manifest.env
+#
+# Lembre: antes de rodar, mude DEPLOY_USER=deploy (ou o nome desejado) no manifest que vai pro VPS.
 
 set -euo pipefail
 
