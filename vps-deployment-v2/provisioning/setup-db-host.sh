@@ -171,8 +171,13 @@ run_cmd "ufw --force enable"
 
 log_info "Configuring fail2ban (SSH jail)"
 if [[ "${DRY_RUN}" != "true" ]]; then
+    OPERATOR_IP="${OPERATOR_IP:-}"
+    if [[ -z "${OPERATOR_IP}" ]]; then
+        OPERATOR_IP="$(echo "${SSH_CLIENT:-}" | awk '{print $1}')"
+    fi
+
     mkdir -p /etc/fail2ban/jail.d
-    cat > /etc/fail2ban/jail.d/vps-v2-ssh.local << 'CFG'
+    cat > /etc/fail2ban/jail.d/vps-v2-ssh.local << CFG
 [sshd]
 enabled  = true
 port     = ssh
@@ -180,9 +185,13 @@ filter   = sshd
 maxretry = 5
 bantime  = 3600
 findtime = 600
+ignoreip = 127.0.0.1/8 ::1${OPERATOR_IP:+ ${OPERATOR_IP}}
 CFG
     systemctl enable fail2ban >/dev/null 2>&1
     systemctl restart fail2ban
+    if [[ -n "${OPERATOR_IP}" ]]; then
+        log_info "fail2ban: IP do operador ${OPERATOR_IP} está na whitelist"
+    fi
 fi
 
 log_success "DB host provisioning completed"
