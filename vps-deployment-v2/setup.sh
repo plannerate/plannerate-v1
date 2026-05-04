@@ -390,14 +390,15 @@ SCP_ROOT="scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 SSH_DEPLOY="ssh -o StrictHostKeyChecking=accept-new -i ${ADMIN_KEY_PATH}"
 SCP_DEPLOY="scp -o StrictHostKeyChecking=accept-new -i ${ADMIN_KEY_PATH}"
 
-_root_ssh_ok=false
-if ${SSH_ROOT} -o ConnectTimeout=8 -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "exit 0" >/dev/null 2>&1; then
-    _root_ssh_ok=true
+# Detecta estado da VPS: deploy+chave já funciona (pós-prov) ou precisa provisionar
+_deploy_ssh_ok=false
+if ${SSH_DEPLOY} -o ConnectTimeout=8 -o BatchMode=yes "${DEPLOY_USER}@${VPS_HOST}" "exit 0" >/dev/null 2>&1; then
+    _deploy_ssh_ok=true
 fi
 
 _install_compose=false
 
-if [[ "${_root_ssh_ok}" == "true" ]]; then
+if [[ "${_deploy_ssh_ok}" == "false" ]]; then
     if ask_yn "Provisionar App VPS agora?"; then
         ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "mkdir -p /tmp/vps-provisioning"
         ${SCP_ROOT} -r "${SCRIPT_DIR}/provisioning/." "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/"
@@ -412,8 +413,7 @@ if [[ "${_root_ssh_ok}" == "true" ]]; then
         _install_compose=true
     fi
 else
-    warn "SSH root não acessível em ${VPS_HOST} (já provisionado ou senha incorreta)."
-    info "Pulando provisionamento — prosseguindo com etapas que usam a chave admin."
+    info "VPS já provisionada — deploy+chave admin acessível, pulando provisionamento."
 fi
 
 if [[ "${_install_compose}" == "true" ]] || ask_yn "Instalar compose files e iniciar Traefik no VPS agora?"; then
