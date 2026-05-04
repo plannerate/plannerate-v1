@@ -27,7 +27,7 @@ yarn-error.log
 /.vscode
 /.zed
 /packages/callcocam/laravel-raptor-flow
-/vps-deployment-packagevps-deployment-v2/manifest.env
+/vps-deployment-v2/manifest.env
 /errors
 
  
