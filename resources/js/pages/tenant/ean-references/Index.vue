@@ -4,6 +4,7 @@ import EanReferenceController from '@/actions/App/Http/Controllers/Tenant/EanRef
 import WayfinderLink from '@/components/WayfinderLink.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import ColumnHeader from '@/components/table/columns/ColumnHeader.vue';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
@@ -23,6 +24,11 @@ type EanReferenceRow = {
     packaging_type: string | null;
     packaging_size: string | null;
     measurement_unit: string | null;
+    width: string | number | null;
+    height: string | number | null;
+    depth: string | number | null;
+    weight: string | number | null;
+    unit: string | null;
 };
 
 const props = defineProps<{
@@ -51,6 +57,23 @@ const pageMeta = useCrudPageMeta({
         },
     ],
 });
+
+function formatDimensions(reference: EanReferenceRow): string {
+    const width = reference.width !== null && String(reference.width).trim() !== '' ? String(reference.width).trim() : null;
+    const height = reference.height !== null && String(reference.height).trim() !== '' ? String(reference.height).trim() : null;
+    const depth = reference.depth !== null && String(reference.depth).trim() !== '' ? String(reference.depth).trim() : null;
+    const weight = reference.weight !== null && String(reference.weight).trim() !== '' ? String(reference.weight).trim() : null;
+    const unit = reference.unit && reference.unit.trim() !== '' ? reference.unit.trim() : 'cm';
+
+    const size = width && height && depth ? `${width} x ${height} x ${depth} ${unit}` : null;
+    const formattedWeight = weight ? `${weight} g` : null;
+
+    if (size && formattedWeight) {
+        return `${size} • ${formattedWeight}`;
+    }
+
+    return size ?? formattedWeight ?? '-';
+}
 </script>
 
 <template>
@@ -78,19 +101,20 @@ const pageMeta = useCrudPageMeta({
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.ean_references.fields.ean') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.ean_references.fields.reference_description') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.ean_references.fields.brand') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.ean_references.fields.packaging_type') }}</th>
+                        <ColumnHeader field="ean">{{ t('app.tenant.ean_references.fields.ean') }}</ColumnHeader>
+                        <ColumnHeader field="reference_description">{{ t('app.tenant.ean_references.fields.reference_description') }}</ColumnHeader>
+                        <ColumnHeader field="brand">{{ t('app.tenant.ean_references.fields.brand') }}</ColumnHeader>
+                        <ColumnHeader field="packaging_type">{{ t('app.tenant.ean_references.fields.packaging_type') }}</ColumnHeader>
+                        <ColumnHeader field="width">Medidas</ColumnHeader>
                         <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <template v-if="eanReferencesLoading">
-                        <TableLoadingSkeleton :columns="5" :rows="6" />
+                        <TableLoadingSkeleton :columns="6" :rows="6" />
                     </template>
                     <tr v-else-if="eanReferencesRows.length === 0">
-                        <td class="px-4 py-6 text-muted-foreground" colspan="5">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="6">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
@@ -103,6 +127,7 @@ const pageMeta = useCrudPageMeta({
                         <td class="px-4 py-3">{{ eanReference.reference_description || '-' }}</td>
                         <td class="px-4 py-3">{{ eanReference.brand || '-' }}</td>
                         <td class="px-4 py-3">{{ eanReference.packaging_type || '-' }}</td>
+                        <td class="px-4 py-3">{{ formatDimensions(eanReference) }}</td>
                         <td class="px-4 py-3 text-right">
                             <div class="inline-flex items-center gap-2">
                                 <Button variant="outline" size="sm" as-child>

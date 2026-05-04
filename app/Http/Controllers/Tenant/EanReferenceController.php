@@ -24,9 +24,17 @@ class EanReferenceController extends Controller
         $this->authorize('viewAny', EanReference::class);
 
         $search = $this->requestString($request, 'search');
+        $requestedSort = trim((string) $request->query('sort', ''));
+        $sort = in_array($requestedSort, ['ean', 'reference_description', 'brand', 'packaging_type', 'width', 'created_at'], true)
+            ? $requestedSort
+            : null;
+        $requestedDirection = strtolower((string) $request->query('direction', 'asc'));
+        $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'asc';
 
         return $this->renderDeferredIndex('tenant/ean-references/Index', 'ean_references', fn (): LengthAwarePaginator => $this->eanReferencesPaginator(
             $search,
+            $sort,
+            $direction,
             $this->resolvePerPage($request, 10),
         ), [
             'subdomain' => $this->tenantSubdomain(),
@@ -36,7 +44,7 @@ class EanReferenceController extends Controller
         ]);
     }
 
-    private function eanReferencesPaginator(string $search, int $perPage): LengthAwarePaginator
+    private function eanReferencesPaginator(string $search, ?string $sort, string $direction, int $perPage): LengthAwarePaginator
     {
         return EanReference::query()
             ->when($search !== '', function ($query) use ($search): void {
@@ -48,7 +56,11 @@ class EanReferenceController extends Controller
                         ->orWhere('subbrand', 'like', '%'.$search.'%');
                 });
             })
-            ->latest()
+            ->when(
+                $sort !== null,
+                fn ($query) => $query->orderBy($sort, $direction),
+                fn ($query) => $query->latest(),
+            )
             ->paginate($perPage)
             ->withQueryString()
             ->through(fn (EanReference $eanReference): array => [
@@ -60,6 +72,11 @@ class EanReferenceController extends Controller
                 'packaging_type' => $eanReference->packaging_type,
                 'packaging_size' => $eanReference->packaging_size,
                 'measurement_unit' => $eanReference->measurement_unit,
+                'width' => $eanReference->width,
+                'height' => $eanReference->height,
+                'depth' => $eanReference->depth,
+                'weight' => $eanReference->weight,
+                'unit' => $eanReference->unit,
                 'created_at' => $eanReference->created_at?->toDateTimeString(),
             ]);
     }
