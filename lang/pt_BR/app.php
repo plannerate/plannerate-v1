@@ -122,6 +122,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'plans' => 'Planos',
         'tenants' => 'Tenants',
         'modules' => 'Modulos',
+        'ean_references' => 'Referencias EAN',
         'roles' => 'Perfis de acesso',
         'users' => 'Usuarios',
         'permissions' => 'Permissoes',
@@ -495,6 +496,29 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'placeholder' => 'Selecione...',
                 'clear' => 'Limpar',
                 'load_error' => 'Nao foi possivel carregar as opcoes.',
+            ],
+        ],
+        'ean_references' => [
+            'navigation' => 'Referencias EAN',
+            'title' => 'Referencias EAN',
+            'description' => 'Gerencie as referencias por EAN para apoio a padronizacao de produtos.',
+            'actions' => [
+                'new' => 'Nova referencia EAN',
+                'edit' => 'Editar referencia EAN',
+            ],
+            'fields' => [
+                'ean' => 'EAN',
+                'reference_description' => 'Descricao de referencia',
+                'brand' => 'Marca',
+                'subbrand' => 'Submarca',
+                'packaging_type' => 'Tipo de embalagem',
+                'packaging_size' => 'Tamanho da embalagem',
+                'measurement_unit' => 'Unidade de medida',
+            ],
+            'messages' => [
+                'created' => 'Referencia EAN criada com sucesso.',
+                'updated' => 'Referencia EAN atualizada com sucesso.',
+                'deleted' => 'Referencia EAN removida com sucesso.',
             ],
         ],
         'stores' => [

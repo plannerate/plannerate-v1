@@ -4,6 +4,7 @@ namespace App\Support\Navigation;
 
 use App\Models\Category;
 use App\Models\Cluster;
+use App\Models\EanReference;
 use App\Models\Module;
 use App\Models\Permission;
 use App\Models\Plan;
@@ -144,6 +145,14 @@ class SidebarNavigationService
                             ->icon('folder-tree')
                             ->authorize('viewAny', Category::class)
                             ->setOrder(20);
+                    })
+                    ->item('tenant.ean-references', function ($item) use ($subdomain): void {
+                        $item
+                            ->label(__('app.tenant.ean_references.navigation'))
+                            ->href(route('tenant.ean-references.index', ['subdomain' => $subdomain], false))
+                            ->icon('barcode')
+                            ->authorize('viewAny', EanReference::class)
+                            ->setOrder(30);
                     });
             })
             ->group('tenant.operational', function ($group) use ($subdomain): void {

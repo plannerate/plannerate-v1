@@ -27,7 +27,28 @@ class EanReference extends Model
         'packaging_type',
         'packaging_size',
         'measurement_unit',
+        'width',
+        'height',
+        'depth',
+        'weight',
+        'unit',
+        'has_dimensions',
+        'dimension_status',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'width' => 'decimal:2',
+            'height' => 'decimal:2',
+            'depth' => 'decimal:2',
+            'weight' => 'decimal:2',
+            'has_dimensions' => 'boolean',
+        ];
+    }
 
     /**
      * @return BelongsTo<Category, EanReference>

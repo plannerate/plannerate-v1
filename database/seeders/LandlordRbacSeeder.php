@@ -9,7 +9,6 @@ use App\Support\Authorization\PermissionName;
 use App\Support\Authorization\RbacType;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Spatie\Permission\PermissionRegistrar;
 
 class LandlordRbacSeeder extends Seeder
@@ -91,6 +90,11 @@ class LandlordRbacSeeder extends Seeder
             PermissionName::LANDLORD_MODULES_UPDATE,
             PermissionName::LANDLORD_MODULES_DELETE,
             PermissionName::TENANT_DASHBOARD_VIEW,
+            PermissionName::TENANT_EAN_REFERENCES_VIEW_ANY,
+            PermissionName::TENANT_EAN_REFERENCES_VIEW,
+            PermissionName::TENANT_EAN_REFERENCES_CREATE,
+            PermissionName::TENANT_EAN_REFERENCES_UPDATE,
+            PermissionName::TENANT_EAN_REFERENCES_DELETE,
             PermissionName::TENANT_CATEGORIES_VIEW_ANY,
             PermissionName::TENANT_CATEGORIES_VIEW,
             PermissionName::TENANT_CATEGORIES_CREATE,

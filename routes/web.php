@@ -13,6 +13,7 @@ use App\Http\Controllers\Landlord\WorkflowTemplateController as LandlordWorkflow
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\ClusterController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboardController;
+use App\Http\Controllers\Tenant\EanReferenceController as TenantEanReferenceController;
 use App\Http\Controllers\Tenant\Editor\EditorPlanogramController;
 use App\Http\Controllers\Tenant\GondolaController;
 use App\Http\Controllers\Tenant\NotificationController;
@@ -134,6 +135,9 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::resource('products', ProductController::class)
             ->except(['show'])
             ->names('products');
+        Route::resource('ean-references', TenantEanReferenceController::class)
+            ->except(['show'])
+            ->names('ean-references');
         Route::post('products/sync-single', [ProductController::class, 'syncSingle'])
             ->name('products.sync-single');
         Route::get('system-logs', [SystemLogController::class, 'index'])

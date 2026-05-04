@@ -66,6 +66,16 @@ final class PermissionName
 
     public const TENANT_DASHBOARD_VIEW = 'tenant.dashboard.view';
 
+    public const TENANT_EAN_REFERENCES_VIEW_ANY = 'tenant.ean-references.viewAny';
+
+    public const TENANT_EAN_REFERENCES_VIEW = 'tenant.ean-references.view';
+
+    public const TENANT_EAN_REFERENCES_CREATE = 'tenant.ean-references.create';
+
+    public const TENANT_EAN_REFERENCES_UPDATE = 'tenant.ean-references.update';
+
+    public const TENANT_EAN_REFERENCES_DELETE = 'tenant.ean-references.delete';
+
     public const TENANT_CATEGORIES_VIEW_ANY = 'tenant.categories.viewAny';
 
     public const TENANT_CATEGORIES_VIEW = 'tenant.categories.view';
@@ -205,6 +215,11 @@ final class PermissionName
             self::LANDLORD_MODULES_UPDATE,
             self::LANDLORD_MODULES_DELETE,
             self::TENANT_DASHBOARD_VIEW,
+            self::TENANT_EAN_REFERENCES_VIEW_ANY,
+            self::TENANT_EAN_REFERENCES_VIEW,
+            self::TENANT_EAN_REFERENCES_CREATE,
+            self::TENANT_EAN_REFERENCES_UPDATE,
+            self::TENANT_EAN_REFERENCES_DELETE,
             self::TENANT_CATEGORIES_VIEW_ANY,
             self::TENANT_CATEGORIES_VIEW,
             self::TENANT_CATEGORIES_CREATE,
