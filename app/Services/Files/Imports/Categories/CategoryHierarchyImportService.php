@@ -287,6 +287,7 @@ class CategoryHierarchyImportService
 
             DB::connection($connectionName)->table($table)->insert([
                 ...$payload,
+                'hierarchy_path' => json_encode($pathNames),
                 'id' => $forcedCategoryId,
             ]);
 
