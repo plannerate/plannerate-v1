@@ -108,6 +108,10 @@ jobs:
             '
             docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
               set -e
+              php -r "if (! function_exists(\"imagewebp\")) { fwrite(STDERR, \"GD sem suporte a WebP (imagewebp ausente).\\n\"); exit(1);} echo \"GD WebP OK\\n\";"
+            '
+            docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
+              set -e
               if [ ! -f .env ]; then
                 echo "Missing .env in ${PWD}. Expected deploy env file."
                 exit 1
