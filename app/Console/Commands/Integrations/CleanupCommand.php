@@ -73,7 +73,9 @@ class CleanupCommand extends Command
      */
     protected function getTenants(): Collection
     {
-        $query = Tenant::query()->where('status', 'active');
+        $query = Tenant::query()
+            ->where('status', 'active')
+            ->whereHas('integration', fn ($q) => $q->where('is_active', true));
 
         $tenantId = $this->option('tenant');
         if (is_string($tenantId) && $tenantId !== '') {

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Integrations;
+namespace App\Console\Commands;
 
 use App\Models\Tenant;
 use App\Services\Integrations\Support\SyncProductsFromEanReferencesService;

@@ -96,7 +96,7 @@ class ImportLegacyBaseClientCommand extends Command
         if (! empty($results)) {
             $this->table(
                 ['Tabela', 'Origem', 'Importados', 'Ignorados'],
-                array_map(fn($r) => [
+                array_map(fn ($r) => [
                     $r['table'],
                     $r['total'],
                     $r['imported'] > 0 ? "<fg=green>{$r['imported']}</>" : '0',
@@ -121,7 +121,7 @@ class ImportLegacyBaseClientCommand extends Command
 
             return true;
         } catch (\Exception $e) {
-            $this->error('❌ Falha na conexão com mysql_legacy: ' . $e->getMessage());
+            $this->error('❌ Falha na conexão com mysql_legacy: '.$e->getMessage());
 
             return false;
         }
@@ -131,9 +131,9 @@ class ImportLegacyBaseClientCommand extends Command
     {
         $filter = $this->argument('tenant') ?? search(
             label: 'Selecione o tenant de destino',
-            options: fn(string $value) => Tenant::on('landlord')
+            options: fn (string $value) => Tenant::on('landlord')
                 ->where(
-                    fn($q) => $q
+                    fn ($q) => $q
                         ->where('name', 'like', "%{$value}%")
                         ->orWhere('slug', 'like', "%{$value}%")
                 )
@@ -144,7 +144,7 @@ class ImportLegacyBaseClientCommand extends Command
 
         $tenant = Tenant::on('landlord')
             ->with('integration')
-            ->where(fn($q) => $q->where('id', $filter)->orWhere('slug', $filter))
+            ->where(fn ($q) => $q->where('id', $filter)->orWhere('slug', $filter))
             ->first();
 
         if (! $tenant) {
@@ -186,7 +186,7 @@ class ImportLegacyBaseClientCommand extends Command
 
             return true;
         } catch (\Exception $e) {
-            $this->error("❌ Não foi possível conectar a '{$this->tenant->database}': " . $e->getMessage());
+            $this->error("❌ Não foi possível conectar a '{$this->tenant->database}': ".$e->getMessage());
 
             return false;
         }
@@ -194,7 +194,6 @@ class ImportLegacyBaseClientCommand extends Command
 
     private function resolveClientFromTenant(): ?object
     {
-        
 
         $client = $this->legacy->table('clients')->where('id', $this->tenant->id)->first();
 
@@ -260,9 +259,9 @@ class ImportLegacyBaseClientCommand extends Command
 
         $this->output->progressStart($remoteCount);
 
-        $query->when($hasId, fn($q) => $q->orderBy('id'))
+        $query->when($hasId, fn ($q) => $q->orderBy('id'))
             ->chunk(500, function ($records) use ($table, $targetColumns, $hasId, &$imported, &$skipped) {
-                $rows = $records->map(fn($r) => $this->prepareRow((array) $r, $targetColumns));
+                $rows = $records->map(fn ($r) => $this->prepareRow((array) $r, $targetColumns));
 
                 if ($hasId && ! $this->option('fresh')) {
                     $existingIds = $this->tenantDb->table($table)
@@ -271,7 +270,7 @@ class ImportLegacyBaseClientCommand extends Command
                         ->toArray();
 
                     $skipped += count($existingIds);
-                    $rows = $rows->filter(fn($r) => ! in_array($r['id'], $existingIds));
+                    $rows = $rows->filter(fn ($r) => ! in_array($r['id'], $existingIds));
                 }
 
                 if ($rows->isNotEmpty()) {
@@ -295,44 +294,7 @@ class ImportLegacyBaseClientCommand extends Command
         return match ($table) {
             'planograms', 'sales', 'purchases' => $query->where('client_id', $clientId),
 
-            'categories', 'providers' => $query,
-
-            'products' => $this->legacy->table('products')
-                ->join('client_product', 'products.id', '=', 'client_product.product_id')
-                ->leftJoin('dimensions', 'products.id', '=', 'dimensions.product_id')
-                ->leftJoin('product_additional_data', function ($join) use ($clientId) {
-                    $join->on('products.id', '=', 'product_additional_data.product_id')
-                        ->where('product_additional_data.client_id', $clientId);
-                })
-                ->where('client_product.client_id', $clientId)
-                ->select([
-                    'products.*',
-                    // dimensions → campos mesclados em products no destino
-                    'dimensions.ean as dimensions_ean',
-                    'dimensions.width',
-                    'dimensions.height',
-                    'dimensions.depth',
-                    'dimensions.weight',
-                    'dimensions.unit',
-                    'dimensions.status as dimensions_status',
-                    'dimensions.description as dimensions_description',
-                    // product_additional_data → campos mesclados em products no destino
-                    'product_additional_data.type',
-                    'product_additional_data.reference',
-                    'product_additional_data.fragrance',
-                    'product_additional_data.flavor',
-                    'product_additional_data.color',
-                    'product_additional_data.brand',
-                    'product_additional_data.subbrand',
-                    'product_additional_data.packaging_type',
-                    'product_additional_data.packaging_size',
-                    'product_additional_data.measurement_unit',
-                    'product_additional_data.packaging_content',
-                    'product_additional_data.unit_measure',
-                    'product_additional_data.auxiliary_description',
-                    'product_additional_data.additional_information',
-                    'product_additional_data.sortiment_attribute',
-                ]),
+            'providers' => $query,
 
             'gondolas' => $query->whereIn('planogram_id', $this->getPlanogramIds()),
 
@@ -524,7 +486,7 @@ class ImportLegacyBaseClientCommand extends Command
                     ->toArray();
 
                 $skipped += count($existingIds);
-                $rows = $rows->filter(fn($r) => ! in_array($r['id'], $existingIds));
+                $rows = $rows->filter(fn ($r) => ! in_array($r['id'], $existingIds));
 
                 if ($rows->isNotEmpty()) {
                     $this->tenantDb->table($table)->insertOrIgnore($rows->values()->toArray());

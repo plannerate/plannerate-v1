@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Integrations;
+namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Database\Query\Builder;
