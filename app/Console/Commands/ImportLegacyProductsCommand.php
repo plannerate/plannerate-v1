@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\EanReference;
 use App\Models\Tenant;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
 use Illuminate\Console\Command;
@@ -327,13 +328,22 @@ class ImportLegacyProductsCommand extends Command
         }
 
         $targetColumns = Schema::connection('tenant_import')->getColumnListing($table);
+
+        // Carrega mapa de EAN → EanReference da base landlord (global)
+        $eanRefMap = $this->loadEanReferenceMap();
+        $this->line(sprintf('  📋 %d referência(s) EAN carregada(s)', count($eanRefMap)));
+
+        // Carrega categorias do tenant para resolução de category_id
+        $categoryMaps = $this->loadTenantCategoryMaps($tenantId);
+        $this->line(sprintf('  📂 %d categoria(s) do tenant carregada(s)', count($categoryMaps['byId'])));
+
         $imported = 0;
         $skipped = 0;
 
         $this->output->progressStart($total);
 
-        $query->orderBy('products.id')->chunk(500, function ($records) use ($table, $targetColumns, $tenantId, $generator, &$imported, &$skipped): void {
-            $rows = $records->map(function ($record) use ($targetColumns, $tenantId, $generator): array {
+        $query->orderBy('products.id')->chunk(500, function ($records) use ($table, $targetColumns, $tenantId, $generator, $eanRefMap, $categoryMaps, &$imported, &$skipped): void {
+            $rows = $records->map(function ($record) use ($targetColumns, $tenantId, $generator, $eanRefMap, $categoryMaps): array {
                 $row = $this->prepareRow((array) $record, $targetColumns, $tenantId);
 
                 $ean = isset($record->ean) && is_string($record->ean) && trim($record->ean) !== ''
@@ -345,6 +355,7 @@ class ImportLegacyProductsCommand extends Command
                     : null;
 
                 $row['id'] = $generator->productId($tenantId, $ean, $codigoErp);
+                $row['category_id'] = $this->resolveProductCategoryId($ean, $eanRefMap, $categoryMaps);
 
                 return $row;
             });
@@ -355,13 +366,23 @@ class ImportLegacyProductsCommand extends Command
                 ->pluck('id')
                 ->toArray();
 
-            $skipped += count($existingIds);
-            $rows = $rows->filter(fn ($r) => ! in_array($r['id'], $existingIds));
+            $toInsert = $rows->filter(fn ($r) => ! in_array($r['id'], $existingIds));
+            $toUpdate = $rows->filter(fn ($r) => in_array($r['id'], $existingIds));
 
-            if ($rows->isNotEmpty()) {
-                DB::connection('tenant_import')->table($table)->insertOrIgnore($rows->values()->toArray());
-                $imported += $rows->count();
+            if ($toInsert->isNotEmpty()) {
+                DB::connection('tenant_import')->table($table)->insertOrIgnore($toInsert->values()->toArray());
+                $imported += $toInsert->count();
             }
+
+            // Atualiza category_id nos produtos que já existem
+            foreach ($toUpdate as $row) {
+                DB::connection('tenant_import')
+                    ->table($table)
+                    ->where('id', $row['id'])
+                    ->update(['category_id' => $row['category_id']]);
+            }
+
+            $skipped += $toUpdate->count();
 
             $this->output->progressAdvance($records->count());
         });
@@ -369,6 +390,98 @@ class ImportLegacyProductsCommand extends Command
         $this->output->progressFinish();
 
         return ['total' => $total, 'imported' => $imported, 'skipped' => $skipped];
+    }
+
+    /**
+     * Carrega todas as EanReferences ativas do landlord, indexadas pelo EAN normalizado.
+     *
+     * @return array<string, object>
+     */
+    private function loadEanReferenceMap(): array
+    {
+        return DB::connection('landlord')
+            ->table('ean_references')
+            ->whereNull('deleted_at')
+            ->get(['ean', 'category_id', 'category_slug', 'category_name'])
+            ->keyBy(fn ($r) => EanReference::normalizeEan((string) $r->ean))
+            ->all();
+    }
+
+    /**
+     * Carrega categorias do tenant em três índices: por id, por slug e por nome (lowercase).
+     *
+     * @return array{byId: array<string, bool>, bySlug: array<string, string>, byName: array<string, string>}
+     */
+    private function loadTenantCategoryMaps(string $tenantId): array
+    {
+        $byId = [];
+        $bySlug = [];
+        $byName = [];
+
+        $categories = DB::connection('tenant_import')
+            ->table('categories')
+            ->where('tenant_id', $tenantId)
+            ->whereNull('deleted_at')
+            ->get(['id', 'slug', 'name']);
+
+        foreach ($categories as $category) {
+            $id = is_string($category->id ?? null) ? $category->id : null;
+            if ($id === null || $id === '') {
+                continue;
+            }
+
+            $byId[$id] = true;
+
+            $slug = is_string($category->slug ?? null) ? trim($category->slug) : '';
+            if ($slug !== '' && ! isset($bySlug[$slug])) {
+                $bySlug[$slug] = $id;
+            }
+
+            $name = is_string($category->name ?? null) ? mb_strtolower(trim($category->name)) : '';
+            if ($name !== '' && ! isset($byName[$name])) {
+                $byName[$name] = $id;
+            }
+        }
+
+        return ['byId' => $byId, 'bySlug' => $bySlug, 'byName' => $byName];
+    }
+
+    /**
+     * Resolve o category_id do produto via EanReference, com fallback por slug e nome.
+     * Retorna null se o EAN não tiver referência ou a categoria não existir no tenant.
+     *
+     * @param  array<string, object>  $eanRefMap
+     * @param  array{byId: array<string, bool>, bySlug: array<string, string>, byName: array<string, string>}  $categoryMaps
+     */
+    private function resolveProductCategoryId(?string $ean, array $eanRefMap, array $categoryMaps): ?string
+    {
+        if ($ean === null) {
+            return null;
+        }
+
+        $normalized = EanReference::normalizeEan($ean);
+        $ref = $eanRefMap[$normalized] ?? null;
+
+        if ($ref === null) {
+            return null;
+        }
+
+        $refCategoryId = is_string($ref->category_id ?? null) ? trim($ref->category_id) : '';
+        if ($refCategoryId !== '' && isset($categoryMaps['byId'][$refCategoryId])) {
+            return $refCategoryId;
+        }
+
+        $refCategorySlug = is_string($ref->category_slug ?? null) ? trim($ref->category_slug) : '';
+        if ($refCategorySlug !== '' && isset($categoryMaps['bySlug'][$refCategorySlug])) {
+            return $categoryMaps['bySlug'][$refCategorySlug];
+        }
+
+        $refCategoryName = is_string($ref->category_name ?? null) ? mb_strtolower(trim($ref->category_name)) : '';
+        if ($refCategoryName !== '' && isset($categoryMaps['byName'][$refCategoryName])) {
+            return $categoryMaps['byName'][$refCategoryName];
+        }
+
+        return null;
     }
 
     /** @return array<string, mixed> */
