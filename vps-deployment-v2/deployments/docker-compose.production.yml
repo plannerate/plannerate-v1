@@ -6,6 +6,7 @@ services:
       - ./.env
     volumes:
       - ./.env:/var/www/.env:ro
+      - prod_storage_data:/var/www/storage
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
@@ -42,6 +43,7 @@ services:
       - ./.env
     volumes:
       - ./.env:/var/www/.env:ro
+      - prod_storage_data:/var/www/storage
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
@@ -58,6 +60,7 @@ services:
       - ./.env
     volumes:
       - ./.env:/var/www/.env:ro
+      - prod_storage_data:/var/www/storage
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: php artisan schedule:work
@@ -74,6 +77,7 @@ services:
       - ./.env
     volumes:
       - ./.env:/var/www/.env:ro
+      - prod_storage_data:/var/www/storage
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: php artisan reverb:start --host=0.0.0.0 --port=8080
@@ -125,4 +129,6 @@ networks:
 
 volumes:
   prod_redis_data:
+    driver: local
+  prod_storage_data:
     driver: local
