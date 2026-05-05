@@ -19,6 +19,8 @@ class Product extends Model
 {
     use BelongsToTenant, HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
 
+    protected $fillable = ['url'];
+
     protected $appends = ['image_url', 'formatted_height', 'formatted_width', 'formatted_depth', 'category_full_path'];
 
     // Relação com Dimension removida - colunas migradas para products

@@ -37,6 +37,10 @@ test('plannerate editor tenant models use configured tenant connection', functio
     Store::class,
 ]);
 
+test('plannerate product model allows mass assignment for url', function (): void {
+    expect((new Product())->isFillable('url'))->toBeTrue();
+});
+
 test('plannerate package does not query tenant tables through default or landlord connections', function (): void {
     $sourcePath = base_path('packages/callcocam/laravel-raptor-plannerate/src');
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($sourcePath));

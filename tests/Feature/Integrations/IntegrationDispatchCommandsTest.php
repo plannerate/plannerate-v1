@@ -581,7 +581,7 @@ test('monthly sales recalculate service links sales and monthly summaries by cod
         'sale_price' => 15,
         'sale_date' => '2025-01-23',
         'promotion' => 'N',
-        'total_sale_quantity' => 2,
+        'total_sale_quantity' => 9.958,
         'total_sale_value' => 30,
         'total_profit_margin' => 5,
         'margem_contribuicao' => 8,
@@ -599,7 +599,7 @@ test('monthly sales recalculate service links sales and monthly summaries by cod
         ->and($linkedSale?->ean)->toBe('7891234500993')
         ->and($monthlySummary?->product_id)->toBe($productId)
         ->and($monthlySummary?->ean)->toBe('7891234500993')
-        ->and((int) $monthlySummary?->total_sale_quantity)->toBe(2);
+        ->and(number_format((float) $monthlySummary?->total_sale_quantity, 3, '.', ''))->toBe('9.958');
 });
 
 test('post sync maintenance job runs cleanup ean reference sync link sales and dispatches monthly recalc for tenant', function () {

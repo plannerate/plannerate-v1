@@ -13,8 +13,11 @@ use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\UploadProductImageRequest;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use League\Flysystem\UnableToWriteFile;
+use Throwable;
 
 class ProductImageController extends Controller
 {
@@ -54,8 +57,10 @@ class ProductImageController extends Controller
             // Valida e obtém a imagem do request
             $image = $request->file('image');
 
-            if (! $image) {
-                return back()->withErrors(['image' => 'Nenhuma imagem foi enviada.']);
+            if (! $image instanceof UploadedFile || ! $image->isValid()) {
+                throw ValidationException::withMessages([
+                    'image' => 'A imagem enviada e invalida ou esta corrompida.',
+                ]);
             }
 
             // Define o path de armazenamento
@@ -64,20 +69,35 @@ class ProductImageController extends Controller
             // Armazena a imagem no disco public
             $filename = $image->store($path, 'public');
 
+            if (! is_string($filename) || $filename === '') {
+                throw UnableToWriteFile::atLocation($path);
+            }
+
             // Coluna `url` guarda o path no disco public (ver getImageUrlAttribute no modelo Product do editor)
             $productModel->update([
                 'url' => $filename,
             ]);
 
             return back()->with('success', 'Imagem atualizada com sucesso!');
-        } catch (\Exception $e) {
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (Throwable $e) {
             Log::error('Erro ao fazer upload de imagem do produto', [
                 'product_id' => $productModel->id,
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->withErrors(['image' => 'Erro ao fazer upload da imagem.']);
+            return back()->withErrors(['image' => $this->resolveUploadExceptionMessage($e)]);
         }
+    }
+
+    private function resolveUploadExceptionMessage(Throwable $exception): string
+    {
+        if ($exception instanceof UnableToWriteFile) {
+            return 'Nao foi possivel salvar a imagem no armazenamento. Verifique a configuracao do disco e tente novamente.';
+        }
+
+        return $exception->getMessage() ?: 'Erro inesperado ao processar o upload da imagem. Tente novamente em instantes.';
     }
 
     /**

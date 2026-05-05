@@ -290,6 +290,18 @@ function formatFileSize(bytes: number): string {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
 
+function resolveUploadErrorMessage(rawMessage?: string): string {
+    if (!rawMessage || rawMessage.trim() === '') {
+        return 'Erro ao enviar imagem. Verifique o formato, o tamanho (ate 5MB) e tente novamente.';
+    }
+
+    if (rawMessage === 'Erro ao fazer upload da imagem.') {
+        return 'Falha ao salvar a imagem no servidor. Verifique se o arquivo e uma imagem valida (ate 5MB) e tente novamente.';
+    }
+
+    return rawMessage;
+}
+
 function handleClose() {
     open.value = false;
 }
@@ -331,7 +343,10 @@ async function handleUploadImage() {
         formData.append('product_id', props.product.id);
 
         // Faz upload via Inertia
-        router.post(wayfinderPath(uploadImage.url(props.product)), formData, {
+        router.post(wayfinderPath(uploadImage.url({
+            subdomain: window.location.hostname.split('.')[0],
+            product: props.product.id,
+        })), formData, {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
@@ -353,7 +368,9 @@ async function handleUploadImage() {
 
                     return typeof v === 'string' ? v : undefined;
                 };
-                const message = pick('product') ?? pick('image') ?? 'Erro ao enviar imagem. Tente novamente.';
+                const message = resolveUploadErrorMessage(
+                    pick('product') ?? pick('image') ?? 'Erro ao enviar imagem. Tente novamente.',
+                );
                 uploadError.value = message;
                 toast.error(message);
             },
@@ -363,8 +380,9 @@ async function handleUploadImage() {
         });
     } catch (error) {
         console.error('Erro ao fazer upload:', error);
-        uploadError.value = 'Erro ao enviar imagem. Tente novamente.';
-        toast.error('Erro ao enviar imagem');
+        const message = resolveUploadErrorMessage(error instanceof Error ? error.message : undefined);
+        uploadError.value = message;
+        toast.error(message);
         isUploading.value = false;
     }
 }
@@ -379,7 +397,10 @@ async function handleDeleteImage() {
 
     try {
         // Envia requisição para remover a imagem (marcar image_url como null)
-        router.delete(wayfinderPath(deleteImage.url(props.product.id)), {
+        router.delete(wayfinderPath(deleteImage.url({
+            subdomain: window.location.hostname.split('.')[0],
+            product: props.product.id,
+        })), {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
