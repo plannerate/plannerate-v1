@@ -74,6 +74,13 @@ test('tenant dashboard shares tenant navigation context', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->where('navigation.context', 'tenant')
             ->where('tenant.name', 'Alfa')
+            ->has('totals')
+            ->has('status_chart.planograms', 3)
+            ->has('status_chart.categories', 3)
+            ->has('status_chart.products', 3)
+            ->has('recent.planograms')
+            ->has('recent.categories')
+            ->has('recent.products')
             ->has('navigation.main', 1)
             ->where('navigation.main.0.type', 'item')
             ->where('navigation.main.0.href', route('tenant.dashboard', ['subdomain' => 'alfa'], false))
