@@ -60,7 +60,7 @@ class ImportLegacyTenantsCommand extends Command
         $this->newLine();
         $this->table(
             ['Cliente', 'Tenant', 'DB', 'Usuários', 'Integrações'],
-            array_map(fn ($r) => [
+            array_map(fn($r) => [
                 $r['client'],
                 $r['tenant'],
                 $r['database'],
@@ -100,7 +100,7 @@ class ImportLegacyTenantsCommand extends Command
 
             return true;
         } catch (\Exception $e) {
-            $this->error('❌ Falha na conexão com mysql_legacy: '.$e->getMessage());
+            $this->error('❌ Falha na conexão com mysql_legacy: ' . $e->getMessage());
 
             return false;
         }
@@ -137,7 +137,7 @@ class ImportLegacyTenantsCommand extends Command
     private function importClient(object $client): array
     {
         $slug = str($client->slug ?? $client->name)->slug('_')->replace('supermercado_', '')->replace('_supermercados', '')->replace('_ltda', '')->replace(' LTDA', '');
-        $database = 'tenant_'.$slug;
+        $database = 'tenant_' . $slug;
         $landlordDomain = config('app.landlord_domain', env('LANDLORD_DOMAIN', 'plannerate-v1.test'));
         $host = "{$slug}.{$landlordDomain}";
 
@@ -323,7 +323,7 @@ class ImportLegacyTenantsCommand extends Command
             ['tenant_id' => $tenant->id],
             [
                 'integration_type' => $ci->integration_type,
-                'identifier' => (string) $client->id,
+                'identifier' => (string) preg_replace('/[^a-z0-9]/', '', strtolower($ci->cnpj ?? '')), // Normalize identifier
                 'external_name' => $ci->external_name,
                 'external_name_ean' => $ci->external_name_ean,
                 'external_name_status' => $ci->external_name_status,
@@ -343,7 +343,7 @@ class ImportLegacyTenantsCommand extends Command
                         'products_page_size' => (int) ($legacyConfig['products_page_size'] ?? 1000),
                         'sales_tipo_consulta' => (string) ($legacyConfig['sales_tipo_consulta'] ?? 'produto'),
                         'partner_key' => (string) ($authBody['partner_key'] ?? ''),
-                        'empresa' => (string) ($authBody['empresa'] ?? ''),
+                        'empresa' => (string) preg_replace('/[^a-z0-9]/', '', strtolower($ci->cnpj ?? '')), // Placeholder, as original schema doesn't have this field
                         'auto_processing_enabled' => (bool) ($legacyConfig['auto_processing_enabled'] ?? true),
                         'processing_time' => (string) ($legacyConfig['processing_time'] ?? '02:00'),
                         'initial_setup_date' => $legacyConfig['initial_setup_date'] ?? null,
