@@ -66,6 +66,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'tenant' => [
                 'id' => fn (): ?string => $this->resolveTenantFromContext($request)?->getKey(),
+                'name' => fn (): ?string => $this->resolveTenantFromContext($request)?->name,
                 'slug' => fn (): ?string => $this->resolveTenantFromContext($request)?->slug,
                 'active_modules' => fn (): array => $this->resolveActiveTenantModules($request),
             ],
