@@ -89,6 +89,47 @@ class TenantIntegrationController extends Controller
         return to_route('landlord.tenants.integration.edit', $tenant);
     }
 
+    public function destroy(Tenant $tenant): RedirectResponse
+    {
+        $this->authorize('update', $tenant);
+
+        $tenant->integration?->delete();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.tenant_integrations.messages.deleted'),
+        ]);
+
+        return to_route('landlord.tenants.integration.edit', $tenant);
+    }
+
+    public function toggleStatus(Tenant $tenant): RedirectResponse
+    {
+        $this->authorize('update', $tenant);
+
+        $integration = $tenant->integration;
+
+        if (! $integration instanceof TenantIntegration) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('app.landlord.tenant_integrations.messages.missing_configuration'),
+            ]);
+
+            return to_route('landlord.tenants.integration.edit', $tenant);
+        }
+
+        $integration->update(['is_active' => ! $integration->is_active]);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $integration->is_active
+                ? __('app.landlord.tenant_integrations.messages.activated')
+                : __('app.landlord.tenant_integrations.messages.deactivated'),
+        ]);
+
+        return to_route('landlord.tenants.integration.edit', $tenant);
+    }
+
     public function testConnection(Request $request, Tenant $tenant): RedirectResponse|JsonResponse
     {
         $this->authorize('update', $tenant);

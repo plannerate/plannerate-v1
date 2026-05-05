@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Form, Head, router } from '@inertiajs/vue3';
-import { Link2 } from 'lucide-vue-next';
+import { Link2, PowerOff, Power } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord/TenantIntegrationController';
+import DeleteButton from '@/components/DeleteButton.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import SysmoIntegrationFields from '@/components/form/SysmoIntegrationFields.vue';
 import FormCard from '@/components/FormCard.vue';
@@ -134,6 +135,27 @@ onBeforeUnmount(() => {
     removeFlashListener();
 });
 
+const statusLoading = ref(false);
+
+function toggleStatus(): void {
+    if (!props.integration || statusLoading.value) {
+        return;
+    }
+
+    statusLoading.value = true;
+
+    router.patch(
+        TenantIntegrationController.toggleStatus.url(props.tenant.id),
+        {},
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                statusLoading.value = false;
+            },
+        },
+    );
+}
+
 function testConnection(): void {
     if (!props.integration || testLoading.value) {
         return;
@@ -189,6 +211,27 @@ function testConnection(): void {
                         >
                             {{ t('app.landlord.tenant_integrations.actions.test_connection') }}
                         </Button>
+                        <Button
+                            type="button"
+                            :variant="props.integration?.is_active ? 'outline' : 'secondary'"
+                            size="sm"
+                            :disabled="!props.integration || statusLoading"
+                            @click="toggleStatus"
+                        >
+                            <PowerOff v-if="props.integration?.is_active" class="size-4" />
+                            <Power v-else class="size-4" />
+                            {{ props.integration?.is_active
+                                ? t('app.landlord.tenant_integrations.actions.deactivate')
+                                : t('app.landlord.tenant_integrations.actions.activate') }}
+                        </Button>
+                        <DeleteButton
+                            v-if="props.integration"
+                            :href="TenantIntegrationController.destroy.url(props.tenant.id)"
+                            :label="t('app.landlord.tenant_integrations.title')"
+                            require-confirm-word
+                        >
+                            {{ t('app.landlord.tenant_integrations.actions.delete') }}
+                        </DeleteButton>
                     </template>
 
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
@@ -296,5 +339,6 @@ function testConnection(): void {
                 </FormCard>
             </Form>
         </div>
+
     </AppLayout>
 </template>

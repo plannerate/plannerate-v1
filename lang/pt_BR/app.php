@@ -353,6 +353,10 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'actions' => [
                 'test_connection' => 'Testar conexao',
                 'run_test' => 'Executar teste',
+                'delete' => 'Excluir integracao',
+                'activate' => 'Ativar',
+                'deactivate' => 'Desativar',
+                'delete_confirm' => 'Tem certeza que deseja excluir esta integracao? Esta acao nao pode ser desfeita.',
             ],
             'types' => [
                 'sysmo' => 'Sysmo',
@@ -388,6 +392,9 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             ],
             'messages' => [
                 'updated' => 'Integracao do tenant atualizada com sucesso.',
+                'deleted' => 'Integracao do tenant excluida com sucesso.',
+                'activated' => 'Integracao ativada com sucesso.',
+                'deactivated' => 'Integracao desativada com sucesso.',
                 'missing_configuration' => 'Salve a configuracao da integracao antes de testar a conexao.',
                 'connection_success' => 'Conexao validada com sucesso.',
                 'connection_failed' => 'Falha ao testar conexao: :error',

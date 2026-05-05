@@ -31,7 +31,7 @@ const props = withDefaults(
 
 const isOpen = ref(false);
 const typed = ref('');
-const confirmWord = ref(CONFIRM_WORDS[0]);
+const confirmWord = ref<typeof CONFIRM_WORDS[number]>(CONFIRM_WORDS[0]);
 const isDeleting = ref(false);
 
 const canConfirm = computed(() => {

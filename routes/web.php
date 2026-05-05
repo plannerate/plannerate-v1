@@ -95,6 +95,10 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->name('landlord.tenants.integration.update');
     Route::post('tenants/{tenant}/integration/test-connection', [TenantIntegrationController::class, 'testConnection'])
         ->name('landlord.tenants.integration.test-connection');
+    Route::patch('tenants/{tenant}/integration/toggle-status', [TenantIntegrationController::class, 'toggleStatus'])
+        ->name('landlord.tenants.integration.toggle-status');
+    Route::delete('tenants/{tenant}/integration', [TenantIntegrationController::class, 'destroy'])
+        ->name('landlord.tenants.integration.destroy');
 
     Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
         Route::get('tenants/{tenant}/kanban/templates', [LandlordWorkflowTemplateController::class, 'index'])
