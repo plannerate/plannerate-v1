@@ -2,12 +2,44 @@
 
 use App\Models\Product;
 use App\Services\ProductRepositoryImageResolver;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 uses(TestCase::class);
+
+beforeEach(function (): void {
+    $landlordPath = database_path('testing_resolver_unit_landlord.sqlite');
+    if (! file_exists($landlordPath)) {
+        touch($landlordPath);
+    }
+
+    Config::set('database.connections.landlord', [
+        'driver' => 'sqlite',
+        'database' => $landlordPath,
+        'prefix' => '',
+        'foreign_key_constraints' => false,
+    ]);
+
+    DB::purge('landlord');
+
+    Schema::connection('landlord')->dropIfExists('ean_references');
+    Schema::connection('landlord')->create('ean_references', function (Blueprint $table): void {
+        $table->string('id')->primary();
+        $table->string('ean')->unique();
+        $table->string('image_front_url')->nullable();
+        $table->string('unit')->default('cm');
+        $table->boolean('has_dimensions')->default(false);
+        $table->string('dimension_status')->default('published');
+        $table->timestamps();
+        $table->timestamp('deleted_at')->nullable();
+    });
+});
 
 test('service resolves image path for product using existing webp from repository', function (): void {
     Storage::fake('public');

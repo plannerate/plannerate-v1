@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\EanReference;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -36,7 +38,7 @@ class ProductRepositoryImageResolver
      */
     public function resolveByEan(string $ean, ?float $width = null, ?float $height = null): ?array
     {
-        $normalizedEan = trim($ean);
+        $normalizedEan = EanReference::normalizeEan($ean);
         $this->lastResolutionDebug = [
             'ean' => $normalizedEan,
             'repository_attempts' => [],
@@ -50,7 +52,31 @@ class ProductRepositoryImageResolver
             return null;
         }
 
+        // Prioridade 1: cache global no landlord (zero I/O remoto)
+        $cachedPath = $this->resolveFromEanReference($normalizedEan);
+        if ($cachedPath !== null) {
+            $this->lastResolutionDebug['result'] = 'resolved_from_ean_reference';
+
+            return [
+                'path' => $cachedPath,
+                'public_url' => Storage::disk('public')->url($cachedPath),
+            ];
+        }
+
         $targetPath = sprintf('repositorioimagens/frente/%s.webp', $normalizedEan);
+
+        // Prioridade 2: arquivo já existe no disco público local
+        if (Storage::disk('public')->exists($targetPath)) {
+            $this->lastResolutionDebug['result'] = 'resolved_from_public_disk';
+            $this->saveToEanReference($normalizedEan, $targetPath);
+
+            return [
+                'path' => $targetPath,
+                'public_url' => Storage::disk('public')->url($targetPath),
+            ];
+        }
+
+        // Prioridade 3+4: DigitalOcean Spaces (webp → copia; png → converte)
         $processedPath = $this->resolveFromRepository(
             ean: $normalizedEan,
             targetPath: $targetPath,
@@ -58,22 +84,27 @@ class ProductRepositoryImageResolver
             height: $height,
         );
 
-        if ($processedPath === null) {
-            $webFallbackPath = $this->resolveFromWeb(
-                ean: $normalizedEan,
-                targetPath: $targetPath,
-                width: $width,
-                height: $height,
-            );
+        if ($processedPath !== null) {
+            $this->lastResolutionDebug['result'] = 'resolved_from_repository';
+            $this->saveToEanReference($normalizedEan, $processedPath);
 
-            if ($webFallbackPath === null) {
-                $this->lastResolutionDebug['result'] = 'not_found';
-                $this->logMissingImage($normalizedEan);
+            return [
+                'path' => $processedPath,
+                'public_url' => Storage::disk('public')->url($processedPath),
+            ];
+        }
 
-                return null;
-            }
+        // Prioridade 5: web (OpenFoodFacts e similares)
+        $webFallbackPath = $this->resolveFromWeb(
+            ean: $normalizedEan,
+            targetPath: $targetPath,
+            width: $width,
+            height: $height,
+        );
 
+        if ($webFallbackPath !== null) {
             $this->lastResolutionDebug['result'] = 'resolved_from_web';
+            $this->saveToEanReference($normalizedEan, $webFallbackPath);
 
             return [
                 'path' => $webFallbackPath,
@@ -81,12 +112,10 @@ class ProductRepositoryImageResolver
             ];
         }
 
-        $this->lastResolutionDebug['result'] = 'resolved_from_repository';
+        $this->lastResolutionDebug['result'] = 'not_found';
+        $this->logMissingImage($normalizedEan);
 
-        return [
-            'path' => $processedPath,
-            'public_url' => Storage::disk('public')->url($processedPath),
-        ];
+        return null;
     }
 
     public function resolveForProduct(Model $product): ?string
@@ -408,6 +437,25 @@ class ProductRepositoryImageResolver
 
             return null;
         }
+    }
+
+    private function resolveFromEanReference(string $normalizedEan): ?string
+    {
+        $path = DB::connection('landlord')
+            ->table('ean_references')
+            ->whereNull('deleted_at')
+            ->where('ean', $normalizedEan)
+            ->value('image_front_url');
+
+        return is_string($path) && $path !== '' ? $path : null;
+    }
+
+    protected function saveToEanReference(string $normalizedEan, string $path): void
+    {
+        EanReference::updateOrCreate(
+            ['ean' => $normalizedEan],
+            ['image_front_url' => $path]
+        );
     }
 
     protected function logMissingImage(string $ean): void
