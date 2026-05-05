@@ -7,7 +7,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
-#[Signature('logs:archive-and-clear {--days=5 : Remove arquivos arquivados com mais de X dias} {--path= : Diretório de logs (opcional)}')]
+#[Signature('logs:archive-and-clear {--days=5 : Remove arquivos arquivados com mais de X dias} {--path= : Diretório de logs (opcional)} {--max-size-mb=0 : Só executa se laravel.log ultrapassar este tamanho em MB (0 = sempre executa)}')]
 #[Description('Cria cópia diária do laravel.log, limpa o arquivo atual e remove arquivos arquivados antigos')]
 class CleanOldLogsCommand extends Command
 {
@@ -27,6 +27,16 @@ class CleanOldLogsCommand extends Command
         $mainLogPath = $basePath.DIRECTORY_SEPARATOR.'laravel.log';
         if (! is_file($mainLogPath)) {
             file_put_contents($mainLogPath, '');
+        }
+
+        $maxSizeMb = (float) $this->option('max-size-mb');
+        if ($maxSizeMb > 0) {
+            $sizeMb = filesize($mainLogPath) / 1_048_576;
+            if ($sizeMb < $maxSizeMb) {
+                $this->line(sprintf('laravel.log com %.2f MB (limite: %.0f MB) — nenhuma ação necessária.', $sizeMb, $maxSizeMb));
+
+                return self::SUCCESS;
+            }
         }
 
         $archivePath = $basePath.DIRECTORY_SEPARATOR.'laravel-'.Carbon::now()->format('Y-m-d_His').'.log';

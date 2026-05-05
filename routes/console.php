@@ -24,6 +24,11 @@ Schedule::command('logs:archive-and-clear --days=5')
     ->withoutOverlapping()
     ->name('logs-archive-and-clear');
 
+Schedule::command('logs:archive-and-clear --max-size-mb=10')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping()
+    ->name('logs-size-check');
+
 Schedule::command('sync:products-from-ean-references')
     ->dailyAt('09:20')
     ->withoutOverlapping()
