@@ -22,9 +22,7 @@ class EanReferenceByEanConnection implements CategoryImportConnection
         unset($tenantId, $userId, $result);
 
         $ean = EanReference::normalizeEan((string) ($row['ean'] ?? ''));
-        if ($ean === '') {
-            return;
-        }
+        
 
         Log::warning('EanReferenceByEanConnection writing reference', [
             'ean' => $ean,
@@ -33,6 +31,9 @@ class EanReferenceByEanConnection implements CategoryImportConnection
             'leaf_category_name' => $leafCategory->name,
             'source' => self::class,
         ]);
+        if ($ean === '') {
+            return;
+        }
 
         EanReference::on('landlord')->updateOrCreate(
             [

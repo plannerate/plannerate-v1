@@ -2,7 +2,7 @@
 import { Form, Head } from '@inertiajs/vue3';
 import { Barcode } from 'lucide-vue-next';
 import { computed } from 'vue';
-import EanReferenceController from '@/actions/App/Http/Controllers/Tenant/EanReferenceController';
+import EanReferenceController from '@/actions/App/Http/Controllers/Landlord/EanReferenceController';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';

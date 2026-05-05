@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import EanReferenceController from '@/actions/App/Http/Controllers/Tenant/EanReferenceController';
+import EanReferenceController from '@/actions/App/Http/Controllers/Landlord/EanReferenceController';
 import WayfinderLink from '@/components/WayfinderLink.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';

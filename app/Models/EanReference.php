@@ -12,19 +12,7 @@ class EanReference extends Model
 {
     use HasUlids, SoftDeletes;
 
-    protected $connection = 'landlord';
-
-    protected static function booted(): void
-    {
-        static::creating(function (self $model): void {
-            $model->logWriteContext('creating');
-        });
-
-        static::updating(function (self $model): void {
-            $model->logWriteContext('updating');
-        });
-    }
-
+    protected $connection = 'landlord'; 
     /**
      * @var list<string>
      */
