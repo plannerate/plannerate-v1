@@ -15,7 +15,7 @@ withDefaults(
         v-if="src"
         :src="src"
         :alt="alt"
-        class="h-10 w-10 rounded-md border border-border object-cover"
+        class="h-16 w-16 rounded-md border border-border object-contain"
         loading="lazy"
     />
     <div v-else class="h-10 w-10 rounded-md border border-dashed border-border bg-muted/30" />
