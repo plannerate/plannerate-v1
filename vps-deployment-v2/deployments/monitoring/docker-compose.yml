@@ -30,7 +30,6 @@ services:
     restart: unless-stopped
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--config.expand-env'
       - '--storage.path=/alertmanager'
       - '--web.external-url=https://${ALERTMANAGER_DOMAIN}'
     volumes:
