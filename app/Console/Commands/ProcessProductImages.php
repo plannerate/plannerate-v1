@@ -3,85 +3,161 @@
 namespace App\Console\Commands;
 
 use App\Jobs\DOProcessProductImageJob;
+use App\Models\EanReference;
 use App\Models\Product;
 use App\Models\Tenant;
+use App\Support\Modules\ModuleSlug;
 use Illuminate\Console\Command;
-use Spatie\Multitenancy\Commands\Concerns\TenantAware;
-use Spatie\Multitenancy\Models\Tenant as CurrentTenantModel;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ProcessProductImages extends Command
 {
-    use TenantAware;
+    protected $signature = 'process-product-images
+        {--ean=      : EAN específico para processar}
+        {--tenant=*  : ID(s) do tenant (todos com módulo image-bank se omitido)}';
 
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'process-product-images {--ean= : EAN code of the product to process} {--tenant=* : Tenant ID(s) to process}';
+    protected $description = 'Processa imagens de produtos para tenants com o módulo image-bank ativo';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Process product images for products';
-
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): int
     {
-        /** @var Tenant|null $tenant */
-        $tenant = CurrentTenantModel::current();
-        if (! $tenant instanceof Tenant) {
-            $this->warn('Nenhum tenant atual encontrado para este ciclo.');
+        $tenants = $this->resolveTenants();
 
-            return self::FAILURE;
-        }
-
-        $ean = trim((string) $this->option('ean'));
-        if ($ean !== '') {
-            $this->info("Filtering by EAN: {$ean}");
-        }
-
-        $this->info("Tenant atual: {$tenant->name}");
-
-        $query = Product::query()
-            ->when($ean !== '', fn ($q) => $q->where('ean', $ean))
-            ->when($ean === '', fn ($q) => $q->whereNull('url'))
-            ->whereNotNull('ean');
-
-        $totalToDispatch = (clone $query)->count();
-
-        if ($totalToDispatch === 0) {
-            $this->warn('Nenhum produto elegivel para enfileirar.');
+        if ($tenants->isEmpty()) {
+            $this->warn('Nenhum tenant com módulo image-bank ativo encontrado.');
 
             return self::SUCCESS;
         }
 
+        $eanRefMap = $this->loadEanReferenceMap();
+        $this->line(sprintf('%d EAN(s) em cache no EanReference.', count($eanRefMap)));
+
+        foreach ($tenants as $tenant) {
+            $this->newLine();
+            $this->info("Tenant: {$tenant->name}");
+            $tenant->execute(fn () => $this->processTenant($eanRefMap));
+        }
+
         $this->newLine();
-        $this->info("Total elegivel: {$totalToDispatch} produto(s)");
-        $progressBar = $this->output->createProgressBar($totalToDispatch);
-        $progressBar->setFormat(' %current%/%max% [%bar%] %percent:3s%% | %message%');
-        $progressBar->setMessage('Iniciando enfileiramento...');
-        $progressBar->start();
-
-        $query
-            ->select(['id'])
-            ->chunkById(1000, function ($products) use ($progressBar, &$dispatchedJobs): void {
-                foreach ($products as $product) {
-                    DOProcessProductImageJob::dispatch($product->id);
-                    $dispatchedJobs++;
-                    $progressBar->setMessage("Enfileirados: {$dispatchedJobs}");
-                    $progressBar->advance();
-                }
-            });
-
-        $progressBar->finish();
-        $this->newLine(2);
-        $this->info("Tenant {$tenant->name}: {$dispatchedJobs} job(s) enfileirado(s).");
+        $this->info('Concluído.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * @return Collection<int, Tenant>
+     */
+    private function resolveTenants(): Collection
+    {
+        $tenantIds = $this->option('tenant');
+
+        if (! empty($tenantIds)) {
+            $ids = collect($tenantIds)
+                ->flatMap(fn (string $v) => explode(',', $v))
+                ->map(fn (string $v) => trim($v))
+                ->filter()
+                ->values()
+                ->toArray();
+
+            return Tenant::query()->whereIn('id', $ids)->get();
+        }
+
+        return Tenant::query()
+            ->where('status', 'active')
+            ->whereHasActiveModule(ModuleSlug::IMAGE_BANK)
+            ->get();
+    }
+
+    /**
+     * Mapa normalizedEan → image_front_url do landlord (uma query por execução).
+     *
+     * @return array<string, string>
+     */
+    private function loadEanReferenceMap(): array
+    {
+        return DB::connection('landlord')
+            ->table('ean_references')
+            ->whereNull('deleted_at')
+            ->whereNotNull('image_front_url')
+            ->pluck('image_front_url', 'ean')
+            ->all();
+    }
+
+    /**
+     * @param  array<string, string>  $eanRefMap
+     */
+    private function processTenant(array $eanRefMap): void
+    {
+        $ean = trim((string) $this->option('ean'));
+        $stats = ['total' => 0, 'fast' => 0, 'dispatched' => 0, 'skipped' => 0];
+
+        $query = Product::query()
+            ->whereNotNull('ean')
+            ->when($ean !== '', fn ($q) => $q->where('ean', $ean))
+            ->select(['id', 'ean', 'url']);
+
+        $progressBar = $this->output->createProgressBar($query->count());
+        $progressBar->start();
+
+        $query->chunkById(500, function ($products) use ($eanRefMap, &$stats, $progressBar): void {
+            $eligible = $products->filter(function ($product): bool {
+                if ($product->url === null || $product->url === '') {
+                    return true;
+                }
+
+                return ! Storage::disk('public')->exists($product->url);
+            });
+
+            $stats['total'] += $products->count();
+            $stats['skipped'] += $products->count() - $eligible->count();
+
+            if ($eligible->isEmpty()) {
+                $progressBar->advance($products->count());
+
+                return;
+            }
+
+            // Fast path: EAN já resolvido → UPDATE em lote via SQL
+            $fastPath = $eligible->filter(
+                fn ($p) => isset($eanRefMap[EanReference::normalizeEan((string) $p->ean)])
+            );
+
+            if ($fastPath->isNotEmpty()) {
+                $grouped = $fastPath->groupBy(
+                    fn ($p) => $eanRefMap[EanReference::normalizeEan((string) $p->ean)]
+                );
+
+                foreach ($grouped as $imageUrl => $group) {
+                    DB::table('products')
+                        ->whereIn('id', $group->pluck('id'))
+                        ->update(['url' => $imageUrl, 'updated_at' => now()]);
+                }
+
+                $stats['fast'] += $fastPath->count();
+            }
+
+            // Slow path: EAN desconhecido → despacha job
+            $slowPath = $eligible->reject(
+                fn ($p) => isset($eanRefMap[EanReference::normalizeEan((string) $p->ean)])
+            );
+
+            foreach ($slowPath as $product) {
+                DOProcessProductImageJob::dispatch($product->id);
+                $stats['dispatched']++;
+            }
+
+            $progressBar->advance($products->count());
+        });
+
+        $progressBar->finish();
+        $this->newLine();
+        $this->line(sprintf(
+            '  Total: %d | Ignorados: %d | Fast path: %d | Jobs: %d',
+            $stats['total'],
+            $stats['skipped'],
+            $stats['fast'],
+            $stats['dispatched'],
+        ));
     }
 }
