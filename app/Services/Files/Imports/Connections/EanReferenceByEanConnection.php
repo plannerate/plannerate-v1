@@ -5,7 +5,6 @@ namespace App\Services\Files\Imports\Connections;
 use App\Models\Category;
 use App\Models\EanReference;
 use App\Services\Files\Imports\ImportExecutionResult;
-use Illuminate\Support\Facades\Log;
 
 class EanReferenceByEanConnection implements CategoryImportConnection
 {
@@ -22,15 +21,7 @@ class EanReferenceByEanConnection implements CategoryImportConnection
         unset($tenantId, $userId, $result);
 
         $ean = EanReference::normalizeEan((string) ($row['ean'] ?? ''));
-        
 
-        Log::warning('EanReferenceByEanConnection writing reference', [
-            'ean' => $ean,
-            'connection' => 'landlord',
-            'leaf_category_id' => $leafCategory->id,
-            'leaf_category_name' => $leafCategory->name,
-            'source' => self::class,
-        ]);
         if ($ean === '') {
             return;
         }

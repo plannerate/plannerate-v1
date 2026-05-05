@@ -6,13 +6,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Log;
 
 class EanReference extends Model
 {
     use HasUlids, SoftDeletes;
 
-    protected $connection = 'landlord'; 
+    protected $connection = 'landlord';
     /**
      * @var list<string>
      */
@@ -69,30 +68,5 @@ class EanReference extends Model
         $digitsOnly = preg_replace('/\D+/', '', $ean) ?? '';
 
         return $digitsOnly !== '' ? $digitsOnly : trim($ean);
-    }
-
-    private function logWriteContext(string $operation): void
-    {
-        $connectionName = $this->getConnectionName();
-        $connection = $this->getConnection();
-
-        $caller = collect(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 20))
-            ->first(function (array $frame): bool {
-                $class = (string) ($frame['class'] ?? '');
-
-                return $class !== '' && ! str_starts_with($class, 'Illuminate\\') && ! str_starts_with($class, self::class);
-            });
-
-        Log::warning('EanReference write trace', [
-            'operation' => $operation,
-            'ean' => $this->ean,
-            'model_connection_name' => $connectionName,
-            'resolved_connection_name' => $connection->getName(),
-            'resolved_database' => $connection->getDatabaseName(),
-            'table' => $this->getTable(),
-            'caller_class' => $caller['class'] ?? null,
-            'caller_function' => $caller['function'] ?? null,
-            'route' => request()?->route()?->getName(),
-        ]);
     }
 }

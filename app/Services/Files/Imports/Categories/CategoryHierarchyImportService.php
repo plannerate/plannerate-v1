@@ -10,7 +10,6 @@ use App\Services\Files\Imports\Connections\PlanogramCategoryLeafConnection;
 use App\Services\Files\Imports\Connections\ProductCategoryByEanConnection;
 use App\Services\Files\Imports\ImportExecutionResult;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CategoryHierarchyImportService
@@ -217,12 +216,6 @@ class CategoryHierarchyImportService
         if ($normalizedEan === '') {
             return null;
         }
-
-        Log::warning('CategoryHierarchyImportService lookup ean reference', [
-            'ean' => $normalizedEan,
-            'lookup_connection' => 'landlord',
-            'source' => self::class,
-        ]);
 
         $reference = EanReference::on('landlord')
             ->select(['category_id'])

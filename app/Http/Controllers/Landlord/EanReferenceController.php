@@ -10,7 +10,6 @@ use App\Models\EanReference;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -92,12 +91,6 @@ class EanReferenceController extends Controller
     {
         $this->authorize('create', EanReference::class);
 
-        Log::warning('Landlord EanReferenceController store called', [
-            'route' => request()->route()?->getName(),
-            'connection' => 'landlord',
-            'ean' => $request->input('ean'),
-        ]);
-
         EanReference::query()->create($request->validated());
 
         Inertia::flash('toast', [
@@ -136,13 +129,6 @@ class EanReferenceController extends Controller
     public function update(UpdateEanReferenceRequest $request, EanReference $eanReference): RedirectResponse
     {
         $this->authorize('update', $eanReference);
-
-        Log::warning('Landlord EanReferenceController update called', [
-            'route' => request()->route()?->getName(),
-            'connection' => 'landlord',
-            'ean_reference_id' => $eanReference->id,
-            'ean' => $request->input('ean'),
-        ]);
 
         $eanReference->update($request->validated());
 
