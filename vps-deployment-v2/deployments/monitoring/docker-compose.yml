@@ -22,7 +22,7 @@ services:
       - 'traefik.http.routers.${APP_SLUG:-staging}-prometheus.entrypoints=websecure'
       - 'traefik.http.routers.${APP_SLUG:-staging}-prometheus.tls=true'
       - 'traefik.http.routers.${APP_SLUG:-staging}-prometheus.tls.certresolver=letsencrypt'
-      - 'traefik.http.routers.${APP_SLUG:-staging}-prometheus.priority=14'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-prometheus.priority=100'
       - 'traefik.http.services.${APP_SLUG:-staging}-prometheus.loadbalancer.server.port=9090'
 
   alertmanager:
@@ -45,7 +45,7 @@ services:
       - 'traefik.http.routers.${APP_SLUG:-staging}-alertmanager.entrypoints=websecure'
       - 'traefik.http.routers.${APP_SLUG:-staging}-alertmanager.tls=true'
       - 'traefik.http.routers.${APP_SLUG:-staging}-alertmanager.tls.certresolver=letsencrypt'
-      - 'traefik.http.routers.${APP_SLUG:-staging}-alertmanager.priority=14'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-alertmanager.priority=100'
       - 'traefik.http.services.${APP_SLUG:-staging}-alertmanager.loadbalancer.server.port=9093'
 
   grafana:
@@ -68,7 +68,7 @@ services:
       - 'traefik.http.routers.${APP_SLUG:-staging}-grafana.entrypoints=websecure'
       - 'traefik.http.routers.${APP_SLUG:-staging}-grafana.tls=true'
       - 'traefik.http.routers.${APP_SLUG:-staging}-grafana.tls.certresolver=letsencrypt'
-      - 'traefik.http.routers.${APP_SLUG:-staging}-grafana.priority=15'
+      - 'traefik.http.routers.${APP_SLUG:-staging}-grafana.priority=100'
       - 'traefik.http.services.${APP_SLUG:-staging}-grafana.loadbalancer.server.port=3000'
 
   node-exporter:
