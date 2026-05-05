@@ -194,18 +194,12 @@ class ImportLegacyBaseClientCommand extends Command
 
     private function resolveClientFromTenant(): ?object
     {
-        $identifier = $this->tenant->integration?->identifier;
+        
 
-        if (! $identifier) {
-            $this->error("❌ Tenant '{$this->tenant->name}' não possui integração com identifier. Execute primeiro o import:legacy-tenants.");
-
-            return null;
-        }
-
-        $client = $this->legacy->table('clients')->where('id', $identifier)->first();
+        $client = $this->legacy->table('clients')->where('id', $this->tenant->id)->first();
 
         if (! $client) {
-            $this->error("❌ Cliente não encontrado na base legada com ID: {$identifier}");
+            $this->error("❌ Cliente não encontrado na base legada com ID: {$this->tenant->id}");
 
             return null;
         }
