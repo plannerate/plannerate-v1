@@ -36,7 +36,16 @@ class LandlordPlansAndModulesSeeder extends Seeder
             $tenant->modules()->syncWithoutDetaching([$module->id]);
         });
 
+        $imageBank = Module::on('landlord')->firstOrCreate(
+            ['slug' => 'image-bank'],
+            [
+                'name' => 'Banco de Imagens',
+                'is_active' => true,
+            ]
+        );
+
         $this->command->info("  Plan: {$plan->name} (user_limit={$plan->user_limit})");
         $this->command->info("  Module: {$module->name} (slug={$module->slug}) — associado a todos os tenants");
+        $this->command->info("  Module: {$imageBank->name} (slug={$imageBank->slug}) — disponível para ativação por tenant");
     }
 }
