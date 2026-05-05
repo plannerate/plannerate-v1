@@ -357,6 +357,19 @@ class ImportLegacyProductsCommand extends Command
                 $row['id'] = $generator->productId($tenantId, $ean, $codigoErp);
                 $row['category_id'] = $this->resolveProductCategoryId($ean, $eanRefMap, $categoryMaps);
 
+                // Aplica defaults para colunas NOT NULL que vêm de LEFT JOINs opcionais.
+                // O raw INSERT não aciona defaults do banco quando o valor é passado explicitamente como null.
+                $row['unit'] = (isset($row['unit']) && is_string($row['unit']) && $row['unit'] !== '') ? $row['unit'] : 'cm';
+                $row['status'] = (isset($row['status']) && $row['status'] !== '') ? $row['status'] : 'draft';
+                $row['dimension_status'] = (isset($row['dimension_status']) && $row['dimension_status'] !== '') ? $row['dimension_status'] : 'published';
+                $row['has_dimensions'] = isset($row['has_dimensions']) ? (bool) $row['has_dimensions'] : false;
+                $row['stackable'] = isset($row['stackable']) ? (bool) $row['stackable'] : false;
+                $row['perishable'] = isset($row['perishable']) ? (bool) $row['perishable'] : false;
+                $row['flammable'] = isset($row['flammable']) ? (bool) $row['flammable'] : false;
+                $row['hangable'] = isset($row['hangable']) ? (bool) $row['hangable'] : false;
+                $row['no_sales'] = isset($row['no_sales']) ? (bool) $row['no_sales'] : false;
+                $row['no_purchases'] = isset($row['no_purchases']) ? (bool) $row['no_purchases'] : false;
+
                 return $row;
             });
 
