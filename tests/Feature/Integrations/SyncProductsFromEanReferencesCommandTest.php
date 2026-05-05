@@ -48,9 +48,9 @@ test('service fills product fields from ean references without overwriting exist
     DB::table('ean_references')->insert([
         [
             'id' => (string) str()->ulid(),
-            'tenant_id' => $tenantId,
             'ean' => '7891000000010',
-            'category_id' => $categoryId,
+            'category_name' => 'Bebidas',
+            'category_slug' => 'bebidas',
             'reference_description' => 'Descrição referência',
             'brand' => 'Marca Ref',
             'subbrand' => 'Submarca Ref',
@@ -69,9 +69,9 @@ test('service fills product fields from ean references without overwriting exist
         ],
         [
             'id' => (string) str()->ulid(),
-            'tenant_id' => $tenantId,
             'ean' => '7891000000027',
-            'category_id' => $categoryId,
+            'category_name' => 'Bebidas',
+            'category_slug' => 'bebidas',
             'reference_description' => 'Referência preenchida',
             'brand' => 'Marca preenchida ref',
             'subbrand' => 'Submarca preenchida ref',
@@ -90,9 +90,9 @@ test('service fills product fields from ean references without overwriting exist
         ],
         [
             'id' => (string) str()->ulid(),
-            'tenant_id' => $otherTenantId,
             'ean' => '7891000000034',
-            'category_id' => $otherCategoryId,
+            'category_name' => 'Outra Categoria',
+            'category_slug' => 'outra-categoria',
             'reference_description' => 'Outro tenant',
             'brand' => 'Outra Marca',
             'subbrand' => null,
@@ -260,9 +260,9 @@ test('command previews product updates for a tenant without mutating data', func
 
     DB::table('ean_references')->insert([
         'id' => (string) str()->ulid(),
-        'tenant_id' => (string) $tenant->id,
         'ean' => '7891000000041',
-        'category_id' => $categoryId,
+        'category_name' => 'Categoria Preview',
+        'category_slug' => 'categoria-preview',
         'brand' => 'Marca Preview',
         'created_at' => $now,
         'updated_at' => $now,

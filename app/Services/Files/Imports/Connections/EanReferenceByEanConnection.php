@@ -18,7 +18,7 @@ class EanReferenceByEanConnection implements CategoryImportConnection
         array $row,
         ImportExecutionResult $result
     ): void {
-        unset($userId, $result);
+        unset($tenantId, $userId, $result);
 
         $ean = EanReference::normalizeEan((string) ($row['ean'] ?? ''));
         if ($ean === '') {
@@ -27,11 +27,12 @@ class EanReferenceByEanConnection implements CategoryImportConnection
 
         EanReference::query()->updateOrCreate(
             [
-                'tenant_id' => $tenantId,
                 'ean' => $ean,
             ],
             [
                 'category_id' => $leafCategory->id,
+                'category_name' => $leafCategory->name,
+                'category_slug' => $leafCategory->slug,
                 'reference_description' => $this->firstValue($row, ['descricao_atual', 'descrição_atual']),
                 'brand' => $this->firstValue($row, ['marca_obrigatorio', 'marca']),
                 'subbrand' => $this->firstValue($row, ['submarca']),

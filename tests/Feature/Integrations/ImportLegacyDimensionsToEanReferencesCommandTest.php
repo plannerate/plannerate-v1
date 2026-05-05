@@ -8,14 +8,14 @@ use Illuminate\Support\Facades\Schema;
 
 test('it upserts ean references from legacy dimensions table', function (): void {
     $legacyPath = database_path('testing_mysql_legacy.sqlite');
-    $tenantPath = database_path('testing_tenant.sqlite');
+    $landlordPath = database_path('testing_landlord.sqlite');
 
     if (! file_exists($legacyPath)) {
         touch($legacyPath);
     }
 
-    if (! file_exists($tenantPath)) {
-        touch($tenantPath);
+    if (! file_exists($landlordPath)) {
+        touch($landlordPath);
     }
 
     Config::set('database.connections.mysql_legacy', [
@@ -25,24 +25,24 @@ test('it upserts ean references from legacy dimensions table', function (): void
         'foreign_key_constraints' => false,
     ]);
 
-    Config::set('database.connections.tenant', [
+    Config::set('database.connections.landlord', [
         'driver' => 'sqlite',
-        'database' => $tenantPath,
+        'database' => $landlordPath,
         'prefix' => '',
         'foreign_key_constraints' => false,
     ]);
 
     DB::purge('mysql_legacy');
-    DB::purge('tenant');
+    DB::purge('landlord');
 
     $legacyConnection = DB::connection('mysql_legacy');
-    $tenantConnection = DB::connection('tenant');
+    $landlordConnection = DB::connection('landlord');
 
     $legacyConnection->getPdo();
-    $tenantConnection->getPdo();
+    $landlordConnection->getPdo();
 
     Schema::connection('mysql_legacy')->dropIfExists('dimensions');
-    Schema::connection('tenant')->dropIfExists('ean_references');
+    Schema::connection('landlord')->dropIfExists('ean_references');
 
     Schema::connection('mysql_legacy')->create('dimensions', function (Blueprint $table): void {
         $table->increments('id');
@@ -56,9 +56,8 @@ test('it upserts ean references from legacy dimensions table', function (): void
         $table->string('client_id')->nullable();
     });
 
-    Schema::connection('tenant')->create('ean_references', function (Blueprint $table): void {
+    Schema::connection('landlord')->create('ean_references', function (Blueprint $table): void {
         $table->string('id')->primary();
-        $table->string('tenant_id');
         $table->string('ean');
         $table->decimal('width', 10, 2)->nullable();
         $table->decimal('height', 10, 2)->nullable();
@@ -69,7 +68,7 @@ test('it upserts ean references from legacy dimensions table', function (): void
         $table->string('dimension_status')->default('draft');
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
-        $table->unique(['tenant_id', 'ean']);
+        $table->unique(['ean']);
     });
 
     $legacyConnection->table('dimensions')->insert([
@@ -105,9 +104,8 @@ test('it upserts ean references from legacy dimensions table', function (): void
         ],
     ]);
 
-    $tenantConnection->table('ean_references')->insert([
+    $landlordConnection->table('ean_references')->insert([
         'id' => 'existing-id',
-        'tenant_id' => 'tenant-1',
         'ean' => '31',
         'width' => 1.00,
         'height' => 1.00,
@@ -122,14 +120,12 @@ test('it upserts ean references from legacy dimensions table', function (): void
     ]);
 
     $exitCode = Artisan::call('sync:import-legacy-dimensions-to-ean-references', [
-        '--tenant-id' => 'tenant-1',
         '--chunk' => 100,
     ]);
 
     expect($exitCode)->toBe(0);
 
-    $rows = $tenantConnection->table('ean_references')
-        ->where('tenant_id', 'tenant-1')
+    $rows = $landlordConnection->table('ean_references')
         ->orderBy('ean')
         ->get();
 

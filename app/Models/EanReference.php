@@ -2,25 +2,25 @@
 
 namespace App\Models;
 
-use App\Models\Traits\BelongsToTenant;
-use App\Models\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class EanReference extends Model
 {
-    use BelongsToTenant, HasUlids, SoftDeletes, UsesTenantConnection;
+    use HasUlids, SoftDeletes;
+
+    protected $connection = 'landlord';
 
     /**
      * @var list<string>
      */
     protected $fillable = [
-        'tenant_id',
         'ean',
         'category_id',
+        'category_name',
+        'category_slug',
         'reference_description',
         'brand',
         'subbrand',
@@ -34,6 +34,10 @@ class EanReference extends Model
         'unit',
         'has_dimensions',
         'dimension_status',
+        'image_front_url',
+        'image_side_url',
+        'image_top_url',
+        'metadata',
     ];
 
     /**
@@ -47,15 +51,8 @@ class EanReference extends Model
             'depth' => 'decimal:2',
             'weight' => 'decimal:2',
             'has_dimensions' => 'boolean',
+            'metadata' => 'array',
         ];
-    }
-
-    /**
-     * @return BelongsTo<Category, EanReference>
-     */
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(Category::class);
     }
 
     /**

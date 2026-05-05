@@ -74,7 +74,6 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
         }
 
         $references = EanReference::query()
-            ->where('tenant_id', $tenantId)
             ->whereIn('ean', array_values(array_unique($eanValues)))
             ->get()
             ->keyBy('ean');
@@ -221,85 +220,60 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
 
         $connection = DB::connection($tenantConnectionName);
 
-        if ($connection->getDriverName() === 'sqlite') {
-            $products = $connection->table('products')
-                ->where('tenant_id', $tenantId)
-                ->orderBy('id')
-                ->get(['id', 'ean']);
+        $products = $connection->table('products')
+            ->where('tenant_id', $tenantId)
+            ->orderBy('id')
+            ->get(['id', 'ean']);
 
-            $eanValues = $products
-                ->pluck('ean')
-                ->filter(fn (mixed $ean): bool => is_string($ean) && trim($ean) !== '')
-                ->map(fn (string $ean): string => trim($ean))
-                ->unique()
-                ->values()
-                ->all();
+        $eanValues = $products
+            ->pluck('ean')
+            ->filter(fn (mixed $ean): bool => is_string($ean) && trim($ean) !== '')
+            ->map(fn (string $ean): string => trim($ean))
+            ->unique()
+            ->values()
+            ->all();
 
-            if ($eanValues !== []) {
-                $references = EanReference::query()
-                    ->where('tenant_id', $tenantId)
-                    ->whereIn('ean', $eanValues)
-                    ->get()
-                    ->keyBy('ean');
+        if ($eanValues !== []) {
+            $references = EanReference::query()
+                ->whereIn('ean', $eanValues)
+                ->get()
+                ->keyBy('ean');
 
-                foreach ($products as $product) {
-                    $ean = is_string($product->ean ?? null) ? trim($product->ean) : null;
-                    if ($ean === null || $ean === '') {
-                        continue;
-                    }
-
-                    $reference = $references->get($ean);
-                    if (! $reference instanceof EanReference) {
-                        continue;
-                    }
-
-                    $updates = [];
-                    foreach ([
-                        'category_id' => $reference->category_id,
-                        'description' => $reference->reference_description,
-                        'brand' => $reference->brand,
-                        'subbrand' => $reference->subbrand,
-                        'packaging_type' => $reference->packaging_type,
-                        'packaging_size' => $reference->packaging_size,
-                        'measurement_unit' => $reference->measurement_unit,
-                    ] as $column => $value) {
-                        if ($value !== null) {
-                            $updates[$column] = $value;
-                        }
-                    }
-
-                    if ($updates === []) {
-                        continue;
-                    }
-
-                    $updates['updated_at'] = $now;
-
-                    $connection->table('products')
-                        ->where('id', (string) $product->id)
-                        ->update($updates);
+            foreach ($products as $product) {
+                $ean = is_string($product->ean ?? null) ? trim($product->ean) : null;
+                if ($ean === null || $ean === '') {
+                    continue;
                 }
-            }
 
-        } else {
-            $connection->update(
-                '
-                UPDATE products p
-                SET category_id = COALESCE(r.category_id, p.category_id),
-                    description = COALESCE(r.reference_description, p.description),
-                    brand = COALESCE(r.brand, p.brand),
-                    subbrand = COALESCE(r.subbrand, p.subbrand),
-                    packaging_type = COALESCE(r.packaging_type, p.packaging_type),
-                    packaging_size = COALESCE(r.packaging_size, p.packaging_size),
-                    measurement_unit = COALESCE(r.measurement_unit, p.measurement_unit),
-                    updated_at = ?
-                FROM ean_references r
-                WHERE r.tenant_id = p.tenant_id
-                  AND r.ean = p.ean
-                  AND r.deleted_at IS NULL
-                  AND p.tenant_id = ?
-                ',
-                [$now, $tenantId],
-            );
+                $reference = $references->get($ean);
+                if (! $reference instanceof EanReference) {
+                    continue;
+                }
+
+                $updates = [];
+                foreach ([
+                    'description' => $reference->reference_description,
+                    'brand' => $reference->brand,
+                    'subbrand' => $reference->subbrand,
+                    'packaging_type' => $reference->packaging_type,
+                    'packaging_size' => $reference->packaging_size,
+                    'measurement_unit' => $reference->measurement_unit,
+                ] as $column => $value) {
+                    if ($value !== null) {
+                        $updates[$column] = $value;
+                    }
+                }
+
+                if ($updates === []) {
+                    continue;
+                }
+
+                $updates['updated_at'] = $now;
+
+                $connection->table('products')
+                    ->where('id', (string) $product->id)
+                    ->update($updates);
+            }
         }
 
         $this->syncSalesProductReferencesService->syncAllByCodigoErp(

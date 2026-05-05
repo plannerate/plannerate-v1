@@ -6,8 +6,27 @@ use Tests\TestCase;
 
 uses(TestCase::class);
 
-test('ean references table includes product dimension columns', function (): void {
-    $dimensionColumns = [
+test('landlord ean references table includes hybrid catalog columns', function (): void {
+    Artisan::call('migrate:fresh', [
+        '--database' => 'landlord',
+        '--path' => 'database/migrations/landlord',
+        '--force' => true,
+        '--no-interaction' => true,
+    ]);
+
+    expect(Schema::connection('landlord')->hasTable('ean_references'))->toBeTrue();
+
+    foreach ([
+        'ean',
+        'category_id',
+        'category_name',
+        'category_slug',
+        'reference_description',
+        'brand',
+        'subbrand',
+        'packaging_type',
+        'packaging_size',
+        'measurement_unit',
         'width',
         'height',
         'depth',
@@ -15,35 +34,11 @@ test('ean references table includes product dimension columns', function (): voi
         'unit',
         'has_dimensions',
         'dimension_status',
-    ];
-
-    Artisan::call('migrate:fresh', [
-        '--path' => 'database/migrations/2026_04_27_223000_create_ean_references_table.php',
-        '--force' => true,
-        '--no-interaction' => true,
-    ]);
-
-    foreach ($dimensionColumns as $column) {
-        expect(Schema::hasColumn('ean_references', $column))->toBeFalse();
-    }
-
-    Artisan::call('migrate', [
-        '--path' => 'database/migrations/2026_04_29_121122_add_dimension_fields_to_ean_references_table.php',
-        '--force' => true,
-        '--no-interaction' => true,
-    ]);
-
-    foreach ($dimensionColumns as $column) {
-        expect(Schema::hasColumn('ean_references', $column))->toBeTrue();
-    }
-
-    Artisan::call('migrate:rollback', [
-        '--path' => 'database/migrations/2026_04_29_121122_add_dimension_fields_to_ean_references_table.php',
-        '--force' => true,
-        '--no-interaction' => true,
-    ]);
-
-    foreach ($dimensionColumns as $column) {
-        expect(Schema::hasColumn('ean_references', $column))->toBeFalse();
+        'image_front_url',
+        'image_side_url',
+        'image_top_url',
+        'metadata',
+    ] as $column) {
+        expect(Schema::connection('landlord')->hasColumn('ean_references', $column))->toBeTrue();
     }
 });

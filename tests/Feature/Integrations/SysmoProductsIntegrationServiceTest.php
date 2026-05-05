@@ -24,9 +24,9 @@ test('persist mapped products uses ean reference as knowledge base', function ()
     ]);
 
     EanReference::query()->create([
-        'tenant_id' => $tenantId,
         'ean' => '789000000002',
-        'category_id' => $category->id,
+        'category_name' => $category->name,
+        'category_slug' => $category->slug,
         'reference_description' => 'Descricao da base de conhecimento',
         'brand' => 'Marca da Base',
         'subbrand' => 'Submarca da Base',
@@ -132,7 +132,7 @@ test('persist mapped products uses ean reference as knowledge base', function ()
 
     expect($knownProduct)->not->toBeNull()
         ->and((string) $knownProduct?->id)->toStartWith('P1')
-        ->and($knownProduct?->category_id)->toBe($category->id)
+        ->and($knownProduct?->category_id)->toBeNull()
         ->and($knownProduct?->brand)->toBe('Marca da Base')
         ->and($knownProduct?->subbrand)->toBe('Submarca da Base')
         ->and($knownProduct?->packaging_type)->toBe('Caixa')

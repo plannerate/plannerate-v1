@@ -38,8 +38,10 @@ class UpdateEanReferenceRequest extends FormRequest
         $eanReference = $this->route('ean_reference');
 
         return [
-            'ean' => ['required', 'string', 'max:32', Rule::unique('ean_references', 'ean')->ignore($eanReference)],
+            'ean' => ['required', 'string', 'max:32', Rule::unique('landlord.ean_references', 'ean')->ignore($eanReference)],
             'reference_description' => ['nullable', 'string'],
+            'category_name' => ['nullable', 'string', 'max:255'],
+            'category_slug' => ['nullable', 'string', 'max:255'],
             'brand' => ['nullable', 'string', 'max:255'],
             'subbrand' => ['nullable', 'string', 'max:255'],
             'packaging_type' => ['nullable', 'string', 'max:255'],
@@ -52,6 +54,10 @@ class UpdateEanReferenceRequest extends FormRequest
             'unit' => ['nullable', 'string', 'max:20'],
             'dimension_status' => ['nullable', 'in:draft,published'],
             'has_dimensions' => ['sometimes', 'boolean'],
+            'image_front_url' => ['nullable', 'string', 'max:2048'],
+            'image_side_url' => ['nullable', 'string', 'max:2048'],
+            'image_top_url' => ['nullable', 'string', 'max:2048'],
+            'metadata' => ['nullable', 'array'],
         ];
     }
 }

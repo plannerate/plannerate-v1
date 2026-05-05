@@ -2,9 +2,7 @@
 
 namespace App\Console\Commands\Integrations;
 
-use App\Models\Tenant;
 use Illuminate\Console\Command;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -13,26 +11,30 @@ use Illuminate\Support\Str;
 class ImportLegacyDimensionsToEanReferencesCommand extends Command
 {
     protected $signature = 'sync:import-legacy-dimensions-to-ean-references
-        {--tenant-id= : Tenant ULID específico}
         {--chunk=1000 : Tamanho do lote}
         {--dry-run : Só mostra quantos registros seriam processados}';
 
-    protected $description = 'Importa dimensions da base legada para ean_references (tenant específico, tenant atual ou todos ativos)';
+    protected $description = 'Importa dimensions da base legada para o catálogo global ean_references (landlord)';
 
     public function handle(): int
     {
-        $tenantId = $this->resolveTenantId();
-
         try {
             DB::connection('mysql_legacy')->getPdo();
+            DB::connection('landlord')->getPdo();
         } catch (\Throwable $exception) {
-            $this->error('❌ Falha ao conectar em mysql_legacy: '.$exception->getMessage());
+            $this->error('❌ Falha ao conectar: '.$exception->getMessage());
 
             return self::FAILURE;
         }
 
         if (! Schema::connection('mysql_legacy')->hasTable('dimensions')) {
             $this->error("❌ Tabela 'dimensions' não encontrada na conexão mysql_legacy.");
+
+            return self::FAILURE;
+        }
+
+        if (! Schema::connection('landlord')->hasTable('ean_references')) {
+            $this->error("❌ Tabela 'ean_references' não encontrada na conexão landlord.");
 
             return self::FAILURE;
         }
@@ -58,126 +60,16 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
             return self::SUCCESS;
         }
 
-        if (is_string($tenantId) && $tenantId !== '') {
-            if ($this->option('dry-run')) {
-                $this->info("👁️ Dry-run: {$total} registros seriam processados para o tenant {$tenantId}.");
-
-                return self::SUCCESS;
-            }
-
-            $stats = $this->processSingleTenant($baseQuery, $chunkSize, $tenantId);
-            $this->info("✅ Importação concluída. Lidos: {$stats['processed']} | Upsert: {$stats['upserted']}");
-
-            return self::SUCCESS;
-        }
-
-        $targetTenants = $this->resolveTargetTenants($tenantId);
-        if ($targetTenants->isEmpty()) {
-            $this->warn('⚠️ Nenhum tenant ativo encontrado para processar.');
-
-            return self::SUCCESS;
-        }
-
         if ($this->option('dry-run')) {
-            $this->info("👁️ Dry-run: {$total} registros seriam processados para {$targetTenants->count()} tenant(s).");
+            $this->info("👁️ Dry-run: {$total} registros seriam processados para o catálogo global.");
 
             return self::SUCCESS;
-        }
-
-        foreach ($targetTenants as $tenant) {
-            $this->line(sprintf('➡️ Processando tenant: %s (%s)', $tenant->name, $tenant->id));
-
-            $stats = $tenant->execute(function () use ($baseQuery, $chunkSize, $tenant): array {
-                if (! Schema::connection('tenant')->hasTable('ean_references')) {
-                    return ['processed' => 0, 'upserted' => 0, 'skipped' => true];
-                }
-
-                $processed = 0;
-                $upserted = 0;
-
-                (clone $baseQuery)->orderBy('ean')->chunk($chunkSize, function ($rows) use ($tenant, &$processed, &$upserted): void {
-                    $now = now();
-                    $payload = [];
-
-                    foreach ($rows as $row) {
-                        $ean = $this->normalizeEan((string) $row->ean);
-                        $processed++;
-
-                        if ($ean === '') {
-                            continue;
-                        }
-
-                        $width = $this->toDecimal($row->width);
-                        $height = $this->toDecimal($row->height);
-                        $depth = $this->toDecimal($row->depth);
-                        $weight = $this->toDecimal($row->weight);
-                        $unit = $this->normalizeUnit($row->unit);
-                        $hasDimensions = $width > 0 && $height > 0 && $depth > 0;
-                        $dimensionStatus = $this->normalizeDimensionStatus($row->status, $hasDimensions);
-
-                        $payload[$ean] = [
-                            'id' => (string) Str::ulid(),
-                            'tenant_id' => (string) $tenant->id,
-                            'ean' => $ean,
-                            'width' => $width,
-                            'height' => $height,
-                            'depth' => $depth,
-                            'weight' => $weight,
-                            'unit' => $unit,
-                            'has_dimensions' => $hasDimensions,
-                            'dimension_status' => $dimensionStatus,
-                            'created_at' => $now,
-                            'updated_at' => $now,
-                            'deleted_at' => null,
-                        ];
-                    }
-
-                    if ($payload !== []) {
-                        DB::connection('tenant')
-                            ->table('ean_references')
-                            ->upsert(
-                                array_values($payload),
-                                ['tenant_id', 'ean'],
-                                ['width', 'height', 'depth', 'weight', 'unit', 'has_dimensions', 'dimension_status', 'updated_at', 'deleted_at']
-                            );
-
-                        $upserted += count($payload);
-                    }
-                });
-
-                return ['processed' => $processed, 'upserted' => $upserted, 'skipped' => false];
-            });
-
-            if (($stats['skipped'] ?? false) === true) {
-                $this->warn("   ⚠️ Tabela 'ean_references' não encontrada no tenant; pulando.");
-
-                continue;
-            }
-
-            $this->line("   ✅ Lidos: {$stats['processed']} | Upsert: {$stats['upserted']}");
-        }
-
-        $this->info('✅ Importação concluída para os tenants selecionados.');
-
-        return self::SUCCESS;
-    }
-
-    /**
-     * @param  Builder  $baseQuery
-     * @return array{processed:int,upserted:int}
-     */
-    private function processSingleTenant($baseQuery, int $chunkSize, string $tenantId): array
-    {
-        if (! Schema::connection('tenant')->hasTable('ean_references')) {
-            $this->error("❌ Tabela 'ean_references' não encontrada na conexão tenant.");
-
-            return ['processed' => 0, 'upserted' => 0];
         }
 
         $processed = 0;
         $upserted = 0;
 
-        (clone $baseQuery)->orderBy('ean')->chunk($chunkSize, function ($rows) use ($tenantId, &$processed, &$upserted): void {
+        (clone $baseQuery)->orderBy('ean')->chunk($chunkSize, function ($rows) use (&$processed, &$upserted): void {
             $now = now();
             $payload = [];
 
@@ -199,7 +91,6 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
 
                 $payload[$ean] = [
                     'id' => (string) Str::ulid(),
-                    'tenant_id' => $tenantId,
                     'ean' => $ean,
                     'width' => $width,
                     'height' => $height,
@@ -208,18 +99,18 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
                     'unit' => $unit,
                     'has_dimensions' => $hasDimensions,
                     'dimension_status' => $dimensionStatus,
-                    'created_at' => $now,
                     'updated_at' => $now,
+                    'created_at' => $now,
                     'deleted_at' => null,
                 ];
             }
 
             if ($payload !== []) {
-                DB::connection('tenant')
+                DB::connection('landlord')
                     ->table('ean_references')
                     ->upsert(
                         array_values($payload),
-                        ['tenant_id', 'ean'],
+                        ['ean'],
                         ['width', 'height', 'depth', 'weight', 'unit', 'has_dimensions', 'dimension_status', 'updated_at', 'deleted_at']
                     );
 
@@ -227,49 +118,14 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
             }
         });
 
-        return ['processed' => $processed, 'upserted' => $upserted];
-    }
+        $this->info("✅ Importação concluída. Lidos: {$processed} | Upsert: {$upserted}");
 
-    private function resolveTenantId(): ?string
-    {
-        $tenantIdOption = $this->option('tenant-id');
-        if (is_string($tenantIdOption) && $tenantIdOption !== '') {
-            return $tenantIdOption;
-        }
-
-        $currentTenantKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
-        $currentTenant = app()->bound($currentTenantKey) ? app($currentTenantKey) : null;
-
-        if (is_object($currentTenant) && isset($currentTenant->id)) {
-            return (string) $currentTenant->id;
-        }
-
-        return null;
+        return self::SUCCESS;
     }
 
     /**
-     * @return Collection<int, Tenant>
+     * @param  Builder  $baseQuery
      */
-    private function resolveTargetTenants(?string $tenantId): Collection
-    {
-        if (is_string($tenantId) && $tenantId !== '') {
-            $tenant = Tenant::query()->whereKey($tenantId)->first();
-
-            return $tenant ? new Collection([$tenant]) : new Collection;
-        }
-
-        $currentTenantKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
-        $currentTenant = app()->bound($currentTenantKey) ? app($currentTenantKey) : null;
-
-        if ($currentTenant instanceof Tenant) {
-            return new Collection([$currentTenant]);
-        }
-
-        return Tenant::query()
-            ->where('status', 'active')
-            ->get(['id', 'name', 'database']);
-    }
-
     private function normalizeEan(string $ean): string
     {
         return preg_replace('/\D+/', '', $ean) ?? '';

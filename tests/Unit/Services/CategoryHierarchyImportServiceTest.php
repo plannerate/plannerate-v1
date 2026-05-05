@@ -72,12 +72,13 @@ test('monta hierarquia e vincula produto pelo ean na categoria folha', function 
     expect($product->category_id)->toBe($leafCategory?->id);
 
     $eanReference = EanReference::query()
-        ->where('tenant_id', $tenantId)
         ->where('ean', '7890000000001')
         ->first();
 
     expect($eanReference)->not->toBeNull();
     expect($eanReference?->category_id)->toBe($leafCategory?->id);
+    expect($eanReference?->category_name)->toBe($leafCategory?->name);
+    expect($eanReference?->category_slug)->toBe($leafCategory?->slug);
     expect($eanReference?->reference_description)->toBe('Macarrao Premium');
     expect($eanReference?->brand)->toBe('Marca A');
 });
@@ -176,7 +177,6 @@ test('mapeia colunas extras com cabecalho original da planilha', function (): vo
     );
 
     $reference = EanReference::query()
-        ->where('tenant_id', $tenantId)
         ->where('ean', '7890000000999')
         ->first();
 
