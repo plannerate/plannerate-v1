@@ -188,3 +188,40 @@ test('mapeia colunas extras com cabecalho original da planilha', function (): vo
     expect($reference?->packaging_size)->toBe('500');
     expect($reference?->measurement_unit)->toBe('G');
 });
+
+test('reutiliza category_id da referencia ean para criar categoria folha', function (): void {
+    $tenantId = (string) Str::ulid();
+    $user = User::factory()->create();
+    $forcedLeafCategoryId = (string) Str::ulid();
+
+    EanReference::query()->create([
+        'ean' => '7890000012345',
+        'category_id' => $forcedLeafCategoryId,
+        'reference_description' => 'Categoria com ID forçado',
+    ]);
+
+    $service = app(CategoryHierarchyImportService::class);
+    $service->importRows(
+        tenantId: $tenantId,
+        userId: $user->id,
+        rows: [[
+            'segmento_varejista' => 'Mercearia',
+            'departamento' => 'Alimentos',
+            'subdepartamento' => 'Secos',
+            'categoria' => 'Massas',
+            'subcategoria' => 'Espaguete',
+            'segmento' => 'Trigo',
+            'subsegmento' => 'Tradicional',
+            'atributo' => 'Premium',
+            'ean' => '7890000012345',
+        ]]
+    );
+
+    $leafCategory = Category::query()
+        ->where('tenant_id', $tenantId)
+        ->where('name', 'Premium')
+        ->first();
+
+    expect($leafCategory)->not->toBeNull()
+        ->and($leafCategory?->id)->toBe($forcedLeafCategoryId);
+});

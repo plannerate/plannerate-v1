@@ -106,6 +106,14 @@ class SidebarNavigationService
                     ->icon('users')
                     ->authorize('viewAny', User::class)
                     ->setOrder(70);
+            })
+            ->item('landlord.ean-references', function ($item): void {
+                $item
+                    ->label(__('app.landlord.ean_references.navigation'))
+                    ->href(route('landlord.ean-references.index', absolute: false))
+                    ->icon('package')
+                    ->authorize('viewAny', EanReference::class)
+                    ->setOrder(80);
             });
     }
 
@@ -145,14 +153,6 @@ class SidebarNavigationService
                             ->icon('folder-tree')
                             ->authorize('viewAny', Category::class)
                             ->setOrder(20);
-                    })
-                    ->item('tenant.ean-references', function ($item) use ($subdomain): void {
-                        $item
-                            ->label(__('app.tenant.ean_references.navigation'))
-                            ->href(route('tenant.ean-references.index', ['subdomain' => $subdomain], false))
-                            ->icon('barcode')
-                            ->authorize('viewAny', EanReference::class)
-                            ->setOrder(30);
                     });
             })
             ->group('tenant.operational', function ($group) use ($subdomain): void {

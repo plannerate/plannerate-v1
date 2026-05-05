@@ -1,13 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Tenant;
+namespace App\Http\Controllers\Landlord;
 
+use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
-use App\Http\Requests\Tenant\StoreEanReferenceRequest;
-use App\Http\Requests\Tenant\UpdateEanReferenceRequest;
+use App\Http\Requests\Landlord\StoreEanReferenceRequest;
+use App\Http\Requests\Landlord\UpdateEanReferenceRequest;
 use App\Models\EanReference;
-use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +16,6 @@ use Inertia\Response;
 class EanReferenceController extends Controller
 {
     use InteractsWithDeferredIndex;
-    use InteractsWithTenantContext;
 
     public function index(Request $request): Response
     {
@@ -31,13 +29,12 @@ class EanReferenceController extends Controller
         $requestedDirection = strtolower((string) $request->query('direction', 'asc'));
         $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'asc';
 
-        return $this->renderDeferredIndex('tenant/ean-references/Index', 'ean_references', fn (): LengthAwarePaginator => $this->eanReferencesPaginator(
+        return $this->renderDeferredIndex('landlord/ean-references/Index', 'ean_references', fn (): LengthAwarePaginator => $this->eanReferencesPaginator(
             $search,
             $sort,
             $direction,
             $this->resolvePerPage($request, 10),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
             ],
@@ -85,8 +82,7 @@ class EanReferenceController extends Controller
     {
         $this->authorize('create', EanReference::class);
 
-        return Inertia::render('tenant/ean-references/Form', [
-            'subdomain' => $this->tenantSubdomain(),
+        return Inertia::render('landlord/ean-references/Form', [
             'ean_reference' => null,
         ]);
     }
@@ -99,19 +95,17 @@ class EanReferenceController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __('app.tenant.ean_references.messages.created'),
+            'message' => __('app.landlord.ean_references.messages.created'),
         ]);
 
-        return to_route('tenant.ean-references.index', $this->tenantRouteParameters());
+        return to_route('landlord.ean-references.index');
     }
 
-    public function edit(string $subdomain, EanReference $eanReference): Response
+    public function edit(EanReference $eanReference): Response
     {
-        unset($subdomain);
         $this->authorize('update', $eanReference);
 
-        return Inertia::render('tenant/ean-references/Form', [
-            'subdomain' => $this->tenantSubdomain(),
+        return Inertia::render('landlord/ean-references/Form', [
             'ean_reference' => [
                 'id' => $eanReference->id,
                 'ean' => $eanReference->ean,
@@ -132,33 +126,31 @@ class EanReferenceController extends Controller
         ]);
     }
 
-    public function update(UpdateEanReferenceRequest $request, string $subdomain, EanReference $eanReference): RedirectResponse
+    public function update(UpdateEanReferenceRequest $request, EanReference $eanReference): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $eanReference);
 
         $eanReference->update($request->validated());
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __('app.tenant.ean_references.messages.updated'),
+            'message' => __('app.landlord.ean_references.messages.updated'),
         ]);
 
-        return to_route('tenant.ean-references.index', $this->tenantRouteParameters());
+        return to_route('landlord.ean-references.index');
     }
 
-    public function destroy(string $subdomain, EanReference $eanReference): RedirectResponse
+    public function destroy(EanReference $eanReference): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('delete', $eanReference);
 
         $eanReference->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __('app.tenant.ean_references.messages.deleted'),
+            'message' => __('app.landlord.ean_references.messages.deleted'),
         ]);
 
-        return to_route('tenant.ean-references.index', $this->tenantRouteParameters());
+        return to_route('landlord.ean-references.index');
     }
 }

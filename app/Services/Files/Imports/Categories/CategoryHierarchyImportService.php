@@ -3,11 +3,13 @@
 namespace App\Services\Files\Imports\Categories;
 
 use App\Models\Category;
+use App\Models\EanReference;
 use App\Services\Files\Imports\Connections\CategoryImportConnection;
 use App\Services\Files\Imports\Connections\EanReferenceByEanConnection;
 use App\Services\Files\Imports\Connections\PlanogramCategoryLeafConnection;
 use App\Services\Files\Imports\Connections\ProductCategoryByEanConnection;
 use App\Services\Files\Imports\ImportExecutionResult;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class CategoryHierarchyImportService
@@ -146,9 +148,11 @@ class CategoryHierarchyImportService
         array $row,
         ImportExecutionResult $result
     ): ?Category {
+        $referenceCategoryId = $this->resolveReferenceCategoryId((string) ($row['ean'] ?? ''));
         $parentId = null;
         $pathNames = [];
         $leafCategory = null;
+        $leafPosition = $this->resolveLeafPosition($row);
 
         foreach (self::LEVEL_COLUMNS as $position => $column) {
             $name = $row[$column] ?? '';
@@ -165,19 +169,16 @@ class CategoryHierarchyImportService
                 ->first();
 
             if (! $category instanceof Category) {
-                $category = Category::query()->create([
-                    'tenant_id' => $tenantId,
-                    'user_id' => $userId,
-                    'category_id' => $parentId,
-                    'name' => $name,
-                    'level_name' => $column,
-                    'status' => 'importer',
-                    'nivel' => (string) $position,
-                    'hierarchy_position' => $position,
-                    'full_path' => implode(' > ', $pathNames),
-                    'hierarchy_path' => $pathNames,
-                    'is_placeholder' => false,
-                ]);
+                $category = $this->createCategory(
+                    tenantId: $tenantId,
+                    userId: $userId,
+                    parentId: $parentId,
+                    name: $name,
+                    levelName: $column,
+                    position: $position,
+                    pathNames: $pathNames,
+                    forcedCategoryId: $position === $leafPosition ? $referenceCategoryId : null,
+                );
 
                 $result->categoriesCreated++;
             } else {
@@ -207,5 +208,91 @@ class CategoryHierarchyImportService
         }
 
         return $leafCategory;
+    }
+
+    private function resolveReferenceCategoryId(string $ean): ?string
+    {
+        $normalizedEan = EanReference::normalizeEan($ean);
+        if ($normalizedEan === '') {
+            return null;
+        }
+
+        $reference = EanReference::query()
+            ->select(['category_id'])
+            ->where('ean', $normalizedEan)
+            ->first();
+
+        if (! $reference instanceof EanReference || ! is_string($reference->category_id)) {
+            return null;
+        }
+
+        $categoryId = trim($reference->category_id);
+
+        return $categoryId !== '' ? $categoryId : null;
+    }
+
+    /**
+     * @param  array<string, string>  $row
+     */
+    private function resolveLeafPosition(array $row): int
+    {
+        $leafPosition = 1;
+
+        foreach (self::LEVEL_COLUMNS as $position => $column) {
+            if (($row[$column] ?? '') !== '') {
+                $leafPosition = $position;
+            }
+        }
+
+        return $leafPosition;
+    }
+
+    /**
+     * @param  array<int, string>  $pathNames
+     */
+    private function createCategory(
+        string $tenantId,
+        ?string $userId,
+        ?string $parentId,
+        string $name,
+        string $levelName,
+        int $position,
+        array $pathNames,
+        ?string $forcedCategoryId = null,
+    ): Category {
+        $payload = [
+            'tenant_id' => $tenantId,
+            'user_id' => $userId,
+            'category_id' => $parentId,
+            'name' => $name,
+            'level_name' => $levelName,
+            'status' => 'importer',
+            'nivel' => (string) $position,
+            'hierarchy_position' => $position,
+            'full_path' => implode(' > ', $pathNames),
+            'hierarchy_path' => $pathNames,
+            'is_placeholder' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        if (is_string($forcedCategoryId) && $forcedCategoryId !== '') {
+            $existingWithForcedId = Category::query()->whereKey($forcedCategoryId)->first();
+            if ($existingWithForcedId instanceof Category) {
+                return $existingWithForcedId;
+            }
+
+            $connectionName = Category::query()->getModel()->getConnectionName();
+            $table = Category::query()->getModel()->getTable();
+
+            DB::connection($connectionName)->table($table)->insert([
+                ...$payload,
+                'id' => $forcedCategoryId,
+            ]);
+
+            return Category::query()->whereKey($forcedCategoryId)->firstOrFail();
+        }
+
+        return Category::query()->create($payload);
     }
 }
