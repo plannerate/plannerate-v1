@@ -30,19 +30,35 @@ class ProcessProductImages extends Command
             return self::SUCCESS;
         }
 
+        $doAvailable = $this->probeDoStorage();
+        if (! $doAvailable) {
+            $this->warn('Disco DO não acessível — apenas fast path (EanReference cache) será executado. Jobs não serão despachados.');
+        }
+
         $eanRefMap = $this->loadEanReferenceMap();
         $this->line(sprintf('%d EAN(s) em cache no EanReference.', count($eanRefMap)));
 
         foreach ($tenants as $tenant) {
             $this->newLine();
             $this->info("Tenant: {$tenant->name}");
-            $tenant->execute(fn () => $this->processTenant($eanRefMap));
+            $tenant->execute(fn () => $this->processTenant($eanRefMap, $doAvailable));
         }
 
         $this->newLine();
         $this->info('Concluído.');
 
         return self::SUCCESS;
+    }
+
+    private function probeDoStorage(): bool
+    {
+        try {
+            Storage::disk('do')->exists('__probe__');
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**
@@ -87,7 +103,7 @@ class ProcessProductImages extends Command
     /**
      * @param  array<string, string>  $eanRefMap
      */
-    private function processTenant(array $eanRefMap): void
+    private function processTenant(array $eanRefMap, bool $doAvailable = true): void
     {
         $ean = trim((string) $this->option('ean'));
         $stats = ['total' => 0, 'fast' => 0, 'dispatched' => 0, 'skipped' => 0];
@@ -100,7 +116,7 @@ class ProcessProductImages extends Command
         $progressBar = $this->output->createProgressBar($query->count());
         $progressBar->start();
 
-        $query->chunkById(500, function ($products) use ($eanRefMap, &$stats, $progressBar): void {
+        $query->chunkById(500, function ($products) use ($eanRefMap, $doAvailable, &$stats, $progressBar): void {
             $eligible = $products->filter(function ($product): bool {
                 if ($product->url === null || $product->url === '') {
                     return true;
@@ -137,14 +153,16 @@ class ProcessProductImages extends Command
                 $stats['fast'] += $fastPath->count();
             }
 
-            // Slow path: EAN desconhecido → despacha job
-            $slowPath = $eligible->reject(
-                fn ($p) => isset($eanRefMap[EanReference::normalizeEan((string) $p->ean)])
-            );
+            // Slow path: EAN desconhecido → despacha job (só se DO estiver disponível)
+            if ($doAvailable) {
+                $slowPath = $eligible->reject(
+                    fn ($p) => isset($eanRefMap[EanReference::normalizeEan((string) $p->ean)])
+                );
 
-            foreach ($slowPath as $product) {
-                DOProcessProductImageJob::dispatch($product->id);
-                $stats['dispatched']++;
+                foreach ($slowPath as $product) {
+                    DOProcessProductImageJob::dispatch($product->id);
+                    $stats['dispatched']++;
+                }
             }
 
             $progressBar->advance($products->count());

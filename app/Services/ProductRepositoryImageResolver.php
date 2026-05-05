@@ -148,6 +148,17 @@ class ProductRepositoryImageResolver
         ?float $width,
         ?float $height
     ): ?string {
+        try {
+            Storage::disk('do')->exists('__probe__');
+        } catch (\Throwable $e) {
+            Log::warning('DOStorage indisponível; pulando resolução por repositório', [
+                'ean' => $ean,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+
         foreach ($this->repositoryAngles as $angle) {
             $candidateWebpPath = sprintf('repositorioimagens/%s/%s.webp', $angle, $ean);
             if (Storage::disk('do')->exists($candidateWebpPath)) {
