@@ -2,7 +2,9 @@
 import { Form, Head, Link, useForm } from '@inertiajs/vue3';
 import { AlertCircle, Building2, ExternalLink, Loader2, RefreshCw } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import TenantCloudflareController from '@/actions/App/Http/Controllers/Landlord/TenantCloudflareController';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
+import CloudflareDnsCard from '@/components/CloudflareDnsCard.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
@@ -40,11 +42,16 @@ type ModuleOption = {
     is_active: boolean;
 };
 
+type CloudflareRecordNotFound = { exists: false; cname_target: string };
+type CloudflareRecordFound = { exists: true; id: string; name: string; content: string; cname_target: string };
+type CloudflareRecord = CloudflareRecordNotFound | CloudflareRecordFound;
+
 const props = defineProps<{
     tenant: TenantPayload | null;
     plans: PlanOption[];
     modules: ModuleOption[];
     statuses: StatusOption[];
+    cloudflare_record?: CloudflareRecord | null;
 }>();
 
 const { t } = useT();
@@ -57,6 +64,18 @@ const slugTouched = ref(props.tenant !== null);
 const databaseTouched = ref(props.tenant !== null);
 
 const tenantsIndexPath = TenantController.index.url().replace(/^\/\/[^/]+/, '');
+
+const cloudflareCreateHref = computed(() =>
+    isEdit.value && props.tenant?.host
+        ? TenantCloudflareController.store.url(props.tenant!.id).replace(/^\/\/[^/]+/, '')
+        : '',
+);
+
+const cloudflareDeleteHref = computed(() =>
+    isEdit.value && props.tenant?.host
+        ? TenantCloudflareController.destroy.url(props.tenant!.id).replace(/^\/\/[^/]+/, '')
+        : '',
+);
 
 const pageMeta = useCrudPageMeta({
     headTitle: isEdit.value ? t('app.landlord.tenants.actions.edit') : t('app.landlord.tenants.actions.new'),
@@ -275,6 +294,15 @@ function onDatabaseInput(): void {
                     </div>
                     <InputError :message="errors.module_ids" />
                 </div>
+
+                <!-- Cloudflare DNS -->
+                <CloudflareDnsCard
+                    v-if="isEdit && props.tenant?.host"
+                    :cloudflare-record="props.cloudflare_record"
+                    :create-href="cloudflareCreateHref"
+                    :delete-href="cloudflareDeleteHref"
+                    :host="props.tenant!.host!"
+                />
 
                 <!-- Domain -->
                 <div class="grid gap-4">

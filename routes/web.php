@@ -7,6 +7,7 @@ use App\Http\Controllers\Landlord\ModuleController;
 use App\Http\Controllers\Landlord\PermissionController;
 use App\Http\Controllers\Landlord\PlanController;
 use App\Http\Controllers\Landlord\RoleController;
+use App\Http\Controllers\Landlord\TenantCloudflareController;
 use App\Http\Controllers\Landlord\TenantController as LandlordTenantController;
 use App\Http\Controllers\Landlord\TenantIntegrationController;
 use App\Http\Controllers\Landlord\TenantSocialiteProviderController;
@@ -78,6 +79,10 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->name('landlord.tenants.setup');
     Route::post('tenants/{tenant}/provision', [LandlordTenantController::class, 'provision'])
         ->name('landlord.tenants.provision');
+    Route::post('tenants/{tenant}/cloudflare', [TenantCloudflareController::class, 'store'])
+        ->name('landlord.tenants.cloudflare.store');
+    Route::delete('tenants/{tenant}/cloudflare', [TenantCloudflareController::class, 'destroy'])
+        ->name('landlord.tenants.cloudflare.destroy');
 
     Route::get('tenants/{tenant}/access', [TenantUserAccessController::class, 'edit'])
         ->name('landlord.tenants.access.edit');

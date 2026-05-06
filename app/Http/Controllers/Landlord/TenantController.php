@@ -10,6 +10,7 @@ use App\Jobs\ProvisionTenantDatabaseJob;
 use App\Models\Module;
 use App\Models\Plan;
 use App\Models\Tenant;
+use App\Services\Cloudflare\CloudflareService;
 use App\Support\Modules\ModuleSlug;
 use App\Support\Modules\TenantModuleService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -200,7 +201,42 @@ class TenantController extends Controller
             'plans' => $this->plansForSelect(),
             'modules' => $this->modulesForSelect(),
             'statuses' => $this->statusesForSelect(),
+            'cloudflare_record' => Inertia::defer(fn (): ?array => $this->resolveCloudflareRecord($tenant)),
         ]);
+    }
+
+    private function resolveCloudflareRecord(Tenant $tenant): ?array
+    {
+        $host = $tenant->primaryDomain?->host;
+        $zoneId = config('cloudflare.zone_id', '');
+
+        /** @var CloudflareService $cloudflare */
+        $cloudflare = app(CloudflareService::class);
+
+        if (! $cloudflare->isConfigured() || $zoneId === '' || ! $host) {
+            return null;
+        }
+
+        $result = $cloudflare->listRecords($zoneId, 'CNAME', $host);
+
+        if (! ($result['success'] ?? false)) {
+            return null;
+        }
+
+        $records = $result['result'] ?? [];
+        $record = $records[0] ?? null;
+
+        if (! $record) {
+            return ['exists' => false, 'cname_target' => config('cloudflare.cname_target', '')];
+        }
+
+        return [
+            'exists' => true,
+            'id' => $record['id'],
+            'name' => $record['name'],
+            'content' => $record['content'],
+            'cname_target' => config('cloudflare.cname_target', ''),
+        ];
     }
 
     /**
