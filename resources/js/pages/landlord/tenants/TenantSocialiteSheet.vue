@@ -3,6 +3,7 @@ import { Form, router } from '@inertiajs/vue3';
 import { KeyRound } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import TenantSocialiteProviderController from '@/actions/App/Http/Controllers/Landlord/TenantSocialiteProviderController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import { Badge } from '@/components/ui/badge';
@@ -62,7 +63,7 @@ const defaultValues = computed(() => ({
 
 function handleDelete(): void {
     router.delete(
-        TenantSocialiteProviderController.destroy.url(props.tenant.id),
+        tenantWayfinderPath(TenantSocialiteProviderController.destroy.url(props.tenant.id)),
         { preserveScroll: true, onSuccess: () => emit('update:open', false) },
     );
 }

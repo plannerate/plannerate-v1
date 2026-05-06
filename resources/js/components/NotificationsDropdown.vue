@@ -24,6 +24,7 @@ import {
     download as downloadRoute,
     markAllRead as markAllReadRoute,
 } from '@/actions/App/Http/Controllers/Tenant/NotificationController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import type { AppNotification, NotificationData } from '@/types/auth';
 
 const page = usePage();
@@ -167,7 +168,7 @@ const typeIconColor = (type: NotificationData['notification_type']) =>
 // --- Actions ---
 
 function markAllRead() {
-    router.post(markAllReadRoute.url(subdomain), {}, {
+    router.post(tenantWayfinderPath(markAllReadRoute.url(subdomain)), {}, {
         preserveScroll: true,
         onSuccess: () => {
             notifications.value.forEach((n) => {
@@ -179,7 +180,7 @@ function markAllRead() {
 }
 
 function destroyAll() {
-    router.delete(destroyAllRoute.url(subdomain), {
+    router.delete(tenantWayfinderPath(destroyAllRoute.url(subdomain)), {
         preserveScroll: true,
         onSuccess: () => {
             notifications.value = [];
@@ -189,7 +190,7 @@ function destroyAll() {
 }
 
 function destroy(id: string) {
-    router.delete(destroyRoute.url({ subdomain, id }), {
+    router.delete(tenantWayfinderPath(destroyRoute.url({ subdomain, id })), {
         preserveScroll: true,
         onSuccess: () => {
             const idx = notifications.value.findIndex((n) => n.id === id);

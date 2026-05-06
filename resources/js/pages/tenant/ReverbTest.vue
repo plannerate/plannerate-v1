@@ -16,6 +16,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import ReverbTestController from '@/actions/App/Http/Controllers/Tenant/ReverbTestController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,7 +74,7 @@ const form = useForm({
 });
 
 function sendNotification() {
-    form.post(ReverbTestController.notify.url(subdomain), {
+    form.post(tenantWayfinderPath(ReverbTestController.notify.url(subdomain)), {
         preserveScroll: true,
         onSuccess: () => form.reset(),
     });
