@@ -4,12 +4,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MANIFEST_OUT="${SCRIPT_DIR}/manifest.env"
 REMOTE_WORKDIR="/tmp/vps-deployment-v2"
 
-if [[ -f "${MANIFEST_OUT}" ]]; then
+# Carrega manifest genérico para pre-preencher valores compartilhados (VPS, GitHub, etc.)
+if [[ -f "${SCRIPT_DIR}/manifest.env" ]]; then
     # shellcheck disable=SC1090
-    set -a; source "${MANIFEST_OUT}"; set +a || true
+    set -a; source "${SCRIPT_DIR}/manifest.env"; set +a || true
 fi
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
@@ -130,7 +130,14 @@ info "Fluxo: dev -> staging (auto) | main -> production (manual)"
 echo ""
 ask_choice DEPLOY_ENV "Ambiente a provisionar" "${DEPLOY_ENV:-staging}" staging production
 
+MANIFEST_OUT="${SCRIPT_DIR}/manifest.${DEPLOY_ENV}.env"
 COMPOSE_FILE_NAME="docker-compose.${DEPLOY_ENV}.yml"
+
+# Carrega manifest do ambiente escolhido (sobrescreve valores do manifest genérico)
+if [[ -f "${MANIFEST_OUT}" ]]; then
+    # shellcheck disable=SC1090
+    set -a; source "${MANIFEST_OUT}"; set +a || true
+fi
 
 step "Projeto e domínio"
 ask PROJECT_NAME "Nome do projeto" "${PROJECT_NAME:-plannerate}"
