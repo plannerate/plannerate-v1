@@ -126,12 +126,15 @@ emit_manifest_var() { printf '%s=%q\n' "$1" "${2:-}"; }
 
 clear
 step "VPS Deployment v2 — Multi-app por APP_SLUG"
-info "Fluxo ativo padrão: dev -> staging"
-info "Você pode criar novas apps trocando APP_SLUG + domínio"
+info "Fluxo: dev -> staging (auto) | main -> production (manual)"
+echo ""
+ask_choice DEPLOY_ENV "Ambiente a provisionar" "${DEPLOY_ENV:-staging}" staging production
+
+COMPOSE_FILE_NAME="docker-compose.${DEPLOY_ENV}.yml"
 
 step "Projeto e domínio"
 ask PROJECT_NAME "Nome do projeto" "${PROJECT_NAME:-plannerate}"
-ask APP_SLUG "Nome da app/pasta (slug)" "${APP_SLUG:-staging}"
+ask APP_SLUG "Nome da app/pasta (slug)" "${APP_SLUG:-${DEPLOY_ENV}}"
 ask GITHUB_OWNER "GitHub org/usuário" "${GITHUB_OWNER:-}"
 ask GITHUB_REPO "Nome do repositório" "${GITHUB_REPO_NAME:-${PROJECT_NAME}}"
 ask GHCR_REPO "Imagem GHCR" "${GHCR_REPO:-${GITHUB_OWNER}/${GITHUB_REPO}}"
@@ -286,7 +289,7 @@ if [[ "${GH_OK}" == "true" ]]; then
     fi
 
     # Cria environment e configura secrets/variables
-    gh api --method PUT "repos/${repo}/environments/staging" >/dev/null 2>&1 || true
+    gh api --method PUT "repos/${repo}/environments/${DEPLOY_ENV}" >/dev/null 2>&1 || true
 
     gh_secret() {
         local name="$1" value="$2" env="${3:-}"
@@ -313,20 +316,20 @@ if [[ "${GH_OK}" == "true" ]]; then
         fi
     }
 
-    info "Configurando secrets..."
-    gh_secret APP_HOST        "${VPS_HOST}"           staging
-    gh_secret APP_USER        "${DEPLOY_USER}"        staging
-    gh_secret SSH_PRIVATE_KEY "${DEPLOY_PRIVATE_KEY}" staging
-    gh_secret SSH_KNOWN_HOSTS "${VPS_KNOWN_HOSTS}"    staging
-    gh_secret DOMAIN          "${DOMAIN_LANDLORD}"    staging
+    info "Configurando secrets (environment: ${DEPLOY_ENV})..."
+    gh_secret APP_HOST        "${VPS_HOST}"           "${DEPLOY_ENV}"
+    gh_secret APP_USER        "${DEPLOY_USER}"        "${DEPLOY_ENV}"
+    gh_secret SSH_PRIVATE_KEY "${DEPLOY_PRIVATE_KEY}" "${DEPLOY_ENV}"
+    gh_secret SSH_KNOWN_HOSTS "${VPS_KNOWN_HOSTS}"    "${DEPLOY_ENV}"
+    gh_secret DOMAIN          "${DOMAIN_LANDLORD}"    "${DEPLOY_ENV}"
 
     info "Configurando variables..."
     gh_var DOMAIN_LANDLORD "${DOMAIN_LANDLORD}"
     gh_var GHCR_REPO       "${GHCR_REPO}"
-    gh_var DEPLOY_PATH     "/opt/plannerate/${APP_SLUG}" staging
-    gh_var COMPOSE_FILE    "docker-compose.staging.yml"  staging
+    gh_var DEPLOY_PATH     "/opt/plannerate/${APP_SLUG}"  "${DEPLOY_ENV}"
+    gh_var COMPOSE_FILE    "${COMPOSE_FILE_NAME}"         "${DEPLOY_ENV}"
 
-    ok "Secrets/variables de staging configurados"
+    ok "Secrets/variables de ${DEPLOY_ENV} configurados"
 else
     warn "gh CLI não autenticado. Configure manualmente:"
     echo ""
@@ -334,17 +337,19 @@ else
     echo "     Título: ${GITHUB_OWNER}/${GITHUB_REPO}-deploy"
     echo "     Chave:  ${DEPLOY_PUBLIC_KEY}"
     echo ""
-    echo -e "  ${BOLD}2. Secrets${RESET} (environment: staging)"
+    echo -e "  ${BOLD}2. Secrets${RESET} (environment: ${DEPLOY_ENV})"
     echo "     APP_HOST         = ${VPS_HOST}"
     echo "     APP_USER         = ${DEPLOY_USER}"
     echo "     SSH_PRIVATE_KEY  = (conteúdo de ${KEY_PATH})"
     echo "     SSH_KNOWN_HOSTS  = (saída de: ssh-keyscan -H ${VPS_HOST})"
     echo "     DOMAIN           = ${DOMAIN_LANDLORD}"
     echo ""
-    echo -e "  ${BOLD}3. Variables${RESET}"
+    echo -e "  ${BOLD}3. Variables${RESET} (repositório)"
     echo "     GHCR_REPO    = ${GHCR_REPO}"
+    echo ""
+    echo -e "  ${BOLD}4. Variables${RESET} (environment: ${DEPLOY_ENV})"
     echo "     DEPLOY_PATH  = /opt/plannerate/${APP_SLUG}"
-    echo "     COMPOSE_FILE = docker-compose.staging.yml"
+    echo "     COMPOSE_FILE = ${COMPOSE_FILE_NAME}"
     echo ""
     read -r -p "  Pressione ENTER após configurar manualmente..."
 fi
@@ -353,6 +358,7 @@ step "Salvar manifest.env"
 ask_secret_suggest REDIS_PASSWORD "Senha Redis" "${REDIS_PASSWORD:-${REDIS_PASSWORD_STAGING:-}}"
 {
     emit_manifest_var PROJECT_NAME "$PROJECT_NAME"
+    emit_manifest_var DEPLOY_ENV "$DEPLOY_ENV"
     emit_manifest_var APP_SLUG "$APP_SLUG"
     emit_manifest_var GHCR_REPO "$GHCR_REPO"
     emit_manifest_var GITHUB_OWNER "$GITHUB_OWNER"
@@ -463,8 +469,8 @@ if ask_yn "Instalar monitoramento dessa app agora?"; then
 fi
 
 echo ""
-ok "Setup concluído. Fluxo ativo: dev -> staging"
-info "Produção futura: /opt/plannerate/production"
+ok "Setup concluído — environment: ${DEPLOY_ENV} | diretório: /opt/plannerate/${APP_SLUG}"
+info "Fluxo: dev -> staging (auto) | main -> production (manual dispatch)"
 echo ""
 echo -e "  ${BOLD}Acesso à VPS:${RESET}"
 echo -e "  ${CYAN}ssh ${DEPLOY_USER}@${VPS_HOST}${RESET}"
