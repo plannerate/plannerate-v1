@@ -36,7 +36,7 @@ class ProductRepositoryImageResolver
     /**
      * @return array{path: string, public_url: string}|null
      */
-    public function resolveByEan(string $ean, ?float $width = null, ?float $height = null): ?array
+    public function resolveByEan(string $ean, ?float $width = null, ?float $height = null, bool $force = false): ?array
     {
         $normalizedEan = EanReference::normalizeEan($ean);
         $this->lastResolutionDebug = [
@@ -52,28 +52,32 @@ class ProductRepositoryImageResolver
             return null;
         }
 
-        // Prioridade 1: cache global no landlord (zero I/O remoto)
-        $cachedPath = $this->resolveFromEanReference($normalizedEan);
-        if ($cachedPath !== null) {
-            $this->lastResolutionDebug['result'] = 'resolved_from_ean_reference';
+        if (! $force) {
+            // Prioridade 1: cache global no landlord (zero I/O remoto)
+            $cachedPath = $this->resolveFromEanReference($normalizedEan);
+            if ($cachedPath !== null) {
+                $this->lastResolutionDebug['result'] = 'resolved_from_ean_reference';
 
-            return [
-                'path' => $cachedPath,
-                'public_url' => Storage::disk('public')->url($cachedPath),
-            ];
+                return [
+                    'path' => $cachedPath,
+                    'public_url' => Storage::disk('public')->url($cachedPath),
+                ];
+            }
         }
 
-        $targetPath = sprintf('repositorioimagens/frente/%s.webp', $normalizedEan);
+        $targetPath = sprintf('repositorioimages/frente/%s.webp', $normalizedEan);
 
-        // Prioridade 2: arquivo já existe no disco público local
-        if (Storage::disk('public')->exists($targetPath)) {
-            $this->lastResolutionDebug['result'] = 'resolved_from_public_disk';
-            $this->saveToEanReference($normalizedEan, $targetPath);
+        if (! $force) {
+            // Prioridade 2: arquivo já existe no disco público local
+            if (Storage::disk('public')->exists($targetPath)) {
+                $this->lastResolutionDebug['result'] = 'resolved_from_public_disk';
+                $this->saveToEanReference($normalizedEan, $targetPath);
 
-            return [
-                'path' => $targetPath,
-                'public_url' => Storage::disk('public')->url($targetPath),
-            ];
+                return [
+                    'path' => $targetPath,
+                    'public_url' => Storage::disk('public')->url($targetPath),
+                ];
+            }
         }
 
         // Prioridade 3+4: DigitalOcean Spaces (webp → copia; png → converte)

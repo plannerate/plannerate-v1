@@ -46,8 +46,9 @@ test('service resolves image path for product using existing webp from repositor
     Storage::fake('do');
 
     $ean = '7899999999999';
-    $expectedPath = "repositorioimagens/frente/{$ean}.webp";
-    Storage::disk('do')->put($expectedPath, 'binary-webp-content');
+    $expectedPath = "repositorioimages/frente/{$ean}.webp";
+    $sourcePath = "repositorioimagens/frente/{$ean}.webp";
+    Storage::disk('do')->put($sourcePath, 'binary-webp-content');
 
     $product = new Product([
         'ean' => $ean,
@@ -84,7 +85,7 @@ test('service fetches product image from web when repository misses', function (
     Storage::fake('do');
 
     $ean = '7891000000001';
-    $webpPath = "repositorioimagens/frente/{$ean}.webp";
+    $webpPath = "repositorioimages/frente/{$ean}.webp";
     $webImageUrl = 'https://images.openfoodfacts.org/images/products/789/100/000/0001/front_pt.3.400.jpg';
     $webImageBinary = UploadedFile::fake()->image('front.jpg', 320, 320)->getContent();
 
@@ -119,7 +120,7 @@ test('service resolves image from side angle in repository when front is missing
 
     $ean = '7891222233334';
     $sideWebpPath = "repositorioimagens/lado/{$ean}.webp";
-    $targetPath = "repositorioimagens/frente/{$ean}.webp";
+    $targetPath = "repositorioimages/frente/{$ean}.webp";
     Storage::disk('do')->put($sideWebpPath, 'binary-side-webp-content');
 
     $service = new ProductRepositoryImageResolver;
@@ -136,7 +137,7 @@ test('service converts png from repository to webp', function (): void {
 
     $ean = '7891111111111';
     $pngPath = "repositorioimagens/frente/{$ean}.png";
-    $webpPath = "repositorioimagens/frente/{$ean}.webp";
+    $webpPath = "repositorioimages/frente/{$ean}.webp";
     Storage::disk('do')->put($pngPath, UploadedFile::fake()->image('source.png', 200, 200)->getContent());
 
     $service = new ProductRepositoryImageResolver;
@@ -146,4 +147,39 @@ test('service converts png from repository to webp', function (): void {
     expect($result)->not()->toBeNull();
     expect($result['path'])->toBe($webpPath);
     Storage::disk('public')->assertExists($webpPath);
+});
+
+test('service force mode bypasses ean reference cache and re-downloads image', function (): void {
+    Storage::fake('public');
+    Storage::fake('do');
+    Http::fake([
+        '*' => Http::response([], 404),
+    ]);
+
+    $ean = '7891333333333';
+    $cachedPath = "repositorioimages/frente/{$ean}.webp";
+
+    DB::connection('landlord')->table('ean_references')->insert([
+        'id' => '01jts31n2rpz1tyy4n6xv4qdp1',
+        'ean' => $ean,
+        'image_front_url' => $cachedPath,
+        'unit' => 'cm',
+        'has_dimensions' => false,
+        'dimension_status' => 'published',
+        'created_at' => now(),
+        'updated_at' => now(),
+        'deleted_at' => null,
+    ]);
+
+    Storage::disk('do')->put("repositorioimagens/frente/{$ean}.webp", 'binary-webp-content');
+
+    $service = new ProductRepositoryImageResolver;
+
+    $defaultResult = $service->resolveByEan($ean);
+    expect($defaultResult)->not()->toBeNull();
+    Storage::disk('public')->assertMissing($cachedPath);
+
+    $forcedResult = $service->resolveByEan($ean, force: true);
+    expect($forcedResult)->not()->toBeNull();
+    Storage::disk('public')->assertExists($cachedPath);
 });

@@ -45,6 +45,7 @@ class ProductImageController extends Controller
         $allowedPrefixes = [
             "products/uploads/{$tenantId}/",
             'repositorioimagens/frente/',
+            'repositorioimages/frente/',
         ];
 
         $isAllowedPath = collect($allowedPrefixes)
