@@ -2,7 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import { useT } from '@/composables/useT';
-import { dashboard, login, register } from '@/routes';
+import { dashboard, login } from '@/routes';
 
 const { t } = useT();
 const dashboardPath = dashboard.url().replace(/^\/\/[^/]+/, '');
@@ -44,13 +44,6 @@ withDefaults(
                         >
                             {{ t('app.auth.login') }}
                         </Link>
-                        <Link
-                            v-if="canRegister"
-                            :href="register()"
-                            class="inline-flex h-9 items-center rounded-md bg-primary px-4 font-semibold text-primary-foreground shadow-sm transition-all hover:brightness-95"
-                        >
-                            {{ t('app.auth.register') }}
-                        </Link>
                     </template>
                 </div>
             </nav>
@@ -85,13 +78,6 @@ withDefaults(
                             class="inline-flex h-11 items-center rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:brightness-95"
                         >
                             Entrar agora
-                        </Link>
-                        <Link
-                            v-if="canRegister"
-                            :href="register()"
-                            class="inline-flex h-11 items-center rounded-md border border-border bg-card px-5 text-sm font-semibold transition-colors hover:bg-accent"
-                        >
-                            Criar conta
                         </Link>
                     </template>
                 </div>
