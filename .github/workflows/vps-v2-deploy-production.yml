@@ -169,6 +169,21 @@ jobs:
               docker compose -p "plannerate-${APP_SLUG}" logs app --tail=120 || true
               exit 1
             fi
+
+            set +e
+            TENANTS_OUTPUT="$(docker compose -p "plannerate-${APP_SLUG}" exec -T app php artisan tenants:artisan "migrate --force --database=tenant" 2>&1)"
+            TENANTS_STATUS=$?
+            set -e
+            echo "${TENANTS_OUTPUT}"
+            if [ "${TENANTS_STATUS}" -ne 0 ]; then
+              if echo "${TENANTS_OUTPUT}" | grep -q "No tenant(s) found."; then
+                echo "No tenants found — skipping tenant migration."
+              else
+                echo "Tenant migration failed."
+                exit "${TENANTS_STATUS}"
+              fi
+            fi
+
             docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
               php artisan config:clear
               php artisan cache:clear
