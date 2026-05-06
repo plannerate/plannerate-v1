@@ -87,6 +87,8 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->name('landlord.tenants.access.users.update');
     Route::patch('tenants/{tenant}/access/users/{userId}/toggle-active', [TenantUserAccessController::class, 'toggleActive'])
         ->name('landlord.tenants.access.users.toggle-active');
+    Route::patch('tenants/{tenant}/access/users/{userId}/sync-roles', [TenantUserAccessController::class, 'syncRoles'])
+        ->name('landlord.tenants.access.users.sync-roles');
     Route::delete('tenants/{tenant}/access/users/{userId}', [TenantUserAccessController::class, 'destroy'])
         ->name('landlord.tenants.access.users.destroy');
     Route::patch('tenants/{tenant}/access/users/{userId}/restore', [TenantUserAccessController::class, 'restore'])
@@ -121,6 +123,8 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
             ->name('landlord.tenants.kanban.templates.edit');
         Route::put('tenants/{tenant}/kanban/templates/{template}', [LandlordWorkflowTemplateController::class, 'update'])
             ->name('landlord.tenants.kanban.templates.update');
+        Route::patch('tenants/{tenant}/kanban/templates/{template}/sync-users', [LandlordWorkflowTemplateController::class, 'syncUsers'])
+            ->name('landlord.tenants.kanban.templates.sync-users');
         Route::delete('tenants/{tenant}/kanban/templates/{template}', [LandlordWorkflowTemplateController::class, 'destroy'])
             ->name('landlord.tenants.kanban.templates.destroy');
     });

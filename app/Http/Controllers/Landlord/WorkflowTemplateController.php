@@ -201,6 +201,30 @@ class WorkflowTemplateController extends Controller
         return to_route('landlord.tenants.kanban.templates.index', $tenant);
     }
 
+    public function syncUsers(Request $request, Tenant $tenant, string $template): RedirectResponse
+    {
+        $this->authorize('update', $tenant);
+
+        $validated = $request->validate([
+            'user_ids' => ['nullable', 'array'],
+            'user_ids.*' => ['string', 'distinct'],
+        ]);
+
+        $userIds = $validated['user_ids'] ?? [];
+
+        $this->runInTenantContext($tenant, function () use ($userIds, $template): void {
+            $tpl = WorkflowTemplate::findOrFail($template);
+            $tpl->suggestedUsers()->sync($userIds);
+        });
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.kanban.templates.messages.updated'),
+        ]);
+
+        return back();
+    }
+
     public function destroy(Tenant $tenant, string $template): RedirectResponse
     {
         $this->authorize('update', $tenant);

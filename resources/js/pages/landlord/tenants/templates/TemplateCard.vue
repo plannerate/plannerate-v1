@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
 import { Edit, Trash2 } from 'lucide-vue-next';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
 import WayfinderLink from '@/components/WayfinderLink.vue';
-import type { TemplateRow } from './Index.vue';
+import type { TemplateRow, UserOption } from './Index.vue';
 
 defineProps<{
     template: TemplateRow;
     tenantId: string;
+    users: UserOption[];
 }>();
 
 const emit = defineEmits<{
@@ -22,6 +24,16 @@ const statusClasses: Record<string, string> = {
     draft: 'border-yellow-400/30 bg-yellow-50 text-yellow-700 dark:bg-yellow-950/20 dark:text-yellow-400',
     published: 'border-primary/30 bg-primary/10 text-primary',
 };
+
+function onUserChange(userId: string, currentIds: string[], tenantId: string, templateId: string, checked: boolean): void {
+    const newIds = checked
+        ? [...currentIds, userId]
+        : currentIds.filter((id) => id !== userId);
+
+    router.patch(WorkflowTemplateController.syncUsers.url({ tenant: tenantId, template: templateId }), {
+        user_ids: newIds,
+    });
+}
 </script>
 
 <template>
@@ -73,13 +85,32 @@ const statusClasses: Record<string, string> = {
                 <span v-if="template.is_required_by_default" class="font-medium text-primary">
                     Obrigatória
                 </span>
-                <span v-if="template.user_ids.length > 0">
-                    {{ template.user_ids.length }} usuário(s) sugerido(s)
-                </span>
+            </div>
+
+            <!-- Suggested users inline checkboxes -->
+            <div class="border-t border-border pt-4">
+                <p class="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Usuários sugeridos</p>
+                <p v-if="users.length === 0" class="text-sm text-muted-foreground">Nenhum usuário disponível</p>
+                <div v-else class="flex flex-wrap gap-1.5">
+                    <label
+                        v-for="user in users"
+                        :key="user.id"
+                        class="flex cursor-pointer items-center gap-1.5 rounded-full border border-input px-3 py-1 text-sm transition-colors hover:bg-accent has-checked:border-primary/60 has-checked:bg-primary/5 has-checked:text-primary"
+                    >
+                        <input
+                            type="checkbox"
+                            :value="user.id"
+                            :checked="template.user_ids.includes(user.id)"
+                            class="accent-primary"
+                            @change="onUserChange(user.id, template.user_ids, tenantId, template.id, ($event.target as HTMLInputElement).checked)"
+                        />
+                        <span class="font-medium">{{ user.name }}</span>
+                    </label>
+                </div>
             </div>
 
             <!-- Actions -->
-            <div class="border-t border-border pt-4">
+            <div class="mt-4 border-t border-border pt-4">
                 <div class="flex items-center justify-end gap-2">
                     <button
                         type="button"

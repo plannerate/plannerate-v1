@@ -225,6 +225,39 @@ class TenantUserAccessController extends Controller
     }
 
     /**
+     * Sync roles for a tenant user without requiring full user data.
+     */
+    public function syncRoles(Request $request, Tenant $tenant, string $userId): RedirectResponse
+    {
+        $this->authorize('update', $tenant);
+
+        $validated = $request->validate([
+            'role_names' => ['nullable', 'array'],
+            'role_names.*' => [
+                'string',
+                'distinct',
+                Rule::exists('landlord.roles', 'name')
+                    ->where(static fn ($query) => $query
+                        ->where('guard_name', 'web')
+                        ->where('type', RbacType::TENANT)
+                        ->whereNull('tenant_id')),
+            ],
+        ]);
+
+        $this->runInTenantContext($tenant, function () use ($validated, $tenant, $userId): void {
+            $tenantUser = User::query()->findOrFail($userId);
+            $this->syncTenantRoles($tenant, $tenantUser, $validated['role_names'] ?? []);
+        });
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.tenant_access.messages.updated'),
+        ]);
+
+        return back();
+    }
+
+    /**
      * Soft delete tenant user.
      */
     public function destroy(Tenant $tenant, string $userId): RedirectResponse

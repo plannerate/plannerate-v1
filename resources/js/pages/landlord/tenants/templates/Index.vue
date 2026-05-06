@@ -166,6 +166,7 @@ function seedDefaultTemplates(): void {
                     :key="template.id"
                     :template="template"
                     :tenant-id="props.tenant.id"
+                    :users="props.users"
                     @edit="openEditDrawer"
                 />
 

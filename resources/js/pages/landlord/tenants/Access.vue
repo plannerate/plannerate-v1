@@ -169,6 +169,7 @@ const pageMeta = useCrudPageMeta({
                     :key="user.id"
                     :user="user"
                     :tenant-id="props.tenant.id"
+                    :roles="props.roles"
                     @edit="openEditDrawer"
                 />
 

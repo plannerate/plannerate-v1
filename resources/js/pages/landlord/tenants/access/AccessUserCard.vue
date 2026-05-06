@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Edit, Ban, Trash2, RotateCcw, Mail } from 'lucide-vue-next';
+import { router } from '@inertiajs/vue3';
+import { Edit, Mail, RotateCcw, Trash2 } from 'lucide-vue-next';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import WayfinderLink from '@/components/WayfinderLink.vue';
 import { useT } from '@/composables/useT';
@@ -13,9 +14,15 @@ type UserAccessRow = {
     role_names: string[];
 };
 
+type RoleOption = {
+    id: string;
+    name: string;
+};
+
 defineProps<{
     user: UserAccessRow;
     tenantId: string;
+    roles: RoleOption[];
 }>();
 
 const emit = defineEmits<{
@@ -36,6 +43,22 @@ function getUserInitials(name: string): string {
     }
 
     return tokens.map((part) => part.charAt(0).toUpperCase()).join('');
+}
+
+function onRoleChange(roleName: string, currentRoles: string[], tenantId: string, userId: string, checked: boolean): void {
+    const newRoles = checked
+        ? [...currentRoles, roleName]
+        : currentRoles.filter((r) => r !== roleName);
+
+    router.patch(TenantUserAccessController.syncRoles.url({ tenant: tenantId, userId }), {
+        role_names: newRoles,
+    });
+}
+
+function onActiveChange(tenantId: string, userId: string, currentIsActive: boolean): void {
+    router.patch(TenantUserAccessController.toggleActive.url({ tenant: tenantId, userId }), {
+        is_active: currentIsActive ? 0 : 1,
+    });
 }
 </script>
 
@@ -89,53 +112,60 @@ function getUserInitials(name: string): string {
                 </p>
             </div>
 
-            <!-- Roles grid -->
+            <!-- Roles inline checkboxes -->
             <div class="border-t border-border pt-5">
-                <div>
-                    <p class="mb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Perfis</p>
-                    <p v-if="user.role_names.length === 0" class="text-sm text-muted-foreground">
-                        Nenhum perfil
-                    </p>
-                    <div v-else class="flex flex-wrap gap-1">
-                        <span
-                            v-for="roleName in user.role_names"
-                            :key="roleName"
-                            class="text-sm text-foreground"
-                        >{{ roleName }}<span v-if="user.role_names.indexOf(roleName) < user.role_names.length - 1">, </span></span>
-                    </div>
+                <p class="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Perfis</p>
+                <p v-if="roles.length === 0" class="text-sm text-muted-foreground">Nenhum perfil disponível</p>
+                <div v-else class="flex flex-wrap gap-1.5">
+                    <label
+                        v-for="role in roles"
+                        :key="role.id"
+                        class="flex cursor-pointer items-center gap-1.5 rounded-full border border-input px-3 py-1 text-sm transition-colors hover:bg-accent has-checked:border-primary/60 has-checked:bg-primary/5 has-checked:text-primary"
+                        :class="user.deleted_at ? 'pointer-events-none opacity-60' : ''"
+                    >
+                        <input
+                            type="checkbox"
+                            :value="role.name"
+                            :checked="user.role_names.includes(role.name)"
+                            :disabled="!!user.deleted_at"
+                            class="accent-primary"
+                            @change="onRoleChange(role.name, user.role_names, tenantId, user.id, ($event.target as HTMLInputElement).checked)"
+                        />
+                        <span class="font-medium">{{ role.name }}</span>
+                    </label>
                 </div>
+            </div>
+
+            <!-- Active toggle -->
+            <div v-if="!user.deleted_at" class="mt-4 border-t border-border pt-4">
+                <p class="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Status</p>
+                <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-input px-3 py-2 text-sm transition-colors hover:bg-accent has-checked:border-primary/60 has-checked:bg-primary/5">
+                    <input
+                        type="checkbox"
+                        :checked="user.is_active"
+                        class="accent-primary"
+                        @change="onActiveChange(tenantId, user.id, user.is_active)"
+                    />
+                    <span class="font-medium">Usuário ativo</span>
+                </label>
             </div>
         </div>
 
         <!-- Footer action strip -->
         <div class="flex items-center justify-between border-t border-border bg-muted/30 px-6 py-3">
-            <div class="flex items-center gap-1">
-                <!-- Edit -->
-                <button
-                    v-if="!user.deleted_at"
-                    class="rounded-lg p-2 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
-                    :title="t('app.landlord.common.edit')"
-                    @click="emit('edit', user.id)"
-                >
-                    <Edit class="size-4" />
-                </button>
-
-                <!-- Toggle active -->
-                <WayfinderLink
-                    v-if="!user.deleted_at"
-                    :href="TenantUserAccessController.toggleActive.url({ tenant: tenantId, userId: user.id })"
-                    method="patch"
-                    as="button"
-                    :data="{ is_active: user.is_active ? 0 : 1 }"
-                    class="rounded-lg p-2 text-muted-foreground transition-all hover:bg-amber-400/10 hover:text-amber-400"
-                    :title="user.is_active ? t('app.landlord.common.inactive') : t('app.landlord.common.active')"
-                >
-                    <Ban class="size-4" />
-                </WayfinderLink>
-            </div>
+            <!-- Edit -->
+            <button
+                v-if="!user.deleted_at"
+                class="rounded-lg p-2 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
+                :title="t('app.landlord.common.edit')"
+                @click="emit('edit', user.id)"
+            >
+                <Edit class="size-4" />
+            </button>
+            <div v-else />
 
             <!-- Delete / Restore -->
-                <WayfinderLink
+            <WayfinderLink
                 v-if="!user.deleted_at"
                 :href="TenantUserAccessController.destroy.url({ tenant: tenantId, userId: user.id })"
                 method="delete"
