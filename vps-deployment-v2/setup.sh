@@ -207,6 +207,7 @@ DB_TENANT_DATABASE="${DB_TENANT_DATABASE:-${DB_NAME}}"
 
 if [[ "${DB_MODE}" == "externo" ]]; then
     info "Banco externo em ${DB_HOST} — o wizard vai provisionar automaticamente após salvar o manifest."
+    ask DB_ALLOWED_CIDR "CIDR autorizado a acessar o banco (IP da App VPS + /32)" "${DB_ALLOWED_CIDR:-${VPS_HOST}/32}"
     ask DB_BOOTSTRAP_ROOT_PASS "Senha root da VPS do banco para 1ª conexão (vazio se já tem chave SSH)" "${DB_BOOTSTRAP_ROOT_PASS:-}"
 fi
 
@@ -379,7 +380,7 @@ ask BACKUP_TABLES "Tabelas para backup seletivo no DO Spaces (vazio = todas, ex:
     emit_manifest_var DB_ROOT_USER "$DB_ROOT_USER"
     emit_manifest_var DB_ROOT_PASS "$DB_ROOT_PASS"
     emit_manifest_var DB_ALLOWED_HOST "%"
-    emit_manifest_var DB_ALLOWED_CIDR "10.10.0.0/24"
+    emit_manifest_var DB_ALLOWED_CIDR "${DB_ALLOWED_CIDR:-${VPS_HOST}/32}"
     emit_manifest_var DB_NAME "$DB_NAME"
     emit_manifest_var DB_USER "$DB_USER"
     emit_manifest_var DB_PASSWORD "$DB_PASSWORD"

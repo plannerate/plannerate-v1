@@ -29,6 +29,7 @@ NEW_PASSWORDS=false
 SETUP_BACKUP=true
 DRY_RUN=false
 FORCE_RESET=false
+UPDATE_FIREWALL=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -38,6 +39,7 @@ while [[ $# -gt 0 ]]; do
         --new-passwords)      NEW_PASSWORDS=true; shift ;;
         --no-backup)          SETUP_BACKUP=false; shift ;;
         --reset)              FORCE_RESET=true; shift ;;
+        --update-firewall)    UPDATE_FIREWALL=true; shift ;;
         --dry-run)            DRY_RUN=true; shift ;;
         # legacy aliases mantidos para compatibilidade
         --bootstrap-root-password) BOOTSTRAP_PASSWORD="$2"; shift 2 ;;
@@ -244,6 +246,9 @@ if _check_db_provisioned; then
 
     if [[ "${FORCE_RESET}" == "true" ]]; then
         log_warn "--reset informado: reconfigurando banco"
+    elif [[ "${UPDATE_FIREWALL}" == "true" ]]; then
+        log_info "--update-firewall: atualizando regras UFW e pg_hba.conf sem reconfigurar o banco"
+        _skip_db_setup=true
     else
         echo ""
         echo -ne "  Banco já configurado. Manter [k] ou reconfigurar [r]? (padrão: k): "
@@ -256,6 +261,32 @@ if _check_db_provisioned; then
         else
             log_warn "Reconfigurando banco existente"
         fi
+    fi
+fi
+
+# ── Atualiza firewall e pg_hba.conf com CIDR correto (sem reconfigurar banco) ─
+if [[ "${UPDATE_FIREWALL}" == "true" || "${_skip_db_setup}" == "false" ]]; then
+    if [[ "${UPDATE_FIREWALL}" == "true" ]]; then
+        log_info "Aplicando CIDR ${DB_ALLOWED_CIDR} no UFW e pg_hba.conf de ${DB_HOST_ARG}"
+        if [[ "${DB_ENGINE}" == "pgsql" ]]; then
+            run_remote "
+                ufw allow from ${DB_ALLOWED_CIDR} to any port 5432 proto tcp
+                PG_VERSION=\$(ls /etc/postgresql | sort -V | tail -n1)
+                grep -qxF 'host all all ${DB_ALLOWED_CIDR} scram-sha-256' \
+                    /etc/postgresql/\${PG_VERSION}/main/pg_hba.conf \
+                    || echo 'host all all ${DB_ALLOWED_CIDR} scram-sha-256' >> \
+                       /etc/postgresql/\${PG_VERSION}/main/pg_hba.conf
+                systemctl reload postgresql
+            "
+        else
+            run_remote "
+                ufw allow from ${DB_ALLOWED_CIDR} to any port 3306 proto tcp
+                mysql -uroot -e \"CREATE USER IF NOT EXISTS '${DB_USER}'@'%' IDENTIFIED BY '${DB_PASSWORD}'; \
+                    GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'%'; \
+                    GRANT CREATE, DROP ON *.* TO '${DB_USER}'@'%'; FLUSH PRIVILEGES;\" 2>/dev/null || true
+            "
+        fi
+        log_success "Firewall e acesso atualizados para CIDR ${DB_ALLOWED_CIDR}"
     fi
 fi
 
