@@ -40,7 +40,7 @@ const flushRoles = useDebounceFn(() => {
     router.patch(TenantUserAccessController.syncRoles.url({ tenant: props.tenantId, userId: props.user.id }), {
         role_names: localRoleNames.value,
     });
-}, 600);
+}, 1000);
 
 function onRoleChange(roleName: string, checked: boolean): void {
     localRoleNames.value = checked

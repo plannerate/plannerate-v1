@@ -34,7 +34,7 @@ const flushUsers = useDebounceFn(() => {
     router.patch(WorkflowTemplateController.syncUsers.url({ tenant: props.tenantId, template: props.template.id }), {
         user_ids: localUserIds.value,
     });
-}, 600);
+}, 1000);
 
 function onUserChange(userId: string, checked: boolean): void {
     localUserIds.value = checked
