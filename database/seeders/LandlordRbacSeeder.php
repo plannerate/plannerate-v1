@@ -144,6 +144,11 @@ class LandlordRbacSeeder extends Seeder
             PermissionName::TENANT_KANBAN_EXECUTIONS_MOVE,
             PermissionName::TENANT_KANBAN_EXECUTIONS_MANAGE,
             PermissionName::TENANT_KANBAN_EXECUTIONS_RESTORE,
+            PermissionName::TENANT_USERS_VIEW_ANY,
+            PermissionName::TENANT_USERS_VIEW,
+            PermissionName::TENANT_USERS_CREATE,
+            PermissionName::TENANT_USERS_UPDATE,
+            PermissionName::TENANT_USERS_DELETE,
         ]);
 
         $adminUser = User::firstOrCreate(

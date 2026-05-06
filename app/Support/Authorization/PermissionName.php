@@ -136,6 +136,16 @@ final class PermissionName
 
     public const TENANT_PROVIDERS_DELETE = 'tenant.providers.delete';
 
+    public const TENANT_USERS_VIEW_ANY = 'tenant.users.viewAny';
+
+    public const TENANT_USERS_VIEW = 'tenant.users.view';
+
+    public const TENANT_USERS_CREATE = 'tenant.users.create';
+
+    public const TENANT_USERS_UPDATE = 'tenant.users.update';
+
+    public const TENANT_USERS_DELETE = 'tenant.users.delete';
+
     public const TENANT_PLANOGRAMS_VIEW_ANY = 'tenant.planograms.viewAny';
 
     public const TENANT_PLANOGRAMS_VIEW = 'tenant.planograms.view';
@@ -250,6 +260,11 @@ final class PermissionName
             self::TENANT_PROVIDERS_CREATE,
             self::TENANT_PROVIDERS_UPDATE,
             self::TENANT_PROVIDERS_DELETE,
+            self::TENANT_USERS_VIEW_ANY,
+            self::TENANT_USERS_VIEW,
+            self::TENANT_USERS_CREATE,
+            self::TENANT_USERS_UPDATE,
+            self::TENANT_USERS_DELETE,
             self::TENANT_PLANOGRAMS_VIEW_ANY,
             self::TENANT_PLANOGRAMS_VIEW,
             self::TENANT_PLANOGRAMS_CREATE,

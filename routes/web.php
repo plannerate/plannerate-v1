@@ -27,6 +27,7 @@ use App\Http\Controllers\Tenant\ReverbTestController;
 use App\Http\Controllers\Tenant\SaleController;
 use App\Http\Controllers\Tenant\StoreController;
 use App\Http\Controllers\Tenant\SystemLogController;
+use App\Http\Controllers\Tenant\UserController as TenantUserController;
 use App\Http\Controllers\Tenant\WorkflowExecutionController;
 use App\Http\Controllers\Tenant\WorkflowKanbanController;
 use App\Http\Controllers\Tenant\WorkflowPlanogramStepController;
@@ -107,7 +108,7 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::delete('tenants/{tenant}/integration', [TenantIntegrationController::class, 'destroy'])
         ->name('landlord.tenants.integration.destroy');
 
-    Route::middleware('tenant.module.active:' . ModuleSlug::KANBAN)->group(function (): void {
+    Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
         Route::get('tenants/{tenant}/kanban/templates', [LandlordWorkflowTemplateController::class, 'index'])
             ->name('landlord.tenants.kanban.templates.index');
         Route::get('tenants/{tenant}/kanban/templates/create', [LandlordWorkflowTemplateController::class, 'create'])
@@ -182,11 +183,15 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->except(['show'])
             ->names('providers');
 
+        Route::resource('users', TenantUserController::class)
+            ->except(['show'])
+            ->names('users');
+
         Route::resource('planograms', PlanogramController::class)
             ->except(['show'])
             ->names('planograms');
 
-        Route::middleware('tenant.module.active:' . ModuleSlug::KANBAN)
+        Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)
             ->get('planograms/kanban', [PlanogramController::class, 'kanban'])
             ->name('planograms.kanban');
 
@@ -227,7 +232,7 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::delete('notifications/{id}', [NotificationController::class, 'destroy'])
             ->name('notifications.destroy');
 
-        Route::middleware('tenant.module.active:' . ModuleSlug::KANBAN)->group(function (): void {
+        Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
             // ── KANBAN ────────────────────────────────────────────────
             Route::get('kanban', [WorkflowKanbanController::class, 'index'])->name('kanban.index');
 
@@ -270,4 +275,4 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Broadcast::routes();
     });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';
