@@ -100,12 +100,14 @@ jobs:
             mv -f docker-compose.production.yml docker-compose.yml
 
             IMAGE_TAG="${{ steps.context.outputs.image_tag }}"
+            GHCR_REPO="${{ vars.GHCR_REPO || github.repository }}"
 
             echo "Deploy context:"
             echo "  app_slug=${APP_SLUG}"
             echo "  image_tag=${IMAGE_TAG}"
+            echo "  ghcr_repo=${GHCR_REPO}"
 
-            export IMAGE_TAG
+            export IMAGE_TAG GHCR_REPO
             docker compose -p "plannerate-${APP_SLUG}" pull
             docker compose -p "plannerate-${APP_SLUG}" up -d --force-recreate
             docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
