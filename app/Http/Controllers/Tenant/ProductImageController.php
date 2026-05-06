@@ -8,6 +8,7 @@ use App\Http\Requests\Tenant\FetchRepositoryProductImageRequest;
 use App\Http\Requests\Tenant\ProcessProductImageRequest;
 use App\Http\Requests\Tenant\UploadProductImageRequest;
 use App\Jobs\ProcessProductImageWithAiJob;
+use App\Models\Product;
 use App\Models\ProductImageAiOperation;
 use App\Services\ProductRepositoryImageResolver;
 use App\Support\Tenancy\InteractsWithTenantContext;
@@ -30,11 +31,63 @@ class ProductImageController extends Controller
     {
         $tenantId = $this->tenantId();
         $file = $request->file('file');
-        $path = $file->store("products/uploads/{$tenantId}", 'public');
+        $productId = trim((string) $request->input('product_id'));
+        $product = null;
+        $storagePath = "products/uploads/{$tenantId}";
+
+        if ($productId !== '') {
+            $product = Product::query()
+                ->whereKey($productId)
+                ->where('tenant_id', $tenantId)
+                ->first();
+
+            if (! $product) {
+                return response()->json([
+                    'message' => __('Produto não encontrado para este tenant.'),
+                ], 404);
+            }
+
+            $this->authorize('update', $product);
+            $storagePath = "{$storagePath}/{$product->id}";
+        }
+
+        $path = $file->store($storagePath, 'public');
+
+        if ($product) {
+            $product->update([
+                'url' => $path,
+            ]);
+        }
 
         return response()->json([
             'path' => $path,
             'public_url' => Storage::disk('public')->url($path),
+        ]);
+    }
+
+    public function destroy(string $product): JsonResponse
+    {
+        $tenantId = (string) $this->tenantId();
+        $productModel = Product::query()
+            ->whereKey($product)
+            ->where('tenant_id', $tenantId)
+            ->first();
+
+        if (! $productModel) {
+            return response()->json([
+                'message' => __('Produto não encontrado para este tenant.'),
+            ], 404);
+        }
+
+        $this->authorize('update', $productModel);
+
+        $productModel->update([
+            'url' => null,
+        ]);
+
+        return response()->json([
+            'message' => __('Imagem removida com sucesso.'),
+            'product_id' => (string) $productModel->id,
         ]);
     }
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\ProcessProductImageWithAiJob;
+use App\Models\Product;
 use App\Models\ProductImageAiOperation;
 use App\Models\Role;
 use App\Models\Tenant;
@@ -68,6 +69,42 @@ test('tenant can upload product image', function (): void {
     Storage::disk('public')->assertExists($path);
 });
 
+test('tenant upload with product id stores file in tenant and product path and updates product url', function (): void {
+    Storage::fake('public');
+    $this->withoutMiddleware(NeedsTenant::class);
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeImageTenant('tenant-image-product-upload');
+    assignImageTenantAdminRole($user, $tenant->id);
+    $tenant->makeCurrent();
+
+    $product = Product::factory()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $user->id,
+        'category_id' => null,
+        'url' => null,
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-image-product-upload.'.config('app.landlord_domain')])
+        ->post(route('tenant.products.image.upload', ['subdomain' => 'tenant-image-product-upload'], false), [
+            'file' => UploadedFile::fake()->image('product.png', 800, 800),
+            'product_id' => (string) $product->id,
+        ]);
+
+    $response
+        ->assertOk()
+        ->assertJsonStructure(['path', 'public_url']);
+
+    $path = (string) $response->json('path');
+
+    expect($path)->toStartWith("products/uploads/{$tenant->id}/{$product->id}/");
+    Storage::disk('public')->assertExists($path);
+    expect((string) $product->fresh()->url)->toBe($path);
+});
+
 test('tenant upload rejects invalid file', function (): void {
     Storage::fake('public');
     $this->withoutMiddleware(NeedsTenant::class);
@@ -87,6 +124,83 @@ test('tenant upload rejects invalid file', function (): void {
 
     $response
         ->assertSessionHasErrors(['file']);
+});
+
+test('tenant upload is forbidden without product permissions', function (): void {
+    Storage::fake('public');
+    $this->withoutMiddleware(NeedsTenant::class);
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    makeImageTenant('tenant-image-forbidden')->makeCurrent();
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-image-forbidden.'.config('app.landlord_domain')])
+        ->post(route('tenant.products.image.upload', ['subdomain' => 'tenant-image-forbidden'], false), [
+            'file' => UploadedFile::fake()->image('product.png', 400, 400),
+        ]);
+
+    $response->assertForbidden();
+});
+
+test('tenant can remove product image', function (): void {
+    Storage::fake('public');
+    $this->withoutMiddleware(NeedsTenant::class);
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeImageTenant('tenant-image-delete');
+    assignImageTenantAdminRole($user, $tenant->id);
+    $tenant->makeCurrent();
+
+    $product = Product::factory()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $user->id,
+        'category_id' => null,
+        'url' => "products/uploads/{$tenant->id}/legacy.png",
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-image-delete.'.config('app.landlord_domain')])
+        ->delete(route('tenant.products.image.destroy', [
+            'subdomain' => 'tenant-image-delete',
+            'product' => $product->id,
+        ], false));
+
+    $response->assertOk();
+    expect($product->fresh()->url)->toBeNull();
+});
+
+test('tenant cannot upload image to product from another tenant', function (): void {
+    Storage::fake('public');
+    $this->withoutMiddleware(NeedsTenant::class);
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenantA = makeImageTenant('tenant-image-cross-a');
+    $tenantB = makeImageTenant('tenant-image-cross-b');
+    assignImageTenantAdminRole($user, $tenantA->id);
+
+    $tenantB->makeCurrent();
+    $productFromOtherTenant = Product::factory()->create([
+        'tenant_id' => $tenantB->id,
+        'user_id' => $user->id,
+        'category_id' => null,
+    ]);
+
+    $tenantA->makeCurrent();
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-image-cross-a.'.config('app.landlord_domain')])
+        ->post(route('tenant.products.image.upload', ['subdomain' => 'tenant-image-cross-a'], false), [
+            'file' => UploadedFile::fake()->image('product.png', 500, 500),
+            'product_id' => (string) $productFromOtherTenant->id,
+        ]);
+
+    $response->assertNotFound();
 });
 
 test('tenant can queue ai processing for uploaded image', function (): void {

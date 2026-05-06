@@ -77,12 +77,18 @@ class ProcessProductImages extends Command
                 ->values()
                 ->all();
 
-            return Tenant::query()->whereIn('id', $ids)->get();
+            return Tenant::query()
+                ->whereIn('id', $ids)
+                ->whereNotNull('database')
+                ->where('database', '!=', '')
+                ->get();
         }
 
         return Tenant::query()
             ->where('status', 'active')
             ->whereHasActiveModule(ModuleSlug::IMAGE_BANK)
+            ->whereNotNull('database')
+            ->where('database', '!=', '')
             ->get();
     }
 

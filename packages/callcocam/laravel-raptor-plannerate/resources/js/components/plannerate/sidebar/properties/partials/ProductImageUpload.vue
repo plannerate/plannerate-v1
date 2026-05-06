@@ -119,13 +119,13 @@
 </template>
 
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
+import type { UrlMethodPair } from '@inertiajs/core';
+import { router, useHttp } from '@inertiajs/vue3';
 import { ImageIcon, Loader2, Trash2, Upload, X } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import { Cropper } from 'vue-advanced-cropper';
 import { toast } from 'vue-sonner';
 import { wayfinderPath } from '../../../../../libs/wayfinderPath';
-import { uploadImage, deleteImage } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -138,6 +138,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import imageRoutes from '@/routes/tenant/products/image';
 import type { Product } from '@/types/planogram';
 import 'vue-advanced-cropper/dist/style.css';
 
@@ -160,6 +161,22 @@ const isUploading = ref(false);
 const uploadError = ref<string | null>(null);
 const imageUrlInput = ref('');
 const isImportingFromUrl = ref(false);
+const uploadHttp = useHttp<{ file: File | Blob | null; product_id: string | null }, { path?: string; public_url?: string }>({
+    file: null,
+    product_id: null,
+});
+const deleteHttp = useHttp<Record<string, never>, { message?: string }>({});
+
+function resolveSubdomain(): string {
+    return window.location.hostname.split('.')[0] ?? '';
+}
+
+function toHttpRoute(route: { url: string; method: string }): UrlMethodPair {
+    return {
+        url: wayfinderPath(route.url),
+        method: route.method as UrlMethodPair['method'],
+    };
+}
 
 // Limpa estado quando dialog fecha
 watch(open, (newValue) => {
@@ -338,51 +355,27 @@ async function handleUploadImage() {
             });
         }
 
-        const formData = new FormData();
-        formData.append('image', fileToUpload);
-        formData.append('product_id', props.product.id);
+        uploadHttp.file = fileToUpload;
+        uploadHttp.product_id = props.product.id;
 
-        // Faz upload via Inertia
-        router.post(wayfinderPath(uploadImage.url({
-            subdomain: window.location.hostname.split('.')[0],
-            product: props.product.id,
-        })), formData, {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                toast.success('Imagem enviada com sucesso!');
-                open.value = false;
-                clearSelectedFile();
+        const payload = await uploadHttp.submit(
+            toHttpRoute(imageRoutes.upload(resolveSubdomain()))
+        );
 
-                // Recarrega a página para atualizar a imagem
-                router.reload({ only: ['product'] });
-            },
-            onError: (errors) => {
-                console.error('Erro ao enviar imagem:', errors);
-                const pick = (key: 'product' | 'image'): string | undefined => {
-                    const v = errors[key];
+        if (typeof payload.path !== 'string' || payload.path === '') {
+            throw new Error('Erro ao enviar imagem. Tente novamente.');
+        }
 
-                    if (Array.isArray(v)) {
-                        return v[0];
-                    }
-
-                    return typeof v === 'string' ? v : undefined;
-                };
-                const message = resolveUploadErrorMessage(
-                    pick('product') ?? pick('image') ?? 'Erro ao enviar imagem. Tente novamente.',
-                );
-                uploadError.value = message;
-                toast.error(message);
-            },
-            onFinish: () => {
-                isUploading.value = false;
-            },
-        });
+        toast.success('Imagem enviada com sucesso!');
+        open.value = false;
+        clearSelectedFile();
+        router.reload({ only: ['product'] });
     } catch (error) {
         console.error('Erro ao fazer upload:', error);
         const message = resolveUploadErrorMessage(error instanceof Error ? error.message : undefined);
         uploadError.value = message;
         toast.error(message);
+    } finally {
         isUploading.value = false;
     }
 }
@@ -396,43 +389,23 @@ async function handleDeleteImage() {
     uploadError.value = null;
 
     try {
-        // Envia requisição para remover a imagem (marcar image_url como null)
-        router.delete(wayfinderPath(deleteImage.url({
-            subdomain: window.location.hostname.split('.')[0],
-            product: props.product.id,
-        })), {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                toast.success('Imagem removida com sucesso!');
-                open.value = false;
+        await deleteHttp.submit(
+            toHttpRoute(imageRoutes.destroy({
+                subdomain: resolveSubdomain(),
+                product: props.product.id,
+            }))
+        );
 
-                // Recarrega a página para atualizar
-                router.reload({ only: ['product'] });
-            },
-            onError: (errors) => {
-                console.error('Erro ao remover imagem:', errors);
-                const pick = (key: 'product' | 'image'): string | undefined => {
-                    const v = errors[key];
-
-                    if (Array.isArray(v)) {
-                        return v[0];
-                    }
-
-                    return typeof v === 'string' ? v : undefined;
-                };
-                const message = pick('product') ?? pick('image') ?? 'Erro ao remover imagem. Tente novamente.';
-                uploadError.value = message;
-                toast.error(message);
-            },
-            onFinish: () => {
-                isUploading.value = false;
-            },
-        });
+        toast.success('Imagem removida com sucesso!');
+        open.value = false;
+        router.reload({ only: ['product'] });
     } catch (error) {
         console.error('Erro ao deletar imagem:', error);
-        uploadError.value = 'Erro ao deletar imagem. Tente novamente.';
-        toast.error('Erro ao deletar imagem');
+        uploadError.value = error instanceof Error && error.message !== ''
+            ? error.message
+            : 'Erro ao deletar imagem. Tente novamente.';
+        toast.error(uploadError.value);
+    } finally {
         isUploading.value = false;
     }
 }

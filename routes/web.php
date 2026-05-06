@@ -188,6 +188,8 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
 
         Route::post('products/image/upload', [ProductImageController::class, 'upload'])
             ->name('products.image.upload');
+        Route::delete('products/image/{product}', [ProductImageController::class, 'destroy'])
+            ->name('products.image.destroy');
         Route::post('products/image/ai/process', [ProductImageController::class, 'process'])
             ->name('products.image.ai.process');
         Route::get('products/image/ai/operations/{operation}', [ProductImageController::class, 'status'])

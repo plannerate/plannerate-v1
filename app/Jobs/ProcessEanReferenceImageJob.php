@@ -11,8 +11,9 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Spatie\Multitenancy\Jobs\NotTenantAware;
 
-class ProcessEanReferenceImageJob implements ShouldQueue
+class ProcessEanReferenceImageJob implements NotTenantAware, ShouldQueue
 {
     use Queueable;
 
@@ -51,8 +52,10 @@ class ProcessEanReferenceImageJob implements ShouldQueue
         $tenants = Tenant::query()
             ->where('status', 'active')
             ->whereHasActiveModule(ModuleSlug::IMAGE_BANK)
+            ->whereNotNull('database')
+            ->where('database', '!=', '')
             ->when($this->tenantIds !== [], fn ($query) => $query->whereIn('id', $this->tenantIds))
-            ->get(['id']);
+            ->get(['id', 'name', 'database']);
 
         $totalProductsUpdated = 0;
 
