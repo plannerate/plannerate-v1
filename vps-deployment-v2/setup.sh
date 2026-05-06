@@ -420,47 +420,86 @@ if ${SSH_DEPLOY} -o ConnectTimeout=8 -o BatchMode=yes "${DEPLOY_USER}@${VPS_HOST
     _deploy_ssh_ok=true
 fi
 
+# Detecta se a instância específica (APP_SLUG) já foi provisionada no VPS
+_app_provisioned=false
+if [[ "${_deploy_ssh_ok}" == "true" ]]; then
+    if ${SSH_DEPLOY} -o ConnectTimeout=8 -o BatchMode=yes "${DEPLOY_USER}@${VPS_HOST}" \
+        "test -f /opt/plannerate/${APP_SLUG}/.env" >/dev/null 2>&1; then
+        _app_provisioned=true
+    fi
+fi
+
 _install_compose=false
 
-if [[ "${_deploy_ssh_ok}" == "false" ]]; then
+if [[ "${_app_provisioned}" == "false" ]]; then
     if ask_yn "Provisionar App VPS agora?"; then
         PROVISION_MODE="normal"
         ask_choice PROVISION_MODE "Modo de provisionamento (normal|reset)" "normal" normal reset
 
         if [[ "${PROVISION_MODE}" == "reset" ]]; then
             warn "Reset da instância '${APP_SLUG}': remove /opt/plannerate/${APP_SLUG} e /opt/monitoring/${APP_SLUG} (não remove banco)"
-            ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "
-                set -euo pipefail
-                APP_SLUG='${APP_SLUG}'
+            _reset_ssh="${_deploy_ssh_ok}" == "true" && echo "${SSH_DEPLOY} ${DEPLOY_USER}@${VPS_HOST}" || echo "${SSH_ROOT} ${VPS_USER}@${VPS_HOST}"
+            if [[ "${_deploy_ssh_ok}" == "true" ]]; then
+                ${SSH_DEPLOY} "${DEPLOY_USER}@${VPS_HOST}" "
+                    set -euo pipefail
+                    APP_SLUG='${APP_SLUG}'
 
-                if [ -d \"/opt/plannerate/\${APP_SLUG}\" ] && [ -f \"/opt/plannerate/\${APP_SLUG}/docker-compose.yml\" ]; then
-                    cd \"/opt/plannerate/\${APP_SLUG}\" && docker compose -p \"plannerate-\${APP_SLUG}\" down --remove-orphans || true
-                fi
+                    if [ -d \"/opt/plannerate/\${APP_SLUG}\" ] && [ -f \"/opt/plannerate/\${APP_SLUG}/docker-compose.yml\" ]; then
+                        cd \"/opt/plannerate/\${APP_SLUG}\" && docker compose -p \"plannerate-\${APP_SLUG}\" down --remove-orphans || true
+                    fi
 
-                if [ -d \"/opt/monitoring/\${APP_SLUG}\" ] && [ -f \"/opt/monitoring/\${APP_SLUG}/docker-compose.yml\" ]; then
-                    cd \"/opt/monitoring/\${APP_SLUG}\" && docker compose -p \"plannerate-monitoring-\${APP_SLUG}\" down --remove-orphans || true
-                fi
+                    if [ -d \"/opt/monitoring/\${APP_SLUG}\" ] && [ -f \"/opt/monitoring/\${APP_SLUG}/docker-compose.yml\" ]; then
+                        cd \"/opt/monitoring/\${APP_SLUG}\" && docker compose -p \"plannerate-monitoring-\${APP_SLUG}\" down --remove-orphans || true
+                    fi
 
-                rm -rf \"/opt/plannerate/\${APP_SLUG}\" \"/opt/monitoring/\${APP_SLUG}\"
-                mkdir -p \"/opt/plannerate/\${APP_SLUG}\" \"/opt/monitoring/\${APP_SLUG}\"
-            "
+                    rm -rf \"/opt/plannerate/\${APP_SLUG}\" \"/opt/monitoring/\${APP_SLUG}\"
+                    mkdir -p \"/opt/plannerate/\${APP_SLUG}\" \"/opt/monitoring/\${APP_SLUG}\"
+                "
+            else
+                ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "
+                    set -euo pipefail
+                    APP_SLUG='${APP_SLUG}'
+
+                    if [ -d \"/opt/plannerate/\${APP_SLUG}\" ] && [ -f \"/opt/plannerate/\${APP_SLUG}/docker-compose.yml\" ]; then
+                        cd \"/opt/plannerate/\${APP_SLUG}\" && docker compose -p \"plannerate-\${APP_SLUG}\" down --remove-orphans || true
+                    fi
+
+                    if [ -d \"/opt/monitoring/\${APP_SLUG}\" ] && [ -f \"/opt/monitoring/\${APP_SLUG}/docker-compose.yml\" ]; then
+                        cd \"/opt/monitoring/\${APP_SLUG}\" && docker compose -p \"plannerate-monitoring-\${APP_SLUG}\" down --remove-orphans || true
+                    fi
+
+                    rm -rf \"/opt/plannerate/\${APP_SLUG}\" \"/opt/monitoring/\${APP_SLUG}\"
+                    mkdir -p \"/opt/plannerate/\${APP_SLUG}\" \"/opt/monitoring/\${APP_SLUG}\"
+                "
+            fi
             ok "Reset concluído para ${APP_SLUG}"
         fi
 
-        ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "mkdir -p /tmp/vps-provisioning"
-        ${SCP_ROOT} -r "${SCRIPT_DIR}/provisioning/." "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/"
-        ${SCP_ROOT} "${MANIFEST_OUT}" "${VPS_USER}@${VPS_HOST}:/tmp/vps-provisioning/manifest.env"
-        ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "bash /tmp/vps-provisioning/validate-prereqs.sh /tmp/vps-provisioning/manifest.env"
+        # Usa deploy+chave se SSH já funciona (VPS base já provisionada, nova instância)
+        # Usa root caso contrário (provisionamento inicial do VPS)
+        _SSH_PROV="${SSH_ROOT}"
+        _SCP_PROV="${SCP_ROOT}"
+        _SSH_PROV_TARGET="${VPS_USER}@${VPS_HOST}"
+        if [[ "${_deploy_ssh_ok}" == "true" ]]; then
+            _SSH_PROV="${SSH_DEPLOY}"
+            _SCP_PROV="${SCP_DEPLOY}"
+            _SSH_PROV_TARGET="${DEPLOY_USER}@${VPS_HOST}"
+        fi
+
+        ${_SSH_PROV} "${_SSH_PROV_TARGET}" "mkdir -p /tmp/vps-provisioning"
+        ${_SCP_PROV} -r "${SCRIPT_DIR}/provisioning/." "${_SSH_PROV_TARGET}:/tmp/vps-provisioning/"
+        ${_SCP_PROV} "${MANIFEST_OUT}" "${_SSH_PROV_TARGET}:/tmp/vps-provisioning/manifest.env"
+        ${_SSH_PROV} "${_SSH_PROV_TARGET}" "bash /tmp/vps-provisioning/validate-prereqs.sh /tmp/vps-provisioning/manifest.env"
         if [[ "${DB_MODE}" == "local" ]]; then
-            ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "DB_ENGINE='${DB_ENGINE}' bash /tmp/vps-provisioning/setup-db-host.sh /tmp/vps-provisioning/manifest.env"
+            ${_SSH_PROV} "${_SSH_PROV_TARGET}" "DB_ENGINE='${DB_ENGINE}' bash /tmp/vps-provisioning/setup-db-host.sh /tmp/vps-provisioning/manifest.env"
             ok "Banco local provisionado (${DB_ENGINE})"
         fi
-        ${SSH_ROOT} "${VPS_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' bash /tmp/vps-provisioning/setup-app-host.sh /tmp/vps-provisioning/manifest.env"
+        ${_SSH_PROV} "${_SSH_PROV_TARGET}" "APP_SLUG='${APP_SLUG}' bash /tmp/vps-provisioning/setup-app-host.sh /tmp/vps-provisioning/manifest.env"
         ok "App VPS provisionado — root SSH desabilitado, use a chave admin daqui em diante"
         _install_compose=true
     fi
 else
-    info "VPS já provisionada — deploy+chave admin acessível, pulando provisionamento."
+    info "Instância '${APP_SLUG}' já provisionada em /opt/plannerate/${APP_SLUG} — pulando provisionamento."
 fi
 
 if [[ "${_install_compose}" == "true" ]] || ask_yn "Instalar compose files e iniciar Traefik no VPS agora?"; then
