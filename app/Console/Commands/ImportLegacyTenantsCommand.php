@@ -23,7 +23,8 @@ class ImportLegacyTenantsCommand extends Command
         {--all : Importa todos os clientes sem confirmação}
         {--skip-users : Não importa usuários}
         {--fresh-users : Recria usuários mesmo que já existam}
-        {--skip-rbac : Não executa o LandlordRbacSeeder ao final}';
+        {--skip-rbac : Não executa o LandlordRbacSeeder ao final}
+        {--db-prefix= : Prefixo de ambiente no nome do banco (ex: production, staging). Padrão: APP_ENV quando não for local}';
 
     protected $description = 'Importa clientes da base legada como tenants e seus usuários';
 
@@ -137,7 +138,11 @@ class ImportLegacyTenantsCommand extends Command
     private function importClient(object $client): array
     {
         $slug = str($client->slug ?? $client->name)->slug('_')->replace('supermercado_', '')->replace('_supermercados', '')->replace('_ltda', '')->replace(' LTDA', '');
-        $database = 'tenant_' . $slug;
+
+        $envPrefix = $this->option('db-prefix') ?? (app()->isLocal() ? '' : app()->environment());
+        $database = $envPrefix !== ''
+            ? 'tenant_' . $envPrefix . '_' . $slug
+            : 'tenant_' . $slug;
         $landlordDomain = config('app.landlord_domain', env('LANDLORD_DOMAIN', 'plannerate-v1.test'));
         $host = "{$slug}.{$landlordDomain}";
 
