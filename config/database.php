@@ -48,7 +48,7 @@ return [
 
 
         'landlord' => [
-            'driver' => 'pgsql',
+            'driver' => env('DB_LANDLORD_CONNECTION', 'pgsql'),
             'url' => env('DB_LANDLORD_URL'),
             'host' => env('DB_LANDLORD_HOST', '127.0.0.1'),
             'port' => env('DB_LANDLORD_PORT', '5432'),
