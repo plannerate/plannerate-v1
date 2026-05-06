@@ -5,6 +5,7 @@ import { Edit, Mail, RotateCcw, Trash2 } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import WayfinderLink from '@/components/WayfinderLink.vue';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import { useT } from '@/composables/useT';
 
 type UserAccessRow = {
@@ -37,7 +38,7 @@ const localRoleNames = ref([...props.user.role_names]);
 watch(() => props.user.role_names, (val) => { localRoleNames.value = [...val]; });
 
 const flushRoles = useDebounceFn(() => {
-    router.patch(TenantUserAccessController.syncRoles.url({ tenant: props.tenantId, userId: props.user.id }), {
+    router.patch(tenantWayfinderPath(TenantUserAccessController.syncRoles.url({ tenant: props.tenantId, userId: props.user.id })), {
         role_names: localRoleNames.value,
     });
 }, 1000);
@@ -50,7 +51,7 @@ function onRoleChange(roleName: string, checked: boolean): void {
 }
 
 function onActiveChange(tenantId: string, userId: string, currentIsActive: boolean): void {
-    router.patch(TenantUserAccessController.toggleActive.url({ tenant: tenantId, userId }), {
+    router.patch(tenantWayfinderPath(TenantUserAccessController.toggleActive.url({ tenant: tenantId, userId })), {
         is_active: currentIsActive ? 0 : 1,
     });
 }

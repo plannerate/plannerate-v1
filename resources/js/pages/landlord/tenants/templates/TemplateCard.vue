@@ -5,6 +5,7 @@ import { Edit, Trash2 } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
 import WayfinderLink from '@/components/WayfinderLink.vue';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import type { TemplateRow, UserOption } from './Index.vue';
 
 const props = defineProps<{
@@ -31,7 +32,7 @@ const localUserIds = ref([...props.template.user_ids]);
 watch(() => props.template.user_ids, (val) => { localUserIds.value = [...val]; });
 
 const flushUsers = useDebounceFn(() => {
-    router.patch(WorkflowTemplateController.syncUsers.url({ tenant: props.tenantId, template: props.template.id }), {
+    router.patch(tenantWayfinderPath(WorkflowTemplateController.syncUsers.url({ tenant: props.tenantId, template: props.template.id })), {
         user_ids: localUserIds.value,
     });
 }, 1000);

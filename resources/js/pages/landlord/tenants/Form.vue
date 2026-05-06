@@ -6,6 +6,7 @@ import TenantCloudflareController from '@/actions/App/Http/Controllers/Landlord/
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import CloudflareDnsCard from '@/components/CloudflareDnsCard.vue';
 import FormCard from '@/components/FormCard.vue';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -104,7 +105,7 @@ const alreadyRunning = computed(
 const provisionForm = useForm({});
 
 function restartProvision(): void {
-    provisionForm.post(TenantController.provision.url(props.tenant!.id));
+    provisionForm.post(tenantWayfinderPath(TenantController.provision.url(props.tenant!.id)));
 }
 
 function toSlug(value: string): string {

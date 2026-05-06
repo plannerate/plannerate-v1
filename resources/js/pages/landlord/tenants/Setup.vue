@@ -13,6 +13,7 @@ import {
 import { onBeforeUnmount, onMounted } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -36,7 +37,7 @@ const { t } = useT();
 const provisionForm = useForm({});
 
 function provision(): void {
-    provisionForm.post(TenantController.provision.url(props.tenant.id));
+    provisionForm.post(tenantWayfinderPath(TenantController.provision.url(props.tenant.id)));
 }
 
 let pollingTimer: ReturnType<typeof setInterval> | null = null;
