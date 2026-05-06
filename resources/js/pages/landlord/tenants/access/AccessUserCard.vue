@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
+import { useDebounceFn } from '@vueuse/core';
 import { Edit, Mail, RotateCcw, Trash2 } from 'lucide-vue-next';
+import { ref, watch } from 'vue';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import WayfinderLink from '@/components/WayfinderLink.vue';
 import { useT } from '@/composables/useT';
@@ -19,7 +21,7 @@ type RoleOption = {
     name: string;
 };
 
-defineProps<{
+const props = defineProps<{
     user: UserAccessRow;
     tenantId: string;
     roles: RoleOption[];
@@ -30,6 +32,28 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useT();
+
+const localRoleNames = ref([...props.user.role_names]);
+watch(() => props.user.role_names, (val) => { localRoleNames.value = [...val]; });
+
+const flushRoles = useDebounceFn(() => {
+    router.patch(TenantUserAccessController.syncRoles.url({ tenant: props.tenantId, userId: props.user.id }), {
+        role_names: localRoleNames.value,
+    });
+}, 600);
+
+function onRoleChange(roleName: string, checked: boolean): void {
+    localRoleNames.value = checked
+        ? [...localRoleNames.value, roleName]
+        : localRoleNames.value.filter((r) => r !== roleName);
+    flushRoles();
+}
+
+function onActiveChange(tenantId: string, userId: string, currentIsActive: boolean): void {
+    router.patch(TenantUserAccessController.toggleActive.url({ tenant: tenantId, userId }), {
+        is_active: currentIsActive ? 0 : 1,
+    });
+}
 
 function getUserInitials(name: string): string {
     const tokens = name
@@ -43,22 +67,6 @@ function getUserInitials(name: string): string {
     }
 
     return tokens.map((part) => part.charAt(0).toUpperCase()).join('');
-}
-
-function onRoleChange(roleName: string, currentRoles: string[], tenantId: string, userId: string, checked: boolean): void {
-    const newRoles = checked
-        ? [...currentRoles, roleName]
-        : currentRoles.filter((r) => r !== roleName);
-
-    router.patch(TenantUserAccessController.syncRoles.url({ tenant: tenantId, userId }), {
-        role_names: newRoles,
-    });
-}
-
-function onActiveChange(tenantId: string, userId: string, currentIsActive: boolean): void {
-    router.patch(TenantUserAccessController.toggleActive.url({ tenant: tenantId, userId }), {
-        is_active: currentIsActive ? 0 : 1,
-    });
 }
 </script>
 
@@ -126,10 +134,10 @@ function onActiveChange(tenantId: string, userId: string, currentIsActive: boole
                         <input
                             type="checkbox"
                             :value="role.name"
-                            :checked="user.role_names.includes(role.name)"
+                            :checked="localRoleNames.includes(role.name)"
                             :disabled="!!user.deleted_at"
                             class="accent-primary"
-                            @change="onRoleChange(role.name, user.role_names, tenantId, user.id, ($event.target as HTMLInputElement).checked)"
+                            @change="onRoleChange(role.name, ($event.target as HTMLInputElement).checked)"
                         />
                         <span class="font-medium">{{ role.name }}</span>
                     </label>

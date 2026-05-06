@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
+import { useDebounceFn } from '@vueuse/core';
 import { Edit, Trash2 } from 'lucide-vue-next';
+import { ref, watch } from 'vue';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
 import WayfinderLink from '@/components/WayfinderLink.vue';
 import type { TemplateRow, UserOption } from './Index.vue';
 
-defineProps<{
+const props = defineProps<{
     template: TemplateRow;
     tenantId: string;
     users: UserOption[];
@@ -25,14 +27,20 @@ const statusClasses: Record<string, string> = {
     published: 'border-primary/30 bg-primary/10 text-primary',
 };
 
-function onUserChange(userId: string, currentIds: string[], tenantId: string, templateId: string, checked: boolean): void {
-    const newIds = checked
-        ? [...currentIds, userId]
-        : currentIds.filter((id) => id !== userId);
+const localUserIds = ref([...props.template.user_ids]);
+watch(() => props.template.user_ids, (val) => { localUserIds.value = [...val]; });
 
-    router.patch(WorkflowTemplateController.syncUsers.url({ tenant: tenantId, template: templateId }), {
-        user_ids: newIds,
+const flushUsers = useDebounceFn(() => {
+    router.patch(WorkflowTemplateController.syncUsers.url({ tenant: props.tenantId, template: props.template.id }), {
+        user_ids: localUserIds.value,
     });
+}, 600);
+
+function onUserChange(userId: string, checked: boolean): void {
+    localUserIds.value = checked
+        ? [...localUserIds.value, userId]
+        : localUserIds.value.filter((id) => id !== userId);
+    flushUsers();
 }
 </script>
 
@@ -48,7 +56,7 @@ function onUserChange(userId: string, currentIds: string[], tenantId: string, te
                     <div
                         v-if="template.color"
                         class="size-10 shrink-0 rounded-full ring-4 ring-offset-0 transition-all duration-500 group-hover:ring-primary/20"
-                        :style="{ backgroundColor: template.color, ringColor: template.color + '33' }"
+                        :style="{ backgroundColor: template.color }"
                     />
                     <div
                         v-else
@@ -100,9 +108,9 @@ function onUserChange(userId: string, currentIds: string[], tenantId: string, te
                         <input
                             type="checkbox"
                             :value="user.id"
-                            :checked="template.user_ids.includes(user.id)"
+                            :checked="localUserIds.includes(user.id)"
                             class="accent-primary"
-                            @change="onUserChange(user.id, template.user_ids, tenantId, template.id, ($event.target as HTMLInputElement).checked)"
+                            @change="onUserChange(user.id, ($event.target as HTMLInputElement).checked)"
                         />
                         <span class="font-medium">{{ user.name }}</span>
                     </label>
