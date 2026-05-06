@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\TenantSocialiteController;
 use App\Http\Controllers\Landlord\DashboardController as LandlordDashboardController;
 use App\Http\Controllers\Landlord\EanReferenceController as LandlordEanReferenceController;
 use App\Http\Controllers\Landlord\ModuleController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Landlord\PlanController;
 use App\Http\Controllers\Landlord\RoleController;
 use App\Http\Controllers\Landlord\TenantController as LandlordTenantController;
 use App\Http\Controllers\Landlord\TenantIntegrationController;
+use App\Http\Controllers\Landlord\TenantSocialiteProviderController;
 use App\Http\Controllers\Landlord\TenantUserAccessController;
 use App\Http\Controllers\Landlord\UserController;
 use App\Http\Controllers\Landlord\WorkflowTemplateController as LandlordWorkflowTemplateController;
@@ -89,6 +91,11 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::patch('tenants/{tenant}/access/users/{userId}/restore', [TenantUserAccessController::class, 'restore'])
         ->name('landlord.tenants.access.users.restore');
 
+    Route::put('tenants/{tenant}/socialite-provider', [TenantSocialiteProviderController::class, 'update'])
+        ->name('landlord.tenants.socialite-provider.update');
+    Route::delete('tenants/{tenant}/socialite-provider', [TenantSocialiteProviderController::class, 'destroy'])
+        ->name('landlord.tenants.socialite-provider.destroy');
+
     Route::get('tenants/{tenant}/integration', [TenantIntegrationController::class, 'edit'])
         ->name('landlord.tenants.integration.edit');
     Route::put('tenants/{tenant}/integration', [TenantIntegrationController::class, 'update'])
@@ -117,6 +124,16 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
             ->name('landlord.tenants.kanban.templates.destroy');
     });
 });
+
+// ── SOCIALITE OAuth — subdomain, sem auth, com NeedsTenant ───
+Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
+    ->middleware(['web', NeedsTenant::class])
+    ->group(function (): void {
+        Route::get('/auth/{provider}/redirect', [TenantSocialiteController::class, 'redirect'])
+            ->name('tenant.auth.socialite.redirect');
+        Route::get('/auth/{provider}/callback', [TenantSocialiteController::class, 'callback'])
+            ->name('tenant.auth.socialite.callback');
+    });
 
 // ── TENANT (rotas que exigem tenant ativo) ────────────────────
 Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))

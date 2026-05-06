@@ -170,6 +170,12 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'in_use' => 'Nao e possivel excluir um plano que possui tenants vinculados.',
             ],
         ],
+        'socialite_providers' => [
+            'messages' => [
+                'updated' => 'Configuracao SSO salva com sucesso.',
+                'deleted' => 'Configuracao SSO removida com sucesso.',
+            ],
+        ],
         'tenants' => [
             'navigation' => 'Tenants',
             'title' => 'Tenants',
@@ -240,6 +246,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             ],
             'fields' => [
                 'ean' => 'EAN',
+                'image_front_url' => 'Imagem',
                 'reference_description' => 'Descricao de referencia',
                 'brand' => 'Marca',
                 'subbrand' => 'Submarca',

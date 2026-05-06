@@ -93,7 +93,7 @@ class TenantController extends Controller
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($planId !== '', fn ($query) => $query->where('plan_id', $planId))
             ->when($module !== '', fn ($query) => $query->whereHasActiveModule($module))
-            ->with(['plan:id,name', 'primaryDomain:id,tenant_id,host,is_active', 'modules:id,slug,is_active'])
+            ->with(['plan:id,name', 'primaryDomain:id,tenant_id,host,is_active', 'modules:id,slug,is_active', 'socialiteProvider'])
             ->latest()
             ->paginate($perPage)
             ->withQueryString()
@@ -113,6 +113,14 @@ class TenantController extends Controller
                     'id' => $tenant->primaryDomain->id,
                     'host' => $tenant->primaryDomain->host,
                     'is_active' => $tenant->primaryDomain->is_active,
+                ] : null,
+                'sso_provider' => $tenant->socialiteProvider ? [
+                    'id' => $tenant->socialiteProvider->id,
+                    'provider' => $tenant->socialiteProvider->provider,
+                    'label' => $tenant->socialiteProvider->label,
+                    'client_id' => $tenant->socialiteProvider->client_id,
+                    'azure_tenant' => $tenant->socialiteProvider->azure_tenant,
+                    'is_active' => $tenant->socialiteProvider->is_active,
                 ] : null,
                 'created_at' => $tenant->created_at?->toDateTimeString(),
             ]);

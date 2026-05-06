@@ -42,9 +42,11 @@ use App\Support\Navigation\Menu\MenuAuthorizationResolver;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use SocialiteProviders\Manager\SocialiteWasCalled;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -66,6 +68,7 @@ class AppServiceProvider extends ServiceProvider
         Tenant::observe(TenantObserver::class);
         $this->registerPolicies();
         $this->configureDefaults();
+        $this->registerSocialiteProviders();
     }
 
     /**
@@ -121,6 +124,13 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Gondola::class, GondolaPolicy::class);
         Gate::policy(WorkflowTemplate::class, WorkflowTemplatePolicy::class);
         Gate::policy(WorkflowGondolaExecution::class, WorkflowExecutionPolicy::class);
+    }
+
+    protected function registerSocialiteProviders(): void
+    {
+        Event::listen(function (SocialiteWasCalled $event): void {
+            $event->extendSocialite('azure', \SocialiteProviders\Azure\Provider::class);
+        });
     }
 
     /**

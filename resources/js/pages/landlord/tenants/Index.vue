@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Users, Layers, Link2 } from 'lucide-vue-next';
+import { KeyRound, Layers, Link2, Users } from 'lucide-vue-next';
+import { ref } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord/TenantIntegrationController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
@@ -15,6 +16,16 @@ import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Paginator } from '@/types';
+import TenantSocialiteSheet from './TenantSocialiteSheet.vue';
+
+type SsoProvider = {
+    id: string;
+    provider: string;
+    label: string | null;
+    client_id: string;
+    azure_tenant: string | null;
+    is_active: boolean;
+};
 
 type TenantRow = {
     active_modules: string[];
@@ -26,6 +37,7 @@ type TenantRow = {
     status: string;
     plan: { id: string; name: string } | null;
     primary_domain: { id: string; host: string; is_active: boolean } | null;
+    sso_provider: SsoProvider | null;
 };
 
 const props = defineProps<{
@@ -57,6 +69,14 @@ const pageMeta = useCrudPageMeta({
         },
     ],
 });
+
+const ssoSheetOpen = ref(false);
+const ssoSheetTenant = ref<TenantRow | null>(null);
+
+function openSsoSheet(tenant: TenantRow): void {
+    ssoSheetTenant.value = tenant;
+    ssoSheetOpen.value = true;
+}
 </script>
 
 <template>
@@ -228,6 +248,18 @@ const pageMeta = useCrudPageMeta({
                                             }}
                                         </Link>
                                     </Button>
+
+                                    <!-- SSO — abre sheet lateral -->
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        :class="tenant.sso_provider ? 'text-primary' : ''"
+                                        @click="openSsoSheet(tenant)"
+                                    >
+                                        <KeyRound class="size-4" />
+                                        SSO
+                                    </Button>
+
                                     <Button
                                         variant="secondary"
                                         size="sm"
@@ -293,5 +325,14 @@ const pageMeta = useCrudPageMeta({
                 </tbody>
             </table>
         </ListPage>
+
+        <!-- SSO Sheet — shared across all rows -->
+        <TenantSocialiteSheet
+            v-if="ssoSheetTenant"
+            :open="ssoSheetOpen"
+            :tenant="ssoSheetTenant"
+            :sso-provider="ssoSheetTenant.sso_provider"
+            @update:open="ssoSheetOpen = $event"
+        />
     </AppLayout>
 </template>

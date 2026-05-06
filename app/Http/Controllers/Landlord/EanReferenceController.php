@@ -63,6 +63,7 @@ class EanReferenceController extends Controller
             ->through(fn (EanReference $eanReference): array => [
                 'id' => $eanReference->id,
                 'ean' => $eanReference->ean,
+                'image_front_url' => $eanReference->image_url,
                 'reference_description' => $eanReference->reference_description,
                 'brand' => $eanReference->brand,
                 'subbrand' => $eanReference->subbrand,

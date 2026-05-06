@@ -6,12 +6,14 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class EanReference extends Model
 {
     use HasUlids, SoftDeletes;
 
     protected $connection = 'landlord';
+
     /**
      * @var list<string>
      */
@@ -37,6 +39,10 @@ class EanReference extends Model
         'image_side_url',
         'image_top_url',
         'metadata',
+    ];
+
+    protected $appends = [
+        'image_url',
     ];
 
     /**
@@ -68,5 +74,10 @@ class EanReference extends Model
         $digitsOnly = preg_replace('/\D+/', '', $ean) ?? '';
 
         return $digitsOnly !== '' ? $digitsOnly : trim($ean);
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image_front_url ? Storage::disk(config('filesystems.default'))->url($this->image_front_url) : null;
     }
 }

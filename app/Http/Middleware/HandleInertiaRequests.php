@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Tenant;
+use App\Models\TenantSocialiteProvider;
 use App\Support\Modules\TenantModuleService;
 use App\Support\Navigation\SidebarNavigationService;
 use Illuminate\Http\Request;
@@ -69,6 +70,7 @@ class HandleInertiaRequests extends Middleware
                 'name' => fn (): ?string => $this->resolveTenantFromContext($request)?->name,
                 'slug' => fn (): ?string => $this->resolveTenantFromContext($request)?->slug,
                 'active_modules' => fn (): array => $this->resolveActiveTenantModules($request),
+                'socialite_providers' => fn (): array => $this->resolveActiveSocialiteProviders($request),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'navigation' => app(SidebarNavigationService::class)->build($request),
@@ -87,6 +89,26 @@ class HandleInertiaRequests extends Middleware
         }
 
         return app(TenantModuleService::class)->tenantActiveModuleSlugs($tenant);
+    }
+
+    /**
+     * @return list<array{provider: string, label: string}>
+     */
+    private function resolveActiveSocialiteProviders(Request $request): array
+    {
+        $tenant = $this->resolveTenantFromContext($request);
+
+        if (! $tenant instanceof Tenant) {
+            return [];
+        }
+
+        $provider = $tenant->socialiteProvider;
+
+        if (! $provider instanceof TenantSocialiteProvider || ! $provider->is_active) {
+            return [];
+        }
+
+        return [['provider' => $provider->provider, 'label' => $provider->displayLabel()]];
     }
 
     private function resolveTenantFromContext(Request $request): ?Tenant

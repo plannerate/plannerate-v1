@@ -13,9 +13,11 @@ import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
+import { ColumnImage } from '@/components/table/columns';
 
 type EanReferenceRow = {
     id: string;
+    image_front_url: string | null;
     ean: string;
     reference_description: string | null;
     brand: string | null;
@@ -99,6 +101,7 @@ function formatDimensions(reference: EanReferenceRow): string {
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
+                        <ColumnHeader field="image_front_url">{{ t('app.landlord.ean_references.fields.image_front_url') }}</ColumnHeader>
                         <ColumnHeader field="ean">{{ t('app.landlord.ean_references.fields.ean') }}</ColumnHeader>
                         <ColumnHeader field="reference_description">{{ t('app.landlord.ean_references.fields.reference_description') }}</ColumnHeader>
                         <ColumnHeader field="brand">{{ t('app.landlord.ean_references.fields.brand') }}</ColumnHeader>
@@ -121,6 +124,9 @@ function formatDimensions(reference: EanReferenceRow): string {
                         :key="eanReference.id"
                         class="border-t border-sidebar-border/60 dark:border-sidebar-border"
                     >
+                        <td class="px-4 py-3">
+                            <ColumnImage :src="eanReference.image_front_url" :alt="eanReference.reference_description || eanReference.ean" />
+                        </td>
                         <td class="px-4 py-3 font-medium">{{ eanReference.ean }}</td>
                         <td class="px-4 py-3">{{ eanReference.reference_description || '-' }}</td>
                         <td class="px-4 py-3">{{ eanReference.brand || '-' }}</td>

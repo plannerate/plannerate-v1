@@ -122,6 +122,11 @@ class Tenant extends ModelsTenant
         return $this->hasOne(TenantIntegration::class);
     }
 
+    public function socialiteProvider(): HasOne
+    {
+        return $this->hasOne(TenantSocialiteProvider::class);
+    }
+
     /**
      * Get the primary domain of the tenant.
      */
