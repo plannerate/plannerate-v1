@@ -1,19 +1,31 @@
 name: vps-v2-deploy-production
 
 on:
+  workflow_run:
+    workflows: ["vps-v2-build-push"]
+    types: [completed]
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "Image tag to deploy (example: production-a1b2c3d). Run vps-v2-build-push on main first to get the tag."
-        required: true
+        description: "Image tag (exemplo: production-a1b2c3d). Deixe vazio para derivar do último build do main."
+        required: false
         default: ""
       app_slug:
-        description: "App slug/path (example: production). Leave empty to use manifest.env default."
+        description: "App slug/path (exemplo: production). Deixe vazio para usar 'production'."
         required: false
         default: ""
 
 jobs:
   deploy:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main'
+      )
     runs-on: ubuntu-latest
     environment: production
     concurrency:
@@ -28,10 +40,14 @@ jobs:
         run: |
           set -euo pipefail
 
+          HEAD_SHA="${{ github.sha }}"
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+          fi
+
           IMAGE_TAG="${{ github.event.inputs.image_tag }}"
           if [[ -z "${IMAGE_TAG}" || "${IMAGE_TAG}" == "null" ]]; then
-            echo "image_tag input is required for production deploys"
-            exit 1
+            IMAGE_TAG="production-${HEAD_SHA:0:7}"
           fi
 
           APP_SLUG="${{ github.event.inputs.app_slug }}"
@@ -44,7 +60,7 @@ jobs:
           fi
 
           if [[ ! "${IMAGE_TAG}" =~ ^production- ]]; then
-            echo "WARNING: image_tag '${IMAGE_TAG}' does not start with 'production-'. Make sure you are deploying the correct image."
+            echo "WARNING: image_tag '${IMAGE_TAG}' does not start with 'production-'."
           fi
 
           {
