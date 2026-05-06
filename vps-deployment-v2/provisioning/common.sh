@@ -87,3 +87,39 @@ load_manifest() {
     # shellcheck disable=SC1090
     source "${manifest_path}"
 }
+
+# Encontra o manifest de ambiente em <dir>.
+# - Se DEPLOY_ENV estiver definido, usa manifest.${DEPLOY_ENV}.env
+# - Se apenas um dos dois (production/staging) existir, usa esse
+# - Se os dois existirem e DEPLOY_ENV não estiver definido, falha com erro (não adivinha)
+# Uso: MANIFEST_PATH="$(find_manifest /path/to/vps-deployment-v2)" || exit 1
+find_manifest() {
+    local dir="${1:-$(pwd)}"
+    local env="${DEPLOY_ENV:-}"
+
+    if [[ -n "${env}" ]]; then
+        local path="${dir}/manifest.${env}.env"
+        if [[ -f "${path}" ]]; then
+            echo "${path}"
+            return 0
+        fi
+        log_error "Manifest não encontrado para DEPLOY_ENV=${env}: ${path}" >&2
+        return 1
+    fi
+
+    local found=()
+    for e in production staging; do
+        [[ -f "${dir}/manifest.${e}.env" ]] && found+=("${e}")
+    done
+
+    if [[ ${#found[@]} -eq 1 ]]; then
+        echo "${dir}/manifest.${found[0]}.env"
+        return 0
+    elif [[ ${#found[@]} -gt 1 ]]; then
+        log_error "Múltiplos manifests encontrados em ${dir}: ${found[*]}" >&2
+        log_error "Defina DEPLOY_ENV=production ou DEPLOY_ENV=staging para evitar conflito." >&2
+        return 1
+    fi
+
+    return 1
+}

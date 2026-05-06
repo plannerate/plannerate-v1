@@ -10,8 +10,11 @@ MANIFEST_PATH="${1:-}"
 APP_SLUG="${APP_SLUG:-${2:-staging}}"
 
 if [[ -z "${MANIFEST_PATH}" ]]; then
-    log_error "Usage: ./vps-health-check.sh /path/to/manifest.env"
-    exit 1
+    if ! MANIFEST_PATH="$(find_manifest "${SCRIPT_DIR}/..")"; then
+        log_error "Nenhum manifest encontrado. Passe: ./vps-health-check.sh /path/to/manifest.env"
+        exit 1
+    fi
+    log_info "Usando manifest: ${MANIFEST_PATH}"
 fi
 
 load_manifest "${MANIFEST_PATH}"

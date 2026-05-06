@@ -103,6 +103,7 @@ CFG
 CREATE DATABASE IF NOT EXISTS ${DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '${DB_USER}'@'${DB_ALLOWED_HOST}' IDENTIFIED BY '${DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'${DB_ALLOWED_HOST}';
+GRANT CREATE, DROP ON *.* TO '${DB_USER}'@'${DB_ALLOWED_HOST}';
 FLUSH PRIVILEGES;
 SQL
         if [[ "${DB_MODE}" == "local" ]]; then
@@ -110,6 +111,7 @@ SQL
             mysql -uroot <<SQL
 CREATE USER IF NOT EXISTS '${DB_USER}'@'172.%' IDENTIFIED BY '${DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'172.%';
+GRANT CREATE, DROP ON *.* TO '${DB_USER}'@'172.%';
 FLUSH PRIVILEGES;
 SQL
         fi
@@ -136,10 +138,14 @@ CFG
 
         if [[ "${DB_MODE}" == "externo" ]]; then
             log_info "Modo externo — liberando acesso ao CIDR ${DB_ALLOWED_CIDR} no pg_hba.conf"
-            echo "host all all ${DB_ALLOWED_CIDR} scram-sha-256" >> "/etc/postgresql/${PG_VERSION}/main/pg_hba.conf"
+            grep -qxF "host all all ${DB_ALLOWED_CIDR} scram-sha-256" \
+                "/etc/postgresql/${PG_VERSION}/main/pg_hba.conf" || \
+                echo "host all all ${DB_ALLOWED_CIDR} scram-sha-256" >> "/etc/postgresql/${PG_VERSION}/main/pg_hba.conf"
         else
             log_info "Modo local — liberando acesso à rede Docker (172.16.0.0/12) no pg_hba.conf"
-            echo "host all all 172.16.0.0/12 scram-sha-256" >> "/etc/postgresql/${PG_VERSION}/main/pg_hba.conf"
+            grep -qxF "host all all 172.16.0.0/12 scram-sha-256" \
+                "/etc/postgresql/${PG_VERSION}/main/pg_hba.conf" || \
+                echo "host all all 172.16.0.0/12 scram-sha-256" >> "/etc/postgresql/${PG_VERSION}/main/pg_hba.conf"
         fi
     fi
 
@@ -151,9 +157,9 @@ CFG
 DO \$\$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${DB_USER}') THEN
-        CREATE ROLE ${DB_USER} LOGIN PASSWORD '${DB_PASSWORD}';
+        CREATE ROLE ${DB_USER} LOGIN CREATEDB PASSWORD '${DB_PASSWORD}';
     ELSE
-        ALTER ROLE ${DB_USER} WITH LOGIN PASSWORD '${DB_PASSWORD}';
+        ALTER ROLE ${DB_USER} WITH LOGIN CREATEDB PASSWORD '${DB_PASSWORD}';
     END IF;
 END
 \$\$;

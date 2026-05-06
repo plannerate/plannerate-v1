@@ -191,8 +191,8 @@ else
     else
         ask DB_PORT "Porta DB externa" "${DB_PORT:-3306}"
     fi
-    ask DB_ROOT_USER "Usuário admin do banco externo (referência)" "${DB_ROOT_USER:-root}"
-    ask_secret_suggest DB_ROOT_PASS "Senha admin do banco externo (referência)" "${DB_ROOT_PASS:-}"
+    ask DB_ROOT_USER "Usuário root/admin da VPS do banco externo (referência)" "${DB_ROOT_USER:-root}"
+    ask_secret_suggest DB_ROOT_PASS "Senha do user root (ou admin) da VPS do banco externo (referência)" "${DB_ROOT_PASS:-}"
 fi
 ask DB_NAME "Nome do banco (${APP_SLUG})" "${DB_NAME:-${DB_NAME_STAGING:-${PROJECT_NAME}_${APP_SLUG}}}"
 if [[ "${DB_ENGINE}" == "pgsql" ]]; then
@@ -206,15 +206,8 @@ ask_secret_suggest DB_PASSWORD "Senha DB (${APP_SLUG})" "${DB_PASSWORD:-${DB_PAS
 DB_TENANT_DATABASE="${DB_TENANT_DATABASE:-${DB_NAME}}"
 
 if [[ "${DB_MODE}" == "externo" ]]; then
-    step "Configuração manual do banco externo"
-    echo "  Configure no banco externo antes de continuar:"
-    echo "  - Engine: ${DB_ENGINE}"
-    echo "  - Host: ${DB_HOST}"
-    echo "  - Port: ${DB_PORT}"
-    echo "  - Database: ${DB_NAME}"
-    echo "  - Username: ${DB_USER}"
-    echo "  - Password: ${DB_PASSWORD}"
-    read -r -p "Pressione ENTER após concluir a configuração no banco externo..."
+    info "Banco externo em ${DB_HOST} — o wizard vai provisionar automaticamente após salvar o manifest."
+    ask DB_BOOTSTRAP_ROOT_PASS "Senha root da VPS do banco para 1ª conexão (vazio se já tem chave SSH)" "${DB_BOOTSTRAP_ROOT_PASS:-}"
 fi
 
 step "Chaves SSH"
@@ -363,6 +356,7 @@ fi
 
 step "Salvar manifest.env"
 ask_secret_suggest REDIS_PASSWORD "Senha Redis" "${REDIS_PASSWORD:-${REDIS_PASSWORD_STAGING:-}}"
+ask BACKUP_TABLES "Tabelas para backup seletivo no DO Spaces (vazio = todas, ex: tenants,users,plans)" "${BACKUP_TABLES:-}"
 {
     emit_manifest_var PROJECT_NAME "$PROJECT_NAME"
     emit_manifest_var DEPLOY_ENV "$DEPLOY_ENV"
@@ -400,12 +394,15 @@ ask_secret_suggest REDIS_PASSWORD "Senha Redis" "${REDIS_PASSWORD:-${REDIS_PASSW
     emit_manifest_var PGADMIN_DOMAIN "${PGADMIN_DOMAIN:-pgadmin.${DOMAIN_LANDLORD}}"
     emit_manifest_var PGADMIN_DEFAULT_EMAIL "${PGADMIN_DEFAULT_EMAIL:-admin@${DOMAIN_LANDLORD}}"
     emit_manifest_var PGADMIN_DEFAULT_PASSWORD "${PGADMIN_DEFAULT_PASSWORD:-}"
+    emit_manifest_var BACKUP_TABLES "${BACKUP_TABLES:-}"
+    if [[ "${DB_MODE}" == "externo" ]]; then
+        DB_SSH_KEY_PATH="${HOME}/.ssh/id_ed25519_${GITHUB_REPO}_db"
+        emit_manifest_var DB_SSH_KEY_PATH "${DB_SSH_KEY_PATH}"
+        emit_manifest_var DB_BOOTSTRAP_ROOT_PASS "${DB_BOOTSTRAP_ROOT_PASS:-}"
+    fi
 } > "$MANIFEST_OUT"
 chmod 600 "$MANIFEST_OUT"
 ok "manifest salvo em ${MANIFEST_OUT}"
-
-# Limpar host key antiga (máquina pode ter sido recriada)
-ssh-keygen -R "${VPS_HOST}" >/dev/null 2>&1 || true
 
 # SSH helpers — provisioning usa root (StrictHostKeyChecking=no: máquina nova pode ter key diferente)
 # pós-prov usa deploy+chave admin (accept-new: key já conhecida após provisionar)
@@ -438,7 +435,6 @@ if [[ "${_app_provisioned}" == "false" ]]; then
 
         if [[ "${PROVISION_MODE}" == "reset" ]]; then
             warn "Reset da instância '${APP_SLUG}': remove /opt/plannerate/${APP_SLUG} e /opt/monitoring/${APP_SLUG} (não remove banco)"
-            _reset_ssh="${_deploy_ssh_ok}" == "true" && echo "${SSH_DEPLOY} ${DEPLOY_USER}@${VPS_HOST}" || echo "${SSH_ROOT} ${VPS_USER}@${VPS_HOST}"
             if [[ "${_deploy_ssh_ok}" == "true" ]]; then
                 ${SSH_DEPLOY} "${DEPLOY_USER}@${VPS_HOST}" "
                     set -euo pipefail
@@ -502,6 +498,14 @@ else
     info "Instância '${APP_SLUG}' já provisionada em /opt/plannerate/${APP_SLUG} — pulando provisionamento."
 fi
 
+if [[ "${DB_MODE}" == "externo" ]]; then
+    step "Provisionar banco externo (${DB_HOST})"
+    PROVISION_DB_ARGS=("--host" "${DB_HOST}" "--manifest" "${MANIFEST_OUT}" "--no-backup")
+    [[ -n "${DB_BOOTSTRAP_ROOT_PASS:-}" ]] && PROVISION_DB_ARGS+=("--bootstrap-password" "${DB_BOOTSTRAP_ROOT_PASS}")
+    bash "${SCRIPT_DIR}/automation/provision-external-db.sh" "${PROVISION_DB_ARGS[@]}"
+    ok "Banco externo provisionado"
+fi
+
 if [[ "${_install_compose}" == "true" ]] || ask_yn "Instalar compose files e iniciar Traefik no VPS agora?"; then
     ${SSH_DEPLOY} "${DEPLOY_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_WORKDIR}'"
     ${SCP_DEPLOY} -r "${SCRIPT_DIR}/." "${DEPLOY_USER}@${VPS_HOST}:${REMOTE_WORKDIR}/"
@@ -512,6 +516,45 @@ fi
 if ask_yn "Instalar monitoramento dessa app agora?"; then
     ${SSH_DEPLOY} "${DEPLOY_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' sudo bash ${REMOTE_WORKDIR}/automation/install-monitoring-on-host.sh ${REMOTE_WORKDIR}/manifest.env '${APP_SLUG}'"
     ok "Monitoramento instalado para ${APP_SLUG}"
+fi
+
+step "Backup automático (DO Spaces)"
+_backup_target_host="${VPS_HOST}"
+_backup_target_user="${DEPLOY_USER}"
+[[ "${DB_MODE}" == "externo" ]] && _backup_target_host="${DB_HOST}" && _backup_target_user="root"
+if ask_yn "Configurar backup automático no DO Spaces para ${DEPLOY_ENV}?"; then
+    BACKUP_S3_ENDPOINT="${BACKUP_S3_ENDPOINT:-}"
+    BACKUP_S3_BUCKET="${BACKUP_S3_BUCKET:-}"
+    if [[ -z "${BACKUP_S3_ENDPOINT}" || -z "${BACKUP_S3_BUCKET}" ]]; then
+        warn "Variáveis BACKUP_S3_* não configuradas no manifest — backup não instalado."
+        warn "Preencha o bloco BACKUP_S3_* no ${MANIFEST_OUT} e re-execute:"
+        warn "  DEPLOY_ENV=${DEPLOY_ENV} ./automation/install-backup-cron.sh"
+    else
+        _BACKUP_SSH="ssh -o StrictHostKeyChecking=accept-new -i ${KEY_PATH} -o ServerAliveInterval=30"
+        _BACKUP_SCP="scp -o StrictHostKeyChecking=accept-new -i ${KEY_PATH}"
+        if [[ "${DB_MODE}" == "externo" ]]; then
+            DB_KEY_PATH="${HOME}/.ssh/id_ed25519_${GITHUB_REPO}_db"
+            [[ -f "${DB_KEY_PATH}" ]] && _BACKUP_SSH="ssh -o StrictHostKeyChecking=accept-new -i ${DB_KEY_PATH} -o ServerAliveInterval=30" && _BACKUP_SCP="scp -o StrictHostKeyChecking=accept-new -i ${DB_KEY_PATH}"
+        fi
+        REMOTE_BACKUP_TMP="/tmp/vps-v2-backup-$$"
+        ${_BACKUP_SSH} "${_backup_target_user}@${_backup_target_host}" "mkdir -p ${REMOTE_BACKUP_TMP}"
+        ${_BACKUP_SCP} \
+            "${SCRIPT_DIR}/automation/backup-db.sh" \
+            "${SCRIPT_DIR}/automation/install-backup-cron.sh" \
+            "${SCRIPT_DIR}/automation/run-backup-all.sh" \
+            "${SCRIPT_DIR}/provisioning/common.sh" \
+            "${MANIFEST_OUT}" \
+            "${_backup_target_user}@${_backup_target_host}:${REMOTE_BACKUP_TMP}/"
+        ${_BACKUP_SSH} "${_backup_target_user}@${_backup_target_host}" \
+            "chmod +x ${REMOTE_BACKUP_TMP}/backup-db.sh ${REMOTE_BACKUP_TMP}/install-backup-cron.sh ${REMOTE_BACKUP_TMP}/run-backup-all.sh && \
+             command -v aws >/dev/null 2>&1 || apt-get install -y awscli 2>/dev/null || true && \
+             CRON_USER=root bash ${REMOTE_BACKUP_TMP}/install-backup-cron.sh ${REMOTE_BACKUP_TMP}/$(basename "${MANIFEST_OUT}") && \
+             rm -rf ${REMOTE_BACKUP_TMP}"
+        ok "Backup cron instalado em ${_backup_target_host} — ambiente: ${DEPLOY_ENV}"
+    fi
+else
+    info "Backup não configurado. Para instalar depois:"
+    info "  DEPLOY_ENV=${DEPLOY_ENV} ./automation/install-backup-cron.sh ${MANIFEST_OUT}"
 fi
 
 echo ""

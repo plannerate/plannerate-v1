@@ -13,8 +13,11 @@ APP_SLUG="${APP_SLUG:-${2:-staging}}"
 ENABLE_PGADMIN="${ENABLE_PGADMIN:-false}"
 
 if [[ -z "${MANIFEST_PATH}" ]]; then
-    log_error "Usage: ./install-monitoring-on-host.sh /path/to/manifest.env [app-slug]"
-    exit 1
+    if ! MANIFEST_PATH="$(find_manifest "${ROOT_DIR}")"; then
+        log_error "Nenhum manifest encontrado. Passe: ./install-monitoring-on-host.sh /path/to/manifest.env [app-slug]"
+        exit 1
+    fi
+    log_info "Usando manifest: ${MANIFEST_PATH}"
 fi
 
 require_root

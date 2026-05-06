@@ -9,7 +9,6 @@ source "${SCRIPT_DIR}/../provisioning/common.sh"
 MANIFEST_PATH="${1:-}"
 RETENTION_DAYS="${RETENTION_DAYS:-14}"
 BACKUP_ROOT="${BACKUP_ROOT:-/opt/backups/db}"
-TARGET_ENV="staging"
 
 if [[ -z "${MANIFEST_PATH}" ]]; then
     log_error "Usage: ./backup-db.sh /path/to/manifest.env"
@@ -26,6 +25,13 @@ DB_NAME="${DB_NAME:-${DB_NAME_STAGING:-${DB_NAME_PRODUCTION:-}}}"
 DB_USER="${DB_USER:-${DB_USER_STAGING:-${DB_USER_PRODUCTION:-}}}"
 DB_PASSWORD="${DB_PASSWORD:-${DB_PASSWORD_STAGING:-${DB_PASSWORD_PRODUCTION:-}}}"
 BACKUP_TABLES="${BACKUP_TABLES:-${BACKUP_TABLES_STAGING:-${BACKUP_TABLES_PRODUCTION:-}}}"
+
+# Ambiente vem do manifest — nunca hardcoded para não misturar production e staging
+TARGET_ENV="${DEPLOY_ENV:-${APP_SLUG:-}}"
+if [[ -z "${TARGET_ENV}" ]]; then
+    log_error "DEPLOY_ENV ou APP_SLUG não definido no manifest. Não é possível isolar o backup por ambiente."
+    exit 1
+fi
 
 if [[ -z "${DB_HOST}" || -z "${DB_NAME}" || -z "${DB_USER}" || -z "${DB_PASSWORD}" ]]; then
     log_error "Missing DB settings in manifest."
