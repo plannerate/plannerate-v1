@@ -19,7 +19,7 @@ class CategoryController extends Controller
      * Se categoryId for fornecido, retorna a hierarquia dessa categoria
      * Se não, retorna as categorias raiz (sem pai)
      */
-    public function index(Request $request, $categoryId = null)
+    public function index(Request $request, string $subdomain, ?string $categoryId = null)
     {
         if ($categoryId) {
             // Busca a categoria selecionada

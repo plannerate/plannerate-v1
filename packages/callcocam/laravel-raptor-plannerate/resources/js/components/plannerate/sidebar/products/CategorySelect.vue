@@ -58,6 +58,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import CategoryController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/CategoryController'
 import { Label } from '@/components/ui/label'
 import {
     Select,
@@ -66,10 +67,17 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select'
+import { wayfinderPath } from '../../../../libs/wayfinderPath'
 
 interface Category {
     id: string
     name: string
+}
+
+interface CategoryResponse {
+    children?: Category[]
+    data?: Category[]
+    hierarchy?: Category[]
 }
 
 interface Props {
@@ -118,6 +126,41 @@ const levelErrors = ref<Record<LevelKey, string>>(
 
 const optionsCache = ref<Map<string, Category[]>>(new Map())
 const hierarchyCache = ref<Map<string, any[]>>(new Map())
+
+const subdomain = computed(() => window.location.hostname.split('.')[0] || '')
+
+const categoryIndexRoute =
+    CategoryController.index['//{subdomain}.plannerate-v1.test/api/editor/categories']
+
+const categoryChildrenRoute =
+    CategoryController.index['//{subdomain}.plannerate-v1.test/api/editor/{categoryId}/categories']
+
+function getCategoriesUrl(categoryId: string | null = null): string {
+    if (categoryId && categoryChildrenRoute) {
+        return wayfinderPath(categoryChildrenRoute.url({
+            subdomain: subdomain.value,
+            categoryId,
+        }))
+    }
+
+    if (categoryIndexRoute) {
+        return wayfinderPath(categoryIndexRoute.url(subdomain.value))
+    }
+
+    return categoryId
+        ? `/api/editor/${categoryId}/categories`
+        : '/api/editor/categories'
+}
+
+async function fetchCategories(url: string): Promise<Response> {
+    return fetch(url, {
+        credentials: 'same-origin',
+        headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
+}
 
 const isLoading = computed(() => 
     Object.values(levelLoading.value).some(loading => loading)
@@ -205,7 +248,7 @@ return []
         let url: string
         
         if (levelIndex === 0) {
-            url = '/api/editor/categories'
+            url = getCategoriesUrl()
         } else {
             const parentLevel = levels[levelIndex - 1]
             const parentId = selections.value[parentLevel.key]
@@ -217,7 +260,7 @@ return []
                 return []
             }
             
-            url = `/api/editor/${parentId}/categories`
+            url = getCategoriesUrl(parentId)
         }
 
         const cachedOptions = optionsCache.value.get(url)
@@ -233,13 +276,13 @@ return []
             return clonedOptions
         }
 
-        const response = await fetch(url)
+        const response = await fetchCategories(url)
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`)
         }
 
-        const data = await response.json()
+        const data = await response.json() as CategoryResponse
         const children = data.children || data.data || []
 
         if (Array.isArray(children)) {
@@ -275,13 +318,22 @@ async function loadCascadeForValue(categoryId: string): Promise<void> {
         let hierarchy = hierarchyCache.value.get(categoryId)
 
         if (!hierarchy) {
-            const response = await fetch(`/api/editor/${categoryId}/categories`)
+            const response = await fetchCategories(getCategoriesUrl(categoryId))
+
+            if (response.status === 404) {
+                hierarchyCache.value.delete(categoryId)
+                emit('update:modelValue', null)
+                resetSelections()
+                await loadOptions(0)
+
+                return
+            }
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`)
             }
 
-            const data = await response.json()
+            const data = await response.json() as CategoryResponse
             const normalizedHierarchy: any[] = Array.isArray(data.hierarchy) ? data.hierarchy : []
             hierarchy = normalizedHierarchy
             hierarchyCache.value.set(categoryId, [...normalizedHierarchy])
