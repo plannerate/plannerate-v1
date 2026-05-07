@@ -69,7 +69,7 @@ return;
         <DialogTrigger as-child>
             <Button variant="destructive" size="sm" class="inline-flex items-center gap-1.5">
                 <Trash2 class="size-3.5" />
-                <slot>Excluir</slot>
+                <span class="hidden sm:inline"><slot>Excluir</slot></span>
             </Button>
         </DialogTrigger>
 

@@ -12,7 +12,7 @@ const props = defineProps<{
     <Button variant="outline" size="sm" as-child>
         <WayfinderLink :href="props.href" class="inline-flex items-center gap-1.5">
             <Pencil class="size-3.5" />
-            <slot>Editar</slot>
+            <span class="hidden sm:inline"><slot>Editar</slot></span>
         </WayfinderLink>
     </Button>
 </template>

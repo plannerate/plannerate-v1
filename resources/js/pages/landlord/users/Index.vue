@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import { Pencil, Trash2 } from 'lucide-vue-next';
 import UserController from '@/actions/App/Http/Controllers/Landlord/UserController';
 import WayfinderLink from '@/components/WayfinderLink.vue';
 import ListPage from '@/components/ListPage.vue';
@@ -124,8 +125,9 @@ const pageMeta = useCrudPageMeta({
                     <td class="px-4 py-3 text-right">
                         <div class="inline-flex items-center gap-2">
                             <Button variant="outline" size="sm" as-child>
-                                <WayfinderLink :href="UserController.edit.url(user.id)">
-                                    {{ t('app.landlord.common.edit') }}
+                                <WayfinderLink :href="UserController.edit.url(user.id)" class="inline-flex items-center gap-1.5">
+                                    <Pencil class="size-3.5" />
+                                    <span class="hidden sm:inline">{{ t('app.landlord.common.edit') }}</span>
                                 </WayfinderLink>
                             </Button>
                             <Button variant="destructive" size="sm" as-child>
@@ -133,8 +135,10 @@ const pageMeta = useCrudPageMeta({
                                     :href="UserController.destroy.url(user.id)"
                                     method="delete"
                                     as="button"
+                                    class="inline-flex items-center gap-1.5"
                                 >
-                                    {{ t('app.landlord.common.delete') }}
+                                    <Trash2 class="size-3.5" />
+                                    <span class="hidden sm:inline">{{ t('app.landlord.common.delete') }}</span>
                                 </WayfinderLink>
                             </Button>
                         </div>

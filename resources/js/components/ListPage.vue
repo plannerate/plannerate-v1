@@ -67,7 +67,7 @@ withDefaults(
             <slot name="filters" />
         </ListFiltersBar>
 
-        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
+        <div class="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
             <slot />
         </div>
 
