@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
-import { Kanban } from 'lucide-vue-next';
+import { Kanban, Plus } from 'lucide-vue-next';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import GondolaCreateStepper from '@/components/plannerate/form/GondolaCreateStepper.vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import KanbanActionConfirmDialog from '@/components/kanban/KanbanActionConfirmDialog.vue';
 import KanbanBoard from '@/components/kanban/KanbanBoard.vue';
@@ -22,6 +23,7 @@ const page = usePage();
 
 const { t } = useT();
 const currentUserId = (page.props.auth as Auth | undefined)?.user?.id ?? null;
+const showGondolaCreate = ref(false);
 const confirmOpen = ref(false);
 const pendingAction = ref<KanbanExecutionAction | null>(null);
 const pendingExecution = ref<Execution | null>(null);
@@ -187,7 +189,15 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
 
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                
+                <button
+                    v-if="props.can_create_gondola && props.selected_planogram"
+                    type="button"
+                    class="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted"
+                    @click="showGondolaCreate = true"
+                >
+                    <Plus class="size-3.5" />
+                    {{ t('app.tenant.gondolas.actions.new') }}
+                </button>
 
                 <NewActionButton :href="PlanogramController.create.url(props.subdomain)">
                     {{ t('app.tenant.planograms.actions.new') }}
@@ -278,6 +288,14 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
             :busy="Boolean(busyExecutionId)"
             @update:notes="actionNotes = $event"
             @confirm="confirmPendingAction"
+        />
+
+        <GondolaCreateStepper
+            v-if="props.can_create_gondola && props.selected_planogram"
+            :open="showGondolaCreate"
+            :planogram-id="props.selected_planogram.id"
+            @update:open="(val) => (showGondolaCreate = val)"
+            @success="showGondolaCreate = false"
         />
     </AppLayout>
 </template>

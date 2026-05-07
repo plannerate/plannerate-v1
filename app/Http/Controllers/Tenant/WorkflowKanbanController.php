@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Models\Gondola;
 use App\Models\Planogram;
 use App\Models\Store;
 use App\Models\User;
@@ -54,6 +55,7 @@ class WorkflowKanbanController extends Controller
                 'store' => $selectedPlanogram->store?->name,
             ] : null,
             'can_initiate' => $request->user()?->can('start', WorkflowGondolaExecution::class) ?? false,
+            'can_create_gondola' => $request->user()?->can('create', Gondola::class) ?? false,
         ]);
     }
 

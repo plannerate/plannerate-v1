@@ -84,4 +84,5 @@ export type KanbanPageProps = {
     board: BoardColumn[] | null;
     selected_planogram: { id: string; name: string; store: string | null } | null;
     can_initiate: boolean;
+    can_create_gondola: boolean;
 };
