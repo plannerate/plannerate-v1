@@ -40,7 +40,7 @@ watch(() => props.user.role_names, (val) => { localRoleNames.value = [...val]; }
 const flushRoles = useDebounceFn(() => {
     router.patch(tenantWayfinderPath(TenantUserAccessController.syncRoles.url({ tenant: props.tenantId, userId: props.user.id })), {
         role_names: localRoleNames.value,
-    });
+    }, { preserveScroll: true });
 }, 1000);
 
 function onRoleChange(roleName: string, checked: boolean): void {
@@ -53,7 +53,7 @@ function onRoleChange(roleName: string, checked: boolean): void {
 function onActiveChange(tenantId: string, userId: string, currentIsActive: boolean): void {
     router.patch(tenantWayfinderPath(TenantUserAccessController.toggleActive.url({ tenant: tenantId, userId })), {
         is_active: currentIsActive ? 0 : 1,
-    });
+    }, { preserveScroll: true });
 }
 
 function getUserInitials(name: string): string {

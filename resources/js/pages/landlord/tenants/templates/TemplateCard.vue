@@ -34,7 +34,7 @@ watch(() => props.template.user_ids, (val) => { localUserIds.value = [...val]; }
 const flushUsers = useDebounceFn(() => {
     router.patch(tenantWayfinderPath(WorkflowTemplateController.syncUsers.url({ tenant: props.tenantId, template: props.template.id })), {
         user_ids: localUserIds.value,
-    });
+    }, { preserveScroll: true });
 }, 1000);
 
 function onUserChange(userId: string, checked: boolean): void {
