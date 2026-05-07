@@ -243,7 +243,7 @@ return false;
         switch (event.key) {
             case 'ArrowLeft':
                 // Diminui quantity da layer (facing)
-                if (currentLayerQty > 0) {
+                if (currentLayerQty > 1) {
                     const newQty = currentLayerQty - 1;
                     editor.updateLayer(layerId, { quantity: newQty });
                 }
@@ -277,7 +277,7 @@ return false;
 
             case 'ArrowDown':
                 // Diminui quantity do segment (altura)
-                if (segmentId && currentSegmentQty > 0) {
+                if (segmentId && currentSegmentQty > 1) {
                     const newSegQty = currentSegmentQty - 1;
                     editor.updateSegment(segmentId, { quantity: newSegQty });
                 }

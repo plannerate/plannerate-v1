@@ -50,7 +50,7 @@ const getQuantity = computed<number>(() => {
         return 1;
     }
 
-    return Math.max(0, Math.min(500, Math.trunc(quantity)));
+    return Math.max(1, Math.min(500, Math.trunc(quantity)));
 });
 
 const internalAlignmentClass = computed(() => {
