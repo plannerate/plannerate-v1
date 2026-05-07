@@ -3,6 +3,7 @@
 namespace App\Jobs\Imports;
 
 use App\Events\Tenant\CategoriesImportFinished;
+use App\Models\Category;
 use App\Models\Tenant;
 use App\Services\Files\Imports\Categories\CategorySpreadsheetImportService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,11 +24,16 @@ class ImportCategoriesFromSpreadsheetJob implements ShouldQueue, TenantAware
         public string $tenantId,
         public ?string $userId,
         public string $disk,
-        public string $path
+        public string $path,
+        public bool $truncateBeforeImport = false,
     ) {}
 
     public function handle(CategorySpreadsheetImportService $service): void
     {
+        if ($this->truncateBeforeImport) {
+            Category::withTrashed()->forceDelete();
+        }
+
         $absolutePath = Storage::disk($this->disk)->path($this->path);
         $result = $service->importFile($absolutePath, $this->tenantId, $this->userId);
 

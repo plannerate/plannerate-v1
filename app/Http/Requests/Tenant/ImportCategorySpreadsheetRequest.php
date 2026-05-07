@@ -25,6 +25,7 @@ class ImportCategorySpreadsheetRequest extends FormRequest
                 'mimes:xlsx,xls',
                 'max:20480',
             ],
+            'truncate_before_import' => ['sometimes', 'boolean'],
         ];
     }
 }

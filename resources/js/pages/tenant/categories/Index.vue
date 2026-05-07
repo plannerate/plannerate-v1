@@ -4,7 +4,7 @@ import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryCo
 import ImportFileButton from '@/components/imports/ImportFileButton.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
-import { ColumnActions, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
+import { ColumnActions, ColumnHeader, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,11 @@ const props = defineProps<{
     filters: {
         search: string;
         status: string;
+        level_name: string;
         trashed: 'without' | 'only' | 'with';
+    };
+    filter_options: {
+        level_names: string[];
     };
 }>();
 
@@ -83,6 +87,9 @@ const pageMeta = useCrudPageMeta({
                     :submit-label="t('app.tenant.categories.import.submit')"
                     :submitting-label="t('app.tenant.categories.import.submitting')"
                     :cancel-label="t('app.tenant.categories.import.cancel')"
+                    show-truncate-option
+                    :truncate-label="t('app.tenant.categories.import.truncate_label')"
+                    :truncate-warning="t('app.tenant.categories.import.truncate_warning')"
                 />
                 <NewActionButton :href="CategoryController.create.url(props.subdomain)">
                     {{ t('app.tenant.categories.actions.new') }}
@@ -114,15 +121,25 @@ const pageMeta = useCrudPageMeta({
                     <option value="published">{{ t('app.tenant.categories.status_options.published') }}</option>
                     <option value="importer">{{ t('app.tenant.categories.status_options.importer') }}</option>
                 </select>
+                <select
+                    name="level_name"
+                    :value="props.filters.level_name"
+                    class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                >
+                    <option value="">{{ t('app.tenant.categories.fields.level_name') }}</option>
+                    <option v-for="level in props.filter_options.level_names" :key="level" :value="level">
+                        {{ level }}
+                    </option>
+                </select>
             </template>
 
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.name') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.full_path') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.status') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.level_name') }}</th>
+                        <ColumnHeader field="name">{{ t('app.tenant.categories.fields.name') }}</ColumnHeader>
+                        <ColumnHeader field="full_path">{{ t('app.tenant.categories.fields.full_path') }}</ColumnHeader>
+                        <ColumnHeader field="status">{{ t('app.tenant.categories.fields.status') }}</ColumnHeader>
+                        <ColumnHeader field="level_name">{{ t('app.tenant.categories.fields.level_name') }}</ColumnHeader>
                         <th class="px-4 py-3 text-right font-medium">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>

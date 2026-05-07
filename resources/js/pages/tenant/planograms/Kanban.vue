@@ -187,6 +187,8 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
 
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
+                
+
                 <NewActionButton :href="PlanogramController.create.url(props.subdomain)">
                     {{ t('app.tenant.planograms.actions.new') }}
                 </NewActionButton>

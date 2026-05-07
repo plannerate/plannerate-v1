@@ -543,6 +543,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'submit' => 'Enviar importacao',
                 'submitting' => 'Enviando...',
                 'cancel' => 'Cancelar',
+                'truncate_label' => 'Excluir tudo antes de importar',
+                'truncate_warning' => 'Todos os registros de categorias serao excluidos do banco de dados de forma permanente antes da importacao. Nao e possivel recuperar esses dados apos a confirmacao.',
             ],
             'cascade' => [
                 'level_1' => 'Segmento varejista',
