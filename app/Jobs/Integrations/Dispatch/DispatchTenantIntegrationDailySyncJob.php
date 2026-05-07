@@ -11,6 +11,8 @@ class DispatchTenantIntegrationDailySyncJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $timeout = 120;
+
     public function __construct(
         public string $integrationId,
         public ?string $resource = null,

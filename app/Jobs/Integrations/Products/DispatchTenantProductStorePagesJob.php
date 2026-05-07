@@ -16,6 +16,8 @@ class DispatchTenantProductStorePagesJob implements ShouldQueue, TenantAware
 {
     use Queueable;
 
+    public int $timeout = 60;
+
     public function __construct(
         public string $integrationId,
         public string $referenceDate,

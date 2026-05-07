@@ -31,7 +31,7 @@ bash vps-deployment-v2/setup.sh
 
 ## Regras Importantes
 - `APP_SLUG` é obrigatório como identificador lógico de instância.
-- `queue` usa `php artisan queue:work` (não depende de Horizon).
+- `horizon` usa `php artisan horizon` com supervisors para as filas `critical`, `default` e `maintenance`.
 - Não subir monitoring antes de DNS dos subdomínios estar pronto.
 - Dashboard auth do Traefik com `$` precisa de escape (`$$`).
 - Migrações seguem Spatie Multitenancy: landlord primeiro, tenants depois.
@@ -128,9 +128,9 @@ Correção: health check interno do container no CI.
 Prevenção: manter workflow com check interno (`127.0.0.1/up`).
 
 ### 6) `Command "horizon" is not defined`
-Causa: imagem sem Horizon instalado.
-Correção: usar `queue:work`.
-Prevenção: compose padrão já usa `queue:work --sleep=3 --tries=3 --max-time=3600`.
+Causa: imagem sem Horizon instalado ou `laravel/horizon` não está no `composer.json`.
+Correção: rodar `composer require laravel/horizon` e rebuild da imagem.
+Prevenção: `laravel/horizon` está nas dependências do projeto desde a migração do serviço `queue` → `horizon`.
 
 ### 7) ACME `NXDOMAIN` + `429 rateLimited`
 Causa: Traefik tentou emitir cert sem DNS pronto.

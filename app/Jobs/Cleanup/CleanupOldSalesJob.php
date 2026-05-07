@@ -16,6 +16,8 @@ class CleanupOldSalesJob implements NotTenantAware, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public string $queue = 'maintenance';
+
     public int $tries = 3;
 
     public int $timeout = 900;

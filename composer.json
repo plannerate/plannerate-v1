@@ -16,6 +16,7 @@
         "intervention/image-laravel": "^4.0",
         "laravel/fortify": "^1.34",
         "laravel/framework": "^13.0",
+        "laravel/horizon": "5.x-dev",
         "laravel/reverb": "^1.0",
         "laravel/socialite": "5.x-dev",
         "laravel/tinker": "^3.0",

@@ -34,6 +34,10 @@ Schedule::command('sync:products-from-ean-references')
     ->withoutOverlapping()
     ->name('sync-products-from-ean-references');
 
+Schedule::command('horizon:snapshot')
+    ->everyFiveMinutes()
+    ->name('horizon-snapshot');
+
 // Schedule::call(function (): bool {
 //     Log::info('Scheduler test log executed.'. request()->getHost());
 

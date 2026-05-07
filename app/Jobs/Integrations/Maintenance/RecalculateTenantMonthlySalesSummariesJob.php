@@ -13,6 +13,8 @@ class RecalculateTenantMonthlySalesSummariesJob implements NotTenantAware, Shoul
 {
     use Queueable;
 
+    public string $queue = 'maintenance';
+
     public int $timeout = 1800;
 
     public function __construct(

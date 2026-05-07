@@ -18,6 +18,8 @@ class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
 
     private const MAX_PROGRESSIVE_PAGE = 500;
 
+    public int $timeout = 300;
+
     public function __construct(
         public string $integrationId,
         public string $referenceDate,
