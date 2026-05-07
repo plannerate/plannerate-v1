@@ -49,8 +49,8 @@ defineProps<{
                         </span>
                     </h1>
 
-                    <p class="max-w-md text-lg leading-relaxed text-white/55">
-                        {{ t('app.auth_layout.description') }}
+                    <p class="max-w-md text-lg leading-relaxed text-white/55" v-html="t('app.auth_layout.description')">
+                        
                     </p>
                 </div>
 

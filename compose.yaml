@@ -140,19 +140,18 @@ services:
             - postgres
             - redis
         restart: unless-stopped
-    queue:
+    horizon:
         build:
             context: './vendor/laravel/sail/runtimes/8.5'
             dockerfile: Dockerfile
             args:
                 WWWGROUP: '${WWWGROUP:-1000}'
         image: 'sail-8.5/app'
-        command: php artisan queue:work --queue=default --sleep=3 --tries=1 --timeout=650 --memory=1024
+        command: php artisan horizon
         environment:
             WWWUSER: '${WWWUSER:-1000}'
             LARAVEL_SAIL: 1
             XDEBUG_MODE: 'off'
-            DB_QUEUE_RETRY_AFTER: '${DB_QUEUE_RETRY_AFTER:-700}'
         volumes:
             - '.:/var/www/html'
         networks:

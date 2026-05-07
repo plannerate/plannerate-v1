@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { FileSpreadsheet, Upload } from 'lucide-vue-next';
+import { FileSpreadsheet, TriangleAlert, Upload } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -26,19 +27,26 @@ const props = withDefaults(
         accept?: string;
         dropLabel?: string;
         dropHint?: string;
+        showTruncateOption?: boolean;
+        truncateLabel?: string;
+        truncateWarning?: string;
     }>(),
     {
         accept: '.xlsx,.xls',
         dropLabel: 'Arraste e solte a planilha aqui',
         dropHint: 'ou clique para escolher um arquivo',
+        showTruncateOption: false,
+        truncateLabel: 'Excluir tudo antes de importar',
+        truncateWarning: 'Atenção: todos os registros existentes serão excluídos permanentemente. Esta ação não poderá ser desfeita.',
     }
 );
 
 const isOpen = ref(false);
 const isDragging = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
-const form = useForm<{ spreadsheet: File | null }>({
+const form = useForm<{ spreadsheet: File | null; truncate_before_import: boolean }>({
     spreadsheet: null,
+    truncate_before_import: false,
 });
 
 function setSpreadsheet(file: File | null): void {
@@ -81,14 +89,22 @@ function onDrop(event: DragEvent): void {
 }
 
 function submit(): void {
-    form.post(props.action, {
-        forceFormData: true,
-        preserveScroll: true,
-        onSuccess: () => {
-            form.reset();
-            isOpen.value = false;
-        },
-    });
+    form
+        .transform((data) => {
+            if (!props.showTruncateOption) {
+                const { truncate_before_import: _, ...rest } = data;
+                return rest;
+            }
+            return data;
+        })
+        .post(props.action, {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                form.reset();
+                isOpen.value = false;
+            },
+        });
 }
 
 function close(): void {
@@ -161,11 +177,60 @@ function close(): void {
                 </p>
             </div>
 
+            <div v-if="showTruncateOption" class="space-y-3">
+                <label
+                    class="flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2.5 transition-colors"
+                    :class="
+                        form.truncate_before_import
+                            ? 'border-destructive/60 bg-destructive/10 dark:bg-destructive/20'
+                            : 'border-border hover:border-destructive/40 hover:bg-destructive/5'
+                    "
+                >
+                    <Checkbox
+                        :checked="form.truncate_before_import"
+                        :disabled="form.processing"
+                        @update:model-value="(v) => (form.truncate_before_import = v === true)"
+                    />
+                    <span
+                        class="text-sm font-semibold transition-colors"
+                        :class="form.truncate_before_import ? 'text-destructive' : 'text-foreground'"
+                    >
+                        {{ truncateLabel }}
+                    </span>
+                </label>
+
+                <Transition
+                    enter-active-class="transition-all duration-200"
+                    enter-from-class="opacity-0 -translate-y-1"
+                    enter-to-class="opacity-100 translate-y-0"
+                    leave-active-class="transition-all duration-150"
+                    leave-from-class="opacity-100 translate-y-0"
+                    leave-to-class="opacity-0 -translate-y-1"
+                >
+                    <div
+                        v-if="form.truncate_before_import"
+                        class="rounded-md border-2 border-destructive bg-destructive/10 p-3 dark:bg-destructive/20"
+                    >
+                        <div class="mb-1.5 flex items-center gap-2">
+                            <TriangleAlert class="size-4 shrink-0 text-destructive" />
+                            <span class="text-sm font-bold uppercase tracking-wide text-destructive">
+                                Ação irreversível
+                            </span>
+                        </div>
+                        <p class="text-sm text-destructive">{{ truncateWarning }}</p>
+                    </div>
+                </Transition>
+            </div>
+
             <DialogFooter>
                 <Button variant="outline" :disabled="form.processing" @click="close">
                     {{ cancelLabel }}
                 </Button>
-                <Button :disabled="!form.spreadsheet || form.processing" @click="submit">
+                <Button
+                    :variant="form.truncate_before_import ? 'destructive' : 'default'"
+                    :disabled="!form.spreadsheet || form.processing"
+                    @click="submit"
+                >
                     {{ form.processing ? submittingLabel : submitLabel }}
                 </Button>
             </DialogFooter>

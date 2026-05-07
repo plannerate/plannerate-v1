@@ -70,7 +70,7 @@ echo ""
 echo "--- Serviços principais ---"
 check_compose_service_running "/opt/traefik" "traefik"
 check_compose_service_running "/opt/plannerate/${APP_SLUG}" "app"
-check_compose_service_running "/opt/plannerate/${APP_SLUG}" "queue"
+check_compose_service_running "/opt/plannerate/${APP_SLUG}" "horizon"
 check_compose_service_running "/opt/plannerate/${APP_SLUG}" "scheduler"
 check_compose_service_running "/opt/plannerate/${APP_SLUG}" "reverb"
 

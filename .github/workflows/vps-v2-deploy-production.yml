@@ -109,7 +109,7 @@ jobs:
 
             export IMAGE_TAG GHCR_REPO
             docker compose -p "plannerate-${APP_SLUG}" pull
-            docker compose -p "plannerate-${APP_SLUG}" up -d --force-recreate
+            docker compose -p "plannerate-${APP_SLUG}" up -d --force-recreate --remove-orphans
             docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
               mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions bootstrap/cache
               chmod -R ug+rwX storage bootstrap/cache

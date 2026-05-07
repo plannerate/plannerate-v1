@@ -8,8 +8,13 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
+use App\Enums\WorkflowExecutionStatus;
 use App\Models\Tenant;
+use App\Models\WorkflowGondolaExecution;
+use App\Models\WorkflowPlanogramStep;
 use App\Support\Authorization\PermissionName;
+use App\Support\Modules\ModuleSlug;
+use App\Support\Modules\TenantModuleService;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\Editor\StoreGondolaRequest;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\Editor\UpdateGondolaRequest;
@@ -99,13 +104,52 @@ class GondolaController extends Controller
 
     public function store(StoreGondolaRequest $request, string $subdomain, string $planogram)
     {
-        unset($subdomain); // Subdomínio é desnecessário para criação de gôndola, pois o planograma já pertence a um tenant específico.
+        unset($subdomain);
         $planogramModel = Planogram::findOrFail($planogram);
 
-        // Cria a gôndola sempre
         $gondola = app(GondolaService::class)->createGondolaWithStructure($planogramModel, $request->validated());
 
+        $tenant = Tenant::current();
+        $kanbanActive = $tenant !== null && app(TenantModuleService::class)->tenantHasActiveModule($tenant, ModuleSlug::KANBAN);
+
+        if ($kanbanActive) {
+            $this->createWorkflowExecution($gondola, $request);
+        }
+
         return redirect()->back()->with('success', 'Gôndola criada com sucesso!');
+    }
+
+    private function createWorkflowExecution(Gondola $gondola, StoreGondolaRequest $request): void
+    {
+        $firstStep = WorkflowPlanogramStep::query()
+            ->where('planogram_id', $gondola->planogram_id)
+            ->where('is_skipped', false)
+            ->with('template:id,suggested_order')
+            ->get()
+            ->sortBy(fn (WorkflowPlanogramStep $step): int => $step->template?->suggested_order ?? PHP_INT_MAX)
+            ->first();
+
+        if ($firstStep === null) {
+            return;
+        }
+
+        $userId = $request->user()?->getAuthIdentifier();
+        $responsibleId = $request->boolean('assignToCurrentUser') || ! $request->filled('assignedUserId')
+            ? $userId
+            : $request->input('assignedUserId');
+
+        $autoStart = $request->boolean('autoStartWorkflow');
+
+        WorkflowGondolaExecution::query()->create([
+            'tenant_id' => $gondola->tenant_id,
+            'gondola_id' => $gondola->id,
+            'workflow_planogram_step_id' => $firstStep->id,
+            'status' => $autoStart ? WorkflowExecutionStatus::Active : WorkflowExecutionStatus::Pending,
+            'user_id' => $userId,
+            'current_responsible_id' => $responsibleId,
+            'execution_started_by' => $autoStart ? $userId : null,
+            'started_at' => $autoStart ? now() : null,
+        ]);
     }
 
     public function update(string $subdomain, string $gondola, UpdateGondolaRequest $request)

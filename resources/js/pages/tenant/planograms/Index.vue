@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
-import { ChevronDown, LayoutTemplate, SlidersHorizontal, Store, X } from 'lucide-vue-next';
+import { ChevronDown, LayoutTemplate, Plus, SlidersHorizontal, Store, X } from 'lucide-vue-next';
 import { computed, nextTick, ref, watch } from 'vue';
+import GondolaCreateStepper from '@/components/plannerate/form/GondolaCreateStepper.vue';
 import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import WorkflowKanbanController from '@/actions/App/Http/Controllers/Tenant/WorkflowKanbanController';
@@ -51,6 +52,7 @@ const props = defineProps<{
     filter_options: {
         stores: Array<{ id: string; name: string }>;
     };
+    can_create_gondola: boolean;
 }>();
 
 const { t } = useT();
@@ -59,6 +61,13 @@ const { meta: planogramsMeta, rows: planogramsRows, loading: planogramsLoading }
 
 const listPageRef = ref<InstanceType<typeof ListPage> | null>(null);
 const categoryId = ref<string | null>(props.filters.category_id ?? null);
+const showGondolaCreate = ref(false);
+const gondolaCreatePlanogramId = ref<string>('');
+
+function openGondolaCreate(planogramId: string): void {
+    gondolaCreatePlanogramId.value = planogramId;
+    showGondolaCreate.value = true;
+}
 const categoryPopoverOpen = ref(false);
 const activeModules = computed<string[]>(() => {
     const tenant = (page.props.tenant ?? null) as { active_modules?: string[] } | null;
@@ -267,9 +276,20 @@ const pageMeta = useCrudPageMeta({
                                 :require-confirm-word="true"
                             >
                                 <Button variant="outline" size="sm" as-child>
-                                    <WayfinderLink :href="planogramWorkflowHref(planogram.id)">
+                                    <WayfinderLink :href="planogramWorkflowHref(planogram.id)" class="inline-flex items-center gap-1.5">
+                                        <LayoutTemplate class="size-3.5" />
                                         {{ t('app.tenant.planograms.actions.view_gondolas') }}
                                     </WayfinderLink>
+                                </Button>
+                                <Button
+                                    v-if="props.can_create_gondola"
+                                    variant="outline"
+                                    size="sm"
+                                    class="gap-1.5"
+                                    @click="openGondolaCreate(planogram.id)"
+                                >
+                                    <Plus class="size-3.5" />
+                                    {{ t('app.tenant.gondolas.actions.new') }}
                                 </Button>
                             </ColumnActions>
                         </td>
@@ -277,5 +297,12 @@ const pageMeta = useCrudPageMeta({
                 </tbody>
             </table>
         </ListTablePage>
+        <GondolaCreateStepper
+            v-if="props.can_create_gondola"
+            :open="showGondolaCreate"
+            :planogram-id="gondolaCreatePlanogramId"
+            @update:open="(val) => (showGondolaCreate = val)"
+            @success="showGondolaCreate = false"
+        />
     </AppLayout>
 </template>

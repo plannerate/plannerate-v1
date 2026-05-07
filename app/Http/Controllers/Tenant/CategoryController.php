@@ -93,25 +93,44 @@ class CategoryController extends Controller
 
         $search = $this->requestString($request, 'search');
         $status = $this->requestEnum($request, 'status', ['draft', 'published', 'importer']);
+        $levelName = $this->requestString($request, 'level_name');
         $trashed = $this->resolveTrashedFilter($request);
+        $requestedSort = trim((string) $request->query('sort', ''));
+        $sort = in_array($requestedSort, ['name', 'level_name', 'nivel', 'status', 'created_at'], true) ? $requestedSort : null;
+        $requestedDirection = strtolower((string) $request->query('direction', 'asc'));
+        $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'asc';
 
         return $this->renderDeferredIndex('tenant/categories/Index', 'categories', fn (): LengthAwarePaginator => $this->categoriesPaginator(
             $search,
             $status,
+            $levelName,
             $trashed,
+            $sort,
+            $direction,
             $this->resolvePerPage($request, 10),
         ), [
             'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'status' => $status,
+                'level_name' => $levelName,
                 'trashed' => $trashed,
+            ],
+            'filter_options' => [
+                'level_names' => $this->levelNamesForSelect(),
             ],
         ]);
     }
 
-    private function categoriesPaginator(string $search, string $status, string $trashed, int $perPage): LengthAwarePaginator
-    {
+    private function categoriesPaginator(
+        string $search,
+        string $status,
+        string $levelName,
+        string $trashed,
+        ?string $sort,
+        string $direction,
+        int $perPage,
+    ): LengthAwarePaginator {
         $query = Category::query();
         $this->applyTrashedToQuery($query, $trashed);
 
@@ -124,7 +143,12 @@ class CategoryController extends Controller
                 });
             })
             ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->latest()
+            ->when($levelName !== '', fn ($query) => $query->where('level_name', $levelName))
+            ->when(
+                $sort !== null,
+                fn ($query) => $query->orderBy($sort, $direction),
+                fn ($query) => $query->latest(),
+            )
             ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Category $category): array => [
@@ -249,6 +273,7 @@ class CategoryController extends Controller
             userId: $request->user()?->getAuthIdentifier(),
             disk: $disk,
             path: $path,
+            truncateBeforeImport: $request->boolean('truncate_before_import'),
         );
 
         Inertia::flash('toast', [
@@ -271,6 +296,19 @@ class CategoryController extends Controller
         $this->authorize('viewAny', Category::class);
 
         return $service->downloadData((string) $this->tenantId());
+    }
+
+    /** @return list<string> */
+    private function levelNamesForSelect(): array
+    {
+        return Category::query()
+            ->whereNotNull('level_name')
+            ->select(['nivel', 'level_name'])
+            ->distinct()
+            ->orderBy('nivel')
+            ->pluck('level_name')
+            ->values()
+            ->all();
     }
 
     /**

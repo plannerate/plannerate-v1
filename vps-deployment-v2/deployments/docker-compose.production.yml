@@ -36,7 +36,7 @@ services:
       redis:
         condition: service_healthy
 
-  queue:
+  horizon:
     image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:-latest}
     restart: always
     env_file:
@@ -46,7 +46,7 @@ services:
       - prod_storage_data:/var/www/storage
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+    command: php artisan horizon
     networks:
       - prod-network
     depends_on:
