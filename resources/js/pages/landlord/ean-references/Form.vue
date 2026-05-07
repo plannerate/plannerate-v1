@@ -5,6 +5,7 @@ import { computed } from 'vue';
 import EanReferenceController from '@/actions/App/Http/Controllers/Landlord/EanReferenceController';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
+import LandlordImageUploadField from '@/components/LandlordImageUploadField.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
@@ -28,6 +29,12 @@ type EanReferencePayload = {
     unit: string | null;
     has_dimensions: boolean;
     dimension_status: 'draft' | 'published' | null;
+    image_front_url: string | null;
+    image_side_url: string | null;
+    image_top_url: string | null;
+    image_front_public_url: string | null;
+    image_side_public_url: string | null;
+    image_top_public_url: string | null;
 };
 
 const props = defineProps<{
@@ -92,41 +99,66 @@ const pageMeta = useCrudPageMeta({
                         <InputError :message="errors.reference_description" />
                     </div>
 
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <div class="grid gap-2">
+                    <div class="grid gap-4 md:grid-cols-12">
+                        <div class="grid gap-2 col-span-12 md:col-span-3">
                             <Label for="brand">{{ t('app.landlord.ean_references.fields.brand') }}</Label>
                             <Input id="brand" name="brand" :default-value="props.ean_reference?.brand ?? ''" />
                             <InputError :message="errors.brand" />
                         </div>
 
-                        <div class="grid gap-2">
+                        <div class="grid gap-2 col-span-12 md:col-span-3">
                             <Label for="subbrand">{{ t('app.landlord.ean_references.fields.subbrand') }}</Label>
                             <Input id="subbrand" name="subbrand" :default-value="props.ean_reference?.subbrand ?? ''" />
                             <InputError :message="errors.subbrand" />
                         </div>
 
-                        <div class="grid gap-2">
+                        <div class="grid gap-2 col-span-12 md:col-span-2">
                             <Label for="packaging_type">{{ t('app.landlord.ean_references.fields.packaging_type') }}</Label>
                             <Input id="packaging_type" name="packaging_type" :default-value="props.ean_reference?.packaging_type ?? ''" />
                             <InputError :message="errors.packaging_type" />
                         </div>
 
-                        <div class="grid gap-2">
+                        <div class="grid gap-2 col-span-12 md:col-span-2">
                             <Label for="packaging_size">{{ t('app.landlord.ean_references.fields.packaging_size') }}</Label>
                             <Input id="packaging_size" name="packaging_size" :default-value="props.ean_reference?.packaging_size ?? ''" />
                             <InputError :message="errors.packaging_size" />
                         </div>
 
-                        <div class="grid gap-2">
+                        <div class="grid gap-2 col-span-12 md:col-span-2">
                             <Label for="measurement_unit">{{ t('app.landlord.ean_references.fields.measurement_unit') }}</Label>
                             <Input id="measurement_unit" name="measurement_unit" :default-value="props.ean_reference?.measurement_unit ?? ''" />
                             <InputError :message="errors.measurement_unit" />
                         </div>
                     </div>
 
+                    <!-- Images -->
+                    <div class="mt-2 border-t border-border pt-4">
+                        <p class="mb-3 text-sm font-semibold text-foreground">Imagens</p>
+                        <div class="grid gap-6 sm:grid-cols-3">
+                            <LandlordImageUploadField
+                                name="image_front_url"
+                                label="Frente"
+                                :initial-url="props.ean_reference?.image_front_public_url ?? null"
+                                :initial-path="props.ean_reference?.image_front_url ?? null"
+                            />
+                            <LandlordImageUploadField
+                                name="image_side_url"
+                                label="Lateral"
+                                :initial-url="props.ean_reference?.image_side_public_url ?? null"
+                                :initial-path="props.ean_reference?.image_side_url ?? null"
+                            />
+                            <LandlordImageUploadField
+                                name="image_top_url"
+                                label="Topo"
+                                :initial-url="props.ean_reference?.image_top_public_url ?? null"
+                                :initial-path="props.ean_reference?.image_top_url ?? null"
+                            />
+                        </div>
+                    </div>
+
                     <div class="mt-2 border-t border-border pt-4">
                         <p class="mb-3 text-sm font-semibold text-foreground">Dimensoes</p>
-                        <div class="grid gap-4 md:grid-cols-2">
+                        <div class="grid gap-4 md:grid-cols-6">
                             <div class="grid gap-2">
                                 <Label for="width">Largura</Label>
                                 <Input id="width" name="width" type="number" min="0" step="0.01" :default-value="props.ean_reference?.width ?? ''" />

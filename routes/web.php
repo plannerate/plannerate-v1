@@ -74,6 +74,10 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::resource('ean-references', LandlordEanReferenceController::class)
         ->except(['show'])
         ->names('landlord.ean-references');
+    Route::post('ean-references/image/upload', [LandlordEanReferenceController::class, 'uploadImage'])
+        ->name('landlord.ean-references.image.upload');
+    Route::post('ean-references/{ean_reference}/fetch-image', [LandlordEanReferenceController::class, 'fetchImage'])
+        ->name('landlord.ean-references.fetch-image');
 
     Route::get('tenants/{tenant}/setup', [LandlordTenantController::class, 'setup'])
         ->name('landlord.tenants.setup');

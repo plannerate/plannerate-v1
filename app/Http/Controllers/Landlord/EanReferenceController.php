@@ -6,10 +6,13 @@ use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StoreEanReferenceRequest;
 use App\Http\Requests\Landlord\UpdateEanReferenceRequest;
+use App\Jobs\ProcessEanReferenceImageJob;
 use App\Models\EanReference;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,22 +31,28 @@ class EanReferenceController extends Controller
             : null;
         $requestedDirection = strtolower((string) $request->query('direction', 'asc'));
         $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'asc';
+        $hasImageParam = $request->query('has_image', '');
+        $hasImage = $hasImageParam === '1' ? true : ($hasImageParam === '0' ? false : null);
 
         return $this->renderDeferredIndex('landlord/ean-references/Index', 'ean_references', fn (): LengthAwarePaginator => $this->eanReferencesPaginator(
             $search,
             $sort,
             $direction,
             $this->resolvePerPage($request, 10),
+            $hasImage,
         ), [
             'filters' => [
                 'search' => $search,
+                'has_image' => $hasImageParam,
             ],
         ]);
     }
 
-    private function eanReferencesPaginator(string $search, ?string $sort, string $direction, int $perPage): LengthAwarePaginator
+    private function eanReferencesPaginator(string $search, ?string $sort, string $direction, int $perPage, ?bool $hasImage = null): LengthAwarePaginator
     {
         return EanReference::query()
+            ->when($hasImage === true, fn ($q) => $q->whereNotNull('image_front_url'))
+            ->when($hasImage === false, fn ($q) => $q->whereNull('image_front_url'))
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -123,6 +132,12 @@ class EanReferenceController extends Controller
                 'unit' => $eanReference->unit,
                 'has_dimensions' => $eanReference->has_dimensions,
                 'dimension_status' => $eanReference->dimension_status,
+                'image_front_url' => $eanReference->image_front_url,
+                'image_side_url' => $eanReference->image_side_url,
+                'image_top_url' => $eanReference->image_top_url,
+                'image_front_public_url' => $eanReference->image_front_url ? Storage::disk('public')->url($eanReference->image_front_url) : null,
+                'image_side_public_url' => $eanReference->image_side_url ? Storage::disk('public')->url($eanReference->image_side_url) : null,
+                'image_top_public_url' => $eanReference->image_top_url ? Storage::disk('public')->url($eanReference->image_top_url) : null,
             ],
         ]);
     }
@@ -139,6 +154,43 @@ class EanReferenceController extends Controller
         ]);
 
         return to_route('landlord.ean-references.index');
+    }
+
+    public function fetchImage(string $eanReference): RedirectResponse
+    {
+        $model = EanReference::on('landlord')->findOrFail($eanReference);
+
+        $this->authorize('update', $model);
+
+        ProcessEanReferenceImageJob::dispatch(
+            eanReferenceId: (string) $model->id,
+            force: true,
+            notify: true,
+            notifyUserId: (string) auth()->id(),
+        );
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Processamento iniciado. A imagem será atualizada em breve.',
+        ]);
+
+        return back();
+    }
+
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $this->authorize('create', EanReference::class);
+
+        $request->validate([
+            'file' => ['required', 'file', 'image', 'max:10240'],
+        ]);
+
+        $path = $request->file('file')->store('ean-references/uploads', 'public');
+
+        return response()->json([
+            'path' => $path,
+            'public_url' => Storage::disk('public')->url($path),
+        ]);
     }
 
     public function destroy(EanReference $eanReference): RedirectResponse

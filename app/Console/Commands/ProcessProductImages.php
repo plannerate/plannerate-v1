@@ -131,23 +131,4 @@ class ProcessProductImages extends Command
             });
         }
     }
-
-    /**
-     * @param  list<string>  $normalizedEans
-     * @return array<string, string>
-     */
-    private function loadEanReferencesForEans(array $normalizedEans): array
-    {
-        if ($normalizedEans === []) {
-            return [];
-        }
-
-        return DB::connection('landlord')
-            ->table('ean_references')
-            ->whereNull('deleted_at')
-            ->whereIn('ean', $normalizedEans)
-            ->whereNotNull('image_front_url')
-            ->pluck('image_front_url', 'ean')
-            ->all();
-    }
 }

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
+import { ImageDown, Loader2 } from 'lucide-vue-next';
+import { ref } from 'vue';
 import EanReferenceController from '@/actions/App/Http/Controllers/Landlord/EanReferenceController';
 import WayfinderLink from '@/components/WayfinderLink.vue';
 import ListPage from '@/components/ListPage.vue';
@@ -36,11 +38,35 @@ const props = defineProps<{
     ean_references?: Paginator<EanReferenceRow>;
     filters: {
         search: string;
+        has_image: string;
     };
 }>();
 
 const { t } = useT();
 const eanReferencesIndexPath = EanReferenceController.index.url();
+
+const fetchingIds = ref<Set<string>>(new Set());
+
+function fetchImageByEan(eanReference: EanReferenceRow): void {
+    if (fetchingIds.value.has(eanReference.id)) {
+        return;
+    }
+
+    fetchingIds.value = new Set([...fetchingIds.value, eanReference.id]);
+
+    router.post(
+        EanReferenceController.fetchImage.url({ ean_reference: eanReference.id }),
+        {},
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                const next = new Set(fetchingIds.value);
+                next.delete(eanReference.id);
+                fetchingIds.value = next;
+            },
+        },
+    );
+}
 const { meta: eanReferencesMeta, rows: eanReferencesRows, loading: eanReferencesLoading } = useDeferredPaginator(() => props.ean_references, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.landlord.ean_references.title'),
@@ -78,6 +104,7 @@ function formatDimensions(reference: EanReferenceRow): string {
 
 <template>
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
@@ -87,25 +114,32 @@ function formatDimensions(reference: EanReferenceRow): string {
             </div>
         </template>
 
-        <ListPage
-            :meta="eanReferencesMeta"
-            label="referencia ean"
-            :action="eanReferencesIndexPath"
-            :clear-href="eanReferencesIndexPath"
-            :search-value="props.filters.search"
-            :search-placeholder="t('app.landlord.common.search')"
-            :filter-label="t('app.landlord.common.filter')"
-            :clear-label="t('app.landlord.common.clear_filters')"
-            :show-trashed-filter="false"
-        >
+        <ListPage :meta="eanReferencesMeta" label="referencia ean" :action="eanReferencesIndexPath"
+            :clear-href="eanReferencesIndexPath" :search-value="props.filters.search"
+            :search-placeholder="t('app.landlord.common.search')" :filter-label="t('app.landlord.common.filter')"
+            :clear-label="t('app.landlord.common.clear_filters')" :show-trashed-filter="false">
+            <template #filters>
+                <select name="has_image"
+                    class="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                    :value="props.filters.has_image">
+                    <option value="">Todas</option>
+                    <option value="1">Com imagem</option>
+                    <option value="0">Sem imagem</option>
+                </select>
+            </template>
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
-                        <ColumnHeader field="image_front_url">{{ t('app.landlord.ean_references.fields.image_front_url') }}</ColumnHeader>
+                        <ColumnHeader field="image_front_url">{{ t('app.landlord.ean_references.fields.image_front_url')
+                            }}
+                        </ColumnHeader>
                         <ColumnHeader field="ean">{{ t('app.landlord.ean_references.fields.ean') }}</ColumnHeader>
-                        <ColumnHeader field="reference_description">{{ t('app.landlord.ean_references.fields.reference_description') }}</ColumnHeader>
+                        <ColumnHeader field="reference_description">{{
+                            t('app.landlord.ean_references.fields.reference_description') }}</ColumnHeader>
                         <ColumnHeader field="brand">{{ t('app.landlord.ean_references.fields.brand') }}</ColumnHeader>
-                        <ColumnHeader field="packaging_type">{{ t('app.landlord.ean_references.fields.packaging_type') }}</ColumnHeader>
+                        <ColumnHeader field="packaging_type">{{ t('app.landlord.ean_references.fields.packaging_type')
+                            }}
+                        </ColumnHeader>
                         <ColumnHeader field="width">Medidas</ColumnHeader>
                         <th class="px-4 py-3 font-medium text-right">{{ t('app.landlord.common.actions') }}</th>
                     </tr>
@@ -119,13 +153,11 @@ function formatDimensions(reference: EanReferenceRow): string {
                             {{ t('app.landlord.common.empty') }}
                         </td>
                     </tr>
-                    <tr
-                        v-for="eanReference in eanReferencesRows"
-                        :key="eanReference.id"
-                        class="border-t border-sidebar-border/60 dark:border-sidebar-border"
-                    >
+                    <tr v-for="eanReference in eanReferencesRows" :key="eanReference.id"
+                        class="border-t border-sidebar-border/60 dark:border-sidebar-border">
                         <td class="px-4 py-3">
-                            <ColumnImage :src="eanReference.image_front_url" :alt="eanReference.reference_description || eanReference.ean" />
+                            <ColumnImage :src="eanReference.image_front_url"
+                                :alt="eanReference.reference_description || eanReference.ean" />
                         </td>
                         <td class="px-4 py-3 font-medium">{{ eanReference.ean }}</td>
                         <td class="px-4 py-3">{{ eanReference.reference_description || '-' }}</td>
@@ -134,17 +166,23 @@ function formatDimensions(reference: EanReferenceRow): string {
                         <td class="px-4 py-3">{{ formatDimensions(eanReference) }}</td>
                         <td class="px-4 py-3 text-right">
                             <div class="inline-flex items-center gap-2">
+                                <Button type="button" variant="outline" size="sm"
+                                    :disabled="fetchingIds.has(eanReference.id)" :title="eanReference.ean"
+                                    @click="fetchImageByEan(eanReference)">
+                                    <Loader2 v-if="fetchingIds.has(eanReference.id)" class="size-3.5 animate-spin" />
+                                    <ImageDown v-else class="size-3.5" />
+                                    Buscar imagem
+                                </Button>
                                 <Button variant="outline" size="sm" as-child>
-                                    <WayfinderLink :href="EanReferenceController.edit.url({ ean_reference: eanReference.id })">
+                                    <WayfinderLink
+                                        :href="EanReferenceController.edit.url({ ean_reference: eanReference.id })">
                                         {{ t('app.landlord.common.edit') }}
                                     </WayfinderLink>
                                 </Button>
                                 <Button variant="destructive" size="sm" as-child>
                                     <WayfinderLink
                                         :href="EanReferenceController.destroy.url({ ean_reference: eanReference.id })"
-                                        method="delete"
-                                        as="button"
-                                    >
+                                        method="delete" as="button">
                                         {{ t('app.landlord.common.delete') }}
                                     </WayfinderLink>
                                 </Button>
