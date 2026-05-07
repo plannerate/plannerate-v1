@@ -3,7 +3,8 @@ import { Head } from '@inertiajs/vue3';
 import { Plus, UserX } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
-import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController'; 
+import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import ListPagination from '@/components/ListPagination.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
@@ -96,7 +97,7 @@ const pageMeta = useCrudPageMeta({
         },
         {
             title: t('app.landlord.tenant_access.title'),
-            href: TenantUserAccessController.edit.url(props.tenant.id),
+            href: tenantWayfinderPath(TenantUserAccessController.edit.url(props.tenant.id)),
         },
     ],
 });

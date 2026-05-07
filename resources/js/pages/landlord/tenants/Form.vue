@@ -89,7 +89,7 @@ const pageMeta = useCrudPageMeta({
         },
         {
             title: isEdit.value ? t('app.landlord.common.edit') : t('app.landlord.common.create'),
-            href: isEdit.value ? TenantController.edit.url(props.tenant!.id) : TenantController.create.url(),
+            href: isEdit.value ? tenantWayfinderPath(TenantController.edit.url(props.tenant!.id)) : tenantWayfinderPath(TenantController.create.url()),
         },
     ],
 });
@@ -153,7 +153,15 @@ function onDatabaseInput(): void {
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <div class="p-4">
         <Form
-            v-bind="isEdit ? TenantController.update.form(props.tenant!.id) : TenantController.store.form()"
+            v-bind="isEdit
+                ? {
+                    ...TenantController.update.form(props.tenant!.id),
+                    action: tenantWayfinderPath(TenantController.update.url(props.tenant!.id)),
+                }
+                : {
+                    ...TenantController.store.form(),
+                    action: tenantWayfinderPath(TenantController.store.url()),
+                }"
             v-slot="{ errors, processing }"
         >
             <FormCard
@@ -198,7 +206,7 @@ function onDatabaseInput(): void {
                             Reiniciar
                         </button>
                         <Link
-                            :href="TenantController.setup.url(tenant!.id)"
+                            :href="tenantWayfinderPath(TenantController.setup.url(tenant!.id))"
                             class="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
                         >
                             <ExternalLink class="size-3" />

@@ -110,7 +110,10 @@ function handleDelete(): void {
                     </div>
 
                     <Form
-                        v-bind="TenantSocialiteProviderController.update.form(tenant.id)"
+                        v-bind="{
+                            ...TenantSocialiteProviderController.update.form(tenant.id),
+                            action: tenantWayfinderPath(TenantSocialiteProviderController.update.url(tenant.id)),
+                        }"
                         :default-values="defaultValues"
                         preserve-scroll
                         v-slot="{ errors, processing }"

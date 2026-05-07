@@ -3,6 +3,7 @@ import { Form } from '@inertiajs/vue3';
 import { Layers } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -88,8 +89,14 @@ const templatesForNextPrev = computed(() =>
                         :key="formKey"
                         v-bind="
                             mode === 'create'
-                                ? WorkflowTemplateController.store.form({ tenant: tenant.id })
-                                : WorkflowTemplateController.update.form({ tenant: tenant.id, template: template!.id })
+                                ? {
+                                    ...WorkflowTemplateController.store.form({ tenant: tenant.id }),
+                                    action: tenantWayfinderPath(WorkflowTemplateController.store.url({ tenant: tenant.id })),
+                                }
+                                : {
+                                    ...WorkflowTemplateController.update.form({ tenant: tenant.id, template: template!.id }),
+                                    action: tenantWayfinderPath(WorkflowTemplateController.update.url({ tenant: tenant.id, template: template!.id })),
+                                }
                         "
                         class="flex min-h-full flex-col"
                         v-slot="{ errors, processing }"

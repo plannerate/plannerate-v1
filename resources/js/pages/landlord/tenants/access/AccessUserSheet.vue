@@ -2,6 +2,7 @@
 import { Form } from '@inertiajs/vue3';
 import { UserPlus } from 'lucide-vue-next';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import InputError from '@/components/InputError.vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -89,7 +90,10 @@ function getUserInitials(name: string): string {
                 <div class="min-h-0 flex-1 overflow-y-auto px-6 py-6">
                     <Form
                         v-if="mode === 'create'"
-                        v-bind="TenantUserAccessController.store.form(tenant.id)"
+                        v-bind="{
+                            ...TenantUserAccessController.store.form(tenant.id),
+                            action: tenantWayfinderPath(TenantUserAccessController.store.url(tenant.id)),
+                        }"
                         class="flex min-h-full flex-col"
                         v-slot="{ errors, processing }"
                     >
@@ -178,7 +182,10 @@ function getUserInitials(name: string): string {
 
                     <Form
                         v-else-if="user"
-                        v-bind="TenantUserAccessController.update.form({ tenant: tenant.id, userId: user.id })"
+                        v-bind="{
+                            ...TenantUserAccessController.update.form({ tenant: tenant.id, userId: user.id }),
+                            action: tenantWayfinderPath(TenantUserAccessController.update.url({ tenant: tenant.id, userId: user.id })),
+                        }"
                         class="flex min-h-full flex-col"
                         v-slot="{ errors, processing }"
                     >

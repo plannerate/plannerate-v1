@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { Layers, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import PlanController from '@/actions/App/Http/Controllers/Landlord/PlanController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -72,7 +73,7 @@ const pageMeta = useCrudPageMeta({
         },
         {
             title: isEdit.value ? t('app.landlord.common.edit') : t('app.landlord.common.create'),
-            href: isEdit.value ? PlanController.edit.url(props.plan!.id) : PlanController.create.url(),
+            href: isEdit.value ? tenantWayfinderPath(PlanController.edit.url(props.plan!.id)) : tenantWayfinderPath(PlanController.create.url()),
         },
     ],
 });
@@ -83,7 +84,9 @@ const pageMeta = useCrudPageMeta({
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <div class="p-4">
         <Form
-            v-bind="isEdit ? PlanController.update.form(props.plan!.id) : PlanController.store.form()"
+            v-bind="isEdit
+                ? { ...PlanController.update.form(props.plan!.id), action: tenantWayfinderPath(PlanController.update.url(props.plan!.id)) }
+                : { ...PlanController.store.form(), action: tenantWayfinderPath(PlanController.store.url()) }"
             v-slot="{ errors, processing }"
         >
             <FormCard

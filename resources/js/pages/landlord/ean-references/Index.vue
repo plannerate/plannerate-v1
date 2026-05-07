@@ -4,6 +4,7 @@ import { toast } from 'vue-sonner';
 import { ImageDown, Loader2 } from 'lucide-vue-next';
 import { ref } from 'vue';
 import EanReferenceController from '@/actions/App/Http/Controllers/Landlord/EanReferenceController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import WayfinderLink from '@/components/WayfinderLink.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
@@ -44,7 +45,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
-const eanReferencesIndexPath = EanReferenceController.index.url();
+const eanReferencesIndexPath = tenantWayfinderPath(EanReferenceController.index.url());
 
 const fetchingIds = ref<Set<string>>(new Set());
 const fetchHttp = useHttp<Record<string, never>, { message?: string }>({});
@@ -58,7 +59,7 @@ async function fetchImageByEan(eanReference: EanReferenceRow): Promise<void> {
 
     try {
         const payload = await fetchHttp.submit({
-            url: EanReferenceController.fetchImage.url({ ean_reference: eanReference.id }),
+            url: tenantWayfinderPath(EanReferenceController.fetchImage.url({ ean_reference: eanReference.id })),
             method: 'post',
         });
         toast.success(payload.message ?? 'Processamento iniciado.');

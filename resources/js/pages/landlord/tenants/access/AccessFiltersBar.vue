@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import ListFiltersBar from '@/components/ListFiltersBar.vue';
 
 type FilterOption = {
@@ -21,8 +22,8 @@ defineProps<{
 
 <template>
     <ListFiltersBar
-        :action="TenantUserAccessController.edit.url(tenantId)"
-        :clear-href="TenantUserAccessController.edit.url(tenantId)"
+        :action="tenantWayfinderPath(TenantUserAccessController.edit.url(tenantId))"
+        :clear-href="tenantWayfinderPath(TenantUserAccessController.edit.url(tenantId))"
         search-name="search"
         :search-value="filters.search"
         search-placeholder="Buscar por nome, email ou perfil..."

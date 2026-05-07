@@ -75,15 +75,15 @@ setLayoutProps({
     breadcrumbs: [
         {
             title: t('app.landlord.tenants.navigation'),
-            href: TenantController.index.url(),
+            href: tenantWayfinderPath(TenantController.index.url()),
         },
         {
             title: props.tenant.name,
-            href: TenantController.edit.url(props.tenant.id),
+            href: tenantWayfinderPath(TenantController.edit.url(props.tenant.id)),
         },
         {
             title: t('app.landlord.tenants.setup.title'),
-            href: TenantController.setup.url(props.tenant.id),
+            href: tenantWayfinderPath(TenantController.setup.url(props.tenant.id)),
         },
     ],
 });
@@ -97,15 +97,15 @@ setLayoutProps({
         :breadcrumbs="[
             {
                 title: t('app.landlord.tenants.navigation'),
-                href: TenantController.index.url(),
+                href: tenantWayfinderPath(TenantController.index.url()),
             },
             {
                 title: props.tenant.name,
-                href: TenantController.edit.url(props.tenant.id),
+                href: tenantWayfinderPath(TenantController.edit.url(props.tenant.id)),
             },
             {
                 title: t('app.landlord.tenants.setup.title'),
-                href: TenantController.setup.url(props.tenant.id),
+                href: tenantWayfinderPath(TenantController.setup.url(props.tenant.id)),
             },
         ]"
         :page-header="{
@@ -171,9 +171,7 @@ setLayoutProps({
                         as-child
                     >
                         <Link
-                            :href="
-                                TenantUserAccessController.edit.url(tenant.id)
-                            "
+                            :href="tenantWayfinderPath(TenantUserAccessController.edit.url(tenant.id))"
                         >
                             {{
                                 t(

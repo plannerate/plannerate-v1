@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { ShieldCheck } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import RoleController from '@/actions/App/Http/Controllers/Landlord/RoleController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
@@ -57,7 +58,7 @@ const pageMeta = useCrudPageMeta({
         },
         {
             title: isEdit.value ? t('app.landlord.common.edit') : t('app.landlord.common.create'),
-            href: isEdit.value ? RoleController.edit.url(props.role!.id) : RoleController.create.url(),
+            href: isEdit.value ? tenantWayfinderPath(RoleController.edit.url(props.role!.id)) : tenantWayfinderPath(RoleController.create.url()),
         },
     ],
 });
@@ -68,7 +69,9 @@ const pageMeta = useCrudPageMeta({
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <div class="p-4">
         <Form
-            v-bind="isEdit ? RoleController.update.form(props.role!.id) : RoleController.store.form()"
+            v-bind="isEdit
+                ? { ...RoleController.update.form(props.role!.id), action: tenantWayfinderPath(RoleController.update.url(props.role!.id)) }
+                : { ...RoleController.store.form(), action: tenantWayfinderPath(RoleController.store.url()) }"
             v-slot="{ errors, processing }"
         >
             <FormCard

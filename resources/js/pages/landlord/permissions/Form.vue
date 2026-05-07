@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { ShieldCheck } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import PermissionController from '@/actions/App/Http/Controllers/Landlord/PermissionController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
@@ -46,7 +47,7 @@ const pageMeta = useCrudPageMeta({
         },
         {
             title: isEdit.value ? t('app.landlord.permissions.actions.edit') : t('app.landlord.permissions.actions.new'),
-            href: isEdit.value ? PermissionController.edit.url(props.permission!.id) : PermissionController.create.url(),
+            href: isEdit.value ? tenantWayfinderPath(PermissionController.edit.url(props.permission!.id)) : tenantWayfinderPath(PermissionController.create.url()),
         },
     ],
 });
@@ -57,7 +58,9 @@ const pageMeta = useCrudPageMeta({
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <div class="space-y-6 p-4">
         <Form
-            v-bind="isEdit ? PermissionController.update.form(props.permission!.id) : PermissionController.store.form()"
+            v-bind="isEdit
+                ? { ...PermissionController.update.form(props.permission!.id), action: tenantWayfinderPath(PermissionController.update.url(props.permission!.id)) }
+                : { ...PermissionController.store.form(), action: tenantWayfinderPath(PermissionController.store.url()) }"
             v-slot="{ errors, processing }"
         >
             <FormCard

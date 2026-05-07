@@ -81,8 +81,7 @@ ensure_domain_resolves() {
         log_success "DNS OK: ${host}"
         return
     fi
-    log_error "DNS missing for ${host}. Create A/AAAA record before enabling monitoring to avoid ACME rate-limit."
-    exit 1
+    log_warn "DNS missing for ${host}. Create an A record pointing to this VPS before accessing monitoring — Traefik will retry ACME automatically once DNS propagates."
 }
 
 ensure_domain_resolves "${grafana_domain}"

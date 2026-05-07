@@ -4,6 +4,7 @@ import { Plus, Layers, Sparkles } from 'lucide-vue-next';
 import { ref } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import ListPagination from '@/components/ListPagination.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
@@ -71,7 +72,7 @@ const pageMeta = useCrudPageMeta({
         { title: t('app.landlord.tenants.navigation'), href: tenantsIndexPath },
         {
             title: t('app.landlord.kanban.templates.navigation'),
-            href: WorkflowTemplateController.index.url(props.tenant.id),
+            href: tenantWayfinderPath(WorkflowTemplateController.index.url(props.tenant.id)),
         },
     ],
 });
@@ -96,7 +97,7 @@ function openEditDrawer(template: TemplateRow): void {
 function seedDefaultTemplates(): void {
     isSeedingLoading.value = true;
     router.post(
-        `/tenants/${props.tenant.id}/kanban/templates/seed-defaults`,
+        tenantWayfinderPath(WorkflowTemplateController.seedDefaultTemplates.url(props.tenant.id)),
         {},
         {
             onFinish: () => {

@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { Barcode } from 'lucide-vue-next';
 import { computed } from 'vue';
 import EanReferenceController from '@/actions/App/Http/Controllers/Landlord/EanReferenceController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import LandlordImageUploadField from '@/components/LandlordImageUploadField.vue';
@@ -43,7 +44,7 @@ const props = defineProps<{
 
 const { t } = useT();
 const isEdit = computed(() => props.ean_reference !== null);
-const eanReferencesIndexPath = EanReferenceController.index.url();
+const eanReferencesIndexPath = tenantWayfinderPath(EanReferenceController.index.url());
 
 const pageMeta = useCrudPageMeta({
     headTitle: isEdit.value ? t('app.landlord.ean_references.actions.edit') : t('app.landlord.ean_references.actions.new'),
@@ -68,8 +69,14 @@ const pageMeta = useCrudPageMeta({
         <div class="p-4">
             <Form
                 v-bind="isEdit
-                    ? EanReferenceController.update.form({ ean_reference: props.ean_reference!.id })
-                    : EanReferenceController.store.form()
+                    ? {
+                        ...EanReferenceController.update.form({ ean_reference: props.ean_reference!.id }),
+                        action: tenantWayfinderPath(EanReferenceController.update.url({ ean_reference: props.ean_reference!.id })),
+                    }
+                    : {
+                        ...EanReferenceController.store.form(),
+                        action: tenantWayfinderPath(EanReferenceController.store.url()),
+                    }
                 "
                 v-slot="{ errors, processing }"
             >

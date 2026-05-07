@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import { UserCog } from 'lucide-vue-next';
 import { computed } from 'vue';
 import UserController from '@/actions/App/Http/Controllers/Landlord/UserController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
@@ -43,7 +44,7 @@ const pageMeta = useCrudPageMeta({
         },
         {
             title: isEdit.value ? t('app.landlord.users.actions.edit') : t('app.landlord.users.actions.new'),
-            href: isEdit.value ? UserController.edit.url(props.user!.id) : UserController.create.url(),
+            href: isEdit.value ? tenantWayfinderPath(UserController.edit.url(props.user!.id)) : tenantWayfinderPath(UserController.create.url()),
         },
     ],
 });
@@ -54,7 +55,9 @@ const pageMeta = useCrudPageMeta({
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <div class="p-4">
         <Form
-            v-bind="isEdit ? UserController.update.form(props.user!.id) : UserController.store.form()"
+            v-bind="isEdit
+                ? { ...UserController.update.form(props.user!.id), action: tenantWayfinderPath(UserController.update.url(props.user!.id)) }
+                : { ...UserController.store.form(), action: tenantWayfinderPath(UserController.store.url()) }"
             v-slot="{ errors, processing }"
         >
             <FormCard

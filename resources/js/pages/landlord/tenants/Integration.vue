@@ -4,6 +4,7 @@ import { Link2, PowerOff, Power } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord/TenantIntegrationController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import DeleteButton from '@/components/DeleteButton.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import SysmoIntegrationFields from '@/components/form/SysmoIntegrationFields.vue';
@@ -78,7 +79,7 @@ const pageMeta = useCrudPageMeta({
         },
         {
             title: t('app.landlord.tenant_integrations.navigation'),
-            href: TenantIntegrationController.edit.url(props.tenant.id),
+            href: tenantWayfinderPath(TenantIntegrationController.edit.url(props.tenant.id)),
         },
     ],
 });
@@ -145,7 +146,7 @@ function toggleStatus(): void {
     statusLoading.value = true;
 
     router.patch(
-        TenantIntegrationController.toggleStatus.url(props.tenant.id),
+        tenantWayfinderPath(TenantIntegrationController.toggleStatus.url(props.tenant.id)),
         {},
         {
             preserveScroll: true,
@@ -166,7 +167,7 @@ function testConnection(): void {
     testResult.value = null;
 
     router.post(
-        TenantIntegrationController.testConnection.url(props.tenant.id),
+        tenantWayfinderPath(TenantIntegrationController.testConnection.url(props.tenant.id)),
         {
             test_path: testPath.value,
             test_method: testMethod.value,
@@ -191,7 +192,10 @@ function testConnection(): void {
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <div class="p-4">
             <Form
-                v-bind="TenantIntegrationController.update.form(props.tenant.id)"
+                v-bind="{
+                    ...TenantIntegrationController.update.form(props.tenant.id),
+                    action: tenantWayfinderPath(TenantIntegrationController.update.url(props.tenant.id)),
+                }"
                 v-slot="{ errors, processing }"
             >
                 <FormCard
@@ -226,7 +230,7 @@ function testConnection(): void {
                         </Button>
                         <DeleteButton
                             v-if="props.integration"
-                            :href="TenantIntegrationController.destroy.url(props.tenant.id)"
+                            :href="tenantWayfinderPath(TenantIntegrationController.destroy.url(props.tenant.id))"
                             :label="t('app.landlord.tenant_integrations.title')"
                             require-confirm-word
                         >

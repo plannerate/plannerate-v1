@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import { ExternalLink, Building2, CircleCheck, LoaderCircle, CircleOff } from 'lucide-vue-next';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
@@ -221,7 +222,7 @@ const statusBadgeClass = (status: string): string => {
                         <p class="text-sm text-muted-foreground">Acesso rápido para edição e setup</p>
                     </div>
                     <Link
-                        :href="TenantController.index.url()"
+                        :href="tenantWayfinderPath(TenantController.index.url())"
                         class="rounded-md border border-border px-3 py-1.5 text-sm font-medium transition hover:bg-muted"
                     >
                         Ver todos
@@ -286,13 +287,13 @@ const statusBadgeClass = (status: string): string => {
                                 <td class="px-3 py-3">
                                     <div class="flex items-center justify-end gap-2">
                                         <Link
-                                            :href="TenantController.edit.url({ tenant: tenant.id })"
+                                            :href="tenantWayfinderPath(TenantController.edit.url({ tenant: tenant.id }))"
                                             class="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium transition hover:bg-muted"
                                         >
                                             Editar
                                         </Link>
                                         <a
-                                            :href="TenantController.setup.url({ tenant: tenant.id })"
+                                            :href="tenantWayfinderPath(TenantController.setup.url({ tenant: tenant.id }))"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             class="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium transition hover:bg-muted"
