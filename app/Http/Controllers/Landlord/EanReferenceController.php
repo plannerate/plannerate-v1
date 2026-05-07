@@ -156,7 +156,7 @@ class EanReferenceController extends Controller
         return to_route('landlord.ean-references.index');
     }
 
-    public function fetchImage(string $eanReference): RedirectResponse
+    public function fetchImage(string $eanReference): JsonResponse
     {
         $model = EanReference::on('landlord')->findOrFail($eanReference);
 
@@ -169,12 +169,9 @@ class EanReferenceController extends Controller
             notifyUserId: (string) auth()->id(),
         );
 
-        Inertia::flash('toast', [
-            'type' => 'success',
+        return response()->json([
             'message' => 'Processamento iniciado. A imagem será atualizada em breve.',
         ]);
-
-        return back();
     }
 
     public function uploadImage(Request $request): JsonResponse
