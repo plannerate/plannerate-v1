@@ -26,6 +26,22 @@ class ProcessEanReferenceImageJob implements NotTenantAware, ShouldQueue
         public ?string $notifyUserId = null,
     ) {}
 
+    public function __wakeup(): void
+    {
+        if (! isset($this->force)) {
+            $this->force = false;
+        }
+        if (! isset($this->tenantIds)) {
+            $this->tenantIds = [];
+        }
+        if (! isset($this->notify)) {
+            $this->notify = false;
+        }
+        if (! isset($this->notifyUserId)) {
+            $this->notifyUserId = null;
+        }
+    }
+
     public function handle(ProductRepositoryImageResolver $imageResolver, EanReferenceImageSyncService $syncService): void
     {
         $reference = EanReference::query()->find($this->eanReferenceId);
