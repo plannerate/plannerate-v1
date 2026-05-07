@@ -12,6 +12,7 @@ use App\Http\Controllers\Landlord\TenantController as LandlordTenantController;
 use App\Http\Controllers\Landlord\TenantIntegrationController;
 use App\Http\Controllers\Landlord\TenantSocialiteProviderController;
 use App\Http\Controllers\Landlord\TenantUserAccessController;
+use App\Http\Controllers\Landlord\UsefulLinkController;
 use App\Http\Controllers\Landlord\UserController;
 use App\Http\Controllers\Landlord\WorkflowTemplateController as LandlordWorkflowTemplateController;
 use App\Http\Controllers\Tenant\CategoryController;
@@ -74,6 +75,9 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::resource('ean-references', LandlordEanReferenceController::class)
         ->except(['show'])
         ->names('landlord.ean-references');
+    Route::resource('useful-links', UsefulLinkController::class)
+        ->except(['show'])
+        ->names('landlord.useful-links');
     Route::post('ean-references/image/upload', [LandlordEanReferenceController::class, 'uploadImage'])
         ->name('landlord.ean-references.image.upload');
     Route::post('ean-references/{ean_reference}/fetch-image', [LandlordEanReferenceController::class, 'fetchImage'])

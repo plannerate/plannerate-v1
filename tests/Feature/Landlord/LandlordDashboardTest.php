@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Tenant;
+use App\Models\UsefulLink;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -38,6 +39,15 @@ test('landlord dashboard returns metrics and tenant lists', function () {
         'status' => 'suspended',
     ]);
 
+    UsefulLink::factory()->create([
+        'name' => 'Link A',
+        'show_on_tenant_dashboard' => false,
+    ]);
+    UsefulLink::factory()->create([
+        'name' => 'Link B',
+        'show_on_tenant_dashboard' => true,
+    ]);
+
     $response = $this->get(route('dashboard'));
 
     $response
@@ -51,5 +61,6 @@ test('landlord dashboard returns metrics and tenant lists', function () {
             ->has('status_chart', 4)
             ->has('tenants_by_month', 6)
             ->has('recent_tenants')
+            ->has('useful_links', 2)
         );
 });

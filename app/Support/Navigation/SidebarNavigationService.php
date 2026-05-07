@@ -15,6 +15,7 @@ use App\Models\Role;
 use App\Models\Sale;
 use App\Models\Store;
 use App\Models\Tenant;
+use App\Models\UsefulLink;
 use App\Models\User;
 use App\Support\Navigation\Menu\Menu;
 use App\Support\Navigation\Menu\MenuPayloadAdapter;
@@ -94,6 +95,14 @@ class SidebarNavigationService
                             ->icon('package')
                             ->authorize('viewAny', EanReference::class)
                             ->setOrder(40);
+                    })
+                    ->item('landlord.useful-links', function ($item): void {
+                        $item
+                            ->label(__('app.landlord.useful_links.navigation'))
+                            ->href(route('landlord.useful-links.index', absolute: false))
+                            ->icon('folder-kanban')
+                            ->authorize('viewAny', UsefulLink::class)
+                            ->setOrder(50);
                     });
             })
             ->group('landlord.access', function ($group): void {

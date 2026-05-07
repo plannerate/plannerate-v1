@@ -64,6 +64,16 @@ final class PermissionName
 
     public const LANDLORD_MODULES_DELETE = 'landlord.modules.delete';
 
+    public const LANDLORD_USEFUL_LINKS_VIEW_ANY = 'landlord.useful-links.viewAny';
+
+    public const LANDLORD_USEFUL_LINKS_VIEW = 'landlord.useful-links.view';
+
+    public const LANDLORD_USEFUL_LINKS_CREATE = 'landlord.useful-links.create';
+
+    public const LANDLORD_USEFUL_LINKS_UPDATE = 'landlord.useful-links.update';
+
+    public const LANDLORD_USEFUL_LINKS_DELETE = 'landlord.useful-links.delete';
+
     public const TENANT_DASHBOARD_VIEW = 'tenant.dashboard.view';
 
     public const TENANT_EAN_REFERENCES_VIEW_ANY = 'tenant.ean-references.viewAny';
@@ -224,6 +234,11 @@ final class PermissionName
             self::LANDLORD_MODULES_CREATE,
             self::LANDLORD_MODULES_UPDATE,
             self::LANDLORD_MODULES_DELETE,
+            self::LANDLORD_USEFUL_LINKS_VIEW_ANY,
+            self::LANDLORD_USEFUL_LINKS_VIEW,
+            self::LANDLORD_USEFUL_LINKS_CREATE,
+            self::LANDLORD_USEFUL_LINKS_UPDATE,
+            self::LANDLORD_USEFUL_LINKS_DELETE,
             self::TENANT_DASHBOARD_VIEW,
             self::TENANT_EAN_REFERENCES_VIEW_ANY,
             self::TENANT_EAN_REFERENCES_VIEW,

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Planogram;
 use App\Models\Product;
+use App\Models\UsefulLink;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -63,6 +64,17 @@ class DashboardController extends Controller
                         'created_at' => $product->created_at?->toDateTimeString(),
                     ]),
             ],
+            'useful_links' => UsefulLink::query()
+                ->where('show_on_tenant_dashboard', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'url', 'logo', 'description'])
+                ->map(fn (UsefulLink $usefulLink): array => [
+                    'id' => $usefulLink->id,
+                    'name' => $usefulLink->name,
+                    'url' => $usefulLink->url,
+                    'logo' => $usefulLink->logo,
+                    'description' => $usefulLink->description,
+                ]),
         ]);
     }
 

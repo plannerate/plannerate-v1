@@ -38,6 +38,14 @@ const props = defineProps<{
         client_since_human: string | null;
         created_at: string | null;
     }>;
+    useful_links: Array<{
+        id: string;
+        name: string;
+        url: string;
+        logo: string | null;
+        description: string | null;
+        show_on_tenant_dashboard: boolean;
+    }>;
 }>();
 
 const { t } = useT();
@@ -297,6 +305,35 @@ const statusBadgeClass = (status: string): string => {
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </section>
+
+            <section class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
+                <header class="mb-4">
+                    <h2 class="text-base font-semibold">Links úteis (sem restrições)</h2>
+                    <p class="text-sm text-muted-foreground">Visão landlord com todos os links cadastrados</p>
+                </header>
+                <div v-if="props.useful_links.length === 0" class="text-sm text-muted-foreground">
+                    Nenhum link útil cadastrado.
+                </div>
+                <div v-else class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    <a
+                        v-for="link in props.useful_links"
+                        :key="link.id"
+                        :href="link.url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="rounded-lg border border-border/70 p-3 transition hover:bg-muted/30"
+                    >
+                        <div class="mb-2 flex items-center gap-2">
+                            <img v-if="link.logo" :src="link.logo" :alt="link.name" class="size-8 rounded object-cover" />
+                            <div class="text-sm font-medium">{{ link.name }}</div>
+                        </div>
+                        <p v-if="link.description" class="text-xs text-muted-foreground">{{ link.description }}</p>
+                        <p class="mt-2 text-[11px] text-muted-foreground">
+                            Mostrar tenant: {{ link.show_on_tenant_dashboard ? 'sim' : 'não' }}
+                        </p>
+                    </a>
                 </div>
             </section>
         </div>

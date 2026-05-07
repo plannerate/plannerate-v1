@@ -33,6 +33,13 @@ const props = defineProps<{
         categories: DashboardEntity[];
         products: DashboardEntity[];
     };
+    useful_links: Array<{
+        id: string;
+        name: string;
+        url: string;
+        logo: string | null;
+        description: string | null;
+    }>;
 }>();
 
 const { t } = useT();
@@ -210,6 +217,36 @@ const maxStatusTotal = computed(() => {
                         </div>
                     </div>
                 </article>
+            </section>
+
+            <section class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
+                <header class="mb-4">
+                    <h2 class="text-base font-semibold">Links úteis</h2>
+                </header>
+                <div v-if="props.useful_links.length === 0" class="text-xs text-muted-foreground">
+                    Nenhum link disponível no momento.
+                </div>
+                <div v-else class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    <a
+                        v-for="link in props.useful_links"
+                        :key="link.id"
+                        :href="link.url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="rounded-lg border border-border/70 p-3 transition hover:bg-muted/30"
+                    >
+                        <div class="mb-2 flex items-center gap-2">
+                            <img
+                                v-if="link.logo"
+                                :src="link.logo"
+                                :alt="link.name"
+                                class="size-8 rounded object-cover"
+                            />
+                            <div class="text-sm font-medium">{{ link.name }}</div>
+                        </div>
+                        <p v-if="link.description" class="text-xs text-muted-foreground">{{ link.description }}</p>
+                    </a>
+                </div>
             </section>
         </div>
     </AppLayout>

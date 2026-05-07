@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Models\UsefulLink;
 use App\Models\User;
 use App\Support\Modules\ModuleSlug;
 use App\Support\Modules\TenantModuleService;
@@ -123,6 +124,17 @@ class DashboardController extends Controller
             'status_chart' => $statusChart,
             'tenants_by_month' => $tenantsByMonth,
             'recent_tenants' => $recentTenants,
+            'useful_links' => UsefulLink::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'url', 'logo', 'description', 'show_on_tenant_dashboard'])
+                ->map(fn (UsefulLink $usefulLink): array => [
+                    'id' => $usefulLink->id,
+                    'name' => $usefulLink->name,
+                    'url' => $usefulLink->url,
+                    'logo' => $usefulLink->logo,
+                    'description' => $usefulLink->description,
+                    'show_on_tenant_dashboard' => $usefulLink->show_on_tenant_dashboard,
+                ]),
         ]);
     }
 
