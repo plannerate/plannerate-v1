@@ -59,6 +59,7 @@ class PlanogramController extends Controller
             'filter_options' => [
                 'stores' => $this->storesForSelect(),
             ],
+            'can_create_gondola' => $request->user()?->can('create', Gondola::class) ?? false,
         ]);
     }
 
