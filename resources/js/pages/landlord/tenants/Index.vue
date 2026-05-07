@@ -6,6 +6,7 @@ import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantCont
 import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord/TenantIntegrationController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import ColumnActions from '@/components/table/columns/ColumnActions.vue';
@@ -84,7 +85,7 @@ function openSsoSheet(tenant: TenantRow): void {
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton :href="TenantController.create.url()">
+                <NewActionButton :href="tenantWayfinderPath(TenantController.create.url())">
                     {{ t('app.landlord.tenants.actions.new') }}
                 </NewActionButton>
             </div>
@@ -215,14 +216,14 @@ function openSsoSheet(tenant: TenantRow): void {
                         <td class="px-4 py-3 text-right">
                             <ColumnActions
                                 :edit-href="
-                                    TenantController.edit.url({
+                                    tenantWayfinderPath(TenantController.edit.url({
                                         tenant: tenant.id,
-                                    })
+                                    }))
                                 "
                                 :delete-href="
-                                    TenantController.destroy.url({
+                                    tenantWayfinderPath(TenantController.destroy.url({
                                         tenant: tenant.id,
-                                    })
+                                    }))
                                 "
                                 :delete-label="tenant.name ?? undefined"
                                 :require-confirm-word="true"
@@ -236,9 +237,9 @@ function openSsoSheet(tenant: TenantRow): void {
                                     >
                                         <Link
                                             :href="
-                                                TenantController.setup.url(
+                                                tenantWayfinderPath(TenantController.setup.url(
                                                     tenant.id,
-                                                )
+                                                ))
                                             "
                                         >
                                             {{
@@ -267,9 +268,9 @@ function openSsoSheet(tenant: TenantRow): void {
                                     >
                                         <Link
                                             :href="
-                                                TenantIntegrationController.edit.url(
+                                                tenantWayfinderPath(TenantIntegrationController.edit.url(
                                                     tenant.id,
-                                                )
+                                                ))
                                             "
                                         >
                                             <Link2 class="size-4" />
@@ -287,9 +288,9 @@ function openSsoSheet(tenant: TenantRow): void {
                                     >
                                         <Link
                                             :href="
-                                                TenantUserAccessController.edit.url(
+                                                tenantWayfinderPath(TenantUserAccessController.edit.url(
                                                     tenant.id,
-                                                )
+                                                ))
                                             "
                                         >
                                             <Users class="size-4" />
@@ -306,12 +307,9 @@ function openSsoSheet(tenant: TenantRow): void {
                                     >
                                         <Link
                                             :href="
-                                                WorkflowTemplateController.index
-                                                    .url(tenant.id)
-                                                    .replace(
-                                                        /^\/\/[^/]+/,
-                                                        '',
-                                                    )
+                                                tenantWayfinderPath(
+                                                    WorkflowTemplateController.index.url(tenant.id),
+                                                )
                                             "
                                         >
                                             <Layers class="size-4" />
