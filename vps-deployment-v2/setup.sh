@@ -396,6 +396,11 @@ ask BACKUP_TABLES "Tabelas para backup seletivo no DO Spaces (vazio = todas, ex:
     emit_manifest_var PGADMIN_DEFAULT_EMAIL "${PGADMIN_DEFAULT_EMAIL:-admin@${DOMAIN_LANDLORD}}"
     emit_manifest_var PGADMIN_DEFAULT_PASSWORD "${PGADMIN_DEFAULT_PASSWORD:-}"
     emit_manifest_var BACKUP_TABLES "${BACKUP_TABLES:-}"
+    emit_manifest_var PROMETHEUS_DOMAIN "${PROMETHEUS_DOMAIN:-prometheus.${DOMAIN_LANDLORD}}"
+    emit_manifest_var GRAFANA_DOMAIN "${GRAFANA_DOMAIN:-grafana.${DOMAIN_LANDLORD}}"
+    emit_manifest_var ALERTMANAGER_DOMAIN "${ALERTMANAGER_DOMAIN:-alerts.${DOMAIN_LANDLORD}}"
+    emit_manifest_var GRAFANA_ADMIN_USER "${GRAFANA_ADMIN_USER:-admin}"
+    emit_manifest_var GRAFANA_ADMIN_PASSWORD "${GRAFANA_ADMIN_PASSWORD:-}"
     if [[ "${DB_MODE}" == "externo" ]]; then
         DB_SSH_KEY_PATH="${HOME}/.ssh/id_ed25519_${GITHUB_REPO}_db"
         emit_manifest_var DB_SSH_KEY_PATH "${DB_SSH_KEY_PATH}"
@@ -510,12 +515,12 @@ fi
 if [[ "${_install_compose}" == "true" ]] || ask_yn "Instalar compose files e iniciar Traefik no VPS agora?"; then
     ${SSH_DEPLOY} "${DEPLOY_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_WORKDIR}'"
     ${SCP_DEPLOY} -r "${SCRIPT_DIR}/." "${DEPLOY_USER}@${VPS_HOST}:${REMOTE_WORKDIR}/"
-    ${SSH_DEPLOY} "${DEPLOY_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' START_SERVICES='true' sudo bash ${REMOTE_WORKDIR}/automation/install-compose-on-host.sh"
+    ${SSH_DEPLOY} "${DEPLOY_USER}@${VPS_HOST}" "sudo env START_SERVICES=true bash ${REMOTE_WORKDIR}/automation/install-compose-on-host.sh ${REMOTE_WORKDIR}/manifest.${DEPLOY_ENV}.env"
     ok "Compose files instalados — Traefik e app iniciados"
 fi
 
 if ask_yn "Instalar monitoramento dessa app agora?"; then
-    ${SSH_DEPLOY} "${DEPLOY_USER}@${VPS_HOST}" "APP_SLUG='${APP_SLUG}' sudo bash ${REMOTE_WORKDIR}/automation/install-monitoring-on-host.sh ${REMOTE_WORKDIR}/manifest.env '${APP_SLUG}'"
+    ${SSH_DEPLOY} "${DEPLOY_USER}@${VPS_HOST}" "sudo bash ${REMOTE_WORKDIR}/automation/install-monitoring-on-host.sh ${REMOTE_WORKDIR}/manifest.${DEPLOY_ENV}.env '${APP_SLUG}'"
     ok "Monitoramento instalado para ${APP_SLUG}"
 fi
 

@@ -48,8 +48,12 @@ install -d -m 700 /opt/traefik/letsencrypt
 touch /opt/traefik/letsencrypt/acme.json
 chmod 600 /opt/traefik/letsencrypt/acme.json
 
-echo "[INFO] Copiando docker-compose.staging.yml para ${APP_DIR}/docker-compose.yml"
-cp "${ROOT_DIR}/deployments/docker-compose.staging.yml" "${APP_DIR}/docker-compose.yml"
+_compose_src="${ROOT_DIR}/deployments/docker-compose.${APP_SLUG}.yml"
+if [[ ! -f "${_compose_src}" ]]; then
+    _compose_src="${ROOT_DIR}/deployments/docker-compose.staging.yml"
+fi
+echo "[INFO] Copiando docker-compose.${APP_SLUG}.yml para ${APP_DIR}/docker-compose.yml"
+cp "${_compose_src}" "${APP_DIR}/docker-compose.yml"
 
 echo "[INFO] Copiando docker-compose do Traefik para /opt/traefik/docker-compose.yml"
 cp "${ROOT_DIR}/deployments/traefik/docker-compose.yml" /opt/traefik/docker-compose.yml
