@@ -17,7 +17,7 @@ export const validate = (data: {
 import { LayoutGridIcon } from 'lucide-vue-next';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {  } from 'vue';
+import { useT } from '@/composables/useT';
 
 interface Props {
     modelValue: {
@@ -34,6 +34,7 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const { t } = useT();
 
 const updateValue = (key: keyof Props['modelValue'], value: number) => {
     emit('update:modelValue', { ...props.modelValue, [key]: value });
@@ -46,12 +47,12 @@ const updateValue = (key: keyof Props['modelValue'], value: number) => {
             <div class="rounded-full bg-primary/10 p-2">
                 <LayoutGridIcon class="h-5 w-5 text-primary" />
             </div>
-            <h3 class="text-lg font-medium">Configurar Módulos</h3>
+            <h3 class="text-lg font-medium">{{ t('plannerate.form.step2.title') }}</h3>
         </div>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div class="space-y-2">
-                <Label for="height">Altura do Módulo (cm) *</Label>
+                <Label for="height">{{ t('plannerate.form.step2.module_height') }} (cm) *</Label>
                 <Input
                     id="height"
                     type="number"
@@ -67,7 +68,7 @@ const updateValue = (key: keyof Props['modelValue'], value: number) => {
                 </p>
             </div>
             <div class="space-y-2">
-                <Label for="width">Largura do Módulo (cm) *</Label>
+                <Label for="width">{{ t('plannerate.form.step2.module_width') }} (cm) *</Label>
                 <Input
                     id="width"
                     type="number"
@@ -83,7 +84,7 @@ const updateValue = (key: keyof Props['modelValue'], value: number) => {
                 </p>
             </div>
             <div class="space-y-2">
-                <Label for="numModules">Número de Módulos *</Label>
+                <Label for="numModules">{{ t('plannerate.form.step2.number_of_modules') }} *</Label>
                 <Input
                     id="numModules"
                     type="number"
@@ -104,9 +105,8 @@ const updateValue = (key: keyof Props['modelValue'], value: number) => {
             class="rounded-lg border border-blue-100 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20"
         >
             <p class="text-sm text-blue-800 dark:text-blue-300">
-                <span class="font-medium">Dica:</span> A configuração de módulos
-                define quantas divisões verticais a gôndola terá. Cada módulo
-                pode ter suas próprias prateleiras.
+                <span class="font-medium">{{ t('plannerate.form.tip') }}:</span>
+                {{ t('plannerate.form.step2.tip_text') }}
             </p>
         </div>
     </div>

@@ -27,6 +27,7 @@ import {
 import { computed, onMounted, ref, watch } from 'vue';
 import AddModuleSheet from '@/components/plannerate/form/AddModuleSheet.vue';
 import TransferSectionDialog from '@/components/plannerate/sidebar/properties/partials/TransferSectionDialog.vue';
+import { useT } from '@/composables/useT';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -84,6 +85,7 @@ const selection = usePlanogramSelection();
  * Acessa props compartilhadas via Inertia (feature flags, etc)
  */
 const page = usePage();
+const { t } = useT();
 
 // ============================================================================
 // PROPS & EMITS
@@ -474,7 +476,7 @@ return;
                         variant="ghost"
                         size="icon"
                         class="size-7"
-                        tooltip="Diminuir zoom"
+                        :tooltip="t('plannerate.toolbar.zoom_out')"
                         @click="editor.decreaseScale()"
                     >
                         <Minus class="size-4" />
@@ -490,7 +492,7 @@ return;
                         variant="ghost"
                         size="icon"
                         class="size-7"
-                        tooltip="Aumentar zoom"
+                        :tooltip="t('plannerate.toolbar.zoom_in')"
                         @click="editor.increaseScale()"
                     >
                         <Plus class="size-4" />
@@ -503,7 +505,7 @@ return;
                     <Search class="size-3.5 text-muted-foreground" />
                     <Input
                         v-model="eanSearchModel"
-                        placeholder="Buscar EAN na gondola"
+                        :placeholder="t('plannerate.toolbar.search_ean_placeholder')"
                         class="h-7 w-40 border-0 px-1 text-xs shadow-none focus-visible:ring-0"
                     />
                     <ButtonWithTooltip
@@ -511,7 +513,7 @@ return;
                         variant="ghost"
                         size="icon"
                         class="size-6"
-                        tooltip="Limpar busca por EAN"
+                        :tooltip="t('plannerate.toolbar.clear_ean_search')"
                         @click="eanSearchModel = ''"
                     >
                         <X class="size-3.5" />
@@ -527,51 +529,51 @@ return;
                 <ButtonWithTooltip
                     :variant="editor.showGrid.value ? 'default' : 'outline'"
                     size="sm"
-                    tooltip="Exibir/ocultar grade"
+                    :tooltip="t('plannerate.toolbar.toggle_grid')"
                     @click="editor.toggleGrid()"
                 >
                     <Grid3x3 class="mr-2 size-4" />
-                    Grade
+                    {{ t('plannerate.toolbar.grid') }}
                 </ButtonWithTooltip>
 
                 <ButtonWithTooltip
                     :variant="alignment === 'left' ? 'default' : 'outline'"
                     size="sm"
-                    tooltip="Alinhar produtos à esquerda"
+                    :tooltip="t('plannerate.toolbar.align_left_tooltip')"
                     @click="editor.alignLeft()"
                 >
                     <AlignLeft class="size-4" />
-                    <span class="sr-only">Alinhar esquerda</span>
+                    <span class="sr-only">{{ t('plannerate.toolbar.align_left_sr') }}</span>
                 </ButtonWithTooltip>
 
                 <ButtonWithTooltip
                     :variant="alignment === 'center' ? 'default' : 'outline'"
                     size="sm"
-                    tooltip="Centralizar produtos"
+                    :tooltip="t('plannerate.toolbar.align_center_tooltip')"
                     @click="editor.alignCenter()"
                 >
                     <AlignCenter class="size-4" />
-                    <span class="sr-only">Centralizar</span>
+                    <span class="sr-only">{{ t('plannerate.toolbar.align_center_sr') }}</span>
                 </ButtonWithTooltip>
 
                 <ButtonWithTooltip
                     :variant="alignment === 'right' ? 'default' : 'outline'"
                     size="sm"
-                    tooltip="Alinhar produtos à direita"
+                    :tooltip="t('plannerate.toolbar.align_right_tooltip')"
                     @click="editor.alignRight()"
                 >
                     <AlignRight class="size-4" />
-                    <span class="sr-only">Alinhar direita</span>
+                    <span class="sr-only">{{ t('plannerate.toolbar.align_right_sr') }}</span>
                 </ButtonWithTooltip>
 
                 <ButtonWithTooltip
                     :variant="alignment === 'justify' ? 'default' : 'outline'"
                     size="sm"
-                    tooltip="Distribuir produtos uniformemente"
+                    :tooltip="t('plannerate.toolbar.align_justify_tooltip')"
                     @click="editor.alignJustify()"
                 >
                     <AlignHorizontalDistributeCenter class="size-4" />
-                    <span class="sr-only">Justificar</span>
+                    <span class="sr-only">{{ t('plannerate.toolbar.align_justify_sr') }}</span>
                 </ButtonWithTooltip>
 
                 <Separator orientation="vertical" class="h-8" />
@@ -583,31 +585,31 @@ return;
                 <ButtonWithTooltip
                     variant="outline"
                     size="sm"
-                    tooltip="Inverter ordem dos elementos"
+                    :tooltip="t('plannerate.toolbar.invert_tooltip')"
                     @click="editor.toggleFlow()"
                 >
                     <FlipHorizontal class="mr-2 size-4" />
-                    Inverter
+                    {{ t('plannerate.toolbar.invert') }}
                 </ButtonWithTooltip>
 
                 <ButtonWithTooltip
                     variant="outline"
                     size="sm"
-                    tooltip="Adicionar novo módulo à gôndola"
+                    :tooltip="t('plannerate.toolbar.add_module_tooltip')"
                     @click="editor.addModule()"
                 >
                     <Plus class="mr-2 size-4" />
-                    <span class="max-w-24 truncate">Adicionar Módulo</span>
+                    <span class="max-w-24 truncate">{{ t('plannerate.toolbar.add_module') }}</span>
                 </ButtonWithTooltip>
 
                 <ButtonWithTooltip
                     variant="outline"
                     size="sm"
-                    tooltip="Transferir seção entre gôndolas"
+                    :tooltip="t('plannerate.toolbar.transfer_section_tooltip')"
                     @click="showTransferSectionDialog = true"
                 >
                     <ArrowRightLeft class="mr-2 size-4" />
-                    <span class="max-w-24 truncate">Transferir Seção</span>
+                    <span class="max-w-24 truncate">{{ t('plannerate.toolbar.transfer_section') }}</span>
                 </ButtonWithTooltip>
 
                 <!-- Vincular ao Mapa (apenas se houver loja) -->
@@ -615,12 +617,12 @@ return;
                     v-if="hasStore"
                     :variant="currentMapRegionId ? 'default' : 'outline'"
                     size="sm"
-                    tooltip="Vincular gôndola a uma posição no mapa da loja"
+                    :tooltip="t('plannerate.toolbar.map_link_tooltip')"
                     @click="showMapRegionSelector = true"
                 >
                     <MapPin class="mr-2 size-4" />
                     <span class="max-w-24 truncate">{{
-                        currentMapRegionId ? 'Remover do Mapa' : 'Mapa da Loja'
+                        currentMapRegionId ? t('plannerate.toolbar.map_remove') : t('plannerate.toolbar.map_store')
                     }}</span>
                 </ButtonWithTooltip>
 
@@ -630,13 +632,13 @@ return;
                     size="sm"
                     :tooltip="
                         currentMapRegionId
-                            ? 'Remover gôndola selecionada'
-                            : 'Nenhuma gôndola selecionada para remoção'
+                            ? t('plannerate.toolbar.remove_gondola_tooltip')
+                            : t('plannerate.toolbar.remove_gondola_none_selected')
                     "
                     @click="editor.removeGondola()"
                 >
                     <Trash2 class="mr-2 size-4" />
-                    <span class="max-w-24 truncate">Remover Gôndola</span>
+                    <span class="max-w-24 truncate">{{ t('plannerate.toolbar.remove_gondola') }}</span>
                 </ButtonWithTooltip>
 
                 <Separator orientation="vertical" class="h-8" />
@@ -649,7 +651,7 @@ return;
                     variant="outline"
                     size="icon"
                     :disabled="!isMounted || !canUndo"
-                    tooltip="Desfazer (Ctrl+Z)"
+                    :tooltip="t('plannerate.toolbar.undo')"
                     @click="editor.undo()"
                 >
                     <Undo2 class="size-4" />
@@ -659,7 +661,7 @@ return;
                     variant="outline"
                     size="icon"
                     :disabled="!isMounted || !canRedo"
-                    tooltip="Refazer (Ctrl+Shift+Z ou Ctrl+Y)"
+                    :tooltip="t('plannerate.toolbar.redo')"
                     @click="editor.redo()"
                 >
                     <Redo2 class="size-4" />
@@ -669,7 +671,7 @@ return;
                     variant="outline"
                     size="icon"
                     :disabled="!isMounted || (!canUndo && !canRedo)"
-                    tooltip="Limpar Histórico"
+                    :tooltip="t('plannerate.toolbar.clear_history')"
                     @click="editor.clearHistory()"
                 >
                     <Trash2 class="size-4" />
@@ -695,7 +697,7 @@ return;
                         :for="'auto-save-toggle'"
                         class="cursor-pointer text-xs font-medium"
                     >
-                        Salvamento automático
+                        {{ t('plannerate.toolbar.auto_save') }}
                     </Label>
                 </div>
 
@@ -705,10 +707,13 @@ return;
                     :disabled="!isMounted || !hasChanges || isSaving"
                     :tooltip="
                         hasChanges
-                            ? `Salvar ${changeCount} alteraç${
-                                  changeCount === 1 ? 'ão' : 'ões'
-                              } (Ctrl+S)`
-                            : 'Nenhuma alteração para salvar'
+                            ? t(
+                                  changeCount === 1
+                                      ? 'plannerate.toolbar.save_tooltip_single'
+                                      : 'plannerate.toolbar.save_tooltip_plural',
+                                  { count: String(changeCount) },
+                              )
+                            : t('plannerate.toolbar.save_none')
                     "
                     @click="editor.save()"
                 >
@@ -716,11 +721,9 @@ return;
                         class="mr-2 size-4"
                         :class="{ 'animate-pulse': isSaving }"
                     />
-                    <span v-if="isSaving">Salvando...</span>
-                    <span v-else-if="hasChanges"
-                        >Salvar ({{ changeCount }})</span
-                    >
-                    <span v-else>Salvo</span>
+                    <span v-if="isSaving">{{ t('plannerate.toolbar.saving') }}</span>
+                    <span v-else-if="hasChanges">{{ t('plannerate.toolbar.save', { count: String(changeCount) }) }}</span>
+                    <span v-else>{{ t('plannerate.toolbar.saved') }}</span>
                 </ButtonWithTooltip>
 
                 <!-- Indicadores de Análises -->
@@ -749,12 +752,12 @@ return;
                     v-if="autoGenerateEnabled && (permissions.can_autogenate_gondola || permissions.can_autogenate_gondola_ia)"
                     variant="default"
                     size="sm"
-                    tooltip="Gerar planograma automaticamente com IA"
+                    :tooltip="t('plannerate.toolbar.auto_generate_tooltip')"
                     @click="showAutoGenerateModal = true"
                 >
                     <Sparkles class="mr-2 size-4" />
                     <span class="max-w-24 truncate">
-                        Gerar Automaticamente</span
+                        {{ t('plannerate.toolbar.auto_generate') }}</span
                     >
                 </ButtonWithTooltip>
                 <AutoGenerateModal

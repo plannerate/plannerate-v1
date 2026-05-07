@@ -5,6 +5,7 @@ import { PanelLeftOpen, PanelRightOpen } from 'lucide-vue-next';
 import { computed, onMounted, provide, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { updateImages } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
+import { useT } from '@/composables/useT';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramKeyboard } from '@/composables/plannerate/usePlanogramKeyboard';
 import { wayfinderPath } from '../../libs/wayfinderPath';
@@ -55,6 +56,7 @@ interface AuthPageProps {
 const props = defineProps<Props>();
 const page = usePage<AuthPageProps>();
 const isBrowser = typeof window !== 'undefined';
+const { t } = useT();
 
 const resolvedSubdomain = computed(() => {
     const subdomainFromPage = page.props.subdomain?.toString().trim();
@@ -127,7 +129,7 @@ const reloadEditorRecord = () => {
 };
 
 const saveChangesAndReloadEditorRecord = async () => {
-    const loadingToastId = toast.loading('Salvando alterações antes de recarregar...');
+    const loadingToastId = toast.loading(t('plannerate.planogram.toast.saving_before_reload'));
 
     try {
         const saved = editor.hasChanges.value ? await editor.save() : true;
@@ -135,16 +137,16 @@ const saveChangesAndReloadEditorRecord = async () => {
         toast.dismiss(loadingToastId);
 
         if (!saved) {
-            toast.error('Não foi possível salvar as alterações.');
+            toast.error(t('plannerate.planogram.toast.save_failed'));
 
             return;
         }
 
         reloadEditorRecord();
-        toast.success('Alterações salvas. Recarregando imagens...');
+        toast.success(t('plannerate.planogram.toast.saved_reloading'));
     } catch {
         toast.dismiss(loadingToastId);
-        toast.error('Erro ao salvar antes de recarregar as imagens.');
+        toast.error(t('plannerate.planogram.toast.save_before_reload_error'));
     }
 };
 
@@ -154,19 +156,17 @@ return;
 }
 
     if (!editor.hasChanges.value) {
-        toast.success(
-            `Imagens atualizadas: ${payload.processed_count} produto(s) processado(s).`,
-        );
+        toast.success(t('plannerate.planogram.toast.images_updated_count', { count: String(payload.processed_count) }));
         reloadEditorRecord();
 
         return;
     }
 
-    toast.warning('Imagens atualizadas, mas há alterações não salvas.', {
-        description: 'Salve o planograma antes de recarregar para não perder mudanças.',
+    toast.warning(t('plannerate.planogram.toast.images_updated_unsaved_title'), {
+        description: t('plannerate.planogram.toast.images_updated_unsaved_description'),
         duration: 15000,
         action: {
-            label: 'Salvar e recarregar',
+            label: t('plannerate.planogram.toast.save_and_reload'),
             onClick: () => {
                 void saveChangesAndReloadEditorRecord();
             },
@@ -312,7 +312,7 @@ const category = computed(() => {
     <div class="h-screen overflow-hidden bg-background">
         <div ref="headerAndToolbar" class="flex flex-col">
             <Header
-                :title="record.planogram?.name || 'Editor v3'"
+                :title="record.planogram?.name || t('plannerate.planogram.editor_fallback_title')"
                 :status="record.planogram?.status || 'draft'"
                 :tenant="record.tenant"
                 :planogram-id="record.planogram_id"
@@ -365,7 +365,7 @@ const category = computed(() => {
                 <span
                     class="max-w-0 overflow-hidden whitespace-nowrap text-foreground transition-all duration-300 group-hover:ml-1 group-hover:max-w-xs"
                 >
-                    Abrir produtos
+                    {{ t('plannerate.planogram.open_products') }}
                 </span>
             </button>
 
@@ -378,7 +378,7 @@ const category = computed(() => {
                 <span
                     class="max-w-0 overflow-hidden whitespace-nowrap text-foreground transition-all duration-300 group-hover:mr-1 group-hover:max-w-xs"
                 >
-                    Abrir propriedades
+                    {{ t('plannerate.planogram.open_properties') }}
                 </span>
                 <PanelRightOpen
                     class="size-4 shrink-0 text-foreground transition-all duration-300 group-hover:ml-2"

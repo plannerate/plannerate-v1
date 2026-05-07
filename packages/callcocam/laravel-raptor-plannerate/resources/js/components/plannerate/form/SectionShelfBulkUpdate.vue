@@ -18,6 +18,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { useT } from '@/composables/useT';
 import {
     calculateUsableHeight,
     DEFAULT_SECTION_FIELDS,
@@ -33,6 +34,7 @@ import {
 } from '@/composables/plannerate/useShelfFields';
 
 const editor = usePlanogramEditor();
+const { t } = useT();
 
 // Form data for section properties (inicializado com valores padrão do composable)
 const sectionForm = ref({ ...DEFAULT_SECTION_FIELDS });
@@ -251,9 +253,9 @@ return 0;
     <div class="space-y-4">
         <div class="flex items-center justify-between">
             <div>
-                <h3 class="text-lg font-medium">Atualização em Massa</h3>
+                <h3 class="text-lg font-medium">{{ t('plannerate.form.bulk_update.title') }}</h3>
                 <p class="text-sm text-muted-foreground">
-                    Edite propriedades de módulos e prateleiras
+                    {{ t('plannerate.form.bulk_update.description') }}
                 </p>
             </div>
         </div>
@@ -264,7 +266,7 @@ return 0;
                 <AccordionTrigger>
                     <div class="flex items-center gap-2">
                         <LayoutGridIcon class="h-4 w-4" />
-                        <span>Propriedades dos Módulos</span>
+                        <span>{{ t('plannerate.form.bulk_update.module_properties') }}</span>
                         <span class="text-xs text-muted-foreground"
                             >({{ totalSections }})</span
                         >
@@ -276,13 +278,13 @@ return 0;
                         <div class="flex items-center gap-2">
                             <LayoutGridIcon class="h-4 w-4" />
                             <Label class="text-sm font-medium"
-                                >Dimensões do Módulo</Label
+                                >{{ t('plannerate.form.bulk_update.module_dimensions') }}</Label
                             >
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div class="space-y-1.5">
                                 <Label for="section-height" class="text-xs"
-                                    >Altura (cm)</Label
+                                    >{{ t('plannerate.print.product_detail.height') }} (cm)</Label
                                 >
                                 <Input
                                     id="section-height"
@@ -293,7 +295,7 @@ return 0;
                             </div>
                             <div class="space-y-1.5">
                                 <Label for="section-width" class="text-xs"
-                                    >Largura (cm)</Label
+                                    >{{ t('plannerate.print.product_detail.width') }} (cm)</Label
                                 >
                                 <Input
                                     id="section-width"
@@ -309,12 +311,12 @@ return 0;
                     <div class="space-y-3">
                         <div class="flex items-center gap-2">
                             <BoxIcon class="h-4 w-4" />
-                            <Label class="text-sm font-medium">Base</Label>
+                            <Label class="text-sm font-medium">{{ t('plannerate.form.add_module.base') }}</Label>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
                             <div class="space-y-1.5">
                                 <Label for="base-height" class="text-xs"
-                                    >Altura</Label
+                                    >{{ t('plannerate.print.product_detail.height') }}</Label
                                 >
                                 <Input
                                     id="base-height"
@@ -325,7 +327,7 @@ return 0;
                             </div>
                             <div class="space-y-1.5">
                                 <Label for="base-width" class="text-xs"
-                                    >Largura</Label
+                                    >{{ t('plannerate.print.product_detail.width') }}</Label
                                 >
                                 <Input
                                     id="base-width"
@@ -336,7 +338,7 @@ return 0;
                             </div>
                             <div class="space-y-1.5">
                                 <Label for="base-depth" class="text-xs"
-                                    >Profund.</Label
+                                    >{{ t('plannerate.print.product_detail.depth') }}</Label
                                 >
                                 <Input
                                     id="base-depth"
@@ -353,13 +355,13 @@ return 0;
                         <div class="flex items-center gap-2">
                             <GripVerticalIcon class="h-4 w-4" />
                             <Label class="text-sm font-medium"
-                                >Cremalheira</Label
+                                >{{ t('plannerate.form.add_module.rack') }}</Label
                             >
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div class="space-y-1.5">
                                 <Label for="rack-width" class="text-xs"
-                                    >Largura</Label
+                                    >{{ t('plannerate.print.product_detail.width') }}</Label
                                 >
                                 <Input
                                     id="rack-width"
@@ -370,7 +372,7 @@ return 0;
                             </div>
                             <div class="space-y-1.5">
                                 <Label for="hole-spacing" class="text-xs"
-                                    >Espaçamento</Label
+                                    >{{ t('plannerate.form.add_module.spacing') }}</Label
                                 >
                                 <Input
                                     id="hole-spacing"
@@ -381,7 +383,7 @@ return 0;
                             </div>
                             <div class="space-y-1.5">
                                 <Label for="hole-height" class="text-xs"
-                                    >Alt. Furo</Label
+                                    >{{ t('plannerate.form.bulk_update.hole_height_short') }}</Label
                                 >
                                 <Input
                                     id="hole-height"
@@ -392,7 +394,7 @@ return 0;
                             </div>
                             <div class="space-y-1.5">
                                 <Label for="hole-width" class="text-xs"
-                                    >Larg. Furo</Label
+                                    >{{ t('plannerate.form.bulk_update.hole_width_short') }}</Label
                                 >
                                 <Input
                                     id="hole-width"
@@ -419,7 +421,7 @@ return 0;
                             for="apply-all-sections"
                             class="text-sm font-normal"
                         >
-                            Aplicar para todos os {{ totalSections }} módulos
+                            {{ t('plannerate.form.bulk_update.apply_all_modules', { count: totalSections }) }}
                         </Label>
                     </div>
 
@@ -430,7 +432,7 @@ return 0;
                             @click="applySectionUpdates"
                             class="flex-1"
                         >
-                            Aplicar
+                            {{ t('plannerate.form.bulk_update.apply') }}
                         </Button>
                         <Button
                             size="sm"
@@ -448,7 +450,7 @@ return 0;
                 <AccordionTrigger>
                     <div class="flex items-center gap-2">
                         <RulerIcon class="h-4 w-4" />
-                        <span>Propriedades das Prateleiras</span>
+                        <span>{{ t('plannerate.form.bulk_update.shelf_properties') }}</span>
                         <span class="text-xs text-muted-foreground"
                             >({{ totalShelves }})</span
                         >
@@ -460,13 +462,13 @@ return 0;
                         <div class="flex items-center gap-2">
                             <RulerIcon class="h-4 w-4" />
                             <Label class="text-sm font-medium"
-                                >Dimensões da Prateleira</Label
+                                >{{ t('plannerate.form.bulk_update.shelf_dimensions') }}</Label
                             >
                         </div>
                         <div class="grid grid-cols-3 gap-2">
                             <div class="space-y-1.5">
                                 <Label for="shelf-height" class="text-xs"
-                                    >Espessura</Label
+                                    >{{ t('plannerate.form.step5.thickness') }}</Label
                                 >
                                 <Input
                                     id="shelf-height"
@@ -477,7 +479,7 @@ return 0;
                             </div>
                             <div class="space-y-1.5">
                                 <Label for="shelf-width" class="text-xs"
-                                    >Largura</Label
+                                    >{{ t('plannerate.print.product_detail.width') }}</Label
                                 >
                                 <Input
                                     id="shelf-width"
@@ -488,7 +490,7 @@ return 0;
                             </div>
                             <div class="space-y-1.5">
                                 <Label for="shelf-depth" class="text-xs"
-                                    >Profund.</Label
+                                    >{{ t('plannerate.print.product_detail.depth') }}</Label
                                 >
                                 <Input
                                     id="shelf-depth"
@@ -502,7 +504,7 @@ return 0;
 
                     <!-- Product Type -->
                     <div class="space-y-2">
-                        <Label class="text-sm">Tipo de Produto</Label>
+                        <Label class="text-sm">{{ t('plannerate.form.bulk_update.product_type') }}</Label>
                         <div class="grid grid-cols-2 gap-2">
                             <Button
                                 :variant="
@@ -514,7 +516,7 @@ return 0;
                                 type="button"
                                 size="sm"
                             >
-                                Normal
+                                {{ t('plannerate.sidebar.shelf_details.normal') }}
                             </Button>
                             <Button
                                 :variant="
@@ -526,7 +528,7 @@ return 0;
                                 type="button"
                                 size="sm"
                             >
-                                Gancheira
+                                {{ t('plannerate.sidebar.shelf_details.hook') }}
                             </Button>
                         </div>
                     </div>
@@ -535,18 +537,18 @@ return 0;
                     <div
                         class="space-y-2 rounded-lg border bg-muted/50 p-3 text-xs"
                     >
-                        <h4 class="font-medium">Cálculos</h4>
+                        <h4 class="font-medium">{{ t('plannerate.form.bulk_update.calculations') }}</h4>
                         <div class="space-y-1">
                             <div class="flex justify-between">
-                                <span>Altura útil:</span>
+                                <span>{{ t('plannerate.form.bulk_update.usable_height') }}:</span>
                                 <span>{{ usableHeight }} cm</span>
                             </div>
                             <div class="flex justify-between">
-                                <span>Espaçamento médio:</span>
+                                <span>{{ t('plannerate.form.bulk_update.average_spacing') }}:</span>
                                 <span>{{ averageShelfSpacing }} cm</span>
                             </div>
                             <div class="flex justify-between">
-                                <span>Área total:</span>
+                                <span>{{ t('plannerate.form.bulk_update.total_area') }}:</span>
                                 <span>{{ totalDisplayArea }} cm²</span>
                             </div>
                         </div>
@@ -567,7 +569,7 @@ return 0;
                             for="apply-all-shelves"
                             class="text-sm font-normal"
                         >
-                            Aplicar para todas as {{ totalShelves }} prateleiras
+                            {{ t('plannerate.form.bulk_update.apply_all_shelves', { count: totalShelves }) }}
                         </Label>
                     </div>
 
@@ -578,7 +580,7 @@ return 0;
                             @click="applyShelfUpdates"
                             class="flex-1"
                         >
-                            Aplicar
+                            {{ t('plannerate.form.bulk_update.apply') }}
                         </Button>
                         <Button
                             size="sm"

@@ -19,6 +19,7 @@ export const validate = (data: {
 import { GripVerticalIcon } from 'lucide-vue-next';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useT } from '@/composables/useT';
 
 interface Props {
     modelValue: {
@@ -36,6 +37,7 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const { t } = useT();
 
 function updateField<K extends keyof Props['modelValue']>(
     key: K,
@@ -54,12 +56,12 @@ function updateField<K extends keyof Props['modelValue']>(
             <div class="rounded-full bg-primary/10 p-2">
                 <GripVerticalIcon class="h-5 w-5 text-primary" />
             </div>
-            <h3 class="text-lg font-medium">Configurar Cremalheira</h3>
+            <h3 class="text-lg font-medium">{{ t('plannerate.form.step4.title') }}</h3>
         </div>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div class="space-y-2">
-                <Label for="rackWidth">Largura da Cremalheira (cm) *</Label>
+                <Label for="rackWidth">{{ t('plannerate.form.step4.rack_width') }} (cm) *</Label>
                 <Input
                     id="rackWidth"
                     type="number"
@@ -74,14 +76,14 @@ function updateField<K extends keyof Props['modelValue']>(
                     {{ errors.rackWidth }}
                 </p>
                 <p class="text-xs text-muted-foreground">
-                    Largura da coluna vertical (cremalheira)
+                    {{ t('plannerate.form.step4.rack_width_hint') }}
                 </p>
             </div>
         </div>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div class="space-y-2">
-                <Label for="holeHeight">Altura do Furo (cm) *</Label>
+                <Label for="holeHeight">{{ t('plannerate.form.step4.hole_height') }} (cm) *</Label>
                 <Input
                     id="holeHeight"
                     type="number"
@@ -98,7 +100,7 @@ function updateField<K extends keyof Props['modelValue']>(
             </div>
 
             <div class="space-y-2">
-                <Label for="holeWidth">Largura do Furo (cm) *</Label>
+                <Label for="holeWidth">{{ t('plannerate.form.step4.hole_width') }} (cm) *</Label>
                 <Input
                     id="holeWidth"
                     type="number"
@@ -115,7 +117,7 @@ function updateField<K extends keyof Props['modelValue']>(
             </div>
 
             <div class="space-y-2">
-                <Label for="holeSpacing">Espaçamento Vertical (cm) *</Label>
+                <Label for="holeSpacing">{{ t('plannerate.form.step4.hole_spacing_vertical') }} (cm) *</Label>
                 <Input
                     id="holeSpacing"
                     type="number"
@@ -130,7 +132,7 @@ function updateField<K extends keyof Props['modelValue']>(
                     {{ errors.holeSpacing }}
                 </p>
                 <p class="text-xs text-muted-foreground">
-                    Distância vertical entre furos
+                    {{ t('plannerate.form.step4.hole_spacing_hint') }}
                 </p>
             </div>
         </div>
@@ -139,10 +141,8 @@ function updateField<K extends keyof Props['modelValue']>(
             class="rounded-lg border border-blue-100 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20"
         >
             <p class="text-sm text-blue-800 dark:text-blue-300">
-                <span class="font-medium">Dica:</span> A cremalheira é a
-                estrutura vertical com furos onde as prateleiras são encaixadas.
-                O espaçamento entre os furos determina as posições possíveis das
-                prateleiras.
+                <span class="font-medium">{{ t('plannerate.form.tip') }}:</span>
+                {{ t('plannerate.form.step4.tip_text') }}
             </p>
         </div>
     </div>

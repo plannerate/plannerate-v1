@@ -24,6 +24,7 @@ import {
     generateGondolaCode,
     getInitialGondolaFields,
 } from '@/composables/plannerate/useGondolaFields';
+import { useT } from '@/composables/useT';
 import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/useSectionFields';
 import { DEFAULT_SHELF_FIELDS } from '@/composables/plannerate/useShelfFields';
 import Step1BasicInfo, {
@@ -60,6 +61,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<Emits>();
+const { t } = useT();
 const isBrowser = typeof window !== 'undefined';
 const page = usePage<{ 
     subdomain?: string;
@@ -306,33 +308,39 @@ const step6Data = computed({
 const steps = [
     {
         step: 1,
-        title: 'Informações Básicas',
-        description: 'Nome, localização e configurações iniciais',
+        title: t('plannerate.form.gondola_create.steps.basic_info.title'),
+        description: t(
+            'plannerate.form.gondola_create.steps.basic_info.description',
+        ),
     },
     {
         step: 2,
-        title: 'Módulos',
-        description: 'Dimensões e quantidade de módulos',
+        title: t('plannerate.form.gondola_create.steps.modules.title'),
+        description: t('plannerate.form.gondola_create.steps.modules.description'),
     },
     {
         step: 3,
-        title: 'Base',
-        description: 'Configuração da base da gôndola',
+        title: t('plannerate.form.gondola_create.steps.base.title'),
+        description: t('plannerate.form.gondola_create.steps.base.description'),
     },
     {
         step: 4,
-        title: 'Cremalheira',
-        description: 'Configuração dos furos e cremalheira',
+        title: t('plannerate.form.gondola_create.steps.rack.title'),
+        description: t('plannerate.form.gondola_create.steps.rack.description'),
     },
     {
         step: 5,
-        title: 'Prateleiras',
-        description: 'Configuração padrão das prateleiras',
+        title: t('plannerate.form.gondola_create.steps.shelves.title'),
+        description: t(
+            'plannerate.form.gondola_create.steps.shelves.description',
+        ),
     },
     {
         step: 6,
-        title: 'Workflow',
-        description: 'Configuração do fluxo de trabalho',
+        title: t('plannerate.form.gondola_create.steps.workflow.title'),
+        description: t(
+            'plannerate.form.gondola_create.steps.workflow.description',
+        ),
     },
 ];
 
@@ -406,9 +414,9 @@ const handleSubmit = () => {
     <Sheet :open="open" @update:open="(val) => emit('update:open', val)">
         <SheetContent side="right" class="flex w-full flex-col md:max-w-4xl">
             <SheetHeader class="shrink-0 py-2">
-                <SheetTitle>Criar Nova Gôndola</SheetTitle>
+                <SheetTitle>{{ t('plannerate.form.gondola_create.title') }}</SheetTitle>
                 <SheetDescription>
-                    Configure a nova gôndola seguindo os passos abaixo
+                    {{ t('plannerate.form.gondola_create.description') }}
                 </SheetDescription>
             </SheetHeader>
 
@@ -521,7 +529,7 @@ const handleSubmit = () => {
                         :disabled="currentStep === 1"
                     >
                         <ChevronLeft class="size-4" />
-                        Anterior
+                        {{ t('plannerate.form.gondola_create.previous') }}
                     </Button>
 
                     <Button
@@ -529,7 +537,7 @@ const handleSubmit = () => {
                         @click="nextStep"
                         :disabled="!canGoNext"
                     >
-                        Próximo
+                        {{ t('plannerate.form.gondola_create.next') }}
                         <ChevronRight class="size-4" />
                     </Button>
 
@@ -538,7 +546,7 @@ const handleSubmit = () => {
                         @click="handleSubmit"
                         :disabled="!canGoNext || form.processing"
                     >
-                        {{ form.processing ? 'Criando...' : 'Criar Gôndola' }}
+                        {{ form.processing ? t('plannerate.form.gondola_create.creating') : t('plannerate.form.gondola_create.create') }}
                         <Check class="size-4" />
                     </Button>
                 </div>

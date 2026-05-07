@@ -3,7 +3,7 @@
         <div>
             <h3 class="text-lg font-semibold">
                 <Package class="mr-2 inline size-5 text-foreground" />
-                Detalhes do Produto
+                {{ t('plannerate.analysis.selection.product_details') }}
             </h3>
         </div>
         <Separator />
@@ -19,11 +19,11 @@
                 <div class="flex items-center gap-2 text-orange-700 dark:text-orange-400">
                     <Users class="size-4" />
                     <span class="text-sm font-medium">
-                        Editando {{ selectedProducts.length }} produtos
+                        {{ t('plannerate.sidebar.product_details.editing_products', { count: selectedProducts.length }) }}
                     </span>
                 </div>
                 <p class="mt-1 text-xs text-orange-600 dark:text-orange-500">
-                    As alterações nas dimensões serão aplicadas a todos os produtos selecionados
+                    {{ t('plannerate.sidebar.product_details.multiple_edit_hint') }}
                 </p>
             </div>
 
@@ -48,6 +48,7 @@
 import { Package, Users } from 'lucide-vue-next';
 import { computed, inject, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import { useT } from '@/composables/useT';
 import { Separator } from '@/components/ui/separator';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
@@ -59,6 +60,7 @@ import ProductSalesSummary from './ProductSalesSummary.vue';
 
 const editor = usePlanogramEditor();
 const selection = usePlanogramSelection();
+const { t } = useT();
 
 // Injeta função para recarregar lista de produtos após edição
 const reloadProductsList = inject<(() => Promise<void>) | undefined>(
@@ -96,8 +98,16 @@ return;
     if (hasMultipleSelections.value && selectedProducts.value.length > 0) {
         const count = selectedProducts.value.length;
 
-        toast.info(`Atualizando ${count} produtos selecionados`, {
-            description: `${dimension === 'width' ? 'Largura' : dimension === 'height' ? 'Altura' : 'Profundidade'}: ${value}cm`,
+        toast.info(t('plannerate.sidebar.product_details.updating_products', { count }), {
+            description: t('plannerate.sidebar.product_details.dimension_update', {
+                dimension:
+                    dimension === 'width'
+                        ? t('plannerate.print.product_detail.width')
+                        : dimension === 'height'
+                          ? t('plannerate.print.product_detail.height')
+                          : t('plannerate.print.product_detail.depth'),
+                value,
+            }),
             duration: 2000,
         });
 
@@ -107,7 +117,7 @@ return;
             value,
             reloadProductsList ? async () => {
                 await reloadProductsList();
-                toast.success(`${count} produtos atualizados com sucesso!`);
+                toast.success(t('plannerate.sidebar.product_details.updated_success', { count }));
             } : undefined
         );
     } else {

@@ -19,7 +19,7 @@
                 :fill="isLeftToRight ? 'currentColor' : 'none'"
             />
             <span>{{
-                isLeftToRight ? 'INÍCIO - Fluxo da Gôndola' : 'Fim'
+                isLeftToRight ? t('plannerate.indicator.start_flow') : t('plannerate.indicator.end')
             }}</span>
             <ArrowRight v-if="isLeftToRight" class="size-3 opacity-50" />
         </div>
@@ -37,7 +37,7 @@
         >
             <ArrowLeft v-if="!isLeftToRight" class="size-3 opacity-50" />
             <span>{{
-                !isLeftToRight ? 'INÍCIO - Fluxo da Gôndola' : 'Fim'
+                !isLeftToRight ? t('plannerate.indicator.start_flow') : t('plannerate.indicator.end')
             }}</span>
             <Star
                 :class="
@@ -52,10 +52,12 @@
 
 <script setup lang="ts">
 import { ArrowLeft, ArrowRight, Star } from 'lucide-vue-next';
+import { useT } from '@/composables/useT';
 
 interface Props {
     isLeftToRight: boolean;
 }
 
 defineProps<Props>();
+const { t } = useT();
 </script>

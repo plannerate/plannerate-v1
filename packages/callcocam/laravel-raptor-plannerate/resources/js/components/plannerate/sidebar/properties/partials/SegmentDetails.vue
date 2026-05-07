@@ -3,7 +3,7 @@
         <div>
             <h3 class="text-lg font-semibold">
                 <Box class="mr-2 inline size-5 text-foreground" />
-                Layer / Produto
+                {{ t('plannerate.sidebar.segment_details.layer_product') }}
             </h3>
         </div>
 
@@ -43,7 +43,7 @@
         <div v-if="segment.layer" class="mt-4 space-y-3">
             <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
-                    <Label for="layer-quantity">Frentes</Label>
+                    <Label for="layer-quantity">{{ t('plannerate.print.product_detail.fronts') }}</Label>
                     <Input
                         id="layer-quantity"
                         :model-value="segment.layer.quantity"
@@ -55,7 +55,7 @@
                     />
                 </div>
                 <div class="space-y-2">
-                    <Label for="layer-height">Altura Layer (cm)</Label>
+                    <Label for="layer-height">{{ t('plannerate.sidebar.segment_details.layer_height') }}</Label>
                     <Input
                         id="layer-height"
                         :model-value="segment.layer.height"
@@ -70,7 +70,7 @@
 
             <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
-                    <Label for="layer-spacing">Espaçamento (cm)</Label>
+                    <Label for="layer-spacing">{{ t('plannerate.sidebar.section_details.hole_spacing') }}</Label>
                     <Input
                         id="layer-spacing"
                         :model-value="segment.layer.spacing"
@@ -82,7 +82,7 @@
                     />
                 </div>
                 <div class="space-y-2">
-                    <Label for="layer-alignment">Alinhamento</Label>
+                    <Label for="layer-alignment">{{ t('plannerate.sidebar.segment_details.alignment') }}</Label>
                     <Input
                         id="layer-alignment"
                         :model-value="segment.layer.alignment"
@@ -99,37 +99,37 @@
 
         <!-- Botões de ação -->
         <div class="space-y-2">
-            <Label>Ações</Label>
+            <Label>{{ t('plannerate.sidebar.section_details.actions') }}</Label>
             <div class="grid grid-cols-2 gap-2">
                 <ButtonWithTooltip
                     variant="outline"
                     size="sm"
                     @click="handleMoveLeft"
                     :disabled="!segmentActions.canMoveLeft"
-                    tooltip="Mover para esquerda (Ctrl+ ←)"
+                    :tooltip="t('plannerate.sidebar.segment_details.move_left_tooltip')"
                 >
                     <ArrowLeft class="mr-2 size-4" />
-                    Esquerda
+                    {{ t('plannerate.sidebar.shelf_details.left') }}
                 </ButtonWithTooltip>
                 <ButtonWithTooltip
                     variant="outline"
                     size="sm"
                     @click="handleMoveRight"
                     :disabled="!segmentActions.canMoveRight"
-                    tooltip="Mover para direita (Ctrl+ →)"
+                    :tooltip="t('plannerate.sidebar.segment_details.move_right_tooltip')"
                 >
                     <ArrowRight class="mr-2 size-4" />
-                    Direita
+                    {{ t('plannerate.sidebar.shelf_details.right') }}
                 </ButtonWithTooltip>
                 <ButtonWithTooltip
                     variant="destructive"
                     size="sm"
                     @click="handleDelete"
                     class="col-span-2"
-                    tooltip="Excluir segmento (Del)"
+                    :tooltip="t('plannerate.sidebar.segment_details.delete_tooltip')"
                 >
                     <Trash2 class="mr-2 size-4" />
-                    Excluir
+                    {{ t('plannerate.sidebar.section_details.delete') }}
                 </ButtonWithTooltip>
             </div>
         </div>
@@ -150,6 +150,7 @@ import { Separator } from '@/components/ui/separator';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { useSegmentActions } from '@/composables/plannerate/useSegmentActions';
+import { useT } from '@/composables/useT';
 import type { Segment } from '@/types/planogram';
 import ProductDimensionsEditor from './ProductDimensionsEditor.vue';
 import ProductImageCard from './ProductImageCard.vue';
@@ -163,6 +164,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const editor = usePlanogramEditor();
+const { t } = useT();
 const selection = usePlanogramSelection();
 
 // Estado do upload de imagem
@@ -298,10 +300,10 @@ return;
 
     router.delete(wayfinderPath(deleteImageAction.url(product.value.id)), {
         onSuccess: () => {
-            toast.success('Imagem removida com sucesso!');
+            toast.success(t('plannerate.sidebar.product_image_upload.success.removed'));
         },
         onError: () => {
-            toast.error('Erro ao remover imagem');
+            toast.error(t('plannerate.sidebar.segment_details.remove_image_error'));
         },
     });
 }

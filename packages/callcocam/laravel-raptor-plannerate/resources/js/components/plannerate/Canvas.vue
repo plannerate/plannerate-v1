@@ -2,6 +2,7 @@
 import { onClickOutside } from '@vueuse/core';
 import { Package } from 'lucide-vue-next';
 import { computed, onMounted, useTemplateRef, watch } from 'vue';
+import { useT } from '@/composables/useT';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import type { Gondola } from '@/types/planogram';
@@ -32,6 +33,7 @@ const emit = defineEmits<{
 
 const editor = usePlanogramEditor();
 const selection = usePlanogramSelection();
+const { t } = useT();
 
 const sortedSections = computed(() => {
     return editor.sectionsOrdered.value;
@@ -173,10 +175,9 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
                     <Package class="size-8 text-muted-foreground" />
                 </div>
                 <div class="space-y-2">
-                    <h3 class="font-medium">Área de Planograma</h3>
+                    <h3 class="font-medium">{{ t('plannerate.canvas.title') }}</h3>
                     <p class="max-w-sm text-sm text-muted-foreground">
-                        O planograma será renderizado aqui. Arraste produtos do
-                        painel esquerdo para começar a montar sua gôndola.
+                        {{ t('plannerate.canvas.description') }}
                     </p>
                 </div>
                 <div v-if="loading" class="mt-4">

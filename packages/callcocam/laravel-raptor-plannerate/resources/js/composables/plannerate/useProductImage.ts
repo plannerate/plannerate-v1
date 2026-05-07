@@ -1,10 +1,12 @@
 import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
+import { useT } from '@/composables/useT';
 import { update } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 import { wayfinderPath } from '../../libs/wayfinderPath';
 
 export function useProductImage() {
+    const { t } = useT();
     const isDownloading = ref(false);
     const updateAction = update;
 
@@ -44,7 +46,7 @@ export function useProductImage() {
                     const firstError = Object.values(errors)[0];
                     const message = typeof firstError === 'string'
                         ? firstError
-                        : 'Não foi possível atualizar a imagem.';
+                        : t('plannerate.composables.product_image.update_failed');
                     console.error('Erro ao atualizar imagem:', errors);
                     toast.error(message);
                     resolve(false);

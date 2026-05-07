@@ -4,14 +4,14 @@
         <DropdownMenuTrigger as-child>
             <Button variant="destructive" size="sm" class="gap-2 rounded-lg"> 
                     <Gauge class="size-4 text-destructive-foreground" /> 
-                Performance
+                {{ t('plannerate.dropdown.performance.title') }}
                 <ChevronDown class="size-3" />
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" class="z-[9999] w-64">
             <DropdownMenuItem @click="showPerformanceModal = true">
                 <Gauge class="mr-2 size-4" />
-                Abrir Análises
+                {{ t('plannerate.dropdown.performance.open_analyses') }}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
 
@@ -25,10 +25,8 @@
                     class="mr-2 size-4 text-green-600"
                 />
                 <EyeOff v-else class="mr-2 size-4 text-green-600" />
-                {{
-                    performance.abc.isVisible.value ? 'Esconder' : 'Mostrar'
-                }}
-                Análise de Assortimento
+                {{ performance.abc.isVisible.value ? t('plannerate.dropdown.performance.hide') : t('plannerate.dropdown.performance.show') }}
+                {{ t('plannerate.dropdown.performance.assortment_analysis') }}
                 <span class="ml-auto text-xs text-muted-foreground">
                     ({{ performance.abc.stats.value.total }})
                 </span>
@@ -43,12 +41,8 @@
                     class="mr-2 size-4 text-blue-600"
                 />
                 <EyeOff v-else class="mr-2 size-4 text-blue-600" />
-                {{
-                    performance.targetStock.isVisible.value
-                        ? 'Esconder'
-                        : 'Mostrar'
-                }}
-                Estoque Alvo
+                {{ performance.targetStock.isVisible.value ? t('plannerate.dropdown.performance.hide') : t('plannerate.dropdown.performance.show') }}
+                {{ t('plannerate.dropdown.performance.target_stock') }}
                 <span class="ml-auto text-xs text-muted-foreground">
                     ({{ performance.targetStock.stats.value.total }})
                 </span>
@@ -63,10 +57,8 @@
             >
                 <Eye v-if="!performance.anyVisible.value" class="mr-2 size-4" />
                 <EyeOff v-else class="mr-2 size-4" />
-                {{
-                    performance.anyVisible.value ? 'Esconder' : 'Mostrar'
-                }}
-                Todos
+                {{ performance.anyVisible.value ? t('plannerate.dropdown.performance.hide') : t('plannerate.dropdown.performance.show') }}
+                {{ t('plannerate.dropdown.performance.all') }}
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
@@ -77,7 +69,7 @@
                 class="text-destructive"
             >
                 <Trash2 class="mr-2 size-4" />
-                Limpar Todas as Análises
+                {{ t('plannerate.dropdown.performance.clear_all') }}
             </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
@@ -92,6 +84,7 @@
 <script setup lang="ts">
 import { ChevronDown, Eye, EyeOff, Gauge, Trash2 } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
+import { useT } from '@/composables/useT';
 import Performance from '@/components/plannerate/header/Performance.vue';
 import { Button } from '@/components/ui/button'; 
 import {
@@ -116,6 +109,7 @@ const props = defineProps<{
 }>();
 
 const showPerformanceModal = ref(false);
+const { t } = useT();
 // Performance indicators
 const performance = usePerformanceIndicators();
 

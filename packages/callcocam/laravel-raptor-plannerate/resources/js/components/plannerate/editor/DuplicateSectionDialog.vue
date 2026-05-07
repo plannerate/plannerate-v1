@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Copy, Package } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
+import { useT } from '@/composables/useT';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -28,6 +29,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<Emits>();
+const { t } = useT();
 
 const selectedType = ref<'structure' | 'complete' | null>(null);
 
@@ -65,10 +67,10 @@ function handleCancel() {
                     </div>
                     <div class="flex-1 space-y-2">
                         <DialogTitle class="text-xl">
-                            Duplicar Seção
+                            {{ t('plannerate.editor.duplicate_section.title') }}
                         </DialogTitle>
                         <DialogDescription class="text-base">
-                            Escolha como deseja duplicar a seção
+                            {{ t('plannerate.editor.duplicate_section.description') }}
                             <span
                                 v-if="section?.name"
                                 class="font-semibold text-foreground"
@@ -108,10 +110,9 @@ function handleCancel() {
                             />
                         </div>
                         <div class="flex-1 space-y-1">
-                            <div class="font-medium">Estrutura Apenas</div>
+                            <div class="font-medium">{{ t('plannerate.editor.duplicate_section.structure_only') }}</div>
                             <div class="text-sm text-muted-foreground">
-                                Duplica a seção com todas as prateleiras, mas
-                                sem produtos
+                                {{ t('plannerate.editor.duplicate_section.structure_only_desc') }}
                             </div>
                             <ul
                                 class="mt-2 space-y-1 text-xs text-muted-foreground"
@@ -120,19 +121,19 @@ function handleCancel() {
                                     <span
                                         class="size-1 rounded-full bg-muted-foreground"
                                     ></span>
-                                    Módulo/Seção
+                                    {{ t('plannerate.editor.duplicate_section.module_section') }}
                                 </li>
                                 <li class="flex items-center gap-2">
                                     <span
                                         class="size-1 rounded-full bg-muted-foreground"
                                     ></span>
-                                    Prateleiras
+                                    {{ t('plannerate.editor.duplicate_section.shelves') }}
                                 </li>
                                 <li class="flex items-center gap-2">
                                     <span
                                         class="size-1 rounded-full bg-muted-foreground/50"
                                     ></span>
-                                    Produtos (não incluídos)
+                                    {{ t('plannerate.editor.duplicate_section.products_not_included') }}
                                 </li>
                             </ul>
                         </div>
@@ -166,25 +167,24 @@ function handleCancel() {
                             />
                         </div>
                         <div class="flex-1 space-y-1">
-                            <div class="font-medium">Duplicação Completa</div>
+                            <div class="font-medium">{{ t('plannerate.editor.duplicate_section.complete') }}</div>
                             <div class="text-sm text-muted-foreground">
-                                Duplica tudo: seção, prateleiras e todos os
-                                produtos posicionados
+                                {{ t('plannerate.editor.duplicate_section.complete_desc') }}
                             </div>
                             <ul
                                 class="mt-2 space-y-1 text-xs text-muted-foreground"
                             >
                                 <li class="flex items-center gap-2">
                                     <Package class="size-3" />
-                                    Módulo/Seção
+                                    {{ t('plannerate.editor.duplicate_section.module_section') }}
                                 </li>
                                 <li class="flex items-center gap-2">
                                     <Package class="size-3" />
-                                    Prateleiras
+                                    {{ t('plannerate.editor.duplicate_section.shelves') }}
                                 </li>
                                 <li class="flex items-center gap-2">
                                     <Package class="size-3" />
-                                    Produtos e posicionamentos
+                                    {{ t('plannerate.editor.duplicate_section.products_positions') }}
                                 </li>
                             </ul>
                         </div>
@@ -194,10 +194,10 @@ function handleCancel() {
 
             <DialogFooter>
                 <Button variant="outline" @click="handleCancel">
-                    Cancelar
+                    {{ t('plannerate.common.cancel') }}
                 </Button>
                 <Button :disabled="!selectedType" @click="handleConfirm">
-                    Duplicar
+                    {{ t('plannerate.editor.duplicate_section.duplicate') }}
                 </Button>
             </DialogFooter>
         </DialogContent>

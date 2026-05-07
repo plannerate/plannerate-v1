@@ -2,6 +2,7 @@
 import { useForm } from '@inertiajs/vue3';
 import { Loader2, Sparkles } from 'lucide-vue-next';
 import { computed, watch } from 'vue';
+import { useT } from '@/composables/useT';
 import AdvancedOptionsSection from '@/components/plannerate/header/partials/AdvancedOptionsSection.vue';
 import AiSettingsSection from '@/components/plannerate/header/partials/AiSettingsSection.vue';
 import FacingsSettingsSection from '@/components/plannerate/header/partials/FacingsSettingsSection.vue';
@@ -39,6 +40,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     'update:open': [value: boolean];
 }>();
+const { t } = useT();
 
 // Types
 interface OptionItem {
@@ -149,8 +151,8 @@ return;
             },
             onError: (errors) => {
                 alert(
-                    'Erro ao gerar planograma: ' +
-                        (Object.values(errors)[0] || 'Erro desconhecido'),
+                    t('plannerate.header.auto_generate.error_prefix') +
+                        (Object.values(errors)[0] || t('plannerate.header.auto_generate.unknown_error')),
                 );
             },
         },
@@ -167,11 +169,10 @@ return;
             <DialogHeader>
                 <DialogTitle class="flex items-center gap-2">
                     <Sparkles class="size-5 text-primary" />
-                    Gerar Planograma Automaticamente
+                    {{ t('plannerate.header.auto_generate.title') }}
                 </DialogTitle>
                 <DialogDescription>
-                    Configure as opções para gerar o planograma automaticamente
-                    baseado em vendas, análise ABC e regras de merchandising.
+                    {{ t('plannerate.header.auto_generate.description') }}
                 </DialogDescription>
             </DialogHeader>
 
@@ -189,7 +190,7 @@ return;
                     <Label
                         class="text-base font-semibold text-blue-900 dark:text-blue-100"
                     >
-                        📦 Categoria (opcional)
+                        {{ t('plannerate.header.auto_generate.category_optional') }}
                     </Label>
                     <CategorySelect
                         v-model="form.category_id"
@@ -197,8 +198,7 @@ return;
                         :required="false"
                     />
                     <div class="pt-2 text-xs text-muted-foreground">
-                        Deixe em branco para gerar incluindo todos os produtos,
-                        ou selecione uma categoria específica
+                        {{ t('plannerate.header.auto_generate.category_hint') }}
                     </div>
                 </div>
 
@@ -221,7 +221,7 @@ return;
                     @click="handleClose"
                     :disabled="form.processing"
                 >
-                    Cancelar
+                    {{ t('plannerate.common.cancel') }}
                 </Button>
                 <Button
                     type="button"
@@ -231,7 +231,7 @@ return;
                 > 
                         <Loader2 class="animate-spin" />  
                         <Sparkles /> 
-                    {{ form.processing ? 'Gerando...' : 'Gerar Planograma' }}
+                    {{ form.processing ? t('plannerate.header.auto_generate.generating') : t('plannerate.header.auto_generate.generate') }}
                 </Button>
             </DialogFooter>
         </DialogContent>

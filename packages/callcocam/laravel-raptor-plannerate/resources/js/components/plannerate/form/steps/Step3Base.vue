@@ -17,6 +17,7 @@ export const validate = (data: {
 import { BoxIcon } from 'lucide-vue-next';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useT } from '@/composables/useT';
 
 interface Props {
     modelValue: {
@@ -33,6 +34,7 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const { t } = useT();
 
 function updateField<K extends keyof Props['modelValue']>(
     key: K,
@@ -51,12 +53,12 @@ function updateField<K extends keyof Props['modelValue']>(
             <div class="rounded-full bg-primary/10 p-2">
                 <BoxIcon class="h-5 w-5 text-primary" />
             </div>
-            <h3 class="text-lg font-medium">Configurar Base</h3>
+            <h3 class="text-lg font-medium">{{ t('plannerate.form.step3.title') }}</h3>
         </div>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div class="space-y-2">
-                <Label for="baseHeight">Altura da Base (cm) *</Label>
+                <Label for="baseHeight">{{ t('plannerate.form.step3.base_height') }} (cm) *</Label>
                 <Input
                     id="baseHeight"
                     type="number"
@@ -73,7 +75,7 @@ function updateField<K extends keyof Props['modelValue']>(
             </div>
 
             <div class="space-y-2">
-                <Label for="baseDepth">Profundidade da Base (cm) *</Label>
+                <Label for="baseDepth">{{ t('plannerate.form.step3.base_depth') }} (cm) *</Label>
                 <Input
                     id="baseDepth"
                     type="number"
@@ -94,9 +96,9 @@ function updateField<K extends keyof Props['modelValue']>(
             class="rounded-lg border border-blue-100 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20"
         >
             <p class="text-sm text-blue-800 dark:text-blue-300">
-                <span class="font-medium">Dica:</span> A base é a parte inferior
-                da gôndola que sustenta toda a estrutura. A largura da base é
-                definida automaticamente pela largura do módulo ({{ modelValue.baseWidth }} cm).
+                <span class="font-medium">{{ t('plannerate.form.tip') }}:</span>
+                {{ t('plannerate.form.step3.tip_prefix') }}
+                {{ modelValue.baseWidth }} cm).
             </p>
         </div>
     </div>

@@ -3,7 +3,7 @@
         v-if="classification && isVisible"
         class="absolute -top-2 -right-2 z-30 flex items-center justify-center rounded-bl-md px-1 py-0.5 text-[10px] font-bold shadow-md rounded-lg"
         :class="badgeClasses"
-        :title="`Performance ABC: Classe ${classification}`"
+        :title="t('plannerate.editor.abc_badge.title', { classification })"
     >
         {{ classification }}
     </div>
@@ -12,6 +12,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useAbcClassification } from '@/composables/plannerate/useAbcClassification';
+import { useT } from '@/composables/useT';
 
 interface Props {
     classification?: 'A' | 'B' | 'C';
@@ -20,6 +21,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const { isVisible } = useAbcClassification();
+const { t } = useT();
 
 /**
  * Classes CSS baseadas na classificação ABC

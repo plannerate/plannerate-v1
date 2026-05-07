@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Check, Trash2 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import { useT } from '@/composables/useT';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -32,6 +33,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 const isBrowser = typeof window !== 'undefined';
+const { t } = useT();
 
 const dontAskAgain = ref(false);
 
@@ -73,30 +75,30 @@ return '';
 }
 
     if (props.type === 'section') {
-        return (props.item as Section).name || 'esta seção';
+        return (props.item as Section).name || t('plannerate.editor.confirm_delete.this_section');
     }
 
     if (props.type === 'shelf') {
-        return `prateleira #${(props.item as Shelf).ordering || ''}`;
+        return `${t('plannerate.editor.confirm_delete.shelf')} #${(props.item as Shelf).ordering || ''}`;
     }
 
     if (props.type === 'layer') {
-        return 'esta camada de produto';
+        return t('plannerate.editor.confirm_delete.this_product_layer');
     }
 
-    return 'este item';
+    return t('plannerate.editor.confirm_delete.this_item');
 });
 
 const itemTypeLabel = computed(() => {
     switch (props.type) {
         case 'section':
-            return 'Seção';
+            return t('plannerate.editor.confirm_delete.section');
         case 'shelf':
-            return 'Prateleira';
+            return t('plannerate.editor.confirm_delete.shelf');
         case 'layer':
-            return 'Camada de Produto';
+            return t('plannerate.editor.confirm_delete.product_layer');
         default:
-            return 'Item';
+            return t('plannerate.editor.confirm_delete.item');
     }
 });
 </script>
@@ -118,10 +120,10 @@ const itemTypeLabel = computed(() => {
                     </div>
                     <div class="flex-1 space-y-2">
                         <DialogTitle class="text-xl">
-                            Remover {{ itemTypeLabel }}?
+                            {{ t('plannerate.editor.confirm_delete.remove') }} {{ itemTypeLabel }}?
                         </DialogTitle>
                         <DialogDescription class="text-base">
-                            Você está prestes a remover
+                            {{ t('plannerate.editor.confirm_delete.about_to_remove') }}
                             <span class="font-semibold text-foreground">
                                 {{ itemName }}
                             </span>
@@ -136,8 +138,7 @@ const itemTypeLabel = computed(() => {
                     class="rounded-lg border border-destructive/20 bg-destructive/5 p-4"
                 >
                     <p class="text-sm text-muted-foreground">
-                        Esta ação irá marcar o item como removido. Você pode
-                        restaurá-lo posteriormente se necessário.
+                        {{ t('plannerate.editor.confirm_delete.description') }}
                     </p>
                 </div>
 
@@ -161,17 +162,17 @@ const itemTypeLabel = computed(() => {
                         for="dont-ask-again"
                         class="cursor-pointer text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                        Não perguntar novamente por 5 minutos
+                        {{ t('plannerate.editor.confirm_delete.dont_ask_again_5min') }}
                     </label>
                 </div>
             </div>
 
             <DialogFooter>
                 <Button variant="outline" @click="handleCancel">
-                    Cancelar
+                    {{ t('plannerate.common.cancel') }}
                 </Button>
                 <Button variant="destructive" @click="handleConfirm">
-                    Remover
+                    {{ t('plannerate.editor.confirm_delete.remove') }}
                 </Button>
             </DialogFooter>
         </DialogContent>

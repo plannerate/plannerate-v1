@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Download, Eye } from 'lucide-vue-next'
 import { ref, computed } from 'vue'
+import { useT } from '@/composables/useT'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -26,6 +27,7 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const { t } = useT()
 
 const selectedSectionIds = ref<string[]>([])
 
@@ -71,7 +73,7 @@ function toggleAll() {
 
 function handlePreview() {
     if (selectedSectionIds.value.length === 0) {
-        alert('Selecione pelo menos um módulo')
+        alert(t('plannerate.print.module_selector.select_at_least_one'))
 
         return
     }
@@ -84,7 +86,7 @@ function handlePreview() {
 
 function handleDownload() {
     if (selectedSectionIds.value.length === 0) {
-        alert('Selecione pelo menos um módulo')
+        alert(t('plannerate.print.module_selector.select_at_least_one'))
 
         return
     }
@@ -100,10 +102,10 @@ function handleDownload() {
     <Dialog :open="open" @update:open="handleOpenChange">
         <DialogContent class="w-full md:max-w-2xl max-h-[80vh] flex flex-col z-[1000]">
             <DialogHeader>
-                <DialogTitle>Selecionar Módulos para PDF</DialogTitle>
+                <DialogTitle>{{ t('plannerate.print.module_selector.title') }}</DialogTitle>
                 <DialogDescription>
-                    Escolha quais módulos deseja incluir no PDF.
-                    {{ selectedSectionIds.length }} de {{ sections.length }} selecionados.
+                    {{ t('plannerate.print.module_selector.description') }}
+                    {{ selectedSectionIds.length }} {{ t('plannerate.print.module_selector.of') }} {{ sections.length }} {{ t('plannerate.print.module_selector.selected') }}.
                 </DialogDescription>
             </DialogHeader>
 
@@ -113,7 +115,7 @@ function handleDownload() {
                     <Label :for="'select-all'" class="text-sm font-medium cursor-pointer">
                         <Checkbox :id="'select-all'" :model-value="allSelected" :indeterminate="someSelected"
                             @update:model-value="toggleAll" />
-                        {{ allSelected ? 'Desmarcar todos' : 'Selecionar todos' }}
+                        {{ allSelected ? t('plannerate.print.module_selector.unselect_all') : t('plannerate.print.module_selector.select_all') }}
                     </Label>
                 </div>
 
@@ -126,9 +128,9 @@ function handleDownload() {
                             <Checkbox :id="`section-${section.id}`" :model-value="isChecked(section.id)"
                                 @update:model-value="() => toggleSection(section.id)" />
                             <div class="flex flex-col">
-                                <span> Módulo {{ section.ordering }}</span>
+                                <span> {{ t('plannerate.print.module_selector.module') }} {{ section.ordering }}</span>
                                 <p class="text-xs text-slate-500 mt-1">
-                                    {{ section.shelves?.length || 0 }} prateleiras
+                                    {{ section.shelves?.length || 0 }} {{ t('plannerate.print.module_selector.shelves') }}
                                 </p>
                             </div>
                         </Label>
@@ -138,15 +140,15 @@ function handleDownload() {
 
             <DialogFooter class="gap-2">
                 <Button variant="outline" @click="handleOpenChange(false)">
-                    Cancelar
+                    {{ t('plannerate.common.cancel') }}
                 </Button>
                 <Button variant="outline" @click="handlePreview" :disabled="selectedSectionIds.length === 0">
                     <Eye class="mr-2 h-4 w-4" />
-                    Visualizar
+                    {{ t('plannerate.print.module_selector.preview') }}
                 </Button>
                 <Button @click="handleDownload" :disabled="selectedSectionIds.length === 0">
                     <Download class="mr-2 h-4 w-4" />
-                    Baixar
+                    {{ t('plannerate.print.module_selector.download') }}
                 </Button>
             </DialogFooter>
         </DialogContent>

@@ -2,16 +2,16 @@
     <Dialog v-model:open="open">
         <DialogContent class="sm:max-w-3xl max-h-[90vh] flex flex-col">
             <DialogHeader>
-                <DialogTitle>Upload de Imagem do Produto</DialogTitle>
+                <DialogTitle>{{ t('plannerate.sidebar.product_image_upload.title') }}</DialogTitle>
                 <DialogDescription>
-                    Faça upload de uma imagem para o produto {{ product?.name }}
+                    {{ t('plannerate.sidebar.product_image_upload.description') }} {{ product?.name }}
                 </DialogDescription>
             </DialogHeader>
 
             <div class="space-y-4 py-4 overflow-y-auto">
                 <!-- Preview da imagem atual -->
                 <div v-if="product?.image_url && !selectedFile" class="flex flex-col items-center gap-2">
-                    <Label class="text-xs text-muted-foreground">Imagem Atual</Label>
+                    <Label class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_image_upload.current_image') }}</Label>
                     <img :src="product.image_url" :alt="product.name" class="h-32 w-32 rounded border object-contain" />
                 </div>
 
@@ -19,7 +19,7 @@
 
                 <!-- Área de upload -->
                 <div v-if="!selectedFile" class="space-y-2">
-                    <Label for="image-upload">Nova Imagem</Label>
+                    <Label for="image-upload">{{ t('plannerate.sidebar.product_image_upload.new_image') }}</Label>
                     <div class="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 transition-colors"
                         :class="{
                             'border-primary bg-primary/5': isDragging,
@@ -32,27 +32,27 @@
                         <ImageIcon class="size-10 text-muted-foreground" />
                         <div class="space-y-1 text-center">
                             <p class="text-sm font-medium">
-                                Arraste uma imagem ou clique para selecionar
+                                {{ t('plannerate.sidebar.product_image_upload.drag_or_click') }}
                             </p>
                             <p class="text-xs text-muted-foreground">
-                                PNG, JPG, GIF até 5MB
+                                {{ t('plannerate.sidebar.product_image_upload.formats_hint') }}
                             </p>
                         </div>
                         <Button type="button" variant="outline" size="sm" @click="() => fileInput?.click()">
                             <Upload class="mr-2 size-4" />
-                            Selecionar Arquivo
+                            {{ t('plannerate.sidebar.product_image_upload.select_file') }}
                         </Button>
                     </div>
 
                     <div class="space-y-2">
-                        <Label for="image-url-input">URL da imagem</Label>
+                        <Label for="image-url-input">{{ t('plannerate.sidebar.product_image_upload.image_url') }}</Label>
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-stretch">
                             <Input
                                 id="image-url-input"
                                 v-model="imageUrlInput"
                                 type="url"
                                 class="sm:flex-1"
-                                placeholder="https://exemplo.com/imagem.jpg"
+                                :placeholder="t('plannerate.sidebar.product_image_upload.url_placeholder')"
                                 @keydown.enter.prevent="importFromUrl"
                             />
                             <Button
@@ -63,7 +63,7 @@
                                 @click="importFromUrl"
                             >
                                 <Loader2 v-if="isImportingFromUrl" class="mr-2 size-4 animate-spin" />
-                                <span>{{ isImportingFromUrl ? 'Importando...' : 'Importar URL' }}</span>
+                                <span>{{ isImportingFromUrl ? t('plannerate.sidebar.product_image_upload.importing') : t('plannerate.sidebar.product_image_upload.import_url') }}</span>
                             </Button>
                         </div>
                     </div>
@@ -76,10 +76,10 @@
                 <!-- Editor de Crop -->
                 <div v-else class="space-y-3">
                     <div class="flex items-center justify-between">
-                        <Label>Ajustar Imagem</Label>
+                        <Label>{{ t('plannerate.sidebar.product_image_upload.adjust_image') }}</Label>
                         <Button type="button" variant="ghost" size="sm" @click="clearSelectedFile">
                             <X class="mr-2 size-4" />
-                            Trocar Imagem
+                            {{ t('plannerate.sidebar.product_image_upload.change_image') }}
                         </Button>
                     </div>
 
@@ -103,15 +103,15 @@
                     :disabled="isUploading"
                 >
                     <Trash2 class="mr-2 size-4" />
-                    Remover Imagem
+                    {{ t('plannerate.sidebar.product_image_upload.remove_image') }}
                 </Button>
                 <Button type="button" variant="outline" @click="handleClose" :disabled="isUploading">
-                    Cancelar
+                    {{ t('plannerate.common.cancel') }}
                 </Button>
                 <Button type="button" @click="handleUploadImage" :disabled="!selectedFile || isUploading">
                     <Loader2 v-if="isUploading" class="mr-2 size-4 animate-spin" />
                     <Upload v-else class="mr-2 size-4" />
-                    {{ isUploading ? 'Enviando...' : 'Upload' }}
+                    {{ isUploading ? t('plannerate.sidebar.product_image_upload.uploading') : t('plannerate.sidebar.product_image_upload.upload') }}
                 </Button>
             </DialogFooter>
         </DialogContent>
@@ -138,6 +138,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { useT } from '@/composables/useT';
 import imageRoutes from '@/routes/tenant/products/image';
 import type { Product } from '@/types/planogram';
 import 'vue-advanced-cropper/dist/style.css';
@@ -148,6 +149,7 @@ interface Props {
 
 const props = defineProps<Props>();
 const open = defineModel<boolean>('open', { required: true });
+const { t } = useT();
 
 // Referências
 const cropperRef = ref<InstanceType<typeof Cropper> | null>(null);
@@ -208,7 +210,7 @@ function validateAndSetFile(file: File) {
 
     // Valida tipo de arquivo
     if (!file.type.startsWith('image/')) {
-        uploadError.value = 'Por favor, selecione um arquivo de imagem válido';
+        uploadError.value = t('plannerate.sidebar.product_image_upload.errors.invalid_image_file');
 
         return;
     }
@@ -217,7 +219,7 @@ function validateAndSetFile(file: File) {
     const maxSize = 5 * 1024 * 1024; // 5MB
 
     if (file.size > maxSize) {
-        uploadError.value = 'A imagem deve ter no máximo 5MB';
+        uploadError.value = t('plannerate.sidebar.product_image_upload.errors.max_5mb');
 
         return;
     }
@@ -253,7 +255,7 @@ async function importFromUrl(): Promise<void> {
          
         new URL(url);
     } catch {
-        uploadError.value = 'Informe uma URL válida.';
+        uploadError.value = t('plannerate.sidebar.product_image_upload.errors.invalid_url');
 
         return;
     }
@@ -265,19 +267,19 @@ async function importFromUrl(): Promise<void> {
         const response = await fetch(url);
 
         if (!response.ok) {
-            throw new Error('Não foi possível importar a imagem pela URL.');
+            throw new Error(t('plannerate.sidebar.product_image_upload.errors.import_failed'));
         }
 
         const blob = await response.blob();
 
         if (!blob.type.startsWith('image/')) {
-            throw new Error('A URL informada não retorna uma imagem válida.');
+            throw new Error(t('plannerate.sidebar.product_image_upload.errors.url_not_image'));
         }
 
         const maxSize = 5 * 1024 * 1024;
 
         if (blob.size > maxSize) {
-            throw new Error('A imagem deve ter no máximo 5MB');
+            throw new Error(t('plannerate.sidebar.product_image_upload.errors.max_5mb'));
         }
 
         const fileExtension = blob.type.split('/')[1] ?? 'jpg';
@@ -289,7 +291,7 @@ async function importFromUrl(): Promise<void> {
     } catch (error) {
         uploadError.value = error instanceof Error
             ? error.message
-            : 'Não foi possível importar a imagem pela URL.';
+            : t('plannerate.sidebar.product_image_upload.errors.import_failed');
     } finally {
         isImportingFromUrl.value = false;
     }
@@ -309,11 +311,11 @@ function formatFileSize(bytes: number): string {
 
 function resolveUploadErrorMessage(rawMessage?: string): string {
     if (!rawMessage || rawMessage.trim() === '') {
-        return 'Erro ao enviar imagem. Verifique o formato, o tamanho (ate 5MB) e tente novamente.';
+        return t('plannerate.sidebar.product_image_upload.errors.upload_generic');
     }
 
     if (rawMessage === 'Erro ao fazer upload da imagem.') {
-        return 'Falha ao salvar a imagem no servidor. Verifique se o arquivo e uma imagem valida (ate 5MB) e tente novamente.';
+        return t('plannerate.sidebar.product_image_upload.errors.upload_server');
     }
 
     return rawMessage;
@@ -344,7 +346,7 @@ async function handleUploadImage() {
                     if (blob) {
                         resolve(blob);
                     } else {
-                        reject(new Error('Falha ao converter imagem'));
+                        reject(new Error(t('plannerate.sidebar.product_image_upload.errors.convert_failed')));
                     }
                 }, selectedFile.value?.type || 'image/png', 0.95);
             });
@@ -363,10 +365,10 @@ async function handleUploadImage() {
         );
 
         if (typeof payload.path !== 'string' || payload.path === '') {
-            throw new Error('Erro ao enviar imagem. Tente novamente.');
+            throw new Error(t('plannerate.sidebar.product_image_upload.errors.upload_try_again'));
         }
 
-        toast.success('Imagem enviada com sucesso!');
+        toast.success(t('plannerate.sidebar.product_image_upload.success.uploaded'));
         open.value = false;
         clearSelectedFile();
         router.reload({ only: ['product'] });
@@ -396,14 +398,14 @@ async function handleDeleteImage() {
             }))
         );
 
-        toast.success('Imagem removida com sucesso!');
+        toast.success(t('plannerate.sidebar.product_image_upload.success.removed'));
         open.value = false;
         router.reload({ only: ['product'] });
     } catch (error) {
         console.error('Erro ao deletar imagem:', error);
         uploadError.value = error instanceof Error && error.message !== ''
             ? error.message
-            : 'Erro ao deletar imagem. Tente novamente.';
+            : t('plannerate.sidebar.product_image_upload.errors.delete_try_again');
         toast.error(uploadError.value);
     } finally {
         isUploading.value = false;

@@ -28,10 +28,10 @@
                     {{ product.name }}
                 </h4>
                 <p class="text-xs text-muted-foreground">
-                    EAN: {{ product.ean }}
+                    {{ t('plannerate.analysis.results.ean') }}: {{ product.ean }}
                 </p>
                 <p v-if="product.height || product.width || product.depth" class="text-xs text-muted-foreground">
-                    Dimensões:
+                    {{ t('plannerate.sidebar.product_card.dimensions') }}:
                     <span class="text-xs text-muted-foreground">
                         {{ product.height || 0 }}cm (A) x
                         {{ product.width || 0 }}cm (L) x
@@ -58,7 +58,11 @@
                         class="size-3"
                     />
                     <span class="hidden sm:inline">
-                        {{ product.has_dimensions ? 'Com dimensão' : 'Sem dimensão' }}
+                        {{
+                            product.has_dimensions
+                                ? t('plannerate.sidebar.product_card.with_dimensions')
+                                : t('plannerate.sidebar.product_card.without_dimensions')
+                        }}
                     </span>
                 </Badge>
             </div>
@@ -72,6 +76,7 @@ import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
+import { useT } from '@/composables/useT';
 import type { Product } from '@/types/planogram';
 
 const props = defineProps<{
@@ -82,6 +87,7 @@ const { selectItem, toggleSelection, setMultiSelectEnabled } =
     usePlanogramSelection();
 const selection = usePlanogramSelection();
 const editor = usePlanogramEditor();
+const { t } = useT();
 
 // Injeta função para remover produto da lista quando usado
 const removeUsedProduct = inject<((productId: string) => void) | undefined>(
@@ -100,20 +106,24 @@ const hasMultipleSelections = computed(() => selection.hasMultipleSelections());
 // Tooltip baseado em has_dimensions
 const getDimensionsTooltip = () => {
     if (props.product.has_dimensions) {
-        return 'Produto com dimensões, pronto para uso no planograma';
+        return t('plannerate.sidebar.product_card.tooltip_ready');
     }
 
     const issues = [];
 
     if (!props.product.width || !props.product.height || !props.product.depth) {
-        issues.push('dimensões incompletas');
+        issues.push(t('plannerate.sidebar.product_card.issue_incomplete_dimensions'));
     }
 
     if (!props.product.ean) {
-        issues.push('sem EAN');
+        issues.push(t('plannerate.sidebar.product_card.issue_no_ean'));
     }
 
-    return issues.length ? `Sem dimensão: ${issues.join(', ')}` : 'Sem dimensão';
+    return issues.length
+        ? t('plannerate.sidebar.product_card.tooltip_without_dimensions_with_issues', {
+              issues: issues.join(', '),
+          })
+        : t('plannerate.sidebar.product_card.without_dimensions');
 };
 
 // Timer para detectar duplo-clique e evitar seleção indesejada
@@ -145,11 +155,15 @@ const handleDragStart = (event: DragEvent) => {
             );
             event.dataTransfer.setData(
                 'text/plain',
-                `${selectedProducts.length} produtos selecionados`,
+                t('plannerate.sidebar.product_card.selected_products', {
+                    count: selectedProducts.length,
+                }),
             );
             
             // Toast informativo
-            toast.info(`Arrastando ${selectedProducts.length} produtos`, {
+            toast.info(t('plannerate.sidebar.product_card.dragging_products', {
+                count: selectedProducts.length,
+            }), {
                 duration: 1500,
             });
         } else {
@@ -164,7 +178,7 @@ const handleDragStart = (event: DragEvent) => {
             );
             event.dataTransfer.setData(
                 'text/plain',
-                props.product.name || 'Product',
+                props.product.name || t('plannerate.sidebar.product_card.product_fallback'),
             );
         }
 
@@ -208,7 +222,9 @@ const handlerselectClick = (event: MouseEvent) => {
 const handlerDbClick = () => {
     if (!props.product.has_dimensions) {
         toast.error(
-            `Produto "${props.product.name}" não tem dimensões e não pode ser adicionado à prateleira.`,
+            t('plannerate.sidebar.product_card.error_no_dimensions', {
+                product: props.product.name,
+            }),
         );
 
         return;
@@ -233,9 +249,9 @@ const handlerDbClick = () => {
         );
     } else {
         console.warn(
-            '⚠️ Selecione uma prateleira antes de adicionar o produto',
+            t('plannerate.sidebar.product_card.warn_select_shelf_first'),
         );
-        toast.error('Selecione uma prateleira antes de adicionar o produto');
+        toast.error(t('plannerate.sidebar.product_card.error_select_shelf_first'));
     }
 };
 onMounted(() => {

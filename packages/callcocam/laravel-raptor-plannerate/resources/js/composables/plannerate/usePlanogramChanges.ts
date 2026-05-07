@@ -4,6 +4,7 @@
 
 import { router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import { useT } from '@/composables/useT';
 import type { EntityType } from '@/types/planogram';
 
 // ============================================================================
@@ -136,6 +137,7 @@ const autoSaveEnabled = ref(
 // ============================================================================
 
 export function usePlanogramChanges() {
+    const { t } = useT();
     // ========================================================================
     // CONFIGURAÇÃO
     // ========================================================================
@@ -338,7 +340,9 @@ export function usePlanogramChanges() {
             const targetRoute = route || autoSaveRoute.value;
 
             if (!targetRoute) {
-                throw new Error('Rota de salvamento não configurada');
+                throw new Error(
+                    t('plannerate.composables.planogram_changes.save_route_not_configured'),
+                );
             }
 
             // Envia via Inertia

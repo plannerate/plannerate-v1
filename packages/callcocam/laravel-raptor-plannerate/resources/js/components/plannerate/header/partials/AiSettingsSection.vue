@@ -4,6 +4,7 @@
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
+import { useT } from '@/composables/useT';
 
 interface AiOption {
     value: string;
@@ -24,6 +25,8 @@ defineProps<{
     form: AiFormState;
     aiModelOptions: AiOption[];
 }>();
+
+const { t } = useT();
 </script>
 
 <template>
@@ -32,11 +35,11 @@ defineProps<{
         class="space-y-4 rounded-lg border border-purple-200 bg-purple-50 p-4 dark:border-purple-800 dark:bg-purple-950/20"
     >
         <Label class="text-base font-semibold text-purple-900 dark:text-purple-100">
-            ⚙️ Configurações de IA
+            {{ t('plannerate.header.ai_settings.title') }}
         </Label>
 
         <div class="space-y-3">
-            <Label>Modelo de IA</Label>
+            <Label>{{ t('plannerate.header.ai_settings.model') }}</Label>
             <RadioGroup v-model="form.model">
                 <div
                     v-for="option in aiModelOptions"
@@ -53,41 +56,41 @@ defineProps<{
         </div>
 
         <div class="space-y-3 pt-2">
-            <Label class="text-sm font-semibold">Recursos Avançados</Label>
+            <Label class="text-sm font-semibold">{{ t('plannerate.header.ai_settings.advanced_features') }}</Label>
 
             <div class="flex items-center justify-between">
                 <Label for="visual-grouping" class="text-sm font-normal">
-                    Agrupamento Visual por Subcategoria
+                    {{ t('plannerate.header.ai_settings.visual_grouping') }}
                 </Label>
                 <Switch id="visual-grouping" v-model="form.apply_visual_grouping" />
             </div>
 
             <div class="flex items-center justify-between">
                 <Label for="intelligent-ordering" class="text-sm font-normal">
-                    Ordenação Inteligente (Marca → Linha → Tamanho)
+                    {{ t('plannerate.header.ai_settings.intelligent_ordering') }}
                 </Label>
                 <Switch id="intelligent-ordering" v-model="form.intelligent_ordering" />
             </div>
 
             <div class="flex items-center justify-between">
                 <Label for="load-balancing" class="text-sm font-normal">
-                    Balanceamento de Carga entre Prateleiras
+                    {{ t('plannerate.header.ai_settings.load_balancing') }}
                 </Label>
                 <Switch id="load-balancing" v-model="form.load_balancing" />
             </div>
         </div>
 
         <div class="space-y-2">
-            <Label for="ai-instructions">Instruções Adicionais (opcional)</Label>
+            <Label for="ai-instructions">{{ t('plannerate.header.ai_settings.additional_instructions') }}</Label>
             <textarea
                 id="ai-instructions"
                 v-model="form.additional_instructions"
                 class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="Ex: Priorizar produtos orgânicos, Separar produtos diet, etc..."
+                :placeholder="t('plannerate.header.ai_settings.additional_instructions_placeholder')"
                 maxlength="1000"
             />
             <p class="text-xs text-muted-foreground">
-                Dê instruções específicas para a IA (máx 1000 caracteres)
+                {{ t('plannerate.header.ai_settings.additional_instructions_hint') }}
             </p>
         </div>
     </div>

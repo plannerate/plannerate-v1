@@ -333,6 +333,7 @@ targetSection.shelves = [];
         productData: any | undefined,
         onProductUsed: ((productId: string) => void) | undefined,
         recordChange: (change: any) => void,
+        productDoesNotFitMessage = 'Product does not fit on selected shelf.',
     ): Segment | null {
         const found = findShelfById(shelfId);
 
@@ -366,7 +367,7 @@ targetSection.shelves = [];
         );
 
         if (!validation.isValid) {
-            toast.error('O produto não cabe na prateleira selecionada.');
+            toast.error(productDoesNotFitMessage);
             console.warn('❌ Produto não cabe na shelf:', {
                 productName: productData?.name,
                 totalWidth: validation.totalWidth,

@@ -7,10 +7,10 @@
         </div>
         <div class="space-y-1">
             <p class="text-sm font-medium text-foreground">
-                Nenhum item selecionado
+                {{ t('plannerate.sidebar.no_selection.title') }}
             </p>
             <p class="text-xs text-muted-foreground">
-                Selecione um produto ou elemento do planograma
+                {{ t('plannerate.sidebar.no_selection.description') }}
             </p>
         </div>
     </div>
@@ -18,4 +18,7 @@
 
 <script setup lang="ts">
 import { MousePointerClick } from 'lucide-vue-next';
+import { useT } from '@/composables/useT';
+
+const { t } = useT();
 </script>

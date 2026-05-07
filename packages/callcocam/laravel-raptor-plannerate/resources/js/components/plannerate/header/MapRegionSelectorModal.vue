@@ -9,6 +9,7 @@ import {
   Check,
 } from 'lucide-vue-next'
 import { computed, nextTick, ref, watch } from 'vue'
+import { useT } from '@/composables/useT'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -59,6 +60,7 @@ const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
   (e: 'select', regionId: string | null): void
 }>()
+const { t } = useT()
 
 // Refs
 const mapContainer = ref<HTMLDivElement | null>(null)
@@ -118,13 +120,13 @@ const selectRegion = (region: Region) => {
 
 const regionTypeLabel = (type: string) => {
   const labels: Record<string, string> = {
-    gondola: 'Gôndola',
-    island: 'Ilha',
+    gondola: t('plannerate.map_region.types.gondola'),
+    island: t('plannerate.map_region.types.island'),
     checkout: 'Checkout',
-    entrance: 'Entrada',
-    exit: 'Saída',
-    storage: 'Estoque',
-    other: 'Outro',
+    entrance: t('plannerate.map_region.types.entrance'),
+    exit: t('plannerate.map_region.types.exit'),
+    storage: t('plannerate.map_region.types.storage'),
+    other: t('plannerate.map_region.types.other'),
   }
 
   return labels[type] || type
@@ -198,10 +200,10 @@ watch(() => props.open, (newVal: boolean) => {
       <DialogHeader>
         <DialogTitle class="flex items-center gap-2">
           <MapPin class="h-5 w-5" />
-          Vincular Gôndola ao Mapa
+          {{ t('plannerate.map_region.title') }}
         </DialogTitle>
         <DialogDescription>
-          Selecione a posição de <strong>{{ gondolaName || 'esta gôndola' }}</strong> no mapa da loja
+          {{ t('plannerate.map_region.select_position') }} <strong>{{ gondolaName || t('plannerate.map_region.this_gondola') }}</strong> {{ t('plannerate.map_region.in_store_map') }}
           <strong v-if="storeName">{{ storeName }}</strong>
         </DialogDescription>
       </DialogHeader>
@@ -210,8 +212,8 @@ watch(() => props.open, (newVal: boolean) => {
       <div v-if="!hasMap" class="flex-1 flex items-center justify-center p-8">
         <div class="text-center text-muted-foreground">
           <Map class="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p class="text-sm">A loja não possui um mapa configurado</p>
-          <p class="text-xs mt-1">Configure o mapa na edição da loja</p>
+          <p class="text-sm">{{ t('plannerate.map_region.no_map') }}</p>
+          <p class="text-xs mt-1">{{ t('plannerate.map_region.configure_map') }}</p>
         </div>
       </div>
 
@@ -221,7 +223,7 @@ watch(() => props.open, (newVal: boolean) => {
         <div v-if="selectedRegion" class="flex items-center gap-2 p-2 bg-muted rounded-md">
           <div class="w-4 h-4 rounded"
             :style="{ backgroundColor: selectedRegion.color || 'rgba(59, 130, 246, 0.5)' }" />
-          <span class="text-sm font-medium">{{ selectedRegion.label || 'Área sem nome' }}</span>
+          <span class="text-sm font-medium">{{ selectedRegion.label || t('plannerate.map_region.unnamed_area') }}</span>
           <span v-if="selectedRegion.type" class="text-xs text-muted-foreground">
             ({{ regionTypeLabel(selectedRegion.type) }})
           </span>
@@ -247,7 +249,7 @@ watch(() => props.open, (newVal: boolean) => {
 
           <!-- Hint -->
           <div class="absolute top-2 right-2 z-10 bg-background/90 backdrop-blur rounded-md px-2 py-1 shadow-sm">
-            <span class="text-xs text-muted-foreground">Clique em uma área para selecionar</span>
+            <span class="text-xs text-muted-foreground">{{ t('plannerate.map_region.click_to_select') }}</span>
           </div>
 
           <!-- Legend (bottom of map) -->
@@ -255,11 +257,11 @@ watch(() => props.open, (newVal: boolean) => {
             class="absolute bottom-2 left-2 z-10 flex items-center gap-3 bg-background/90 backdrop-blur rounded-md px-2 py-1 shadow-sm">
             <div class="flex items-center gap-1 text-xs">
               <div class="w-2.5 h-2.5 rounded-full bg-green-500" />
-              <span>Esta gôndola</span>
+              <span>{{ t('plannerate.map_region.this_gondola') }}</span>
             </div>
             <div class="flex items-center gap-1 text-xs">
               <div class="w-2.5 h-2.5 rounded-full bg-amber-500" />
-              <span>Outra gôndola</span>
+              <span>{{ t('plannerate.map_region.other_gondola') }}</span>
             </div>
           </div>
 
@@ -317,16 +319,16 @@ watch(() => props.open, (newVal: boolean) => {
 
       <DialogFooter class="flex items-center justify-end gap-2 z-[100] p-2">
         <Button type="button" variant="outline" @click="handleCancel">
-          Cancelar
+          {{ t('app.actions.cancel') }}
         </Button>
         <Button v-if="canUnlink" type="button" variant="outline"
           class="text-destructive hover:text-destructive hover:bg-destructive/10" @click="selectedRegionId = null">
           <X class="h-4 w-4 mr-2" />
-          Desvincular
+          {{ t('plannerate.map_region.unlink') }}
         </Button>
         <Button type="button" :disabled="!hasChanged" @click="handleConfirm">
           <Check class="h-4 w-4 mr-2" />
-          Confirmar
+          {{ t('app.actions.confirm') }}
         </Button>
       </DialogFooter>
     </DialogContent>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Calculator } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
+import { useT } from '@/composables/useT';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -42,6 +43,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<Emits>();
+const { t } = useT();
 
 // Form state
 const form = ref<FormData>({
@@ -89,9 +91,9 @@ const handleOpenChange = (value: boolean) => {
     <Dialog :open="open" @update:open="handleOpenChange">
         <DialogContent class="max-w-2xl max-h-[90vh] overflow-y-auto z-[600]">
             <DialogHeader class="pb-3">
-                <DialogTitle class="text-base">Parâmetros de Análise de Assortimento</DialogTitle>
+                <DialogTitle class="text-base">{{ t('plannerate.analysis.abc_params.title') }}</DialogTitle>
                 <DialogDescription class="text-xs">
-                    Configure os parâmetros de datas, pesos e cortes para a análise de assortimento.
+                    {{ t('plannerate.analysis.abc_params.description') }}
                 </DialogDescription>
             </DialogHeader>
 
@@ -111,10 +113,10 @@ const handleOpenChange = (value: boolean) => {
                 />
                 <!-- Pesos -->
                 <div class="space-y-2">
-                    <Label class="text-xs">Pesos da Média Ponderada</Label>
+                    <Label class="text-xs">{{ t('plannerate.analysis.abc_params.weighted_average') }}</Label>
                     <div class="grid grid-cols-3 gap-3">
                         <div class="space-y-1.5">
-                            <Label class="text-[10px] text-muted-foreground">Peso Quantidade</Label>
+                            <Label class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.abc_params.weight_quantity') }}</Label>
                             <Input
                                 v-model.number="form.peso_qtde"
                                 type="number"
@@ -125,7 +127,7 @@ const handleOpenChange = (value: boolean) => {
                             />
                         </div>
                         <div class="space-y-1.5">
-                            <Label class="text-[10px] text-muted-foreground">Peso Valor</Label>
+                            <Label class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.abc_params.weight_value') }}</Label>
                             <Input
                                 v-model.number="form.peso_valor"
                                 type="number"
@@ -136,7 +138,7 @@ const handleOpenChange = (value: boolean) => {
                             />
                         </div>
                         <div class="space-y-1.5">
-                            <Label class="text-[10px] text-muted-foreground">Peso Margem</Label>
+                            <Label class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.abc_params.weight_margin') }}</Label>
                             <Input
                                 v-model.number="form.peso_margem"
                                 type="number"
@@ -148,16 +150,16 @@ const handleOpenChange = (value: boolean) => {
                         </div>
                     </div>
                     <p class="text-[10px] text-muted-foreground">
-                        A soma dos pesos deve ser igual a 1.0
+                        {{ t('plannerate.analysis.abc_params.weights_sum_hint') }}
                     </p>
                 </div>
 
                 <!-- Limites de Classificação -->
                 <div class="space-y-2">
-                    <Label class="text-xs">Limites de Classificação (%)</Label>
+                    <Label class="text-xs">{{ t('plannerate.analysis.abc_params.class_limits') }}</Label>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1.5">
-                            <Label class="text-[10px] text-muted-foreground">Limite Classe A</Label>
+                            <Label class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.abc_params.class_a_limit') }}</Label>
                             <Input
                                 v-model.number="form.corte_a"
                                 type="number"
@@ -168,7 +170,7 @@ const handleOpenChange = (value: boolean) => {
                             />
                         </div>
                         <div class="space-y-1.5">
-                            <Label class="text-[10px] text-muted-foreground">Limite Classe B</Label>
+                            <Label class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.abc_params.class_b_limit') }}</Label>
                             <Input
                                 v-model.number="form.corte_b"
                                 type="number"
@@ -180,16 +182,15 @@ const handleOpenChange = (value: boolean) => {
                         </div>
                     </div>
                     <p class="text-[10px] text-muted-foreground">
-                        Produtos até o limite A são classe A, entre A e B são classe B, e acima de B são classe C.
+                        {{ t('plannerate.analysis.abc_params.class_limits_hint') }}
                     </p>
                 </div>
 
                 <Button type="submit" class="w-full">
                     <Calculator class="mr-2 size-4" />
-                    Executar Análise
+                    {{ t('plannerate.analysis.abc_params.run_analysis') }}
                 </Button>
             </form>
         </DialogContent>
     </Dialog>
 </template>
-

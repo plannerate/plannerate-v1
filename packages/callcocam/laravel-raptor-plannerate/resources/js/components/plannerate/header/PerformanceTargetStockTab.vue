@@ -15,7 +15,7 @@
                         class="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
                     ></div>
                     <p class="text-sm text-muted-foreground">
-                        Calculando estoque alvo...
+                        {{ t('plannerate.performance.target_stock_tab.loading') }}
                     </p>
                 </div>
             </CardContent>
@@ -31,16 +31,16 @@
                 <div class="flex flex-wrap items-center gap-2">
                     <div class="inline-flex items-center gap-1.5 rounded-md border border-border bg-accent/30 px-2 py-1 text-[11px] font-medium text-foreground">
                         <Settings class="size-3.5 text-muted-foreground" />
-                        Parâmetros de Estoque Alvo
+                        {{ t('plannerate.performance.target_stock_tab.parameters') }}
                     </div>
 
                     <div class="inline-flex min-w-32 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
-                        <span class="text-muted-foreground">Tipo</span>
+                        <span class="text-muted-foreground">{{ t('plannerate.performance.common.type') }}</span>
                         <span class="font-medium">
                             {{
                                 form.table_type === 'sales'
-                                    ? 'Vendas'
-                                    : 'Resumo Mensal'
+                                    ? t('plannerate.performance.common.sales')
+                                    : t('plannerate.performance.common.monthly_summary')
                             }}
                         </span>
                     </div>
@@ -51,7 +51,7 @@
                     >
                         <span class="inline-flex items-center gap-1 text-muted-foreground">
                             <Calendar class="size-3.5" />
-                            Inicial
+                            {{ t('plannerate.performance.common.start') }}
                         </span>
                         <span class="font-medium">{{ formatDate(form.date_from) }}</span>
                     </div>
@@ -62,7 +62,7 @@
                     >
                         <span class="inline-flex items-center gap-1 text-muted-foreground">
                             <Calendar class="size-3.5" />
-                            Final
+                            {{ t('plannerate.performance.common.end') }}
                         </span>
                         <span class="font-medium">{{ formatDate(form.date_to) }}</span>
                     </div>
@@ -73,7 +73,7 @@
                     >
                         <span class="inline-flex items-center gap-1 text-muted-foreground">
                             <Calendar class="size-3.5" />
-                            Mês inicial
+                            {{ t('plannerate.performance.common.start_month') }}
                         </span>
                         <span class="font-medium">{{ formatMonth(form.start_month) }}</span>
                     </div>
@@ -84,7 +84,7 @@
                     >
                         <span class="inline-flex items-center gap-1 text-muted-foreground">
                             <Calendar class="size-3.5" />
-                            Mês final
+                            {{ t('plannerate.performance.common.end_month') }}
                         </span>
                         <span class="font-medium">{{ formatMonth(form.end_month) }}</span>
                     </div>
@@ -96,7 +96,7 @@
                         @click="openParametersModal"
                     > 
                             <Settings /> 
-                        <span class="text-[11px]">Configurar</span>
+                        <span class="text-[11px]">{{ t('plannerate.performance.common.configure') }}</span>
                     </Button>
                 </div>
             </template>
@@ -105,10 +105,9 @@
         <!-- Mensagem quando não há resultados -->
         <Card v-else-if="!loading && hasCalculated">
             <CardContent class="py-6 text-center text-muted-foreground">
-                <p class="text-sm">Nenhum resultado encontrado</p>
+                <p class="text-sm">{{ t('plannerate.performance.common.no_results') }}</p>
                 <p class="mt-1 text-xs">
-                    Configure os parâmetros e execute o cálculo para ver os
-                    resultados.
+                    {{ t('plannerate.performance.target_stock_tab.empty_description') }}
                 </p>
             </CardContent>
         </Card>
@@ -119,14 +118,14 @@
                 <div class="flex flex-col items-center gap-3">
                     <Package class="size-10 text-muted-foreground/50" />
                     <div>
-                        <p class="text-sm font-medium">Nenhum cálculo realizado</p>
-                        <p class="mt-1 text-xs text-muted-foreground">Configure os parâmetros e execute o cálculo de estoque alvo.</p>
+                        <p class="text-sm font-medium">{{ t('plannerate.performance.target_stock_tab.no_calculation') }}</p>
+                        <p class="mt-1 text-xs text-muted-foreground">{{ t('plannerate.performance.target_stock_tab.no_calculation_description') }}</p>
                     </div>
                     <Button type="button" size="sm" class="gap-2" @click="openParametersModal">
                         <ActionIconBox variant="outline" class="[&_svg]:size-3.5">
                             <Settings />
                         </ActionIconBox>
-                        Configurar e Calcular
+                        {{ t('plannerate.performance.common.configure_and_calculate') }}
                     </Button>
                 </div>
             </CardContent>
@@ -139,9 +138,10 @@ import { router, usePage } from '@inertiajs/vue3';
 import { Calendar, Package, Settings } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { calculateTargetStockApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
+import { useT } from '@/composables/useT';
 import TargetStockParamsModal from '@/components/plannerate/analysis/TargetStockParamsModal.vue';
 import TargetStockResultsList from '@/components/plannerate/analysis/TargetStockResultsList.vue';
-import { Button } from '@/components/ui/button'; 
+import { Button } from '@/components/ui/button';  
 import {
     Card,
     CardContent,
@@ -179,6 +179,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 const page = usePage<{ subdomain?: string }>();
+const { t } = useT();
 const isBrowser = typeof window !== 'undefined';
 
 const resolvedSubdomain = computed(() => {
@@ -238,7 +239,7 @@ watch(
 
 const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) {
-return 'Não definida';
+        return t('plannerate.performance.common.not_defined_feminine');
 }
 
     try {
@@ -260,7 +261,7 @@ return dateString;
 
 const formatMonth = (monthString: string | null | undefined): string => {
     if (!monthString) {
-return 'Não definida';
+        return t('plannerate.performance.common.not_defined_feminine');
 }
 
     try {

@@ -26,8 +26,8 @@
                 <p class="text-sm text-muted-foreground">
                     {{
                         searchQuery
-                            ? 'Nenhum produto encontrado'
-                            : 'Nenhum produto disponível'
+                            ? t('plannerate.sidebar.products.none_found')
+                            : t('plannerate.sidebar.products.none_available')
                     }}
                 </p>
             </div>
@@ -44,7 +44,7 @@
                 v-if="showEndMessage"
                 class="py-4 text-center text-xs text-muted-foreground"
             >
-                Todos os produtos carregados
+                {{ t('plannerate.sidebar.products.all_loaded') }}
             </div>
         </template>
     </div>
@@ -52,6 +52,7 @@
 
 <script setup lang="ts">
 import { Package } from 'lucide-vue-next';
+import { useT } from '@/composables/useT';
 import type { Product } from '@/types/planogram';
 import CardProduct from './Card.vue';
 
@@ -64,4 +65,5 @@ interface Props {
 }
 
 defineProps<Props>();
+const { t } = useT();
 </script>

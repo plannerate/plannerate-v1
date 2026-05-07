@@ -3,6 +3,7 @@
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useT } from '@/composables/useT';
 
 interface FacingsFormState {
     min_facings: number;
@@ -12,14 +13,16 @@ interface FacingsFormState {
 defineProps<{
     form: FacingsFormState;
 }>();
+
+const { t } = useT();
 </script>
 
 <template>
     <div class="space-y-3">
-        <Label class="text-base font-semibold">Configurações de Frentes</Label>
+        <Label class="text-base font-semibold">{{ t('plannerate.header.facings.title') }}</Label>
         <div class="grid grid-cols-2 gap-4">
             <div class="space-y-2">
-                <Label for="min-facings">Frentes Mínimo</Label>
+                <Label for="min-facings">{{ t('plannerate.header.facings.min') }}</Label>
                 <Input
                     id="min-facings"
                     v-model.number="form.min_facings"
@@ -28,11 +31,11 @@ defineProps<{
                     max="10"
                 />
                 <p class="text-xs text-muted-foreground">
-                    Mínimo de produtos lado a lado (1-10)
+                    {{ t('plannerate.header.facings.min_hint') }}
                 </p>
             </div>
             <div class="space-y-2">
-                <Label for="max-facings">Frentes Máximo</Label>
+                <Label for="max-facings">{{ t('plannerate.header.facings.max') }}</Label>
                 <Input
                     id="max-facings"
                     v-model.number="form.max_facings"
@@ -41,7 +44,7 @@ defineProps<{
                     max="20"
                 />
                 <p class="text-xs text-muted-foreground">
-                    Máximo de produtos lado a lado (1-20)
+                    {{ t('plannerate.header.facings.max_hint') }}
                 </p>
             </div>
         </div>

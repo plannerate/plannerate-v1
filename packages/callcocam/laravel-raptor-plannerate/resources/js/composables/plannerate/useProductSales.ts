@@ -1,5 +1,6 @@
 import type { Ref } from 'vue';
 import { ref } from 'vue';
+import { useT } from '@/composables/useT';
 
 export interface ProductSalesSummary {
     total_sales: number;
@@ -40,13 +41,14 @@ export interface ProductSalesData {
  * Composable para carregar e gerenciar dados de vendas de produtos
  */
 export function useProductSales() {
+    const { t } = useT();
     const salesData: Ref<ProductSalesData | null> = ref(null);
     const isLoading = ref(false);
     const error: Ref<string | null> = ref(null);
 
     async function loadSales(productId: string) {
         if (!productId) {
-            error.value = 'ID do produto é obrigatório';
+            error.value = t('plannerate.composables.product_sales.required_product_id');
 
             return;
         }
@@ -61,14 +63,18 @@ export function useProductSales() {
             );
 
             if (!response.ok) {
-                throw new Error('Erro ao carregar dados de vendas');
+                throw new Error(
+                    t('plannerate.composables.product_sales.load_sales_failed'),
+                );
             }
 
             const data: ProductSalesData = await response.json();
             salesData.value = data;
         } catch (err) {
             error.value =
-                err instanceof Error ? err.message : 'Erro desconhecido';
+                err instanceof Error
+                    ? err.message
+                    : t('plannerate.composables.product_sales.unknown_error');
             console.error('Erro ao carregar vendas:', err);
         } finally {
             isLoading.value = false;

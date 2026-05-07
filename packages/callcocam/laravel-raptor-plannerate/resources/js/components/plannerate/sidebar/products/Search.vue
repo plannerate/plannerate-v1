@@ -12,7 +12,7 @@
                     ($event.target as HTMLInputElement).value,
                 )
             "
-            placeholder="Buscar produtos..."
+            :placeholder="t('plannerate.sidebar.products.search_placeholder')"
             :disabled="disabled"
             class="w-full rounded-md border border-input bg-background py-2 pr-3 pl-9 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
         />
@@ -21,6 +21,7 @@
 
 <script setup lang="ts">
 import { Search } from 'lucide-vue-next';
+import { useT } from '@/composables/useT';
 
 interface Props {
     modelValue: string;
@@ -28,6 +29,7 @@ interface Props {
 }
 
 defineProps<Props>();
+const { t } = useT();
 
 const emit = defineEmits<{
     'update:modelValue': [value: string];

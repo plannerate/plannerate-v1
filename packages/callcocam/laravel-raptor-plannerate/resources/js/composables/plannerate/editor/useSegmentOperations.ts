@@ -16,6 +16,7 @@ export function moveSegmentToShelf(
     segmentId: string,
     targetShelfId: string,
     recordChange: (change: any) => void,
+    productDoesNotFitMessage = 'Product does not fit on destination shelf.',
 ): boolean {
     if (!currentGondola.value) {
         console.warn('⚠️ Nenhuma gôndola carregada');
@@ -80,7 +81,7 @@ break;
         );
 
         if (!validation.isValid) {
-            toast.error('O produto não cabe na prateleira de destino.');
+            toast.error(productDoesNotFitMessage);
             console.warn('❌ Segmento não cabe na shelf de destino:', {
                 productName: segment.layer.product?.name,
                 totalWidth: validation.totalWidth,
@@ -170,6 +171,7 @@ export function copySegmentToShelf(
     segmentId: string,
     targetShelfId: string,
     recordChange: (change: any) => void,
+    productDoesNotFitMessage = 'Product does not fit on destination shelf.',
 ): boolean {
     if (!currentGondola.value) {
         console.warn('⚠️ Nenhuma gôndola carregada');
@@ -223,7 +225,7 @@ break;
         );
 
         if (!validation.isValid) {
-            toast.error('O produto não cabe na prateleira de destino.');
+            toast.error(productDoesNotFitMessage);
             console.warn('❌ Segmento não cabe na shelf de destino:', {
                 productName: segment.layer.product?.name,
                 totalWidth: validation.totalWidth,

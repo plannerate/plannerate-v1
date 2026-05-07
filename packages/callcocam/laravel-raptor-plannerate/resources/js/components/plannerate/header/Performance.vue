@@ -5,10 +5,10 @@
             <DialogHeader class="px-4 pt-4 pb-2">
                 <DialogTitle class="flex items-center gap-2 text-lg">
                     <Gauge class="size-4" />
-                    Análise de Performance
+                    {{ t('plannerate.performance.title') }}
                 </DialogTitle>
                 <DialogDescription class="text-xs">
-                    Visualize métricas de ABC, Estoque Alvo e BCG para os produtos da gôndola
+                    {{ t('plannerate.performance.description') }}
                 </DialogDescription>
             </DialogHeader>
 
@@ -23,13 +23,13 @@
                     <TabsTrigger value="target-stock">
                         <div class="flex items-center gap-1.5">
                             <Package class="size-3.5 shrink-0" />
-                            <span class="leading-tight">Estoque Alvo</span>
+                            <span class="leading-tight">{{ t('plannerate.performance.target_stock') }}</span>
                         </div>
                     </TabsTrigger>
                     <TabsTrigger value="bcg" disabled>
                         <div class="flex items-center gap-1.5">
                             <TrendingUp class="size-3.5 shrink-0" />
-                            <span class="leading-tight">BCG (Em breve)</span>
+                            <span class="leading-tight">{{ t('plannerate.performance.bcg_soon') }}</span>
                         </div>
                     </TabsTrigger>
                 </TabsList>
@@ -46,8 +46,8 @@
                     <div class="flex items-center justify-center h-full text-muted-foreground">
                         <div class="text-center">
                             <TrendingUp class="mx-auto size-12 mb-4 opacity-50" />
-                            <p class="text-lg font-medium">Análise BCG</p>
-                            <p class="text-sm">Em breve</p>
+                            <p class="text-lg font-medium">{{ t('plannerate.performance.bcg_title') }}</p>
+                            <p class="text-sm">{{ t('plannerate.performance.soon') }}</p>
                         </div>
                     </div>
                 </TabsContent>
@@ -59,6 +59,7 @@
 <script setup lang="ts">
 import { BarChart3, Gauge, Package, TrendingUp } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
+import { useT } from '@/composables/useT';
 import {
     Dialog,
     DialogContent,
@@ -101,6 +102,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<Emits>();
+const { t } = useT();
 
 const isOpen = ref(props.open);
 const activeTab = ref('abc'); 

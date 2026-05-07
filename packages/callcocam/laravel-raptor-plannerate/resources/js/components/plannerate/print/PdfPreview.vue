@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Columns, Download, Loader2, Minus, Plus, Rows } from 'lucide-vue-next'
 import { computed, nextTick, ref, watch } from 'vue'
+import { useT } from '@/composables/useT'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAbcClassification } from '@/composables/plannerate/useAbcClassification'
@@ -35,6 +36,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const { t } = useT()
 const editor = usePlanogramEditor()
 const pdfGenerator = usePdfGenerator()
 const abcClassification = useAbcClassification()
@@ -113,7 +115,7 @@ async function generatePDF(autoDownload = false, selectedSectionIds?: string[]) 
             specificElements
         )
     } catch (error) {
-        alert('Erro ao gerar PDF: ' + (error instanceof Error ? error.message : 'Erro desconhecido'))
+        alert(t('plannerate.print.preview.error_prefix') + (error instanceof Error ? error.message : t('plannerate.header.auto_generate.unknown_error')))
     } finally {
         abcClassification.setVisibility(previousAbcVisibility)
         targetStockAnalysis.setVisibility(previousTargetStockVisibility)
@@ -171,7 +173,7 @@ const extraHeight = 0; // Sem espaço extra — seção usa altura real igual ao
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5">
                         <span class="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-300">
                             <span class="text-slate-400 dark:text-slate-500">⊞</span>
-                            {{ sections.length }} módulo{{ sections.length !== 1 ? 's' : '' }}
+                            {{ sections.length }} {{ t('plannerate.print.module_selector.module') }}{{ sections.length !== 1 ? 's' : '' }}
                         </span>
                         <span v-if="gondola.location" class="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-300">
                             <span class="text-slate-400 dark:text-slate-500">📍</span>
@@ -183,11 +185,11 @@ const extraHeight = 0; // Sem espaço extra — seção usa altura real igual ao
                         </span>
                         <span class="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-300">
                             <span class="text-slate-400 dark:text-slate-500">→</span>
-                            {{ gondola.flow === 'right_to_left' ? 'Direita → Esquerda' : 'Esquerda → Direita' }}
+                            {{ gondola.flow === 'right_to_left' ? t('plannerate.print.preview.right_to_left') : t('plannerate.print.preview.left_to_right') }}
                         </span>
                         <span class="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-300">
                             <span class="text-slate-400 dark:text-slate-500">⊡</span>
-                            Scale {{ gondola.scale_factor ?? 1 }}×
+                            {{ t('plannerate.print.preview.scale') }} {{ gondola.scale_factor ?? 1 }}×
                         </span>
                     </div>
                 </div>
@@ -206,16 +208,16 @@ const extraHeight = 0; // Sem espaço extra — seção usa altura real igual ao
 
                     <DropdownPerformance :gondola="(gondola as any)" :analysis="analysis" />
                     <Button @click="toggleLayout" variant="outline" size="sm"
-                        :title="layoutDirection === 'column' ? 'Mudar para linha' : 'Mudar para coluna'">
+                        :title="layoutDirection === 'column' ? t('plannerate.print.preview.switch_to_row') : t('plannerate.print.preview.switch_to_column')">
                         <Rows v-if="layoutDirection === 'column'" class="mr-2 h-4 w-4" />
                         <Columns v-else class="mr-2 h-4 w-4" />
-                        {{ layoutDirection === 'column' ? 'Em Linha' : 'Em Coluna' }}
+                        {{ layoutDirection === 'column' ? t('plannerate.print.preview.in_row') : t('plannerate.print.preview.in_column') }}
                     </Button> 
 
                     <Button @click="handleDownloadPdf" :disabled="pdfGenerator.isGenerating.value || isDownloading" size="sm">
                         <Loader2 v-if="isDownloading" class="mr-2 h-4 w-4 animate-spin" />
                         <Download v-else class="mr-2 h-4 w-4" />
-                        {{ isDownloading ? 'Baixando...' : 'Baixar PDF' }}
+                        {{ isDownloading ? t('plannerate.print.preview.downloading') : t('plannerate.print.preview.download_pdf') }}
                     </Button>
                 </div>
             </div>

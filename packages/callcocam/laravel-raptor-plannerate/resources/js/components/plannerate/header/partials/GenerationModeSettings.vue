@@ -3,6 +3,7 @@
 
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useT } from '@/composables/useT';
 
 interface GenerationFormState {
     generate_by_sections: boolean;
@@ -16,6 +17,8 @@ defineProps<{
         can_autogenate_gondola_ia: boolean;
     };
 }>();
+
+const { t } = useT();
 </script>
 
 <template>
@@ -26,13 +29,13 @@ defineProps<{
         <div class="flex items-center justify-between">
             <div class="space-y-0.5">
                 <Label for="generate-by-sections" class="text-base font-semibold">
-                    Gerar por section (módulo a módulo)
+                    {{ t('plannerate.header.generation_mode.by_section') }}
                 </Label>
                 <div class="text-sm text-muted-foreground">
                     {{
                         form.generate_by_sections
-                            ? '📐 Gera section por section (regras ou IA por módulo via Laravel AI). Mais previsível.'
-                            : '📦 Gera a gôndola inteira de uma vez (algoritmo ou IA Prism).'
+                            ? t('plannerate.header.generation_mode.by_section_enabled')
+                            : t('plannerate.header.generation_mode.by_section_disabled')
                     }}
                 </div>
             </div>
@@ -47,17 +50,17 @@ defineProps<{
         <div class="flex items-center justify-between">
             <div class="space-y-0.5">
                 <Label for="use-ai" class="text-base font-semibold">
-                    {{ form.use_ai ? 'Geração com IA' : 'Algoritmo (regras)' }}
+                    {{ form.use_ai ? t('plannerate.header.generation_mode.ai_generation') : t('plannerate.header.generation_mode.rules_algorithm') }}
                 </Label>
                 <div class="text-sm text-muted-foreground">
                     {{
                         form.generate_by_sections
                             ? form.use_ai
-                                ? '🤖 IA por section (Laravel AI SDK, por módulo)'
-                                : '⚡ Regras de merchandising por section'
+                                ? t('plannerate.header.generation_mode.ai_by_section')
+                                : t('plannerate.header.generation_mode.rules_by_section')
                             : form.use_ai
-                              ? '🤖 IA gôndola inteira (Prism, ~8-15s)'
-                              : '⚡ Algoritmo rápido gôndola inteira (~2s)'
+                              ? t('plannerate.header.generation_mode.ai_full_gondola')
+                              : t('plannerate.header.generation_mode.fast_algorithm_full_gondola')
                     }}
                 </div>
             </div>

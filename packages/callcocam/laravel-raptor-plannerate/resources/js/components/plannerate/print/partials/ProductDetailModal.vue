@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useAbcClassification } from '@/composables/plannerate/useAbcClassification'
 import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis'
+import { useT } from '@/composables/useT'
 import type { Product } from '@/types/planogram'
 
 interface Props {
@@ -21,6 +22,7 @@ const emit = defineEmits<{
 
 const { getClassification } = useAbcClassification()
 const { getTargetStockData, calculateSegmentCapacity, getStockStatus, DEFAULT_TOLERANCE } = useTargetStockAnalysis()
+const { t } = useT()
 
 // Classificação ABC
 const abcClassification = computed(() => {
@@ -78,9 +80,9 @@ const abcBadgeClass = computed(() => {
 // Status do estoque com cor
 const stockStatusInfo = computed(() => {
   switch (stockStatus.value) {
-    case 'increase': return { label: 'Aumentar Espaço', class: 'bg-red-500 hover:bg-red-500 text-white', icon: '↑' }
-    case 'decrease': return { label: 'Diminuir Espaço', class: 'bg-yellow-500 hover:bg-yellow-500 text-gray-900', icon: '↓' }
-    case 'ok': return { label: 'Espaço Adequado', class: 'bg-green-500 hover:bg-green-500 text-white', icon: '✓' }
+    case 'increase': return { label: t('plannerate.print.product_detail.increase_space'), class: 'bg-red-500 hover:bg-red-500 text-white', icon: '↑' }
+    case 'decrease': return { label: t('plannerate.print.product_detail.decrease_space'), class: 'bg-yellow-500 hover:bg-yellow-500 text-gray-900', icon: '↓' }
+    case 'ok': return { label: t('plannerate.print.product_detail.space_ok'), class: 'bg-green-500 hover:bg-green-500 text-white', icon: '✓' }
     default: return null
   }
 })
@@ -98,9 +100,9 @@ function handleClose() {
   <Dialog :open="open" @update:open="handleClose" class="z-[500]">
     <DialogContent class="max-w-2xl max-h-[85vh] flex flex-col z-[1000]">
       <DialogHeader class="shrink-0">
-        <DialogTitle>Detalhes do Produto</DialogTitle>
+        <DialogTitle>{{ t('plannerate.print.product_detail.title') }}</DialogTitle>
         <DialogDescription v-if="product">
-          Informações completas sobre o produto selecionado
+          {{ t('plannerate.print.product_detail.description') }}
         </DialogDescription>
       </DialogHeader>
 
@@ -128,67 +130,67 @@ function handleClose() {
         <div class="grid gap-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <div class="text-sm font-medium text-muted-foreground">Nome</div>
+              <div class="text-sm font-medium text-muted-foreground">{{ t('plannerate.print.product_detail.name') }}</div>
               <div class="text-lg font-semibold">{{ product.name }}</div>
             </div>
             
             <div>
-              <div class="text-sm font-medium text-muted-foreground">EAN</div>
-              <div class="font-mono text-sm">{{ product.ean || 'N/A' }}</div>
+              <div class="text-sm font-medium text-muted-foreground">{{ t('plannerate.analysis.results.ean') }}</div>
+              <div class="font-mono text-sm">{{ product.ean || t('plannerate.print.product_detail.na') }}</div>
             </div>
           </div>
 
           <div class="grid grid-cols-3 gap-4">
             <div>
-              <div class="text-sm font-medium text-muted-foreground">Largura</div>
+              <div class="text-sm font-medium text-muted-foreground">{{ t('plannerate.print.product_detail.width') }}</div>
               <div class="text-lg">{{ product.width }} cm</div>
             </div>
             
             <div>
-              <div class="text-sm font-medium text-muted-foreground">Altura</div>
+              <div class="text-sm font-medium text-muted-foreground">{{ t('plannerate.print.product_detail.height') }}</div>
               <div class="text-lg">{{ product.height }} cm</div>
             </div>
 
             <div>
-              <div class="text-sm font-medium text-muted-foreground">Profundidade</div>
-              <div class="text-lg">{{ product.depth || 'N/A' }} cm</div>
+              <div class="text-sm font-medium text-muted-foreground">{{ t('plannerate.print.product_detail.depth') }}</div>
+              <div class="text-lg">{{ product.depth || t('plannerate.print.product_detail.na') }} cm</div>
             </div>
           </div>
 
           <div class="grid grid-cols-3 gap-4">
             <div>
-              <div class="text-sm font-medium text-muted-foreground">Frentes</div>
+              <div class="text-sm font-medium text-muted-foreground">{{ t('plannerate.print.product_detail.fronts') }}</div>
               <div class="text-lg">{{ segmentQuantity ?? 1 }} un.</div>
             </div>
             
             <div>
-              <div class="text-sm font-medium text-muted-foreground">Empilhamento</div>
+              <div class="text-sm font-medium text-muted-foreground">{{ t('plannerate.print.product_detail.stacking') }}</div>
               <div class="text-lg">{{ layerQuantity ?? 1 }} un.</div>
             </div>
 
             <div>
-              <div class="text-sm font-medium text-muted-foreground">Quantidade Total</div>
+              <div class="text-sm font-medium text-muted-foreground">{{ t('plannerate.print.product_detail.total_quantity') }}</div>
               <div class="text-lg font-semibold text-primary">{{ totalQuantity }} un.</div>
             </div>
           </div>
 
           <!-- Dados de Target Stock (quando disponível) -->
           <div v-if="targetStockData" class="border-t pt-4 mt-2">
-            <h4 class="text-sm font-semibold text-muted-foreground mb-3">📊 Análise de Estoque</h4>
+            <h4 class="text-sm font-semibold text-muted-foreground mb-3">{{ t('plannerate.print.product_detail.stock_analysis') }}</h4>
             
             <div class="grid grid-cols-3 gap-4">
               <div>
-                <div class="text-sm font-medium text-muted-foreground">Estoque Alvo</div>
+                <div class="text-sm font-medium text-muted-foreground">{{ t('plannerate.print.product_detail.target_stock') }}</div>
                 <div class="text-lg font-semibold text-blue-600">{{ targetStockData.estoque_alvo }} un.</div>
               </div>
               
               <div>
-                <div class="text-sm font-medium text-muted-foreground">Estoque Mínimo</div>
+                <div class="text-sm font-medium text-muted-foreground">{{ t('plannerate.print.product_detail.min_stock') }}</div>
                 <div class="text-lg">{{ targetStockData.estoque_minimo }} un.</div>
               </div>
 
               <div>
-                <div class="text-sm font-medium text-muted-foreground">Capacidade Atual</div>
+                <div class="text-sm font-medium text-muted-foreground">{{ t('plannerate.print.product_detail.current_capacity') }}</div>
                 <div class="text-lg font-semibold" :class="{
                   'text-red-600': stockStatus === 'increase',
                   'text-yellow-600': stockStatus === 'decrease',
@@ -199,17 +201,17 @@ function handleClose() {
 
             <div class="grid grid-cols-3 gap-4 mt-3">
               <div>
-                <div class="text-sm font-medium text-muted-foreground">Demanda Média</div>
-                <div class="text-lg">{{ targetStockData.demanda_media?.toFixed(2) ?? 'N/A' }}</div>
+                <div class="text-sm font-medium text-muted-foreground">{{ t('plannerate.print.product_detail.avg_demand') }}</div>
+                <div class="text-lg">{{ targetStockData.demanda_media?.toFixed(2) ?? t('plannerate.print.product_detail.na') }}</div>
               </div>
               
               <div>
-                <div class="text-sm font-medium text-muted-foreground">Cobertura</div>
+                <div class="text-sm font-medium text-muted-foreground">{{ t('plannerate.print.product_detail.coverage') }}</div>
                 <div class="text-lg">{{ targetStockData.cobertura_dias }} dias</div>
               </div>
 
               <div>
-                <div class="text-sm font-medium text-muted-foreground">Estoque Segurança</div>
+                <div class="text-sm font-medium text-muted-foreground">{{ t('plannerate.print.product_detail.safety_stock') }}</div>
                 <div class="text-lg">{{ targetStockData.estoque_seguranca }} un.</div>
               </div>
             </div>

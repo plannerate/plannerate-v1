@@ -5,7 +5,7 @@
                 class="z-20 object-cover" />
             <div v-else :style="style" class="flex items-center justify-center border border-dashed bg-muted">
                 <span class="text-xs text-muted-foreground">{{
-                    product?.name || 'Sem imagem'
+                    product?.name || t('plannerate.sidebar.product_image_card.no_image')
                     }}</span>
             </div>
         </div>
@@ -14,6 +14,7 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
+import { useT } from '@/composables/useT';
 import type { Layer, Product, Segment } from '@/types/planogram';
 
 interface Props {
@@ -24,6 +25,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { t } = useT();
 
 const product = computed<Product | undefined>(() => props.layer?.product);
 

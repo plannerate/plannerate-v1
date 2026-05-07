@@ -17,6 +17,7 @@ import {
     toSnakeCase,
 } from '@/composables/plannerate/useGondolaFields';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { useT } from '@/composables/useT';
 import type { Gondola } from '@/types/planogram';
 import SectionShelfBulkUpdate from './SectionShelfBulkUpdate.vue';
 
@@ -25,6 +26,7 @@ import SectionShelfBulkUpdate from './SectionShelfBulkUpdate.vue';
 // ============================================================================
 
 const editor = usePlanogramEditor();
+const { t } = useT();
 
 // ============================================================================
 // EMITS
@@ -160,21 +162,21 @@ function handleCancel() {
     <div class="relative z-[9999] flex h-full flex-col">
         <!-- Header -->
         <div class="border-b p-4">
-            <h3 class="text-lg font-semibold">Editar Gôndola</h3>
+            <h3 class="text-lg font-semibold">{{ t('plannerate.form.gondola_edit.title') }}</h3>
             <p class="text-sm text-muted-foreground">
-                Configure as propriedades da gôndola
+                {{ t('plannerate.form.gondola_edit.description') }}
             </p>
         </div>
 
         <!-- Form -->
         <div class="flex-1 space-y-6 overflow-y-auto p-4">
-            <!-- Nome -->
-            <div class="space-y-2">
-                <Label for="gondola-name">Nome</Label>
+                <!-- Nome -->
+                <div class="space-y-2">
+                <Label for="gondola-name">{{ t('plannerate.print.product_detail.name') }}</Label>
                 <Input
                     id="gondola-name"
                     v-model="formData.name"
-                    placeholder="Digite o nome da gôndola"
+                    :placeholder="t('plannerate.form.gondola_edit.name_placeholder')"
                 />
             </div>
 
@@ -183,17 +185,17 @@ function handleCancel() {
             <div class="grid grid-cols-2 gap-4">
                 <!-- Localização -->
                 <div class="space-y-2">
-                    <Label for="gondola-location">Localização</Label>
+                    <Label for="gondola-location">{{ t('plannerate.form.gondola_edit.location') }}</Label>
                     <Input
                         id="gondola-location"
                         v-model="formData.location"
-                        placeholder="Ex: Corredor 1, Parede Direita"
+                        :placeholder="t('plannerate.form.gondola_edit.location_placeholder')"
                     />
                 </div>
 
                 <!-- Escala Padrão -->
                 <div class="space-y-2">
-                    <Label for="gondola-scale">Escala/Zoom Padrão</Label>
+                    <Label for="gondola-scale">{{ t('plannerate.form.gondola_edit.scale') }}</Label>
                     <div class="flex items-center gap-2">
                         <Input
                             id="gondola-scale"
@@ -208,7 +210,7 @@ function handleCancel() {
                         </span>
                     </div>
                     <p class="text-xs text-muted-foreground">
-                        Fator de escala inicial ao abrir a gôndola (1.0 a 10.0)
+                        {{ t('plannerate.form.gondola_edit.scale_hint') }}
                     </p>
                 </div>
             </div>
@@ -218,7 +220,7 @@ function handleCancel() {
             <!-- Número de Módulos -->
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
-                    <Label for="gondola-modules">Número de Módulos</Label>
+                    <Label for="gondola-modules">{{ t('plannerate.form.gondola_edit.modules') }}</Label>
                     <Input
                         id="gondola-modules"
                         v-model.number="formData.num_modulos"
@@ -227,21 +229,21 @@ function handleCancel() {
                         placeholder="0"
                     />
                     <p class="text-xs text-muted-foreground">
-                        Quantidade de módulos/sections na gôndola
+                        {{ t('plannerate.form.gondola_edit.modules_hint') }}
                     </p>
                 </div>
 
                 <!-- Lado -->
                 <div class="space-y-2">
-                    <Label for="gondola-side">Lado</Label>
+                    <Label for="gondola-side">{{ t('plannerate.form.gondola_edit.side') }}</Label>
                     <Select v-model="formData.side">
                         <SelectTrigger id="gondola-side" class="h-9 w-full">
-                            <SelectValue placeholder="Selecione o lado" />
+                            <SelectValue :placeholder="t('plannerate.form.gondola_edit.select_side')" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="A">Lado A</SelectItem>
-                            <SelectItem value="B">Lado B</SelectItem>
-                            <SelectItem value="both">Ambos os lados</SelectItem>
+                            <SelectItem value="A">{{ t('plannerate.form.gondola_edit.side_a') }}</SelectItem>
+                            <SelectItem value="B">{{ t('plannerate.form.gondola_edit.side_b') }}</SelectItem>
+                            <SelectItem value="both">{{ t('plannerate.form.gondola_edit.side_both') }}</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -254,7 +256,7 @@ function handleCancel() {
                 <!-- Alinhamento -->
                 <div class="space-y-2">
                     <Label for="gondola-alignment"
-                        >Alinhamento de Produtos</Label
+                        >{{ t('plannerate.form.gondola_edit.alignment') }}</Label
                     >
                     <Select v-model="formData.alignment">
                         <SelectTrigger
@@ -262,39 +264,39 @@ function handleCancel() {
                             class="h-9 w-full"
                         >
                             <SelectValue
-                                placeholder="Selecione o alinhamento"
+                                :placeholder="t('plannerate.form.gondola_edit.select_alignment')"
                             />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="left">Esquerda</SelectItem>
-                            <SelectItem value="center">Centro</SelectItem>
-                            <SelectItem value="right">Direita</SelectItem>
-                            <SelectItem value="justify">Justificado</SelectItem>
+                            <SelectItem value="left">{{ t('plannerate.form.gondola_edit.left') }}</SelectItem>
+                            <SelectItem value="center">{{ t('plannerate.form.gondola_edit.center') }}</SelectItem>
+                            <SelectItem value="right">{{ t('plannerate.form.gondola_edit.right') }}</SelectItem>
+                            <SelectItem value="justify">{{ t('plannerate.form.gondola_edit.justify') }}</SelectItem>
                         </SelectContent>
                     </Select>
                     <p class="text-xs text-muted-foreground">
-                        Como os produtos serão alinhados nas prateleiras
+                        {{ t('plannerate.form.gondola_edit.alignment_hint') }}
                     </p>
                 </div>
 
                 <!-- Fluxo -->
                 <div class="space-y-2">
-                    <Label for="gondola-flow">Direção do Fluxo</Label>
+                    <Label for="gondola-flow">{{ t('plannerate.form.gondola_edit.flow') }}</Label>
                     <Select v-model="formData.flow">
                         <SelectTrigger id="gondola-flow" class="h-9 w-full">
-                            <SelectValue placeholder="Selecione a direção" />
+                            <SelectValue :placeholder="t('plannerate.form.gondola_edit.select_flow')" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="left_to_right">
-                                Esquerda → Direita
+                                {{ t('plannerate.form.gondola_edit.flow_left_to_right') }}
                             </SelectItem>
                             <SelectItem value="right_to_left">
-                                Direita → Esquerda
+                                {{ t('plannerate.form.gondola_edit.flow_right_to_left') }}
                             </SelectItem>
                         </SelectContent>
                     </Select>
                     <p class="text-xs text-muted-foreground">
-                        Onde posicionar produtos premium (início do fluxo)
+                        {{ t('plannerate.form.gondola_edit.flow_hint') }}
                     </p>
                 </div>
             </div>
@@ -310,11 +312,11 @@ function handleCancel() {
             <div class="flex gap-2">
                 <Button variant="outline" class="flex-1" @click="handleCancel">
                     <X class="mr-2 size-4" />
-                    Cancelar
+                    {{ t('plannerate.common.cancel') }}
                 </Button>
                 <Button class="flex-1" @click="handleSave">
                     <Check class="mr-2 size-4" />
-                    Salvar
+                    {{ t('plannerate.toolbar.save') }}
                 </Button>
             </div>
         </div>

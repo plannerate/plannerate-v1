@@ -4,13 +4,13 @@
             class="absolute inset-0 bg-white/50 dark:bg-black/50 z-10 flex items-center justify-center rounded-md">
             <div class="flex items-center justify-center space-x-2">
                 <div class="w-4 h-4 border-2 border-t-2 border-gray-200 rounded-full animate-spin dark:border-gray-600 border-t-primary"></div>
-                <span class="text-sm text-gray-500 dark:text-gray-400">Carregando...</span>
+                <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('plannerate.sidebar.products.loading') }}</span>
             </div>
         </div>
         
         <div v-if="breadcrumbPath"
             class="text-xs p-2 mb-3 bg-gray-50 dark:bg-white/10 rounded border border-dashed border-gray-300 dark:border-gray-700">
-            <span class="font-medium text-gray-600 dark:text-gray-400">Seleção:</span>
+            <span class="font-medium text-gray-600 dark:text-gray-400">{{ t('plannerate.sidebar.products.selection') }}</span>
             <span class="ml-1 font-semibold text-gray-800 dark:text-gray-200">{{ breadcrumbPath }}</span>
         </div>
 
@@ -20,7 +20,7 @@
                 class="flex flex-col gap-1">
                 <div class="flex items-center justify-between gap-2">
                     <Label :for="`category-${level.key}`" class="text-xs font-medium text-gray-700 dark:text-gray-300">
-                        {{ level.label }}
+                        {{ t(`plannerate.sidebar.products.levels.${level.key}`) }}
                         <span v-if="required && index === 0" class="text-red-500">*</span>
                     </Label>
                     <button
@@ -29,7 +29,7 @@
                         class="text-[11px] text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
                         :disabled="disabled || levelLoading[level.key]"
                         @click="clearSelection(index)">
-                        Limpar
+                        {{ t('plannerate.sidebar.products.clear') }}
                     </button>
                 </div>
                 <Select 
@@ -38,7 +38,7 @@
                     :disabled="disabled || levelLoading[level.key] || (index > 0 && !selections[levels[index - 1].key])" 
                     class="z-[1200]">
                     <SelectTrigger class="h-8 text-xs border border-gray-300 dark:border-gray-600 rounded px-2 w-full dark:bg-input/30">
-                        <SelectValue :placeholder="`Selecione ${level.label.toLowerCase()}`" />
+                        <SelectValue :placeholder="t('plannerate.sidebar.products.select_level', { level: t(`plannerate.sidebar.products.levels.${level.key}`).toLowerCase() })" />
                     </SelectTrigger>
                     <SelectContent class="z-[1200]">
                         <SelectItem 
@@ -58,6 +58,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useT } from '@/composables/useT'
 import CategoryController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/CategoryController'
 import { Label } from '@/components/ui/label'
 import {
@@ -91,19 +92,20 @@ const props = withDefaults(defineProps<Props>(), {
     required: false,
     disabled: false
 })
+const { t } = useT()
 
 const emit = defineEmits<{
     (e: 'update:modelValue', value: string | null): void
 }>()
 
 const levels = [
-    { key: 'segmento_varejista', label: 'Segmento Varejista' },
-    { key: 'departamento', label: 'Departamento' },
-    { key: 'subdepartamento', label: 'Subdepartamento' },
-    { key: 'categoria', label: 'Categoria' },
-    { key: 'subcategoria', label: 'Subcategoria' },
-    { key: 'segmento', label: 'Segmento' },
-    { key: 'subsegmento', label: 'Subsegmento' }
+    { key: 'segmento_varejista' },
+    { key: 'departamento' },
+    { key: 'subdepartamento' },
+    { key: 'categoria' },
+    { key: 'subcategoria' },
+    { key: 'segmento' },
+    { key: 'subsegmento' }
 ] as const
 
 type LevelKey = typeof levels[number]['key']
@@ -270,7 +272,7 @@ return []
             levelOptions.value[currentLevel.key] = clonedOptions
 
             if (clonedOptions.length === 0) {
-                levelErrors.value[currentLevel.key] = 'Nenhuma opção disponível'
+                levelErrors.value[currentLevel.key] = t('plannerate.sidebar.products.errors.no_options')
             }
 
             return clonedOptions
@@ -291,21 +293,21 @@ return []
             levelOptions.value[currentLevel.key] = normalizedChildren
 
             if (normalizedChildren.length === 0) {
-                levelErrors.value[currentLevel.key] = 'Nenhuma opção disponível'
+                levelErrors.value[currentLevel.key] = t('plannerate.sidebar.products.errors.no_options')
             }
 
             return normalizedChildren
         } else {
             optionsCache.value.set(url, [])
             levelOptions.value[currentLevel.key] = []
-            levelErrors.value[currentLevel.key] = 'Formato de resposta inválido'
+            levelErrors.value[currentLevel.key] = t('plannerate.sidebar.products.errors.invalid_response')
 
             return []
         }
     } catch (error) {
         console.error(`Erro ao carregar opções para ${currentLevel.label}:`, error)
         levelOptions.value[currentLevel.key] = []
-        levelErrors.value[currentLevel.key] = 'Erro ao carregar opções'
+        levelErrors.value[currentLevel.key] = t('plannerate.sidebar.products.errors.load_options')
 
         return []
     } finally {

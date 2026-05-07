@@ -8,6 +8,7 @@ import {
 import { computed, ref } from 'vue';
 import { calculateAbc } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 import type { AbcResult } from '@/components/plannerate/analysis/abc/types';
+import { useT } from '@/composables/useT';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -59,6 +60,7 @@ const props = withDefaults(defineProps<Props>(), {
     initialData: null,
     errors: () => ({}),
 });
+const { t } = useT();
 
 // Form state
 const form = ref({
@@ -83,7 +85,7 @@ const results = computed(() => props.initialData?.results || []);
 
 const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) {
-return 'Não definida';
+        return t('plannerate.performance.common.not_defined_feminine');
 }
     
     try {
@@ -166,9 +168,9 @@ const handleParamsSubmit = (data: typeof form.value) => {
     <div class="space-y-6">
         <!-- Header -->
         <div class="space-y-2">
-            <h1 class="text-3xl font-bold tracking-tight">Análise ABC</h1>
+            <h1 class="text-3xl font-bold tracking-tight">{{ t('plannerate.analysis.abc_page.title') }}</h1>
             <p class="text-muted-foreground">
-                Classificação de produtos por importância usando média ponderada
+                {{ t('plannerate.analysis.abc_page.subtitle') }}
             </p>
         </div>
 
@@ -179,38 +181,38 @@ const handleParamsSubmit = (data: typeof form.value) => {
                     <div>
                         <CardTitle class="flex items-center gap-2">
                             <Settings class="size-5" />
-                            Parâmetros de Análise ABC
+                            {{ t('plannerate.analysis.abc_page.parameters_title') }}
                         </CardTitle>
                         <CardDescription>
-                            Configure os parâmetros para a análise ABC.
+                            {{ t('plannerate.analysis.abc_page.parameters_description') }}
                         </CardDescription>
                     </div>
                     <Button type="button" @click="showParametersModal = true">
                         <Settings class="mr-2 size-4" />
-                        Configurar Parâmetros
+                        {{ t('plannerate.analysis.abc_page.configure_parameters') }}
                     </Button>
                 </div>
             </CardHeader>
             <CardContent>
                 <div class="grid grid-cols-4 gap-4 text-sm">
                     <div class="flex items-center gap-2">
-                        <span class="text-muted-foreground">Tipo de Tabela:</span>
+                        <span class="text-muted-foreground">{{ t('plannerate.analysis.abc_page.table_type') }}:</span>
                         <span class="font-medium">
-                            {{ form.table_type === 'sales' ? 'Vendas (Sales)' : 'Resumo Mensal' }}
+                            {{ form.table_type === 'sales' ? t('plannerate.analysis.period.sales') : t('plannerate.performance.common.monthly_summary') }}
                         </span>
                     </div>
                     <div class="flex items-center gap-2">
                         <Calendar class="size-4 text-muted-foreground" />
-                        <span class="text-muted-foreground">Data Inicial:</span>
+                        <span class="text-muted-foreground">{{ t('plannerate.analysis.period.start_date') }}:</span>
                         <span class="font-medium">{{ formatDate(form.date_from) }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <Calendar class="size-4 text-muted-foreground" />
-                        <span class="text-muted-foreground">Data Final:</span>
+                        <span class="text-muted-foreground">{{ t('plannerate.analysis.period.end_date') }}:</span>
                         <span class="font-medium">{{ formatDate(form.date_to) }}</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="text-muted-foreground">Pesos:</span>
+                        <span class="text-muted-foreground">{{ t('plannerate.analysis.abc_page.weights') }}:</span>
                         <span class="font-medium">
                             Q:{{ form.peso_qtde }} V:{{ form.peso_valor }} M:{{ form.peso_margem }}
                         </span>
@@ -234,10 +236,9 @@ const handleParamsSubmit = (data: typeof form.value) => {
             <CardContent class="pt-6">
                 <div class="flex flex-col items-center justify-center py-12 text-center">
                     <AlertCircle class="mb-4 size-12 text-muted-foreground" />
-                    <h3 class="mb-2 text-lg font-semibold">Nenhum resultado</h3>
+                    <h3 class="mb-2 text-lg font-semibold">{{ t('plannerate.analysis.abc_page.no_results') }}</h3>
                     <p class="text-sm text-muted-foreground">
-                        Configure os parâmetros acima e execute a análise para ver os
-                        resultados.
+                        {{ t('plannerate.analysis.abc_page.no_results_description') }}
                     </p>
                 </div>
             </CardContent>

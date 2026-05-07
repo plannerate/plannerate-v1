@@ -3,7 +3,7 @@
         <div>
             <h3 class="text-lg font-semibold">
                 <Box class="mr-2 inline size-5 text-foreground" />
-                Seção
+                {{ t('plannerate.sidebar.section_details.section') }}
             </h3>
             <p class="text-sm text-muted-foreground">
                 {{ section.name }}
@@ -14,7 +14,7 @@
 
         <div class="space-y-3">
             <div class="space-y-2">
-                <Label for="section-name">Nome</Label>
+                <Label for="section-name">{{ t('plannerate.print.product_detail.name') }}</Label>
                 <Input
                     id="section-name"
                     :model-value="section.name"
@@ -23,7 +23,7 @@
             </div>
 
             <div class="space-y-2">
-                <Label for="section-code">Código</Label>
+                <Label for="section-code">{{ t('plannerate.sidebar.section_details.code') }}</Label>
                 <Input
                     id="section-code"
                     :model-value="section.code"
@@ -33,7 +33,7 @@
 
             <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
-                    <Label for="section-width">Largura (cm)</Label>
+                    <Label for="section-width">{{ t('plannerate.print.product_detail.width') }} (cm)</Label>
                     <Input
                         id="section-width"
                         :model-value="section.width"
@@ -45,7 +45,7 @@
                     />
                 </div>
                 <div class="space-y-2">
-                    <Label for="section-height">Altura (cm)</Label>
+                    <Label for="section-height">{{ t('plannerate.print.product_detail.height') }} (cm)</Label>
                     <Input
                         id="section-height"
                         :model-value="section.height"
@@ -60,7 +60,7 @@
 
             <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
-                    <Label for="base-width">Base Largura (cm)</Label>
+                    <Label for="base-width">{{ t('plannerate.sidebar.section_details.base_width') }}</Label>
                     <Input
                         id="base-width"
                         :model-value="section.base_width"
@@ -72,7 +72,7 @@
                     />
                 </div>
                 <div class="space-y-2">
-                    <Label for="base-height">Base Altura (cm)</Label>
+                    <Label for="base-height">{{ t('plannerate.sidebar.section_details.base_height') }}</Label>
                     <Input
                         id="base-height"
                         :model-value="section.base_height"
@@ -87,7 +87,7 @@
 
             <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
-                    <Label for="base-depth">Base Profundidade (cm)</Label>
+                    <Label for="base-depth">{{ t('plannerate.sidebar.section_details.base_depth') }}</Label>
                     <Input
                         id="base-depth"
                         :model-value="section.base_depth"
@@ -100,7 +100,7 @@
                 </div>
                 <div class="space-y-2">
                     <Label for="cremalheira-width"
-                        >Larg. Cremalheira (cm)</Label
+                        >{{ t('plannerate.sidebar.section_details.rack_width') }}</Label
                     >
                     <Input
                         id="cremalheira-width"
@@ -117,10 +117,10 @@
             <Separator />
 
             <div>
-                <h4 class="mb-2 font-medium">Configuração dos Furos</h4>
+                <h4 class="mb-2 font-medium">{{ t('plannerate.sidebar.section_details.holes_config') }}</h4>
                 <div class="grid grid-cols-3 gap-2">
                     <div class="space-y-2">
-                        <Label for="hole-height">Altura Furo (cm)</Label>
+                        <Label for="hole-height">{{ t('plannerate.sidebar.section_details.hole_height') }}</Label>
                         <Input
                             id="hole-height"
                             :model-value="section.hole_height"
@@ -132,7 +132,7 @@
                         />
                     </div>
                     <div class="space-y-2">
-                        <Label for="hole-spacing">Espaçamento (cm)</Label>
+                        <Label for="hole-spacing">{{ t('plannerate.sidebar.section_details.hole_spacing') }}</Label>
                         <Input
                             id="hole-spacing"
                             :model-value="section.hole_spacing"
@@ -144,7 +144,7 @@
                         />
                     </div>
                     <div class="space-y-2">
-                        <Label for="hole-width">Largura Furo (cm)</Label>
+                        <Label for="hole-width">{{ t('plannerate.sidebar.section_details.hole_width') }}</Label>
                         <Input
                             id="hole-width"
                             :model-value="section.hole_width"
@@ -162,27 +162,27 @@
 
             <!-- Botões de ação -->
             <div class="space-y-2">
-                <Label>Ações</Label>
+                <Label>{{ t('plannerate.sidebar.section_details.actions') }}</Label>
                 <div class="grid grid-cols-2 gap-2">
                     <ButtonWithTooltip
                         variant="outline"
                         size="sm"
                         @click="handleMoveLeft"
                         :disabled="!sectionActions.canMoveLeft"
-                        tooltip="Mover para esquerda (Ctrl+ <-)"
+                        :tooltip="t('plannerate.sidebar.section_details.move_left_tooltip')"
                     >
                         <ArrowLeft class="mr-2 size-4" />
-                        Mover
+                        {{ t('plannerate.sidebar.section_details.move') }}
                     </ButtonWithTooltip>
                     <ButtonWithTooltip
                         variant="outline"
                         size="sm"
                         @click="handleMoveRight"
                         :disabled="!sectionActions.canMoveRight"
-                        tooltip="Mover para direita (Ctrl+ ->)"
+                        :tooltip="t('plannerate.sidebar.section_details.move_right_tooltip')"
                     >
                         <ArrowRight class="mr-2 size-4" />
-                        Mover
+                        {{ t('plannerate.sidebar.section_details.move') }}
                     </ButtonWithTooltip>
                     <ButtonWithTooltip
                         variant="outline"
@@ -190,20 +190,20 @@
                         @click="handleInvertShelves"
                         :disabled="!sectionActions.canInvertShelves"
                         class="col-span-2"
-                        tooltip="Inverter ordem das prateleiras (Ctrl+I)"
+                        :tooltip="t('plannerate.sidebar.section_details.invert_shelves_tooltip')"
                     >
                         <ArrowUpDown class="mr-2 size-4" />
-                        Inverter Prateleiras
+                        {{ t('plannerate.sidebar.section_details.invert_shelves') }}
                     </ButtonWithTooltip>
                     <ButtonWithTooltip
                         variant="destructive"
                         size="sm"
                         @click="handleDelete"
                         class="col-span-2"
-                        tooltip="Excluir seção (Del)"
+                        :tooltip="t('plannerate.sidebar.section_details.delete_tooltip')"
                     >
                         <Trash2 class="mr-2 size-4" />
-                        Excluir
+                        {{ t('plannerate.sidebar.section_details.delete') }}
                     </ButtonWithTooltip>
                 </div>
             </div>
@@ -228,6 +228,7 @@ import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor'
 import { usePlanogramKeyboard } from '@/composables/plannerate/usePlanogramKeyboard';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { useSectionActions } from '@/composables/plannerate/useSectionActions';
+import { useT } from '@/composables/useT';
 import type { Section } from '@/types/planogram';
 
 interface Props {
@@ -237,6 +238,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const section = computed(() => props.item);
+const { t } = useT();
 const selection = usePlanogramSelection();
 const keyboard = usePlanogramKeyboard();
 

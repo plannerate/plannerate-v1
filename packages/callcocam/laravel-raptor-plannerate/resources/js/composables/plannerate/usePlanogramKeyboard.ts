@@ -1,5 +1,7 @@
 import { ulid } from 'ulid';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { toast } from 'vue-sonner';
+import { useT } from '@/composables/useT';
 import type { Layer, Section, Segment, Shelf } from '@/types/planogram';
 import { validateShelfWidth } from '@plannerate/libs/validation';
 import { usePlanogramEditor } from './usePlanogramEditor';
@@ -39,7 +41,14 @@ const numberInputDisplay = ref(''); // Para mostrar visualmente ao usuário
  * Handler para entrada de números (digitar quantidade)
  * Acumula dígitos e aplica após 800ms de inatividade
  */
-function handleNumberInput(digit: string, layerId: string) {
+function handleNumberInput(
+    digit: string,
+    layerId: string,
+    buildShelfWidthExceededMessage: (
+        totalWidth: number,
+        sectionWidth: number,
+    ) => string,
+) {
     const editor = usePlanogramEditor();
     
     // Se mudou de layer, reseta o buffer
@@ -79,6 +88,12 @@ function handleNumberInput(digit: string, layerId: string) {
                 );
 
                 if (!validation.isValid) {
+                    toast.error(
+                        buildShelfWidthExceededMessage(
+                            validation.totalWidth,
+                            validation.sectionWidth,
+                        ),
+                    );
                     // Não permite - excederia a largura da shelf
                     numberInputBuffer = '';
                     currentInputLayerId = null;
@@ -115,8 +130,19 @@ function handleNumberInput(digit: string, layerId: string) {
  * - Global: Delete/Backspace, Ctrl+Z/Y, Ctrl+S
  */
 export function usePlanogramKeyboard() {
+    const { t } = useT();
     const selection = usePlanogramSelection();
     const editor = usePlanogramEditor();
+
+    const buildShelfWidthExceededMessage = (
+        totalWidth: number,
+        sectionWidth: number,
+    ): string => {
+        return t('plannerate.editor.shelf_width_exceeded', {
+            totalWidth: String(totalWidth),
+            sectionWidth: String(sectionWidth),
+        });
+    };
 
     // ==================== KEYBOARD HANDLERS BY TYPE ====================
 
@@ -218,7 +244,11 @@ export function usePlanogramKeyboard() {
         if (/^[0-9]$/.test(event.key)) {
             event.preventDefault();
             event.stopPropagation();
-            handleNumberInput(event.key, layerId);
+            handleNumberInput(
+                event.key,
+                layerId,
+                buildShelfWidthExceededMessage,
+            );
 
             return true;
         }
@@ -265,6 +295,12 @@ return false;
                     );
 
                     if (!validation.isValid) {
+                        toast.error(
+                            buildShelfWidthExceededMessage(
+                                validation.totalWidth,
+                                validation.sectionWidth,
+                            ),
+                        );
                         // Não permite aumentar - excederia a largura da shelf
                         return true;
                     }

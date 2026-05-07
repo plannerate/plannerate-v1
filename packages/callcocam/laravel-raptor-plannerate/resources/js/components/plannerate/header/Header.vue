@@ -2,6 +2,7 @@
 import { Link } from "@inertiajs/vue3";
 import { ArrowLeft, Edit, Plus, RefreshCcw, Upload } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { useT } from '@/composables/useT';
 import GondolaCreateStepper from '@/components/plannerate/form/GondolaCreateStepper.vue';
 import GondolaEditForm from '@/components/plannerate/form/GondolaEditForm.vue';
 import { wayfinderPath } from '../../../libs/wayfinderPath';
@@ -41,13 +42,14 @@ interface Props {
     backRoute?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
-    title: 'Planograma',
+    title: '',
     status: 'draft',
     planogramId: '',
     tenant: {},
     availableUsers: () => [],
     backRoute: '',
 });
+const { t } = useT();
 const emit = defineEmits<{
     closeProducts: [];
     closeProperties: [];
@@ -70,6 +72,7 @@ const getStatusColor = (status: string) => {
 const gondolaSettings = computed(() => {
     return props.tenant?.settings?.gondola || {};
 });
+const titleDisplay = computed(() => props.title || t('plannerate.header.planogram'));
 
 // Sheet de edição da gôndola
 const showGondolaEdit = ref(false);
@@ -120,7 +123,7 @@ function cancelUpdateGondolaImages() {
         <div class="flex h-16 items-center justify-between px-6">
             <!-- Left: Title -->
             <div class="flex items-center gap-3">
-                <h1 class="text-xl font-semibold">{{ title }}</h1>
+                <h1 class="text-xl font-semibold">{{ titleDisplay }}</h1>
                 <Badge :class="getStatusColor(status)" variant="outline">
                     {{ status }}
                 </Badge>
@@ -135,7 +138,7 @@ function cancelUpdateGondolaImages() {
                     @click="emit('importData')"
                 >
                     <Upload />
-                    Importar Dados
+                    {{ t('plannerate.header.import_data') }}
                 </Button>
 
                 <Button
@@ -146,7 +149,7 @@ function cancelUpdateGondolaImages() {
                     v-if="permissions.can_create_gondola"
                 >
                     <Plus />
-                    Adicionar Gôndola
+                    {{ t('plannerate.header.add_gondola') }}
                 </Button>
 
                 <Button
@@ -157,7 +160,7 @@ function cancelUpdateGondolaImages() {
                     v-if="permissions.can_update_gondola"
                 >
                     <Edit />
-                    Editar Gôndola
+                    {{ t('plannerate.header.edit_gondola') }}
                 </Button>
                 <!-- Atualizar imagens da gôndola -->
                 <Button
@@ -167,7 +170,7 @@ function cancelUpdateGondolaImages() {
                     @click="handleUpdateGondolaImages"
                 >
                     <RefreshCcw />
-                    Atualizar Imagens
+                    {{ t('plannerate.header.update_images') }}
                 </Button>
 
                 <!-- Modal de confirmação: Atualizar Imagens -->
@@ -178,23 +181,22 @@ function cancelUpdateGondolaImages() {
                     <AlertDialogContent class="z-[1000] sm:max-w-md">
                         <AlertDialogHeader>
                             <AlertDialogTitle
-                                >Atualizar imagens da gôndola?</AlertDialogTitle
+                                >{{ t('plannerate.header.confirm_update_images_title') }}</AlertDialogTitle
                             >
                             <AlertDialogDescription>
-                                As imagens dos produtos na gôndola serão
-                                atualizadas. Deseja continuar?
+                                {{ t('plannerate.header.confirm_update_images_description') }}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel
                                 @click="cancelUpdateGondolaImages"
                             >
-                                Cancelar
+                                {{ t('app.actions.cancel') }}
                             </AlertDialogCancel>
                             <AlertDialogAction
                                 @click="confirmUpdateGondolaImages"
                             >
-                                Sim, atualizar
+                                {{ t('plannerate.header.confirm_update_images_action') }}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
@@ -208,7 +210,7 @@ function cancelUpdateGondolaImages() {
                     class="flex items-center gap-2 text-sm text-muted-foreground hover:text-muted-foreground/80 cursor-pointer"
                 >
                     <ArrowLeft class="size-4" />
-                    Voltar
+                    {{ t('app.actions.back') }}
                 </Link>
             </div>
         </div>
@@ -217,7 +219,7 @@ function cancelUpdateGondolaImages() {
     <!-- Sheet de Edição da Gôndola -->
     <Sheet v-model:open="showGondolaEdit">
         <SheetContent side="right" class="w-full p-0 sm:max-w-md">
-            <SheetTitle class="sr-only">Editar Gôndola</SheetTitle>
+            <SheetTitle class="sr-only">{{ t('plannerate.header.edit_gondola') }}</SheetTitle>
             <SheetDescription class="sr-only">
                 Formulário para editar propriedades da gôndola
             </SheetDescription>

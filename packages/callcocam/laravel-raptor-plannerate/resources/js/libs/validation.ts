@@ -1,30 +1,5 @@
 import { ulid } from 'ulid';
-import { toast } from 'vue-sonner';
 import type { Layer, Shelf } from '@/types/planogram';
-
-const debouncedToast = (() => {
-    let canShow = true;
-    let timeout: ReturnType<typeof setTimeout> | null = null;
-
-    return (message: string, delay = 5000) => {
-        // Se pode mostrar, mostra imediatamente e bloqueia por um tempo
-        if (canShow) {
-            toast.error(message);
-            canShow = false;
-
-            // Libera para mostrar novamente após o delay
-            if (timeout) {
-clearTimeout(timeout);
-}
-
-            timeout = setTimeout(() => {
-                canShow = true;
-                timeout = null;
-            }, delay);
-        }
-        // Se não pode mostrar, ignora (está no período de bloqueio)
-    };
-})();
 
 /**
  * Valida se a largura total dos segmentos em uma prateleira, considerando uma mudança proposta
@@ -109,12 +84,6 @@ continue;
     totalWidth = parseFloat(totalWidth.toFixed(2));
     sectionWidth = parseFloat(sectionWidth.toFixed(2));
     const isValid = totalWidth <= sectionWidth;
-
-    if (!isValid) {
-        debouncedToast(
-            `A largura total dos produtos (${totalWidth} cm) excede a largura da seção (${sectionWidth} cm). Ajuste as quantidades ou remova produtos para continuar.`,
-        );
-    }
 
     return { isValid, totalWidth, sectionWidth };
 }

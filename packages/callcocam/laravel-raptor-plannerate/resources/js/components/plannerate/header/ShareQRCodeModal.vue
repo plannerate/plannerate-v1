@@ -11,6 +11,7 @@ import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { generateQrCode } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaExportController';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
+import { useT } from '@/composables/useT';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -38,6 +39,7 @@ const emit = defineEmits<{
 // Composables
 const success = (msg: string) => toast.success(msg);
 const showError = (msg: string) => toast.error(msg);
+const { t } = useT();
 
 // State
 const qrCodeDataUri = ref<string>('');
@@ -80,7 +82,7 @@ return;
         }
     } catch (err) {
         console.error('Erro ao carregar QR Code:', err);
-        showError('Não foi possível gerar o QR Code');
+        showError(t('plannerate.share_qr.errors.generate'));
     } finally {
         isLoading.value = false;
     }
@@ -91,7 +93,7 @@ async function copyLink() {
         // Tenta usar a Clipboard API moderna
         if (navigator.clipboard && navigator.clipboard.writeText) {
             await navigator.clipboard.writeText(shareUrl.value);
-            success('Link copiado para a área de transferência!');
+            success(t('plannerate.share_qr.success.link_copied'));
         } else {
             // Fallback para método antigo (funciona em HTTP)
             const textarea = document.createElement('textarea');
@@ -102,11 +104,11 @@ async function copyLink() {
             textarea.select();
             document.execCommand('copy');
             document.body.removeChild(textarea);
-            success('Link copiado para a área de transferência!');
+            success(t('plannerate.share_qr.success.link_copied'));
         }
     } catch (err) {
         console.error('Erro ao copiar link:', err);
-        showError('Não foi possível copiar o link');
+        showError(t('plannerate.share_qr.errors.copy_link'));
     }
 }
 
@@ -114,8 +116,8 @@ async function shareLink() {
     if (navigator.share) {
         try {
             await navigator.share({
-                title: props.gondolaName || 'Gôndola',
-                text: `Confira esta gôndola: ${props.gondolaName}`,
+                title: props.gondolaName || t('plannerate.share_qr.gondola'),
+                text: `${t('plannerate.share_qr.check_this_gondola')} ${props.gondolaName}`,
                 url: shareUrl.value,
             });
         } catch (error) {
@@ -141,7 +143,7 @@ return;
     link.click();
     document.body.removeChild(link);
     
-    success('QR Code baixado com sucesso!');
+    success(t('plannerate.share_qr.success.download_qr'));
 }
 
 // function close() {
@@ -155,10 +157,10 @@ return;
             <DialogHeader>
                 <DialogTitle class="flex items-center gap-2">
                     <QrCode class="size-5" />
-                    Compartilhar Gôndola
+                    {{ t('plannerate.share_qr.title') }}
                 </DialogTitle>
                 <DialogDescription>
-                    {{ gondolaName || 'Gôndola sem nome' }}
+                    {{ gondolaName || t('plannerate.share_qr.gondola_unnamed') }}
                 </DialogDescription>
             </DialogHeader>
 
@@ -167,8 +169,8 @@ return;
                 <div class="flex items-center gap-3 p-4 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
                     <AlertCircle class="size-5 shrink-0" />
                     <div class="text-sm">
-                        <p class="font-medium">Nenhuma gôndola selecionada</p>
-                        <p class="text-xs opacity-90 mt-1">Selecione uma gôndola para gerar o QR Code</p>
+                        <p class="font-medium">{{ t('plannerate.share_qr.none_selected') }}</p>
+                        <p class="text-xs opacity-90 mt-1">{{ t('plannerate.share_qr.select_to_generate') }}</p>
                     </div>
                 </div>
             </div>
@@ -182,37 +184,37 @@ return;
                     <img
                         v-else-if="qrCodeDataUri"
                         :src="qrCodeDataUri"
-                        alt="QR Code"
+                        :alt="t('plannerate.share_qr.qr_alt')"
                         class="w-64 h-64"
                     />
                     <div v-else class="flex items-center justify-center h-64 text-muted-foreground">
-                        <p>QR Code não disponível</p>
+                        <p>{{ t('plannerate.share_qr.not_available') }}</p>
                     </div>
                 </div>
 
                 <!-- Share URL -->
                 <div class="space-y-2">
-                    <Label for="share-url">Link de Acesso</Label>
+                    <Label for="share-url">{{ t('plannerate.share_qr.access_link') }}</Label>
                     <div class="flex gap-2">
                         <Input
                             id="share-url"
                             :model-value="shareUrl"
                             readonly
                             class="flex-1 font-mono text-xs"
-                            placeholder="URL será gerada aqui..."
+                            :placeholder="t('plannerate.share_qr.url_placeholder')"
                         />
                         <Button
                             variant="outline"
                             size="icon"
                             @click="copyLink"
-                            title="Copiar link"
+                            :title="t('plannerate.share_qr.copy_link')"
                             :disabled="!shareUrl"
                         >
                             <Copy class="size-4" />
                         </Button>
                     </div>
                     <p class="text-xs text-muted-foreground">
-                        Este link abre uma visualização somente leitura da gôndola
+                        {{ t('plannerate.share_qr.readonly_hint') }}
                     </p>
                 </div>
 
@@ -227,7 +229,7 @@ return;
                         :disabled="!qrCodeDataUri"
                     >
                         <Download class="mr-2 size-4" />
-                        Baixar QR Code
+                        {{ t('plannerate.share_qr.download_qr') }}
                     </Button>
                     <Button
                         variant="default"
@@ -236,7 +238,7 @@ return;
                         :disabled="!shareUrl"
                     >
                         <Share2 class="mr-2 size-4" />
-                        Compartilhar
+                        {{ t('plannerate.share_qr.share') }}
                     </Button>
                 </div>
             </div>

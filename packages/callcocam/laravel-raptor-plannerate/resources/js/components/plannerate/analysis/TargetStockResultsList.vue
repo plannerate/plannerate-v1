@@ -22,6 +22,7 @@ import { useAnalysisFilters } from '@/composables/plannerate/analysis/useAnalysi
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis';
+import { useT } from '@/composables/useT';
 
 interface Props {
     results: TargetStockResult[];
@@ -40,6 +41,7 @@ const { calculateSegmentCapacity, getStockStatus, calculateToleranceMargin, DEFA
 const selectedProductId = ref<string | null>(null);
 const slots = useSlots();
 const hasTopSlot = computed(() => Boolean(slots.top));
+const { t } = useT();
 
 // Usa o composable compartilhado
 const {
@@ -264,7 +266,7 @@ function handleDecreaseFronts(): void {
                             <Search class="absolute left-2 top-2 size-3.5 text-muted-foreground" />
                             <Input
                                 v-model="searchQuery"
-                                placeholder="Buscar por produto ou EAN..."
+                                :placeholder="t('plannerate.analysis.results.search_product_ean')"
                                 class="h-8 pl-7 text-xs"
                             />
                         </div>
@@ -277,7 +279,7 @@ function handleDecreaseFronts(): void {
                             @click="filterByClass = 'all'"
                             class="h-7 px-2.5 text-[11px]"
                         >
-                            Todas ({{ classStats.total }})
+                            {{ t('plannerate.analysis.results.all') }} ({{ classStats.total }})
                         </Button>
                         <Button
                             type="button"
@@ -310,7 +312,7 @@ function handleDecreaseFronts(): void {
                 </div>
 
                 <div class="mt-1 text-[11px] text-muted-foreground">
-                    {{ filteredResults.length }} produto(s) encontrado(s)
+                    {{ filteredResults.length }} {{ t('plannerate.analysis.results.products_found') }}
                 </div>
             </CardContent>
         </Card>
@@ -324,75 +326,75 @@ function handleDecreaseFronts(): void {
                             <TableHeader class="sticky top-0 z-10 bg-white dark:bg-gray-900">
                                 <TableRow class="bg-gray-100 text-xs dark:bg-gray-900">
                                 <TableHeadAnalysis
-                                    label="EAN"
+                                    :label="t('plannerate.analysis.results.ean')"
                                     sort-key="ean"
                                     :sortConfig="sortConfig"
                                     @sort="handleSort"
                                     class="sticky-col-1 min-w-[7.5rem]"
                                 />
                                 <TableHeadAnalysis
-                                    label="Descrição Produto"
+                                    :label="t('plannerate.analysis.target_stock_results.product_description')"
                                     sort-key="product_name"
                                     :sortConfig="sortConfig"
                                     @sort="handleSort"
                                     class="sticky-col-2 min-w-[13rem]"
                                 />
                                 <TableHeadAnalysis
-                                    label="Demanda média"
+                                    :label="t('plannerate.analysis.target_stock_results.avg_demand')"
                                     sort-key="demanda_media"
                                     :sortConfig="sortConfig"
                                     @sort="handleSort"
                                 />
                                 <TableHeadAnalysis
-                                    label="Desvio Padrão"
+                                    :label="t('plannerate.analysis.target_stock_results.std_dev')"
                                     sort-key="desvio_padrao"
                                     :sortConfig="sortConfig"
                                     @sort="handleSort"
                                 />
                                 <TableHeadAnalysis
-                                    label="Cobertura de estoque em dias (Reposição)"
+                                    :label="t('plannerate.analysis.target_stock_results.coverage_days')"
                                     sort-key="cobertura_dias"
                                     :sortConfig="sortConfig"
                                     @sort="handleSort"
                                 />
                                 <TableHeadAnalysis
-                                    label="Nível de Serviço"
+                                    :label="t('plannerate.analysis.target_stock_results.service_level')"
                                     sort-key="nivel_servico"
                                     :sortConfig="sortConfig"
                                     @sort="handleSort"
                                 />
                                 <TableHeadAnalysis
-                                    label="Constante Z-ns"
+                                    :label="t('plannerate.analysis.target_stock_results.z_constant')"
                                     sort-key="z_score"
                                     :sortConfig="sortConfig"
                                     @sort="handleSort"
                                 />
                                 <TableHeadAnalysis
-                                    label="Estoque de Segurança"
+                                    :label="t('plannerate.analysis.target_stock_results.safety_stock')"
                                     sort-key="estoque_seguranca"
                                     :sortConfig="sortConfig"
                                     @sort="handleSort"
                                 />
                                 <TableHeadAnalysis
-                                    label="Estoque mínimo prateleira"
+                                    :label="t('plannerate.analysis.target_stock_results.min_shelf_stock')"
                                     sort-key="estoque_minimo"
                                     :sortConfig="sortConfig"
                                     @sort="handleSort"
                                 />
                                 <TableHeadAnalysis
-                                    label="Estoque alvo prateleira"
+                                    :label="t('plannerate.analysis.target_stock_results.target_shelf_stock')"
                                     sort-key="estoque_alvo"
                                     :sortConfig="sortConfig"
                                     @sort="handleSort"
                                 />
                                 <TableHeadAnalysis
-                                    label="Permite frentes múltiplas"
+                                    :label="t('plannerate.analysis.target_stock_results.allows_multiple_fronts')"
                                     sort-key="permite_frentes"
                                     :sortConfig="sortConfig"
                                     @sort="handleSort"
                                 />
                                 <TableHeadAnalysis
-                                    label="Estoque Atual"
+                                    :label="t('plannerate.analysis.target_stock_results.current_stock')"
                                     sort-key="estoque_atual"
                                     :sortConfig="sortConfig"
                                     @sort="handleSort"
@@ -500,4 +502,3 @@ function handleDecreaseFronts(): void {
     z-index: 3;
 }
 </style>
-

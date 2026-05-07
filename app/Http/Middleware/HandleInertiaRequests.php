@@ -44,6 +44,7 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'translations' => fn (): array => [
                 'app' => trans('app'),
+                'plannerate' => trans('plannerate'),
                 'auth' => trans('auth'),
                 'passwords' => trans('passwords'),
                 'pagination' => trans('pagination'),

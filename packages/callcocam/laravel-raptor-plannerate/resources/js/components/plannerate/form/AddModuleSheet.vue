@@ -19,6 +19,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { useT } from '@/composables/useT';
 import {
     getInitialSectionFields,
     toSnakeCase as sectionToSnakeCase,
@@ -49,6 +50,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<Emits>();
+const { t } = useT();
 
 // Função para obter valores da última seção ou valores padrão usando composables
 const getInitialFormData = () => {
@@ -79,7 +81,11 @@ const getInitialFormData = () => {
 
     return {
         // Dados da Seção
-        name: sectionFields.name || `Módulo ${sectionIndex + 1}`,
+        name:
+            sectionFields.name ||
+            t('plannerate.form.add_module.module_default_name', {
+                number: sectionIndex + 1,
+            }),
         height: sectionSnake.height ?? props.gondolaHeight ?? 200,
         width: sectionSnake.width ?? 100,
 
@@ -149,9 +155,9 @@ const handleSubmit = () => {
     <Sheet :open="open" @update:open="(val) => emit('update:open', val)">
         <SheetContent side="right" class="flex w-full flex-col md:max-w-4xl">
             <SheetHeader class="shrink-0 py-2">
-                <SheetTitle>Adicionar Novo Módulo</SheetTitle>
+                <SheetTitle>{{ t('plannerate.form.add_module.title') }}</SheetTitle>
                 <SheetDescription>
-                    Configure o novo módulo para a gôndola
+                    {{ t('plannerate.form.add_module.description') }}
                 </SheetDescription>
             </SheetHeader>
 
@@ -159,7 +165,7 @@ const handleSubmit = () => {
                 <!-- Mensagens de Erro -->
                 <div v-if="hasErrors" class="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
                     <p class="mb-2 font-medium text-destructive">
-                        Por favor, corrija os seguintes erros:
+                        {{ t('plannerate.form.add_module.fix_errors') }}
                     </p>
                     <ul class="list-inside list-disc space-y-1 text-sm text-destructive/80">
                         <li v-for="(error, key) in form.errors" :key="key">
@@ -173,11 +179,11 @@ const handleSubmit = () => {
                 <form @submit.prevent="handleSubmit" class="flex-1 space-y-6">
                     <!-- Informações Básicas -->
                     <div class="space-y-4">
-                        <h3 class="font-medium">Informações do Módulo</h3>
+                        <h3 class="font-medium">{{ t('plannerate.form.add_module.module_info') }}</h3>
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
                             <div class="space-y-2 md:col-span-2">
-                                <Label for="section_name">Nome do Módulo *</Label>
-                                <Input id="section_name" v-model="form.name" type="text" placeholder="Ex: Módulo 5"
+                                <Label for="section_name">{{ t('plannerate.form.add_module.module_name') }} *</Label>
+                                <Input id="section_name" v-model="form.name" type="text" :placeholder="t('plannerate.form.add_module.module_name_placeholder')"
                                     :class="{
                                         'border-red-500': form.errors.name,
                                     }" />
@@ -186,7 +192,7 @@ const handleSubmit = () => {
                                 </p>
                             </div>
                             <div class="space-y-2">
-                                <Label for="width">Altura (cm) *</Label>
+                                <Label for="width">{{ t('plannerate.form.add_module.height_cm_required') }}</Label>
                                 <Input id="width" v-model.number="form.height" type="number" min="1" step="any" :class="{
                                     'border-red-500': form.errors.height,
                                 }" />
@@ -195,7 +201,7 @@ const handleSubmit = () => {
                                 </p>
                             </div>
                             <div class="space-y-2">
-                                <Label for="width">Largura (cm) *</Label>
+                                <Label for="width">{{ t('plannerate.form.add_module.width_cm_required') }}</Label>
                                 <Input id="width" v-model.number="form.width" type="number" min="1" step="any" :class="{
                                     'border-red-500': form.errors.width,
                                 }" />
@@ -210,10 +216,10 @@ const handleSubmit = () => {
 
                     <!-- Base -->
                     <div class="space-y-4">
-                        <h3 class="font-medium">Base</h3>
+                        <h3 class="font-medium">{{ t('plannerate.form.add_module.base') }}</h3>
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                             <div class="space-y-2">
-                                <Label for="base_height">Altura (cm) *</Label>
+                                <Label for="base_height">{{ t('plannerate.form.add_module.height_cm_required') }}</Label>
                                 <Input id="base_height" v-model.number="form.base_height" type="number" min="1"
                                     step="any" :class="{
                                         'border-red-500':
@@ -224,7 +230,7 @@ const handleSubmit = () => {
                                 </p>
                             </div>
                             <div class="space-y-2">
-                                <Label for="base_width">Largura (cm) *</Label>
+                                <Label for="base_width">{{ t('plannerate.form.add_module.width_cm_required') }}</Label>
                                 <Input id="base_width" v-model.number="form.base_width" type="number" min="1" step="any"
                                     :class="{
                                         'border-red-500':
@@ -235,7 +241,7 @@ const handleSubmit = () => {
                                 </p>
                             </div>
                             <div class="space-y-2">
-                                <Label for="base_depth">Profundidade (cm) *</Label>
+                                <Label for="base_depth">{{ t('plannerate.form.add_module.depth_cm_required') }}</Label>
                                 <Input id="base_depth" v-model.number="form.base_depth" type="number" min="1" step="any"
                                     :class="{
                                         'border-red-500':
@@ -252,10 +258,10 @@ const handleSubmit = () => {
 
                     <!-- Cremalheira -->
                     <div class="space-y-4">
-                        <h3 class="font-medium">Cremalheira</h3>
+                        <h3 class="font-medium">{{ t('plannerate.form.add_module.rack') }}</h3>
                         <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
                             <div class="space-y-2">
-                                <Label for="cremalheira_width">Largura (cm) *</Label>
+                                <Label for="cremalheira_width">{{ t('plannerate.form.add_module.width_cm_required') }}</Label>
                                 <Input id="cremalheira_width" v-model.number="form.cremalheira_width" type="number"
                                     min="1" step="any" :class="{
                                         'border-red-500':
@@ -266,7 +272,7 @@ const handleSubmit = () => {
                                 </p>
                             </div>
                             <div class="space-y-2">
-                                <Label for="hole_height">Altura Furo (cm) *</Label>
+                                <Label for="hole_height">{{ t('plannerate.form.add_module.hole_height_cm_required') }}</Label>
                                 <Input id="hole_height" v-model.number="form.hole_height" type="number" min="0.1"
                                     step="any" :class="{
                                         'border-red-500':
@@ -277,7 +283,7 @@ const handleSubmit = () => {
                                 </p>
                             </div>
                             <div class="space-y-2">
-                                <Label for="hole_width">Largura Furo (cm) *</Label>
+                                <Label for="hole_width">{{ t('plannerate.form.add_module.hole_width_cm_required') }}</Label>
                                 <Input id="hole_width" v-model.number="form.hole_width" type="number" min="0.1"
                                     step="any" :class="{
                                         'border-red-500':
@@ -288,7 +294,7 @@ const handleSubmit = () => {
                                 </p>
                             </div>
                             <div class="space-y-2">
-                                <Label for="hole_spacing">Espaçamento (cm) *</Label>
+                                <Label for="hole_spacing">{{ t('plannerate.form.add_module.spacing') }} (cm) *</Label>
                                 <Input id="hole_spacing" v-model.number="form.hole_spacing" type="number" min="0.1"
                                     step="any" :class="{
                                         'border-red-500':
@@ -305,10 +311,10 @@ const handleSubmit = () => {
 
                     <!-- Prateleiras -->
                     <div class="space-y-4">
-                        <h3 class="font-medium">Prateleiras Padrão</h3>
+                        <h3 class="font-medium">{{ t('plannerate.form.add_module.default_shelves') }}</h3>
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
                             <div class="space-y-2">
-                                <Label for="shelf_height">Espessura (cm) *</Label>
+                                <Label for="shelf_height">{{ t('plannerate.form.add_module.thickness_cm_required') }}</Label>
                                 <Input id="shelf_height" v-model.number="form.shelf_height" type="number" min="1"
                                     step="any" :class="{
                                         'border-red-500':
@@ -319,7 +325,7 @@ const handleSubmit = () => {
                                 </p>
                             </div>
                             <div class="space-y-2">
-                                <Label for="shelf_width">Largura (cm) *</Label>
+                                <Label for="shelf_width">{{ t('plannerate.form.add_module.width_cm_required') }}</Label>
                                 <Input id="shelf_width" v-model.number="form.shelf_width" type="number" min="1"
                                     step="any" :class="{
                                         'border-red-500':
@@ -330,7 +336,7 @@ const handleSubmit = () => {
                                 </p>
                             </div>
                             <div class="space-y-2">
-                                <Label for="shelf_depth">Profundidade (cm) *</Label>
+                                <Label for="shelf_depth">{{ t('plannerate.form.add_module.depth_cm_required') }}</Label>
                                 <Input id="shelf_depth" v-model.number="form.shelf_depth" type="number" min="1"
                                     step="any" :class="{
                                         'border-red-500':
@@ -341,7 +347,7 @@ const handleSubmit = () => {
                                 </p>
                             </div>
                             <div class="space-y-2">
-                                <Label for="num_shelves">Nº de Prateleiras *</Label>
+                                <Label for="num_shelves">{{ t('plannerate.form.add_module.number_of_shelves') }} *</Label>
                                 <Input id="num_shelves" v-model.number="form.num_shelves" type="number" min="0" :class="{
                                     'border-red-500':
                                         form.errors.num_shelves,
@@ -353,14 +359,14 @@ const handleSubmit = () => {
                         </div>
 
                         <div class="space-y-2">
-                            <Label for="product_type">Tipo de Produto Padrão *</Label>
+                            <Label for="product_type">{{ t('plannerate.form.add_module.default_product_type') }} *</Label>
                             <Select v-model="form.product_type">
                                 <SelectTrigger id="product_type">
-                                    <SelectValue placeholder="Selecione o tipo" />
+                                    <SelectValue :placeholder="t('plannerate.form.add_module.select_type')" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="normal">Normal</SelectItem>
-                                    <SelectItem value="hook">Gancheira</SelectItem>
+                                    <SelectItem value="normal">{{ t('plannerate.sidebar.shelf_details.normal') }}</SelectItem>
+                                    <SelectItem value="hook">{{ t('plannerate.sidebar.shelf_details.hook') }}</SelectItem>
                                 </SelectContent>
                             </Select>
                             <p v-if="form.errors.product_type" class="text-xs text-red-500">
@@ -372,13 +378,13 @@ const handleSubmit = () => {
                     <!-- Botões -->
                     <div class="flex shrink-0 justify-end gap-2 border-t py-4">
                         <Button type="button" variant="outline" @click="handleClose" :disabled="form.processing">
-                            Cancelar
+                            {{ t('plannerate.common.cancel') }}
                         </Button>
                         <Button type="submit" :disabled="form.processing || !form.name">
                             {{
                                 form.processing
-                                    ? 'Adicionando...'
-                                    : 'Adicionar Módulo'
+                                    ? t('plannerate.form.add_module.adding')
+                                    : t('plannerate.form.add_module.submit')
                             }}
                         </Button>
                     </div>

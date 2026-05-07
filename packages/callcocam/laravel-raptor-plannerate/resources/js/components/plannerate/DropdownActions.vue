@@ -3,28 +3,28 @@
         <DropdownMenuTrigger as-child>
             <Button variant="outline" size="sm">
                 <MoreVertical class="mr-2 size-4" />
-                Ações
+                {{ t('plannerate.dropdown.actions.title') }}
                 <ChevronDown class="ml-1 size-3" />
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" class="w-56 z-[9999]">
             <DropdownMenuItem @click="showShareQRModal = true">
                 <Share2 class="mr-2 size-4" />
-                Compartilhar / QR Code
+                {{ t('plannerate.dropdown.actions.share_qr') }}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem @click="handlePreviewPdf">
                 <Eye class="mr-2 size-4" />
-                Visualizar PDF
+                {{ t('plannerate.dropdown.actions.preview_pdf') }}
             </DropdownMenuItem>
             <DropdownMenuItem @click="handleDownloadPdf">
                 <Download class="mr-2 size-4" />
-                Baixar PDF
+                {{ t('plannerate.dropdown.actions.download_pdf') }}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem @click="editor.showReports()">
                 <FileText class="mr-2 size-4" />
-                Relatórios
+                {{ t('plannerate.dropdown.actions.reports') }}
             </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
@@ -40,6 +40,7 @@ import { ChevronDown, Download, Eye, FileText, MoreVertical, Share2 } from 'luci
 
 import { ref } from 'vue';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
+import { useT } from '@/composables/useT';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -57,6 +58,7 @@ import ShareQRCodeModal from './header/ShareQRCodeModal.vue';
  * Singleton - mesma instância compartilhada entre todos os componentes
  */
 const editor = usePlanogramEditor();
+const { t } = useT();
 
 /**
  * Estado do modal de compartilhamento/QR code

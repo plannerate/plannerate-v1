@@ -24,6 +24,7 @@ import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useT } from '@/composables/useT';
 import { calculateUsableHeight } from '@/composables/plannerate/useSectionFields';
 import {
     calculateShelfSpacing,
@@ -53,6 +54,7 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const { t } = useT();
 
 const updateValue = (key: keyof Props['modelValue'], value: number | string) => {
     emit('update:modelValue', { ...props.modelValue, [key]: value });
@@ -106,12 +108,12 @@ const calculateDisplayArea = () => {
             <div class="rounded-full bg-primary/10 p-2">
                 <RulerIcon class="h-5 w-5 text-primary" />
             </div>
-            <h3 class="text-lg font-medium">Configurar Prateleiras Padrão</h3>
+            <h3 class="text-lg font-medium">{{ t('plannerate.form.step5.title') }}</h3>
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div class="space-y-2">
-                <Label for="shelfHeight">Espessura (cm) *</Label>
+                <Label for="shelfHeight">{{ t('plannerate.form.step5.thickness') }} (cm) *</Label>
                 <Input
                     id="shelfHeight"
                     type="number"
@@ -128,7 +130,7 @@ const calculateDisplayArea = () => {
             </div>
 
             <div class="space-y-2">
-                <Label for="shelfDepth">Profundidade (cm) *</Label>
+                <Label for="shelfDepth">{{ t('plannerate.print.product_detail.depth') }} (cm) *</Label>
                 <Input
                     id="shelfDepth"
                     type="number"
@@ -145,7 +147,7 @@ const calculateDisplayArea = () => {
             </div>
 
             <div class="space-y-2">
-                <Label for="numShelves">Nº de Prateleiras *</Label>
+                <Label for="numShelves">{{ t('plannerate.form.step5.number_of_shelves') }} *</Label>
                 <Input
                     id="numShelves"
                     type="number"
@@ -166,13 +168,13 @@ const calculateDisplayArea = () => {
             class="rounded-lg border border-blue-100 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20"
         >
             <p class="text-sm text-blue-800 dark:text-blue-300">
-                <span class="font-medium">Informação:</span> A largura das prateleiras
-                é definida automaticamente pela largura do módulo ({{ moduleData.width }} cm).
+                <span class="font-medium">{{ t('plannerate.form.info') }}:</span>
+                {{ t('plannerate.form.step5.width_auto_prefix') }} ({{ moduleData.width }} cm).
             </p>
         </div>
 
         <div class="space-y-2">
-            <Label>Tipo de Produto Padrão *</Label>
+            <Label>{{ t('plannerate.form.step5.default_product_type') }} *</Label>
             <div
                 class="grid grid-cols-2 gap-2 rounded-md border"
                 :class="{
@@ -189,7 +191,7 @@ const calculateDisplayArea = () => {
                     type="button"
                     class="justify-center rounded-r-none border-r"
                 >
-                    Normal
+                    {{ t('plannerate.sidebar.shelf_details.normal') }}
                 </Button>
                 <Button
                     :variant="
@@ -199,7 +201,7 @@ const calculateDisplayArea = () => {
                     type="button"
                     class="justify-center rounded-l-none"
                 >
-                    Gancheira
+                    {{ t('plannerate.sidebar.shelf_details.hook') }}
                 </Button>
             </div>
             <p v-if="errors?.productType" class="text-xs text-red-500">
@@ -208,18 +210,18 @@ const calculateDisplayArea = () => {
         </div>
 
         <div class="space-y-2 rounded-lg border p-4">
-            <h4 class="text-sm font-medium">Cálculos e Dimensões</h4>
+            <h4 class="text-sm font-medium">{{ t('plannerate.form.step5.calculations') }}</h4>
             <div class="space-y-1 text-sm">
                 <div class="flex justify-between">
-                    <span>Altura total útil (seção - base):</span>
+                    <span>{{ t('plannerate.form.step5.usable_height') }}:</span>
                     <span>{{ usableHeightDisplay }} cm</span>
                 </div>
                 <div class="flex justify-between">
-                    <span>Espaçamento médio entre prateleiras:</span>
+                    <span>{{ t('plannerate.form.step5.average_spacing') }}:</span>
                     <span>{{ calculateSpacing() }} cm</span>
                 </div>
                 <div class="flex justify-between">
-                    <span>Área total de exposição (prateleiras):</span>
+                    <span>{{ t('plannerate.form.step5.total_display_area') }}:</span>
                     <span>{{ calculateDisplayArea() }} cm²</span>
                 </div>
             </div>
@@ -229,9 +231,8 @@ const calculateDisplayArea = () => {
             class="rounded-lg border border-blue-100 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20"
         >
             <p class="text-sm text-blue-800 dark:text-blue-300">
-                <span class="font-medium">Dica:</span> Defina as dimensões e o
-                tipo padrão para as prateleiras que serão adicionados a cada
-                módulo. A largura é automaticamente definida pela largura do módulo.
+                <span class="font-medium">{{ t('plannerate.form.tip') }}:</span>
+                {{ t('plannerate.form.step5.tip_text') }}
             </p>
         </div>
     </div>

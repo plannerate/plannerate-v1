@@ -3,10 +3,10 @@
         <!-- Header -->
         <div>
             <h4 class="text-sm font-medium text-foreground">
-                Resumo de Vendas
+                {{ t('plannerate.sidebar.product_sales_summary.title') }}
             </h4>
             <p class="mt-1 text-xs text-muted-foreground">
-                Análise de desempenho do produto
+                {{ t('plannerate.sidebar.product_sales_summary.subtitle') }}
             </p>
         </div>
 
@@ -33,10 +33,10 @@
             <div class="text-center">
                 <TrendingDown class="mx-auto h-10 w-10 text-muted-foreground" />
                 <p class="mt-2 text-sm font-medium text-foreground">
-                    Sem dados de vendas
+                    {{ t('plannerate.sidebar.product_sales_summary.no_data_title') }}
                 </p>
                 <p class="text-xs text-muted-foreground">
-                    Este produto ainda não possui vendas registradas
+                    {{ t('plannerate.sidebar.product_sales_summary.no_data_description') }}
                 </p>
             </div>
         </div>
@@ -48,7 +48,7 @@
                 <!-- Total Vendas -->
                 <div class="rounded-lg border bg-muted/50 p-3">
                     <p class="text-xs font-medium text-muted-foreground">
-                        Total Vendas
+                        {{ t('plannerate.sidebar.product_sales_summary.total_sales') }}
                     </p>
                     <p class="text-xl font-bold text-foreground">
                         {{ salesData.summary.total_sales }}
@@ -58,7 +58,7 @@
                 <!-- Quantidade -->
                 <div class="rounded-lg border bg-muted/50 p-3">
                     <p class="text-xs font-medium text-muted-foreground">
-                        Quantidade
+                        {{ t('plannerate.sidebar.product_sales_summary.quantity') }}
                     </p>
                     <p class="text-xl font-bold text-foreground">
                         {{ salesData.summary.total_quantity }}
@@ -68,7 +68,7 @@
                 <!-- Faturamento -->
                 <div class="rounded-lg border bg-muted/50 p-3">
                     <p class="text-xs font-medium text-muted-foreground">
-                        Faturamento
+                        {{ t('plannerate.sidebar.product_sales_summary.revenue') }}
                     </p>
                     <p
                         class="text-lg font-bold text-green-600 dark:text-green-500"
@@ -80,7 +80,7 @@
                 <!-- Margem Média -->
                 <div class="rounded-lg border bg-muted/50 p-3">
                     <p class="text-xs font-medium text-muted-foreground">
-                        Margem Média
+                        {{ t('plannerate.sidebar.product_sales_summary.avg_margin') }}
                     </p>
                     <p class="text-lg font-bold text-foreground">
                         {{ formatCurrency(salesData.summary.avg_margin) }}
@@ -93,13 +93,13 @@
             <!-- Preços -->
             <div class="space-y-2">
                 <h5 class="text-xs font-semibold text-foreground">
-                    Preços Médios
+                    {{ t('plannerate.sidebar.product_sales_summary.avg_prices') }}
                 </h5>
                 <div class="grid grid-cols-2 gap-2">
                     <div
                         class="flex items-center justify-between rounded-md bg-muted/30 px-3 py-2"
                     >
-                        <span class="text-xs text-muted-foreground">Venda</span>
+                        <span class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.sale') }}</span>
                         <span class="text-sm font-medium text-foreground">
                             {{ formatCurrency(salesData.summary.avg_price) }}
                         </span>
@@ -107,7 +107,7 @@
                     <div
                         class="flex items-center justify-between rounded-md bg-muted/30 px-3 py-2"
                     >
-                        <span class="text-xs text-muted-foreground">Custo</span>
+                        <span class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.cost') }}</span>
                         <span class="text-sm font-medium text-foreground">
                             {{ formatCurrency(salesData.summary.avg_cost) }}
                         </span>
@@ -120,19 +120,19 @@
             <!-- Período -->
             <div class="space-y-2">
                 <h5 class="text-xs font-semibold text-foreground">
-                    Período de Vendas
+                    {{ t('plannerate.sidebar.product_sales_summary.sales_period') }}
                 </h5>
                 <div class="rounded-md bg-muted/30 px-3 py-2">
                     <div class="flex items-center justify-between text-xs">
                         <span class="text-muted-foreground"
-                            >Primeira Venda</span
+                            >{{ t('plannerate.sidebar.product_sales_summary.first_sale') }}</span
                         >
                         <span class="font-medium text-foreground">
                             {{ formatDate(salesData.summary.first_sale_date) }}
                         </span>
                     </div>
                     <div class="mt-1 flex items-center justify-between text-xs">
-                        <span class="text-muted-foreground">Última Venda</span>
+                        <span class="text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.last_sale') }}</span>
                         <span class="font-medium text-foreground">
                             {{ formatDate(salesData.summary.last_sale_date) }}
                         </span>
@@ -144,7 +144,7 @@
             <div v-if="salesData.top_stores.length > 0" class="space-y-2">
                 <Separator />
                 <h5 class="text-xs font-semibold text-foreground">
-                    Top 5 Lojas
+                    {{ t('plannerate.sidebar.product_sales_summary.top_stores') }}
                 </h5>
                 <div class="space-y-1">
                     <div
@@ -174,8 +174,8 @@
                         <div
                             class="mt-1 flex items-center gap-3 text-xs text-muted-foreground"
                         >
-                            <span>{{ store.sales_count }} vendas</span>
-                            <span>{{ store.quantity }} unidades</span>
+                            <span>{{ store.sales_count }} {{ t('plannerate.sidebar.product_sales_summary.sales') }}</span>
+                            <span>{{ store.quantity }} {{ t('plannerate.sidebar.product_sales_summary.units') }}</span>
                         </div>
                     </div>
                 </div>
@@ -190,12 +190,14 @@ import { watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useProductSales } from '@/composables/plannerate/useProductSales';
+import { useT } from '@/composables/useT';
 
 interface Props {
     productId: string | null;
 }
 
 const props = defineProps<Props>();
+const { t } = useT();
 
 const { salesData, isLoading, error, loadSales, clearSales } =
     useProductSales();

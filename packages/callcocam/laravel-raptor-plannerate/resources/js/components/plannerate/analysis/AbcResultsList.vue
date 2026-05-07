@@ -18,6 +18,7 @@ import {
 import { useAnalysisFilters } from '@/composables/plannerate/analysis/useAnalysisFilters';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
+import { useT } from '@/composables/useT';
 
 interface Props {
     results: AbcResult[];
@@ -36,6 +37,7 @@ const removedProductIds = ref<Set<string>>(new Set());
 const editor = usePlanogramEditor();
 const selection = usePlanogramSelection();
 const filterByClass = ref<'all' | 'A' | 'B' | 'C' | 'retirarMix'>('all');
+const { t } = useT();
 
 // Usa o composable compartilhado (sem o filterByClass que será customizado)
 const {
@@ -250,7 +252,7 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                             />
                             <Input
                                 v-model="searchQuery"
-                                placeholder="Buscar por produto, EAN ou categoria..."
+                                :placeholder="t('plannerate.analysis.results.search_placeholder')"
                                 class="h-8 pl-7 text-xs"
                             />
                         </div>
@@ -265,7 +267,7 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                             @click="filterByClass = 'all'"
                             class="h-8 text-xs"
                         >
-                            Todas ({{ stats.total }})
+                            {{ t('plannerate.analysis.results.all') }} ({{ stats.total }})
                         </Button>
                         <Button
                             type="button"
@@ -311,13 +313,13 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                             @click="filterByClass = 'retirarMix'"
                             class="h-8 text-xs"
                         >
-                            Retirar do Mix ({{ stats.retirarMix }})
+                            {{ t('plannerate.analysis.results.remove_from_mix') }} ({{ stats.retirarMix }})
                         </Button>
                     </div>
                 </div>
 
                 <div class="mt-1 text-[11px] text-muted-foreground">
-                    {{ displayedResults.length }} produto(s) encontrado(s)
+                    {{ displayedResults.length }} {{ t('plannerate.analysis.results.products_found') }}
                 </div>
             </CardContent>
         </Card>
@@ -335,63 +337,63 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                                     class="bg-gray-100 text-xs dark:bg-gray-900"
                                 >
                                     <TableHeadAnalysis
-                                        label="EAN"
+                                        :label="t('plannerate.analysis.results.ean')"
                                         sort-key="ean"
                                         :sortConfig="sortConfig"
                                         @sort="handleSort"
                                         class="sticky-col-1 min-w-[7.5rem]"
                                     />
                                     <TableHeadAnalysis
-                                        label="Produto"
+                                        :label="t('plannerate.analysis.results.product')"
                                         sort-key="product_name"
                                         :sortConfig="sortConfig"
                                         @sort="handleSort"
                                         class="sticky-col-2 min-w-[13rem]"
                                     />
                                     <TableHeadAnalysis
-                                        label="Média Ponderada"
+                                        :label="t('plannerate.analysis.results.weighted_average')"
                                         sort-key="media_ponderada"
                                         :sortConfig="sortConfig"
                                         @sort="handleSort"
                                     />
                                     <TableHeadAnalysis
-                                        label="% Individual"
+                                        :label="t('plannerate.analysis.results.individual_percent')"
                                         sort-key="percentual_individual"
                                         :sortConfig="sortConfig"
                                         @sort="handleSort"
                                     />
                                     <TableHeadAnalysis
-                                        label="% Acumulada"
+                                        :label="t('plannerate.analysis.results.accumulated_percent')"
                                         sort-key="percentual_acumulado"
                                         :sortConfig="sortConfig"
                                         @sort="handleSort"
                                     />
                                     <TableHeadAnalysis
-                                        label="Classe ABC"
+                                        :label="t('plannerate.analysis.results.abc_class')"
                                         sort-key="classificacao"
                                         :sortConfig="sortConfig"
                                         @sort="handleSort"
                                     />
                                     <TableHeadAnalysis
-                                        label="Ranking"
+                                        :label="t('plannerate.analysis.results.ranking')"
                                         sort-key="ranking"
                                         :sortConfig="sortConfig"
                                         @sort="handleSort"
                                     />
                                     <TableHeadAnalysis
-                                        label="Retirar do Mix"
+                                        :label="t('plannerate.analysis.results.remove_from_mix')"
                                         sort-key="retirar_do_mix"
                                         :sortConfig="sortConfig"
                                         @sort="handleSort"
                                     />
                                     <TableHeadAnalysis
-                                        label="Status"
+                                        :label="t('plannerate.analysis.results.status')"
                                         sort-key="status.status"
                                         :sortConfig="sortConfig"
                                         @sort="handleSort"
                                     />
                                     <TableHeadAnalysis
-                                        label="Detalhe do Status"
+                                        :label="t('plannerate.analysis.results.status_detail')"
                                         sort-key="status.motivo"
                                         :sortConfig="sortConfig"
                                         @sort="handleSort"
@@ -429,7 +431,7 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                                             >
                                                 {{
                                                     item.category_name ||
-                                                    'Sem categoria'
+                                                    t('plannerate.analysis.selection.no_category')
                                                 }}
                                             </span>
                                         </div>
@@ -476,12 +478,12 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                                             variant="destructive"
                                             class="text-[10px]"
                                         >
-                                            Sim
+                                            {{ t('plannerate.common.yes') }}
                                         </Badge>
                                         <span
                                             v-else
                                             class="text-[11px] text-muted-foreground"
-                                            >Não</span
+                                            >{{ t('plannerate.common.no') }}</span
                                         >
                                     </TableCell>
                                     <TableCell class="py-2">

@@ -8,7 +8,7 @@
             width: `${Math.max(7 * scale, 13)}px`,
             height: `${Math.max(7 * scale, 13)}px`,
         }"
-        :title="`Classificação ABC: ${classification}`"
+        :title="t('plannerate.editor.abc_badge.title', { classification })"
     >
         {{ classification }}
     </div>
@@ -17,8 +17,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useAbcClassification } from '@/composables/plannerate/useAbcClassification';
+import { useT } from '@/composables/useT';
 
 const { isVisible } = useAbcClassification();
+const { t } = useT();
 
 interface Props {
     classification?: 'A' | 'B' | 'C';

@@ -5,7 +5,7 @@
                 <Button variant="outline" class="w-full justify-start">
                     <Filter class="mr-2 size-4" />
                     <span class="truncate">
-                        {{ selectedCategoryName || 'Selecione uma categoria' }}
+                        {{ selectedCategoryName || t('plannerate.sidebar.products.select_category') }}
                     </span>
                 </Button>
             </PopoverTrigger>
@@ -38,17 +38,17 @@
                             @click="navigateToCategory(currentCategory.category_id)"
                         >
                             <ChevronLeft class="mr-2 size-4" />
-                            Voltar
+                            {{ t('plannerate.sidebar.products.back') }}
                         </Button>
                     </div>
 
                     <!-- Lista de categorias filhas -->
                     <div class="max-h-64 overflow-y-auto p-2">
                         <div v-if="isLoading" class="flex items-center justify-center p-4">
-                            <div class="text-sm text-muted-foreground">Carregando...</div>
+                            <div class="text-sm text-muted-foreground">{{ t('plannerate.sidebar.products.loading') }}</div>
                         </div>
                         <div v-else-if="children.length === 0" class="flex items-center justify-center p-4">
-                            <div class="text-sm text-muted-foreground">Nenhuma subcategoria encontrada</div>
+                            <div class="text-sm text-muted-foreground">{{ t('plannerate.sidebar.products.no_subcategory') }}</div>
                         </div>
                         <div v-else class="space-y-1">
                             <button
@@ -78,7 +78,7 @@
                             class="w-full"
                             @click="clearSelection"
                         >
-                            Limpar seleção
+                            {{ t('plannerate.sidebar.products.clear_selection') }}
                         </Button>
                     </div>
                 </div>
@@ -94,6 +94,7 @@ import { ref, computed, watch, onMounted } from 'vue';
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useT } from '@/composables/useT';
 
 interface CategoryItem {
     id: string;
@@ -124,6 +125,7 @@ interface CategoryResponse {
 }
 
 const category = defineModel<string>('category');
+const { t } = useT();
 const isOpen = ref(false);
 const isLoading = ref(false);
 const currentCategory = ref<CategoryItem | null>(props.current);
@@ -175,7 +177,7 @@ async function loadCategories(categoryId: string | null = null) {
         children.value = response.data.children || [];
     } catch (error) {
         console.error('Erro ao carregar categorias:', error);
-        toast.error('Erro ao carregar categorias');
+        toast.error(t('plannerate.sidebar.products.errors.load_categories'));
         children.value = [];
         hierarchy.value = [];
         currentCategory.value = null;

@@ -11,13 +11,15 @@
                 v-else
                 class="flex h-20 w-20 items-center justify-center rounded border bg-muted"
             >
-                <span class="text-xs text-muted-foreground">Sem imagem</span>
+                <span class="text-xs text-muted-foreground">{{
+                    t('plannerate.sidebar.product_image_card.no_image')
+                }}</span>
             </div>
         </div>
         <div class="min-w-0 flex-1">
             <p class="flex-wrap font-medium">{{ product.name }}</p>
             <Badge variant="outline" class="mt-1">{{
-                product.ean || 'Sem EAN'
+                product.ean || t('plannerate.sidebar.product_image_card.no_ean')
             }}</Badge>
             <p
                 class="text-xs text-muted-foreground"
@@ -40,8 +42,10 @@
                     @click="handleDownload"
                     :title="
                         product.ean
-                            ? 'Baixar e atualizar imagem do servidor'
-                            : 'Produto sem EAN'
+                            ? t(
+                                  'plannerate.sidebar.product_image_card.download_and_update',
+                              )
+                            : t('plannerate.sidebar.product_image_card.product_without_ean')
                     "
                 >
                     <Loader2
@@ -58,7 +62,7 @@
                     size="icon"
                     class="h-6 w-6"
                     @click="$emit('upload')"
-                    title="Upload manual de imagem"
+                    :title="t('plannerate.sidebar.product_image_card.manual_upload')"
                 >
                     <Upload class="h-3 w-3" />
                 </Button>
@@ -70,7 +74,7 @@
                     size="icon"
                     class="h-6 w-6"
                     @click="$emit('delete')"
-                    title="Remover imagem"
+                    :title="t('plannerate.sidebar.product_image_card.remove_image')"
                 >
                     <Trash2 class="h-3 w-3" />
                 </Button>
@@ -84,6 +88,7 @@ import { Download, Loader2, Trash2, Upload } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useProductImage } from '@/composables/plannerate/useProductImage';
+import { useT } from '@/composables/useT';
 import type { Product } from '@/types/planogram';
 
 interface Props {
@@ -94,6 +99,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
     showUploadButton: false,
 });
+const { t } = useT();
 
 defineEmits<{
     upload: [];

@@ -1,9 +1,9 @@
 <template>
     <Card class="h-fit">
         <CardHeader class="pb-1.5">
-            <CardTitle class="text-sm">Detalhes do Produto</CardTitle>
+            <CardTitle class="text-sm">{{ t('plannerate.analysis.selection.product_details') }}</CardTitle>
             <CardDescription class="text-xs">
-                {{ selected ? 'Visualização e ajuste direto no editor' : 'Selecione um item na tabela' }}
+                {{ selected ? t('plannerate.analysis.target_stock_selection.editor_adjustment') : t('plannerate.analysis.selection.select_from_table') }}
             </CardDescription>
         </CardHeader>
         <CardContent class="max-h-[64vh] overflow-y-auto pt-0">
@@ -29,13 +29,13 @@
                             </p>
                             <div class="mt-1.5 flex items-center gap-1">
                                 <Badge variant="outline" class="text-[10px]">
-                                    Classe {{ selected.classificacao }}
+                                    {{ t('plannerate.analysis.selection.class') }} {{ selected.classificacao }}
                                 </Badge>
                                 <Badge
                                     :variant="selected.permite_frentes === 'Sim' ? 'default' : 'secondary'"
                                     class="text-[10px]"
                                 >
-                                    Frentes: {{ selected.permite_frentes }}
+                                    {{ t('plannerate.analysis.target_stock_selection.fronts') }}: {{ selected.permite_frentes }}
                                 </Badge>
                             </div>
                         </div>
@@ -43,37 +43,37 @@
                 </div>
 
                 <div class="rounded-lg border border-border bg-background p-2">
-                    <p class="text-[11px] font-semibold text-muted-foreground">Capacidade no segmento</p>
+                    <p class="text-[11px] font-semibold text-muted-foreground">{{ t('plannerate.analysis.target_stock_selection.segment_capacity') }}</p>
                     <div class="mt-1.5 grid grid-cols-2 gap-x-2.5 gap-y-1 text-xs">
-                        <div class="text-muted-foreground">Frentes</div>
+                        <div class="text-muted-foreground">{{ t('plannerate.analysis.target_stock_selection.fronts') }}</div>
                         <div class="text-right font-semibold text-foreground">{{ segmentQuantity }}</div>
-                        <div class="text-muted-foreground">Altura</div>
+                        <div class="text-muted-foreground">{{ t('plannerate.analysis.target_stock_selection.height') }}</div>
                         <div class="text-right font-semibold text-foreground">{{ layerQuantity }}</div>
-                        <div class="text-muted-foreground">Profundidade</div>
+                        <div class="text-muted-foreground">{{ t('plannerate.analysis.target_stock_selection.depth') }}</div>
                         <div class="text-right font-semibold text-foreground">{{ itemsInDepth }} un.</div>
-                        <div class="border-t border-border pt-1 text-foreground font-semibold">Total</div>
-                        <div class="border-t border-border pt-1 text-right text-foreground font-semibold">{{ segmentCapacity }} un.</div>
+                        <div class="border-t border-border pt-1 text-foreground font-semibold">{{ t('plannerate.analysis.target_stock_selection.total') }}</div>
+                        <div class="border-t border-border pt-1 text-right text-foreground font-semibold">{{ segmentCapacity }} {{ t('plannerate.analysis.target_stock_selection.units') }}</div>
                     </div>
                 </div>
 
                 <div class="rounded-lg border border-border bg-background p-2">
-                    <p class="text-[11px] font-semibold text-muted-foreground">Estoque</p>
+                    <p class="text-[11px] font-semibold text-muted-foreground">{{ t('plannerate.analysis.target_stock_selection.stock') }}</p>
                     <div class="mt-1.5 grid grid-cols-3 gap-1 text-center">
                         <div class="rounded-md border border-border bg-accent/40 p-1">
-                            <div class="text-[10px] text-muted-foreground">Alvo</div>
+                            <div class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.target_stock_selection.target') }}</div>
                             <div class="text-xs font-semibold text-foreground">{{ selected.estoque_alvo }}</div>
                         </div>
                         <div class="rounded-md border border-border bg-accent/40 p-1">
-                            <div class="text-[10px] text-muted-foreground">Mínimo</div>
+                            <div class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.target_stock_selection.minimum') }}</div>
                             <div class="text-xs font-semibold text-foreground">{{ selected.estoque_minimo }}</div>
                         </div>
                         <div class="rounded-md border border-border bg-accent/40 p-1">
-                            <div class="text-[10px] text-muted-foreground">Atual</div>
+                            <div class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.target_stock_selection.current') }}</div>
                             <div class="text-xs font-semibold text-foreground">{{ selected.estoque_atual }}</div>
                         </div>
                     </div>
                     <div class="mt-1.5 text-[11px] text-muted-foreground">
-                        Faixa de tolerância: {{ toleranceMin }} - {{ toleranceMax }}
+                        {{ t('plannerate.analysis.target_stock_selection.tolerance_range') }}: {{ toleranceMin }} - {{ toleranceMax }}
                     </div>
                 </div>
 
@@ -103,7 +103,7 @@
             </div>
 
             <div v-else class="rounded-lg border border-dashed border-border bg-accent/20 p-3 text-center text-xs text-muted-foreground">
-                Clique em um produto da tabela para ver detalhes e ajustar frentes.
+                {{ t('plannerate.analysis.target_stock_selection.click_for_details') }}
             </div>
         </CardContent>
     </Card>
@@ -111,6 +111,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useT } from '@/composables/useT';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -139,6 +140,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { t } = useT();
 
 defineEmits<{
     'increase-fronts': [];
@@ -147,18 +149,18 @@ defineEmits<{
 
 const recommendationText = computed(() => {
     if (props.stockStatus === 'increase') {
-        return 'Aumente o espaço na gôndola';
+        return t('plannerate.analysis.target_stock_selection.recommendation_increase');
     }
 
     if (props.stockStatus === 'decrease') {
-        return 'Diminua o espaço na gôndola';
+        return t('plannerate.analysis.target_stock_selection.recommendation_decrease');
     }
 
     if (props.stockStatus === 'ok') {
-        return 'Espaço adequado';
+        return t('plannerate.analysis.target_stock_selection.recommendation_ok');
     }
 
-    return 'Sem dados suficientes para recomendação';
+    return t('plannerate.analysis.target_stock_selection.recommendation_unknown');
 });
 
 const statusTextClass = computed(() => {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Calculator, Settings } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import { useT } from '@/composables/useT';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -43,6 +44,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<Emits>();
+const { t } = useT();
 
 // Form state
 const form = ref<FormData>({
@@ -88,7 +90,9 @@ const handleOpenChange = (value: boolean) => {
 };
 
 const tableTypeLabel = computed(() => {
-    return form.value.table_type === 'sales' ? 'Vendas' : 'Resumo Mensal';
+    return form.value.table_type === 'sales'
+        ? t('plannerate.performance.common.sales')
+        : t('plannerate.performance.common.monthly_summary');
 });
 </script>
 
@@ -98,13 +102,13 @@ const tableTypeLabel = computed(() => {
             <DialogHeader class="border-b border-border bg-background px-5 py-3">
                 <DialogTitle class="flex items-center gap-2 text-base">
                     <Settings class="size-4 text-muted-foreground" />
-                    Parâmetros de Estoque Alvo
+                    {{ t('plannerate.analysis.target_stock_params.title') }}
                 </DialogTitle>
                 <DialogDescription class="text-xs">
-                    Configure os níveis de serviço e parâmetros de reposição para calcular o estoque ideal.
+                    {{ t('plannerate.analysis.target_stock_params.description') }}
                 </DialogDescription>
                 <div class="inline-flex w-fit items-center rounded-md border border-border bg-accent/40 px-2 py-1 text-[11px] text-foreground">
-                    Tipo atual: {{ tableTypeLabel }}
+                    {{ t('plannerate.analysis.target_stock_params.current_type') }}: {{ tableTypeLabel }}
                 </div>
             </DialogHeader>
 
@@ -125,10 +129,10 @@ const tableTypeLabel = computed(() => {
 
                 <!-- Níveis de Serviço -->
                 <div class="space-y-1.5">
-                    <Label class="text-xs">Níveis de Serviço</Label>
+                    <Label class="text-xs">{{ t('plannerate.analysis.target_stock_params.service_levels') }}</Label>
                     <div class="grid grid-cols-3 gap-3">
                         <div class="space-y-1.5">
-                            <Label class="text-[10px] text-muted-foreground">Classe A</Label>
+                            <Label class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.target_stock_params.class_a') }}</Label>
                             <Input
                                 v-model.number="form.nivel_servico_a"
                                 type="number"
@@ -139,7 +143,7 @@ const tableTypeLabel = computed(() => {
                             />
                         </div>
                         <div class="space-y-1.5">
-                            <Label class="text-[10px] text-muted-foreground">Classe B</Label>
+                            <Label class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.target_stock_params.class_b') }}</Label>
                             <Input
                                 v-model.number="form.nivel_servico_b"
                                 type="number"
@@ -150,7 +154,7 @@ const tableTypeLabel = computed(() => {
                             />
                         </div>
                         <div class="space-y-1.5">
-                            <Label class="text-[10px] text-muted-foreground">Classe C</Label>
+                            <Label class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.target_stock_params.class_c') }}</Label>
                             <Input
                                 v-model.number="form.nivel_servico_c"
                                 type="number"
@@ -165,10 +169,10 @@ const tableTypeLabel = computed(() => {
 
                 <!-- Dias de Cobertura -->
                 <div class="space-y-1.5">
-                    <Label class="text-xs">Dias de Cobertura</Label>
+                    <Label class="text-xs">{{ t('plannerate.analysis.target_stock_params.coverage_days') }}</Label>
                     <div class="grid grid-cols-3 gap-3">
                         <div class="space-y-1.5">
-                            <Label class="text-[10px] text-muted-foreground">Classe A</Label>
+                            <Label class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.target_stock_params.class_a') }}</Label>
                             <Input
                                 v-model.number="form.cobertura_dias_a"
                                 type="number"
@@ -178,7 +182,7 @@ const tableTypeLabel = computed(() => {
                             />
                         </div>
                         <div class="space-y-1.5">
-                            <Label class="text-[10px] text-muted-foreground">Classe B</Label>
+                            <Label class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.target_stock_params.class_b') }}</Label>
                             <Input
                                 v-model.number="form.cobertura_dias_b"
                                 type="number"
@@ -188,7 +192,7 @@ const tableTypeLabel = computed(() => {
                             />
                         </div>
                         <div class="space-y-1.5">
-                            <Label class="text-[10px] text-muted-foreground">Classe C</Label>
+                            <Label class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.target_stock_params.class_c') }}</Label>
                             <Input
                                 v-model.number="form.cobertura_dias_c"
                                 type="number"
@@ -202,10 +206,9 @@ const tableTypeLabel = computed(() => {
 
                 <Button type="submit" class="h-9 w-full">
                     <Calculator class="mr-2 size-4" />
-                    Executar Cálculo
+                    {{ t('plannerate.analysis.target_stock_params.run_calculation') }}
                 </Button>
             </form>
         </DialogContent>
     </Dialog>
 </template>
-

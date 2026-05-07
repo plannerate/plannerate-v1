@@ -1,5 +1,6 @@
 import { onMounted, reactive, ref, watch  } from 'vue';
 import type {Ref} from 'vue';
+import { useT } from '@/composables/useT';
 import type { Category, Product } from '@/types/planogram';
 import { products as productsRoute } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
 
@@ -24,6 +25,7 @@ const isBrowser = typeof window !== 'undefined';
 let didMount = false;
 
 export function useProductsPanel(options: UseProductsPanelOptions) {
+    const { t } = useT();
     const products = ref<Product[]>([]);
     const searchQuery = ref('');
     const filters = reactive<ProductFilters>({
@@ -71,7 +73,7 @@ return;
             );
 
             if (!response.ok) {
-throw new Error('Failed to load products');
+throw new Error(t('plannerate.composables.products_panel.failed_load_products'));
 }
 
             const data = await response.json();

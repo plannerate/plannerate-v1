@@ -58,7 +58,7 @@
                                 <p
                                     class="line-clamp-2 text-sm leading-tight font-semibold text-foreground"
                                 >
-                                    {{ stockInfo.product_name || 'Produto' }}
+                                    {{ stockInfo.product_name || t('plannerate.editor.stock_indicator.product') }}
                                 </p>
                                 <p
                                     v-if="stockInfo.ean"
@@ -81,7 +81,7 @@
                                     <img
                                         :src="productImageUrl"
                                         :alt="
-                                            stockInfo.product_name || 'Produto'
+                                            stockInfo.product_name || t('plannerate.editor.stock_indicator.product')
                                         "
                                         class="h-full w-full object-contain"
                                     />
@@ -90,13 +90,13 @@
                                     <p
                                         class="mb-2.5 text-xs font-semibold text-foreground"
                                     >
-                                        Capacidade deste segmento
+                                        {{ t('plannerate.editor.stock_indicator.segment_capacity') }}
                                     </p>
                                     <div
                                         class="flex items-center justify-between text-xs"
                                     >
                                         <span class="text-muted-foreground"
-                                            >Frentes:</span
+                                            >{{ t('plannerate.print.product_detail.fronts') }}:</span
                                         >
                                         <span
                                             class="font-semibold text-foreground"
@@ -107,7 +107,7 @@
                                         class="flex items-center justify-between text-xs"
                                     >
                                         <span class="text-muted-foreground"
-                                            >Altura:</span
+                                            >{{ t('plannerate.print.product_detail.height') }}:</span
                                         >
                                         <span
                                             class="font-semibold text-foreground"
@@ -118,7 +118,7 @@
                                         class="flex items-center justify-between text-xs"
                                     >
                                         <span class="text-muted-foreground"
-                                            >Profundidade:</span
+                                            >{{ t('plannerate.print.product_detail.depth') }}:</span
                                         >
                                         <span
                                             class="font-semibold text-foreground"
@@ -130,7 +130,7 @@
                                     >
                                         <span
                                             class="text-xs font-semibold text-foreground"
-                                            >Total:</span
+                                            >{{ t('plannerate.analysis.target_stock_selection.total') }}:</span
                                         >
                                         <span
                                             class="text-base font-bold text-foreground"
@@ -180,7 +180,7 @@
                                         <p
                                             class="text-[10px] font-medium text-muted-foreground"
                                         >
-                                            Mínimo
+                                            {{ t('plannerate.analysis.target_stock_selection.minimum') }}
                                         </p>
                                         <p
                                             class="text-sm font-bold text-foreground"
@@ -222,7 +222,7 @@
                                     <p
                                         class="mb-1 text-[11px] font-medium text-muted-foreground"
                                     >
-                                        Demanda Média
+                                        {{ t('plannerate.print.product_detail.avg_demand') }}
                                     </p>
                                     <p
                                         class="text-base font-bold text-foreground"
@@ -236,7 +236,7 @@
                                     <p
                                         class="text-[10px] text-muted-foreground"
                                     >
-                                        unidades
+                                        {{ t('plannerate.sidebar.product_sales_summary.units') }}
                                     </p>
                                 </div>
                                 <div
@@ -245,7 +245,7 @@
                                     <p
                                         class="mb-1 text-[11px] font-medium text-muted-foreground"
                                     >
-                                        Faixa de Tolerância
+                                        {{ t('plannerate.analysis.target_stock_selection.tolerance_range') }}
                                     </p>
                                     <p
                                         class="text-sm font-bold text-foreground"
@@ -267,7 +267,7 @@
                                     <p
                                         class="text-[10px] text-muted-foreground"
                                     >
-                                        unidades
+                                        {{ t('plannerate.sidebar.product_sales_summary.units') }}
                                     </p>
                                 </div>
                             </div>
@@ -310,13 +310,13 @@
                                         class="size-4"
                                     />
                                     <span v-if="stockStatus === 'increase'"
-                                        >Aumente o espaço na gôndola</span
+                                        >{{ t('plannerate.analysis.target_stock_selection.recommendation_increase') }}</span
                                     >
                                     <span v-if="stockStatus === 'decrease'"
-                                        >Diminua o espaço na gôndola</span
+                                        >{{ t('plannerate.analysis.target_stock_selection.recommendation_decrease') }}</span
                                     >
                                     <span v-if="stockStatus === 'ok'"
-                                        >Espaço adequado</span
+                                        >{{ t('plannerate.analysis.target_stock_selection.recommendation_ok') }}</span
                                     >
                                 </p>
                             </div>
@@ -331,6 +331,7 @@
 <script setup lang="ts">
 import { CheckCircle, TrendingDown, TrendingUp } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { useT } from '@/composables/useT';
 import {
     Tooltip,
     TooltipContent,
@@ -358,6 +359,7 @@ const {
     DEFAULT_TOLERANCE,
     isVisible,
 } = useTargetStockAnalysis();
+const { t } = useT();
 
 // Busca dados de target stock pelo EAN do produto
 const stockInfo = computed(() => {

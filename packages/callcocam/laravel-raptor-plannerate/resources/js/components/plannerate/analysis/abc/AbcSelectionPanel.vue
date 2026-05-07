@@ -1,12 +1,12 @@
 <template>
     <Card class="h-fit">
         <CardHeader >
-            <CardTitle class="text-sm">Detalhes do Produto</CardTitle>
+            <CardTitle class="text-sm">{{ t('plannerate.analysis.selection.product_details') }}</CardTitle>
             <CardDescription class="text-xs">
                 {{
                     selected
-                        ? 'Resumo da classificação ABC selecionada'
-                        : 'Selecione um produto da tabela'
+                        ? t('plannerate.analysis.abc_selection.selected_summary')
+                        : t('plannerate.analysis.selection.select_from_table')
                 }}
             </CardDescription>
         </CardHeader>
@@ -36,7 +36,7 @@
                                 {{ selected.ean }}
                             </p>
                             <p class="mt-0.5 text-[11px] text-muted-foreground">
-                                {{ selected.category_name || 'Sem categoria' }}
+                                {{ selected.category_name || t('plannerate.analysis.selection.no_category') }}
                             </p>
                         </div>
                     </div>
@@ -46,7 +46,7 @@
                     <div
                         class="rounded-md border border-border bg-background p-1.5"
                     >
-                        <div class="text-muted-foreground">Classe</div>
+                        <div class="text-muted-foreground">{{ t('plannerate.analysis.selection.class') }}</div>
                         <div class="font-semibold text-foreground">
                             {{ selected.classificacao }}
                         </div>
@@ -54,7 +54,7 @@
                     <div
                         class="rounded-md border border-border bg-background p-1.5"
                     >
-                        <div class="text-muted-foreground">Ranking</div>
+                        <div class="text-muted-foreground">{{ t('plannerate.analysis.selection.ranking') }}</div>
                         <div class="font-semibold text-foreground">
                             {{ selected.ranking }}
                         </div>
@@ -64,11 +64,11 @@
                 <div
                     class="rounded-lg border border-border bg-background p-2 text-[11px]"
                 >
-                    <p class="mb-1 text-muted-foreground">Indicadores</p>
+                    <p class="mb-1 text-muted-foreground">{{ t('plannerate.analysis.selection.indicators') }}</p>
                     <div class="space-y-1">
                         <div class="flex items-center justify-between">
                             <span class="text-muted-foreground"
-                                >Média ponderada</span
+                                >{{ t('plannerate.analysis.abc_selection.weighted_average') }}</span
                             >
                             <span class="font-semibold text-foreground">{{
                                 selected.media_ponderada.toFixed(2)
@@ -76,7 +76,7 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-muted-foreground"
-                                >% Individual</span
+                                >{{ t('plannerate.analysis.abc_selection.individual_percent') }}</span
                             >
                             <span class="font-semibold text-foreground">{{
                                 formatPercent(selected.percentual_individual)
@@ -84,26 +84,26 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-muted-foreground"
-                                >% Acumulada</span
+                                >{{ t('plannerate.analysis.abc_selection.accumulated_percent') }}</span
                             >
                             <span class="font-semibold text-foreground">{{
                                 formatPercent(selected.percentual_acumulado)
                             }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-muted-foreground">Qtde</span>
+                            <span class="text-muted-foreground">{{ t('plannerate.analysis.abc_selection.quantity') }}</span>
                             <span class="font-semibold text-foreground">{{
                                 selected.qtde
                             }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-muted-foreground">Valor</span>
+                            <span class="text-muted-foreground">{{ t('plannerate.analysis.abc_selection.value') }}</span>
                             <span class="font-semibold text-foreground">{{
                                 formatCurrency(selected.valor)
                             }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-muted-foreground">Margem</span>
+                            <span class="text-muted-foreground">{{ t('plannerate.analysis.abc_selection.margin') }}</span>
                             <span class="font-semibold text-foreground">{{
                                 formatCurrency(selected.margem)
                             }}</span>
@@ -116,7 +116,7 @@
                 >
                     <div class="flex items-center justify-between">
                         <span class="text-muted-foreground"
-                            >Retirar do mix</span
+                            >{{ t('plannerate.analysis.abc_selection.remove_from_mix') }}</span
                         >
                         <Badge
                             :variant="
@@ -126,11 +126,11 @@
                             "
                             class="text-[10px]"
                         >
-                            {{ selected.retirar_do_mix ? 'Sim' : 'Não' }}
+                            {{ selected.retirar_do_mix ? t('plannerate.common.yes') : t('plannerate.common.no') }}
                         </Badge>
                     </div>
                     <div class="mt-1 flex items-center justify-between">
-                        <span class="text-muted-foreground">Status</span>
+                        <span class="text-muted-foreground">{{ t('plannerate.analysis.selection.status') }}</span>
                         <Badge
                             :variant="
                                 selected.status.status === 'Ativo'
@@ -153,11 +153,11 @@
                     variant="destructive"
                     size="sm"
                     class="w-full"
-                    tooltip="Excluir segmento (Del)"
+                    :tooltip="t('plannerate.analysis.abc_selection.remove_segment_tooltip')"
                     @click="emit('remove-from-planogram', selected.product_id)"
                 >
                     <Trash2 class="mr-2 size-4" />
-                    Excluir do planograma
+                    {{ t('plannerate.analysis.abc_selection.remove_from_planogram') }}
                 </ButtonWithTooltip>
             </div>
 
@@ -165,7 +165,7 @@
                 v-else
                 class="rounded-lg border border-dashed border-border bg-accent/20 p-3 text-center text-xs text-muted-foreground"
             >
-                Clique em uma linha para ver os detalhes.
+                {{ t('plannerate.analysis.selection.click_row_for_details') }}
             </div>
         </CardContent>
     </Card>
@@ -173,6 +173,7 @@
 
 <script setup lang="ts">
 import { Trash2 } from 'lucide-vue-next';
+import { useT } from '@/composables/useT';
 import { Badge } from '@/components/ui/badge';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import {
@@ -192,6 +193,7 @@ defineProps<{
 const emit = defineEmits<{
     'remove-from-planogram': [productId: string];
 }>();
+const { t } = useT();
 
 const formatPercent = (value: number): string => `${value.toFixed(2)}%`;
 

@@ -9,6 +9,7 @@ import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate
 import { usePlanogramChanges } from '@/composables/plannerate/usePlanogramChanges';
 import { usePlanogramHistory } from '@/composables/plannerate/usePlanogramHistory';
 import { findNearestHole } from '@/composables/plannerate/useSectionHoles';
+import { useT } from '@/composables/useT';
 import type { Gondola, Product, Section, Shelf } from '@/types/planogram';
 
 // Importa módulos separados por responsabilidade
@@ -53,6 +54,7 @@ import { useShelfOperations } from './editor/useShelfOperations';
 const isBrowser = typeof window !== 'undefined';
 
 export function usePlanogramEditor() {
+    const { t } = useT();
     const history = usePlanogramHistory();
     const changes = usePlanogramChanges();
 
@@ -437,7 +439,13 @@ return false;
         };
 
         const result = commitOptimistic({
-            apply: () => moveSegmentOperation(segmentId, targetShelfId, recordChange),
+            apply: () =>
+                moveSegmentOperation(
+                    segmentId,
+                    targetShelfId,
+                    recordChange,
+                    t('plannerate.editor.product_does_not_fit_destination_shelf'),
+                ),
             historySnapshot: {
                 type: 'segment_transfer',
                 segmentId: segmentId,
@@ -480,7 +488,13 @@ return false;
         };
 
         const result = commitOptimistic({
-            apply: () => copySegmentOperation(segmentId, targetShelfId, recordChange),
+            apply: () =>
+                copySegmentOperation(
+                    segmentId,
+                    targetShelfId,
+                    recordChange,
+                    t('plannerate.editor.product_does_not_fit_destination_shelf'),
+                ),
             historySnapshot: {
                 type: 'segment_copy',
                 segmentId: segmentId,
@@ -756,6 +770,7 @@ return null;
                     productData,
                     onProductUsed,
                     recordChange,
+                    t('plannerate.editor.product_does_not_fit_selected_shelf'),
                 ),
             historySnapshot: {
                 type: 'segment_update',

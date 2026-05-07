@@ -1,9 +1,11 @@
 <template>
     <div class="space-y-2">
-        <Label class="text-xs font-semibold">Dimensões do Produto</Label>
+        <Label class="text-xs font-semibold">{{
+            t('plannerate.sidebar.product_dimensions.title')
+        }}</Label>
         <div class="grid grid-cols-3 gap-2 text-sm">
             <div>
-                <span class="text-muted-foreground">A:</span>
+                <span class="text-muted-foreground">{{ t('plannerate.sidebar.product_dimensions.short_height') }}:</span>
                 <Input
                     type="number"
                     step="0.01"
@@ -14,7 +16,7 @@
                 />
             </div>
             <div>
-                <span class="text-muted-foreground">L:</span>
+                <span class="text-muted-foreground">{{ t('plannerate.sidebar.product_dimensions.short_width') }}:</span>
                 <Input
                     type="number"
                     step="0.01"
@@ -25,7 +27,7 @@
                 />
             </div>
             <div>
-                <span class="text-muted-foreground">P:</span>
+                <span class="text-muted-foreground">{{ t('plannerate.sidebar.product_dimensions.short_depth') }}:</span>
                 <Input
                     type="number"
                     step="0.01"
@@ -42,6 +44,7 @@
 <script setup lang="ts">
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useT } from '@/composables/useT';
 
 interface Props {
     height?: number;
@@ -50,6 +53,7 @@ interface Props {
 }
 
 defineProps<Props>();
+const { t } = useT();
 
 defineEmits<{
     'update:height': [value: number];

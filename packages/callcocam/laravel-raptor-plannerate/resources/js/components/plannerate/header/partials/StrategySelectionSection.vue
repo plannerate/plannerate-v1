@@ -3,6 +3,7 @@
 
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useT } from '@/composables/useT';
 
 interface StrategyOption {
     value: string;
@@ -18,11 +19,13 @@ defineProps<{
     form: StrategyFormState;
     strategyOptions: StrategyOption[];
 }>();
+
+const { t } = useT();
 </script>
 
 <template>
     <div class="space-y-3">
-        <Label class="text-base font-semibold">Estratégia de Otimização</Label>
+        <Label class="text-base font-semibold">{{ t('plannerate.header.strategy.title') }}</Label>
         <RadioGroup v-model="form.strategy">
             <div
                 v-for="option in strategyOptions"

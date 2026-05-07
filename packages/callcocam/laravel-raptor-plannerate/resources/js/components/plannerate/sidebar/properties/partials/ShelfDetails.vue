@@ -3,10 +3,10 @@
         <div>
             <h3 class="text-lg font-semibold">
                 <Box class="mr-2 inline size-5 text-foreground" />
-                Prateleira
+                {{ t('plannerate.sidebar.shelf_details.shelf') }}
             </h3>
             <p class="text-sm text-muted-foreground">
-                {{ shelf.code || `Prateleira #${shelf.ordering}` }}
+                {{ shelf.code || `${t('plannerate.sidebar.shelf_details.shelf')} #${shelf.ordering}` }}
             </p>
         </div>
 
@@ -15,7 +15,7 @@
         <div class="space-y-3">
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
-                    <Label for="shelf-code">Código</Label>
+                    <Label for="shelf-code">{{ t('plannerate.sidebar.section_details.code') }}</Label>
                     <Input
                         id="shelf-code"
                         :model-value="shelf.code"
@@ -24,7 +24,7 @@
                 </div>
 
                 <div class="space-y-2">
-                    <Label for="shelf-product-type">Tipo</Label>
+                    <Label for="shelf-product-type">{{ t('plannerate.performance.common.type') }}</Label>
                     <select
                         id="shelf-product-type"
                         :value="
@@ -33,15 +33,15 @@
                         @change="handleProductTypeChange"
                         class="flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        <option value="normal">Normal</option>
-                        <option value="hook">Gancheira</option>
+                        <option value="normal">{{ t('plannerate.sidebar.shelf_details.normal') }}</option>
+                        <option value="hook">{{ t('plannerate.sidebar.shelf_details.hook') }}</option>
                     </select>
                 </div>
             </div>
 
             <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
-                    <Label for="shelf-width">Largura (cm)</Label>
+                    <Label for="shelf-width">{{ t('plannerate.print.product_detail.width') }} (cm)</Label>
                     <Input
                         id="shelf-width"
                         :model-value="shelf.shelf_width"
@@ -53,7 +53,7 @@
                     />
                 </div>
                 <div class="space-y-2">
-                    <Label for="shelf-height">Altura (cm)</Label>
+                    <Label for="shelf-height">{{ t('plannerate.print.product_detail.height') }} (cm)</Label>
                     <Input
                         id="shelf-height"
                         :model-value="shelf.shelf_height"
@@ -68,7 +68,7 @@
 
             <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
-                    <Label for="shelf-depth">Profundidade (cm)</Label>
+                    <Label for="shelf-depth">{{ t('plannerate.print.product_detail.depth') }} (cm)</Label>
                     <Input
                         id="shelf-depth"
                         :model-value="shelf.shelf_depth"
@@ -80,7 +80,7 @@
                     />
                 </div>
                 <div class="space-y-2">
-                    <Label for="shelf-position">Posição (cm)</Label>
+                    <Label for="shelf-position">{{ t('plannerate.sidebar.shelf_details.position') }} (cm)</Label>
                     <Input
                         id="shelf-position"
                         :model-value="shelf.shelf_position"
@@ -97,47 +97,47 @@
 
             <!-- Botões de ação -->
             <div class="space-y-2">
-                <Label>Ações</Label>
+                <Label>{{ t('plannerate.sidebar.section_details.actions') }}</Label>
                 <div class="grid grid-cols-2 gap-2">
                     <ButtonWithTooltip
                         variant="outline"
                         size="sm"
                         @click="handleMoveUp"
                         :disabled="!shelfActions.canMoveUp"
-                        tooltip="Mover para cima (Ctrl+ ↑)"
+                        :tooltip="t('plannerate.sidebar.shelf_details.move_up_tooltip')"
                     >
                         <ArrowUp class="mr-2 size-4" />
-                        Cima
+                        {{ t('plannerate.sidebar.shelf_details.up') }}
                     </ButtonWithTooltip>
                     <ButtonWithTooltip
                         variant="outline"
                         size="sm"
                         @click="handleMoveDown"
                         :disabled="!shelfActions.canMoveDown"
-                        tooltip="Mover para baixo (Ctrl+ ↓)"
+                        :tooltip="t('plannerate.sidebar.shelf_details.move_down_tooltip')"
                     >
                         <ArrowDown class="mr-2 size-4" />
-                        Baixo
+                        {{ t('plannerate.sidebar.shelf_details.down') }}
                     </ButtonWithTooltip>
                     <ButtonWithTooltip
                         variant="outline"
                         size="sm"
                         @click="handleMoveLeft"
                         :disabled="!shelfActions.canMoveLeft"
-                        tooltip="Mover para seção esquerda (Ctrl+ ←)"
+                        :tooltip="t('plannerate.sidebar.shelf_details.move_left_tooltip')"
                     >
                         <ArrowLeft class="mr-2 size-4" />
-                        Esquerda
+                        {{ t('plannerate.sidebar.shelf_details.left') }}
                     </ButtonWithTooltip>
                     <ButtonWithTooltip
                         variant="outline"
                         size="sm"
                         @click="handleMoveRight"
                         :disabled="!shelfActions.canMoveRight"
-                        tooltip="Mover para seção direita (Ctrl+ →)"
+                        :tooltip="t('plannerate.sidebar.shelf_details.move_right_tooltip')"
                     >
                         <ArrowRight class="mr-2 size-4" />
-                        Direita
+                        {{ t('plannerate.sidebar.shelf_details.right') }}
                     </ButtonWithTooltip>
                     <ButtonWithTooltip
                         variant="outline"
@@ -145,20 +145,20 @@
                         @click="handleInvertSegments"
                         :disabled="!canInvertSegments"
                         class="col-span-2"
-                        tooltip="Inverter ordem dos produtos (Ctrl+I)"
+                        :tooltip="t('plannerate.sidebar.shelf_details.invert_products_tooltip')"
                     >
                         <ArrowUpDown class="mr-2 size-4" />
-                        Inverter Produtos
+                        {{ t('plannerate.sidebar.shelf_details.invert_products') }}
                     </ButtonWithTooltip>
                     <ButtonWithTooltip
                         variant="destructive"
                         size="sm"
                         @click="handleDelete"
                         class="col-span-2"
-                        tooltip="Excluir prateleira (Del)"
+                        :tooltip="t('plannerate.sidebar.shelf_details.delete_tooltip')"
                     >
                         <Trash2 class="mr-2 size-4" />
-                        Excluir
+                        {{ t('plannerate.sidebar.section_details.delete') }}
                     </ButtonWithTooltip>
                 </div>
             </div>
@@ -186,6 +186,7 @@ import { usePlanogramKeyboard } from '@/composables/plannerate/usePlanogramKeybo
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { findNearestHole } from '@/composables/plannerate/useSectionHoles';
 import { useShelfActions } from '@/composables/plannerate/useShelfActions';
+import { useT } from '@/composables/useT';
 import type { Shelf } from '@/types/planogram';
 
 interface Props {
@@ -195,6 +196,7 @@ interface Props {
 const props = defineProps<Props>();
 
 const editor = usePlanogramEditor();
+const { t } = useT();
 const selection = usePlanogramSelection();
 const keyboard = usePlanogramKeyboard();
 

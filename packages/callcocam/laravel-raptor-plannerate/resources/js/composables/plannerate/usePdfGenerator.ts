@@ -1,6 +1,7 @@
 import html2canvas from 'html2canvas-pro'
 import jsPDF from 'jspdf'
 import { ref } from 'vue'
+import { useT } from '@/composables/useT'
 
 const MAX_CAPTURE_SCALE = 5
 const MAX_CANVAS_SIDE = 16000
@@ -144,6 +145,7 @@ async function captureElementAsCanvas(
 }
 
 export function usePdfGenerator() {
+  const { t } = useT()
   const isGenerating = ref(false)
 
   /**
@@ -286,7 +288,7 @@ export function usePdfGenerator() {
               ?.parentElement
 
         if (!container) {
-          throw new Error('Container não encontrado!')
+          throw new Error(t('plannerate.composables.pdf_generator.container_not_found'))
         }
 
         pdf = await generateSinglePagePdf(container, pdfOptions)
@@ -306,7 +308,7 @@ export function usePdfGenerator() {
         }
 
         if (elements.length === 0) {
-          throw new Error('Nenhum elemento encontrado!')
+          throw new Error(t('plannerate.composables.pdf_generator.no_elements_found'))
         }
 
         pdf = await generateMultiPagePdf(elements, pdfOptions)

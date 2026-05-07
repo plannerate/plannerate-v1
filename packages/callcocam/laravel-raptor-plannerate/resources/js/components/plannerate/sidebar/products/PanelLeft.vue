@@ -11,7 +11,7 @@
             <Collapsible :open="isOpen" class="border-b  border-border bg-background flex-col">
                 <CollapsibleTrigger @click.stop="isOpen = !isOpen"
                     class="w-full px-4 py-2 text-left font-medium flex items-center justify-between cursor-pointer">
-                    <span>Filtros &amp; Pesquisa</span>
+                    <span>{{ t('plannerate.sidebar.products.filters_and_search') }}</span>
                     <button class="  z-10 cursor-pointer rounded-full p-1 transition-colors hover:bg-accent"
                         @click="emit('close')" type="button">
                         <X class="size-4 text-foreground" />
@@ -25,21 +25,20 @@
                         <!-- Divider -->
                         <div class="border-t border-border" />
 
-                        <label class="text-sm font-medium text-foreground">Filtros</label>
+                        <label class="text-sm font-medium text-foreground">{{ t('plannerate.sidebar.products.filters') }}</label>
                         <Popover>
                             <PopoverTrigger as-child>
                                 <button
                                     class="w-full px-3 py-2 text-left text-sm font-medium border border-input rounded-md hover:bg-accent transition-colors">
-                                    Classificação Mercadológica
+                                    {{ t('plannerate.sidebar.products.market_classification') }}
                                 </button>
                             </PopoverTrigger>
                             <PopoverContent align="start" class="w-full md:max-w-7xl   z-[1000]">
                                 <div class="grid grid-cols-1 gap-8">
                                     <!-- Coluna Esquerda -->
                                     <div class="flex flex-col gap-2">
-                                        <h3 class="text-sm font-semibold text-foreground">Nível Mercadológico</h3>
-                                        <p class="text-xs text-muted-foreground">Selecione a hierarquia de classificação
-                                            do produto</p>
+                                        <h3 class="text-sm font-semibold text-foreground">{{ t('plannerate.sidebar.products.market_level') }}</h3>
+                                        <p class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.products.market_level_help') }}</p>
                                     </div>
                                     <!-- Coluna Direita -->
                                     <div class="flex flex-col gap-4 z-[1500]">
@@ -71,6 +70,7 @@
 <script setup lang="ts">
 import { X } from 'lucide-vue-next';
 import { onMounted, provide, ref, useTemplateRef } from 'vue';
+import { useT } from '@/composables/useT';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useProductsPanel } from '@/composables/plannerate/useProductsPanel';
@@ -89,6 +89,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { t } = useT();
 const open = defineModel<boolean>('open');
 const isOpen = ref(true) 
 const emit = defineEmits<{

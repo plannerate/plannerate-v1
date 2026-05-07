@@ -27,6 +27,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { validateGondolaFields } from '@/composables/plannerate/useGondolaFields';
+import { useT } from '@/composables/useT';
 
 interface Props {
     modelValue: {
@@ -46,6 +47,7 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const { t } = useT();
 
 function updateField<K extends keyof Props['modelValue']>(
     key: K,
@@ -68,12 +70,12 @@ const setFlow = (flowValue: 'left_to_right' | 'right_to_left') => {
             <div class="rounded-full bg-primary/10 p-2">
                 <InfoIcon class="h-5 w-5 text-primary" />
             </div>
-            <h3 class="text-lg font-medium">Informações Básicas</h3>
+            <h3 class="text-lg font-medium">{{ t('plannerate.form.step1.title') }}</h3>
         </div>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div class="space-y-2">
-                <Label for="gondolaName">Nome da Gôndola *</Label>
+                <Label for="gondolaName">{{ t('plannerate.form.step1.gondola_name') }} *</Label>
                 <Input
                     id="gondolaName"
                     :model-value="props.modelValue.gondolaName"
@@ -89,12 +91,12 @@ const setFlow = (flowValue: 'left_to_right' | 'right_to_left') => {
             </div>
 
             <div class="space-y-2">
-                <Label for="location">Localização Da Gôndola</Label>
+                <Label for="location">{{ t('plannerate.form.step1.location') }}</Label>
                 <Input
                     id="location"
                     :model-value="props.modelValue.location"
                     @update:model-value="(val) => updateField('location', String(val ?? ''))"
-                    placeholder="Ex.: Corredor de Bebidas"
+                    :placeholder="t('plannerate.form.step1.location_placeholder')"
                     :class="{
                         'border-red-500': errors?.location,
                     }"
@@ -103,19 +105,19 @@ const setFlow = (flowValue: 'left_to_right' | 'right_to_left') => {
                     {{ errors.location }}
                 </p>
                 <p v-else class="text-xs text-muted-foreground">
-                    Corredor onde a gôndola está localizada
+                    {{ t('plannerate.form.step1.location_hint') }}
                 </p>
             </div>
         </div>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div class="space-y-2">
-                <Label for="side">Lado do Corredor *</Label>
+                <Label for="side">{{ t('plannerate.form.step1.side') }} *</Label>
                 <Input
                     id="side"
                     :model-value="props.modelValue.side"
                     @update:model-value="(val) => updateField('side', String(val ?? ''))"
-                    placeholder="Ex.: A, B ou 1, 2"
+                    :placeholder="t('plannerate.form.step1.side_placeholder')"
                     :class="{
                         'border-red-500': errors?.side,
                     }"
@@ -126,7 +128,7 @@ const setFlow = (flowValue: 'left_to_right' | 'right_to_left') => {
             </div>
 
             <div class="space-y-2">
-                <Label for="scaleFactor">Fator de Escala *</Label>
+                <Label for="scaleFactor">{{ t('plannerate.form.step1.scale_factor') }} *</Label>
                 <Input
                     id="scaleFactor"
                     type="number"
@@ -143,19 +145,19 @@ const setFlow = (flowValue: 'left_to_right' | 'right_to_left') => {
             </div>
 
             <div class="space-y-2">
-                <Label for="status">Status</Label>
+                <Label for="status">{{ t('plannerate.analysis.selection.status') }}</Label>
                 <Select
                     :model-value="props.modelValue.status"
                     @update:model-value="(val) => updateField('status', String(val ?? 'draft'))"
                 >
                     <SelectTrigger>
-                        <SelectValue placeholder="Selecione o status" />
+                        <SelectValue :placeholder="t('plannerate.form.step1.select_status')" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup>
-                            <SelectLabel>Status</SelectLabel>
-                            <SelectItem value="published">Publicado</SelectItem>
-                            <SelectItem value="draft">Rascunho</SelectItem>
+                            <SelectLabel>{{ t('plannerate.analysis.selection.status') }}</SelectLabel>
+                            <SelectItem value="published">{{ t('plannerate.form.step1.status_published') }}</SelectItem>
+                            <SelectItem value="draft">{{ t('plannerate.form.step1.status_draft') }}</SelectItem>
                         </SelectGroup>
                     </SelectContent>
                 </Select>
@@ -163,7 +165,7 @@ const setFlow = (flowValue: 'left_to_right' | 'right_to_left') => {
         </div>
 
         <div class="space-y-2">
-            <Label>Posição do Fluxo *</Label>
+            <Label>{{ t('plannerate.form.step1.flow_position') }} *</Label>
             <div
                 class="grid grid-cols-2 gap-2 rounded-md border"
                 :class="{ 'border-red-500': errors?.flow }"
@@ -178,7 +180,7 @@ const setFlow = (flowValue: 'left_to_right' | 'right_to_left') => {
                     type="button"
                     class="justify-center rounded-r-none border-r"
                 >
-                    Esquerda para Direita
+                    {{ t('plannerate.form.step1.flow_left_to_right') }}
                 </Button>
                 <Button
                     :variant="
@@ -190,7 +192,7 @@ const setFlow = (flowValue: 'left_to_right' | 'right_to_left') => {
                     type="button"
                     class="justify-center rounded-l-none"
                 >
-                    Direita para Esquerda
+                    {{ t('plannerate.form.step1.flow_right_to_left') }}
                 </Button>
             </div>
             <p v-if="errors?.flow" class="text-xs text-red-500">
