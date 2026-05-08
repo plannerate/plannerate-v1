@@ -6,13 +6,10 @@ import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantCont
 import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord/TenantIntegrationController';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import DeleteButton from '@/components/DeleteButton.vue';
-import ApiAuthorizationFields from '@/components/form/ApiAuthorizationFields.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import FormTabsBar from '@/components/form/FormTabsBar.vue';
-import GesCooperIntegrationFields from '@/components/form/GesCooperIntegrationFields.vue';
 import KeyValueTable from '@/components/form/KeyValueTable.vue';
-import SysmoIntegrationFields from '@/components/form/SysmoIntegrationFields.vue';
 import FormCard from '@/components/FormCard.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
@@ -33,38 +30,19 @@ type KeyValueRow = {
 type IntegrationPayload = {
     id: string;
     integration_type: string;
-    identifier: string;
-    external_name: string;
-    external_name_ean: string;
-    external_name_status: string;
-    external_name_sale_date: string;
     api_url: string;
     auth_type: string;
+    auth_token: string;
     auth_username: string;
     auth_password: string;
-    auth_token: string;
-    auth_api_key: string;
-    auth_api_key_name: string;
-    usuario: string;
-    senha: string;
-    dispositivo_uid: string;
-    partner_key: string;
-    empresa: string;
-    days_to_maintain: number;
     sales_initial_days: number;
     products_initial_days: number;
-    daily_lookback_days: number;
-    sales_page_size: number;
-    products_page_size: number;
-    sales_tipo_consulta: string;
-    auto_processing_enabled: boolean;
     processing_time: string;
-    initial_setup_date: string | null;
     is_active: boolean;
     last_sync: string | null;
     connection_headers: KeyValueRow[];
     connection_params: KeyValueRow[];
-    default_body: string;
+    connection_body: KeyValueRow[];
 };
 
 type IntegrationTypeOption = {
@@ -79,13 +57,13 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
-const integrationType = ref(props.integration?.integration_type ?? 'sysmo');
-const activeTab = ref('dados');
+const activeTab = ref('authorization');
 const tenantsIndexPath = TenantController.index.url().replace(/^\/\/[^/]+/, '');
 
+const localAuthType = ref(props.integration?.auth_type ?? 'none');
 const connectionHeaders = ref<KeyValueRow[]>(props.integration?.connection_headers ?? []);
 const connectionParams = ref<KeyValueRow[]>(props.integration?.connection_params ?? []);
-const defaultBody = ref(props.integration?.default_body ?? '');
+const connectionBody = ref<KeyValueRow[]>(props.integration?.connection_body ?? []);
 
 const testPath = ref('/');
 const testMethod = ref('GET');
@@ -95,10 +73,9 @@ const testError = ref<string | null>(null);
 const testResult = ref<unknown>(null);
 
 const tabs = computed(() => [
-    { key: 'dados',         label: t('app.landlord.tenant_integrations.tabs.dados') },
-    { key: 'params',        label: 'Params' },
     { key: 'authorization', label: 'Authorization' },
     { key: 'headers',       label: 'Headers' },
+    { key: 'params',        label: 'Params' },
     { key: 'body',          label: 'Body' },
 ]);
 
@@ -119,35 +96,16 @@ const pageMeta = useCrudPageMeta({
 });
 
 const formData = computed(() => ({
-    integration_type:        props.integration?.integration_type ?? integrationType.value,
-    identifier:              props.integration?.identifier ?? '',
-    api_url:                 props.integration?.api_url ?? '',
-    auth_type:               props.integration?.auth_type ?? 'none',
-    auth_username:           props.integration?.auth_username ?? '',
-    auth_password:           props.integration?.auth_password ?? '',
-    auth_token:              props.integration?.auth_token ?? '',
-    auth_api_key:            props.integration?.auth_api_key ?? '',
-    auth_api_key_name:       props.integration?.auth_api_key_name ?? '',
-    usuario:                 props.integration?.usuario ?? '',
-    senha:                   props.integration?.senha ?? '',
-    dispositivo_uid:         props.integration?.dispositivo_uid ?? '',
-    external_name:           props.integration?.external_name ?? 'produto',
-    external_name_ean:       props.integration?.external_name_ean ?? '',
-    external_name_status:    props.integration?.external_name_status ?? '',
-    external_name_sale_date: props.integration?.external_name_sale_date ?? '',
-    partner_key:             props.integration?.partner_key ?? '',
-    empresa:                 props.integration?.empresa ?? '',
-    days_to_maintain:        props.integration?.days_to_maintain ?? 120,
-    sales_initial_days:      props.integration?.sales_initial_days ?? 120,
-    products_initial_days:   props.integration?.products_initial_days ?? 120,
-    daily_lookback_days:     props.integration?.daily_lookback_days ?? 7,
-    sales_page_size:         props.integration?.sales_page_size ?? 20000,
-    products_page_size:      props.integration?.products_page_size ?? (integrationType.value === 'gescooper' ? 200 : 1000),
-    sales_tipo_consulta:     props.integration?.sales_tipo_consulta ?? 'produto',
-    auto_processing_enabled: props.integration?.auto_processing_enabled ?? true,
-    processing_time:         props.integration?.processing_time ?? '02:00',
-    initial_setup_date:      props.integration?.initial_setup_date ?? '',
-    is_active:               props.integration?.is_active ?? true,
+    integration_type:      props.integration?.integration_type ?? 'sysmo',
+    api_url:               props.integration?.api_url ?? '',
+    auth_type:             props.integration?.auth_type ?? 'none',
+    auth_username:         props.integration?.auth_username ?? '',
+    auth_password:         props.integration?.auth_password ?? '',
+    auth_token:            props.integration?.auth_token ?? '',
+    sales_initial_days:    props.integration?.sales_initial_days ?? 120,
+    products_initial_days: props.integration?.products_initial_days ?? 120,
+    processing_time:       props.integration?.processing_time ?? '02:00',
+    is_active:             props.integration?.is_active ?? true,
 }));
 
 const updateForm = computed(() => {
@@ -284,7 +242,7 @@ function testConnection(): void {
                         </DeleteButton>
                     </template>
 
-                    <!-- Tipo sempre visível -->
+                    <!-- Tipo + URL — sempre visíveis -->
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
                         <FormSelectField
                             id="integration_type"
@@ -293,9 +251,8 @@ function testConnection(): void {
                             :default-value="formData.integration_type"
                             :error="errors.integration_type"
                             :disabled="!!props.integration"
-                            class="md:col-span-4"
+                            class="md:col-span-3"
                             required
-                            @update:model-value="(value) => integrationType = String(value)"
                         >
                             <option
                                 v-for="type in props.integration_types"
@@ -305,61 +262,86 @@ function testConnection(): void {
                                 {{ type.label }}
                             </option>
                         </FormSelectField>
+
+                        <FormTextField
+                            id="api_url"
+                            name="api_url"
+                            :label="t('app.landlord.tenant_integrations.fields.api_url')"
+                            :default-value="formData.api_url"
+                            :error="errors.api_url"
+                            placeholder="https://api.exemplo.com"
+                            class="md:col-span-9"
+                            required
+                        />
                     </div>
 
-                    <!-- Abas Postman-like -->
+                    <!-- Tabs Postman -->
                     <FormTabsBar v-model="activeTab" :tabs="tabs" />
 
-                    <!-- Aba: Dados -->
-                    <!-- v-show mantém inputs no DOM para todos os submits -->
-                    <div v-show="activeTab === 'dados'" class="space-y-4">
+                    <!-- Authorization -->
+                    <!-- v-show mantém inputs no DOM para que sejam submetidos independente da tab ativa -->
+                    <div v-show="activeTab === 'authorization'" class="space-y-4">
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                            <div class="space-y-1 md:col-span-4">
+                                <label for="auth_type" class="text-sm font-medium text-foreground">
+                                    {{ t('app.landlord.tenant_integrations.fields.auth_type') }}
+                                </label>
+                                <select
+                                    id="auth_type"
+                                    v-model="localAuthType"
+                                    name="auth_type"
+                                    class="h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                                >
+                                    <option value="none">{{ t('app.landlord.tenant_integrations.auth_types.none') }}</option>
+                                    <option value="bearer">{{ t('app.landlord.tenant_integrations.auth_types.bearer') }}</option>
+                                    <option value="basic">{{ t('app.landlord.tenant_integrations.auth_types.basic') }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Bearer Token -->
+                        <div v-show="localAuthType === 'bearer'" class="grid grid-cols-1 gap-4 md:grid-cols-12">
                             <FormTextField
-                                id="api_url"
-                                name="api_url"
-                                :label="t('app.landlord.tenant_integrations.fields.api_url')"
-                                :default-value="formData.api_url"
-                                :error="errors.api_url"
-                                placeholder="https://api.exemplo.com"
+                                id="auth_token"
+                                name="auth_token"
+                                type="password"
+                                :label="t('app.landlord.tenant_integrations.fields.auth_token')"
+                                :default-value="formData.auth_token"
+                                :error="errors.auth_token"
                                 class="md:col-span-8"
-                                required
                             />
                         </div>
 
-                        <SysmoIntegrationFields
-                            v-if="integrationType === 'sysmo'"
-                            :data="formData"
-                            :errors="errors"
-                        />
-                        <GesCooperIntegrationFields
-                            v-else-if="integrationType === 'gescooper'"
-                            :data="formData"
-                            :errors="errors"
-                        />
+                        <!-- Basic Auth -->
+                        <div v-show="localAuthType === 'basic'" class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                            <FormTextField
+                                id="auth_username"
+                                name="auth_username"
+                                :label="t('app.landlord.tenant_integrations.fields.auth_username')"
+                                :default-value="formData.auth_username"
+                                :error="errors.auth_username"
+                                class="md:col-span-4"
+                            />
+                            <FormTextField
+                                id="auth_password"
+                                name="auth_password"
+                                type="password"
+                                :label="t('app.landlord.tenant_integrations.fields.auth_password')"
+                                :default-value="formData.auth_password"
+                                :error="errors.auth_password"
+                                :hint="t('app.landlord.tenant_integrations.hints.auth_password')"
+                                :placeholder="!props.integration ? '' : t('app.landlord.tenant_integrations.placeholders.keep_password')"
+                                class="md:col-span-4"
+                            />
+                        </div>
+
+                        <!-- None -->
+                        <div v-show="localAuthType === 'none'" class="rounded-lg border border-border/50 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                            {{ t('app.landlord.tenant_integrations.auth_types.none_description') }}
+                        </div>
                     </div>
 
-                    <!-- Aba: Params -->
-                    <div v-show="activeTab === 'params'" class="space-y-2">
-                        <p class="text-sm text-muted-foreground">
-                            {{ t('app.landlord.tenant_integrations.tabs.params_hint') }}
-                        </p>
-                        <KeyValueTable
-                            v-model="connectionParams"
-                            name="params"
-                        />
-                    </div>
-
-                    <!-- Aba: Authorization -->
-                    <div v-show="activeTab === 'authorization'">
-                        <ApiAuthorizationFields
-                            :data="formData"
-                            :integration-type="integrationType"
-                            :password-required="!props.integration"
-                            :errors="errors"
-                        />
-                    </div>
-
-                    <!-- Aba: Headers -->
+                    <!-- Headers -->
                     <div v-show="activeTab === 'headers'" class="space-y-2">
                         <p class="text-sm text-muted-foreground">
                             {{ t('app.landlord.tenant_integrations.tabs.headers_hint') }}
@@ -370,17 +352,56 @@ function testConnection(): void {
                         />
                     </div>
 
-                    <!-- Aba: Body -->
+                    <!-- Params -->
+                    <div v-show="activeTab === 'params'" class="space-y-2">
+                        <p class="text-sm text-muted-foreground">
+                            {{ t('app.landlord.tenant_integrations.tabs.params_hint') }}
+                        </p>
+                        <KeyValueTable
+                            v-model="connectionParams"
+                            name="params"
+                        />
+                    </div>
+
+                    <!-- Body -->
                     <div v-show="activeTab === 'body'" class="space-y-2">
                         <p class="text-sm text-muted-foreground">
                             {{ t('app.landlord.tenant_integrations.tabs.body_hint') }}
                         </p>
-                        <textarea
-                            v-model="defaultBody"
-                            name="default_body"
-                            rows="12"
-                            class="w-full rounded-lg border border-input bg-background px-3 py-2 font-mono text-xs text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                            placeholder="{}"
+                        <KeyValueTable
+                            v-model="connectionBody"
+                            name="body"
+                        />
+                    </div>
+
+                    <!-- Processamento — fora das tabs -->
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                        <FormTextField
+                            id="sales_initial_days"
+                            name="sales_initial_days"
+                            type="number"
+                            :label="t('app.landlord.tenant_integrations.fields.sales_initial_days')"
+                            :default-value="String(formData.sales_initial_days)"
+                            :error="errors.sales_initial_days"
+                            class="md:col-span-3"
+                        />
+                        <FormTextField
+                            id="products_initial_days"
+                            name="products_initial_days"
+                            type="number"
+                            :label="t('app.landlord.tenant_integrations.fields.products_initial_days')"
+                            :default-value="String(formData.products_initial_days)"
+                            :error="errors.products_initial_days"
+                            class="md:col-span-3"
+                        />
+                        <FormTextField
+                            id="processing_time"
+                            name="processing_time"
+                            :label="t('app.landlord.tenant_integrations.fields.processing_time')"
+                            :default-value="formData.processing_time"
+                            :error="errors.processing_time"
+                            placeholder="02:00"
+                            class="md:col-span-3"
                         />
                     </div>
 

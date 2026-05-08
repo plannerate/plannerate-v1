@@ -19,7 +19,7 @@ class TenantIntegrationConfigNormalizer
      *         ping_method: string,
      *         headers: array<string, string>,
      *         params: array<string, string>,
-     *         default_body: string
+     *         body: array<string, string>
      *     },
      *     processing: array<string, mixed>
      * }
@@ -48,10 +48,37 @@ class TenantIntegrationConfigNormalizer
                 'ping_method' => strtoupper((string) ($connection['ping_method'] ?? 'GET')),
                 'headers' => $this->normalizeKeyValuePairs($connection['headers'] ?? []),
                 'params' => $this->normalizeKeyValuePairs($connection['params'] ?? []),
-                'default_body' => (string) ($connection['default_body'] ?? ''),
+                'body' => $this->normalizeBody($connection),
             ],
             'processing' => $this->normalizeProcessing($processing),
         ];
+    }
+
+    /**
+     * Normalizes body stored as either:
+     *   - new array of objects: [{"key": "...", "value": "...", "enabled": true}]
+     *   - legacy string (JSON): "{\"key\": \"value\"}" — decoded and used as-is
+     *
+     * Returns only enabled entries as a key→value dict.
+     *
+     * @param  array<string, mixed>  $connection
+     * @return array<string, string>
+     */
+    private function normalizeBody(array $connection): array
+    {
+        if (is_array($connection['body'] ?? null)) {
+            return $this->normalizeKeyValuePairs($connection['body']);
+        }
+
+        // Legacy: default_body was a raw JSON string
+        $raw = (string) ($connection['default_body'] ?? '');
+        if ($raw === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded) ? array_map('strval', $decoded) : [];
     }
 
     /**

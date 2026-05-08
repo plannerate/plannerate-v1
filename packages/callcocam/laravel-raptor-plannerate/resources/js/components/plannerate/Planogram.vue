@@ -57,6 +57,8 @@ const props = defineProps<Props>();
 const page = usePage<AuthPageProps>();
 const isBrowser = typeof window !== 'undefined';
 
+const { t } = useT();
+
 const resolvedSubdomain = computed(() => {
     const subdomainFromPage = page.props.subdomain?.toString().trim();
 

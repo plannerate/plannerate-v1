@@ -40,47 +40,23 @@ class TenantIntegrationController extends Controller
         $integrationData = $integration ? [
             'id' => $integration->id,
             'integration_type' => $type,
-            'identifier' => $integration->identifier,
             'is_active' => (bool) $integration->is_active,
             'last_sync' => $integration->last_sync?->toDateTimeString(),
-            'auto_processing_enabled' => (bool) ($processing['auto_processing_enabled'] ?? true),
-            'processing_time' => (string) ($processing['processing_time'] ?? '02:00'),
-            'initial_setup_date' => $processing['initial_setup_date'] ?? null,
-            'products_page_size' => (int) ($processing['products_page_size'] ?? ($type === 'gescooper' ? 200 : 1000)),
             // Connection
             'api_url' => (string) ($connection['base_url'] ?? ''),
             'connection_headers' => $this->formatHeadersForFrontend($connection['headers'] ?? []),
             'connection_params' => is_array($connection['params'] ?? null) ? array_values((array) $connection['params']) : [],
-            'default_body' => (string) ($connection['default_body'] ?? ''),
-            // Auth — common to all types
+            'connection_body' => is_array($connection['body'] ?? null) ? array_values((array) $connection['body']) : [],
+            // Auth
             'auth_type' => $authType,
             'auth_username' => (string) ($credentials['username'] ?? ''),
             'auth_password' => '',
             'auth_token' => '',
-            'auth_api_key' => '',
-            'auth_api_key_name' => (string) ($credentials['name'] ?? ''),
-            // GesCooper credentials
-            'usuario' => (string) ($credentials['usuario'] ?? ''),
-            'senha' => '',
-            'dispositivo_uid' => (string) ($credentials['dispositivo_uid'] ?? ''),
+            // Processing
+            'sales_initial_days' => (int) ($processing['sales_initial_days'] ?? 120),
+            'products_initial_days' => (int) ($processing['products_initial_days'] ?? 120),
+            'processing_time' => (string) ($processing['processing_time'] ?? '02:00'),
         ] : null;
-
-        if ($integrationData !== null && $type === 'sysmo') {
-            $integrationData = array_merge($integrationData, [
-                'partner_key' => (string) ($processing['partner_key'] ?? ''),
-                'empresa' => (string) ($processing['empresa'] ?? ''),
-                'external_name' => (string) ($processing['external_name'] ?? 'produto'),
-                'external_name_ean' => (string) ($processing['external_name_ean'] ?? ''),
-                'external_name_status' => (string) ($processing['external_name_status'] ?? ''),
-                'external_name_sale_date' => (string) ($processing['external_name_sale_date'] ?? ''),
-                'days_to_maintain' => (int) ($processing['days_to_maintain'] ?? 120),
-                'sales_initial_days' => (int) ($processing['sales_initial_days'] ?? 120),
-                'products_initial_days' => (int) ($processing['products_initial_days'] ?? 120),
-                'daily_lookback_days' => (int) ($processing['daily_lookback_days'] ?? 7),
-                'sales_page_size' => (int) ($processing['sales_page_size'] ?? 20000),
-                'sales_tipo_consulta' => (string) ($processing['sales_tipo_consulta'] ?? 'produto'),
-            ]);
-        }
 
         return Inertia::render('landlord/tenants/Integration', [
             'tenant' => ['id' => $tenant->id, 'name' => $tenant->name],
@@ -178,22 +154,10 @@ class TenantIntegrationController extends Controller
 
         $normalized = $this->configNormalizer->normalize($integration);
         $connection = $normalized['connection'];
-        $processing = $normalized['processing'];
         $endpoint = (string) ($request->string('test_path') ?: $connection['ping_path'] ?: '/');
         $method = strtoupper((string) ($request->string('test_method') ?: $connection['ping_method'] ?: 'GET'));
         $query = $request->query();
-        $defaultPageSize = str_contains($endpoint, 'hubvendas')
-            ? (int) ($processing['sales_page_size'] ?? 20000)
-            : (int) ($processing['products_page_size'] ?? 1000);
-        $body = array_merge(
-            [
-                'partner_key' => (string) ($processing['partner_key'] ?? ''),
-                'empresa' => (string) ($processing['empresa'] ?? ''),
-                'pagina' => 1,
-                'tamanho_pagina' => max(1, $defaultPageSize),
-            ],
-            $this->decodeJsonBody((string) $request->input('test_body', ''))
-        );
+        $body = $this->decodeJsonBody((string) $request->input('test_body', ''));
 
         try {
             Log::info('Tenant integration test request', [

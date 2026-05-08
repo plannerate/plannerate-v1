@@ -256,8 +256,10 @@ class WorkflowKanbanService
     {
         return DB::transaction(function () use ($execution, $actor, $notes) {
             $execution->update([
-                'status' => WorkflowExecutionStatus::Cancelled,
-                'completed_at' => now(),
+                'status' => WorkflowExecutionStatus::Pending,
+                'current_responsible_id' => null,
+                'started_at' => null,
+                'execution_started_by' => null,
                 'notes' => $notes,
             ]);
 
