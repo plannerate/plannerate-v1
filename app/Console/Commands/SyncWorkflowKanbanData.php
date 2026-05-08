@@ -47,7 +47,7 @@ class SyncWorkflowKanbanData extends Command
 
         foreach ($tenants as $tenant) {
             /** @var Tenant $tenant */
-            $result = $tenant->execute(fn (): int => $this->syncTenant($tenant));
+            $result = $tenant->execute(fn(): int => $this->syncTenant($tenant));
 
             if ($result !== self::SUCCESS) {
                 $exitCode = self::FAILURE;
@@ -63,7 +63,7 @@ class SyncWorkflowKanbanData extends Command
         $planogramIds = $this->planogramIdsToProcess($tenant);
 
         $query = Planogram::query()
-            ->when($planogramIds !== [], fn ($planograms) => $planograms->whereIn('id', $planogramIds))
+            ->when($planogramIds !== [], fn($planograms) => $planograms->whereIn('id', $planogramIds))
             ->orderBy('id');
 
         $totalPlanograms = (clone $query)->count();
@@ -95,7 +95,7 @@ class SyncWorkflowKanbanData extends Command
                 /** @var Planogram $planogram */
                 $result = $dryRun
                     ? $this->previewPlanogram($planogram)
-                    : DB::transaction(fn (): array => $this->syncPlanogram($planogram));
+                    : DB::transaction(fn(): array => $this->syncPlanogram($planogram));
 
                 foreach ($result as $key => $value) {
                     $summary[$key] += $value;
@@ -149,7 +149,7 @@ class SyncWorkflowKanbanData extends Command
         $selectedTenantId = select(
             label: 'Qual tenant deseja sincronizar?',
             options: ['__all__' => 'Todos os tenants'] + $tenants
-                ->mapWithKeys(fn (Tenant $tenant): array => [$tenant->id => $tenant->name])
+                ->mapWithKeys(fn(Tenant $tenant): array => [$tenant->id => $tenant->name])
                 ->all(),
             default: '__all__',
         );
@@ -187,7 +187,7 @@ class SyncWorkflowKanbanData extends Command
         $selectedPlanogramId = select(
             label: "Qual planograma deseja sincronizar em {$tenant->name}?",
             options: ['__all__' => 'Todos os planogramas'] + $planograms
-                ->mapWithKeys(fn (Planogram $planogram): array => [$planogram->id => $planogram->name])
+                ->mapWithKeys(fn(Planogram $planogram): array => [$planogram->id => $planogram->name])
                 ->all(),
             default: '__all__',
         );
@@ -230,7 +230,7 @@ class SyncWorkflowKanbanData extends Command
         $steps = $planogram->workflowSteps()
             ->with(['template:id,suggested_order', 'availableUsers:id'])
             ->get()
-            ->sortBy(fn (WorkflowPlanogramStep $step): int => $step->template?->suggested_order ?? PHP_INT_MAX)
+            ->sortBy(fn(WorkflowPlanogramStep $step): int => $step->template?->suggested_order ?? PHP_INT_MAX)
             ->values();
 
         $stepsToCreate = $this->missingWorkflowTemplateCount($planogram);
@@ -269,18 +269,28 @@ class SyncWorkflowKanbanData extends Command
         $created = 0;
         $existing = 0;
         $gondolas = 0;
-        $responsibleId = $firstStep?->availableUsers()->value('users.id');
 
         Gondola::query()
             ->where('planogram_id', $planogram->id)
             ->select(['id', 'tenant_id'])
-            ->chunkById(100, function (Collection $chunk) use ($firstStep, $responsibleId, $dryRun, &$created, &$existing, &$gondolas): void {
-                $gondolaIds = $chunk->pluck('id')->map(fn (mixed $id): string => (string) $id)->all();
+            ->chunkById(100, function (Collection $chunk) use ($firstStep, $dryRun, &$created, &$existing, &$gondolas): void {
+                $gondolaIds = $chunk->pluck('id')->map(fn(mixed $id): string => (string) $id)->all();
                 $existingGondolaIds = WorkflowGondolaExecution::withTrashed()
                     ->whereIn('gondola_id', $gondolaIds)
                     ->pluck('gondola_id')
-                    ->map(fn (mixed $id): string => (string) $id)
+                    ->map(fn(mixed $id): string => (string) $id)
                     ->all();
+
+                if (! $dryRun && $gondolaIds !== []) {
+                    WorkflowGondolaExecution::query()
+                        ->whereIn('gondola_id', $gondolaIds)
+                        ->update([
+                            'status' => WorkflowExecutionStatus::Pending,
+                            'current_responsible_id' => null,
+                            'started_at' => null,
+                            'execution_started_by' => null,
+                        ]);
+                }
 
                 $existingByGondolaId = array_flip($existingGondolaIds);
 
@@ -309,7 +319,8 @@ class SyncWorkflowKanbanData extends Command
                         'gondola_id' => $gondola->id,
                         'workflow_planogram_step_id' => $firstStep->id,
                         'status' => WorkflowExecutionStatus::Pending,
-                        'current_responsible_id' => $responsibleId,
+                        'current_responsible_id' => null,
+                        'started_at' => null,
                     ]);
                 }
             });
@@ -327,7 +338,7 @@ class SyncWorkflowKanbanData extends Command
      */
     private function firstAvailableStep(Collection $steps): ?WorkflowPlanogramStep
     {
-        return $steps->first(fn (WorkflowPlanogramStep $step): bool => ! $step->is_skipped);
+        return $steps->first(fn(WorkflowPlanogramStep $step): bool => ! $step->is_skipped);
     }
 
     private function missingWorkflowTemplateCount(Planogram $planogram): int
@@ -335,11 +346,11 @@ class SyncWorkflowKanbanData extends Command
         $publishedTemplateIds = WorkflowTemplate::query()
             ->where('status', 'published')
             ->pluck('id')
-            ->map(fn (mixed $id): string => (string) $id);
+            ->map(fn(mixed $id): string => (string) $id);
 
         $existingTemplateIds = $planogram->workflowSteps()
             ->pluck('workflow_template_id')
-            ->map(fn (mixed $id): string => (string) $id);
+            ->map(fn(mixed $id): string => (string) $id);
 
         return $publishedTemplateIds->diff($existingTemplateIds)->count();
     }
