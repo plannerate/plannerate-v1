@@ -126,6 +126,7 @@ class GesCooperProductsIntegrationService implements ProductsIntegrationService
                 'packaging_type' => $this->normalizeString($item['packaging_type'] ?? null) ?? $reference?->packaging_type,
                 'packaging_size' => $this->normalizeString($item['packaging_size'] ?? null) ?? $reference?->packaging_size,
                 'measurement_unit' => $this->normalizeString($item['unit'] ?? null) ?? $reference?->measurement_unit,
+                'unit_measure' => $this->normalizeString($item['unit'] ?? null),
                 'sortiment_attribute' => $this->normalizeString($item['sortiment_attribute'] ?? null),
                 'current_stock' => $this->normalizeFloat($item['current_stock'] ?? null),
                 'last_purchase_date' => $this->normalizeDate($item['last_purchase_date'] ?? null),
@@ -167,7 +168,7 @@ class GesCooperProductsIntegrationService implements ProductsIntegrationService
                 'description', 'auxiliary_description', 'additional_information',
                 'reference', 'color', 'fragrance', 'flavor',
                 'height', 'width', 'depth',
-                'packaging_type', 'packaging_size', 'measurement_unit',
+                'packaging_type', 'packaging_size', 'measurement_unit', 'unit_measure',
                 'sortiment_attribute', 'current_stock', 'last_purchase_date',
                 'sales_status', 'status', 'sync_source', 'sync_at', 'deleted_at', 'updated_at',
             ]

@@ -26,11 +26,14 @@ class GesCooperAuthService
         $baseUrl = rtrim($normalized['connection']['base_url'], '/');
         $credentials = $normalized['auth']['credentials'];
 
+        if ($baseUrl === '') {
+            throw new RuntimeException('GesCooper: base_url nao configurada.');
+        }
+
         $response = Http::acceptJson()
             ->timeout($normalized['connection']['timeout'])
             ->connectTimeout($normalized['connection']['connect_timeout'])
             ->withOptions(['verify' => $normalized['connection']['verify_ssl']])
-            ->withHeaders(['Content-Type' => 'application/json'])
             ->post($baseUrl.'/'.$this->endpoints->get('token'), [
                 'usuario' => (string) ($credentials['usuario'] ?? ''),
                 'senha' => (string) ($credentials['senha'] ?? ''),
