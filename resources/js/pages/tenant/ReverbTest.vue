@@ -37,13 +37,14 @@ const props = defineProps<{
 }>();
 
 const isBrowser = typeof window !== 'undefined';
+const isEchoConfigured = isBrowser && window.__plannerateEchoConfigured === true;
 const subdomain = isBrowser ? window.location.hostname.split('.')[0] : '';
 
-const connectionStatus = isBrowser ? useConnectionStatus() : ref<ConnectionStatus>('disconnected');
+const connectionStatus = isEchoConfigured ? useConnectionStatus() : ref<ConnectionStatus>('disconnected');
 
 const receivedNotifications = ref<Array<AppNotification & { received_at: string }>>([]);
 
-if (isBrowser) {
+if (isEchoConfigured) {
     useEchoNotification<NotificationData>(
         `App.Models.User.${props.user.id}`,
         (payload) => {

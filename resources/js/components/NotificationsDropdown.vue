@@ -29,6 +29,7 @@ import type { AppNotification, NotificationData } from '@/types/auth';
 
 const page = usePage();
 const isBrowser = typeof window !== 'undefined';
+const isEchoConfigured = isBrowser && window.__plannerateEchoConfigured === true;
 const subdomain = isBrowser ? window.location.hostname.split('.')[0] : '';
 const isOpen = ref(false);
 const panelRef = ref<HTMLElement | null>(null);
@@ -42,9 +43,9 @@ onClickOutside(panelRef, () => {
  isOpen.value = false; 
 });
 
-const connectionStatus = isBrowser ? useConnectionStatus() : ref<ConnectionStatus>('disconnected');
+const connectionStatus = isEchoConfigured ? useConnectionStatus() : ref<ConnectionStatus>('disconnected');
 
-if (isBrowser) {
+if (isEchoConfigured) {
     useEchoNotification<NotificationData>(
         `App.Models.User.${auth.value.user.id}`,
         (payload) => {

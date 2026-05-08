@@ -9,6 +9,7 @@ import { initializeFlashToast } from '@/lib/flashToast';
 declare global {
     interface Window {
         Pusher: typeof Pusher;
+        __plannerateEchoConfigured?: boolean;
     }
 }
 
@@ -19,6 +20,7 @@ function metaContent(name: string): string | null {
 
 if (typeof window !== 'undefined') {
     window.Pusher = Pusher;
+    window.__plannerateEchoConfigured = false;
 
     const reverbAppKey = (metaContent('plannerate-reverb-key') ?? import.meta.env.VITE_REVERB_APP_KEY ?? '') as string;
     const reverbHost = (metaContent('plannerate-reverb-host') ?? import.meta.env.VITE_REVERB_HOST ?? window.location.hostname) as string;
@@ -35,6 +37,7 @@ if (typeof window !== 'undefined') {
             forceTLS: reverbScheme === 'https',
             enabledTransports: ['ws', 'wss'],
         });
+        window.__plannerateEchoConfigured = true;
     } else {
         console.warn('Echo/Reverb disabled: no runtime or Vite Reverb app key was provided.');
     }

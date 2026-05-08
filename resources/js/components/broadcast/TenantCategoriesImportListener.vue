@@ -21,11 +21,12 @@ type ImportFinishedPayload = {
 
 const page = usePage();
 const { t } = useT();
+const isEchoConfigured = typeof window !== 'undefined' && window.__plannerateEchoConfigured === true;
 
 const auth = page.props.auth as { user: { id: string } };
 const channel = `App.Models.User.${auth.user.id}`;
 
-if (typeof window !== 'undefined') {
+if (isEchoConfigured) {
     useEcho(channel, '.categories.import.finished', (raw: ImportFinishedPayload) => {
         const sub = window.location.hostname.split('.')[0] ?? '';
 

@@ -20,6 +20,7 @@ type IntegrationProcessFinishedPayload = {
 
 const page = usePage();
 const { t } = useT();
+const isEchoConfigured = typeof window !== 'undefined' && window.__plannerateEchoConfigured === true;
 
 const tenantId = computed(() => {
     const tenant = (page.props.tenant ?? null) as { id?: string } | null;
@@ -27,7 +28,7 @@ const tenantId = computed(() => {
     return typeof tenant?.id === 'string' && tenant.id !== '' ? tenant.id : null;
 });
 
-if (typeof window !== 'undefined' && tenantId.value) {
+if (isEchoConfigured && tenantId.value) {
     useEcho(`tenant.${tenantId.value}`, '.integration.process.finished', (raw: IntegrationProcessFinishedPayload) => {
         const resource = raw.resource ?? 'integration';
         const referenceDate = raw.reference_date ?? raw.referenceDate ?? 'N/A';
