@@ -389,6 +389,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             ],
             'types' => [
                 'sysmo' => 'Sysmo',
+                'gescooper' => 'GesCooper',
             ],
             'fields' => [
                 'integration_type' => 'Tipo de integracao',
@@ -414,6 +415,9 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'processing_time' => 'Horario de processamento',
                 'initial_setup_date' => 'Data de setup inicial',
                 'is_active' => 'Integracao ativa',
+                'usuario' => 'Usuário',
+                'senha' => 'Senha',
+                'dispositivo_uid' => 'Dispositivo UID',
                 'test_method' => 'Metodo de teste',
                 'test_path' => 'Path do endpoint',
                 'test_body' => 'Body JSON (opcional)',
