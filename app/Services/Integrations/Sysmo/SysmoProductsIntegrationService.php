@@ -293,7 +293,7 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
 
         $response = $this->externalApiBaseService->request(
             integration: $integration,
-            method: strtoupper((string) $integration->http_method),
+            method: 'POST',
             endpoint: $this->sysmoEndpoints->get('products'),
             body: $requestBody,
         );

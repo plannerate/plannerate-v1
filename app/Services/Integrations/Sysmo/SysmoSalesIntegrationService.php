@@ -46,7 +46,7 @@ class SysmoSalesIntegrationService implements SalesIntegrationService
 
         $response = $this->externalApiBaseService->request(
             integration: $integration,
-            method: strtoupper((string) $integration->http_method),
+            method: 'POST',
             endpoint: $this->sysmoEndpoints->get('sales'),
             body: $requestBody,
         );
