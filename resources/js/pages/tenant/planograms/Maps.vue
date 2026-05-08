@@ -275,8 +275,10 @@ onBeforeUnmount(() => {
                 </NewActionButton>
             </div>
         </template>
-        <KankanNavigationLinks :subdomain="props.subdomain" />
-        <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div class="px-4">
+            <KankanNavigationLinks :subdomain="props.subdomain" />
+        </div>
+        <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4 px-4">
             <button
                 type="button"
                 class="rounded-lg border border-border bg-card p-3 text-left transition hover:bg-muted/30"
@@ -310,7 +312,7 @@ onBeforeUnmount(() => {
             </button>
         </div>
 
-        <div class="mb-4 flex flex-col gap-3 rounded-lg border border-border bg-card p-3 lg:flex-row lg:items-center">
+        <div class="mb-4 flex flex-col gap-3 rounded-lg border border-border bg-card p-3 lg:flex-row lg:items-center px-4 mx-4">
             <input
                 v-model="search"
                 type="text"
@@ -358,7 +360,7 @@ onBeforeUnmount(() => {
             </button>
         </div>
 
-        <div class="mb-4 flex flex-wrap items-center gap-3 text-xs">
+        <div class="mb-4 flex flex-wrap items-center gap-3 text-xs px-4">
             <div class="inline-flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 text-foreground">
                 <span class="inline-block h-3 w-3 rounded-sm border border-primary bg-primary/40 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]" />
                 <span>Com link</span>
@@ -372,7 +374,7 @@ onBeforeUnmount(() => {
         <div v-if="props.store_maps.length === 0" class="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
             Nenhum mapa de loja disponível.
         </div>
-        <div v-else class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div v-else class="grid grid-cols-1 gap-4 xl:grid-cols-2 px-4">
             <article
                 v-for="storeMap in props.store_maps"
                 :key="storeMap.id"
