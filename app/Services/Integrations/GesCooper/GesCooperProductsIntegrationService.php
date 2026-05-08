@@ -160,6 +160,11 @@ class GesCooperProductsIntegrationService implements ProductsIntegrationService
             return;
         }
 
+        // Deduplica por id antes do upsert — PostgreSQL rejeita duplicatas no mesmo batch
+        $productsRows = array_values(
+            collect($productsRows)->keyBy('id')->all()
+        );
+
         DB::connection($tenantConnectionName)->table('products')->upsert(
             $productsRows,
             ['id'],
@@ -283,16 +288,19 @@ class GesCooperProductsIntegrationService implements ProductsIntegrationService
 
         $token = $this->authService->getToken($integration);
 
+        // Config params (pagina, registros_por_pagina, api-version etc.) are the base;
+        // caller filters override them so dynamic values like page always win.
+        $params = array_merge($connection['params'], [
+            'pagina' => (int) ($filters['page'] ?? 1),
+            'registros_por_pagina' => (int) ($filters['page_size'] ?? $processing['products_page_size']),
+        ]);
+
         $response = Http::withToken($token)
             ->acceptJson()
             ->timeout($connection['timeout'])
             ->connectTimeout($connection['connect_timeout'])
             ->withOptions(['verify' => $connection['verify_ssl']])
-            ->get($baseUrl.'/'.$this->endpoints->get('products'), [
-                'pagina' => (int) ($filters['page'] ?? 1),
-                'registros_por_pagina' => (int) ($filters['page_size'] ?? $processing['products_page_size']),
-                'api-version' => '1.0',
-            ]);
+            ->get($baseUrl.'/'.$this->endpoints->get('products'), $params);
 
         if ($response->failed()) {
             throw new RuntimeException(sprintf(

@@ -21,6 +21,14 @@ class IntegrationServiceResolver
         private readonly GesCooperProductsIntegrationService $gesCooperProductsIntegrationService,
     ) {}
 
+    public function isPerStore(TenantIntegration $integration): bool
+    {
+        return match ($this->normalizeIntegrationType($integration->integration_type)) {
+            'gescooper' => false,
+            default => true,
+        };
+    }
+
     public function resolveProductsService(TenantIntegration $integration): ProductsIntegrationService
     {
         return match ($this->normalizeIntegrationType($integration->integration_type)) {

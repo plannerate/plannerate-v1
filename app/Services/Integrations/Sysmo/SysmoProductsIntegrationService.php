@@ -164,6 +164,10 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
             return;
         }
 
+        $productsRows = array_values(
+            collect($productsRows)->keyBy('id')->all()
+        );
+
         DB::connection($tenantConnectionName)->table('products')->upsert(
             $productsRows,
             ['id'],

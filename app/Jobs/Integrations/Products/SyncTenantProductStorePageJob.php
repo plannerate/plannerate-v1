@@ -26,6 +26,7 @@ class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
         public string $storeId,
         public string $empresa,
         public int $page,
+        public int $pageSize = 1000,
         public bool $fullSync = false,
     ) {}
 
@@ -42,26 +43,28 @@ class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
             return;
         }
 
-        $store = Store::query()
-            ->whereKey($this->storeId)
-            ->where('tenant_id', $integration->tenant_id)
-            ->whereNull('deleted_at')
-            ->first();
+        $store = $this->storeId !== ''
+            ? Store::query()
+                ->whereKey($this->storeId)
+                ->where('tenant_id', $integration->tenant_id)
+                ->whereNull('deleted_at')
+                ->first()
+            : null;
 
-        if (! $store) {
+        if ($this->storeId !== '' && ! $store) {
             return;
         }
 
         $processing = $configNormalizer->normalize($integration)['processing'];
         $productsService = $integrationServiceResolver->resolveProductsService($integration);
         $page = max(1, $this->page);
-        $pageSize = (int) ($processing['products_page_size'] ?? 1000);
+        $pageSize = $this->pageSize > 0 ? $this->pageSize : (int) ($processing['products_page_size'] ?? 1000);
         $referenceDate = Carbon::parse($this->referenceDate)->toDateString();
 
         $items = $productsService->fetchProducts($integration, [
             'date' => $this->fullSync ? null : $referenceDate,
-            'store_id' => (string) $store->id,
-            'empresa' => $this->empresa,
+            'store_id' => $store !== null ? (string) $store->id : null,
+            'empresa' => $this->empresa !== '' ? $this->empresa : null,
             'page' => $page,
             'page_size' => $pageSize,
             'partner_key' => (string) ($processing['partner_key'] ?? ''),
@@ -70,14 +73,13 @@ class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
         $itemsCount = count($items);
 
         if ($itemsCount >= $pageSize && $page < self::MAX_PROGRESSIVE_PAGE) {
-            $nextPage = $page + 1;
-
             SyncTenantProductStorePageJob::dispatch(
                 integrationId: (string) $integration->id,
                 referenceDate: $referenceDate,
-                storeId: (string) $store->id,
+                storeId: $this->storeId,
                 empresa: $this->empresa,
-                page: $nextPage,
+                page: $page + 1,
+                pageSize: $pageSize,
                 fullSync: $this->fullSync,
             );
         }
@@ -86,7 +88,7 @@ class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
             Log::warning('Products page sync reached progressive page safety limit.', [
                 'integration_id' => $integration->id,
                 'tenant_id' => $integration->tenant_id,
-                'store_id' => (string) $store->id,
+                'store_id' => $this->storeId,
                 'empresa' => $this->empresa,
                 'reference_date' => $referenceDate,
                 'page' => $page,

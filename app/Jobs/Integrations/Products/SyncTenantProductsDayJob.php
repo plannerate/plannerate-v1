@@ -8,9 +8,13 @@ use App\Models\Store;
 use App\Models\TenantIntegration;
 use App\Models\User;
 use App\Notifications\AppNotification;
+use App\Services\Integrations\Support\IntegrationServiceResolver;
+use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use App\Support\BroadcastPayload;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Multitenancy\Jobs\TenantAware;
 use Throwable;
@@ -28,6 +32,8 @@ class SyncTenantProductsDayJob implements ShouldQueue, TenantAware
     ) {}
 
     public function handle(
+        IntegrationServiceResolver $integrationServiceResolver,
+        TenantIntegrationConfigNormalizer $configNormalizer,
     ): void {
         $integration = TenantIntegration::query()
             ->whereKey($this->integrationId)
@@ -52,19 +58,25 @@ class SyncTenantProductsDayJob implements ShouldQueue, TenantAware
         $syncDay->markRunning();
 
         try {
-            $stores = Store::query()
-                ->where('tenant_id', $integration->tenant_id)
-                ->where('status', 'published')
-                ->whereNull('deleted_at')
-                ->get(['id']);
+            if (! $integrationServiceResolver->isPerStore($integration)) {
+                // Não per-store (ex: GesCooper): pagina sincronamente para que o
+                // chain só avance ao RunTenantIntegrationPostSyncJob depois de tudo concluído.
+                $this->syncAllPagesSync($integration, $integrationServiceResolver, $configNormalizer);
+            } else {
+                $stores = Store::query()
+                    ->where('tenant_id', $integration->tenant_id)
+                    ->where('status', 'published')
+                    ->whereNull('deleted_at')
+                    ->get(['id']);
 
-            foreach ($stores as $store) {
-                DispatchTenantProductStorePagesJob::dispatch(
-                    integrationId: $integration->id,
-                    referenceDate: $this->referenceDate,
-                    storeId: (string) $store->id,
-                    fullSync: $this->fullSync,
-                );
+                foreach ($stores as $store) {
+                    DispatchTenantProductStorePagesJob::dispatch(
+                        integrationId: $integration->id,
+                        referenceDate: $this->referenceDate,
+                        storeId: (string) $store->id,
+                        fullSync: $this->fullSync,
+                    );
+                }
             }
 
             $syncDay->markSuccess();
@@ -101,6 +113,41 @@ class SyncTenantProductsDayJob implements ShouldQueue, TenantAware
             );
 
             throw $exception;
+        }
+    }
+
+    private function syncAllPagesSync(
+        TenantIntegration $integration,
+        IntegrationServiceResolver $integrationServiceResolver,
+        TenantIntegrationConfigNormalizer $configNormalizer,
+    ): void {
+        $productsService = $integrationServiceResolver->resolveProductsService($integration);
+        $processing = $configNormalizer->normalize($integration)['processing'];
+        $pageSize = (int) ($processing['products_page_size'] ?? 1000);
+        $referenceDate = Carbon::parse($this->referenceDate)->toDateString();
+        $page = 1;
+        $maxPage = 500;
+
+        do {
+            $items = $productsService->fetchProducts($integration, [
+                'date' => $this->fullSync ? null : $referenceDate,
+                'store_id' => null,
+                'empresa' => null,
+                'page' => $page,
+                'page_size' => $pageSize,
+                'partner_key' => (string) ($processing['partner_key'] ?? ''),
+            ]);
+
+            $page++;
+        } while (count($items) >= $pageSize && $page <= $maxPage);
+
+        if ($page > $maxPage) {
+            Log::warning('Global products sync reached page safety limit.', [
+                'integration_id' => $integration->id,
+                'tenant_id' => $integration->tenant_id,
+                'reference_date' => $referenceDate,
+                'page_limit' => $maxPage,
+            ]);
         }
     }
 

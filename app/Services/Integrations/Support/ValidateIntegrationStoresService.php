@@ -6,6 +6,7 @@ use App\Models\Store;
 use App\Models\TenantIntegration;
 use App\Models\User;
 use App\Notifications\AppNotification;
+use App\Services\Integrations\Contracts\ProductsIntegrationService;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
@@ -17,81 +18,127 @@ class ValidateIntegrationStoresService
         private readonly TenantIntegrationConfigNormalizer $configNormalizer,
     ) {}
 
-    public function validateBeforeDispatch(TenantIntegration $integration, string $dispatchLabel): bool
+    /**
+     * Returns null on success, or a failure reason string.
+     */
+    public function validateBeforeDispatch(TenantIntegration $integration, string $dispatchLabel): ?string
     {
         $tenant = $integration->tenant;
         if (! $tenant) {
-            return false;
+            return 'tenant not found';
         }
 
-        return (bool) $tenant->execute(function () use ($integration, $dispatchLabel): bool {
-            $tenantConnectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
-            if (! Schema::connection($tenantConnectionName)->hasTable('stores')) {
-                return true;
-            }
-
-            $stores = Store::query()
-                ->where('status', 'published')
-                ->whereNull('deleted_at')
-                ->get(['id', 'code', 'document']);
-
-            if ($stores->isEmpty()) {
-                return true;
-            }
-
-            $processing = $this->configNormalizer->normalize($integration)['processing'];
+        return $tenant->execute(function () use ($integration, $dispatchLabel): ?string {
             try {
                 $productsService = $this->integrationServiceResolver->resolveProductsService($integration);
             } catch (Throwable $exception) {
+                $reason = 'service resolver: '.$exception->getMessage();
                 $this->notifyTenantUsersAboutInvalidStores($integration, $dispatchLabel, [[
                     'store_id' => 'n/a',
-                    'reason' => $exception->getMessage(),
+                    'reason' => $reason,
                 ]]);
 
-                return false;
-            }
-            $failedStores = [];
-            $hasAtLeastOneValidStore = false;
-
-            foreach ($stores as $store) {
-                $empresa = $this->resolveEmpresaForStore($store->code, $store->document, $processing);
-                if ($empresa === null) {
-                    $failedStores[] = [
-                        'store_id' => (string) $store->id,
-                        'reason' => 'empresa_invalid',
-                    ];
-                    $this->setStoreAsDraft($store);
-
-                    continue;
-                }
-
-                try {
-                    $productsService->discoverProductsTotalPages($integration, [
-                        'store_id' => (string) $store->id,
-                        'empresa' => $empresa,
-                        'partner_key' => (string) ($processing['partner_key'] ?? ''),
-                        'page_size' => (int) ($processing['products_page_size'] ?? 1000),
-                    ]);
-                    $hasAtLeastOneValidStore = true;
-                } catch (Throwable $exception) {
-                    $failedStores[] = [
-                        'store_id' => (string) $store->id,
-                        'reason' => $exception->getMessage(),
-                    ];
-                    $this->setStoreAsDraft($store);
-                }
+                return $reason;
             }
 
-            if ($failedStores !== []) {
-                $this->notifyTenantUsersAboutInvalidStores($integration, $dispatchLabel, $failedStores);
+            if (! $this->integrationServiceResolver->isPerStore($integration)) {
+                return $this->validateGlobalApi($integration, $dispatchLabel, $productsService);
             }
 
-            if (! $hasAtLeastOneValidStore) {
-                return false;
-            }
-
-            return true;
+            return $this->validatePerStore($integration, $dispatchLabel, $productsService);
         });
+    }
+
+    private function validateGlobalApi(
+        TenantIntegration $integration,
+        string $dispatchLabel,
+        ProductsIntegrationService $productsService,
+    ): ?string {
+        $processing = $this->configNormalizer->normalize($integration)['processing'];
+
+        try {
+            $productsService->discoverProductsTotalPages($integration, [
+                'page_size' => (int) ($processing['products_page_size'] ?? 1000),
+            ]);
+
+            return null;
+        } catch (Throwable $exception) {
+            $reason = $exception->getMessage();
+            $this->notifyTenantUsersAboutInvalidStores($integration, $dispatchLabel, [[
+                'store_id' => 'n/a',
+                'reason' => $reason,
+            ]]);
+
+            return $reason;
+        }
+    }
+
+    private function validatePerStore(
+        TenantIntegration $integration,
+        string $dispatchLabel,
+        ProductsIntegrationService $productsService,
+    ): ?string {
+        $tenantConnectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+        if (! Schema::connection($tenantConnectionName)->hasTable('stores')) {
+            return null;
+        }
+
+        $stores = Store::query()
+            ->where('status', 'published')
+            ->whereNull('deleted_at')
+            ->get(['id', 'code', 'document']);
+
+        if ($stores->isEmpty()) {
+            return null;
+        }
+
+        $processing = $this->configNormalizer->normalize($integration)['processing'];
+        $failedStores = [];
+        $hasAtLeastOneValidStore = false;
+
+        foreach ($stores as $store) {
+            $empresa = $this->resolveEmpresaForStore($store->code, $store->document, $processing);
+            if ($empresa === null) {
+                $failedStores[] = [
+                    'store_id' => (string) $store->id,
+                    'reason' => 'empresa_invalid',
+                ];
+                $this->setStoreAsDraft($store);
+
+                continue;
+            }
+
+            try {
+                $productsService->discoverProductsTotalPages($integration, [
+                    'store_id' => (string) $store->id,
+                    'empresa' => $empresa,
+                    'partner_key' => (string) ($processing['partner_key'] ?? ''),
+                    'page_size' => (int) ($processing['products_page_size'] ?? 1000),
+                ]);
+                $hasAtLeastOneValidStore = true;
+            } catch (Throwable $exception) {
+                $failedStores[] = [
+                    'store_id' => (string) $store->id,
+                    'reason' => $exception->getMessage(),
+                ];
+                $this->setStoreAsDraft($store);
+            }
+        }
+
+        if ($failedStores !== []) {
+            $this->notifyTenantUsersAboutInvalidStores($integration, $dispatchLabel, $failedStores);
+        }
+
+        if (! $hasAtLeastOneValidStore) {
+            $summary = collect($failedStores)
+                ->take(3)
+                ->map(fn (array $f): string => sprintf('loja %s: %s', $f['store_id'], $f['reason']))
+                ->implode('; ');
+
+            return 'nenhuma loja válida — '.$summary;
+        }
+
+        return null;
     }
 
     /**

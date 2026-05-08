@@ -391,6 +391,18 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'sysmo' => 'Sysmo',
                 'gescooper' => 'GesCooper',
             ],
+            'auth_types' => [
+                'none' => 'Sem autenticacao',
+                'bearer' => 'Bearer Token',
+                'basic' => 'Basic Auth',
+                'none_description' => 'Nenhuma autenticacao configurada.',
+            ],
+            'tabs' => [
+                'dados' => 'Dados',
+                'params_hint' => 'Parametros enviados na query string da requisicao.',
+                'headers_hint' => 'Cabecalhos HTTP adicionais enviados em cada requisicao.',
+                'body_hint' => 'Campos enviados no corpo da requisicao.',
+            ],
             'fields' => [
                 'integration_type' => 'Tipo de integracao',
                 'identifier' => 'Identificador/CNPJ',
@@ -400,6 +412,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'external_name_sale_date' => 'Campo data de venda externo',
                 'http_method' => 'Metodo HTTP',
                 'api_url' => 'URL da API',
+                'auth_type' => 'Tipo de autenticacao',
+                'auth_token' => 'Token',
                 'auth_username' => 'Usuario de autenticacao',
                 'auth_password' => 'Senha de autenticacao',
                 'partner_key' => 'Partner key',

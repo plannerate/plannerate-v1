@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use RuntimeException;
@@ -71,6 +72,11 @@ class TenantIntegrationController extends Controller
     public function update(UpdateTenantIntegrationRequest $request, Tenant $tenant): RedirectResponse
     {
         $this->authorize('update', $tenant);
+
+        Storage::disk('local')->put(
+            $tenant->id.'/last_payload.json',
+            json_encode($request->integrationPayload(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+        );
 
         TenantIntegration::query()->updateOrCreate(
             ['tenant_id' => $tenant->id],

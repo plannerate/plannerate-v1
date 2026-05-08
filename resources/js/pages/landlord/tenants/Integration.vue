@@ -249,8 +249,7 @@ function testConnection(): void {
                             name="integration_type"
                             :label="t('app.landlord.tenant_integrations.fields.integration_type')"
                             :default-value="formData.integration_type"
-                            :error="errors.integration_type"
-                            :disabled="!!props.integration"
+                            :error="errors.integration_type" 
                             class="md:col-span-3"
                             required
                         >

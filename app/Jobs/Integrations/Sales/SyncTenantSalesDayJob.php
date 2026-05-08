@@ -58,6 +58,12 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
         $syncDay->markRunning();
 
         try {
+            if (! $integrationServiceResolver->isPerStore($integration)) {
+                $syncDay->markSuccess();
+
+                return;
+            }
+
             $salesIntegrationService = $integrationServiceResolver->resolveSalesService($integration);
             $processing = $configNormalizer->normalize($integration)['processing'];
             $stores = Store::query()

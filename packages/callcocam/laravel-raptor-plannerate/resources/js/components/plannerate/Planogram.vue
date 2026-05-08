@@ -56,6 +56,7 @@ interface AuthPageProps {
 const props = defineProps<Props>();
 const page = usePage<AuthPageProps>();
 const isBrowser = typeof window !== 'undefined';
+const isEchoConfigured = isBrowser && window.__plannerateEchoConfigured === true;
 
 const { t } = useT();
 

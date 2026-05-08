@@ -35,8 +35,8 @@ class GesCooperAuthService
             ->connectTimeout($normalized['connection']['connect_timeout'])
             ->withOptions(['verify' => $normalized['connection']['verify_ssl']])
             ->post($baseUrl.'/'.$this->endpoints->get('token'), [
-                'usuario' => (string) ($credentials['usuario'] ?? ''),
-                'senha' => (string) ($credentials['senha'] ?? ''),
+                'usuario' => (string) ($credentials['usuario'] ?? $credentials['username'] ?? ''),
+                'senha' => (string) ($credentials['senha'] ?? $credentials['password'] ?? ''),
                 'dispositivoUID' => (string) ($credentials['dispositivo_uid'] ?? ''),
             ]);
 

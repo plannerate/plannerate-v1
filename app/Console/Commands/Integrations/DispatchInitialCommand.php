@@ -33,17 +33,16 @@ class DispatchInitialCommand extends Command
         $integrations = $query->get();
 
         foreach ($integrations as $integration) {
-            // if (! $validateIntegrationStoresService->validateBeforeDispatch($integration, 'inicial')) {
-            //     Log::warning('Dispatch inicial ignorado por validacao de lojas/API.', [
-            //         'tenant_id' => (string) $integration->tenant_id,
-            //         'tenant_integration_id' => (string) $integration->id,
-            //         'resource' => $resource ?? 'all',
-            //         'ignore_synced_days' => (bool) $this->option('ignore-synced-days'),
-            //     ]);
-            //     $this->warn(sprintf('Initial sync skipped for tenant %s due to invalid store/API configuration.', $integration->tenant_id));
+            $validationFailure = $validateIntegrationStoresService->validateBeforeDispatch($integration, 'inicial');
+            if ($validationFailure !== null) {
+                $this->warn(sprintf(
+                    'Initial sync skipped for tenant %s: %s',
+                    $integration->tenant_id,
+                    $validationFailure,
+                ));
 
-            //     continue;
-            // }
+                continue;
+            }
 
             Log::info('Dispatch inicial enfileirado.', [
                 'tenant_id' => (string) $integration->tenant_id,

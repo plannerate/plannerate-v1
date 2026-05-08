@@ -49,14 +49,17 @@ class ExternalApiBaseService
         $strategy = $this->authStrategyResolver->resolve($auth['type']);
         $credentials = is_array($auth['credentials'] ?? null) ? $auth['credentials'] : [];
         $request = $strategy->apply($request, $credentials);
-        $query = $strategy->appendQuery($query, $credentials);
+
+        $mergedQuery = array_merge($connection['params'], $query);
+        $mergedQuery = $strategy->appendQuery($mergedQuery, $credentials);
+        $mergedBody = array_merge($connection['body'], $body);
 
         $response = $this->sendRequest(
             $request,
             strtoupper($method),
             $this->buildUrl($connection['base_url'], $endpoint),
-            $query,
-            $body,
+            $mergedQuery,
+            $mergedBody,
         );
 
         if ($response->failed()) {

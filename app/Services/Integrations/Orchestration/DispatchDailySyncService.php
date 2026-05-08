@@ -76,10 +76,6 @@ class DispatchDailySyncService
                 $jobs[] = new SyncTenantProductsDayJob((string) $integration->id, $date);
             }
 
-            if ($jobs === []) {
-                return;
-            }
-
             $jobs[] = new RunTenantIntegrationPostSyncJob((string) $integration->tenant_id);
 
             Bus::chain($jobs)->dispatch();

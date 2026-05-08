@@ -44,6 +44,24 @@ class DispatchTenantProductStorePagesJob implements ShouldQueue, TenantAware
             return;
         }
 
+        $processing = $configNormalizer->normalize($integration)['processing'];
+        $date = Carbon::parse($this->referenceDate)->toDateString();
+        $pageSize = (int) ($processing['products_page_size'] ?? 1000);
+
+        if (! $integrationServiceResolver->isPerStore($integration)) {
+            SyncTenantProductStorePageJob::dispatch(
+                integrationId: $integration->id,
+                referenceDate: $date,
+                storeId: '',
+                empresa: '',
+                page: 1,
+                pageSize: $pageSize,
+                fullSync: $this->fullSync,
+            );
+
+            return;
+        }
+
         $store = Store::query()
             ->whereKey($this->storeId)
             ->where('tenant_id', $integration->tenant_id)
@@ -61,7 +79,6 @@ class DispatchTenantProductStorePagesJob implements ShouldQueue, TenantAware
             return;
         }
 
-        $processing = $configNormalizer->normalize($integration)['processing'];
         $empresa = $this->resolveEmpresaForStore($store->code, $store->document, $processing);
 
         if ($empresa === null) {
@@ -77,15 +94,13 @@ class DispatchTenantProductStorePagesJob implements ShouldQueue, TenantAware
             return;
         }
 
-        $pageSize = (int) ($processing['products_page_size'] ?? 1000);
-        $date = Carbon::parse($this->referenceDate)->toDateString();
-
         SyncTenantProductStorePageJob::dispatch(
             integrationId: $integration->id,
             referenceDate: $date,
             storeId: $store->id,
             empresa: $empresa,
             page: 1,
+            pageSize: $pageSize,
             fullSync: $this->fullSync,
         );
     }
