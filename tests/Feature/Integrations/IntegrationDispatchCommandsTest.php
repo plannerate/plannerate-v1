@@ -20,6 +20,7 @@ use App\Models\TenantIntegration;
 use App\Models\User;
 use App\Notifications\AppNotification;
 use App\Services\Integrations\Contracts\SalesIntegrationService;
+use App\Services\Integrations\GesCooper\GesCooperProductsIntegrationService;
 use App\Services\Integrations\Orchestration\DispatchDailySyncService;
 use App\Services\Integrations\Orchestration\DispatchInitialSyncService;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
@@ -29,10 +30,12 @@ use App\Services\Integrations\Support\SyncSalesProductReferencesService;
 use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
 
@@ -397,6 +400,105 @@ test('initial sync skips sales dates already marked as success', function () {
     Bus::assertNotDispatched(SyncTenantProductsDayJob::class);
 });
 
+test('initial sync dispatches sales gaps and non-success statuses in window', function () {
+    Bus::fake();
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Initial Gaps',
+        'slug' => 'tenant-initial-gaps-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.landlord.database'),
+        'status' => 'active',
+    ]));
+
+    $integration = TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['sales_initial_days' => 4, 'products_initial_days' => 1]],
+        'is_active' => true,
+    ]);
+
+    $oldestDate = Carbon::yesterday()->subDays(3)->toDateString();
+    $failedDate = Carbon::yesterday()->subDays(2)->toDateString();
+    $pendingDate = Carbon::yesterday()->subDay()->toDateString();
+    $missingDate = Carbon::yesterday()->toDateString();
+
+    IntegrationSyncDay::query()->create([
+        'tenant_integration_id' => $integration->id,
+        'resource' => 'sales',
+        'reference_date' => $oldestDate,
+        'status' => 'success',
+    ]);
+    IntegrationSyncDay::query()->create([
+        'tenant_integration_id' => $integration->id,
+        'resource' => 'sales',
+        'reference_date' => $failedDate,
+        'status' => 'failed',
+    ]);
+    IntegrationSyncDay::query()->create([
+        'tenant_integration_id' => $integration->id,
+        'resource' => 'sales',
+        'reference_date' => $pendingDate,
+        'status' => 'pending',
+    ]);
+
+    app(DispatchInitialSyncService::class)->dispatch($integration);
+
+    Bus::assertChained([
+        new SyncTenantSalesDayJob((string) $integration->id, $failedDate, true),
+        new SyncTenantSalesDayJob((string) $integration->id, $pendingDate, true),
+        new SyncTenantSalesDayJob((string) $integration->id, $missingDate, true),
+        new SyncTenantProductsDayJob((string) $integration->id, $missingDate, true),
+        new SyncTenantProvidersJob((string) $integration->id, 1, true),
+        new RunTenantIntegrationPostSyncJob((string) $tenant->id),
+    ]);
+});
+
+test('initial sync expansion backfills older sales gaps without reprocessing successful days', function () {
+    Bus::fake();
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Initial Expansion',
+        'slug' => 'tenant-initial-expansion-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.landlord.database'),
+        'status' => 'active',
+    ]));
+
+    $integration = TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['sales_initial_days' => 5, 'products_initial_days' => 1]],
+        'is_active' => true,
+    ]);
+
+    $oldestSuccessDate = Carbon::yesterday()->subDays(4)->toDateString();
+    $backfillGapDate = Carbon::yesterday()->subDays(3)->toDateString();
+    $recentSuccessDateOne = Carbon::yesterday()->subDays(2)->toDateString();
+    $recentSuccessDateTwo = Carbon::yesterday()->subDay()->toDateString();
+    $recentSuccessDateThree = Carbon::yesterday()->toDateString();
+
+    foreach ([$oldestSuccessDate, $recentSuccessDateOne, $recentSuccessDateTwo, $recentSuccessDateThree] as $successDate) {
+        IntegrationSyncDay::query()->create([
+            'tenant_integration_id' => $integration->id,
+            'resource' => 'sales',
+            'reference_date' => $successDate,
+            'status' => 'success',
+        ]);
+    }
+
+    app(DispatchInitialSyncService::class)->dispatch($integration);
+
+    Bus::assertChained([
+        new SyncTenantSalesDayJob((string) $integration->id, $backfillGapDate, true),
+        new SyncTenantProductsDayJob((string) $integration->id, $recentSuccessDateThree, true),
+        new SyncTenantProvidersJob((string) $integration->id, 1, true),
+        new RunTenantIntegrationPostSyncJob((string) $tenant->id),
+    ]);
+});
+
 test('initial sync can ignore synced days check when requested', function () {
     Bus::fake();
 
@@ -440,6 +542,53 @@ test('initial sync can ignore synced days check when requested', function () {
     Bus::assertChained([
         new SyncTenantSalesDayJob((string) $integration->id, $referenceDate, true),
         new SyncTenantProductsDayJob((string) $integration->id, $referenceDate, true),
+        new SyncTenantProvidersJob((string) $integration->id, 1, true),
+        new RunTenantIntegrationPostSyncJob((string) $tenant->id),
+    ]);
+});
+
+test('initial sync ignore synced days dispatches all sales days in window', function () {
+    Bus::fake();
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Initial Ignore Full Window',
+        'slug' => 'tenant-initial-ignore-window-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.landlord.database'),
+        'status' => 'active',
+    ]));
+
+    $integration = TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['sales_initial_days' => 3, 'products_initial_days' => 1]],
+        'is_active' => true,
+    ]);
+
+    $twoDaysAgo = Carbon::yesterday()->subDays(2)->toDateString();
+    $previousDay = Carbon::yesterday()->subDay()->toDateString();
+    $yesterday = Carbon::yesterday()->toDateString();
+
+    foreach ([$twoDaysAgo, $previousDay, $yesterday] as $date) {
+        IntegrationSyncDay::query()->create([
+            'tenant_integration_id' => $integration->id,
+            'resource' => 'sales',
+            'reference_date' => $date,
+            'status' => 'success',
+        ]);
+    }
+
+    app(DispatchInitialSyncService::class)->dispatch(
+        integration: $integration,
+        ignoreSyncDaysCheck: true,
+    );
+
+    Bus::assertChained([
+        new SyncTenantSalesDayJob((string) $integration->id, $twoDaysAgo, true),
+        new SyncTenantSalesDayJob((string) $integration->id, $previousDay, true),
+        new SyncTenantSalesDayJob((string) $integration->id, $yesterday, true),
+        new SyncTenantProductsDayJob((string) $integration->id, $yesterday, true),
         new SyncTenantProvidersJob((string) $integration->id, 1, true),
         new RunTenantIntegrationPostSyncJob((string) $tenant->id),
     ]);
@@ -752,6 +901,129 @@ test('initial sync dispatches products as single full sync bootstrap', function 
         new SyncTenantProvidersJob((string) $integration->id, 1, true),
         new RunTenantIntegrationPostSyncJob((string) $tenant->id),
     ]);
+});
+
+test('gescooper products request uses products_initial_days range when no explicit date filter is provided', function () {
+    Carbon::setTestNow('2026-05-08 10:00:00');
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant GesCooper Products Range',
+        'slug' => 'tenant-gescooper-products-range-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.landlord.database'),
+        'status' => 'active',
+    ]));
+
+    $integration = TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'gescooper',
+        'http_method' => 'GET',
+        'api_url' => 'https://gescooper.example.com',
+        'config' => [
+            'auth' => [
+                'credentials' => [
+                    'usuario' => 'user',
+                    'senha' => 'pass',
+                    'dispositivo_uid' => 'device',
+                ],
+            ],
+            'connection' => [
+                'base_url' => 'https://gescooper.example.com',
+            ],
+            'processing' => [
+                'products_initial_days' => 3,
+                'products_page_size' => 250,
+            ],
+        ],
+        'is_active' => true,
+    ]);
+
+    $capturedQuery = null;
+
+    Http::fake(function (Request $request) use (&$capturedQuery) {
+        if (str_contains($request->url(), '/v1/Token')) {
+            return Http::response(['token' => 'fake-token'], 200);
+        }
+
+        if (str_contains($request->url(), '/Produtos/Produtos')) {
+            $queryString = parse_url($request->url(), PHP_URL_QUERY) ?? '';
+            parse_str($queryString, $query);
+            $capturedQuery = $query;
+
+            return Http::response(['pagination' => ['last_page' => 1], 'dados' => []], 200);
+        }
+
+        return Http::response([], 404);
+    });
+
+    $pages = app(GesCooperProductsIntegrationService::class)->discoverProductsTotalPages($integration);
+
+    expect($pages)->toBe(1)
+        ->and($capturedQuery)->not->toBeNull()
+        ->and($capturedQuery['data_cadastro_de'] ?? null)->toBe('2026-05-05')
+        ->and($capturedQuery['data_cadastro_ate'] ?? null)->toBe('2026-05-07');
+
+    Carbon::setTestNow();
+});
+
+test('gescooper products request uses reference date as single-day cadastro range', function () {
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant GesCooper Products Reference Date',
+        'slug' => 'tenant-gescooper-products-reference-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.landlord.database'),
+        'status' => 'active',
+    ]));
+
+    $integration = TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'gescooper',
+        'http_method' => 'GET',
+        'api_url' => 'https://gescooper.example.com',
+        'config' => [
+            'auth' => [
+                'credentials' => [
+                    'usuario' => 'user',
+                    'senha' => 'pass',
+                    'dispositivo_uid' => 'device',
+                ],
+            ],
+            'connection' => [
+                'base_url' => 'https://gescooper.example.com',
+            ],
+            'processing' => [
+                'products_initial_days' => 15,
+                'products_page_size' => 300,
+            ],
+        ],
+        'is_active' => true,
+    ]);
+
+    $capturedQuery = null;
+
+    Http::fake(function (Request $request) use (&$capturedQuery) {
+        if (str_contains($request->url(), '/v1/Token')) {
+            return Http::response(['token' => 'fake-token'], 200);
+        }
+
+        if (str_contains($request->url(), '/Produtos/Produtos')) {
+            $queryString = parse_url($request->url(), PHP_URL_QUERY) ?? '';
+            parse_str($queryString, $query);
+            $capturedQuery = $query;
+
+            return Http::response(['pagination' => ['last_page' => 1], 'dados' => []], 200);
+        }
+
+        return Http::response([], 404);
+    });
+
+    $referenceDate = '2026-05-01';
+    $pages = app(GesCooperProductsIntegrationService::class)->discoverProductsTotalPages($integration, [
+        'date' => $referenceDate,
+    ]);
+
+    expect($pages)->toBe(1)
+        ->and($capturedQuery)->not->toBeNull()
+        ->and($capturedQuery['data_cadastro_de'] ?? null)->toBe($referenceDate)
+        ->and($capturedQuery['data_cadastro_ate'] ?? null)->toBe($referenceDate);
 });
 
 test('queue and cache infrastructure use landlord connection explicitly', function () {

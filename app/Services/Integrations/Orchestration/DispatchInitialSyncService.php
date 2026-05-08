@@ -42,14 +42,14 @@ class DispatchInitialSyncService
                     $referenceDate = $date->toDateString();
 
                     if (! $ignoreSyncDaysCheck) {
-                        $alreadySynced = IntegrationSyncDay::query()
+                        $latestSyncDayStatus = IntegrationSyncDay::query()
                             ->where('tenant_integration_id', $integration->id)
                             ->where('resource', 'sales')
                             ->whereDate('reference_date', $referenceDate)
-                            ->where('status', 'success')
-                            ->exists();
+                            ->latest('created_at')
+                            ->value('status');
 
-                        if ($alreadySynced) {
+                        if ($latestSyncDayStatus === 'success') {
                             continue;
                         }
                     }

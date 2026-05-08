@@ -294,6 +294,11 @@ class GesCooperProductsIntegrationService implements ProductsIntegrationService
             'pagina' => (int) ($filters['page'] ?? 1),
             'registros_por_pagina' => (int) ($filters['page_size'] ?? $processing['products_page_size']),
         ]);
+        [$startDate, $endDate] = $this->resolveProductsRegistrationRange($processing, $filters);
+        if ($startDate !== null && $endDate !== null) {
+            $params['data_cadastro_de'] = $startDate;
+            $params['data_cadastro_ate'] = $endDate;
+        }
 
         $response = Http::withToken($token)
             ->acceptJson()
@@ -311,6 +316,37 @@ class GesCooperProductsIntegrationService implements ProductsIntegrationService
         }
 
         return is_array($response->json()) ? $response->json() : [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $processing
+     * @param  array<string, mixed>  $filters
+     * @return array{0: ?string, 1: ?string}
+     */
+    private function resolveProductsRegistrationRange(array $processing, array $filters): array
+    {
+        $explicitStartDate = $filters['data_cadastro_de'] ?? null;
+        $explicitEndDate = $filters['data_cadastro_ate'] ?? null;
+
+        if (is_string($explicitStartDate) && trim($explicitStartDate) !== '' && is_string($explicitEndDate) && trim($explicitEndDate) !== '') {
+            return [
+                Carbon::parse($explicitStartDate)->toDateString(),
+                Carbon::parse($explicitEndDate)->toDateString(),
+            ];
+        }
+
+        $referenceDate = $filters['date'] ?? null;
+        if (is_string($referenceDate) && trim($referenceDate) !== '') {
+            $normalizedReferenceDate = Carbon::parse($referenceDate)->toDateString();
+
+            return [$normalizedReferenceDate, $normalizedReferenceDate];
+        }
+
+        $initialDays = max(1, (int) ($processing['products_initial_days'] ?? 120));
+        $endDate = Carbon::yesterday()->startOfDay();
+        $startDate = $endDate->copy()->subDays($initialDays - 1);
+
+        return [$startDate->toDateString(), $endDate->toDateString()];
     }
 
     private function normalizeAndValidateEan(mixed $value): ?string
