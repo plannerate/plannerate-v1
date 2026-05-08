@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Errors } from '@inertiajs/core';
-import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import { useT } from '@/composables/useT';
 
@@ -10,12 +9,8 @@ type IntegrationFormData = {
     external_name_ean: string;
     external_name_status: string;
     external_name_sale_date: string;
-    http_method: string;
-    api_url: string;
-    auth_username: string;
-    auth_password: string;
-    partner_key: string;
     empresa: string;
+    partner_key: string;
     days_to_maintain: string | number;
     sales_initial_days: string | number;
     products_initial_days: string | number;
@@ -32,8 +27,6 @@ type IntegrationFormData = {
 defineProps<{
     data: IntegrationFormData;
     errors: Errors;
-    httpMethods: string[];
-    passwordRequired: boolean;
 }>();
 
 const { t } = useT();
@@ -61,30 +54,6 @@ const { t } = useT();
             required
         />
 
-        <FormSelectField
-            id="http_method"
-            name="http_method"
-            :label="t('app.landlord.tenant_integrations.fields.http_method')"
-            :default-value="data.http_method"
-            :error="errors.http_method"
-            class="md:col-span-4"
-            required
-        >
-            <option v-for="method in httpMethods" :key="method" :value="method">
-                {{ method }}
-            </option>
-        </FormSelectField>
-
-        <FormTextField
-            id="api_url"
-            name="api_url"
-            :label="t('app.landlord.tenant_integrations.fields.api_url')"
-            :default-value="data.api_url"
-            :error="errors.api_url"
-            class="md:col-span-8"
-            required
-        />
-
         <FormTextField
             id="empresa"
             name="empresa"
@@ -92,33 +61,6 @@ const { t } = useT();
             :default-value="data.empresa"
             :error="errors.empresa"
             class="md:col-span-4"
-        />
-
-        <FormTextField
-            id="auth_username"
-            name="auth_username"
-            :label="t('app.landlord.tenant_integrations.fields.auth_username')"
-            :default-value="data.auth_username"
-            :error="errors.auth_username"
-            class="md:col-span-4"
-            required
-        />
-
-        <FormTextField
-            id="auth_password"
-            name="auth_password"
-            type="password"
-            :label="t('app.landlord.tenant_integrations.fields.auth_password')"
-            :default-value="data.auth_password"
-            :error="errors.auth_password"
-            :hint="t('app.landlord.tenant_integrations.hints.auth_password')"
-            :placeholder="
-                passwordRequired
-                    ? ''
-                    : t('app.landlord.tenant_integrations.placeholders.keep_password')
-            "
-            class="md:col-span-4"
-            :required="passwordRequired"
         />
 
         <FormTextField

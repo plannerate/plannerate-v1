@@ -4,10 +4,6 @@ import FormTextField from '@/components/form/FormTextField.vue';
 import { useT } from '@/composables/useT';
 
 type GesCooperFormData = {
-    api_url: string;
-    usuario: string;
-    senha: string;
-    dispositivo_uid: string;
     products_page_size: string | number;
     processing_time: string;
     initial_setup_date: string;
@@ -18,7 +14,6 @@ type GesCooperFormData = {
 defineProps<{
     data: GesCooperFormData;
     errors: Errors;
-    passwordRequired: boolean;
 }>();
 
 const { t } = useT();
@@ -26,53 +21,6 @@ const { t } = useT();
 
 <template>
     <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-        <FormTextField
-            id="api_url"
-            name="api_url"
-            :label="t('app.landlord.tenant_integrations.fields.api_url')"
-            :default-value="data.api_url"
-            :error="errors.api_url"
-            placeholder="https://web.cooasgo.com.br/GesCooper/Cadastro/Api"
-            class="md:col-span-12"
-            required
-        />
-
-        <FormTextField
-            id="usuario"
-            name="usuario"
-            :label="t('app.landlord.tenant_integrations.fields.usuario')"
-            :default-value="data.usuario"
-            :error="errors.usuario"
-            class="md:col-span-4"
-            required
-        />
-
-        <FormTextField
-            id="senha"
-            name="senha"
-            type="password"
-            :label="t('app.landlord.tenant_integrations.fields.senha')"
-            :default-value="data.senha"
-            :error="errors.senha"
-            :hint="t('app.landlord.tenant_integrations.hints.auth_password')"
-            :placeholder="
-                passwordRequired
-                    ? ''
-                    : t('app.landlord.tenant_integrations.placeholders.keep_password')
-            "
-            class="md:col-span-4"
-            :required="passwordRequired"
-        />
-
-        <FormTextField
-            id="dispositivo_uid"
-            name="dispositivo_uid"
-            :label="t('app.landlord.tenant_integrations.fields.dispositivo_uid')"
-            :default-value="data.dispositivo_uid"
-            :error="errors.dispositivo_uid"
-            class="md:col-span-4"
-        />
-
         <FormTextField
             id="products_page_size"
             name="products_page_size"

@@ -17,7 +17,9 @@ class TenantIntegrationConfigNormalizer
      *         verify_ssl: bool,
      *         ping_path: string,
      *         ping_method: string,
-     *         headers: array<string, string>
+     *         headers: array<string, string>,
+     *         params: array<string, string>,
+     *         default_body: string
      *     },
      *     processing: array<string, mixed>
      * }
@@ -44,33 +46,39 @@ class TenantIntegrationConfigNormalizer
                 'verify_ssl' => (bool) ($connection['verify_ssl'] ?? true),
                 'ping_path' => (string) ($connection['ping_path'] ?? '/'),
                 'ping_method' => strtoupper((string) ($connection['ping_method'] ?? 'GET')),
-                'headers' => $this->normalizeHeaders($connection['headers'] ?? []),
+                'headers' => $this->normalizeKeyValuePairs($connection['headers'] ?? []),
+                'params' => $this->normalizeKeyValuePairs($connection['params'] ?? []),
+                'default_body' => (string) ($connection['default_body'] ?? ''),
             ],
             'processing' => $this->normalizeProcessing($processing),
         ];
     }
 
     /**
+     * Normalizes headers or params stored as either:
+     *   - legacy dict: {"Content-Type": "application/json"}
+     *   - new array of objects: [{"key": "Content-Type", "value": "...", "enabled": true}]
+     *
+     * Returns only enabled entries as a key→value dict for HTTP client use.
+     *
      * @return array<string, string>
      */
-    private function normalizeHeaders(mixed $headers): array
+    private function normalizeKeyValuePairs(mixed $items): array
     {
-        if (! is_array($headers)) {
+        if (! is_array($items)) {
             return [];
         }
 
         $normalized = [];
 
-        foreach ($headers as $key => $value) {
-            if (! is_string($key)) {
-                continue;
+        foreach ($items as $key => $value) {
+            if (is_string($key) && (is_string($value) || is_numeric($value))) {
+                // Legacy dict format
+                $normalized[$key] = (string) $value;
+            } elseif (is_array($value) && isset($value['key']) && ($value['enabled'] ?? true)) {
+                // New array-of-objects format — only include if enabled
+                $normalized[(string) $value['key']] = (string) ($value['value'] ?? '');
             }
-
-            if (! is_string($value) && ! is_numeric($value)) {
-                continue;
-            }
-
-            $normalized[$key] = (string) $value;
         }
 
         return $normalized;

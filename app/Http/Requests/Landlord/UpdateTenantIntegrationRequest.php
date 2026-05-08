@@ -37,11 +37,28 @@ class UpdateTenantIntegrationRequest extends FormRequest
             'initial_setup_date' => ['nullable', 'date'],
             'is_active' => ['sometimes', 'boolean'],
             'products_page_size' => ['nullable', 'integer', 'min:1', 'max:50000'],
+            // Connection
+            'api_url' => ['required', 'url', 'max:255'],
+            'headers' => ['sometimes', 'array'],
+            'headers.*.key' => ['required_with:headers.*', 'string', 'max:255'],
+            'headers.*.value' => ['required_with:headers.*', 'string', 'max:1000'],
+            'headers.*.enabled' => ['sometimes', 'boolean'],
+            'params' => ['sometimes', 'array'],
+            'params.*.key' => ['required_with:params.*', 'string', 'max:255'],
+            'params.*.value' => ['required_with:params.*', 'string', 'max:1000'],
+            'params.*.enabled' => ['sometimes', 'boolean'],
+            'default_body' => ['nullable', 'string', 'max:10000'],
+            // Auth
+            'auth_type' => ['nullable', 'string', Rule::in(['none', 'bearer', 'basic', 'api_key_header', 'api_key_query', 'gescooper'])],
+            'auth_token' => ['nullable', 'string', 'max:2000'],
+            'auth_api_key' => ['nullable', 'string', 'max:2000'],
+            'auth_api_key_name' => ['nullable', 'string', 'max:255'],
+            'auth_username' => ['nullable', 'string', 'max:255'],
+            'auth_password' => ['nullable', 'string', 'max:255'],
         ];
 
         if ($type === 'gescooper') {
             return array_merge($shared, [
-                'api_url' => ['required', 'url', 'max:255'],
                 'usuario' => ['required', 'string', 'max:255'],
                 'senha' => [
                     Rule::requiredIf(! $integrationExists),
@@ -56,15 +73,6 @@ class UpdateTenantIntegrationRequest extends FormRequest
         // Sysmo
         return array_merge($shared, [
             'external_name' => ['required', 'string', 'max:255'],
-            'http_method' => ['required', 'string', Rule::in(['GET', 'POST', 'PUT', 'PATCH'])],
-            'api_url' => ['required', 'url', 'max:255'],
-            'auth_username' => ['required', 'string', 'max:255'],
-            'auth_password' => [
-                Rule::requiredIf(! $integrationExists),
-                'nullable',
-                'string',
-                'max:255',
-            ],
             'partner_key' => ['required', 'string', 'max:255'],
             'empresa' => ['nullable', 'string', 'max:255'],
             'external_name_ean' => ['nullable', 'string', 'max:255'],
@@ -76,11 +84,6 @@ class UpdateTenantIntegrationRequest extends FormRequest
             'daily_lookback_days' => ['nullable', 'integer', 'min:2', 'max:365'],
             'sales_page_size' => ['nullable', 'integer', 'min:1', 'max:50000'],
             'sales_tipo_consulta' => ['nullable', 'string', 'max:50'],
-            'auth_type' => ['nullable', 'string', Rule::in(['none', 'bearer', 'basic', 'api_key_header', 'api_key_query', 'custom_headers'])],
-            'auth_token' => ['nullable', 'string', 'max:2000'],
-            'auth_api_key' => ['nullable', 'string', 'max:2000'],
-            'auth_api_key_name' => ['nullable', 'string', 'max:255'],
-            'auth_api_key_prefix' => ['nullable', 'string', 'max:50'],
             'connection_timeout' => ['nullable', 'integer', 'min:1', 'max:120'],
             'connection_connect_timeout' => ['nullable', 'integer', 'min:1', 'max:120'],
         ]);
@@ -117,6 +120,7 @@ class UpdateTenantIntegrationRequest extends FormRequest
             ? $existingConfig['connection']
             : [];
 
+        $authType = (string) ($validated['auth_type'] ?? 'gescooper');
         $resolvedSenha = $validated['senha'] ?? $existingCredentials['senha'] ?? '';
 
         return [
@@ -125,7 +129,7 @@ class UpdateTenantIntegrationRequest extends FormRequest
             'is_active' => (bool) ($validated['is_active'] ?? true),
             'config' => [
                 'auth' => [
-                    'type' => 'none',
+                    'type' => $authType,
                     'credentials' => [
                         'usuario' => (string) ($validated['usuario'] ?? ''),
                         'senha' => (string) $resolvedSenha,
@@ -139,6 +143,9 @@ class UpdateTenantIntegrationRequest extends FormRequest
                     'verify_ssl' => (bool) ($existingConnection['verify_ssl'] ?? true),
                     'ping_path' => (string) ($existingConnection['ping_path'] ?? '/v1/Token'),
                     'ping_method' => 'POST',
+                    'headers' => $this->buildKeyValueArray($validated['headers'] ?? []),
+                    'params' => $this->buildKeyValueArray($validated['params'] ?? []),
+                    'default_body' => $validated['default_body'] ?? null,
                 ],
                 'processing' => [
                     'products_page_size' => (int) ($validated['products_page_size'] ?? 200),
@@ -199,7 +206,9 @@ class UpdateTenantIntegrationRequest extends FormRequest
                     'verify_ssl' => (bool) ($existingConnectionConfig['verify_ssl'] ?? true),
                     'ping_path' => (string) ($existingConnectionConfig['ping_path'] ?? '/'),
                     'ping_method' => (string) ($existingConnectionConfig['ping_method'] ?? 'GET'),
-                    'headers' => is_array($existingConnectionConfig['headers'] ?? null) ? $existingConnectionConfig['headers'] : [],
+                    'headers' => $this->buildKeyValueArray($validated['headers'] ?? []),
+                    'params' => $this->buildKeyValueArray($validated['params'] ?? []),
+                    'default_body' => $validated['default_body'] ?? null,
                 ],
             ],
         ];
@@ -226,19 +235,39 @@ class UpdateTenantIntegrationRequest extends FormRequest
             'api_key_header' => [
                 'name' => (string) ($validated['auth_api_key_name'] ?? $existingCredentials['name'] ?? 'X-API-KEY'),
                 'key' => (string) ($validated['auth_api_key'] ?? $existingCredentials['key'] ?? ''),
-                'prefix' => (string) ($validated['auth_api_key_prefix'] ?? $existingCredentials['prefix'] ?? ''),
+                'prefix' => (string) ($existingCredentials['prefix'] ?? ''),
             ],
             'api_key_query' => [
                 'name' => (string) ($validated['auth_api_key_name'] ?? $existingCredentials['name'] ?? 'api_key'),
                 'key' => (string) ($validated['auth_api_key'] ?? $existingCredentials['key'] ?? ''),
             ],
-            'custom_headers' => is_array($existingCredentials['headers'] ?? null) ? [
-                'headers' => $existingCredentials['headers'],
-            ] : ['headers' => []],
             default => [
                 'username' => (string) ($validated['auth_username'] ?? $existingCredentials['username'] ?? ''),
                 'password' => $resolvedPassword,
             ],
         };
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return array<int, array{key: string, value: string, enabled: bool}>
+     */
+    private function buildKeyValueArray(array $rows): array
+    {
+        $result = [];
+
+        foreach ($rows as $row) {
+            if (! is_array($row) || trim((string) ($row['key'] ?? '')) === '') {
+                continue;
+            }
+
+            $result[] = [
+                'key' => (string) $row['key'],
+                'value' => (string) ($row['value'] ?? ''),
+                'enabled' => filter_var($row['enabled'] ?? true, FILTER_VALIDATE_BOOLEAN),
+            ];
+        }
+
+        return $result;
     }
 }
