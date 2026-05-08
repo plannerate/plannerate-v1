@@ -55,6 +55,7 @@ interface AuthPageProps {
 const props = defineProps<Props>();
 const page = usePage<AuthPageProps>();
 const isBrowser = typeof window !== 'undefined';
+const isEchoConfigured = isBrowser && window.__plannerateEchoConfigured === true;
 
 const resolvedSubdomain = computed(() => {
     const subdomainFromPage = page.props.subdomain?.toString().trim();
@@ -203,7 +204,7 @@ return;
     },
 );
 
-if (isBrowser && authUserId.value) {
+if (isEchoConfigured && authUserId.value) {
     useEcho<ProductImagesUpdatedPayload>(
         `App.Models.User.${authUserId.value}`,
         '.plannerate.gondola.product-images.updated',
