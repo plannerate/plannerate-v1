@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import WayfinderLink from '@/components/WayfinderLink.vue';
+import { Maximize2, Minimize2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
@@ -60,6 +61,8 @@ const search = ref(props.filters.search ?? '');
 const selectedStoreId = ref<string>(props.filters.store_id ?? '');
 const statusFilter = ref<'all' | 'clickable' | 'pending' | 'blocked'>(props.filters.status ?? 'all');
 const onlyEditableStores = ref(props.filters.only_editable ?? false);
+const mapContainers = ref<Record<string, HTMLElement | null>>({});
+const fullscreenStoreId = ref<string | null>(null);
 
 const storeOptions = computed(() => props.filter_options.stores ?? []);
 
@@ -149,6 +152,43 @@ const pageMeta = useCrudPageMeta({
         { title: 'Maps', href: '/planograms/maps' },
     ],
 });
+
+function setMapContainer(id: string, element: Element | { $el: Element } | null): void {
+    if (!element) {
+        mapContainers.value[id] = null;
+
+        return;
+    }
+
+    const domElement = '$el' in element ? element.$el : element;
+    mapContainers.value[id] = domElement as HTMLElement;
+}
+
+async function toggleMapFullscreen(storeId: string): Promise<void> {
+    if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        fullscreenStoreId.value = null;
+
+        return;
+    }
+
+    const mapContainer = mapContainers.value[storeId];
+
+    if (!mapContainer) {
+        return;
+    }
+
+    await mapContainer.requestFullscreen();
+    fullscreenStoreId.value = storeId;
+}
+
+if (typeof document !== 'undefined') {
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            fullscreenStoreId.value = null;
+        }
+    });
+}
 </script>
 
 <template>
@@ -284,17 +324,36 @@ const pageMeta = useCrudPageMeta({
                             </span>
                         </div>
                     </div>
-                    <WayfinderLink
-                        v-if="storeMap.can_edit_store"
-                        :href="StoreController.edit.url({ subdomain: props.subdomain, store: storeMap.id })"
-                        class="inline-flex h-8 items-center rounded-md border border-border px-3 text-xs font-medium text-foreground transition hover:bg-muted"
-                    >
-                        Editar loja
-                    </WayfinderLink>
+                    <div class="flex items-center gap-2">
+                        <button
+                            type="button"
+                            class="inline-flex h-8 items-center gap-1 rounded-md border border-border px-3 text-xs font-medium text-foreground transition hover:bg-muted"
+                            @click="toggleMapFullscreen(storeMap.id)"
+                        >
+                            <Minimize2 v-if="fullscreenStoreId === storeMap.id" class="size-3.5" />
+                            <Maximize2 v-else class="size-3.5" />
+                            {{ fullscreenStoreId === storeMap.id ? 'Sair da tela cheia' : 'Tela cheia' }}
+                        </button>
+                        <WayfinderLink
+                            v-if="storeMap.can_edit_store"
+                            :href="StoreController.edit.url({ subdomain: props.subdomain, store: storeMap.id })"
+                            class="inline-flex h-8 items-center rounded-md border border-border px-3 text-xs font-medium text-foreground transition hover:bg-muted"
+                        >
+                            Editar loja
+                        </WayfinderLink>
+                    </div>
                 </div>
 
-                <div class="overflow-hidden rounded-md border border-border bg-muted/20 p-2">
-                    <div class="relative inline-block origin-top-left" style="zoom: 0.78;">
+                <div
+                    :ref="(el) => setMapContainer(storeMap.id, el)"
+                    class="overflow-hidden rounded-md border border-border bg-muted/20"
+                    :class="fullscreenStoreId === storeMap.id ? 'p-4' : 'p-2'"
+                >
+                    <div
+                        class="w-full overflow-auto"
+                            :class="fullscreenStoreId === storeMap.id ? 'h-[calc(100vh-8rem)]' : 'max-h-128'"
+                    >
+                        <div class="relative inline-block origin-top-left" :style="{ zoom: fullscreenStoreId === storeMap.id ? 1 : 0.78 }">
                         <img
                             :src="storeMap.map_image_url ?? ''"
                             :alt="`Mapa da loja ${storeMap.name}`"
@@ -342,6 +401,7 @@ const pageMeta = useCrudPageMeta({
                                 </span>
                             </div>
                         </template>
+                    </div>
                     </div>
                 </div>
             </article>
