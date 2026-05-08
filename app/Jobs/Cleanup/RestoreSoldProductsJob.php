@@ -16,8 +16,6 @@ class RestoreSoldProductsJob implements NotTenantAware, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $queue = 'maintenance';
-
     public int $tries = 3;
 
     public int $timeout = 600;
@@ -30,7 +28,9 @@ class RestoreSoldProductsJob implements NotTenantAware, ShouldQueue
         public array $productIds,
         public string $tenantConnectionName,
         public bool $executeInTenantContext = true,
-    ) {}
+    ) {
+        $this->onQueue('maintenance');
+    }
 
     public function handle(): void
     {

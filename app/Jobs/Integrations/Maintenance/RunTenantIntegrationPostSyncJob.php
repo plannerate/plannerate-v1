@@ -11,13 +11,13 @@ class RunTenantIntegrationPostSyncJob implements ShouldQueue
 {
     use Queueable;
 
-    public string $queue = 'maintenance';
-
     public int $timeout = 1800;
 
     public function __construct(
         public string $tenantId,
-    ) {}
+    ) {
+        $this->onQueue('maintenance');
+    }
 
     public function handle(): void
     {

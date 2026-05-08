@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Log;
 
 class GondolaAnalysisController extends Controller
 {
-    public function calculateAbcApi(Request $request, string $gondola)
+    public function calculateAbcApi(Request $request, string $subdomain, string $gondola)
     {
         $gondolaModel = Gondola::with('planogram.category')->find($gondola);
 
@@ -71,13 +71,13 @@ class GondolaAnalysisController extends Controller
         } catch (\Exception $e) {
             Log::error('ABC Analysis failed', ['gondola' => $gondola, 'error' => $e->getMessage()]);
 
-            return redirect()->back()->with('flash', ['error' => 'Erro ao calcular análise ABC: '.$e->getMessage()]);
+            return redirect()->back()->with('flash', ['error' => 'Erro ao calcular análise ABC: ' . $e->getMessage()]);
         }
 
         return redirect()->back();
     }
 
-    public function calculateTargetStockApi(Request $request, string $gondola)
+    public function calculateTargetStockApi(Request $request, string $subdomain, string $gondola)
     {
         $gondolaModel = Gondola::find($gondola);
 
@@ -134,13 +134,13 @@ class GondolaAnalysisController extends Controller
         } catch (\Exception $e) {
             Log::error('Target Stock Analysis failed', ['gondola' => $gondola, 'error' => $e->getMessage()]);
 
-            return redirect()->back()->with('flash', ['error' => 'Erro ao calcular estoque alvo: '.$e->getMessage()]);
+            return redirect()->back()->with('flash', ['error' => 'Erro ao calcular estoque alvo: ' . $e->getMessage()]);
         }
 
         return redirect()->back();
     }
 
-    public function clearAnalysisApi(Request $request, string $gondola)
+    public function clearAnalysisApi(Request $request, string $subdomain, string $gondola)
     {
         GondolaAnalysis::where('gondola_id', $gondola)->delete();
 
@@ -174,9 +174,9 @@ class GondolaAnalysisController extends Controller
 
     private function buildAbcSummary(array $results): array
     {
-        $classA = count(array_filter($results, fn ($r) => ($r['classificacao'] ?? '') === 'A'));
-        $classB = count(array_filter($results, fn ($r) => ($r['classificacao'] ?? '') === 'B'));
-        $classC = count(array_filter($results, fn ($r) => ($r['classificacao'] ?? '') === 'C'));
+        $classA = count(array_filter($results, fn($r) => ($r['classificacao'] ?? '') === 'A'));
+        $classB = count(array_filter($results, fn($r) => ($r['classificacao'] ?? '') === 'B'));
+        $classC = count(array_filter($results, fn($r) => ($r['classificacao'] ?? '') === 'C'));
 
         return [
             'total_products' => count($results),
@@ -191,7 +191,7 @@ class GondolaAnalysisController extends Controller
         $totalTarget = array_sum(array_column($results, 'estoque_alvo') ?: array_column($results, 'target_stock') ?: [0]);
         $totalCurrent = array_sum(array_column($results, 'estoque_atual') ?: array_column($results, 'current_stock') ?: [0]);
 
-        $above = count(array_filter($results, fn ($r) => ($r['estoque_atual'] ?? $r['current_stock'] ?? 0) >= ($r['estoque_alvo'] ?? $r['target_stock'] ?? 0)));
+        $above = count(array_filter($results, fn($r) => ($r['estoque_atual'] ?? $r['current_stock'] ?? 0) >= ($r['estoque_alvo'] ?? $r['target_stock'] ?? 0)));
         $below = count($results) - $above;
 
         return [

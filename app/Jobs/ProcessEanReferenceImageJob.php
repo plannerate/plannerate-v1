@@ -15,8 +15,6 @@ class ProcessEanReferenceImageJob implements NotTenantAware, ShouldQueue
 {
     use Queueable;
 
-    public string $queue = 'critical';
-
     public int $timeout = 300;
 
     /**
@@ -28,7 +26,9 @@ class ProcessEanReferenceImageJob implements NotTenantAware, ShouldQueue
         public array $tenantIds = [],
         public bool $notify = false,
         public ?string $notifyUserId = null,
-    ) {}
+    ) {
+        $this->onQueue('critical');
+    }
 
     public function __wakeup(): void
     {

@@ -16,8 +16,6 @@ class ImportCategoriesFromSpreadsheetJob implements ShouldQueue, TenantAware
 {
     use Queueable;
 
-    public string $queue = 'critical';
-
     public int $tries = 1;
 
     public int $timeout = 300;
@@ -28,7 +26,9 @@ class ImportCategoriesFromSpreadsheetJob implements ShouldQueue, TenantAware
         public string $disk,
         public string $path,
         public bool $truncateBeforeImport = false,
-    ) {}
+    ) {
+        $this->onQueue('critical');
+    }
 
     public function handle(CategorySpreadsheetImportService $service): void
     {

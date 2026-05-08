@@ -13,8 +13,6 @@ class DOProcessProductImageJob implements ShouldQueue, TenantAware
 {
     use Queueable;
 
-    public string $queue = 'critical';
-
     public int $timeout = 120;
 
     /**
@@ -22,7 +20,9 @@ class DOProcessProductImageJob implements ShouldQueue, TenantAware
      */
     public function __construct(
         public string $productId
-    ) {}
+    ) {
+        $this->onQueue('critical');
+    }
 
     /**
      * Execute the job.

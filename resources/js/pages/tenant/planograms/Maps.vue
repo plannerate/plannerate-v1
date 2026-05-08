@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import WayfinderLink from '@/components/WayfinderLink.vue';
-import { computed, ref } from 'vue';
+import { Maximize2, Minimize2 } from 'lucide-vue-next';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
 import { show as gondolaPdfShow } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
@@ -60,6 +61,68 @@ const search = ref(props.filters.search ?? '');
 const selectedStoreId = ref<string>(props.filters.store_id ?? '');
 const statusFilter = ref<'all' | 'clickable' | 'pending' | 'blocked'>(props.filters.status ?? 'all');
 const onlyEditableStores = ref(props.filters.only_editable ?? false);
+const mapContainers = ref<Record<string, HTMLElement | null>>({});
+const fullscreenStoreId = ref<string | null>(null);
+const imageNaturalSizes = ref<Record<string, { w: number; h: number }>>({});
+const containerSizes = ref<Record<string, { w: number; h: number }>>({});
+const mapResizeObservers: Record<string, ResizeObserver> = {};
+
+function onImageLoad(storeId: string, event: Event): void {
+    const img = event.target as HTMLImageElement;
+    imageNaturalSizes.value[storeId] = { w: img.naturalWidth, h: img.naturalHeight };
+}
+
+function mapScale(storeId: string): number {
+    const nat = imageNaturalSizes.value[storeId];
+    const con = containerSizes.value[storeId];
+
+    if (!nat || !con || con.w === 0) {
+        return 1;
+    }
+
+    if (fullscreenStoreId.value === storeId) {
+        return Math.min(con.w / nat.w, con.h / nat.h);
+    }
+
+    return con.w / nat.w;
+}
+
+function mapContainerStyle(storeId: string): Record<string, string> {
+    if (fullscreenStoreId.value === storeId) {
+        return {};
+    }
+
+    const nat = imageNaturalSizes.value[storeId];
+
+    if (!nat) {
+        return { minHeight: '12rem' };
+    }
+
+    return { aspectRatio: `${nat.w} / ${nat.h}` };
+}
+
+function mapWrapperStyle(storeId: string): Record<string, string> {
+    const nat = imageNaturalSizes.value[storeId];
+
+    if (!nat) {
+        return {};
+    }
+
+    const scale = mapScale(storeId);
+    const isFullscreen = fullscreenStoreId.value === storeId;
+
+    return {
+        position: 'absolute',
+        top: isFullscreen ? '50%' : '0',
+        left: isFullscreen ? '50%' : '0',
+        width: `${nat.w}px`,
+        height: `${nat.h}px`,
+        transform: isFullscreen
+            ? `translate(-50%, -50%) scale(${scale})`
+            : `scale(${scale})`,
+        transformOrigin: isFullscreen ? 'center' : 'top left',
+    };
+}
 
 const storeOptions = computed(() => props.filter_options.stores ?? []);
 
@@ -149,6 +212,57 @@ const pageMeta = useCrudPageMeta({
         { title: 'Maps', href: '/planograms/maps' },
     ],
 });
+
+function setMapContainer(id: string, element: Element | { $el: Element } | null): void {
+    if (!element) {
+        mapContainers.value[id] = null;
+        mapResizeObservers[id]?.disconnect();
+        delete mapResizeObservers[id];
+
+        return;
+    }
+
+    const domElement = '$el' in element ? element.$el : element;
+    mapContainers.value[id] = domElement as HTMLElement;
+
+    mapResizeObservers[id]?.disconnect();
+    const observer = new ResizeObserver((entries) => {
+        const rect = entries[0].contentRect;
+        containerSizes.value[id] = { w: rect.width, h: rect.height };
+    });
+    observer.observe(domElement as HTMLElement);
+    mapResizeObservers[id] = observer;
+}
+
+async function toggleMapFullscreen(storeId: string): Promise<void> {
+    if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        fullscreenStoreId.value = null;
+
+        return;
+    }
+
+    const mapContainer = mapContainers.value[storeId];
+
+    if (!mapContainer) {
+        return;
+    }
+
+    await mapContainer.requestFullscreen();
+    fullscreenStoreId.value = storeId;
+}
+
+if (typeof document !== 'undefined') {
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            fullscreenStoreId.value = null;
+        }
+    });
+}
+
+onBeforeUnmount(() => {
+    Object.values(mapResizeObservers).forEach((observer) => observer.disconnect());
+});
 </script>
 
 <template>
@@ -161,8 +275,10 @@ const pageMeta = useCrudPageMeta({
                 </NewActionButton>
             </div>
         </template>
-        <KankanNavigationLinks :subdomain="props.subdomain" />
-        <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div class="px-4">
+            <KankanNavigationLinks :subdomain="props.subdomain" />
+        </div>
+        <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4 px-4">
             <button
                 type="button"
                 class="rounded-lg border border-border bg-card p-3 text-left transition hover:bg-muted/30"
@@ -196,7 +312,7 @@ const pageMeta = useCrudPageMeta({
             </button>
         </div>
 
-        <div class="mb-4 flex flex-col gap-3 rounded-lg border border-border bg-card p-3 lg:flex-row lg:items-center">
+        <div class="mb-4 flex flex-col gap-3 rounded-lg border border-border bg-card p-3 lg:flex-row lg:items-center px-4 mx-4">
             <input
                 v-model="search"
                 type="text"
@@ -244,7 +360,7 @@ const pageMeta = useCrudPageMeta({
             </button>
         </div>
 
-        <div class="mb-4 flex flex-wrap items-center gap-3 text-xs">
+        <div class="mb-4 flex flex-wrap items-center gap-3 text-xs px-4">
             <div class="inline-flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 text-foreground">
                 <span class="inline-block h-3 w-3 rounded-sm border border-primary bg-primary/40 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]" />
                 <span>Com link</span>
@@ -258,7 +374,7 @@ const pageMeta = useCrudPageMeta({
         <div v-if="props.store_maps.length === 0" class="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
             Nenhum mapa de loja disponível.
         </div>
-        <div v-else class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div v-else class="grid grid-cols-1 gap-4 xl:grid-cols-2 px-4">
             <article
                 v-for="storeMap in props.store_maps"
                 :key="storeMap.id"
@@ -284,21 +400,39 @@ const pageMeta = useCrudPageMeta({
                             </span>
                         </div>
                     </div>
-                    <WayfinderLink
-                        v-if="storeMap.can_edit_store"
-                        :href="StoreController.edit.url({ subdomain: props.subdomain, store: storeMap.id })"
-                        class="inline-flex h-8 items-center rounded-md border border-border px-3 text-xs font-medium text-foreground transition hover:bg-muted"
-                    >
-                        Editar loja
-                    </WayfinderLink>
+                    <div class="flex items-center gap-2">
+                        <button
+                            type="button"
+                            class="inline-flex h-8 items-center gap-1 rounded-md border border-border px-3 text-xs font-medium text-foreground transition hover:bg-muted"
+                            @click="toggleMapFullscreen(storeMap.id)"
+                        >
+                            <Minimize2 v-if="fullscreenStoreId === storeMap.id" class="size-3.5" />
+                            <Maximize2 v-else class="size-3.5" />
+                            {{ fullscreenStoreId === storeMap.id ? 'Sair da tela cheia' : 'Tela cheia' }}
+                        </button>
+                        <WayfinderLink
+                            v-if="storeMap.can_edit_store"
+                            :href="StoreController.edit.url({ subdomain: props.subdomain, store: storeMap.id })"
+                            class="inline-flex h-8 items-center rounded-md border border-border px-3 text-xs font-medium text-foreground transition hover:bg-muted"
+                        >
+                            Editar loja
+                        </WayfinderLink>
+                    </div>
                 </div>
 
-                <div class="overflow-hidden rounded-md border border-border bg-muted/20 p-2">
-                    <div class="relative inline-block origin-top-left" style="zoom: 0.78;">
+                <div
+                    :ref="(el) => setMapContainer(storeMap.id, el)"
+                    class="relative overflow-hidden rounded-md border border-border bg-muted/20"
+                    :style="mapContainerStyle(storeMap.id)"
+                >
+                    <div
+                        :style="mapWrapperStyle(storeMap.id)"
+                    >
                         <img
                             :src="storeMap.map_image_url ?? ''"
                             :alt="`Mapa da loja ${storeMap.name}`"
-                            class="max-w-none rounded-md"
+                            class="block max-w-none rounded-md"
+                            @load="onImageLoad(storeMap.id, $event)"
                         >
 
                         <template v-for="region in storeMap.regions" :key="region.id">

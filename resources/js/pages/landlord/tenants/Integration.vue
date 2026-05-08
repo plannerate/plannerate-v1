@@ -150,6 +150,15 @@ const formData = computed(() => ({
     is_active:               props.integration?.is_active ?? true,
 }));
 
+const updateForm = computed(() => {
+    const definition = TenantIntegrationController.update.form(props.tenant.id);
+
+    return {
+        ...definition,
+        action: tenantWayfinderPath(definition.action),
+    };
+});
+
 type IntegrationTestResult = {
     ok: boolean;
     message?: string;
@@ -232,10 +241,7 @@ function testConnection(): void {
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <div class="p-4">
             <Form
-                v-bind="{
-                    ...TenantIntegrationController.update.form(props.tenant.id),
-                    action: tenantWayfinderPath(TenantIntegrationController.update.url(props.tenant.id)),
-                }"
+                v-bind="updateForm"
                 v-slot="{ errors, processing }"
             >
                 <FormCard
