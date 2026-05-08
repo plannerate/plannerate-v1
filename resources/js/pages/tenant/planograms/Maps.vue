@@ -2,7 +2,7 @@
 import { Head, router } from '@inertiajs/vue3';
 import WayfinderLink from '@/components/WayfinderLink.vue';
 import { Maximize2, Minimize2 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
 import { show as gondolaPdfShow } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
@@ -63,6 +63,66 @@ const statusFilter = ref<'all' | 'clickable' | 'pending' | 'blocked'>(props.filt
 const onlyEditableStores = ref(props.filters.only_editable ?? false);
 const mapContainers = ref<Record<string, HTMLElement | null>>({});
 const fullscreenStoreId = ref<string | null>(null);
+const imageNaturalSizes = ref<Record<string, { w: number; h: number }>>({});
+const containerSizes = ref<Record<string, { w: number; h: number }>>({});
+const mapResizeObservers: Record<string, ResizeObserver> = {};
+
+function onImageLoad(storeId: string, event: Event): void {
+    const img = event.target as HTMLImageElement;
+    imageNaturalSizes.value[storeId] = { w: img.naturalWidth, h: img.naturalHeight };
+}
+
+function mapScale(storeId: string): number {
+    const nat = imageNaturalSizes.value[storeId];
+    const con = containerSizes.value[storeId];
+
+    if (!nat || !con || con.w === 0) {
+        return 1;
+    }
+
+    if (fullscreenStoreId.value === storeId) {
+        return Math.min(con.w / nat.w, con.h / nat.h);
+    }
+
+    return con.w / nat.w;
+}
+
+function mapContainerStyle(storeId: string): Record<string, string> {
+    if (fullscreenStoreId.value === storeId) {
+        return {};
+    }
+
+    const nat = imageNaturalSizes.value[storeId];
+
+    if (!nat) {
+        return { minHeight: '12rem' };
+    }
+
+    return { aspectRatio: `${nat.w} / ${nat.h}` };
+}
+
+function mapWrapperStyle(storeId: string): Record<string, string> {
+    const nat = imageNaturalSizes.value[storeId];
+
+    if (!nat) {
+        return {};
+    }
+
+    const scale = mapScale(storeId);
+    const isFullscreen = fullscreenStoreId.value === storeId;
+
+    return {
+        position: 'absolute',
+        top: isFullscreen ? '50%' : '0',
+        left: isFullscreen ? '50%' : '0',
+        width: `${nat.w}px`,
+        height: `${nat.h}px`,
+        transform: isFullscreen
+            ? `translate(-50%, -50%) scale(${scale})`
+            : `scale(${scale})`,
+        transformOrigin: isFullscreen ? 'center' : 'top left',
+    };
+}
 
 const storeOptions = computed(() => props.filter_options.stores ?? []);
 
@@ -156,12 +216,22 @@ const pageMeta = useCrudPageMeta({
 function setMapContainer(id: string, element: Element | { $el: Element } | null): void {
     if (!element) {
         mapContainers.value[id] = null;
+        mapResizeObservers[id]?.disconnect();
+        delete mapResizeObservers[id];
 
         return;
     }
 
     const domElement = '$el' in element ? element.$el : element;
     mapContainers.value[id] = domElement as HTMLElement;
+
+    mapResizeObservers[id]?.disconnect();
+    const observer = new ResizeObserver((entries) => {
+        const rect = entries[0].contentRect;
+        containerSizes.value[id] = { w: rect.width, h: rect.height };
+    });
+    observer.observe(domElement as HTMLElement);
+    mapResizeObservers[id] = observer;
 }
 
 async function toggleMapFullscreen(storeId: string): Promise<void> {
@@ -189,6 +259,10 @@ if (typeof document !== 'undefined') {
         }
     });
 }
+
+onBeforeUnmount(() => {
+    Object.values(mapResizeObservers).forEach((observer) => observer.disconnect());
+});
 </script>
 
 <template>
@@ -346,18 +420,17 @@ if (typeof document !== 'undefined') {
 
                 <div
                     :ref="(el) => setMapContainer(storeMap.id, el)"
-                    class="overflow-hidden rounded-md border border-border bg-muted/20"
-                    :class="fullscreenStoreId === storeMap.id ? 'p-4' : 'p-2'"
+                    class="relative overflow-hidden rounded-md border border-border bg-muted/20"
+                    :style="mapContainerStyle(storeMap.id)"
                 >
                     <div
-                        class="w-full overflow-auto"
-                            :class="fullscreenStoreId === storeMap.id ? 'h-[calc(100vh-8rem)]' : 'max-h-128'"
+                        :style="mapWrapperStyle(storeMap.id)"
                     >
-                        <div class="relative inline-block origin-top-left" :style="{ zoom: fullscreenStoreId === storeMap.id ? 1 : 0.78 }">
                         <img
                             :src="storeMap.map_image_url ?? ''"
                             :alt="`Mapa da loja ${storeMap.name}`"
-                            class="max-w-none rounded-md"
+                            class="block max-w-none rounded-md"
+                            @load="onImageLoad(storeMap.id, $event)"
                         >
 
                         <template v-for="region in storeMap.regions" :key="region.id">
@@ -401,7 +474,6 @@ if (typeof document !== 'undefined') {
                                 </span>
                             </div>
                         </template>
-                    </div>
                     </div>
                 </div>
             </article>
