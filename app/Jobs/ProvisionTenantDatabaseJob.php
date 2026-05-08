@@ -14,15 +14,16 @@ class ProvisionTenantDatabaseJob implements NotTenantAware, ShouldQueue
 {
     use Queueable;
 
-    public $queue = 'critical';
-
     public int $tries = 3;
 
     public int $timeout = 300;
 
     public int $backoff = 10;
 
-    public function __construct(public readonly Tenant $tenant) {}
+    public function __construct(public readonly Tenant $tenant)
+    {
+        $this->onQueue('critical');
+    }
 
     public function handle(): void
     {

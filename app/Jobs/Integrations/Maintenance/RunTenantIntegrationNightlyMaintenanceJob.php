@@ -11,13 +11,13 @@ class RunTenantIntegrationNightlyMaintenanceJob implements ShouldQueue
 {
     use Queueable;
 
-    public $queue = 'maintenance';
-
     public int $timeout = 1800;
 
     public function __construct(
         public string $integrationId,
-    ) {}
+    ) {
+        $this->onQueue('maintenance');
+    }
 
     public function handle(RunNightlyMaintenanceService $runNightlyMaintenanceService): void
     {
