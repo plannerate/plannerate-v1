@@ -25,21 +25,12 @@ class TenantIntegrationConfigNormalizer
     public function normalize(TenantIntegration $integration): array
     {
         $config = is_array($integration->config) ? $integration->config : [];
-        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : $config;
+        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
         $auth = is_array($config['auth'] ?? null) ? $config['auth'] : [];
         $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
-        $authenticationBody = is_array($integration->authentication_body) ? $integration->authentication_body : [];
-        $legacyHeaders = is_array($integration->authentication_headers) ? $integration->authentication_headers : [];
 
         $authType = (string) ($auth['type'] ?? AuthenticationType::Basic->value);
         $credentials = is_array($auth['credentials'] ?? null) ? $auth['credentials'] : [];
-
-        if ($credentials === [] && $legacyHeaders !== []) {
-            $credentials = [
-                'username' => (string) ($legacyHeaders['auth_username'] ?? ''),
-                'password' => (string) ($legacyHeaders['auth_password'] ?? ''),
-            ];
-        }
 
         return [
             'auth' => [
@@ -47,7 +38,7 @@ class TenantIntegrationConfigNormalizer
                 'credentials' => $credentials,
             ],
             'connection' => [
-                'base_url' => (string) ($connection['base_url'] ?? $integration->api_url ?? ''),
+                'base_url' => (string) ($connection['base_url'] ?? ''),
                 'timeout' => (int) ($connection['timeout'] ?? 30),
                 'connect_timeout' => (int) ($connection['connect_timeout'] ?? 10),
                 'verify_ssl' => (bool) ($connection['verify_ssl'] ?? true),
@@ -55,7 +46,7 @@ class TenantIntegrationConfigNormalizer
                 'ping_method' => strtoupper((string) ($connection['ping_method'] ?? 'GET')),
                 'headers' => $this->normalizeHeaders($connection['headers'] ?? []),
             ],
-            'processing' => $this->normalizeProcessing($processing, $authenticationBody),
+            'processing' => $this->normalizeProcessing($processing),
         ];
     }
 
@@ -88,7 +79,7 @@ class TenantIntegrationConfigNormalizer
     /**
      * @return array<string, mixed>
      */
-    private function normalizeProcessing(mixed $processing, array $authenticationBody): array
+    private function normalizeProcessing(mixed $processing): array
     {
         if (! is_array($processing)) {
             $processing = [];
@@ -101,8 +92,8 @@ class TenantIntegrationConfigNormalizer
             'daily_lookback_days' => (int) ($processing['daily_lookback_days'] ?? 7),
             'sales_page_size' => (int) ($processing['sales_page_size'] ?? $processing['page_size'] ?? 20000),
             'products_page_size' => (int) ($processing['products_page_size'] ?? $processing['page_size'] ?? 1000),
-            'empresa' => (string) ($processing['empresa'] ?? $authenticationBody['empresa'] ?? ''),
-            'partner_key' => (string) ($processing['partner_key'] ?? $authenticationBody['partner_key'] ?? ''),
+            'empresa' => (string) ($processing['empresa'] ?? ''),
+            'partner_key' => (string) ($processing['partner_key'] ?? ''),
             'sales_tipo_consulta' => (string) ($processing['sales_tipo_consulta'] ?? 'produto'),
         ];
     }
