@@ -40,9 +40,9 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
-Route::inertia('/', 'Welcome', [
-    'canRegister' => Features::enabled(Features::registration()),
-])->name('home');
+Route::get('/',function(){
+     return redirect()->route('dashboard');
+})->middleware(['web', 'auth', SetPermissionTeamContext::class])->name('home');
 
 // ── LANDLORD (rota raiz, sem tenant) ──────────────────────────
 Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPermissionTeamContext::class])->group(function (): void {
