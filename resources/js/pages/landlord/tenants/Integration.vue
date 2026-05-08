@@ -7,6 +7,7 @@ import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import DeleteButton from '@/components/DeleteButton.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
+import GesCooperIntegrationFields from '@/components/form/GesCooperIntegrationFields.vue';
 import SysmoIntegrationFields from '@/components/form/SysmoIntegrationFields.vue';
 import FormCard from '@/components/FormCard.vue';
 import { Button } from '@/components/ui/button';
@@ -45,6 +46,9 @@ type IntegrationPayload = {
     initial_setup_date: string | null;
     is_active: boolean;
     last_sync: string | null;
+    usuario: string;
+    senha: string;
+    dispositivo_uid: string;
 };
 
 type IntegrationTypeOption = {
@@ -60,6 +64,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
+const integrationType = ref(props.integration?.integration_type ?? 'sysmo');
 const tenantsIndexPath = TenantController.index.url().replace(/^\/\/[^/]+/, '');
 const testPath = ref('/');
 const testMethod = ref('GET');
@@ -85,7 +90,7 @@ const pageMeta = useCrudPageMeta({
 });
 
 const formData = computed(() => ({
-    integration_type: props.integration?.integration_type ?? 'sysmo',
+    integration_type: props.integration?.integration_type ?? integrationType.value,
     identifier: props.integration?.identifier ?? '',
     external_name: props.integration?.external_name ?? 'produto',
     external_name_ean: props.integration?.external_name_ean ?? '',
@@ -102,12 +107,15 @@ const formData = computed(() => ({
     products_initial_days: props.integration?.products_initial_days ?? 120,
     daily_lookback_days: props.integration?.daily_lookback_days ?? 7,
     sales_page_size: props.integration?.sales_page_size ?? 20000,
-    products_page_size: props.integration?.products_page_size ?? 1000,
+    products_page_size: props.integration?.products_page_size ?? (integrationType.value === 'gescooper' ? 200 : 1000),
     sales_tipo_consulta: props.integration?.sales_tipo_consulta ?? 'produto',
     auto_processing_enabled: props.integration?.auto_processing_enabled ?? true,
     processing_time: props.integration?.processing_time ?? '02:00',
     initial_setup_date: props.integration?.initial_setup_date ?? '',
     is_active: props.integration?.is_active ?? true,
+    usuario: props.integration?.usuario ?? '',
+    senha: props.integration?.senha ?? '',
+    dispositivo_uid: props.integration?.dispositivo_uid ?? '',
 }));
 
 type IntegrationTestResult = {
@@ -245,8 +253,10 @@ function testConnection(): void {
                             :label="t('app.landlord.tenant_integrations.fields.integration_type')"
                             :default-value="formData.integration_type"
                             :error="errors.integration_type"
+                            :disabled="!!props.integration"
                             class="md:col-span-4"
                             required
+                            @update:model-value="(value) => integrationType = String(value)"
                         >
                             <option
                                 v-for="type in props.integration_types"
@@ -259,9 +269,16 @@ function testConnection(): void {
                     </div>
 
                     <SysmoIntegrationFields
+                        v-if="integrationType === 'sysmo'"
                         :data="formData"
                         :errors="errors"
                         :http-methods="props.http_methods"
+                        :password-required="!props.integration"
+                    />
+                    <GesCooperIntegrationFields
+                        v-else-if="integrationType === 'gescooper'"
+                        :data="formData"
+                        :errors="errors"
                         :password-required="!props.integration"
                     />
 
