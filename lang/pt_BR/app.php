@@ -785,6 +785,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'type' => 'Tipo',
                 'reference' => 'Referencia',
                 'fragrance' => 'Fragrancia',
+                'created_at' => 'Criado em',
                 'flavor' => 'Sabor',
                 'color' => 'Cor',
                 'packaging_type' => 'Tipo de embalagem',

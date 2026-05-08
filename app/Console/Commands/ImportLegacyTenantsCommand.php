@@ -61,7 +61,7 @@ class ImportLegacyTenantsCommand extends Command
         $this->newLine();
         $this->table(
             ['Cliente', 'Tenant', 'DB', 'Usuários', 'Integrações'],
-            array_map(fn($r) => [
+            array_map(fn ($r) => [
                 $r['client'],
                 $r['tenant'],
                 $r['database'],
@@ -101,7 +101,7 @@ class ImportLegacyTenantsCommand extends Command
 
             return true;
         } catch (\Exception $e) {
-            $this->error('❌ Falha na conexão com mysql_legacy: ' . $e->getMessage());
+            $this->error('❌ Falha na conexão com mysql_legacy: '.$e->getMessage());
 
             return false;
         }
@@ -141,8 +141,8 @@ class ImportLegacyTenantsCommand extends Command
 
         $envPrefix = $this->option('db-prefix') ?? (app()->isLocal() ? '' : app()->environment());
         $database = $envPrefix !== ''
-            ? 'tenant_' . $envPrefix . '_' . $slug
-            : 'tenant_' . $slug;
+            ? 'tenant_'.$envPrefix.'_'.$slug
+            : 'tenant_'.$slug;
         $landlordDomain = config('app.landlord_domain', env('LANDLORD_DOMAIN', 'plannerate-v1.test'));
         $host = "{$slug}.{$landlordDomain}";
 
@@ -415,7 +415,9 @@ class ImportLegacyTenantsCommand extends Command
                 continue;
             }
 
-            $existing = User::where('email', $email)->first();
+            $existing = User::withTrashed()
+                ->where('email', $email)
+                ->first();
 
             if ($existing && ! $this->option('fresh-users')) {
                 $skipped++;

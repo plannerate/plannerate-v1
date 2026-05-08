@@ -40,6 +40,7 @@ type ProductRow = {
     };
     current_stock: string | number | null;
     last_purchase_date: string | null;
+    created_at: string;
 };
 
 const props = defineProps<{
@@ -216,6 +217,9 @@ const pageMeta = useCrudPageMeta({
                         <ColumnHeader field="status">{{
                             t('app.tenant.products.fields.status')
                         }}</ColumnHeader>
+                        <ColumnHeader field="created_at">{{
+                            t('app.tenant.products.fields.created_at')
+                        }}</ColumnHeader>
                         <th class="text-right">
                             {{ t('app.tenant.common.actions') }}
                         </th>
@@ -223,10 +227,10 @@ const pageMeta = useCrudPageMeta({
                 </thead>
                 <tbody>
                     <template v-if="productsLoading">
-                        <TableLoadingSkeleton :columns="6" :rows="6" />
+                        <TableLoadingSkeleton :columns="7" :rows="6" />
                     </template>
                     <tr v-else-if="productsRows.length === 0">
-                        <td class="px-4 py-6 text-muted-foreground" colspan="6">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="8">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
@@ -255,6 +259,7 @@ const pageMeta = useCrudPageMeta({
                         <td class="px-4 py-3">
                             <ColumnStatusBadge :status="product.status" />
                         </td>
+                        <td class="px-4 py-3">{{ new Date(product.created_at).toLocaleDateString('pt-BR') }}</td>
                         <td class="px-4 py-3 text-right">
                             <ColumnActions
                                 :edit-href="
