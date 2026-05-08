@@ -11,7 +11,7 @@ class RunTenantIntegrationPostSyncJob implements ShouldQueue
 {
     use Queueable;
 
-    public string $queue = 'maintenance';
+    public $queue = 'maintenance';
 
     public int $timeout = 1800;
 

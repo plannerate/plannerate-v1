@@ -16,7 +16,7 @@ class DeactivateInactiveProductsJob implements NotTenantAware, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $queue = 'maintenance';
+    public $queue = 'maintenance';
 
     public int $tries = 3;
 

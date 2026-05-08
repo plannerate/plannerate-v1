@@ -13,7 +13,7 @@ class DOProcessProductImageJob implements ShouldQueue, TenantAware
 {
     use Queueable;
 
-    public string $queue = 'critical';
+    public $queue = 'critical';
 
     public int $timeout = 120;
 

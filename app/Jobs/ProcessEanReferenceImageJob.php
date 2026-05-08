@@ -15,7 +15,7 @@ class ProcessEanReferenceImageJob implements NotTenantAware, ShouldQueue
 {
     use Queueable;
 
-    public string $queue = 'critical';
+    public $queue = 'critical';
 
     public int $timeout = 300;
 

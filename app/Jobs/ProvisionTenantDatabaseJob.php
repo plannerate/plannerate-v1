@@ -14,7 +14,7 @@ class ProvisionTenantDatabaseJob implements NotTenantAware, ShouldQueue
 {
     use Queueable;
 
-    public string $queue = 'critical';
+    public $queue = 'critical';
 
     public int $tries = 3;
 
