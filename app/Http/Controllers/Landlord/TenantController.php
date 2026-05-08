@@ -217,26 +217,31 @@ class TenantController extends Controller
             return null;
         }
 
-        $result = $cloudflare->listRecords($zoneId, 'CNAME', $host);
+        try {
+            $result = $cloudflare->listRecords($zoneId, 'CNAME', $host);
 
-        if (! ($result['success'] ?? false)) {
+            if (! ($result['success'] ?? false)) {
+                return null;
+            }
+
+            $records = $result['result'] ?? [];
+            $record = $records[0] ?? null;
+
+            if (! $record) {
+                return ['exists' => false, 'cname_target' => config('cloudflare.cname_target', '')];
+            }
+
+            return [
+                'exists' => true,
+                'id' => $record['id'],
+                'name' => $record['name'],
+                'content' => $record['content'],
+                'cname_target' => config('cloudflare.cname_target', ''),
+            ];
+        } catch (\Throwable $e) {
+            // Silently fail if Cloudflare is not properly configured or accessible
             return null;
         }
-
-        $records = $result['result'] ?? [];
-        $record = $records[0] ?? null;
-
-        if (! $record) {
-            return ['exists' => false, 'cname_target' => config('cloudflare.cname_target', '')];
-        }
-
-        return [
-            'exists' => true,
-            'id' => $record['id'],
-            'name' => $record['name'],
-            'content' => $record['content'],
-            'cname_target' => config('cloudflare.cname_target', ''),
-        ];
     }
 
     /**

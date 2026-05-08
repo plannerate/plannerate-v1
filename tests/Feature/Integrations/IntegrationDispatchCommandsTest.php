@@ -884,7 +884,18 @@ test('sales day job only syncs sales and leaves product linking to command', fun
         'integration_type' => 'sysmo',
         'http_method' => 'POST',
         'api_url' => 'https://sysmo.example.com',
-        'config' => ['processing' => ['sales_page_size' => 20000]],
+        'config' => [
+            'connection' => [
+                'body' => [
+                    [
+                        'key' => 'partner_key',
+                        'value' => 'Proplanner',
+                        'enabled' => true,
+                    ],
+                ],
+            ],
+            'processing' => ['sales_page_size' => 20000],
+        ],
         'is_active' => true,
     ]);
 
@@ -956,6 +967,9 @@ test('sales day job only syncs sales and leaves product linking to command', fun
     ]);
 
     expect($salesService->filters)->toHaveCount(2);
+    expect($salesService->filters)->each(
+        fn (array $filters): bool => ($filters['partner_key'] ?? null) === 'Proplanner'
+    );
 });
 
 test('initial sync dispatches products as single full sync bootstrap', function () {

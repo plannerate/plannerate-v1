@@ -50,7 +50,7 @@ class TenantIntegrationConfigNormalizer
                 'params' => $this->normalizeKeyValuePairs($connection['params'] ?? []),
                 'body' => $this->normalizeBody($connection),
             ],
-            'processing' => $this->normalizeProcessing($processing),
+            'processing' => $this->normalizeProcessing($processing, $connection),
         ];
     }
 
@@ -112,12 +112,24 @@ class TenantIntegrationConfigNormalizer
     }
 
     /**
+     * @param  array<string, mixed>  $connection
      * @return array<string, mixed>
      */
-    private function normalizeProcessing(mixed $processing): array
+    private function normalizeProcessing(mixed $processing, array $connection): array
     {
         if (! is_array($processing)) {
             $processing = [];
+        }
+
+        $connectionBody = $this->normalizeBody($connection);
+        $connectionParams = $this->normalizeKeyValuePairs($connection['params'] ?? []);
+
+        $partnerKey = trim((string) ($processing['partner_key'] ?? ''));
+        if ($partnerKey === '') {
+            $partnerKey = trim((string) ($connectionBody['partner_key'] ?? ''));
+        }
+        if ($partnerKey === '') {
+            $partnerKey = trim((string) ($connectionParams['partner_key'] ?? ''));
         }
 
         return [
@@ -128,7 +140,7 @@ class TenantIntegrationConfigNormalizer
             'sales_page_size' => (int) ($processing['sales_page_size'] ?? $processing['page_size'] ?? 20000),
             'products_page_size' => (int) ($processing['products_page_size'] ?? $processing['page_size'] ?? 1000),
             'empresa' => (string) ($processing['empresa'] ?? ''),
-            'partner_key' => (string) ($processing['partner_key'] ?? ''),
+            'partner_key' => $partnerKey,
             'sales_tipo_consulta' => (string) ($processing['sales_tipo_consulta'] ?? 'produto'),
         ];
     }

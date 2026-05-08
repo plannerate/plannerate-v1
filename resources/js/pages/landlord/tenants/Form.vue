@@ -157,10 +157,12 @@ function onDatabaseInput(): void {
                 ? {
                     ...TenantController.update.form(props.tenant!.id),
                     action: tenantWayfinderPath(TenantController.update.url(props.tenant!.id)),
+                    method: 'put',
                 }
                 : {
                     ...TenantController.store.form(),
                     action: tenantWayfinderPath(TenantController.store.url()),
+                    method: 'post',
                 }"
             v-slot="{ errors, processing }"
         >

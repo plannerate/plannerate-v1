@@ -65,7 +65,9 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
             }
 
             $salesIntegrationService = $integrationServiceResolver->resolveSalesService($integration);
-            $processing = $configNormalizer->normalize($integration)['processing'];
+            $normalizedConfig = $configNormalizer->normalize($integration);
+            $processing = $normalizedConfig['processing'];
+            $partnerKey = $this->resolvePartnerKey($normalizedConfig);
             $stores = Store::query()
                 ->where('tenant_id', $integration->tenant_id)
                 ->where('status', 'published')
@@ -118,7 +120,7 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
                     'empresa' => $empresa,
                     'page_size' => (int) ($processing['sales_page_size'] ?? 20000),
                     'tipo_consulta' => (string) ($processing['sales_tipo_consulta'] ?? 'produto'),
-                    'partner_key' => (string) ($processing['partner_key'] ?? ''),
+                    'partner_key' => $partnerKey,
                 ];
 
                 $salesIntegrationService->fetchSales($integration, $filters);
@@ -146,7 +148,7 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
                     'empresa' => $fallbackEmpresa,
                     'page_size' => (int) ($processing['sales_page_size'] ?? 20000),
                     'tipo_consulta' => (string) ($processing['sales_tipo_consulta'] ?? 'produto'),
-                    'partner_key' => (string) ($processing['partner_key'] ?? ''),
+                    'partner_key' => $partnerKey,
                 ];
 
                 $salesIntegrationService->fetchSales($integration, $fallbackFilters);
@@ -250,5 +252,23 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
         }
 
         return (int) $normalized > 0 ? $normalized : null;
+    }
+
+    /**
+     * @param  array{processing?: array<string, mixed>, connection?: array{body?: array<string, mixed>, params?: array<string, mixed>}}  $normalizedConfig
+     */
+    private function resolvePartnerKey(array $normalizedConfig): string
+    {
+        $processingPartnerKey = trim((string) data_get($normalizedConfig, 'processing.partner_key', ''));
+        if ($processingPartnerKey !== '') {
+            return $processingPartnerKey;
+        }
+
+        $connectionBodyPartnerKey = trim((string) data_get($normalizedConfig, 'connection.body.partner_key', ''));
+        if ($connectionBodyPartnerKey !== '') {
+            return $connectionBodyPartnerKey;
+        }
+
+        return trim((string) data_get($normalizedConfig, 'connection.params.partner_key', ''));
     }
 }

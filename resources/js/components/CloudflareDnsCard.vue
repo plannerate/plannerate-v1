@@ -59,19 +59,10 @@ function confirmDelete(): void {
 </script>
 
 <template>
-    <div v-if="cloudflareRecord !== null" class="rounded-lg border border-border">
-        <!-- Loading skeleton -->
-        <div v-if="isLoading" class="flex items-center justify-between px-4 py-3">
-            <div class="flex items-center gap-3">
-                <div class="size-4 animate-pulse rounded bg-muted" />
-                <div class="h-4 w-28 animate-pulse rounded bg-muted" />
-                <div class="h-5 w-24 animate-pulse rounded-full bg-muted" />
-            </div>
-            <div class="h-8 w-24 animate-pulse rounded bg-muted" />
-        </div>
-
-        <!-- Loaded state -->
-        <div v-else class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+    <!-- Only render if cloudflareRecord is successfully loaded (not null/undefined) -->
+    <div v-if="cloudflareRecord && cloudflareRecord !== null && cloudflareRecord !== undefined" class="rounded-lg border border-border">
+        <!-- Loaded state only - no skeleton to avoid interfering with form -->
+        <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
             <div class="flex flex-wrap items-center gap-3">
                 <Cloud class="size-4 shrink-0 text-muted-foreground" />
                 <span class="text-sm font-medium">DNS Cloudflare</span>
