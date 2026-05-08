@@ -40,6 +40,9 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok']);
+})->name('home');
 
 // ── LANDLORD (rota raiz, sem tenant) ──────────────────────────
 Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPermissionTeamContext::class])->group(function (): void {
