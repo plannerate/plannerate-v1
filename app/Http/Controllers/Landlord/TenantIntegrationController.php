@@ -28,45 +28,61 @@ class TenantIntegrationController extends Controller
         $this->authorize('update', $tenant);
 
         $integration = $tenant->integration;
-        $headers = is_array($integration?->authentication_headers) ? $integration->authentication_headers : [];
-        $body = is_array($integration?->authentication_body) ? $integration->authentication_body : [];
         $config = is_array($integration?->config) ? $integration->config : [];
-        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : $config;
+        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
+        $auth = is_array($config['auth'] ?? null) ? $config['auth'] : [];
+        $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
+        $credentials = is_array($auth['credentials'] ?? null) ? $auth['credentials'] : [];
+        $type = (string) ($integration?->integration_type ?? 'sysmo');
+
+        $integrationData = $integration ? [
+            'id' => $integration->id,
+            'integration_type' => $type,
+            'identifier' => $integration->identifier,
+            'is_active' => (bool) $integration->is_active,
+            'last_sync' => $integration->last_sync?->toDateTimeString(),
+            'auto_processing_enabled' => (bool) ($processing['auto_processing_enabled'] ?? true),
+            'processing_time' => (string) ($processing['processing_time'] ?? '02:00'),
+            'initial_setup_date' => $processing['initial_setup_date'] ?? null,
+            'products_page_size' => (int) ($processing['products_page_size'] ?? ($type === 'gescooper' ? 200 : 1000)),
+        ] : null;
+
+        if ($integrationData !== null) {
+            if ($type === 'gescooper') {
+                $integrationData = array_merge($integrationData, [
+                    'api_url' => (string) ($connection['base_url'] ?? ''),
+                    'usuario' => (string) ($credentials['usuario'] ?? ''),
+                    'senha' => '',
+                    'dispositivo_uid' => (string) ($credentials['dispositivo_uid'] ?? ''),
+                ]);
+            } else {
+                $integrationData = array_merge($integrationData, [
+                    'api_url' => (string) ($connection['base_url'] ?? ''),
+                    'http_method' => 'POST',
+                    'auth_username' => (string) ($credentials['username'] ?? ''),
+                    'auth_password' => '',
+                    'partner_key' => (string) ($processing['partner_key'] ?? ''),
+                    'empresa' => (string) ($processing['empresa'] ?? ''),
+                    'external_name' => 'produto',
+                    'external_name_ean' => '',
+                    'external_name_status' => '',
+                    'external_name_sale_date' => '',
+                    'days_to_maintain' => (int) ($processing['days_to_maintain'] ?? 120),
+                    'sales_initial_days' => (int) ($processing['sales_initial_days'] ?? 120),
+                    'products_initial_days' => (int) ($processing['products_initial_days'] ?? 120),
+                    'daily_lookback_days' => (int) ($processing['daily_lookback_days'] ?? 7),
+                    'sales_page_size' => (int) ($processing['sales_page_size'] ?? 20000),
+                    'sales_tipo_consulta' => (string) ($processing['sales_tipo_consulta'] ?? 'produto'),
+                ]);
+            }
+        }
 
         return Inertia::render('landlord/tenants/Integration', [
-            'tenant' => [
-                'id' => $tenant->id,
-                'name' => $tenant->name,
-            ],
-            'integration' => $integration ? [
-                'id' => $integration->id,
-                'integration_type' => $integration->integration_type,
-                'identifier' => $integration->identifier,
-                'external_name' => $integration->external_name,
-                'external_name_ean' => $integration->external_name_ean,
-                'external_name_status' => $integration->external_name_status,
-                'external_name_sale_date' => $integration->external_name_sale_date,
-                'http_method' => $integration->http_method,
-                'api_url' => $integration->api_url,
-                'auth_username' => (string) ($headers['auth_username'] ?? ''),
-                'auth_password' => '',
-                'partner_key' => (string) ($body['partner_key'] ?? ''),
-                'empresa' => (string) ($body['empresa'] ?? ''),
-                'days_to_maintain' => (int) ($processing['days_to_maintain'] ?? 120),
-                'sales_initial_days' => (int) ($processing['sales_initial_days'] ?? $processing['days_to_maintain'] ?? 120),
-                'products_initial_days' => (int) ($processing['products_initial_days'] ?? $processing['days_to_maintain'] ?? 120),
-                'daily_lookback_days' => (int) ($processing['daily_lookback_days'] ?? 7),
-                'sales_page_size' => (int) ($processing['sales_page_size'] ?? 20000),
-                'products_page_size' => (int) ($processing['products_page_size'] ?? 1000),
-                'sales_tipo_consulta' => (string) ($processing['sales_tipo_consulta'] ?? 'produto'),
-                'auto_processing_enabled' => (bool) ($processing['auto_processing_enabled'] ?? true),
-                'processing_time' => (string) ($processing['processing_time'] ?? '02:00'),
-                'initial_setup_date' => $processing['initial_setup_date'] ?? null,
-                'is_active' => (bool) $integration->is_active,
-                'last_sync' => $integration->last_sync?->toDateTimeString(),
-            ] : null,
+            'tenant' => ['id' => $tenant->id, 'name' => $tenant->name],
+            'integration' => $integrationData,
             'integration_types' => [
                 ['value' => 'sysmo', 'label' => __('app.landlord.tenant_integrations.types.sysmo')],
+                ['value' => 'gescooper', 'label' => __('app.landlord.tenant_integrations.types.gescooper')],
             ],
             'http_methods' => ['GET', 'POST', 'PUT', 'PATCH'],
         ]);
@@ -159,7 +175,6 @@ class TenantIntegrationController extends Controller
         $normalized = $this->configNormalizer->normalize($integration);
         $connection = $normalized['connection'];
         $processing = $normalized['processing'];
-        $authenticationBody = is_array($integration->authentication_body) ? $integration->authentication_body : [];
         $endpoint = (string) ($request->string('test_path') ?: $connection['ping_path'] ?: '/');
         $method = strtoupper((string) ($request->string('test_method') ?: $connection['ping_method'] ?: 'GET'));
         $query = $request->query();
@@ -168,8 +183,8 @@ class TenantIntegrationController extends Controller
             : (int) ($processing['products_page_size'] ?? 1000);
         $body = array_merge(
             [
-                'partner_key' => (string) ($authenticationBody['partner_key'] ?? ''),
-                'empresa' => (string) ($authenticationBody['empresa'] ?? ''),
+                'partner_key' => (string) ($processing['partner_key'] ?? ''),
+                'empresa' => (string) ($processing['empresa'] ?? ''),
                 'pagina' => 1,
                 'tamanho_pagina' => max(1, $defaultPageSize),
             ],
