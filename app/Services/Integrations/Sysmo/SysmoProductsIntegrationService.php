@@ -294,6 +294,16 @@ class SysmoProductsIntegrationService implements ProductsIntegrationService
     private function requestProducts(TenantIntegration $integration, array $filters): array
     {
         $requestBody = $this->buildProductsRequestBody($filters);
+        Log::info('Sysmo products request prepared.', [
+            'integration_id' => (string) $integration->id,
+            'tenant_id' => (string) $integration->tenant_id,
+            'store_id' => $filters['store_id'] ?? null,
+            'store_document' => $filters['store_document'] ?? null,
+            'empresa' => $requestBody['empresa'] ?? null,
+            'page' => $requestBody['pagina'] ?? null,
+            'page_size' => $requestBody['tamanho_pagina'] ?? null,
+            'has_partner_key' => (($requestBody['partner_key'] ?? '') !== ''),
+        ]);
 
         $response = $this->externalApiBaseService->request(
             integration: $integration,

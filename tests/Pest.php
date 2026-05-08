@@ -1,7 +1,62 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use RuntimeException;
 use Tests\TestCase;
+
+/*
+|--------------------------------------------------------------------------
+| Safety Guardrails
+|--------------------------------------------------------------------------
+|
+| Abort early if tests are started in a non-testing environment or with
+| non-test database names. This prevents accidental destructive test runs.
+|
+*/
+
+$assertSafeTestingDatabases = static function (): void {
+    if (! app()->environment('testing')) {
+        throw new RuntimeException('Unsafe test execution blocked: APP_ENV must be testing.');
+    }
+
+    $isSafeDatabaseName = static function (?string $databaseName): bool {
+        if ($databaseName === null || $databaseName === '') {
+            return true;
+        }
+
+        $normalized = strtolower($databaseName);
+
+        return $normalized === ':memory:'
+            || str_contains($normalized, 'test')
+            || str_contains($normalized, 'testing')
+            || str_contains($normalized, 'sqlite');
+    };
+
+    $databaseNames = [
+        'default' => config('database.connections.'.config('database.default').'.database'),
+        'landlord' => config('database.connections.landlord.database'),
+        'tenant' => config('database.connections.tenant.database'),
+    ];
+
+    foreach ($databaseNames as $connectionName => $databaseName) {
+        if (! is_string($databaseName) && $databaseName !== null) {
+            throw new RuntimeException(sprintf(
+                'Unsafe test execution blocked: invalid database value for [%s].',
+                $connectionName,
+            ));
+        }
+
+        if (! $isSafeDatabaseName($databaseName)) {
+            throw new RuntimeException(sprintf(
+                'Unsafe test execution blocked: connection [%s] points to non-test database [%s].',
+                $connectionName,
+                (string) $databaseName,
+            ));
+        }
+    }
+};
+
+$assertSafeTestingDatabases();
 
 /*
 |--------------------------------------------------------------------------

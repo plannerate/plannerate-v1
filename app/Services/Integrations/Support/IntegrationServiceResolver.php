@@ -38,6 +38,15 @@ class IntegrationServiceResolver
         };
     }
 
+    public function supportsSales(TenantIntegration $integration): bool
+    {
+        return match ($this->normalizeIntegrationType($integration->integration_type)) {
+            'sysmo' => true,
+            'gescooper' => false,
+            default => false,
+        };
+    }
+
     public function resolveSalesService(TenantIntegration $integration): SalesIntegrationService
     {
         return match ($this->normalizeIntegrationType($integration->integration_type)) {

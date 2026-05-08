@@ -36,7 +36,7 @@ class DispatchDailyCommand extends Command
         $integrations = $query->get();
 
         foreach ($integrations as $integration) {
-            $validationFailure = $validateIntegrationStoresService->validateBeforeDispatch($integration, 'diária');
+            $validationFailure = $validateIntegrationStoresService->validateBeforeDispatch($integration, 'diária', $resource);
             if ($validationFailure !== null) {
                 $this->warn(sprintf(
                     'Daily sync skipped for tenant %s: %s',

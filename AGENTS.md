@@ -139,6 +139,12 @@ This project has domain-specific skills available. You MUST activate the relevan
 - Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
 - Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
 
+## Database Safety
+
+- Never run destructive database commands without explicit user confirmation in the same conversation.
+- Destructive commands include (but are not limited to): `migrate:fresh`, `migrate:refresh`, `db:wipe`, `db:reset`, and any SQL with `DROP DATABASE`, `DROP SCHEMA`, or `TRUNCATE` on production-like environments.
+- Before running tests or migrations, confirm the active environment is safe (`APP_ENV=testing` for tests) and that database names/connections are test-only.
+
 === inertia-laravel/core rules ===
 
 # Inertia

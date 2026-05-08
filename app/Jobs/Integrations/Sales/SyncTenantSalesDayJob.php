@@ -67,13 +67,34 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
             $salesIntegrationService = $integrationServiceResolver->resolveSalesService($integration);
             $processing = $configNormalizer->normalize($integration)['processing'];
             $stores = Store::query()
+                ->where('tenant_id', $integration->tenant_id)
                 ->where('status', 'published')
                 ->whereNull('deleted_at')
                 ->get(['id', 'code', 'document']);
             $referenceDate = Carbon::parse($this->referenceDate)->toDateString();
             $executed = false;
 
+            Log::info('Integrations sales sync stores loaded.', [
+                'integration_id' => (string) $integration->id,
+                'tenant_id' => (string) $integration->tenant_id,
+                'reference_date' => $referenceDate,
+                'stores_found' => $stores->count(),
+                'stores_preview' => $stores->take(5)->map(fn (Store $store): array => [
+                    'id' => (string) $store->id,
+                    'code' => $store->code,
+                    'document' => $store->document,
+                ])->values()->all(),
+            ]);
+
             foreach ($stores as $store) {
+                Log::info('Integrations sales sync processing store.', [
+                    'integration_id' => (string) $integration->id,
+                    'tenant_id' => (string) $integration->tenant_id,
+                    'reference_date' => $referenceDate,
+                    'store_id' => (string) $store->id,
+                    'store_code' => $store->code,
+                    'store_document' => $store->document,
+                ]);
                 $empresa = $this->resolveEmpresaForStore($store->code, $store->document, $processing);
 
                 if ($empresa === null) {
@@ -106,7 +127,7 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
             }
 
             if (! $executed) {
-                $fallbackEmpresa = $this->normalizeEmpresaValue($processing['empresa'] ?? null);
+                $fallbackEmpresa = $this->normalizeEmpresaValue($store->document ?? null);
                 if ($fallbackEmpresa === null) {
                     Log::warning('Integrations sales sync fallback skipped due to missing/invalid empresa.', [
                         'integration_id' => $integration->id,
@@ -196,6 +217,7 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
     private function resolveEmpresaForStore(?string $storeCode, ?string $storeDocument, array $processing): ?string
     {
         $empresaFromDocument = $this->normalizeEmpresaValue($storeDocument);
+
         if ($empresaFromDocument !== null) {
             return $empresaFromDocument;
         }
@@ -215,6 +237,9 @@ class SyncTenantSalesDayJob implements ShouldQueue, TenantAware
 
     private function normalizeEmpresaValue(mixed $value): ?string
     {
+        Log::debug('Normalizing empresa value for sales sync.', [
+            'original_value' => $value,
+        ]);
         if (! is_string($value) && ! is_numeric($value)) {
             return null;
         }

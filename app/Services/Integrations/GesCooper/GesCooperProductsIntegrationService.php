@@ -164,6 +164,12 @@ class GesCooperProductsIntegrationService implements ProductsIntegrationService
         $productsRows = array_values(
             collect($productsRows)->keyBy('id')->all()
         );
+        $candidateProductIds = array_column($productsRows, 'id');
+        $existingProductsCount = DB::connection($tenantConnectionName)
+            ->table('products')
+            ->whereIn('id', $candidateProductIds)
+            ->count();
+        $newProductsCount = max(0, count($candidateProductIds) - $existingProductsCount);
 
         DB::connection($tenantConnectionName)->table('products')->upsert(
             $productsRows,
@@ -178,6 +184,14 @@ class GesCooperProductsIntegrationService implements ProductsIntegrationService
                 'sales_status', 'status', 'sync_source', 'sync_at', 'deleted_at', 'updated_at',
             ]
         );
+
+        Log::info('GesCooper products upsert executed.', [
+            'tenant_id' => $tenantId,
+            'store_id' => $storeId,
+            'rows_upserted' => count($productsRows),
+            'existing_rows_estimated' => $existingProductsCount,
+            'new_rows_estimated' => $newProductsCount,
+        ]);
 
         if ($storeId !== null && $storeId !== '') {
             $pivotRows = [];
@@ -300,6 +314,17 @@ class GesCooperProductsIntegrationService implements ProductsIntegrationService
             $params['data_cadastro_ate'] = $endDate;
         }
 
+        Log::info('GesCooper products request prepared.', [
+            'integration_id' => (string) $integration->id,
+            'tenant_id' => (string) $integration->tenant_id,
+            'page' => (int) ($params['pagina'] ?? 1),
+            'page_size' => (int) ($params['registros_por_pagina'] ?? 0),
+            'data_cadastro_de' => $params['data_cadastro_de'] ?? null,
+            'data_cadastro_ate' => $params['data_cadastro_ate'] ?? null,
+            'date_filter' => $filters['date'] ?? null,
+            'products_initial_days' => (int) ($processing['products_initial_days'] ?? 120),
+        ]);
+
         $response = Http::withToken($token)
             ->acceptJson()
             ->timeout($connection['timeout'])
@@ -315,7 +340,19 @@ class GesCooperProductsIntegrationService implements ProductsIntegrationService
             ));
         }
 
-        return is_array($response->json()) ? $response->json() : [];
+        $payload = is_array($response->json()) ? $response->json() : [];
+        $payloadItems = $this->extractItemsFromPayload($payload);
+        $lastPage = $payload['pagination']['last_page'] ?? null;
+
+        Log::info('GesCooper products response received.', [
+            'integration_id' => (string) $integration->id,
+            'tenant_id' => (string) $integration->tenant_id,
+            'page' => (int) ($params['pagina'] ?? 1),
+            'items_count' => count($payloadItems),
+            'last_page' => is_numeric($lastPage) ? (int) $lastPage : null,
+        ]);
+
+        return $payload;
     }
 
     /**
@@ -329,6 +366,11 @@ class GesCooperProductsIntegrationService implements ProductsIntegrationService
         $explicitEndDate = $filters['data_cadastro_ate'] ?? null;
 
         if (is_string($explicitStartDate) && trim($explicitStartDate) !== '' && is_string($explicitEndDate) && trim($explicitEndDate) !== '') {
+            Log::info('GesCooper products range resolved from explicit cadastro filters.', [
+                'data_cadastro_de' => $explicitStartDate,
+                'data_cadastro_ate' => $explicitEndDate,
+            ]);
+
             return [
                 Carbon::parse($explicitStartDate)->toDateString(),
                 Carbon::parse($explicitEndDate)->toDateString(),
@@ -338,6 +380,9 @@ class GesCooperProductsIntegrationService implements ProductsIntegrationService
         $referenceDate = $filters['date'] ?? null;
         if (is_string($referenceDate) && trim($referenceDate) !== '') {
             $normalizedReferenceDate = Carbon::parse($referenceDate)->toDateString();
+            Log::info('GesCooper products range resolved from single reference date.', [
+                'reference_date' => $normalizedReferenceDate,
+            ]);
 
             return [$normalizedReferenceDate, $normalizedReferenceDate];
         }
@@ -345,6 +390,11 @@ class GesCooperProductsIntegrationService implements ProductsIntegrationService
         $initialDays = max(1, (int) ($processing['products_initial_days'] ?? 120));
         $endDate = Carbon::yesterday()->startOfDay();
         $startDate = $endDate->copy()->subDays($initialDays - 1);
+        Log::info('GesCooper products range resolved from products_initial_days window.', [
+            'products_initial_days' => $initialDays,
+            'start_date' => $startDate->toDateString(),
+            'end_date' => $endDate->toDateString(),
+        ]);
 
         return [$startDate->toDateString(), $endDate->toDateString()];
     }

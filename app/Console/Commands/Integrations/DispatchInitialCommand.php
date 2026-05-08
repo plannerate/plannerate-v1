@@ -33,7 +33,7 @@ class DispatchInitialCommand extends Command
         $integrations = $query->get();
 
         foreach ($integrations as $integration) {
-            $validationFailure = $validateIntegrationStoresService->validateBeforeDispatch($integration, 'inicial');
+            $validationFailure = $validateIntegrationStoresService->validateBeforeDispatch($integration, 'inicial', $resource);
             if ($validationFailure !== null) {
                 $this->warn(sprintf(
                     'Initial sync skipped for tenant %s: %s',

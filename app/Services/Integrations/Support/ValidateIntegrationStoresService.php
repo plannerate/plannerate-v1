@@ -7,6 +7,7 @@ use App\Models\TenantIntegration;
 use App\Models\User;
 use App\Notifications\AppNotification;
 use App\Services\Integrations\Contracts\ProductsIntegrationService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
@@ -21,31 +22,48 @@ class ValidateIntegrationStoresService
     /**
      * Returns null on success, or a failure reason string.
      */
-    public function validateBeforeDispatch(TenantIntegration $integration, string $dispatchLabel): ?string
-    {
+    public function validateBeforeDispatch(
+        TenantIntegration $integration,
+        string $dispatchLabel,
+        ?string $resource = null,
+    ): ?string {
         $tenant = $integration->tenant;
         if (! $tenant) {
             return 'tenant not found';
         }
 
-        return $tenant->execute(function () use ($integration, $dispatchLabel): ?string {
-            try {
-                $productsService = $this->integrationServiceResolver->resolveProductsService($integration);
-            } catch (Throwable $exception) {
-                $reason = 'service resolver: '.$exception->getMessage();
-                $this->notifyTenantUsersAboutInvalidStores($integration, $dispatchLabel, [[
-                    'store_id' => 'n/a',
-                    'reason' => $reason,
-                ]]);
+        return $tenant->execute(function () use ($integration, $dispatchLabel, $resource): ?string {
+            $shouldValidateProductsEndpoint = $this->shouldValidateProductsEndpoint($resource);
+            $productsService = null;
 
-                return $reason;
+            if ($shouldValidateProductsEndpoint) {
+                try {
+                    $productsService = $this->integrationServiceResolver->resolveProductsService($integration);
+                } catch (Throwable $exception) {
+                    $reason = 'service resolver: '.$exception->getMessage();
+                    $this->notifyTenantUsersAboutInvalidStores($integration, $dispatchLabel, [[
+                        'store_id' => 'n/a',
+                        'reason' => $reason,
+                    ]]);
+
+                    return $reason;
+                }
             }
 
             if (! $this->integrationServiceResolver->isPerStore($integration)) {
+                if (! $shouldValidateProductsEndpoint) {
+                    return null;
+                }
+
                 return $this->validateGlobalApi($integration, $dispatchLabel, $productsService);
             }
 
-            return $this->validatePerStore($integration, $dispatchLabel, $productsService);
+            return $this->validatePerStore(
+                integration: $integration,
+                dispatchLabel: $dispatchLabel,
+                productsService: $productsService,
+                shouldValidateProductsEndpoint: $shouldValidateProductsEndpoint,
+            );
         });
     }
 
@@ -76,7 +94,8 @@ class ValidateIntegrationStoresService
     private function validatePerStore(
         TenantIntegration $integration,
         string $dispatchLabel,
-        ProductsIntegrationService $productsService,
+        ?ProductsIntegrationService $productsService,
+        bool $shouldValidateProductsEndpoint,
     ): ?string {
         $tenantConnectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
         if (! Schema::connection($tenantConnectionName)->hasTable('stores')) {
@@ -109,8 +128,28 @@ class ValidateIntegrationStoresService
             }
 
             try {
+                Log::info('Integrations store validation request prepared.', [
+                    'integration_id' => (string) $integration->id,
+                    'tenant_id' => (string) $integration->tenant_id,
+                    'store_id' => (string) $store->id,
+                    'store_document' => $store->document,
+                    'empresa' => $empresa,
+                    'partner_key_suffix' => substr((string) ($processing['partner_key'] ?? ''), -6),
+                ]);
+
+                if (! $shouldValidateProductsEndpoint) {
+                    $hasAtLeastOneValidStore = true;
+
+                    continue;
+                }
+
+                if (! $productsService instanceof ProductsIntegrationService) {
+                    throw new \RuntimeException('Servico de produtos nao disponivel para validacao.');
+                }
+
                 $productsService->discoverProductsTotalPages($integration, [
                     'store_id' => (string) $store->id,
+                    'store_document' => $store->document,
                     'empresa' => $empresa,
                     'partner_key' => (string) ($processing['partner_key'] ?? ''),
                     'page_size' => (int) ($processing['products_page_size'] ?? 1000),
@@ -139,6 +178,11 @@ class ValidateIntegrationStoresService
         }
 
         return null;
+    }
+
+    private function shouldValidateProductsEndpoint(?string $resource): bool
+    {
+        return $resource === null || $resource === 'products';
     }
 
     /**

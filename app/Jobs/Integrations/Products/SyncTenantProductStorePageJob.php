@@ -64,6 +64,7 @@ class SyncTenantProductStorePageJob implements ShouldQueue, TenantAware
         $items = $productsService->fetchProducts($integration, [
             'date' => $this->fullSync ? null : $referenceDate,
             'store_id' => $store !== null ? (string) $store->id : null,
+            'store_document' => $store?->document,
             'empresa' => $this->empresa !== '' ? $this->empresa : null,
             'page' => $page,
             'page_size' => $pageSize,

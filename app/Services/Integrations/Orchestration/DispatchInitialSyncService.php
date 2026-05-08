@@ -8,6 +8,7 @@ use App\Jobs\Integrations\Providers\SyncTenantProvidersJob;
 use App\Jobs\Integrations\Sales\SyncTenantSalesDayJob;
 use App\Models\IntegrationSyncDay;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Support\IntegrationServiceResolver;
 use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
@@ -16,6 +17,7 @@ class DispatchInitialSyncService
 {
     public function __construct(
         private readonly TenantIntegrationConfigNormalizer $configNormalizer,
+        private readonly IntegrationServiceResolver $integrationServiceResolver,
     ) {}
 
     public function dispatch(
@@ -37,7 +39,7 @@ class DispatchInitialSyncService
         $tenant->execute(function () use ($integration, $salesStart, $yesterday, $resource, $ignoreSyncDaysCheck): void {
             $jobs = [];
 
-            if ($resource === null || $resource === 'sales') {
+            if (($resource === null || $resource === 'sales') && $this->integrationServiceResolver->supportsSales($integration)) {
                 for ($date = $salesStart->copy(); $date->lte($yesterday); $date->addDay()) {
                     $referenceDate = $date->toDateString();
 

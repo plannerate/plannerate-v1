@@ -164,6 +164,65 @@ test('integrations dispatch initial command supports resource option', function 
     );
 });
 
+test('integrations dispatch initial sales does not validate via products endpoint', function () {
+    Bus::fake();
+    Http::preventStrayRequests();
+    Http::fake();
+
+    $tenantDatabase = tempnam(sys_get_temp_dir(), 'tenant_initial_sales_resource_');
+    config([
+        'multitenancy.tenant_database_connection_name' => 'tenant',
+        'database.connections.tenant' => array_merge(config('database.connections.sqlite'), [
+            'database' => $tenantDatabase,
+        ]),
+    ]);
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Initial Sales Resource',
+        'slug' => 'tenant-initial-sales-resource-'.fake()->numberBetween(100, 999),
+        'database' => $tenantDatabase,
+        'status' => 'active',
+    ]));
+
+    $tenant->execute(function (): void {
+        if (! Schema::connection('tenant')->hasTable('stores')) {
+            Schema::connection('tenant')->create('stores', function (Blueprint $table): void {
+                $table->ulid('id')->primary();
+                $table->string('code')->nullable();
+                $table->string('document')->nullable();
+                $table->string('status')->default('draft');
+                $table->softDeletes();
+                $table->timestamps();
+            });
+        }
+
+        Store::query()->create([
+            'code' => '1',
+            'document' => '12345678000199',
+            'status' => 'published',
+        ]);
+    });
+
+    TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'http_method' => 'POST',
+        'api_url' => 'https://sysmo.example.com',
+        'config' => ['processing' => ['partner_key' => 'partner-key-123']],
+        'is_active' => true,
+    ]);
+
+    $this->artisan('integrations:dispatch-initial --resource=sales')->assertSuccessful();
+
+    Bus::assertDispatched(
+        DispatchTenantIntegrationInitialSyncJob::class,
+        fn (DispatchTenantIntegrationInitialSyncJob $job): bool => $job->resource === 'sales'
+            && $job->ignoreSyncDaysCheck === false
+    );
+
+    Http::assertNothingSent();
+});
+
 test('integrations dispatch initial command supports ignore synced days option', function () {
     Bus::fake();
 
@@ -619,6 +678,37 @@ test('initial sync chains post sync maintenance after initial jobs', function ()
 
     Bus::assertChained([
         new SyncTenantSalesDayJob((string) $integration->id, $yesterday, true),
+        new SyncTenantProductsDayJob((string) $integration->id, $yesterday, true),
+        new SyncTenantProvidersJob((string) $integration->id, 1, true),
+        new RunTenantIntegrationPostSyncJob((string) $tenant->id),
+    ]);
+});
+
+test('initial sync does not dispatch sales jobs for gescooper integration', function () {
+    Bus::fake();
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant GesCooper Without Sales',
+        'slug' => 'tenant-gescooper-without-sales-'.fake()->numberBetween(100, 999),
+        'database' => (string) config('database.connections.landlord.database'),
+        'status' => 'active',
+    ]));
+
+    $integration = TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'gescooper',
+        'http_method' => 'GET',
+        'api_url' => 'https://gescooper.example.com',
+        'config' => ['processing' => ['sales_initial_days' => 3, 'products_initial_days' => 1]],
+        'is_active' => true,
+    ]);
+
+    $yesterday = Carbon::yesterday()->toDateString();
+
+    app(DispatchInitialSyncService::class)->dispatch($integration);
+
+    Bus::assertNotDispatched(SyncTenantSalesDayJob::class);
+    Bus::assertChained([
         new SyncTenantProductsDayJob((string) $integration->id, $yesterday, true),
         new SyncTenantProvidersJob((string) $integration->id, 1, true),
         new RunTenantIntegrationPostSyncJob((string) $tenant->id),
