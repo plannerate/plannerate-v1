@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Store;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
+use App\Services\Integrations\Importers\GescooperImporter;
 use App\Services\Integrations\Importers\SysmoImporter;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Config;
@@ -79,13 +81,46 @@ test('sysmo importer uses configured products path when present', function (): v
         ],
     ]);
 
-    (new SysmoImporter(new IntegrationHttpClient))->importProducts($integration);
+    $store = new Store([
+        'document' => '12345678000199',
+    ]);
+    $store->id = '01jts31n2rpz1tyy4n6xv4qdp1';
+
+    (new SysmoImporter(new IntegrationHttpClient))->importProducts($integration, $store);
 
     Http::assertSent(function (Request $request): bool {
         return $request->url() === 'https://sysmo.example.test/custom/products'
             && $request->data() === [
                 'partner_key' => 'abc123',
+                'empresa' => '12345678000199',
                 'pagina' => '1',
             ];
+    });
+});
+
+test('gescooper importer sends store document as empresa query param for get requests', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+
+    Http::fake([
+        'https://gescooper.example.test/Produtos/Produtos*' => Http::response(['ok' => true]),
+    ]);
+
+    $integration = new TenantIntegration([
+        'config' => [
+            'connection' => [
+                'base_url' => 'https://gescooper.example.test',
+            ],
+        ],
+    ]);
+
+    $store = new Store([
+        'document' => '98765432000188',
+    ]);
+    $store->id = '01jts31n2rpz1tyy4n6xv4qdp2';
+
+    (new GescooperImporter(new IntegrationHttpClient))->importProducts($integration, $store);
+
+    Http::assertSent(function (Request $request): bool {
+        return $request->url() === 'https://gescooper.example.test/Produtos/Produtos?empresa=98765432000188&pagina=1&registros_por_pagina=1000&api-version=1.0';
     });
 });

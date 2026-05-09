@@ -24,6 +24,7 @@ class ImportProductsJob implements NotTenantAware, ShouldQueue
     public function handle(IntegrationImporter $integrationImporter): void
     {
         $integration = TenantIntegration::query()
+            ->with('tenant')
             ->whereKey($this->integrationId)
             ->where('is_active', true)
             ->first();

@@ -2,6 +2,7 @@
 
 namespace App\Services\Integrations\Importers;
 
+use App\Models\Store;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
 use Illuminate\Support\Carbon;
@@ -13,7 +14,7 @@ class SysmoImporter implements ClientApiImporter
         private readonly IntegrationHttpClient $httpClient,
     ) {}
 
-    public function importSales(TenantIntegration $integration): void
+    public function importSales(TenantIntegration $integration, ?Store $store = null): void
     {
         $response = $this->httpClient->request(
             integration: $integration,
@@ -21,6 +22,7 @@ class SysmoImporter implements ClientApiImporter
             endpoint: $this->path($integration, 'sales', '/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos'),
             body: [
                 ...$this->connectionBody($integration),
+                ...$this->storeBody($store),
                 ...$this->salesDatePayload($integration),
                 'pagina' => '1',
             ],
@@ -29,11 +31,12 @@ class SysmoImporter implements ClientApiImporter
         Log::info('Sysmo sales import request completed.', [
             'integration_id' => (string) $integration->id,
             'tenant_id' => (string) $integration->tenant_id,
+            'store_id' => $store?->id,
             'status' => $response->status(),
         ]);
     }
 
-    public function importProducts(TenantIntegration $integration): void
+    public function importProducts(TenantIntegration $integration, ?Store $store = null): void
     {
         $response = $this->httpClient->request(
             integration: $integration,
@@ -41,6 +44,7 @@ class SysmoImporter implements ClientApiImporter
             endpoint: $this->path($integration, 'products', '/sysmo-integrador-api/api/integradorService/hubprodutos.listar_produtos'),
             body: [
                 ...$this->connectionBody($integration),
+                ...$this->storeBody($store),
                 'pagina' => '1',
             ],
         );
@@ -48,6 +52,7 @@ class SysmoImporter implements ClientApiImporter
         Log::info('Sysmo products import request completed.', [
             'integration_id' => (string) $integration->id,
             'tenant_id' => (string) $integration->tenant_id,
+            'store_id' => $store?->id,
             'status' => $response->status(),
         ]);
     }
@@ -76,6 +81,16 @@ class SysmoImporter implements ClientApiImporter
         }
 
         return $body;
+    }
+
+    /**
+     * @return array{empresa: string}|array{}
+     */
+    private function storeBody(?Store $store): array
+    {
+        $document = trim((string) $store?->document);
+
+        return $document !== '' ? ['empresa' => $document] : [];
     }
 
     private function path(TenantIntegration $integration, string $key, string $fallback): string
