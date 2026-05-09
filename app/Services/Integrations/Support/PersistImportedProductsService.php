@@ -6,6 +6,7 @@ use App\Models\EanReference;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Support\ProductFieldMaps\ProductFieldMapRegistry;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -14,6 +15,8 @@ class PersistImportedProductsService
 {
     public function __construct(
         private readonly DeterministicIdGenerator $deterministicIdGenerator,
+        private readonly FieldResolver $fieldResolver,
+        private readonly ProductFieldMapRegistry $productFieldMapRegistry,
     ) {}
 
     /**
@@ -237,74 +240,14 @@ class PersistImportedProductsService
      */
     private function mapItem(string $provider, array $item): array
     {
-        return match ($provider) {
-            'sysmo' => $this->mapSysmoItem($item),
-            'gescooper' => $this->mapGescooperItem($item),
-            default => [
-                'codigo_erp' => $item['codigo_erp'] ?? null,
-                'ean' => $item['ean'] ?? null,
-            ],
-        };
-    }
+        $map = $this->productFieldMapRegistry->resolve($provider)->fields();
+        $mapped = [];
 
-    /**
-     * @param  array<string, mixed>  $item
-     * @return array<string, mixed>
-     */
-    private function mapSysmoItem(array $item): array
-    {
-        return [
-            'codigo_erp' => $item['produto'] ?? $item['id'] ?? $item['codigo'] ?? null,
-            'ean' => $this->sysmoPrimaryGtin($item) ?? $item['ean'] ?? null,
-            'name' => $item['descricao'] ?? $item['nome'] ?? null,
-            'brand' => is_array($item['marca'] ?? null) ? ($item['marca']['descricao'] ?? null) : ($item['marca'] ?? null),
-            'description' => $item['descricao_comercial'] ?? $item['descricao'] ?? null,
-            'unit_measure' => is_array($item['unidade_venda'] ?? null) ? ($item['unidade_venda']['codigo'] ?? null) : null,
-            'measurement_unit' => is_array($item['unidade_venda'] ?? null) ? ($item['unidade_venda']['descricao'] ?? null) : null,
-            'packaging_type' => null,
-            'packaging_size' => null,
-            'current_stock' => is_array($item['estoque'] ?? null) ? ($item['estoque']['disponivel'] ?? null) : null,
-            'last_purchase_date' => $this->sysmoLastPurchaseDate($item),
-            'sales_status' => $item['cadastro_ativo'] ?? $item['status'] ?? null,
-            'reference' => null,
-            'fragrance' => null,
-            'flavor' => null,
-            'color' => null,
-            'subbrand' => null,
-            'auxiliary_description' => null,
-            'additional_information' => null,
-            'sortiment_attribute' => null,
-        ];
-    }
+        foreach ($map as $field => $paths) {
+            $mapped[$field] = $this->fieldResolver->resolve($item, $paths);
+        }
 
-    /**
-     * @param  array<string, mixed>  $item
-     * @return array<string, mixed>
-     */
-    private function mapGescooperItem(array $item): array
-    {
-        return [
-            'codigo_erp' => $item['id_produto'] ?? null,
-            'ean' => $item['ean'] ?? null,
-            'name' => $item['descricao_completa'] ?? null,
-            'brand' => $item['marca'] ?? null,
-            'subbrand' => $item['submarca'] ?? null,
-            'description' => $item['descricao_completa'] ?? null,
-            'auxiliary_description' => $item['descricao_auxiliar'] ?? null,
-            'additional_information' => $item['informacao_adicional'] ?? null,
-            'reference' => $item['referencia'] ?? null,
-            'color' => $item['cor'] ?? null,
-            'fragrance' => $item['fragrancia'] ?? null,
-            'flavor' => $item['sabor'] ?? null,
-            'packaging_type' => $item['tipo_embalagem'] ?? null,
-            'packaging_size' => $item['tamanho_embalagem'] ?? null,
-            'measurement_unit' => $item['unidade_medida'] ?? null,
-            'unit_measure' => $item['unidade_medida'] ?? null,
-            'sortiment_attribute' => $item['segmento_varejista'] ?? null,
-            'current_stock' => $item['estoque_atual'] ?? null,
-            'last_purchase_date' => $item['data_ultima_compra'] ?? null,
-            'sales_status' => $item['status_produto'] ?? null,
-        ];
+        return $mapped;
     }
 
     /**
@@ -313,94 +256,7 @@ class PersistImportedProductsService
      */
     private function passesProviderValidation(string $provider, array $mapped, array $raw): bool
     {
-        return match ($provider) {
-            'sysmo' => $this->passesSysmoValidation($mapped, $raw),
-            'gescooper' => $this->passesGescooperValidation($mapped),
-            default => true,
-        };
-    }
-
-    /**
-     * @param  array<string, mixed>  $mapped
-     * @param  array<string, mixed>  $raw
-     */
-    private function passesSysmoValidation(array $mapped, array $raw): bool
-    {
-        $requiredFlags = ['cadastro_ativo', 'ativo_na_empresa', 'pertence_ao_mix'];
-        foreach ($requiredFlags as $flag) {
-            if (! array_key_exists($flag, $raw)) {
-                continue;
-            }
-
-            $value = strtoupper((string) ($raw[$flag] ?? ''));
-            if ($value === 'N') {
-                return false;
-            }
-        }
-
-        return $this->normalizeString($mapped['name'] ?? null) !== null;
-    }
-
-    /**
-     * @param  array<string, mixed>  $mapped
-     */
-    private function passesGescooperValidation(array $mapped): bool
-    {
-        return $this->normalizeString($mapped['name'] ?? null) !== null;
-    }
-
-    /**
-     * @param  array<string, mixed>  $item
-     */
-    private function sysmoPrimaryGtin(array $item): ?string
-    {
-        $gtins = $item['gtins']['completo'] ?? null;
-        if (! is_array($gtins)) {
-            return null;
-        }
-
-        foreach ($gtins as $entry) {
-            if (! is_array($entry)) {
-                continue;
-            }
-
-            if (($entry['principal'] ?? null) === 'S') {
-                return is_string($entry['gtin'] ?? null) ? $entry['gtin'] : null;
-            }
-        }
-
-        foreach ($gtins as $entry) {
-            if (is_array($entry) && is_string($entry['gtin'] ?? null)) {
-                return $entry['gtin'];
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @param  array<string, mixed>  $item
-     */
-    private function sysmoLastPurchaseDate(array $item): ?string
-    {
-        $fornecedores = $item['fornecedores'] ?? null;
-        if (! is_array($fornecedores)) {
-            return null;
-        }
-
-        $lastDate = null;
-        foreach ($fornecedores as $supplier) {
-            if (! is_array($supplier)) {
-                continue;
-            }
-
-            $date = $this->normalizeDate($supplier['data_ultima_compra'] ?? null);
-            if ($date !== null && ($lastDate === null || $date > $lastDate)) {
-                $lastDate = $date;
-            }
-        }
-
-        return $lastDate;
+        return $this->productFieldMapRegistry->resolve($provider)->passesValidation($mapped, $raw);
     }
 
     private function normalizeEan(mixed $value): ?string

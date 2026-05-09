@@ -6,7 +6,9 @@ use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\Importers\GescooperImporter;
 use App\Services\Integrations\Importers\SysmoImporter;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
+use App\Services\Integrations\Support\FieldResolver;
 use App\Services\Integrations\Support\PersistImportedProductsService;
+use App\Services\Integrations\Support\ProductFieldMaps\ProductFieldMapRegistry;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -18,7 +20,11 @@ uses(TestCase::class);
 
 function productsPersister(): PersistImportedProductsService
 {
-    return new PersistImportedProductsService(new DeterministicIdGenerator);
+    return new PersistImportedProductsService(
+        new DeterministicIdGenerator,
+        new FieldResolver,
+        new ProductFieldMapRegistry
+    );
 }
 
 test('client builds request with base url auth headers and enabled params', function (): void {
