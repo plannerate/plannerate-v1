@@ -1,0 +1,32 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: plannerate-nginx
+
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.plannerate.rule=Host(`plannerate.localhost`) || HostRegexp(`{subdomain:.+}.plannerate.localhost`)"
+      - "traefik.http.routers.plannerate.entrypoints=web"
+      - "traefik.http.services.plannerate.loadbalancer.server.port=80"
+
+    networks:
+      - web
+
+  php:
+    image: php:8.4-fpm
+    container_name: plannerate-php
+
+    volumes:
+      - ./:/var/www
+
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
