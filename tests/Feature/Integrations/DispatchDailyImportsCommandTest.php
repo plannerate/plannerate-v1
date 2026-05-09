@@ -1,10 +1,15 @@
 <?php
 
+use App\Jobs\Integrations\Imports\ImportProductsJob;
+use App\Jobs\Integrations\Imports\ImportSalesJob;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Bus;
 
-test('daily imports command prints active integrations', function (): void {
+test('daily imports command dispatches sales and products jobs for active integrations', function (): void {
+    Bus::fake();
+
     config([
         'app.key' => 'base64:'.base64_encode(random_bytes(32)),
     ]);
@@ -23,7 +28,7 @@ test('daily imports command prints active integrations', function (): void {
         'status' => 'active',
     ]));
 
-    TenantIntegration::query()->create([
+    $activeIntegration = TenantIntegration::query()->create([
         'tenant_id' => $activeTenant->id,
         'integration_type' => 'sysmo',
         'identifier' => 'principal',
@@ -44,15 +49,58 @@ test('daily imports command prints active integrations', function (): void {
     $output = Artisan::output();
 
     expect($output)
-        ->toContain('Integrações ativas encontradas para busca diária: 1')
+        ->toContain('Integrações ativas encontradas para importação diária: 1')
         ->toContain('Tenant Ativo')
         ->toContain('principal')
+        ->toContain('sales')
+        ->toContain('products')
+        ->toContain('provider_adapter')
         ->not->toContain('Tenant Inativo')
         ->not->toContain('desativada');
+
+    Bus::assertDispatched(ImportSalesJob::class, function (ImportSalesJob $job) use ($activeIntegration): bool {
+        return $job->integrationId === (string) $activeIntegration->id;
+    });
+
+    Bus::assertDispatched(ImportProductsJob::class, function (ImportProductsJob $job) use ($activeIntegration): bool {
+        return $job->integrationId === (string) $activeIntegration->id;
+    });
 });
 
 test('daily imports command warns when there are no active integrations', function (): void {
+    Bus::fake();
+
     Artisan::call('integrations:daily-imports');
 
     expect(Artisan::output())->toContain('Nenhuma integração ativa encontrada para a busca diária.');
+
+    Bus::assertNothingDispatched();
+});
+
+test('daily imports command can dispatch only sales', function (): void {
+    Bus::fake();
+
+    config([
+        'app.key' => 'base64:'.base64_encode(random_bytes(32)),
+    ]);
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Vendas',
+        'slug' => 'tenant-vendas',
+        'database' => 'tenant_sales',
+        'status' => 'active',
+    ]));
+
+    TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'identifier' => 'vendas',
+        'config' => [],
+        'is_active' => true,
+    ]);
+
+    Artisan::call('integrations:daily-imports', ['--type' => 'sales']);
+
+    Bus::assertDispatched(ImportSalesJob::class);
+    Bus::assertNotDispatched(ImportProductsJob::class);
 });
