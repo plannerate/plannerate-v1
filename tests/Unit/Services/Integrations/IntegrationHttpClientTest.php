@@ -6,6 +6,8 @@ use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\Importers\GescooperImporter;
 use App\Services\Integrations\Importers\SysmoImporter;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -61,6 +63,7 @@ test('client builds request with base url auth headers and enabled params', func
 
 test('sysmo importer uses configured products path when present', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    Carbon::setTestNow('2026-05-09 12:00:00');
 
     Http::fake([
         'https://sysmo.example.test/custom/products*' => Http::response(['ok' => true]),
@@ -74,6 +77,9 @@ test('sysmo importer uses configured products path when present', function (): v
                     ['key' => 'partner_key', 'value' => 'abc123', 'enabled' => true],
                 ],
             ],
+            'processing' => [
+                'products_initial_days' => 7,
+            ],
             'paths' => [
                 'products' => '/custom/products',
                 'sales' => '/custom/sales',
@@ -82,7 +88,7 @@ test('sysmo importer uses configured products path when present', function (): v
     ]);
 
     $store = new Store([
-        'document' => '12345678000199',
+        'document' => '12.345.678/0001-99',
     ]);
     $store->id = '01jts31n2rpz1tyy4n6xv4qdp1';
 
@@ -93,20 +99,33 @@ test('sysmo importer uses configured products path when present', function (): v
             && $request->data() === [
                 'partner_key' => 'abc123',
                 'empresa' => '12345678000199',
+                'data_ultima_alteracao' => '2026-05-02',
                 'pagina' => '1',
             ];
     });
+
+    Carbon::setTestNow();
 });
 
 test('gescooper importer sends store document as empresa query param for get requests', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    Cache::flush();
 
     Http::fake([
+        'https://gescooper.example.test/v1/Token' => Http::response([
+            'token' => 'test-jwt-token',
+        ], 200),
         'https://gescooper.example.test/Produtos/Produtos*' => Http::response(['ok' => true]),
     ]);
 
     $integration = new TenantIntegration([
         'config' => [
+            'auth' => [
+                'credentials' => [
+                    'username' => 'GOMARKAPI',
+                    'password' => 'secret',
+                ],
+            ],
             'connection' => [
                 'base_url' => 'https://gescooper.example.test',
             ],
@@ -114,7 +133,7 @@ test('gescooper importer sends store document as empresa query param for get req
     ]);
 
     $store = new Store([
-        'document' => '98765432000188',
+        'document' => '98.765.432/0001-88',
     ]);
     $store->id = '01jts31n2rpz1tyy4n6xv4qdp2';
 
@@ -123,4 +142,43 @@ test('gescooper importer sends store document as empresa query param for get req
     Http::assertSent(function (Request $request): bool {
         return $request->url() === 'https://gescooper.example.test/Produtos/Produtos?empresa=98765432000188&pagina=1&registros_por_pagina=1000&api-version=1.0';
     });
+
+    Http::assertSent(function (Request $request): bool {
+        return $request->url() === 'https://gescooper.example.test/Produtos/Produtos?empresa=98765432000188&pagina=1&registros_por_pagina=1000&api-version=1.0'
+            && $request->hasHeader('Authorization', 'Bearer test-jwt-token');
+    });
+});
+
+test('gescooper importer caches token between requests', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    Cache::flush();
+
+    Http::fake([
+        'https://gescooper.example.test/v1/Token' => Http::response([
+            'token' => 'test-jwt-token',
+        ], 200),
+        'https://gescooper.example.test/Produtos/Produtos*' => Http::response(['ok' => true]),
+    ]);
+
+    $integration = new TenantIntegration([
+        'id' => '01k-token-cache-test',
+        'config' => [
+            'auth' => [
+                'credentials' => [
+                    'username' => 'GOMARKAPI',
+                    'password' => 'secret',
+                ],
+            ],
+            'connection' => [
+                'base_url' => 'https://gescooper.example.test',
+            ],
+        ],
+    ]);
+
+    $importer = new GescooperImporter(new IntegrationHttpClient);
+    $importer->importProducts($integration);
+    $importer->importProducts($integration);
+
+    Http::assertSentCount(3);
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://gescooper.example.test/v1/Token');
 });

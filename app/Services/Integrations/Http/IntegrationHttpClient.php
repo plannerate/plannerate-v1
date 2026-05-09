@@ -20,9 +20,10 @@ class IntegrationHttpClient
         string $endpoint,
         array $query = [],
         array $body = [],
+        ?string $bearerToken = null,
     ): Response {
         $url = $this->url($integration, $endpoint);
-        $request = $this->pendingRequest($integration);
+        $request = $this->pendingRequest($integration, $bearerToken);
         $method = strtolower($method);
 
         $response = match ($method) {
@@ -34,7 +35,7 @@ class IntegrationHttpClient
         return $response->throw();
     }
 
-    private function pendingRequest(TenantIntegration $integration): PendingRequest
+    private function pendingRequest(TenantIntegration $integration, ?string $bearerToken = null): PendingRequest
     {
         $config = $this->config($integration);
         $auth = is_array($config['auth'] ?? null) ? $config['auth'] : [];
@@ -45,6 +46,10 @@ class IntegrationHttpClient
             ->connectTimeout(15)
             ->acceptJson()
             ->withHeaders($this->enabledKeyValueRows($connection['headers'] ?? []));
+
+        if (is_string($bearerToken) && $bearerToken !== '') {
+            return $request->withToken($bearerToken);
+        }
 
         return match ((string) ($auth['type'] ?? 'none')) {
             'basic' => $request->withBasicAuth(
