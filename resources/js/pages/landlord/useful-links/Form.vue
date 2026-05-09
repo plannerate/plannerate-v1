@@ -3,7 +3,6 @@ import { Form, Head } from '@inertiajs/vue3';
 import { Link } from 'lucide-vue-next';
 import { computed } from 'vue';
 import UsefulLinkController from '@/actions/App/Http/Controllers/Landlord/UsefulLinkController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
@@ -11,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 type UsefulLinkPayload = {
     id: string;
@@ -52,8 +52,8 @@ const pageMeta = useCrudPageMeta({
         <div class="p-4">
             <Form
                 v-bind="isEdit
-                    ? { ...UsefulLinkController.update.form(props.useful_link!.id), action: tenantWayfinderPath(UsefulLinkController.update.url(props.useful_link!.id)) }
-                    : { ...UsefulLinkController.store.form(), action: tenantWayfinderPath(UsefulLinkController.store.url()) }"
+                    ? { ...UsefulLinkController.update.form(props.useful_link!.id), action: tenantWayfinderPath(UsefulLinkController.update.form(props.useful_link!.id).action) }
+                    : { ...UsefulLinkController.store.form(), action: tenantWayfinderPath(UsefulLinkController.store.form().action) }"
                 v-slot="{ errors, processing }"
             >
                 <FormCard

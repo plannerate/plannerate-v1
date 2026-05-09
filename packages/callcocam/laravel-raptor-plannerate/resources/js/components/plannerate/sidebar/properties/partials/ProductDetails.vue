@@ -48,10 +48,10 @@
 import { Package, Users } from 'lucide-vue-next';
 import { computed, inject, ref } from 'vue';
 import { toast } from 'vue-sonner';
-import { useT } from '@/composables/useT';
 import { Separator } from '@/components/ui/separator';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
+import { useT } from '@/composables/useT';
 import type { Product } from '@/types/planogram';
 import ProductDimensionsEditor from './ProductDimensionsEditor.vue';
 import ProductImageCard from './ProductImageCard.vue';

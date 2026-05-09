@@ -5,8 +5,8 @@ import { Edit, Mail, RotateCcw, Trash2 } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import WayfinderLink from '@/components/WayfinderLink.vue';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import { useT } from '@/composables/useT';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 type UserAccessRow = {
     id: string;
@@ -35,7 +35,9 @@ const emit = defineEmits<{
 const { t } = useT();
 
 const localRoleNames = ref([...props.user.role_names]);
-watch(() => props.user.role_names, (val) => { localRoleNames.value = [...val]; });
+watch(() => props.user.role_names, (val) => {
+ localRoleNames.value = [...val]; 
+});
 
 const flushRoles = useDebounceFn(() => {
     router.patch(tenantWayfinderPath(TenantUserAccessController.syncRoles.url({ tenant: props.tenantId, userId: props.user.id })), {

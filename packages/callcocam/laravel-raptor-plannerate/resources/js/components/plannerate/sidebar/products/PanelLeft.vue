@@ -70,10 +70,10 @@
 <script setup lang="ts">
 import { X } from 'lucide-vue-next';
 import { onMounted, provide, ref, useTemplateRef } from 'vue';
-import { useT } from '@/composables/useT';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useProductsPanel } from '@/composables/plannerate/useProductsPanel';
+import { useT } from '@/composables/useT';
 import type { Category as CategoryType } from '@/types/planogram';
 import Category from './CategorySelect.vue';
 import ProductFilters from './Filters.vue';

@@ -125,7 +125,6 @@ import { ImageIcon, Loader2, Trash2, Upload, X } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import { Cropper } from 'vue-advanced-cropper';
 import { toast } from 'vue-sonner';
-import { wayfinderPath } from '../../../../../libs/wayfinderPath';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -141,6 +140,7 @@ import { Separator } from '@/components/ui/separator';
 import { useT } from '@/composables/useT';
 import imageRoutes from '@/routes/tenant/products/image';
 import type { Product } from '@/types/planogram';
+import { wayfinderPath } from '../../../../../libs/wayfinderPath';
 import 'vue-advanced-cropper/dist/style.css';
 
 interface Props {

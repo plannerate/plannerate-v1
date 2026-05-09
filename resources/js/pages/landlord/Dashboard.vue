@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
 import { ExternalLink, Building2, CircleCheck, LoaderCircle, CircleOff } from 'lucide-vue-next';
+import { computed } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 const props = defineProps<{
     totals: {

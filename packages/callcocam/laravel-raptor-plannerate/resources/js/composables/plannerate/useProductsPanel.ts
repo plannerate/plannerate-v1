@@ -1,8 +1,8 @@
 import { onMounted, reactive, ref, watch  } from 'vue';
 import type {Ref} from 'vue';
+import { products as productsRoute } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
 import { useT } from '@/composables/useT';
 import type { Category, Product } from '@/types/planogram';
-import { products as productsRoute } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
 
 interface UseProductsPanelOptions {
     gondolaId: string;

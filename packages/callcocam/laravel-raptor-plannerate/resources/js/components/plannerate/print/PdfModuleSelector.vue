@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Download, Eye } from 'lucide-vue-next'
 import { ref, computed } from 'vue'
-import { useT } from '@/composables/useT'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -13,6 +12,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { useT } from '@/composables/useT'
 import type { Section } from '@/types/planogram'
 
 interface Props {

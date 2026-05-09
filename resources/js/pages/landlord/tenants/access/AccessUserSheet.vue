@@ -2,7 +2,6 @@
 import { Form } from '@inertiajs/vue3';
 import { UserPlus } from 'lucide-vue-next';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import InputError from '@/components/InputError.vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useT } from '@/composables/useT';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 type TenantPayload = {
     id: string;
@@ -92,7 +92,7 @@ function getUserInitials(name: string): string {
                         v-if="mode === 'create'"
                         v-bind="{
                             ...TenantUserAccessController.store.form(tenant.id),
-                            action: tenantWayfinderPath(TenantUserAccessController.store.url(tenant.id)),
+                            action: tenantWayfinderPath(TenantUserAccessController.store.form(tenant.id).action),
                         }"
                         class="flex min-h-full flex-col"
                         v-slot="{ errors, processing }"
@@ -184,7 +184,7 @@ function getUserInitials(name: string): string {
                         v-else-if="user"
                         v-bind="{
                             ...TenantUserAccessController.update.form({ tenant: tenant.id, userId: user.id }),
-                            action: tenantWayfinderPath(TenantUserAccessController.update.url({ tenant: tenant.id, userId: user.id })),
+                            action: tenantWayfinderPath(TenantUserAccessController.update.form({ tenant: tenant.id, userId: user.id }).action),
                         }"
                         class="flex min-h-full flex-col"
                         v-slot="{ errors, processing }"

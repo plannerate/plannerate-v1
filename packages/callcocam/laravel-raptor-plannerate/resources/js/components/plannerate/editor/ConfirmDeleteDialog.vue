@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Check, Trash2 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
-import { useT } from '@/composables/useT';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -12,6 +11,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useT } from '@/composables/useT';
 import type { Layer, Section, Shelf } from '../../../types/planogram';
 
 interface Props {

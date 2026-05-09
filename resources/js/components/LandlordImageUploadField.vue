@@ -44,6 +44,7 @@ function clearImage(event: MouseEvent): void {
     previewUrl.value = '';
     storedPath.value = '';
     errorMessage.value = '';
+
     if (fileInput.value) {
         fileInput.value.value = '';
     }
@@ -53,6 +54,7 @@ async function uploadFile(file: File): Promise<void> {
     if (file.size > props.maxSizeMb * 1024 * 1024) {
         errorMessage.value = `Arquivo muito grande. Máximo: ${props.maxSizeMb}MB`;
         emit('error', errorMessage.value);
+
         return;
     }
 
@@ -92,6 +94,7 @@ async function uploadFile(file: File): Promise<void> {
 function onFileChange(event: Event): void {
     const target = event.target as HTMLInputElement;
     const [file] = target.files ?? [];
+
     if (file) {
         void uploadFile(file);
     }
@@ -110,6 +113,7 @@ function onDrop(event: DragEvent): void {
     event.preventDefault();
     isDragging.value = false;
     const [file] = event.dataTransfer?.files ?? [];
+
     if (file && file.type.startsWith('image/')) {
         void uploadFile(file);
     }
@@ -117,6 +121,7 @@ function onDrop(event: DragEvent): void {
 
 async function importFromUrl(): Promise<void> {
     const url = urlInput.value.trim();
+
     if (!url || isImportingUrl.value || isUploading.value) {
         return;
     }
@@ -125,6 +130,7 @@ async function importFromUrl(): Promise<void> {
         new URL(url);
     } catch {
         errorMessage.value = 'URL inválida.';
+
         return;
     }
 
@@ -133,13 +139,17 @@ async function importFromUrl(): Promise<void> {
 
     try {
         const response = await fetch(url);
+
         if (!response.ok) {
             throw new Error('Falha ao buscar imagem.');
         }
+
         const blob = await response.blob();
+
         if (!blob.type.startsWith('image/')) {
             throw new Error('URL não aponta para uma imagem.');
         }
+
         const ext = blob.type.split('/')[1] ?? 'jpg';
         const file = new File([blob], `imported.${ext}`, { type: blob.type });
         urlInput.value = '';

@@ -6,13 +6,13 @@ import TenantCloudflareController from '@/actions/App/Http/Controllers/Landlord/
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import CloudflareDnsCard from '@/components/CloudflareDnsCard.vue';
 import FormCard from '@/components/FormCard.vue';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 type TenantPayload = {
     id: string;
@@ -146,6 +146,15 @@ database.value = suggestDatabase(toSlug(slug.value));
 function onDatabaseInput(): void {
     databaseTouched.value = true;
 }
+
+const formProps = computed(() => {
+    if (isEdit.value) {
+        const d = TenantController.update.form(props.tenant!.id);
+        return { ...d, action: tenantWayfinderPath(d.action) };
+    }
+    const d = TenantController.store.form();
+    return { ...d, action: tenantWayfinderPath(d.action) };
+});
 </script>
 
 <template>
@@ -153,17 +162,7 @@ function onDatabaseInput(): void {
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <div class="p-4">
         <Form
-            v-bind="isEdit
-                ? {
-                    ...TenantController.update.form(props.tenant!.id),
-                    action: tenantWayfinderPath(TenantController.update.url(props.tenant!.id)),
-                    method: 'put',
-                }
-                : {
-                    ...TenantController.store.form(),
-                    action: tenantWayfinderPath(TenantController.store.url()),
-                    method: 'post',
-                }"
+            v-bind="formProps"
             v-slot="{ errors, processing }"
         >
             <FormCard

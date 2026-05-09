@@ -138,7 +138,6 @@ import { router, usePage } from '@inertiajs/vue3';
 import { Calendar, Package, Settings } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { calculateTargetStockApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
-import { useT } from '@/composables/useT';
 import TargetStockParamsModal from '@/components/plannerate/analysis/TargetStockParamsModal.vue';
 import TargetStockResultsList from '@/components/plannerate/analysis/TargetStockResultsList.vue';
 import { Button } from '@/components/ui/button';  
@@ -147,6 +146,7 @@ import {
     CardContent,
 } from '@/components/ui/card';
 import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis';
+import { useT } from '@/composables/useT';
 import { wayfinderPath } from '../../../libs/wayfinderPath';
 
 interface Planogram {

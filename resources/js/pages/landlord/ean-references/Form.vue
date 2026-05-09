@@ -3,7 +3,6 @@ import { Form, Head } from '@inertiajs/vue3';
 import { Barcode } from 'lucide-vue-next';
 import { computed } from 'vue';
 import EanReferenceController from '@/actions/App/Http/Controllers/Landlord/EanReferenceController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import LandlordImageUploadField from '@/components/LandlordImageUploadField.vue';
@@ -13,6 +12,7 @@ import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 type EanReferencePayload = {
     id: string;
@@ -71,11 +71,11 @@ const pageMeta = useCrudPageMeta({
                 v-bind="isEdit
                     ? {
                         ...EanReferenceController.update.form({ ean_reference: props.ean_reference!.id }),
-                        action: tenantWayfinderPath(EanReferenceController.update.url({ ean_reference: props.ean_reference!.id })),
+                        action: tenantWayfinderPath(EanReferenceController.update.form({ ean_reference: props.ean_reference!.id }).action),
                     }
                     : {
                         ...EanReferenceController.store.form(),
-                        action: tenantWayfinderPath(EanReferenceController.store.url()),
+                        action: tenantWayfinderPath(EanReferenceController.store.form().action),
                     }
                 "
                 v-slot="{ errors, processing }"

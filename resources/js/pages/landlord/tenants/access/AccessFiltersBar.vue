@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import ListFiltersBar from '@/components/ListFiltersBar.vue';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 type FilterOption = {
     value: string;

@@ -3,7 +3,6 @@ import { Form, router } from '@inertiajs/vue3';
 import { KeyRound } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import TenantSocialiteProviderController from '@/actions/App/Http/Controllers/Landlord/TenantSocialiteProviderController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 type SsoProvider = {
     id: string;
@@ -112,7 +112,7 @@ function handleDelete(): void {
                     <Form
                         v-bind="{
                             ...TenantSocialiteProviderController.update.form(tenant.id),
-                            action: tenantWayfinderPath(TenantSocialiteProviderController.update.url(tenant.id)),
+                            action: tenantWayfinderPath(TenantSocialiteProviderController.update.form(tenant.id).action),
                         }"
                         :default-values="defaultValues"
                         preserve-scroll

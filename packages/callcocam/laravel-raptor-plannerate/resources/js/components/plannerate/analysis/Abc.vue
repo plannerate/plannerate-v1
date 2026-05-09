@@ -8,7 +8,6 @@ import {
 import { computed, ref } from 'vue';
 import { calculateAbc } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 import type { AbcResult } from '@/components/plannerate/analysis/abc/types';
-import { useT } from '@/composables/useT';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -17,6 +16,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useT } from '@/composables/useT';
 import AbcParamsModal from './AbcParamsModal.vue';
 import AbcResultsList from './AbcResultsList.vue';
 

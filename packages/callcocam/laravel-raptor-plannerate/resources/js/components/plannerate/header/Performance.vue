@@ -59,7 +59,6 @@
 <script setup lang="ts">
 import { BarChart3, Gauge, Package, TrendingUp } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
-import { useT } from '@/composables/useT';
 import {
     Dialog,
     DialogContent,
@@ -68,6 +67,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useT } from '@/composables/useT';
 import type { AbcAnalysis, StockAnalysis } from '@/types/planogram';
 import PerformanceAbcTab from './PerformanceAbcTab.vue';
 import PerformanceTargetStockTab from './PerformanceTargetStockTab.vue';

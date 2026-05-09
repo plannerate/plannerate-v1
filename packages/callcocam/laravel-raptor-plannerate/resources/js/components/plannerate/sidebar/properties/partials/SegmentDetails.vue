@@ -141,7 +141,6 @@ import { router } from '@inertiajs/vue3';
 import { ArrowLeft, ArrowRight, Box, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
-import { wayfinderPath } from '../../../../../libs/wayfinderPath';
 import { deleteImage } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
@@ -152,6 +151,7 @@ import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSele
 import { useSegmentActions } from '@/composables/plannerate/useSegmentActions';
 import { useT } from '@/composables/useT';
 import type { Segment } from '@/types/planogram';
+import { wayfinderPath } from '../../../../../libs/wayfinderPath';
 import ProductDimensionsEditor from './ProductDimensionsEditor.vue';
 import ProductImageCard from './ProductImageCard.vue';
 import ProductImageUpload from './ProductImageUpload.vue';

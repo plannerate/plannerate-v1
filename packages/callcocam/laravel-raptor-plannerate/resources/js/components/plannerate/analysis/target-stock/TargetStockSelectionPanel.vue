@@ -111,7 +111,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useT } from '@/composables/useT';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -120,6 +119,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useT } from '@/composables/useT';
 import ProductSalesSummary from '../../sidebar/properties/partials/ProductSalesSummary.vue';
 import TargetStockQuickActions from './TargetStockQuickActions.vue';
 import type { TargetStockResult } from './types';

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Copy, Package } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
-import { useT } from '@/composables/useT';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -11,6 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useT } from '@/composables/useT';
 import type { Section } from '../../../types/planogram';
 
 interface Props {

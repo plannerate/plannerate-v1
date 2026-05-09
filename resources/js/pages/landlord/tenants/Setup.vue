@@ -13,10 +13,10 @@ import {
 import { onBeforeUnmount, onMounted } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 type TenantPayload = {
     id: string;

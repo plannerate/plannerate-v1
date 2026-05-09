@@ -301,6 +301,7 @@ return false;
                                 validation.sectionWidth,
                             ),
                         );
+
                         // Não permite aumentar - excederia a largura da shelf
                         return true;
                     }

@@ -2,9 +2,9 @@
 import { onClickOutside } from '@vueuse/core';
 import { Package } from 'lucide-vue-next';
 import { computed, onMounted, useTemplateRef, watch } from 'vue';
-import { useT } from '@/composables/useT';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
+import { useT } from '@/composables/useT';
 import type { Gondola } from '@/types/planogram';
 import Sections from './editor/Sections.vue';
 import Indicador from './Indicador.vue';

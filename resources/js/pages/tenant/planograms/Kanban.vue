@@ -2,7 +2,6 @@
 import { Head, usePage } from '@inertiajs/vue3';
 import { Kanban, Plus } from 'lucide-vue-next';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
-import GondolaCreateStepper from '@/components/plannerate/form/GondolaCreateStepper.vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import KanbanActionConfirmDialog from '@/components/kanban/KanbanActionConfirmDialog.vue';
 import KanbanBoard from '@/components/kanban/KanbanBoard.vue';
@@ -11,6 +10,7 @@ import KanbanFilters from '@/components/kanban/KanbanFilters.vue';
 import type { Execution, KanbanExecutionAction, KanbanPageProps } from '@/components/kanban/types';
 import KankanNavigationLinks from '@/components/KankanNavigationLinks.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import GondolaCreateStepper from '@/components/plannerate/form/GondolaCreateStepper.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useKanban } from '@/composables/useKanban';
 import { useT } from '@/composables/useT';

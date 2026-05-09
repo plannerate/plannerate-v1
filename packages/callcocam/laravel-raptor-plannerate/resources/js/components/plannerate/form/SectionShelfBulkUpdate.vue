@@ -18,7 +18,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { useT } from '@/composables/useT';
 import {
     calculateUsableHeight,
     DEFAULT_SECTION_FIELDS,
@@ -32,6 +31,7 @@ import {
     toCamelCase as shelfToCamelCase,
     toSnakeCase as shelfToSnakeCase,
 } from '@/composables/plannerate/useShelfFields';
+import { useT } from '@/composables/useT';
 
 const editor = usePlanogramEditor();
 const { t } = useT();

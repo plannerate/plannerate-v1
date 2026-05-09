@@ -40,7 +40,6 @@ import { ChevronDown, Download, Eye, FileText, MoreVertical, Share2 } from 'luci
 
 import { ref } from 'vue';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
-import { useT } from '@/composables/useT';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -51,6 +50,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { currentGondola } from '@/composables/plannerate/editor/useGondolaState';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { useT } from '@/composables/useT';
 import ShareQRCodeModal from './header/ShareQRCodeModal.vue';
 
 /**

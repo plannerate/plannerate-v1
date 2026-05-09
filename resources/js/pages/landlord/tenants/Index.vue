@@ -6,7 +6,6 @@ import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantCont
 import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord/TenantIntegrationController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import ColumnActions from '@/components/table/columns/ColumnActions.vue';
@@ -16,6 +15,7 @@ import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import type { Paginator } from '@/types';
 import TenantSocialiteSheet from './TenantSocialiteSheet.vue';
 

@@ -29,7 +29,9 @@ const statusClasses: Record<string, string> = {
 };
 
 const localUserIds = ref([...props.template.user_ids]);
-watch(() => props.template.user_ids, (val) => { localUserIds.value = [...val]; });
+watch(() => props.template.user_ids, (val) => {
+ localUserIds.value = [...val]; 
+});
 
 const flushUsers = useDebounceFn(() => {
     router.patch(tenantWayfinderPath(WorkflowTemplateController.syncUsers.url({ tenant: props.tenantId, template: props.template.id })), {

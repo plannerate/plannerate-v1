@@ -27,7 +27,6 @@ import {
 import { computed, onMounted, ref, watch } from 'vue';
 import AddModuleSheet from '@/components/plannerate/form/AddModuleSheet.vue';
 import TransferSectionDialog from '@/components/plannerate/sidebar/properties/partials/TransferSectionDialog.vue';
-import { useT } from '@/composables/useT';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,6 +42,7 @@ import {
 import { usePlanogramChanges } from '@/composables/plannerate/usePlanogramChanges';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
+import { useT } from '@/composables/useT';
 
 // Types
 

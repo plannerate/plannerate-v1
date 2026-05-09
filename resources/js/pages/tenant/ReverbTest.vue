@@ -16,7 +16,6 @@ import {
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import ReverbTestController from '@/actions/App/Http/Controllers/Tenant/ReverbTestController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +29,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import type { AppNotification, NotificationData } from '@/types/auth';
 
 const props = defineProps<{

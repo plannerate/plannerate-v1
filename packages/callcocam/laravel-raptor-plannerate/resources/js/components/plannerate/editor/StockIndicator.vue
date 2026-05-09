@@ -331,13 +331,13 @@
 <script setup lang="ts">
 import { CheckCircle, TrendingDown, TrendingUp } from 'lucide-vue-next';
 import { computed } from 'vue';
-import { useT } from '@/composables/useT';
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useT } from '@/composables/useT';
 import { useTargetStockAnalysis } from '../../../composables/plannerate/useTargetStockAnalysis';
 import type { Segment } from '../../../types/planogram';
 

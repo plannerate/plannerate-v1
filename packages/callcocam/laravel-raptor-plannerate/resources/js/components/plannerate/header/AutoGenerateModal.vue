@@ -2,7 +2,6 @@
 import { useForm } from '@inertiajs/vue3';
 import { Loader2, Sparkles } from 'lucide-vue-next';
 import { computed, watch } from 'vue';
-import { useT } from '@/composables/useT';
 import AdvancedOptionsSection from '@/components/plannerate/header/partials/AdvancedOptionsSection.vue';
 import AiSettingsSection from '@/components/plannerate/header/partials/AiSettingsSection.vue';
 import FacingsSettingsSection from '@/components/plannerate/header/partials/FacingsSettingsSection.vue';
@@ -20,6 +19,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { useT } from '@/composables/useT';
 
 // Props
 const props = defineProps<{

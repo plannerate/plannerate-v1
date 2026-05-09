@@ -93,8 +93,10 @@ function submit(): void {
         .transform((data) => {
             if (!props.showTruncateOption) {
                 const { truncate_before_import: _, ...rest } = data;
+
                 return rest;
             }
+
             return data;
         })
         .post(props.action, {

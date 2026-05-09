@@ -3,7 +3,6 @@ import { Form } from '@inertiajs/vue3';
 import { Layers } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useT } from '@/composables/useT';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import type { TemplateRow, UserOption, TemplateOption } from './Index.vue';
 
 type TenantPayload = {
@@ -91,11 +91,11 @@ const templatesForNextPrev = computed(() =>
                             mode === 'create'
                                 ? {
                                     ...WorkflowTemplateController.store.form({ tenant: tenant.id }),
-                                    action: tenantWayfinderPath(WorkflowTemplateController.store.url({ tenant: tenant.id })),
+                                    action: tenantWayfinderPath(WorkflowTemplateController.store.form({ tenant: tenant.id }).action),
                                 }
                                 : {
                                     ...WorkflowTemplateController.update.form({ tenant: tenant.id, template: template!.id }),
-                                    action: tenantWayfinderPath(WorkflowTemplateController.update.url({ tenant: tenant.id, template: template!.id })),
+                                    action: tenantWayfinderPath(WorkflowTemplateController.update.form({ tenant: tenant.id, template: template!.id }).action),
                                 }
                         "
                         class="flex min-h-full flex-col"

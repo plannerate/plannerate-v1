@@ -19,7 +19,6 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
-import { useT } from '@/composables/useT';
 import {
     getInitialSectionFields,
     toSnakeCase as sectionToSnakeCase,
@@ -28,6 +27,7 @@ import {
     getInitialShelfFields,
     toSnakeCase as shelfToSnakeCase,
 } from '@/composables/plannerate/useShelfFields';
+import { useT } from '@/composables/useT';
 import type { Section } from '@/types/planogram';
 
 interface Props {

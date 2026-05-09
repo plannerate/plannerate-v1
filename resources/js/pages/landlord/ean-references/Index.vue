@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import { Head, useHttp } from '@inertiajs/vue3';
-import { toast } from 'vue-sonner';
 import { ImageDown, Loader2 } from 'lucide-vue-next';
 import { ref } from 'vue';
+import { toast } from 'vue-sonner';
 import EanReferenceController from '@/actions/App/Http/Controllers/Landlord/EanReferenceController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
-import WayfinderLink from '@/components/WayfinderLink.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import { ColumnImage } from '@/components/table/columns';
 import ColumnHeader from '@/components/table/columns/ColumnHeader.vue';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Button } from '@/components/ui/button';
+import WayfinderLink from '@/components/WayfinderLink.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import type { Paginator } from '@/types';
-import { ColumnImage } from '@/components/table/columns';
 
 type EanReferenceRow = {
     id: string;

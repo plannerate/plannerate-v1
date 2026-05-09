@@ -24,13 +24,13 @@ import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useT } from '@/composables/useT';
 import { calculateUsableHeight } from '@/composables/plannerate/useSectionFields';
 import {
     calculateShelfSpacing,
     calculateTotalDisplayArea,
     validateShelfFields,
 } from '@/composables/plannerate/useShelfFields';
+import { useT } from '@/composables/useT';
 
 interface Props {
     modelValue: {

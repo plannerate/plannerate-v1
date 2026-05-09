@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Pencil } from 'lucide-vue-next';
-import WayfinderLink from '@/components/WayfinderLink.vue';
 import { Button } from '@/components/ui/button';
+import WayfinderLink from '@/components/WayfinderLink.vue';
 
 const props = defineProps<{
     href: string;

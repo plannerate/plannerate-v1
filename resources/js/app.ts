@@ -14,7 +14,10 @@ declare global {
 }
 
 function metaContent(name: string): string | null {
-    if (typeof document === 'undefined') return null;
+    if (typeof document === 'undefined') {
+return null;
+}
+
     return document.querySelector(`meta[name="${name}"]`)?.getAttribute('content') ?? null;
 }
 

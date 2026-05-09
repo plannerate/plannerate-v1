@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import WayfinderLink from '@/components/WayfinderLink.vue';
 import { Maximize2, Minimize2 } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
@@ -8,6 +7,7 @@ import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreControll
 import { show as gondolaPdfShow } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
 import KankanNavigationLinks from '@/components/KankanNavigationLinks.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import WayfinderLink from '@/components/WayfinderLink.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';

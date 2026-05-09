@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Head, Link, setLayoutProps, usePage } from '@inertiajs/vue3';
 import { LayoutTemplate, Shapes, Package } from 'lucide-vue-next';
+import { computed } from 'vue';
 import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryController';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';

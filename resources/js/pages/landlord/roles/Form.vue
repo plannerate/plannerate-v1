@@ -3,7 +3,6 @@ import { Form, Head } from '@inertiajs/vue3';
 import { ShieldCheck } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import RoleController from '@/actions/App/Http/Controllers/Landlord/RoleController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 type RolePayload = {
     id: string;
@@ -70,8 +70,8 @@ const pageMeta = useCrudPageMeta({
         <div class="p-4">
         <Form
             v-bind="isEdit
-                ? { ...RoleController.update.form(props.role!.id), action: tenantWayfinderPath(RoleController.update.url(props.role!.id)) }
-                : { ...RoleController.store.form(), action: tenantWayfinderPath(RoleController.store.url()) }"
+                ? { ...RoleController.update.form(props.role!.id), action: tenantWayfinderPath(RoleController.update.form(props.role!.id).action) }
+                : { ...RoleController.store.form(), action: tenantWayfinderPath(RoleController.store.form().action) }"
             v-slot="{ errors, processing }"
         >
             <FormCard

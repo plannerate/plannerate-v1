@@ -9,7 +9,6 @@ import {
   Check,
 } from 'lucide-vue-next'
 import { computed, nextTick, ref, watch } from 'vue'
-import { useT } from '@/composables/useT'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -20,6 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
+import { useT } from '@/composables/useT'
 
 interface Region {
   id: string

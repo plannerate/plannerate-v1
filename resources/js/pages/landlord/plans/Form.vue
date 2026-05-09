@@ -3,7 +3,6 @@ import { Form, Head } from '@inertiajs/vue3';
 import { Layers, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import PlanController from '@/actions/App/Http/Controllers/Landlord/PlanController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 type PlanItem = {
     id: string | null;
@@ -85,8 +85,8 @@ const pageMeta = useCrudPageMeta({
         <div class="p-4">
         <Form
             v-bind="isEdit
-                ? { ...PlanController.update.form(props.plan!.id), action: tenantWayfinderPath(PlanController.update.url(props.plan!.id)) }
-                : { ...PlanController.store.form(), action: tenantWayfinderPath(PlanController.store.url()) }"
+                ? { ...PlanController.update.form(props.plan!.id), action: tenantWayfinderPath(PlanController.update.form(props.plan!.id).action) }
+                : { ...PlanController.store.form(), action: tenantWayfinderPath(PlanController.store.form().action) }"
             v-slot="{ errors, processing }"
         >
             <FormCard

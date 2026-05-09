@@ -3,7 +3,6 @@ import { Form, Head } from '@inertiajs/vue3';
 import { Blocks } from 'lucide-vue-next';
 import { computed } from 'vue';
 import ModuleController from '@/actions/App/Http/Controllers/Landlord/ModuleController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
@@ -11,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 type ModulePayload = {
     id: string;
@@ -51,8 +51,8 @@ const pageMeta = useCrudPageMeta({
         <div class="p-4">
             <Form
                 v-bind="isEdit
-                    ? { ...ModuleController.update.form(props.module!.id), action: tenantWayfinderPath(ModuleController.update.url(props.module!.id)) }
-                    : { ...ModuleController.store.form(), action: tenantWayfinderPath(ModuleController.store.url()) }"
+                    ? { ...ModuleController.update.form(props.module!.id), action: tenantWayfinderPath(ModuleController.update.form(props.module!.id).action) }
+                    : { ...ModuleController.store.form(), action: tenantWayfinderPath(ModuleController.store.form().action) }"
                 v-slot="{ errors, processing }"
             >
                 <FormCard

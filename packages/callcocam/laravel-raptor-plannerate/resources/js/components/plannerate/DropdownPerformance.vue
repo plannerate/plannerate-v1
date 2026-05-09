@@ -84,7 +84,6 @@
 <script setup lang="ts">
 import { ChevronDown, Eye, EyeOff, Gauge, Trash2 } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
-import { useT } from '@/composables/useT';
 import Performance from '@/components/plannerate/header/Performance.vue';
 import { Button } from '@/components/ui/button'; 
 import {
@@ -96,6 +95,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import { usePerformanceIndicators } from '@/composables/plannerate/usePerformanceIndicators';
+import { useT } from '@/composables/useT';
 import type { AbcAnalysis, Gondola, StockAnalysis } from '@/types/planogram';
 
 

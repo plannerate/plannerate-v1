@@ -65,11 +65,11 @@ const pageMeta = useCrudPageMeta({
                 v-bind="isEdit
                     ? {
                         ...EanReferenceController.update.form({ subdomain: props.subdomain, ean_reference: props.ean_reference!.id }),
-                        action: tenantWayfinderPath(EanReferenceController.update.url({ subdomain: props.subdomain, ean_reference: props.ean_reference!.id })),
+                        action: tenantWayfinderPath(EanReferenceController.update.form({ subdomain: props.subdomain, ean_reference: props.ean_reference!.id }).action),
                     }
                     : {
                         ...EanReferenceController.store.form(props.subdomain),
-                        action: tenantWayfinderPath(EanReferenceController.store.url(props.subdomain)),
+                        action: tenantWayfinderPath(EanReferenceController.store.form(props.subdomain).action),
                     }
                 "
                 v-slot="{ errors, processing }"

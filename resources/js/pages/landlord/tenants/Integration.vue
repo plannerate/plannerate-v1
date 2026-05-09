@@ -4,17 +4,17 @@ import { Link2, PowerOff, Power } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord/TenantIntegrationController';
-import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import DeleteButton from '@/components/DeleteButton.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
-import FormTextField from '@/components/form/FormTextField.vue';
 import FormTabsBar from '@/components/form/FormTabsBar.vue';
+import FormTextField from '@/components/form/FormTextField.vue';
 import KeyValueTable from '@/components/form/KeyValueTable.vue';
 import FormCard from '@/components/FormCard.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 type TenantPayload = {
     id: string;
