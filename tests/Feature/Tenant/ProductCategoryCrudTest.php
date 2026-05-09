@@ -4,9 +4,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\Tenant;
-use App\Models\TenantIntegration;
 use App\Models\User;
-use App\Services\Integrations\Sysmo\SysmoSingleProductIntegrationService;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -165,98 +163,24 @@ test('tenant product store validates required fields', function (): void {
         ->assertSessionHasErrors(['name']);
 });
 
-test('sync single redirects to edit when product is found', function (): void {
+test('sync single endpoint is mocked while import system is rebuilt', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);
 
-    $tenant = makeTenant('tenant-sync-product');
+    $tenant = makeTenant('tenant-sync-mocked');
     assignTenantAdminRole($user, $tenant->id);
 
-    $product = Product::query()->create([
-        'tenant_id' => $tenant->id,
-        'name' => 'Produto API',
-        'slug' => 'produto-api',
-        'ean' => '7896038308600',
-        'codigo_erp' => 'ERP-7896038308600',
-        'status' => 'draft',
-        'dimensions_status' => 'draft',
-    ]);
-
-    TenantIntegration::query()->create([
-        'tenant_id' => (string) $tenant->id,
-        'integration_type' => 'sysmo',
-        'http_method' => 'POST',
-        'api_url' => 'https://sysmo.test',
-        'is_active' => true,
-        'config' => [
-            'processing' => [
-                'partner_key' => 'Proplanner',
-                'empresa' => '10623678000184',
-            ],
-        ],
-    ]);
-
-    $mockedService = Mockery::mock(SysmoSingleProductIntegrationService::class);
-    $mockedService->shouldReceive('fetchAndPersist')
-        ->once()
-        ->andReturn([
-            'found' => true,
-            'mapped_item' => [
-                'ean' => '7896038308600',
-            ],
-        ]);
-
-    $this->app->instance(SysmoSingleProductIntegrationService::class, $mockedService);
-
     $response = $this
-        ->withServerVariables(['HTTP_HOST' => 'tenant-sync-product.'.config('app.landlord_domain')])
-        ->post(route('tenant.products.sync-single', ['subdomain' => 'tenant-sync-product'], false), [
+        ->from(route('tenant.products.index', ['subdomain' => 'tenant-sync-mocked'], false))
+        ->withServerVariables(['HTTP_HOST' => 'tenant-sync-mocked.'.config('app.landlord_domain')])
+        ->post(route('tenant.products.sync-single', ['subdomain' => 'tenant-sync-mocked'], false), [
             'produto' => '7896038308600',
             'store_ids' => [],
         ]);
 
-    $response->assertRedirect(route('tenant.products.edit', [
-        'subdomain' => 'tenant-sync-product',
-        'product' => $product->id,
-    ], false));
-});
-
-test('sync single restores deleted product and redirects to edit', function (): void {
-    $user = User::factory()->create();
-    $this->actingAs($user);
-
-    $tenant = makeTenant('tenant-sync-restore');
-    assignTenantAdminRole($user, $tenant->id);
-
-    $product = Product::query()->create([
-        'tenant_id' => $tenant->id,
-        'name' => 'Produto Deletado',
-        'slug' => 'produto-deletado',
-        'ean' => '7896038308600',
-        'codigo_erp' => 'ERP-7896038308600',
-        'status' => 'draft',
-        'dimensions_status' => 'draft',
-    ]);
-
-    $product->delete();
-
-    $mockedService = Mockery::mock(SysmoSingleProductIntegrationService::class);
-    $mockedService->shouldNotReceive('fetchAndPersist');
-    $this->app->instance(SysmoSingleProductIntegrationService::class, $mockedService);
-
-    $response = $this
-        ->withServerVariables(['HTTP_HOST' => 'tenant-sync-restore.'.config('app.landlord_domain')])
-        ->post(route('tenant.products.sync-single', ['subdomain' => 'tenant-sync-restore'], false), [
-            'produto' => '7896038308600',
-            'store_ids' => [],
-        ]);
-
-    $response->assertRedirect(route('tenant.products.edit', [
-        'subdomain' => 'tenant-sync-restore',
-        'product' => $product->id,
-    ], false));
-
-    expect(Product::withTrashed()->find($product->id)?->deleted_at)->toBeNull();
+    $response
+        ->assertRedirect(route('tenant.products.index', ['subdomain' => 'tenant-sync-mocked'], false))
+        ->assertSessionHas('toast.type', 'info');
 });
 
 test('product index trashed filter scopes soft deleted records', function (): void {

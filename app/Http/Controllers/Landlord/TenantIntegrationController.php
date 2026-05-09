@@ -6,24 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\UpdateTenantIntegrationRequest;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
-use App\Services\Integrations\ExternalApiBaseService;
-use App\Services\Integrations\Support\TenantIntegrationConfigNormalizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
-use RuntimeException;
 
 class TenantIntegrationController extends Controller
 {
-    public function __construct(
-        private readonly ExternalApiBaseService $externalApiBaseService,
-        private readonly TenantIntegrationConfigNormalizer $configNormalizer,
-    ) {}
-
     public function edit(Tenant $tenant): Response
     {
         $this->authorize('update', $tenant);
@@ -158,104 +149,17 @@ class TenantIntegrationController extends Controller
             return to_route('landlord.tenants.integration.edit', $tenant);
         }
 
-        $normalized = $this->configNormalizer->normalize($integration);
-        $connection = $normalized['connection'];
-        $endpoint = (string) ($request->string('test_path') ?: $connection['ping_path'] ?: '/');
-        $method = strtoupper((string) ($request->string('test_method') ?: $connection['ping_method'] ?: 'GET'));
-        $query = $request->query();
-        $body = $this->decodeJsonBody((string) $request->input('test_body', ''));
+        $payload = $this->mockConnectionTestPayload($request);
 
-        try {
-            Log::info('Tenant integration test request', [
-                'tenant_id' => $tenant->id,
-                'integration_id' => $integration->id,
-                'method' => $method,
-                'endpoint' => $endpoint,
-                'query' => $query,
-                'body' => $body,
-            ]);
-
-            $response = $this->externalApiBaseService->request(
-                integration: $integration,
-                method: $method,
-                endpoint: $endpoint,
-                query: $query,
-                body: $body,
-            );
-
-            $integration->update([
-                'last_sync' => now(),
-            ]);
-
-            $payload = $response->json();
-            $responseBody = is_array($payload) ? $payload : ['raw' => $response->body()];
-
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'ok' => true,
-                    'message' => __('app.landlord.tenant_integrations.messages.connection_success'),
-                    'meta' => [
-                        'status' => $response->status(),
-                        'method' => $method,
-                        'path' => $endpoint,
-                    ],
-                    'data' => $responseBody,
-                ]);
-            }
-
-            Inertia::flash('toast', [
-                'type' => 'success',
-                'message' => __('app.landlord.tenant_integrations.messages.connection_success'),
-            ]);
-            Inertia::flash('tenant_integration_test', [
-                'ok' => true,
-                'message' => __('app.landlord.tenant_integrations.messages.connection_success'),
-                'meta' => [
-                    'status' => $response->status(),
-                    'method' => $method,
-                    'path' => $endpoint,
-                ],
-                'data' => $responseBody,
-            ]);
-        } catch (RuntimeException $exception) {
-            Log::error('Tenant integration test failed', [
-                'tenant_id' => $tenant->id,
-                'integration_id' => $integration->id,
-                'method' => $method,
-                'endpoint' => $endpoint,
-                'error' => $exception->getMessage(),
-            ]);
-
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'ok' => false,
-                    'message' => __('app.landlord.tenant_integrations.messages.connection_failed', [
-                        'error' => $exception->getMessage(),
-                    ]),
-                    'meta' => [
-                        'method' => $method,
-                        'path' => $endpoint,
-                    ],
-                ], 422);
-            }
-
-            Inertia::flash('toast', [
-                'type' => 'error',
-                'message' => __('app.landlord.tenant_integrations.messages.connection_failed', [
-                    'error' => $exception->getMessage(),
-                ]),
-            ]);
-            Inertia::flash('tenant_integration_test', [
-                'ok' => false,
-                'message' => __('app.landlord.tenant_integrations.messages.connection_failed', [
-                    'error' => $exception->getMessage(),
-                ]),
-                'meta' => [
-                    'method' => $method,
-                    'path' => $endpoint,
-                ],
-            ]);
+        if ($request->expectsJson()) {
+            return response()->json($payload);
         }
+
+        Inertia::flash('toast', [
+            'type' => 'info',
+            'message' => $payload['message'],
+        ]);
+        Inertia::flash('tenant_integration_test', $payload);
 
         return to_route('landlord.tenants.integration.edit', $tenant);
     }
@@ -286,17 +190,20 @@ class TenantIntegrationController extends Controller
         return $result;
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function decodeJsonBody(string $json): array
+    /** @return array{ok: bool, message: string, meta: array{status: int, method: string, path: string}, data: array<string, mixed>} */
+    private function mockConnectionTestPayload(Request $request): array
     {
-        if (trim($json) === '') {
-            return [];
-        }
-
-        $decoded = json_decode($json, true);
-
-        return is_array($decoded) ? $decoded : [];
+        return [
+            'ok' => true,
+            'message' => 'Teste de conexão mockado enquanto o novo sistema de importação é construído.',
+            'meta' => [
+                'status' => 200,
+                'method' => strtoupper((string) ($request->string('test_method') ?: 'GET')),
+                'path' => (string) ($request->string('test_path') ?: '/'),
+            ],
+            'data' => [
+                'mocked' => true,
+            ],
+        ];
     }
 }

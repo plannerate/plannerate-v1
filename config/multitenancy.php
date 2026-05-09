@@ -1,8 +1,5 @@
 <?php
 
-use App\Jobs\Integrations\Dispatch\DispatchTenantIntegrationDailySyncJob;
-use App\Jobs\Integrations\Dispatch\DispatchTenantIntegrationInitialSyncJob;
-use App\Jobs\Integrations\Maintenance\RunTenantIntegrationNightlyMaintenanceJob;
 use App\Models\Tenant;
 use App\Multitenancy\TenantFinder\DomainTenantWithDomainsFinder;
 use Illuminate\Broadcasting\BroadcastEvent;
@@ -135,8 +132,5 @@ return [
      * Jobs not tenant aware even if these don't implement the NotTenantAware interface.
      */
     'not_tenant_aware_jobs' => [
-        DispatchTenantIntegrationInitialSyncJob::class,
-        DispatchTenantIntegrationDailySyncJob::class,
-        RunTenantIntegrationNightlyMaintenanceJob::class,
     ],
 ];

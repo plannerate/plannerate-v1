@@ -10,13 +10,10 @@ use App\Http\Requests\Tenant\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Store;
-use App\Models\TenantIntegration;
-use App\Services\Integrations\Sysmo\SysmoSingleProductIntegrationService;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -27,169 +24,20 @@ class ProductController extends Controller
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
 
-    public function syncSingle(Request $request, SysmoSingleProductIntegrationService $singleProductIntegrationService): RedirectResponse
+    public function syncSingle(Request $request): RedirectResponse
     {
         $this->authorize('viewAny', Product::class);
 
-        $validated = $request->validate([
+        $request->validate([
             'produto' => ['required', 'string', 'max:255'],
             'empresa' => ['nullable', 'string', 'max:255'],
             'store_ids' => ['nullable', 'array'],
             'store_ids.*' => ['ulid'],
         ]);
 
-        $tenantId = $this->tenantId();
-        if ($tenantId === null || $tenantId === '') {
-            abort(404);
-        }
-
-        $existingDeletedProduct = Product::withTrashed()
-            ->where('tenant_id', $tenantId)
-            ->whereNotNull('deleted_at')
-            ->where(function ($query) use ($validated): void {
-                $query->where('ean', (string) $validated['produto'])
-                    ->orWhere('codigo_erp', (string) $validated['produto']);
-            })
-            ->first();
-
-        if ($existingDeletedProduct instanceof Product) {
-            $existingDeletedProduct->restore();
-
-            Inertia::flash('toast', [
-                'type' => 'success',
-                'message' => 'Produto restaurado com sucesso.',
-            ]);
-
-            return to_route('tenant.products.edit', [
-                ...$this->tenantRouteParameters(),
-                'product' => $existingDeletedProduct->id,
-            ]);
-        }
-
-        $integration = TenantIntegration::query()
-            ->where('tenant_id', $tenantId)
-            ->where('integration_type', 'sysmo')
-            ->where('is_active', true)
-            ->first();
-
-        if (! $integration instanceof TenantIntegration) {
-            Inertia::flash('toast', [
-                'type' => 'error',
-                'message' => 'Integração Sysmo ativa não encontrada para este tenant.',
-            ]);
-
-            return back();
-        }
-
-        $storeIds = collect(is_array($validated['store_ids'] ?? null) ? $validated['store_ids'] : [])
-            ->filter(fn (mixed $id): bool => is_string($id) && $id !== '')
-            ->unique()
-            ->values()
-            ->all();
-
-        $stores = $storeIds === []
-            ? collect()
-            : Store::query()
-                ->whereIn('id', $storeIds)
-                ->get(['id', 'document']);
-
-        $documents = $stores
-            ->map(fn (Store $store): ?string => $this->normalizeEmpresaValue($store->document))
-            ->filter(fn (?string $document): bool => $document !== null && $document !== '')
-            ->unique()
-            ->values()
-            ->all();
-
-        if ($documents === [] && is_string($validated['empresa'] ?? null) && $validated['empresa'] !== '') {
-            $normalizedEmpresa = $this->normalizeEmpresaValue($validated['empresa']);
-            if ($normalizedEmpresa !== null) {
-                $documents = [$normalizedEmpresa];
-            }
-        }
-        if ($documents === []) {
-            $documents = [''];
-        }
-
-        $foundAny = false;
-        $associatedStores = 0;
-        $lastMatchedProduct = null;
-
-        try {
-            foreach ($documents as $empresa) {
-                $result = $singleProductIntegrationService->fetchAndPersist(
-                    integration: $integration,
-                    produto: (string) $validated['produto'],
-                    filters: [
-                        'empresa' => $empresa !== '' ? $empresa : null,
-                    ],
-                );
-
-                if (! ($result['found'] ?? false)) {
-                    continue;
-                }
-
-                $foundAny = true;
-                $matchedProduct = $this->resolveProductFromIntegrationResult(
-                    tenantId: $tenantId,
-                    result: $result,
-                );
-
-                if ($matchedProduct instanceof Product) {
-                    $lastMatchedProduct = $matchedProduct;
-                }
-
-                if (! $matchedProduct instanceof Product || $storeIds === []) {
-                    continue;
-                }
-
-                $matchingStoreIds = $stores
-                    ->filter(function (Store $store) use ($empresa): bool {
-                        return $this->normalizeEmpresaValue($store->document) === $empresa;
-                    })
-                    ->pluck('id')
-                    ->all();
-
-                if ($matchingStoreIds === []) {
-                    continue;
-                }
-
-                $pivotValues = [];
-                foreach ($matchingStoreIds as $storeId) {
-                    $pivotValues[(string) $storeId] = [
-                        'tenant_id' => $tenantId,
-                        'last_synced_at' => Carbon::now(),
-                    ];
-                }
-
-                $matchedProduct->stores()->syncWithoutDetaching($pivotValues);
-                $associatedStores += count($matchingStoreIds);
-            }
-        } catch (\Throwable $exception) {
-            Inertia::flash('toast', [
-                'type' => 'error',
-                'message' => 'Falha ao sincronizar produto na integração: '.$exception->getMessage(),
-            ]);
-
-            return back();
-        }
-
-        if ($foundAny && $lastMatchedProduct instanceof Product) {
-            Inertia::flash('toast', [
-                'type' => 'success',
-                'message' => sprintf('Produto sincronizado com sucesso. Lojas associadas: %d.', $associatedStores),
-            ]);
-
-            return to_route('tenant.products.edit', [
-                ...$this->tenantRouteParameters(),
-                'product' => $lastMatchedProduct->id,
-            ]);
-        }
-
         Inertia::flash('toast', [
-            'type' => $foundAny ? 'success' : 'warning',
-            'message' => $foundAny
-                ? sprintf('Produto sincronizado com sucesso. Lojas associadas: %d.', $associatedStores)
-                : 'Produto não encontrado na integração.',
+            'type' => 'info',
+            'message' => 'Busca de produto mockada enquanto o novo sistema de importação é construído.',
         ]);
 
         return back();
@@ -455,43 +303,6 @@ class ProductController extends Controller
                 'document' => is_string($store->document) && $store->document !== '' ? $store->document : null,
             ])
             ->all();
-    }
-
-    /**
-     * @param  array<string, mixed>  $result
-     */
-    private function resolveProductFromIntegrationResult(string $tenantId, array $result): ?Product
-    {
-        $mappedItem = is_array($result['mapped_item'] ?? null) ? $result['mapped_item'] : [];
-        $ean = is_string($mappedItem['ean'] ?? null) ? trim($mappedItem['ean']) : null;
-        $codigoErp = is_string($mappedItem['external_id'] ?? null) ? trim($mappedItem['external_id']) : null;
-
-        $query = Product::query()->where('tenant_id', $tenantId);
-
-        if ($ean !== null && $ean !== '') {
-            $query->where('ean', $ean);
-
-            return $query->first();
-        }
-
-        if ($codigoErp !== null && $codigoErp !== '') {
-            $query->where('codigo_erp', $codigoErp);
-
-            return $query->first();
-        }
-
-        return null;
-    }
-
-    private function normalizeEmpresaValue(mixed $value): ?string
-    {
-        if (! is_string($value) && ! is_numeric($value)) {
-            return null;
-        }
-
-        $digits = preg_replace('/\D+/', '', (string) $value) ?? '';
-
-        return $digits !== '' ? $digits : null;
     }
 
     /**

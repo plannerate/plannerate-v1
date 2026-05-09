@@ -3,9 +3,7 @@
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\User;
-use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function (): void {
@@ -108,13 +106,9 @@ test('update keeps existing password when auth_password is blank', function () {
         ->and($integration->config['connection']['base_url'] ?? null)->toBe('https://keep-password.example.com');
 });
 
-test('can test connection successfully', function () {
+test('test connection returns mocked success feedback', function () {
     $tenant = createTenantForIntegration();
     $this->put(route('landlord.tenants.integration.update', $tenant), integrationPayload());
-
-    Http::fake([
-        'https://sysmo.example.com/*' => Http::response(['ok' => true], 200),
-    ]);
 
     $response = $this
         ->withHeaders(['Accept' => 'application/json'])
@@ -123,36 +117,26 @@ test('can test connection successfully', function () {
             'test_method' => 'GET',
         ]);
 
-    $response->assertOk()->assertJsonPath('ok', true);
-
-    $integration = TenantIntegration::query()->where('tenant_id', $tenant->id)->firstOrFail();
-    expect($integration->last_sync)->not->toBeNull();
+    $response
+        ->assertOk()
+        ->assertJsonPath('ok', true)
+        ->assertJsonPath('data.mocked', true);
 });
 
-test('test connection returns error feedback when request fails', function () {
+test('test connection redirect flow uses mocked feedback', function () {
     $tenant = createTenantForIntegration();
     $this->put(route('landlord.tenants.integration.update', $tenant), integrationPayload());
-    $integration = TenantIntegration::query()->where('tenant_id', $tenant->id)->firstOrFail();
-
-    Http::fake([
-        'https://sysmo.example.com/*' => Http::response(['message' => 'not authorized'], 401),
-    ]);
 
     $response = $this->post(route('landlord.tenants.integration.test-connection', $tenant));
 
-    $response->assertRedirect(route('landlord.tenants.integration.edit', $tenant));
-
-    $integration->refresh();
-    expect($integration->last_sync)->toBeNull();
+    $response
+        ->assertRedirect(route('landlord.tenants.integration.edit', $tenant))
+        ->assertSessionHas('tenant_integration_test.ok', true);
 });
 
-test('test connection sends custom test_body to the api', function () {
+test('test connection mocked response includes requested method and path', function () {
     $tenant = createTenantForIntegration();
     $this->put(route('landlord.tenants.integration.update', $tenant), integrationPayload());
-
-    Http::fake([
-        'https://sysmo.example.com/*' => Http::response(['items' => [['id' => 10]]], 200),
-    ]);
 
     $response = $this
         ->withHeaders(['Accept' => 'application/json'])
@@ -167,11 +151,7 @@ test('test connection sends custom test_body to the api', function () {
         ->assertJsonPath('ok', true)
         ->assertJsonPath('meta.method', 'POST')
         ->assertJsonPath('meta.path', '/custom/path')
-        ->assertJsonPath('data.items.0.id', 10);
-
-    Http::assertSent(function (Request $request): bool {
-        return ($request->data()['filtro'] ?? null) === 'abc';
-    });
+        ->assertJsonPath('data.mocked', true);
 });
 
 function createTenantForIntegration(): Tenant
