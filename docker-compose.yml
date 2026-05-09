@@ -1,7 +1,11 @@
+ 
 services:
+
   nginx:
     image: nginx:alpine
-    container_name: plannerate-nginx
+
+    depends_on:
+      - php
 
     volumes:
       - ./:/var/www
@@ -10,22 +14,145 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=web"
-      - "traefik.http.routers.plannerate.rule=Host(`plannerate.localhost`) || HostRegexp(`{subdomain:.+}.plannerate.localhost`)"
-      - "traefik.http.routers.plannerate.entrypoints=web"
-      - "traefik.http.services.plannerate.loadbalancer.server.port=80"
+      - "traefik.http.routers.app.rule=Host(`plannerate.localhost`) || HostRegexp(`{subdomain:.+}.plannerate.localhost`)"
+      - "traefik.http.services.app.loadbalancer.server.port=80"
 
     networks:
       - web
 
   php:
-    image: php:8.4-fpm
-    container_name: plannerate-php
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+
+    user: "1000:1000"
 
     volumes:
       - ./:/var/www
 
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      mysql:
+        condition: service_started
+
+    working_dir: /var/www
+
     networks:
       - web
+
+  horizon:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+
+    user: "1000:1000"
+
+    command: php artisan horizon
+
+    volumes:
+      - ./:/var/www
+
+    depends_on:
+      - redis
+      - php
+
+    working_dir: /var/www
+
+    networks:
+      - web
+
+  reverb:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+
+    user: "1000:1000"
+
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+
+    volumes:
+      - ./:/var/www
+
+    depends_on:
+      - redis
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.reverb.rule=Host(`ws.plannerate.localhost`)"
+      - "traefik.http.services.reverb.loadbalancer.server.port=8080"
+
+    working_dir: /var/www
+
+    networks:
+      - web
+
+  postgres:
+    image: postgres:17
+
+    environment:
+      POSTGRES_DB: landlord
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    ports:
+      - "5432:5432"
+
+    networks:
+      - web
+
+  mysql:
+    image: mysql:8.0
+
+    command: --default-authentication-plugin=mysql_native_password
+
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: legacy
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+    ports:
+      - "3306:3306"
+
+    networks:
+      - web
+
+  redis:
+    image: redis:7-alpine
+
+    command: redis-server --appendonly yes
+
+    volumes:
+      - redis_data:/data
+
+    ports:
+      - "6379:6379"
+
+    networks:
+      - web
+
+  mailpit:
+    image: axllent/mailpit
+
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+    networks:
+      - web
+
+volumes:
+  postgres_data:
+  mysql_data:
+  redis_data:
 
 networks:
   web:
