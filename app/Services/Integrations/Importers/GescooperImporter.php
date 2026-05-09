@@ -5,6 +5,7 @@ namespace App\Services\Integrations\Importers;
 use App\Models\Store;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
+use App\Services\Integrations\Support\PersistImportedProductsService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -15,6 +16,7 @@ class GescooperImporter implements ClientApiImporter
 {
     public function __construct(
         private readonly IntegrationHttpClient $httpClient,
+        private readonly PersistImportedProductsService $persistImportedProductsService,
     ) {}
 
     public function importSales(TenantIntegration $integration, ?Store $store = null): void
@@ -79,6 +81,14 @@ class GescooperImporter implements ClientApiImporter
 
             $payload = $response->json();
             $totalPages = $this->resolveTotalPages(is_array($payload) ? $payload : [], $currentPage);
+            $items = $this->resolveItems(is_array($payload) ? $payload : []);
+
+            $this->persistImportedProductsService->persist(
+                integration: $integration,
+                provider: 'gescooper',
+                items: $items,
+                store: $store,
+            );
 
             Log::info('GesCooper products import page fetched.', [
                 'integration_id' => (string) $integration->id,
@@ -86,7 +96,7 @@ class GescooperImporter implements ClientApiImporter
                 'store_id' => $store?->id,
                 'page' => $currentPage,
                 'total_pages' => $totalPages,
-                'items' => $this->resolveItemCount(is_array($payload) ? $payload : []),
+                'items' => count($items),
                 'status' => $response->status(),
             ]);
 
@@ -172,6 +182,20 @@ class GescooperImporter implements ClientApiImporter
         $items = $payload['data'] ?? null;
 
         return is_array($items) ? count($items) : 0;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<int, array<string, mixed>>
+     */
+    private function resolveItems(array $payload): array
+    {
+        $items = $payload['data'] ?? null;
+        if (! is_array($items)) {
+            return [];
+        }
+
+        return array_values(array_filter($items, fn (mixed $item): bool => is_array($item)));
     }
 
     private function accessToken(TenantIntegration $integration): string
