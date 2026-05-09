@@ -22,6 +22,7 @@ class TenantIntegrationController extends Controller
         $integration = $tenant->integration;
         $config = is_array($integration?->config) ? $integration->config : [];
         $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
+        $paths = is_array($config['paths'] ?? null) ? $config['paths'] : [];
         $auth = is_array($config['auth'] ?? null) ? $config['auth'] : [];
         $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
         $credentials = is_array($auth['credentials'] ?? null) ? $auth['credentials'] : [];
@@ -48,6 +49,10 @@ class TenantIntegrationController extends Controller
             'sales_initial_days' => (int) ($processing['sales_initial_days'] ?? 120),
             'products_initial_days' => (int) ($processing['products_initial_days'] ?? 120),
             'processing_time' => (string) ($processing['processing_time'] ?? '02:00'),
+            'separate_by_store' => (bool) ($processing['separate_by_store'] ?? false),
+            // Paths
+            'products_path' => (string) ($paths['products'] ?? ''),
+            'sales_path' => (string) ($paths['sales'] ?? ''),
         ] : null;
 
         return Inertia::render('landlord/tenants/Integration', [

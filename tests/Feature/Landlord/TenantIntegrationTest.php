@@ -51,6 +51,9 @@ test('put creates tenant integration when absent and stores encrypted config', f
 
     expect($integration->config['processing']['sales_initial_days'] ?? null)->toBe(120)
         ->and($integration->config['processing']['products_initial_days'] ?? null)->toBe(120)
+        ->and($integration->config['processing']['separate_by_store'] ?? null)->toBeTrue()
+        ->and($integration->config['paths']['products'] ?? null)->toBe('/products')
+        ->and($integration->config['paths']['sales'] ?? null)->toBe('/sales')
         ->and($integration->config['connection']['base_url'] ?? null)->toBe('https://sysmo.example.com')
         ->and($integration->config['auth']['type'] ?? null)->toBe('basic');
 });
@@ -184,6 +187,9 @@ function integrationPayload(array $overrides = []): array
         'sales_initial_days' => 120,
         'products_initial_days' => 120,
         'processing_time' => '02:00',
+        'separate_by_store' => true,
+        'products_path' => '/products',
+        'sales_path' => '/sales',
         'is_active' => true,
     ], $overrides);
 }

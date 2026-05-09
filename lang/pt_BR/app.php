@@ -412,6 +412,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'external_name_sale_date' => 'Campo data de venda externo',
                 'http_method' => 'Metodo HTTP',
                 'api_url' => 'URL da API',
+                'products_path' => 'Path de produtos',
+                'sales_path' => 'Path de vendas',
                 'auth_type' => 'Tipo de autenticacao',
                 'auth_token' => 'Token',
                 'auth_username' => 'Usuario de autenticacao',
@@ -427,6 +429,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'sales_tipo_consulta' => 'Tipo consulta vendas',
                 'auto_processing_enabled' => 'Processamento automatico habilitado',
                 'processing_time' => 'Horario de processamento',
+                'separate_by_store' => 'Separar importacao por loja',
                 'initial_setup_date' => 'Data de setup inicial',
                 'is_active' => 'Integracao ativa',
                 'usuario' => 'Usuário',
@@ -449,6 +452,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             ],
             'hints' => [
                 'auth_password' => 'Ao editar, preencha apenas se quiser trocar a senha atual.',
+                'separate_by_store' => 'Quando marcado, produtos e vendas serao buscados por loja. Quando desmarcado, a mesma busca sera aplicada para todas as lojas no vinculo product_store.',
             ],
             'placeholders' => [
                 'keep_password' => 'Deixe em branco para manter a senha atual',

@@ -18,7 +18,7 @@ class SysmoImporter implements ClientApiImporter
         $response = $this->httpClient->request(
             integration: $integration,
             method: 'POST',
-            endpoint: '/hubvendas.vendas_produtos',
+            endpoint: $this->path($integration, 'sales', '/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos'),
             body: [
                 ...$this->connectionBody($integration),
                 ...$this->salesDatePayload($integration),
@@ -38,7 +38,7 @@ class SysmoImporter implements ClientApiImporter
         $response = $this->httpClient->request(
             integration: $integration,
             method: 'POST',
-            endpoint: '/hubprodutos.listar_produtos',
+            endpoint: $this->path($integration, 'products', '/sysmo-integrador-api/api/integradorService/hubprodutos.listar_produtos'),
             body: [
                 ...$this->connectionBody($integration),
                 'pagina' => '1',
@@ -76,6 +76,15 @@ class SysmoImporter implements ClientApiImporter
         }
 
         return $body;
+    }
+
+    private function path(TenantIntegration $integration, string $key, string $fallback): string
+    {
+        $config = is_array($integration->config) ? $integration->config : [];
+        $paths = is_array($config['paths'] ?? null) ? $config['paths'] : [];
+        $path = trim((string) ($paths[$key] ?? ''));
+
+        return $path !== '' ? $path : $fallback;
     }
 
     /**

@@ -38,6 +38,9 @@ type IntegrationPayload = {
     sales_initial_days: number;
     products_initial_days: number;
     processing_time: string;
+    separate_by_store: boolean;
+    products_path: string;
+    sales_path: string;
     is_active: boolean;
     last_sync: string | null;
     connection_headers: KeyValueRow[];
@@ -61,9 +64,15 @@ const activeTab = ref('authorization');
 const tenantsIndexPath = TenantController.index.url().replace(/^\/\/[^/]+/, '');
 
 const localAuthType = ref(props.integration?.auth_type ?? 'none');
-const connectionHeaders = ref<KeyValueRow[]>(props.integration?.connection_headers ?? []);
-const connectionParams = ref<KeyValueRow[]>(props.integration?.connection_params ?? []);
-const connectionBody = ref<KeyValueRow[]>(props.integration?.connection_body ?? []);
+const connectionHeaders = ref<KeyValueRow[]>(
+    props.integration?.connection_headers ?? [],
+);
+const connectionParams = ref<KeyValueRow[]>(
+    props.integration?.connection_params ?? [],
+);
+const connectionBody = ref<KeyValueRow[]>(
+    props.integration?.connection_body ?? [],
+);
 
 const testPath = ref('/');
 const testMethod = ref('GET');
@@ -74,9 +83,9 @@ const testResult = ref<unknown>(null);
 
 const tabs = computed(() => [
     { key: 'authorization', label: 'Authorization' },
-    { key: 'headers',       label: 'Headers' },
-    { key: 'params',        label: 'Params' },
-    { key: 'body',          label: 'Body' },
+    { key: 'headers', label: 'Headers' },
+    { key: 'params', label: 'Params' },
+    { key: 'body', label: 'Body' },
 ]);
 
 const pageMeta = useCrudPageMeta({
@@ -90,22 +99,27 @@ const pageMeta = useCrudPageMeta({
         },
         {
             title: t('app.landlord.tenant_integrations.navigation'),
-            href: tenantWayfinderPath(TenantIntegrationController.edit.url(props.tenant.id)),
+            href: tenantWayfinderPath(
+                TenantIntegrationController.edit.url(props.tenant.id),
+            ),
         },
     ],
 });
 
 const formData = computed(() => ({
-    integration_type:      props.integration?.integration_type ?? 'sysmo',
-    api_url:               props.integration?.api_url ?? '',
-    auth_type:             props.integration?.auth_type ?? 'none',
-    auth_username:         props.integration?.auth_username ?? '',
-    auth_password:         props.integration?.auth_password ?? '',
-    auth_token:            props.integration?.auth_token ?? '',
-    sales_initial_days:    props.integration?.sales_initial_days ?? 120,
+    integration_type: props.integration?.integration_type ?? 'sysmo',
+    api_url: props.integration?.api_url ?? '',
+    auth_type: props.integration?.auth_type ?? 'none',
+    auth_username: props.integration?.auth_username ?? '',
+    auth_password: props.integration?.auth_password ?? '',
+    auth_token: props.integration?.auth_token ?? '',
+    sales_initial_days: props.integration?.sales_initial_days ?? 120,
     products_initial_days: props.integration?.products_initial_days ?? 120,
-    processing_time:       props.integration?.processing_time ?? '02:00',
-    is_active:             props.integration?.is_active ?? true,
+    processing_time: props.integration?.processing_time ?? '02:00',
+    separate_by_store: props.integration?.separate_by_store ?? false,
+    products_path: props.integration?.products_path ?? '',
+    sales_path: props.integration?.sales_path ?? '',
+    is_active: props.integration?.is_active ?? true,
 }));
 
 const updateForm = computed(() => {
@@ -136,7 +150,9 @@ const removeFlashListener = router.on('flash', (event) => {
     }
 
     testResult.value = payload;
-    testError.value = payload.ok ? null : (payload.message ?? t('app.messages.generic_error'));
+    testError.value = payload.ok
+        ? null
+        : (payload.message ?? t('app.messages.generic_error'));
 });
 
 onBeforeUnmount(() => {
@@ -153,7 +169,9 @@ function toggleStatus(): void {
     statusLoading.value = true;
 
     router.patch(
-        tenantWayfinderPath(TenantIntegrationController.toggleStatus.url(props.tenant.id)),
+        tenantWayfinderPath(
+            TenantIntegrationController.toggleStatus.url(props.tenant.id),
+        ),
         {},
         {
             preserveScroll: true,
@@ -174,11 +192,13 @@ function testConnection(): void {
     testResult.value = null;
 
     router.post(
-        tenantWayfinderPath(TenantIntegrationController.testConnection.url(props.tenant.id)),
+        tenantWayfinderPath(
+            TenantIntegrationController.testConnection.url(props.tenant.id),
+        ),
         {
-            test_path:   testPath.value,
+            test_path: testPath.value,
             test_method: testMethod.value,
-            test_body:   testBody.value,
+            test_body: testBody.value,
         },
         {
             preserveScroll: true,
@@ -198,10 +218,7 @@ function testConnection(): void {
     <Head :title="pageMeta.headTitle" />
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <div class="p-4">
-            <Form
-                v-bind="updateForm"
-                v-slot="{ errors, processing }"
-            >
+            <Form v-bind="updateForm" v-slot="{ errors, processing }">
                 <FormCard
                     :processing="processing"
                     :cancel-href="tenantsIndexPath"
@@ -217,28 +234,55 @@ function testConnection(): void {
                             :disabled="!props.integration || testLoading"
                             @click="testConnection"
                         >
-                            {{ t('app.landlord.tenant_integrations.actions.test_connection') }}
+                            {{
+                                t(
+                                    'app.landlord.tenant_integrations.actions.test_connection',
+                                )
+                            }}
                         </Button>
                         <Button
                             type="button"
-                            :variant="props.integration?.is_active ? 'outline' : 'secondary'"
+                            :variant="
+                                props.integration?.is_active
+                                    ? 'outline'
+                                    : 'secondary'
+                            "
                             size="sm"
                             :disabled="!props.integration || statusLoading"
                             @click="toggleStatus"
                         >
-                            <PowerOff v-if="props.integration?.is_active" class="size-4" />
+                            <PowerOff
+                                v-if="props.integration?.is_active"
+                                class="size-4"
+                            />
                             <Power v-else class="size-4" />
-                            {{ props.integration?.is_active
-                                ? t('app.landlord.tenant_integrations.actions.deactivate')
-                                : t('app.landlord.tenant_integrations.actions.activate') }}
+                            {{
+                                props.integration?.is_active
+                                    ? t(
+                                          'app.landlord.tenant_integrations.actions.deactivate',
+                                      )
+                                    : t(
+                                          'app.landlord.tenant_integrations.actions.activate',
+                                      )
+                            }}
                         </Button>
                         <DeleteButton
                             v-if="props.integration"
-                            :href="tenantWayfinderPath(TenantIntegrationController.destroy.url(props.tenant.id))"
+                            :href="
+                                tenantWayfinderPath(
+                                    TenantIntegrationController.destroy.url(
+                                        props.tenant.id,
+                                    ),
+                                )
+                            "
                             :label="t('app.landlord.tenant_integrations.title')"
                             require-confirm-word
                         >
-                            {{ t('app.landlord.tenant_integrations.actions.delete') }}
+                            {{
+                                t(
+                                    'app.landlord.tenant_integrations.actions.delete',
+                                )
+                            }}
                         </DeleteButton>
                     </template>
 
@@ -247,9 +291,13 @@ function testConnection(): void {
                         <FormSelectField
                             id="integration_type"
                             name="integration_type"
-                            :label="t('app.landlord.tenant_integrations.fields.integration_type')"
+                            :label="
+                                t(
+                                    'app.landlord.tenant_integrations.fields.integration_type',
+                                )
+                            "
                             :default-value="formData.integration_type"
-                            :error="errors.integration_type" 
+                            :error="errors.integration_type"
                             class="md:col-span-3"
                             required
                         >
@@ -265,7 +313,11 @@ function testConnection(): void {
                         <FormTextField
                             id="api_url"
                             name="api_url"
-                            :label="t('app.landlord.tenant_integrations.fields.api_url')"
+                            :label="
+                                t(
+                                    'app.landlord.tenant_integrations.fields.api_url',
+                                )
+                            "
                             :default-value="formData.api_url"
                             :error="errors.api_url"
                             placeholder="https://api.exemplo.com"
@@ -274,37 +326,101 @@ function testConnection(): void {
                         />
                     </div>
 
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                        <FormTextField
+                            id="products_path"
+                            name="products_path"
+                            :label="
+                                t(
+                                    'app.landlord.tenant_integrations.fields.products_path',
+                                )
+                            "
+                            :default-value="formData.products_path"
+                            :error="errors.products_path"
+                            placeholder="/hubprodutos.listar_produtos"
+                            class="md:col-span-6"
+                        />
+                        <FormTextField
+                            id="sales_path"
+                            name="sales_path"
+                            :label="
+                                t(
+                                    'app.landlord.tenant_integrations.fields.sales_path',
+                                )
+                            "
+                            :default-value="formData.sales_path"
+                            :error="errors.sales_path"
+                            placeholder="/hubvendas.vendas_produtos"
+                            class="md:col-span-6"
+                        />
+                    </div>
+
                     <!-- Tabs Postman -->
                     <FormTabsBar v-model="activeTab" :tabs="tabs" />
 
                     <!-- Authorization -->
                     <!-- v-show mantém inputs no DOM para que sejam submetidos independente da tab ativa -->
-                    <div v-show="activeTab === 'authorization'" class="space-y-4">
+                    <div
+                        v-show="activeTab === 'authorization'"
+                        class="space-y-4"
+                    >
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
                             <div class="space-y-1 md:col-span-4">
-                                <label for="auth_type" class="text-sm font-medium text-foreground">
-                                    {{ t('app.landlord.tenant_integrations.fields.auth_type') }}
+                                <label
+                                    for="auth_type"
+                                    class="text-sm font-medium text-foreground"
+                                >
+                                    {{
+                                        t(
+                                            'app.landlord.tenant_integrations.fields.auth_type',
+                                        )
+                                    }}
                                 </label>
                                 <select
                                     id="auth_type"
                                     v-model="localAuthType"
                                     name="auth_type"
-                                    class="h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                                    class="h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                 >
-                                    <option value="none">{{ t('app.landlord.tenant_integrations.auth_types.none') }}</option>
-                                    <option value="bearer">{{ t('app.landlord.tenant_integrations.auth_types.bearer') }}</option>
-                                    <option value="basic">{{ t('app.landlord.tenant_integrations.auth_types.basic') }}</option>
+                                    <option value="none">
+                                        {{
+                                            t(
+                                                'app.landlord.tenant_integrations.auth_types.none',
+                                            )
+                                        }}
+                                    </option>
+                                    <option value="bearer">
+                                        {{
+                                            t(
+                                                'app.landlord.tenant_integrations.auth_types.bearer',
+                                            )
+                                        }}
+                                    </option>
+                                    <option value="basic">
+                                        {{
+                                            t(
+                                                'app.landlord.tenant_integrations.auth_types.basic',
+                                            )
+                                        }}
+                                    </option>
                                 </select>
                             </div>
                         </div>
 
                         <!-- Bearer Token -->
-                        <div v-show="localAuthType === 'bearer'" class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                        <div
+                            v-show="localAuthType === 'bearer'"
+                            class="grid grid-cols-1 gap-4 md:grid-cols-12"
+                        >
                             <FormTextField
                                 id="auth_token"
                                 name="auth_token"
                                 type="password"
-                                :label="t('app.landlord.tenant_integrations.fields.auth_token')"
+                                :label="
+                                    t(
+                                        'app.landlord.tenant_integrations.fields.auth_token',
+                                    )
+                                "
                                 :default-value="formData.auth_token"
                                 :error="errors.auth_token"
                                 class="md:col-span-8"
@@ -312,11 +428,18 @@ function testConnection(): void {
                         </div>
 
                         <!-- Basic Auth -->
-                        <div v-show="localAuthType === 'basic'" class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                        <div
+                            v-show="localAuthType === 'basic'"
+                            class="grid grid-cols-1 gap-4 md:grid-cols-12"
+                        >
                             <FormTextField
                                 id="auth_username"
                                 name="auth_username"
-                                :label="t('app.landlord.tenant_integrations.fields.auth_username')"
+                                :label="
+                                    t(
+                                        'app.landlord.tenant_integrations.fields.auth_username',
+                                    )
+                                "
                                 :default-value="formData.auth_username"
                                 :error="errors.auth_username"
                                 class="md:col-span-4"
@@ -325,25 +448,50 @@ function testConnection(): void {
                                 id="auth_password"
                                 name="auth_password"
                                 type="password"
-                                :label="t('app.landlord.tenant_integrations.fields.auth_password')"
+                                :label="
+                                    t(
+                                        'app.landlord.tenant_integrations.fields.auth_password',
+                                    )
+                                "
                                 :default-value="formData.auth_password"
                                 :error="errors.auth_password"
-                                :hint="t('app.landlord.tenant_integrations.hints.auth_password')"
-                                :placeholder="!props.integration ? '' : t('app.landlord.tenant_integrations.placeholders.keep_password')"
+                                :hint="
+                                    t(
+                                        'app.landlord.tenant_integrations.hints.auth_password',
+                                    )
+                                "
+                                :placeholder="
+                                    !props.integration
+                                        ? ''
+                                        : t(
+                                              'app.landlord.tenant_integrations.placeholders.keep_password',
+                                          )
+                                "
                                 class="md:col-span-4"
                             />
                         </div>
 
                         <!-- None -->
-                        <div v-show="localAuthType === 'none'" class="rounded-lg border border-border/50 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-                            {{ t('app.landlord.tenant_integrations.auth_types.none_description') }}
+                        <div
+                            v-show="localAuthType === 'none'"
+                            class="rounded-lg border border-border/50 bg-muted/20 px-4 py-3 text-sm text-muted-foreground"
+                        >
+                            {{
+                                t(
+                                    'app.landlord.tenant_integrations.auth_types.none_description',
+                                )
+                            }}
                         </div>
                     </div>
 
                     <!-- Headers -->
                     <div v-show="activeTab === 'headers'" class="space-y-2">
                         <p class="text-sm text-muted-foreground">
-                            {{ t('app.landlord.tenant_integrations.tabs.headers_hint') }}
+                            {{
+                                t(
+                                    'app.landlord.tenant_integrations.tabs.headers_hint',
+                                )
+                            }}
                         </p>
                         <KeyValueTable
                             v-model="connectionHeaders"
@@ -354,7 +502,11 @@ function testConnection(): void {
                     <!-- Params -->
                     <div v-show="activeTab === 'params'" class="space-y-2">
                         <p class="text-sm text-muted-foreground">
-                            {{ t('app.landlord.tenant_integrations.tabs.params_hint') }}
+                            {{
+                                t(
+                                    'app.landlord.tenant_integrations.tabs.params_hint',
+                                )
+                            }}
                         </p>
                         <KeyValueTable
                             v-model="connectionParams"
@@ -365,12 +517,13 @@ function testConnection(): void {
                     <!-- Body -->
                     <div v-show="activeTab === 'body'" class="space-y-2">
                         <p class="text-sm text-muted-foreground">
-                            {{ t('app.landlord.tenant_integrations.tabs.body_hint') }}
+                            {{
+                                t(
+                                    'app.landlord.tenant_integrations.tabs.body_hint',
+                                )
+                            }}
                         </p>
-                        <KeyValueTable
-                            v-model="connectionBody"
-                            name="body"
-                        />
+                        <KeyValueTable v-model="connectionBody" name="body" />
                     </div>
 
                     <!-- Processamento — fora das tabs -->
@@ -379,7 +532,11 @@ function testConnection(): void {
                             id="sales_initial_days"
                             name="sales_initial_days"
                             type="number"
-                            :label="t('app.landlord.tenant_integrations.fields.sales_initial_days')"
+                            :label="
+                                t(
+                                    'app.landlord.tenant_integrations.fields.sales_initial_days',
+                                )
+                            "
                             :default-value="String(formData.sales_initial_days)"
                             :error="errors.sales_initial_days"
                             class="md:col-span-3"
@@ -388,15 +545,25 @@ function testConnection(): void {
                             id="products_initial_days"
                             name="products_initial_days"
                             type="number"
-                            :label="t('app.landlord.tenant_integrations.fields.products_initial_days')"
-                            :default-value="String(formData.products_initial_days)"
+                            :label="
+                                t(
+                                    'app.landlord.tenant_integrations.fields.products_initial_days',
+                                )
+                            "
+                            :default-value="
+                                String(formData.products_initial_days)
+                            "
                             :error="errors.products_initial_days"
                             class="md:col-span-3"
                         />
                         <FormTextField
                             id="processing_time"
                             name="processing_time"
-                            :label="t('app.landlord.tenant_integrations.fields.processing_time')"
+                            :label="
+                                t(
+                                    'app.landlord.tenant_integrations.fields.processing_time',
+                                )
+                            "
                             :default-value="formData.processing_time"
                             :error="errors.processing_time"
                             placeholder="02:00"
@@ -404,10 +571,51 @@ function testConnection(): void {
                         />
                     </div>
 
+                    <label
+                        class="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3"
+                    >
+                        <input
+                            type="hidden"
+                            name="separate_by_store"
+                            value="0"
+                        />
+                        <input
+                            name="separate_by_store"
+                            type="checkbox"
+                            value="1"
+                            :checked="formData.separate_by_store"
+                            class="mt-1 accent-primary"
+                        />
+                        <span class="space-y-1">
+                            <span
+                                class="block text-sm font-medium text-foreground"
+                            >
+                                {{
+                                    t(
+                                        'app.landlord.tenant_integrations.fields.separate_by_store',
+                                    )
+                                }}
+                            </span>
+                            <span class="block text-sm text-muted-foreground">
+                                {{
+                                    t(
+                                        'app.landlord.tenant_integrations.hints.separate_by_store',
+                                    )
+                                }}
+                            </span>
+                        </span>
+                    </label>
+
                     <!-- Seção de teste de conexão -->
-                    <div class="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-4">
+                    <div
+                        class="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-4"
+                    >
                         <h3 class="text-sm font-semibold text-foreground">
-                            {{ t('app.landlord.tenant_integrations.actions.test_connection') }}
+                            {{
+                                t(
+                                    'app.landlord.tenant_integrations.actions.test_connection',
+                                )
+                            }}
                         </h3>
 
                         <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
@@ -415,9 +623,15 @@ function testConnection(): void {
                                 <FormSelectField
                                     id="test_method"
                                     name="test_method"
-                                    :label="t('app.landlord.tenant_integrations.fields.test_method')"
+                                    :label="
+                                        t(
+                                            'app.landlord.tenant_integrations.fields.test_method',
+                                        )
+                                    "
                                     :model-value="testMethod"
-                                    @update:model-value="(value) => testMethod = String(value)"
+                                    @update:model-value="
+                                        (value) => (testMethod = String(value))
+                                    "
                                 >
                                     <option value="GET">GET</option>
                                     <option value="POST">POST</option>
@@ -428,29 +642,47 @@ function testConnection(): void {
                             </div>
 
                             <div class="space-y-1 md:col-span-9">
-                                <label for="test_path" class="text-sm font-medium text-foreground">
-                                    {{ t('app.landlord.tenant_integrations.fields.test_path') }}
+                                <label
+                                    for="test_path"
+                                    class="text-sm font-medium text-foreground"
+                                >
+                                    {{
+                                        t(
+                                            'app.landlord.tenant_integrations.fields.test_path',
+                                        )
+                                    }}
                                 </label>
                                 <input
                                     id="test_path"
                                     v-model="testPath"
                                     type="text"
-                                    class="h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                                    class="h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                     placeholder="/"
                                 />
                             </div>
                         </div>
 
                         <div class="space-y-1">
-                            <label for="test_body" class="text-sm font-medium text-foreground">
-                                {{ t('app.landlord.tenant_integrations.fields.test_body') }}
+                            <label
+                                for="test_body"
+                                class="text-sm font-medium text-foreground"
+                            >
+                                {{
+                                    t(
+                                        'app.landlord.tenant_integrations.fields.test_body',
+                                    )
+                                }}
                             </label>
                             <textarea
                                 id="test_body"
                                 v-model="testBody"
                                 rows="6"
-                                class="w-full rounded-lg border border-input bg-background px-3 py-2 font-mono text-xs text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                                :placeholder="t('app.landlord.tenant_integrations.placeholders.test_body')"
+                                class="w-full rounded-lg border border-input bg-background px-3 py-2 font-mono text-xs text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                                :placeholder="
+                                    t(
+                                        'app.landlord.tenant_integrations.placeholders.test_body',
+                                    )
+                                "
                             />
                         </div>
 
@@ -462,22 +694,41 @@ function testConnection(): void {
                                 :disabled="!props.integration || testLoading"
                                 @click="testConnection"
                             >
-                                {{ t('app.landlord.tenant_integrations.actions.run_test') }}
+                                {{
+                                    t(
+                                        'app.landlord.tenant_integrations.actions.run_test',
+                                    )
+                                }}
                             </Button>
-                            <span v-if="testLoading" class="text-xs text-muted-foreground">
+                            <span
+                                v-if="testLoading"
+                                class="text-xs text-muted-foreground"
+                            >
                                 {{ t('app.loading') }}
                             </span>
                         </div>
 
-                        <div v-if="testError" class="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                        <div
+                            v-if="testError"
+                            class="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                        >
                             {{ testError }}
                         </div>
 
                         <div v-if="testResult !== null" class="space-y-1">
-                            <p class="text-xs font-semibold text-muted-foreground">
-                                {{ t('app.landlord.tenant_integrations.fields.test_response') }}
+                            <p
+                                class="text-xs font-semibold text-muted-foreground"
+                            >
+                                {{
+                                    t(
+                                        'app.landlord.tenant_integrations.fields.test_response',
+                                    )
+                                }}
                             </p>
-                            <pre class="max-h-96 overflow-auto rounded-md border border-border bg-background p-3 text-xs text-foreground">{{ JSON.stringify(testResult, null, 2) }}</pre>
+                            <pre
+                                class="max-h-96 overflow-auto rounded-md border border-border bg-background p-3 text-xs text-foreground"
+                                >{{ JSON.stringify(testResult, null, 2) }}</pre
+                            >
                         </div>
                     </div>
                 </FormCard>
