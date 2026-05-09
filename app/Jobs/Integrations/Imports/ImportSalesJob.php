@@ -3,6 +3,7 @@
 namespace App\Jobs\Integrations\Imports;
 
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Importers\IntegrationImporter;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -20,7 +21,7 @@ class ImportSalesJob implements NotTenantAware, ShouldQueue
         $this->onQueue('imports');
     }
 
-    public function handle(): void
+    public function handle(IntegrationImporter $integrationImporter): void
     {
         $integration = TenantIntegration::query()
             ->whereKey($this->integrationId)
@@ -35,10 +36,6 @@ class ImportSalesJob implements NotTenantAware, ShouldQueue
             return;
         }
 
-        Log::info('Importação de vendas enfileirada para implementação.', [
-            'integration_id' => $this->integrationId,
-            'tenant_id' => (string) $integration->tenant_id,
-            'provider' => (string) $integration->integration_type,
-        ]);
+        $integrationImporter->importSales($integration);
     }
 }
