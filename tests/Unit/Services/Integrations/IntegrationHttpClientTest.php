@@ -182,3 +182,82 @@ test('gescooper importer caches token between requests', function (): void {
     Http::assertSentCount(3);
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://gescooper.example.test/v1/Token');
 });
+
+test('sysmo importer paginates products when total_paginas is returned', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    Carbon::setTestNow('2026-05-09 12:00:00');
+
+    Http::fake([
+        'https://sysmo.example.test/custom/products' => Http::sequence()
+            ->push([
+                'pagina' => 1,
+                'total_paginas' => 2,
+                'dados' => [],
+            ], 200)
+            ->push([
+                'pagina' => 2,
+                'total_paginas' => 2,
+                'dados' => [],
+            ], 200),
+    ]);
+
+    $integration = new TenantIntegration([
+        'config' => [
+            'connection' => [
+                'base_url' => 'https://sysmo.example.test',
+                'body' => [
+                    ['key' => 'partner_key', 'value' => 'abc123', 'enabled' => true],
+                ],
+            ],
+            'processing' => [
+                'products_initial_days' => 7,
+            ],
+            'paths' => [
+                'products' => '/custom/products',
+            ],
+        ],
+    ]);
+
+    (new SysmoImporter(new IntegrationHttpClient))->importProducts($integration);
+
+    Http::assertSentCount(2);
+    Carbon::setTestNow();
+});
+
+test('gescooper importer paginates products when last_page is returned', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    Cache::flush();
+
+    Http::fake([
+        'https://gescooper.example.test/v1/Token' => Http::response([
+            'token' => 'test-jwt-token',
+        ], 200),
+        'https://gescooper.example.test/Produtos/Produtos*' => Http::sequence()
+            ->push([
+                'data' => [],
+                'last_page' => 2,
+            ], 200)
+            ->push([
+                'data' => [],
+                'last_page' => 2,
+            ], 200),
+    ]);
+
+    $integration = new TenantIntegration([
+        'config' => [
+            'auth' => [
+                'credentials' => [
+                    'username' => 'GOMARKAPI',
+                    'password' => 'secret',
+                ],
+            ],
+            'connection' => [
+                'base_url' => 'https://gescooper.example.test',
+            ],
+        ],
+    ]);
+
+    (new GescooperImporter(new IntegrationHttpClient))->importProducts($integration);
+
+    Http::assertSentCount(3);
+});
