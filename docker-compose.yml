@@ -15,6 +15,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=web"
       - "traefik.http.routers.app.rule=Host(`plannerate.localhost`) || HostRegexp(`{subdomain:.+}.plannerate.localhost`)"
+      - "traefik.http.routers.app.priority=1"
       - "traefik.http.services.app.loadbalancer.server.port=80"
 
     networks:
@@ -113,14 +114,42 @@ services:
     command: --default-authentication-plugin=mysql_native_password
 
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: legacy
+      MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD:-root}'
+      MYSQL_DATABASE: '${MYSQL_DATABASE:-legacy}'
+      MYSQL_USER: '${MYSQL_USER:-root}'
+      MYSQL_PASSWORD: '${MYSQL_PASSWORD:-password}'
 
     volumes:
       - mysql_data:/var/lib/mysql
 
     ports:
       - "3306:3306"
+
+    networks:
+      - web
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+
+    depends_on:
+      - mysql
+
+    environment:
+      PMA_HOST: '${PMA_HOST:-mysql}'
+      PMA_PORT: '${PMA_PORT:-3306}'
+      PMA_USER: '${PMA_USER:-root}'
+      PMA_PASSWORD: '${PMA_PASSWORD:-root}'
+      UPLOAD_LIMIT: '${PHPMYADMIN_UPLOAD_LIMIT:-256M}'
+    ports:
+      - "8081:80"
+
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.phpmyadmin.rule=Host(`phpmyadmin.plannerate.localhost`)"
+      - "traefik.http.routers.phpmyadmin.priority=100"
+      - "traefik.http.services.phpmyadmin.loadbalancer.server.port=80"
 
     networks:
       - web
@@ -157,3 +186,4 @@ volumes:
 networks:
   web:
     external: true
+    name: web
