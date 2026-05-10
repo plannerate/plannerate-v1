@@ -53,6 +53,12 @@ class RecalculateMonthlySalesSummaries extends Command
         $sync = (bool) $this->option('sync');
 
         foreach ($tenants as $tenant) {
+            if (! $this->tenantHasSales($tenant)) {
+                $this->line(sprintf('%s: sem vendas, recálculo ignorado.', $tenant->name));
+
+                continue;
+            }
+
             if ($sync) {
                 $summary = $recalculateMonthlySalesSummariesService->recalculate($tenant, $month);
                 $this->line(sprintf(
@@ -98,6 +104,18 @@ class RecalculateMonthlySalesSummaries extends Command
         }
 
         return $query->get(['id', 'name', 'database']);
+    }
+
+    private function tenantHasSales(Tenant $tenant): bool
+    {
+        return $tenant->execute(function (): bool {
+            $connection = $this->tenantConnectionName();
+
+            return DB::connection($connection)
+                ->table('sales')
+                ->whereNull('deleted_at')
+                ->exists();
+        });
     }
 
     private function tenantConnectionName(): string

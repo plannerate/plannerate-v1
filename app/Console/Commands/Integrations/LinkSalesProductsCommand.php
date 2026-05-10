@@ -121,6 +121,7 @@ class LinkSalesProductsCommand extends Command
         $configuredTenantConnection = config('multitenancy.tenant_database_connection_name');
         $connection = (string) ($configuredTenantConnection ?: config('database.default'));
         $shouldSwitchTenantContext = is_string($configuredTenantConnection) && $configuredTenantConnection !== '';
+        $tenantId = (string) $tenant->id;
 
         $tenantDatabase = is_string($tenant->getAttribute('database'))
             ? trim((string) $tenant->getAttribute('database'))
@@ -142,7 +143,17 @@ class LinkSalesProductsCommand extends Command
         );
 
         if ($shouldSwitchTenantContext) {
-            return $tenant->execute($process);
+            return $tenant->execute(function () use ($process, $connection, $tenantId): ?array {
+                if (! $this->tenantHasSales($connection, $tenantId)) {
+                    return null;
+                }
+
+                return $process();
+            });
+        }
+
+        if (! $this->tenantHasSales($connection, $tenantId)) {
+            return null;
         }
 
         return $process();
@@ -264,5 +275,14 @@ class LinkSalesProductsCommand extends Command
         ';
 
         return $database->affectingStatement($sql, [$tenantId]);
+    }
+
+    private function tenantHasSales(string $connection, string $tenantId): bool
+    {
+        return DB::connection($connection)
+            ->table('sales')
+            ->where('tenant_id', $tenantId)
+            ->whereNull('deleted_at')
+            ->exists();
     }
 }

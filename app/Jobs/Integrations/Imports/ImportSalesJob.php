@@ -6,6 +6,7 @@ use App\Models\TenantIntegration;
 use App\Services\Integrations\Importers\IntegrationImporter;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
 
@@ -37,6 +38,33 @@ class ImportSalesJob implements NotTenantAware, ShouldQueue
             return;
         }
 
+        if (! $this->tenantHasProducts($integration)) {
+            Log::info('Importação de vendas ignorada: tenant sem produtos para vinculação.', [
+                'integration_id' => (string) $integration->id,
+                'tenant_id' => (string) $integration->tenant_id,
+            ]);
+
+            return;
+        }
+
         $integrationImporter->importSales($integration);
+    }
+
+    private function tenantHasProducts(TenantIntegration $integration): bool
+    {
+        $tenant = $integration->tenant;
+        if ($tenant === null) {
+            return false;
+        }
+
+        return $tenant->execute(function () use ($tenant): bool {
+            $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+
+            return DB::connection($connection)
+                ->table('products')
+                ->where('tenant_id', (string) $tenant->id)
+                ->whereNull('deleted_at')
+                ->exists();
+        });
     }
 }
