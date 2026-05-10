@@ -4,12 +4,14 @@ namespace App\Console\Commands\Integrations;
 
 use App\Jobs\Integrations\Imports\ImportProductsJob;
 use App\Jobs\Integrations\Imports\ImportSalesJob;
+use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
-#[Signature('integrations:daily-imports {--type=all : Tipo de importação: all, sales ou products}')]
+#[Signature('integrations:daily-imports {--type=all : Tipo de importação: all, sales ou products} {--clear : Limpa tabelas antes do dispatch respeitando o type}')]
 #[Description('Inicia a busca diária de produtos e vendas para integrações ativas')]
 class DispatchDailyImportsCommand extends Command
 {
@@ -30,6 +32,10 @@ class DispatchDailyImportsCommand extends Command
             $this->warn('Nenhuma integração ativa encontrada para a busca diária.');
 
             return self::SUCCESS;
+        }
+
+        if ((bool) $this->option('clear')) {
+            $this->clearTablesForActiveIntegrations($integrations, $types);
         }
 
         $this->info(sprintf(
@@ -105,5 +111,46 @@ class DispatchDailyImportsCommand extends Command
         }
 
         return sprintf('%s (%s)', $integration->tenant->name, $integration->tenant->slug);
+    }
+
+    /**
+     * @param  list<'sales'|'products'>  $types
+     */
+    private function clearTablesForActiveIntegrations($integrations, array $types): void
+    {
+        $tenants = $integrations
+            ->pluck('tenant')
+            ->filter(fn (mixed $tenant): bool => $tenant instanceof Tenant)
+            ->unique(fn (Tenant $tenant): string => (string) $tenant->id)
+            ->values();
+
+        if ($tenants->isEmpty()) {
+            $this->warn('Limpeza ignorada: nenhum tenant válido encontrado nas integrações ativas.');
+
+            return;
+        }
+
+        $this->warn('Iniciando limpeza de tabelas para integrações ativas...');
+
+        foreach ($tenants as $tenant) {
+            $tenant->execute(function () use ($tenant, $types): void {
+                $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+
+                if (in_array('products', $types, true)) {
+                    DB::connection($connection)->table('product_store')->where('tenant_id', (string) $tenant->id)->delete();
+                    DB::connection($connection)->table('products')->where('tenant_id', (string) $tenant->id)->delete();
+                }
+
+                if (in_array('sales', $types, true)) {
+                    DB::connection($connection)->table('sales')->where('tenant_id', (string) $tenant->id)->delete();
+                }
+            });
+        }
+
+        $this->info(sprintf(
+            'Limpeza concluída para %d tenant(s) ativo(s). Tipos: %s',
+            $tenants->count(),
+            implode(', ', $types),
+        ));
     }
 }

@@ -41,6 +41,7 @@ type ProductRow = {
     current_stock: string | number | null;
     last_purchase_date: string | null;
     created_at: string;
+    sync_at: string | null;
 };
 
 const props = defineProps<{
@@ -99,6 +100,10 @@ const formatStockAndLastPurchase = (product: ProductRow): string | null => {
     return [currentStock, lastPurchase].filter(Boolean).join(' | ') || null;
 };
 
+const formatSyncDate = (product: ProductRow): string | null => {
+    return product.sync_at ? `Última sincronização: ${new Date(product.sync_at).toLocaleDateString('pt-BR')}` : null;
+};
+
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.products.title'),
     title: t('app.tenant.products.title'),
@@ -115,34 +120,23 @@ const pageMeta = useCrudPageMeta({
 
 <template>
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton
-                    :href="ProductController.create.url(props.subdomain)"
-                >
+                <NewActionButton :href="ProductController.create.url(props.subdomain)">
                     {{ t('app.tenant.products.actions.new') }}
                 </NewActionButton>
             </div>
         </template>
 
-        <ListPage
-            :meta="productsMeta"
-            label="produto"
-            :action="productsIndexPath"
-            :clear-href="productsIndexPath"
-            :search-value="props.filters.search"
-            :search-placeholder="t('app.tenant.common.search')"
-            :filter-label="t('app.tenant.common.filter')"
-            :clear-label="t('app.tenant.common.clear_filters')"
-            :trashed-value="props.filters.trashed"
-        >
+        <ListPage :meta="productsMeta" label="produto" :action="productsIndexPath" :clear-href="productsIndexPath"
+            :search-value="props.filters.search" :search-placeholder="t('app.tenant.common.search')"
+            :filter-label="t('app.tenant.common.filter')" :clear-label="t('app.tenant.common.clear_filters')"
+            :trashed-value="props.filters.trashed">
             <template #filters>
-                <select
-                    name="status"
-                    :value="filters.status"
-                    class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                >
+                <select name="status" :value="filters.status"
+                    class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
                     <option value="">{{ t('app.tenant.common.all') }}</option>
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>
@@ -153,19 +147,13 @@ const pageMeta = useCrudPageMeta({
 
                 <Popover v-model:open="categoryPopoverOpen">
                     <PopoverTrigger as-child>
-                        <button
-                            type="button"
+                        <button type="button"
                             class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted"
-                            :class="categoryId ? 'border-primary/60 text-primary' : ''"
-                        >
+                            :class="categoryId ? 'border-primary/60 text-primary' : ''">
                             <SlidersHorizontal class="size-3.5 shrink-0" />
                             <span>{{ categoryLabel }}</span>
-                            <button
-                                v-if="categoryId"
-                                type="button"
-                                class="ml-1 rounded-sm opacity-60 hover:opacity-100"
-                                @click.stop="categoryId = null"
-                            >
+                            <button v-if="categoryId" type="button" class="ml-1 rounded-sm opacity-60 hover:opacity-100"
+                                @click.stop="categoryId = null">
                                 <X class="size-3" />
                             </button>
                             <ChevronDown v-else class="size-3.5 shrink-0 opacity-50" />
@@ -173,22 +161,15 @@ const pageMeta = useCrudPageMeta({
                     </PopoverTrigger>
                     <PopoverContent class="w-170 p-4" align="start">
                         <p class="mb-3 text-sm font-medium">{{ t('app.tenant.products.form.sections.category') }}</p>
-                        <CategoryCascadeSelect
-                            v-model="categoryId"
-                        />
+                        <CategoryCascadeSelect v-model="categoryId" />
                         <div class="mt-4 flex justify-end gap-2">
-                            <button
-                                type="button"
-                                class="rounded-md px-3 py-1.5 text-sm hover:bg-muted"
-                                @click="categoryId = null; categoryPopoverOpen = false"
-                            >
+                            <button type="button" class="rounded-md px-3 py-1.5 text-sm hover:bg-muted"
+                                @click="categoryId = null; categoryPopoverOpen = false">
                                 {{ t('app.tenant.common.clear_filters') }}
                             </button>
-                            <button
-                                type="submit"
+                            <button type="submit"
                                 class="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
-                                @click="categoryPopoverOpen = false"
-                            >
+                                @click="categoryPopoverOpen = false">
                                 {{ t('app.tenant.common.filter') }}
                             </button>
                         </div>
@@ -204,22 +185,22 @@ const pageMeta = useCrudPageMeta({
                         </th>
                         <ColumnHeader field="name">{{
                             t('app.tenant.products.fields.name')
-                        }}</ColumnHeader>
+                            }}</ColumnHeader>
                         <ColumnHeader field="ean">{{
                             t('app.tenant.products.fields.ean')
-                        }}</ColumnHeader>
+                            }}</ColumnHeader>
                         <ColumnHeader field="category">{{
                             t('app.tenant.products.fields.category')
-                        }}</ColumnHeader>
+                            }}</ColumnHeader>
                         <th class="px-4 py-3 font-medium">
                             Lojas
                         </th>
                         <ColumnHeader field="status">{{
                             t('app.tenant.products.fields.status')
-                        }}</ColumnHeader>
+                            }}</ColumnHeader>
                         <ColumnHeader field="created_at">{{
                             t('app.tenant.products.fields.created_at')
-                        }}</ColumnHeader>
+                            }}</ColumnHeader>
                         <th class="text-right">
                             {{ t('app.tenant.common.actions') }}
                         </th>
@@ -234,22 +215,14 @@ const pageMeta = useCrudPageMeta({
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
-                    <tr
-                        v-for="product in productsRows"
-                        :key="product.id"
-                        class="border-t border-sidebar-border/60 dark:border-sidebar-border"
-                    >
+                    <tr v-for="product in productsRows" :key="product.id"
+                        class="border-t border-sidebar-border/60 dark:border-sidebar-border">
                         <td class="px-4 py-3">
-                            <ColumnImage
-                                :src="product.image_url"
-                                :alt="product.name ?? 'Produto'"
-                            />
+                            <ColumnImage :src="product.image_url" :alt="product.name ?? 'Produto'" />
                         </td>
                         <td class="px-4 py-3">
-                            <ColumnLabel
-                                :label="product.name ?? '-'"
-                                :description="[product.slug, formatStockAndLastPurchase(product), formatProductDimensions(product)].filter(Boolean).join(' • ') || null"
-                            />
+                            <ColumnLabel :label="product.name ?? '-'"
+                                :description="[product.slug, formatStockAndLastPurchase(product), formatProductDimensions(product)].filter(Boolean).join(' • ') || null" />
                         </td>
                         <td class="px-4 py-3">{{ product.ean ?? '-' }}</td>
                         <td class="px-4 py-3">{{ product.category ?? '-' }}</td>
@@ -259,24 +232,22 @@ const pageMeta = useCrudPageMeta({
                         <td class="px-4 py-3">
                             <ColumnStatusBadge :status="product.status" />
                         </td>
-                        <td class="px-4 py-3">{{ new Date(product.created_at).toLocaleDateString('pt-BR') }}</td>
+                        <td class="px-4 py-3">
+                            <div class="flex flex-col gap-1">
+                                <span> {{ new Date(product.created_at).toLocaleDateString('pt-BR') }}</span>
+                                <span class="text-muted-foreground">{{ formatSyncDate(product) }}</span>
+                            </div>
+                        </td>
                         <td class="px-4 py-3 text-right">
-                            <ColumnActions
-                                :edit-href="
-                                    ProductController.edit.url({
-                                        subdomain: props.subdomain,
-                                        product: product.id,
-                                    })
-                                "
-                                :delete-href="
-                                    ProductController.destroy.url({
-                                        subdomain: props.subdomain,
-                                        product: product.id,
-                                    })
-                                "
-                                :delete-label="product.name ?? undefined"
-                                :require-confirm-word="true"
-                            />
+                            <ColumnActions :edit-href="ProductController.edit.url({
+                                subdomain: props.subdomain,
+                                product: product.id,
+                            })
+                                " :delete-href="ProductController.destroy.url({
+                                    subdomain: props.subdomain,
+                                    product: product.id,
+                                })
+                                    " :delete-label="product.name ?? undefined" :require-confirm-word="true" />
                         </td>
                     </tr>
                 </tbody>

@@ -15,6 +15,8 @@ class ProcessImportedProductsBatchJob implements NotTenantAware, ShouldQueue
 {
     use Queueable;
 
+    private const PERSIST_CHUNK_SIZE = 500;
+
     public int $timeout = 1800;
 
     public string $integrationId = '';
@@ -82,11 +84,13 @@ class ProcessImportedProductsBatchJob implements NotTenantAware, ShouldQueue
             $store->id = $this->storeId;
         }
 
-        $persistImportedProductsService->persist(
-            integration: $integration,
-            provider: $this->provider,
-            items: $items,
-            store: $store,
-        );
+        foreach (array_chunk($items, self::PERSIST_CHUNK_SIZE) as $chunk) {
+            $persistImportedProductsService->persist(
+                integration: $integration,
+                provider: $this->provider,
+                items: $chunk,
+                store: $store,
+            );
+        }
     }
 }

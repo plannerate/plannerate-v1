@@ -76,7 +76,7 @@ class SysmoImporter implements ClientApiImporter
                 ...$this->productsDatePayload($integration, $store),
                 'pagina' => (string) $currentPage,
             ];
-            $body['tamanho_pagina'] = (string) $this->productsPageSize($integration);
+            $this->applyProductsPageSize($body, $integration);
 
             $this->logRequestPayload('products', $integration, $store, $endpoint, $body);
 
@@ -284,13 +284,20 @@ class SysmoImporter implements ClientApiImporter
         return (bool) ($processing['separate_by_store'] ?? false);
     }
 
-    private function productsPageSize(TenantIntegration $integration): int
+    /**
+     * @param  array<string, string>  $body
+     */
+    private function applyProductsPageSize(array &$body, TenantIntegration $integration): void
     {
+        if (array_key_exists('tamanho_pagina', $body) && trim((string) $body['tamanho_pagina']) !== '') {
+            return;
+        }
+
         $config = is_array($integration->config) ? $integration->config : [];
         $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
         $requested = (int) ($processing['products_page_size'] ?? 500);
 
-        return max(100, min(1000, $requested));
+        $body['tamanho_pagina'] = (string) max(100, min(5000, $requested));
     }
 
     /**

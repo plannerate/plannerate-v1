@@ -137,6 +137,7 @@ class ProductController extends Controller
                     ->values()
                     ->all(),
                 'created_at' => $product->created_at?->toDateTimeString(),
+                'sync_at' => $product->sync_at?->toDateTimeString(),
                 'dimensions' => [
                     'width' => $product->width,
                     'height' => $product->height,
