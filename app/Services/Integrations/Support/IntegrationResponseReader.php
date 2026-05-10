@@ -74,20 +74,35 @@ class IntegrationResponseReader
      */
     private function paths(TenantIntegration $integration, string $resource, string $key, array $fallbacks): array
     {
-        $config = is_array($integration->config) ? $integration->config : [];
-        $response = is_array($config['response'] ?? null) ? $config['response'] : [];
-        $resourceResponse = is_array($response[$resource] ?? null) ? $response[$resource] : [];
-        $pagination = is_array($resourceResponse['pagination'] ?? null) ? $resourceResponse['pagination'] : [];
+        $configured = [];
 
-        $configured = [
-            $resourceResponse[$key] ?? null,
-            $pagination[$key] ?? null,
-            $response[$key] ?? null,
-        ];
+        foreach ($this->responseConfigs($integration) as $response) {
+            $resourceResponse = is_array($response[$resource] ?? null) ? $response[$resource] : [];
+            $responsePagination = is_array($response['pagination'] ?? null) ? $response['pagination'] : [];
+            $resourcePagination = is_array($resourceResponse['pagination'] ?? null) ? $resourceResponse['pagination'] : [];
+
+            $configured[] = $resourceResponse[$key] ?? null;
+            $configured[] = $resourcePagination[$key] ?? null;
+            $configured[] = $response[$key] ?? null;
+            $configured[] = $responsePagination[$key] ?? null;
+        }
 
         return array_values(array_unique(array_filter([
             ...array_map(fn (mixed $path): string => trim((string) $path), $configured),
             ...$fallbacks,
         ], fn (string $path): bool => $path !== '')));
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function responseConfigs(TenantIntegration $integration): array
+    {
+        $providerResponse = config(sprintf('integrations.providers.%s.response', (string) $integration->integration_type), []);
+        $providerResponse = is_array($providerResponse) ? $providerResponse : [];
+
+        return array_values(array_filter([
+            $providerResponse,
+        ], fn (array $response): bool => $response !== []));
     }
 }

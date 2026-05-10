@@ -226,10 +226,11 @@ test('response reader understands sysmo pagination shape', function (): void {
         ->and($reader->totalPages($integration, 'products', $payload, 1))->toBe(30);
 });
 
-test('response reader prefers configured response paths', function (): void {
+test('response reader falls back to generic paths without provider config', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
 
     $integration = new TenantIntegration([
+        'integration_type' => 'unknown',
         'config' => [
             'response' => [
                 'products' => [
@@ -242,14 +243,19 @@ test('response reader prefers configured response paths', function (): void {
         ],
     ]);
     $payload = [
-        'data' => [],
+        'data' => [
+            ['sku' => 'A'],
+            ['sku' => 'B'],
+        ],
+        'pagination' => [
+            'last_page' => 4,
+        ],
         'payload' => [
             'records' => [
-                ['sku' => 'A'],
-                ['sku' => 'B'],
+                ['sku' => 'ignored'],
             ],
             'pages' => [
-                'last' => 4,
+                'last' => 9,
             ],
         ],
     ];
@@ -258,6 +264,82 @@ test('response reader prefers configured response paths', function (): void {
 
     expect($reader->items($integration, 'products', $payload))->toHaveCount(2)
         ->and($reader->totalPages($integration, 'products', $payload, 1))->toBe(4);
+});
+
+test('response reader uses provider config by integration type', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    Config::set('integrations.providers.acme.response', [
+        'items_path' => 'payload.items',
+        'pagination' => [
+            'last_page_path' => 'payload.pagination.pages',
+        ],
+    ]);
+
+    $integration = new TenantIntegration([
+        'integration_type' => 'acme',
+        'config' => [],
+    ]);
+    $payload = [
+        'payload' => [
+            'items' => [
+                ['sku' => 'A'],
+            ],
+            'pagination' => [
+                'pages' => 7,
+            ],
+        ],
+    ];
+
+    $reader = new IntegrationResponseReader;
+
+    expect($reader->items($integration, 'products', $payload))->toHaveCount(1)
+        ->and($reader->totalPages($integration, 'products', $payload, 1))->toBe(7);
+});
+
+test('response reader ignores tenant response config in favor of provider config', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    Config::set('integrations.providers.acme.response', [
+        'items_path' => 'payload.items',
+        'pagination' => [
+            'last_page_path' => 'payload.pagination.pages',
+        ],
+    ]);
+
+    $integration = new TenantIntegration([
+        'integration_type' => 'acme',
+        'config' => [
+            'response' => [
+                'products' => [
+                    'items_path' => 'custom.records',
+                    'pagination' => [
+                        'last_page_path' => 'custom.pages.last',
+                    ],
+                ],
+            ],
+        ],
+    ]);
+    $payload = [
+        'payload' => [
+            'items' => [],
+            'pagination' => [
+                'pages' => 7,
+            ],
+        ],
+        'custom' => [
+            'records' => [
+                ['sku' => 'B'],
+                ['sku' => 'C'],
+            ],
+            'pages' => [
+                'last' => 3,
+            ],
+        ],
+    ];
+
+    $reader = new IntegrationResponseReader;
+
+    expect($reader->items($integration, 'products', $payload))->toHaveCount(0)
+        ->and($reader->totalPages($integration, 'products', $payload, 1))->toBe(7);
 });
 
 test('sysmo importer uses configured products path when present', function (): void {
