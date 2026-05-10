@@ -8,6 +8,7 @@ use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\Support\ImportBatchPayloadStore;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Log;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
 
@@ -77,12 +78,29 @@ class FetchSysmoSalesDayJob implements NotTenantAware, ShouldQueue
                 'body' => $body,
             ]);
 
-            $response = $httpClient->request(
-                integration: $integration,
-                method: 'POST',
-                endpoint: $endpoint,
-                body: $body,
-            );
+            try {
+                $response = $httpClient->request(
+                    integration: $integration,
+                    method: 'POST',
+                    endpoint: $endpoint,
+                    body: $body,
+                );
+            } catch (RequestException $exception) {
+                $status = $exception->response?->status();
+                if (in_array($status, [404, 501], true)) {
+                    Log::warning('Sysmo sales day fetch skipped due to provider response.', [
+                        'integration_id' => (string) $integration->id,
+                        'tenant_id' => (string) $integration->tenant_id,
+                        'store_id' => $store?->id,
+                        'date' => $this->date,
+                        'status' => $status,
+                    ]);
+
+                    return;
+                }
+
+                throw $exception;
+            }
 
             $payload = $response->json();
             $totalPages = $this->resolveTotalPages(is_array($payload) ? $payload : [], $currentPage);
