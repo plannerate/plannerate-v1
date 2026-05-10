@@ -60,7 +60,6 @@ class FetchSysmoSalesDayJob implements NotTenantAware, ShouldQueue
 
         do {
             $body = [
-                ...$this->connectionBody($integration),
                 ...$this->storeBody($store),
                 'data_inicial' => $this->date,
                 'data_final' => $this->date,
@@ -133,32 +132,6 @@ class FetchSysmoSalesDayJob implements NotTenantAware, ShouldQueue
     }
 
     /**
-     * @return array<string, string>
-     */
-    private function connectionBody(TenantIntegration $integration): array
-    {
-        $config = is_array($integration->config) ? $integration->config : [];
-        $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
-        $bodyRows = is_array($connection['body'] ?? null) ? $connection['body'] : [];
-
-        $body = [];
-        foreach ($bodyRows as $row) {
-            if (! is_array($row) || ! $this->rowIsEnabled($row)) {
-                continue;
-            }
-
-            $key = trim((string) ($row['key'] ?? ''));
-            if ($key === '') {
-                continue;
-            }
-
-            $body[$key] = (string) ($row['value'] ?? '');
-        }
-
-        return $body;
-    }
-
-    /**
      * @return array{empresa: string}|array{}
      */
     private function storeBody(?Store $store): array
@@ -211,26 +184,5 @@ class FetchSysmoSalesDayJob implements NotTenantAware, ShouldQueue
         }
 
         return array_values(array_filter($items, fn (mixed $item): bool => is_array($item)));
-    }
-
-    /**
-     * @param  array<string, mixed>  $row
-     */
-    private function rowIsEnabled(array $row): bool
-    {
-        if (! array_key_exists('enabled', $row)) {
-            return true;
-        }
-
-        $enabled = $row['enabled'];
-        if (is_bool($enabled)) {
-            return $enabled;
-        }
-
-        if (is_string($enabled) || is_int($enabled)) {
-            return filter_var($enabled, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? true;
-        }
-
-        return true;
     }
 }

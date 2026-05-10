@@ -53,7 +53,6 @@ class SysmoImporter implements ClientApiImporter
 
         do {
             $body = [
-                ...$this->connectionBody($integration),
                 ...$this->storeBody($store),
                 ...$this->productsDatePayload($integration, $store),
                 'pagina' => (string) $currentPage,
@@ -95,32 +94,6 @@ class SysmoImporter implements ClientApiImporter
             unset($payload, $items, $body);
             gc_collect_cycles();
         } while ($currentPage <= $totalPages);
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function connectionBody(TenantIntegration $integration): array
-    {
-        $config = is_array($integration->config) ? $integration->config : [];
-        $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
-        $bodyRows = is_array($connection['body'] ?? null) ? $connection['body'] : [];
-
-        $body = [];
-        foreach ($bodyRows as $row) {
-            if (! is_array($row) || ! $this->rowIsEnabled($row)) {
-                continue;
-            }
-
-            $key = trim((string) ($row['key'] ?? ''));
-            if ($key === '') {
-                continue;
-            }
-
-            $body[$key] = (string) ($row['value'] ?? '');
-        }
-
-        return $body;
     }
 
     /**
@@ -275,11 +248,36 @@ class SysmoImporter implements ClientApiImporter
             return;
         }
 
+        if ($this->connectionBodyHasValue($integration, 'tamanho_pagina')) {
+            return;
+        }
+
         $config = is_array($integration->config) ? $integration->config : [];
         $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
         $requested = (int) ($processing['products_page_size'] ?? 500);
 
         $body['tamanho_pagina'] = (string) max(100, min(5000, $requested));
+    }
+
+    private function connectionBodyHasValue(TenantIntegration $integration, string $key): bool
+    {
+        $config = is_array($integration->config) ? $integration->config : [];
+        $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
+        $bodyRows = is_array($connection['body'] ?? null) ? $connection['body'] : [];
+
+        foreach ($bodyRows as $row) {
+            if (! is_array($row) || ! $this->rowIsEnabled($row)) {
+                continue;
+            }
+
+            if (trim((string) ($row['key'] ?? '')) !== $key) {
+                continue;
+            }
+
+            return trim((string) ($row['value'] ?? '')) !== '';
+        }
+
+        return false;
     }
 
     /**

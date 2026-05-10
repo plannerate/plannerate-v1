@@ -92,7 +92,6 @@ class IntegrationImporter
     {
         return $tenant->execute(fn (): Collection => Store::query()
             ->where('tenant_id', $tenant->id)
-            ->where('status', 'published')
             ->whereNotNull('document')
             ->where('document', '<>', '')
             ->orderBy('name')
