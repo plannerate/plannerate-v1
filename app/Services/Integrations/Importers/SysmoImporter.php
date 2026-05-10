@@ -5,10 +5,12 @@ namespace App\Services\Integrations\Importers;
 use App\Jobs\Integrations\Imports\ProcessImportedProductsBatchJob;
 use App\Jobs\Integrations\Imports\ProcessImportedSalesBatchJob;
 use App\Models\Store;
+use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\Support\ImportBatchPayloadStore;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SysmoImporter implements ClientApiImporter
@@ -230,17 +232,34 @@ class SysmoImporter implements ClientApiImporter
     }
 
     /**
-     * @return array{data_ultima_alteracao: string}
+     * @return array{data_ultima_alteracao: string}|array{}
      */
     private function productsDatePayload(TenantIntegration $integration): array
     {
-        $config = is_array($integration->config) ? $integration->config : [];
-        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
-        $days = max(1, (int) ($processing['products_initial_days'] ?? 120));
+        if (! $this->tenantHasProducts($integration)) {
+            return [];
+        }
 
         return [
-            'data_ultima_alteracao' => Carbon::yesterday()->subDays($days - 1)->toDateString(),
+            'data_ultima_alteracao' => Carbon::yesterday()->toDateString(),
         ];
+    }
+
+    private function tenantHasProducts(TenantIntegration $integration): bool
+    {
+        $tenant = $integration->tenant;
+        if (! $tenant instanceof Tenant) {
+            return true;
+        }
+
+        return $tenant->execute(function (): bool {
+            $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+
+            return DB::connection($connection)
+                ->table('products')
+                ->whereNull('deleted_at')
+                ->exists();
+        });
     }
 
     private function productsPageSize(TenantIntegration $integration): int

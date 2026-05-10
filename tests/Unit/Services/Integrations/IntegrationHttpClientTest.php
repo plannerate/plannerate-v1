@@ -100,7 +100,7 @@ test('sysmo importer uses configured products path when present', function (): v
             && $request->data() === [
                 'partner_key' => 'abc123',
                 'empresa' => '12345678000199',
-                'data_ultima_alteracao' => '2026-05-02',
+                'data_ultima_alteracao' => '2026-05-08',
                 'pagina' => '1',
                 'tamanho_pagina' => '500',
             ];
