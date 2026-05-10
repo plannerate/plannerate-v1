@@ -2,8 +2,8 @@
 
 namespace App\Services\Integrations\Importers;
 
+use App\Jobs\Integrations\Imports\FetchSysmoSalesDayJob;
 use App\Jobs\Integrations\Imports\ProcessImportedProductsBatchJob;
-use App\Jobs\Integrations\Imports\ProcessImportedSalesBatchJob;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
@@ -22,44 +22,26 @@ class SysmoImporter implements ClientApiImporter
 
     public function importSales(TenantIntegration $integration, ?Store $store = null): void
     {
-        $endpoint = $this->path($integration, 'sales', '/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos');
         $salesMode = $this->salesMode($integration, $store);
-        $body = [
-            ...$this->connectionBody($integration),
-            ...$this->storeBody($store),
-            ...$this->salesDatePayload($integration, $salesMode),
-            'pagina' => '1',
-        ];
+        $dates = $this->salesDates($integration, $store, $salesMode);
 
-        $this->logRequestPayload('sales', $integration, $store, $endpoint, $body, [
-            'sales_mode' => $salesMode,
-        ]);
+        foreach ($dates as $date) {
+            FetchSysmoSalesDayJob::dispatch(
+                integrationId: (string) $integration->id,
+                date: $date,
+                storeId: $store?->id,
+                storeDocument: $store?->document,
+            );
+        }
 
-        $response = $this->httpClient->request(
-            integration: $integration,
-            method: 'POST',
-            endpoint: $endpoint,
-            body: $body,
-        );
-
-        $payload = $response->json();
-        $items = $this->resolveItems(is_array($payload) ? $payload : []);
-
-        $payloadKey = $this->importBatchPayloadStore->put((string) $integration->id, 'sales', $items);
-        ProcessImportedSalesBatchJob::dispatch(
-            integrationId: (string) $integration->id,
-            provider: 'sysmo',
-            payloadKey: $payloadKey,
-            storeId: $store?->id,
-            storeDocument: $store?->document,
-        );
-
-        Log::info('Sysmo sales import request completed.', [
+        Log::info('Sysmo sales day fetch jobs dispatched.', [
             'integration_id' => (string) $integration->id,
             'tenant_id' => (string) $integration->tenant_id,
             'store_id' => $store?->id,
-            'items' => count($items),
-            'status' => $response->status(),
+            'sales_mode' => $salesMode,
+            'days_dispatched' => count($dates),
+            'start_date' => $dates[0] ?? null,
+            'end_date' => $dates[count($dates) - 1] ?? null,
         ]);
     }
 
@@ -326,6 +308,111 @@ class SysmoImporter implements ClientApiImporter
     private function salesMode(TenantIntegration $integration, ?Store $store = null): string
     {
         return $this->tenantHasSales($integration, $store) ? 'daily' : 'initial';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function salesDates(TenantIntegration $integration, ?Store $store, string $mode): array
+    {
+        $endDate = Carbon::today();
+        $lookbackDays = $this->salesLookbackDays($integration);
+
+        if ($mode === 'daily') {
+            $baseDates = [
+                $endDate->copy()->subDay()->toDateString(),
+                $endDate->toDateString(),
+            ];
+
+            $missingDates = $this->resolveMissingSalesDates($integration, $store, $lookbackDays);
+            $this->logSalesGapSummary($integration, $store, $lookbackDays, $missingDates);
+
+            $merged = array_values(array_unique([...$baseDates, ...$missingDates]));
+            sort($merged);
+
+            return $merged;
+        }
+
+        $dates = [];
+        for ($i = $lookbackDays - 1; $i >= 0; $i--) {
+            $dates[] = $endDate->copy()->subDays($i)->toDateString();
+        }
+
+        return $dates;
+    }
+
+    private function salesLookbackDays(TenantIntegration $integration): int
+    {
+        $config = is_array($integration->config) ? $integration->config : [];
+        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
+
+        return max(1, (int) ($processing['sales_initial_days'] ?? 120));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function resolveMissingSalesDates(TenantIntegration $integration, ?Store $store, int $lookbackDays): array
+    {
+        $tenant = $integration->tenant;
+        if (! $tenant instanceof Tenant) {
+            return [];
+        }
+
+        $endDate = Carbon::today();
+        $startDate = $endDate->copy()->subDays($lookbackDays - 1);
+        $expectedDates = [];
+
+        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+            $expectedDates[] = $date->toDateString();
+        }
+
+        $existingDates = $tenant->execute(function () use ($integration, $store, $tenant, $startDate, $endDate): array {
+            $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+            $isSeparateByStore = $this->separateByStore($integration);
+
+            $query = DB::connection($connection)
+                ->table('sales')
+                ->where('tenant_id', (string) $tenant->id)
+                ->whereNull('deleted_at')
+                ->whereBetween('sale_date', [$startDate->toDateString(), $endDate->toDateString()]);
+
+            if ($isSeparateByStore && $store instanceof Store && is_string($store->id) && $store->id !== '') {
+                $query->where('store_id', (string) $store->id);
+            }
+
+            return $query
+                ->distinct()
+                ->pluck('sale_date')
+                ->filter(fn (mixed $date): bool => is_string($date) && $date !== '')
+                ->map(fn (string $date): string => Carbon::parse($date)->toDateString())
+                ->values()
+                ->all();
+        });
+
+        $missingDates = array_values(array_diff($expectedDates, $existingDates));
+        sort($missingDates);
+
+        return $missingDates;
+    }
+
+    /**
+     * @param  list<string>  $missingDates
+     */
+    private function logSalesGapSummary(
+        TenantIntegration $integration,
+        ?Store $store,
+        int $lookbackDays,
+        array $missingDates,
+    ): void {
+        Log::info('Sysmo sales gap analysis.', [
+            'integration_id' => (string) $integration->id,
+            'tenant_id' => (string) $integration->tenant_id,
+            'store_id' => $store?->id,
+            'lookback_days' => $lookbackDays,
+            'missing_days_count' => count($missingDates),
+            'missing_days_sample' => array_slice($missingDates, 0, 10),
+        ]);
     }
 
     private function tenantHasSales(TenantIntegration $integration, ?Store $store = null): bool
