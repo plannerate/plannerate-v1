@@ -1,65 +1,21 @@
-# Integração GesCooper - Endpoint `Produtos/Produtos`
+# Integracao GesCooper (Status do Documento)
 
-Fonte oficial (Swagger):
-- `https://web.cooasgo.com.br/GesCooper/Cadastro/swagger/v1/swagger.json`
+Este documento foi simplificado para evitar orientacoes antigas.
 
-Base URL observada no Swagger:
-- server: `/GesCooper/Cadastro`
-- endpoint: `GET /Api/Produtos/Produtos`
+## Fonte oficial atual
 
-No ambiente configurado hoje no projeto, a chamada final fica no formato:
-- `{base_url}/Produtos/Produtos`
-- Exemplo: `https://web.cooasgo.com.br/GesCooper/Cadastro/Produtos/Produtos`
+Use somente:
 
-## Autenticação
+- `docs/integrations-import-process.md`
 
-O Swagger define `Authorization` no header (tipo `apiKey`), usando:
-- `Authorization: Bearer {token}`
+## Regras vigentes (resumo)
 
-Token:
-- Endpoint de geração no Swagger: `POST /Api/v1/Token`
-- Payload (`UsuarioToken`): `usuario`, `senha`, `dispositivoUID` (opcional)
+- O disparo roda por `integrations:daily-imports`.
+- O importer GesCooper usa token, cacheia token e busca produtos paginados.
+- Se sales retornar 404, o fluxo deve registrar `skip` e nao quebrar importacao geral.
+- `registros_por_pagina` deve vir da configuracao da integracao (com limite maximo de seguranca).
+- Quando ja houver produtos, aplicar filtro incremental por `data_cadastro_de` / `data_cadastro_ate`.
 
-## Parâmetros de consulta de `GET /Api/Produtos/Produtos`
+## Observacao
 
-- `pagina` (integer, default `1`)
-- `registros_por_pagina` (integer, default `200`)
-- `ean` (string, opcional)
-- `status_produto` (string, opcional)
-- `data_cadastro_de` (string, format `date-time`, opcional)
-- `data_cadastro_ate` (string, format `date-time`, opcional)
-- `data_ultima_venda_de` (string, format `date-time`, opcional)
-- `data_ultima_venda_ate` (string, format `date-time`, opcional)
-- `api-version` (string, default `1.0`)
-
-## Paginação
-
-Parâmetros principais:
-- `pagina`
-- `registros_por_pagina`
-
-No projeto, esses campos já são enviados por:
-- [GesCooperProductsIntegrationService.php](/home/call/projects/plannerate-v1/app/Services/Integrations/GesCooper/GesCooperProductsIntegrationService.php)
-
-## Filtro por período de cadastro (uso atual no projeto)
-
-Implementação atual:
-- Se vier `data_cadastro_de` e `data_cadastro_ate` no filtro, usa os dois explicitamente.
-- Senão, se vier `date`, envia dia único (`de=ate=date`).
-- Senão, calcula janela por `products_initial_days` (de `ontem - (dias-1)` até `ontem`).
-
-Referência de implementação:
-- [GesCooperProductsIntegrationService.php](/home/call/projects/plannerate-v1/app/Services/Integrations/GesCooper/GesCooperProductsIntegrationService.php#L326)
-
-## Exemplo de chamada
-
-```bash
-curl -X GET \
-  'https://web.cooasgo.com.br/GesCooper/Cadastro/Api/Produtos/Produtos?pagina=1&registros_por_pagina=200&data_cadastro_de=2026-05-01T00:00:00&data_cadastro_ate=2026-05-07T23:59:59&api-version=1.0' \
-  -H 'Authorization: Bearer SEU_TOKEN'
-```
-
-## Observações
-
-- No Swagger, `data_cadastro_*` está como `date-time`.
-- No nosso código, hoje enviamos datas normalizadas em `Y-m-d`; se precisar aderência estrita ao Swagger, podemos ajustar para `Y-m-d\TH:i:s`.
+Se houver qualquer divergencia entre este arquivo e o guia principal, siga `docs/integrations-import-process.md`.

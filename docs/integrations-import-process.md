@@ -28,6 +28,10 @@ Ele busca integrações ativas e dispara:
 - `ImportProductsJob`
 - `ImportSalesJob`
 
+Agendamento:
+
+- `routes/console.php` executa `integrations:daily-imports` diariamente às `06:00`.
+
 ### 2) Importer por provider (fetch)
 
 - `app/Services/Integrations/Importers/IntegrationImporter.php`
@@ -101,8 +105,15 @@ Campos importantes no `config` da integração:
 - `processing.products_initial_days`
 - `processing.sales_initial_days`
 - `processing.products_page_size` (ex.: 300, 500)
+- `connection.params[].registros_por_pagina` (GesCooper, com limite máximo de segurança)
 
 Se `separate_by_store=true`, a busca roda por loja usando documento da loja (`empresa`), quando suportado pelo provider.
+Somente lojas `published` entram na execução.
+
+Regra de persistência por loja:
+
+- Com `separate_by_store=true`: busca por loja e sempre cria/atualiza vínculo em `product_store`.
+- Com `separate_by_store=false`: a busca pode ocorrer sem escopo de loja, mas a persistência garante vínculo em `product_store` para todas as lojas do tenant.
 
 ---
 
@@ -182,6 +193,9 @@ Depois repetir para sales.
 ## Observações Operacionais
 
 - Se endpoint de sales não estiver ativo (ex.: 404), tratar como `skip` no importer para não quebrar o job todo.
+- Sysmo sales é buscado por dia (janela inicial por `sales_initial_days`; depois diário com ontem+hoje e recomposição de lacunas).
+- Sysmo products em modo incremental usa `data_ultima_alteracao` quando já existem produtos na base.
+- GesCooper products suporta incremental por `data_cadastro_de`/`data_cadastro_ate` quando já existem produtos.
 - Evitar payload gigante no corpo do job.
 - Ajustar `processing.products_page_size` para estabilidade de memória.
 - Se houver filas antigas com schema de job antigo, reiniciar Horizon e limpar fila antes de novo disparo.
@@ -191,4 +205,3 @@ Comandos úteis (docker):
 - `docker compose exec horizon php artisan horizon:terminate`
 - `docker compose restart horizon`
 - `docker compose exec php php artisan integrations:daily-imports --type=products`
-

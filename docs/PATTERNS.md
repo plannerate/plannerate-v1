@@ -1,9 +1,9 @@
 # Padrões do Sistema — Plannerate
 
-## Integracao Sysmo
+## Integracoes API Clients
 
-Documentacao operacional da integracao (sync inicial, diario, lacunas, paginação por loja e manutencao):
-- `docs/integracao-sysmo-sync.md`
+Documentacao oficial e atualizada do fluxo de importacao (products/sales, jobs, paginacao, lojas, finalizacao e onboarding de nova API):
+- `docs/integrations-import-process.md`
 
 ## Multitenancy — Validacoes Tenant
 
