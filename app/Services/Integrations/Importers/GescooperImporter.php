@@ -100,7 +100,7 @@ class GescooperImporter implements ClientApiImporter
                 ...$this->storeQuery($store),
                 ...$this->productsDateQuery($integration, $store),
                 'pagina' => $currentPage,
-                'registros_por_pagina' => 1000,
+                'registros_por_pagina' => $this->productsPageSize($integration),
                 'api-version' => '1.0',
             ];
 
@@ -409,5 +409,61 @@ class GescooperImporter implements ClientApiImporter
         $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
 
         return (bool) ($processing['separate_by_store'] ?? false);
+    }
+
+    private function productsPageSize(TenantIntegration $integration): int
+    {
+        $config = is_array($integration->config) ? $integration->config : [];
+        $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
+        $params = is_array($connection['params'] ?? null) ? $connection['params'] : [];
+        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
+
+        $requested = null;
+
+        foreach ($params as $param) {
+            if (! is_array($param)) {
+                continue;
+            }
+
+            $key = trim((string) ($param['key'] ?? ''));
+            if ($key !== 'registros_por_pagina') {
+                continue;
+            }
+
+            if (! $this->rowIsEnabled($param)) {
+                continue;
+            }
+
+            $requested = (int) ($param['value'] ?? 0);
+
+            break;
+        }
+
+        if (! is_int($requested) || $requested <= 0) {
+            $requested = (int) ($processing['products_page_size'] ?? 200);
+        }
+
+        return max(50, min(500, $requested));
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    private function rowIsEnabled(array $row): bool
+    {
+        if (! array_key_exists('enabled', $row)) {
+            return true;
+        }
+
+        $enabled = $row['enabled'];
+        if (is_bool($enabled)) {
+            return $enabled;
+        }
+
+        if (is_string($enabled) || is_int($enabled)) {
+            return filter_var($enabled, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? true;
+        }
+
+        return true;
     }
 }

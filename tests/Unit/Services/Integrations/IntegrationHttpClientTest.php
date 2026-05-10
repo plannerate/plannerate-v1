@@ -142,11 +142,11 @@ test('gescooper importer sends store document as empresa query param for get req
     (new GescooperImporter(new IntegrationHttpClient, new ImportBatchPayloadStore))->importProducts($integration, $store);
 
     Http::assertSent(function (Request $request): bool {
-        return $request->url() === 'https://gescooper.example.test/Produtos/Produtos?empresa=98765432000188&pagina=1&registros_por_pagina=1000&api-version=1.0';
+        return $request->url() === 'https://gescooper.example.test/Produtos/Produtos?empresa=98765432000188&pagina=1&registros_por_pagina=200&api-version=1.0';
     });
 
     Http::assertSent(function (Request $request): bool {
-        return $request->url() === 'https://gescooper.example.test/Produtos/Produtos?empresa=98765432000188&pagina=1&registros_por_pagina=1000&api-version=1.0'
+        return $request->url() === 'https://gescooper.example.test/Produtos/Produtos?empresa=98765432000188&pagina=1&registros_por_pagina=200&api-version=1.0'
             && $request->hasHeader('Authorization', 'Bearer test-jwt-token');
     });
 });
