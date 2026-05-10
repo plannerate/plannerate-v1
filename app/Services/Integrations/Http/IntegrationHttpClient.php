@@ -10,6 +10,10 @@ use RuntimeException;
 
 class IntegrationHttpClient
 {
+    public function __construct(
+        private readonly ?IntegrationTokenResolver $tokenResolver = null,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $query
      * @param  array<string, mixed>  $body
@@ -25,10 +29,15 @@ class IntegrationHttpClient
         $url = $this->url($integration, $endpoint);
         $request = $this->pendingRequest($integration, $bearerToken);
         $method = strtolower($method);
+        $query = $this->mergeQuery($integration, $query);
+        $body = $this->mergeBody($integration, $body);
 
         $response = match ($method) {
-            'get' => $request->get($url, $this->mergeQuery($integration, $query)),
-            'post' => $request->post($this->appendQuery($integration, $url, $query), $body),
+            'get' => $request->get($url, $query),
+            'post' => $request->post($this->appendQuery($url, $query), $body),
+            'put' => $request->put($this->appendQuery($url, $query), $body),
+            'patch' => $request->patch($this->appendQuery($url, $query), $body),
+            'delete' => $request->delete($this->appendQuery($url, $query)),
             default => throw new RuntimeException(sprintf('Método HTTP [%s] não suportado para integrações.', $method)),
         };
 
@@ -47,8 +56,9 @@ class IntegrationHttpClient
             ->acceptJson()
             ->withHeaders($this->enabledKeyValueRows($connection['headers'] ?? []));
 
-        if (is_string($bearerToken) && $bearerToken !== '') {
-            return $request->withToken($bearerToken);
+        $resolvedBearerToken = ($this->tokenResolver ?? new IntegrationTokenResolver)->resolve($integration, $bearerToken);
+        if (is_string($resolvedBearerToken) && $resolvedBearerToken !== '') {
+            return $request->withToken($resolvedBearerToken);
         }
 
         return match ((string) ($auth['type'] ?? 'none')) {
@@ -96,12 +106,24 @@ class IntegrationHttpClient
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    private function mergeBody(TenantIntegration $integration, array $body): array
+    {
+        $config = $this->config($integration);
+        $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
+
+        return [
+            ...$this->enabledKeyValueRows($connection['body'] ?? []),
+            ...$body,
+        ];
+    }
+
+    /**
      * @param  array<string, mixed>  $query
      */
-    private function appendQuery(TenantIntegration $integration, string $url, array $query): string
+    private function appendQuery(string $url, array $query): string
     {
-        $query = $this->mergeQuery($integration, $query);
-
         if ($query === []) {
             return $url;
         }

@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\UpdateTenantIntegrationRequest;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Http\IntegrationHttpClient;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class TenantIntegrationController extends Controller
 {
@@ -37,14 +40,25 @@ class TenantIntegrationController extends Controller
             'last_sync' => $integration->last_sync?->toDateTimeString(),
             // Connection
             'api_url' => (string) ($connection['base_url'] ?? ''),
-            'connection_headers' => $this->formatHeadersForFrontend($connection['headers'] ?? []),
-            'connection_params' => is_array($connection['params'] ?? null) ? array_values((array) $connection['params']) : [],
-            'connection_body' => is_array($connection['body'] ?? null) ? array_values((array) $connection['body']) : [],
+            'connection_headers' => $this->formatKeyValueRowsForFrontend($connection['headers'] ?? []),
+            'connection_params' => $this->formatKeyValueRowsForFrontend($connection['params'] ?? []),
+            'connection_body' => $this->formatKeyValueRowsForFrontend($connection['body'] ?? []),
             // Auth
             'auth_type' => $authType,
+            'auth_bearer_mode' => (string) ($auth['token_mode'] ?? 'manual'),
             'auth_username' => (string) ($credentials['username'] ?? ''),
             'auth_password' => '',
             'auth_token' => '',
+            'auth_token_username' => (string) ($credentials['username'] ?? ''),
+            'auth_token_password' => '',
+            'auth_token_method' => (string) ($auth['token_request']['method'] ?? 'POST'),
+            'auth_token_path' => (string) ($auth['token_request']['path'] ?? ''),
+            'auth_token_response_path' => (string) ($auth['token_request']['response_path'] ?? 'token'),
+            'auth_token_username_field' => (string) ($auth['token_request']['username_field'] ?? 'username'),
+            'auth_token_password_field' => (string) ($auth['token_request']['password_field'] ?? 'password'),
+            'auth_token_headers' => $this->formatKeyValueRowsForFrontend($auth['token_request']['headers'] ?? []),
+            'auth_token_params' => $this->formatKeyValueRowsForFrontend($auth['token_request']['params'] ?? []),
+            'auth_token_body' => $this->formatKeyValueRowsForFrontend($auth['token_request']['body'] ?? []),
             // Processing
             'sales_initial_days' => (int) ($processing['sales_initial_days'] ?? 120),
             'products_initial_days' => (int) ($processing['products_initial_days'] ?? 120),
@@ -61,6 +75,7 @@ class TenantIntegrationController extends Controller
             'integration_types' => [
                 ['value' => 'sysmo',     'label' => __('app.landlord.tenant_integrations.types.sysmo')],
                 ['value' => 'gescooper', 'label' => __('app.landlord.tenant_integrations.types.gescooper')],
+                ['value' => 'generic',   'label' => __('app.landlord.tenant_integrations.types.generic')],
             ],
         ]);
     }
@@ -128,7 +143,7 @@ class TenantIntegrationController extends Controller
         return to_route('landlord.tenants.integration.edit', $tenant);
     }
 
-    public function testConnection(Request $request, Tenant $tenant): RedirectResponse|JsonResponse
+    public function testConnection(Request $request, Tenant $tenant, IntegrationHttpClient $httpClient): RedirectResponse|JsonResponse
     {
         $this->authorize('update', $tenant);
 
@@ -154,7 +169,7 @@ class TenantIntegrationController extends Controller
             return to_route('landlord.tenants.integration.edit', $tenant);
         }
 
-        $payload = $this->mockConnectionTestPayload($request);
+        $payload = $this->connectionTestPayload($request, $integration, $httpClient);
 
         if ($request->expectsJson()) {
             return response()->json($payload);
@@ -172,7 +187,7 @@ class TenantIntegrationController extends Controller
     /**
      * @return array<int, array{key: string, value: string, enabled: bool}>
      */
-    private function formatHeadersForFrontend(mixed $headers): array
+    private function formatKeyValueRowsForFrontend(mixed $headers): array
     {
         if (! is_array($headers)) {
             return [];
@@ -195,20 +210,70 @@ class TenantIntegrationController extends Controller
         return $result;
     }
 
-    /** @return array{ok: bool, message: string, meta: array{status: int, method: string, path: string}, data: array<string, mixed>} */
-    private function mockConnectionTestPayload(Request $request): array
+    /** @return array{ok: bool, message: string, meta: array<string, mixed>, data?: mixed} */
+    private function connectionTestPayload(Request $request, TenantIntegration $integration, IntegrationHttpClient $httpClient): array
     {
-        return [
-            'ok' => true,
-            'message' => 'Teste de conexão mockado enquanto o novo sistema de importação é construído.',
-            'meta' => [
-                'status' => 200,
-                'method' => strtoupper((string) ($request->string('test_method') ?: 'GET')),
-                'path' => (string) ($request->string('test_path') ?: '/'),
-            ],
-            'data' => [
-                'mocked' => true,
-            ],
-        ];
+        $method = strtoupper((string) ($request->string('test_method') ?: 'GET'));
+        $path = (string) ($request->string('test_path') ?: '/');
+
+        try {
+            $response = $httpClient->request(
+                integration: $integration,
+                method: $method,
+                endpoint: $path,
+                body: $this->testBody($request),
+            );
+
+            return [
+                'ok' => true,
+                'message' => __('app.landlord.tenant_integrations.messages.connection_success'),
+                'meta' => [
+                    'status' => $response->status(),
+                    'method' => $method,
+                    'path' => $path,
+                ],
+                'data' => $response->json(),
+            ];
+        } catch (RequestException $exception) {
+            return [
+                'ok' => false,
+                'message' => __('app.landlord.tenant_integrations.messages.connection_failed', [
+                    'error' => $exception->getMessage(),
+                ]),
+                'meta' => [
+                    'status' => $exception->response?->status(),
+                    'method' => $method,
+                    'path' => $path,
+                ],
+                'data' => $exception->response?->json(),
+            ];
+        } catch (Throwable $exception) {
+            return [
+                'ok' => false,
+                'message' => __('app.landlord.tenant_integrations.messages.connection_failed', [
+                    'error' => $exception->getMessage(),
+                ]),
+                'meta' => [
+                    'status' => null,
+                    'method' => $method,
+                    'path' => $path,
+                ],
+            ];
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function testBody(Request $request): array
+    {
+        $rawBody = trim((string) $request->string('test_body'));
+        if ($rawBody === '') {
+            return [];
+        }
+
+        $decoded = json_decode($rawBody, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 }

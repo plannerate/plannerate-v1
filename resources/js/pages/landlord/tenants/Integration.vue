@@ -32,9 +32,20 @@ type IntegrationPayload = {
     integration_type: string;
     api_url: string;
     auth_type: string;
+    auth_bearer_mode: string;
     auth_token: string;
     auth_username: string;
     auth_password: string;
+    auth_token_username: string;
+    auth_token_password: string;
+    auth_token_method: string;
+    auth_token_path: string;
+    auth_token_response_path: string;
+    auth_token_username_field: string;
+    auth_token_password_field: string;
+    auth_token_headers: KeyValueRow[];
+    auth_token_params: KeyValueRow[];
+    auth_token_body: KeyValueRow[];
     sales_initial_days: number;
     products_initial_days: number;
     processing_time: string;
@@ -64,6 +75,7 @@ const activeTab = ref('authorization');
 const tenantsIndexPath = TenantController.index.url().replace(/^\/\/[^/]+/, '');
 
 const localAuthType = ref(props.integration?.auth_type ?? 'none');
+const localBearerMode = ref(props.integration?.auth_bearer_mode ?? 'manual');
 const connectionHeaders = ref<KeyValueRow[]>(
     props.integration?.connection_headers ?? [],
 );
@@ -72,6 +84,15 @@ const connectionParams = ref<KeyValueRow[]>(
 );
 const connectionBody = ref<KeyValueRow[]>(
     props.integration?.connection_body ?? [],
+);
+const authTokenHeaders = ref<KeyValueRow[]>(
+    props.integration?.auth_token_headers ?? [],
+);
+const authTokenParams = ref<KeyValueRow[]>(
+    props.integration?.auth_token_params ?? [],
+);
+const authTokenBody = ref<KeyValueRow[]>(
+    props.integration?.auth_token_body ?? [],
 );
 
 const testPath = ref('/');
@@ -110,9 +131,20 @@ const formData = computed(() => ({
     integration_type: props.integration?.integration_type ?? 'sysmo',
     api_url: props.integration?.api_url ?? '',
     auth_type: props.integration?.auth_type ?? 'none',
+    auth_bearer_mode: props.integration?.auth_bearer_mode ?? 'manual',
     auth_username: props.integration?.auth_username ?? '',
     auth_password: props.integration?.auth_password ?? '',
     auth_token: props.integration?.auth_token ?? '',
+    auth_token_username: props.integration?.auth_token_username ?? '',
+    auth_token_password: props.integration?.auth_token_password ?? '',
+    auth_token_method: props.integration?.auth_token_method ?? 'POST',
+    auth_token_path: props.integration?.auth_token_path ?? '',
+    auth_token_response_path:
+        props.integration?.auth_token_response_path ?? 'token',
+    auth_token_username_field:
+        props.integration?.auth_token_username_field ?? 'username',
+    auth_token_password_field:
+        props.integration?.auth_token_password_field ?? 'password',
     sales_initial_days: props.integration?.sales_initial_days ?? 120,
     products_initial_days: props.integration?.products_initial_days ?? 120,
     processing_time: props.integration?.processing_time ?? '02:00',
@@ -410,21 +442,247 @@ function testConnection(): void {
                         <!-- Bearer Token -->
                         <div
                             v-show="localAuthType === 'bearer'"
-                            class="grid grid-cols-1 gap-4 md:grid-cols-12"
+                            class="space-y-4"
                         >
-                            <FormTextField
-                                id="auth_token"
-                                name="auth_token"
-                                type="password"
-                                :label="
-                                    t(
-                                        'app.landlord.tenant_integrations.fields.auth_token',
-                                    )
-                                "
-                                :default-value="formData.auth_token"
-                                :error="errors.auth_token"
-                                class="md:col-span-8"
-                            />
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                                <div class="space-y-1 md:col-span-4">
+                                    <label
+                                        for="auth_bearer_mode"
+                                        class="text-sm font-medium text-foreground"
+                                    >
+                                        {{
+                                            t(
+                                                'app.landlord.tenant_integrations.fields.auth_bearer_mode',
+                                            )
+                                        }}
+                                    </label>
+                                    <select
+                                        id="auth_bearer_mode"
+                                        v-model="localBearerMode"
+                                        name="auth_bearer_mode"
+                                        class="h-9 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                                    >
+                                        <option value="manual">
+                                            {{
+                                                t(
+                                                    'app.landlord.tenant_integrations.auth_types.bearer_manual',
+                                                )
+                                            }}
+                                        </option>
+                                        <option value="fetch">
+                                            {{
+                                                t(
+                                                    'app.landlord.tenant_integrations.auth_types.bearer_fetch',
+                                                )
+                                            }}
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div
+                                v-show="localBearerMode === 'manual'"
+                                class="grid grid-cols-1 gap-4 md:grid-cols-12"
+                            >
+                                <FormTextField
+                                    id="auth_token"
+                                    name="auth_token"
+                                    type="password"
+                                    :label="
+                                        t(
+                                            'app.landlord.tenant_integrations.fields.auth_token',
+                                        )
+                                    "
+                                    :default-value="formData.auth_token"
+                                    :error="errors.auth_token"
+                                    :placeholder="
+                                        !props.integration
+                                            ? ''
+                                            : t(
+                                                  'app.landlord.tenant_integrations.placeholders.keep_token',
+                                              )
+                                    "
+                                    class="md:col-span-8"
+                                />
+                            </div>
+
+                            <div
+                                v-show="localBearerMode === 'fetch'"
+                                class="space-y-4"
+                            >
+                                <div
+                                    class="grid grid-cols-1 gap-4 md:grid-cols-12"
+                                >
+                                    <FormSelectField
+                                        id="auth_token_method"
+                                        name="auth_token_method"
+                                        :label="
+                                            t(
+                                                'app.landlord.tenant_integrations.fields.auth_token_method',
+                                            )
+                                        "
+                                        :default-value="
+                                            formData.auth_token_method
+                                        "
+                                        :error="errors.auth_token_method"
+                                        class="md:col-span-3"
+                                    >
+                                        <option value="POST">POST</option>
+                                        <option value="GET">GET</option>
+                                        <option value="PUT">PUT</option>
+                                        <option value="PATCH">PATCH</option>
+                                    </FormSelectField>
+                                    <FormTextField
+                                        id="auth_token_path"
+                                        name="auth_token_path"
+                                        :label="
+                                            t(
+                                                'app.landlord.tenant_integrations.fields.auth_token_path',
+                                            )
+                                        "
+                                        :default-value="
+                                            formData.auth_token_path
+                                        "
+                                        :error="errors.auth_token_path"
+                                        placeholder="/token"
+                                        class="md:col-span-5"
+                                    />
+                                    <FormTextField
+                                        id="auth_token_response_path"
+                                        name="auth_token_response_path"
+                                        :label="
+                                            t(
+                                                'app.landlord.tenant_integrations.fields.auth_token_response_path',
+                                            )
+                                        "
+                                        :default-value="
+                                            formData.auth_token_response_path
+                                        "
+                                        :error="
+                                            errors.auth_token_response_path
+                                        "
+                                        placeholder="token"
+                                        class="md:col-span-4"
+                                    />
+                                </div>
+
+                                <div
+                                    class="grid grid-cols-1 gap-4 md:grid-cols-12"
+                                >
+                                    <FormTextField
+                                        id="auth_token_username"
+                                        name="auth_token_username"
+                                        :label="
+                                            t(
+                                                'app.landlord.tenant_integrations.fields.auth_username',
+                                            )
+                                        "
+                                        :default-value="
+                                            formData.auth_token_username
+                                        "
+                                        :error="errors.auth_token_username"
+                                        class="md:col-span-3"
+                                    />
+                                    <FormTextField
+                                        id="auth_token_password"
+                                        name="auth_token_password"
+                                        type="password"
+                                        :label="
+                                            t(
+                                                'app.landlord.tenant_integrations.fields.auth_password',
+                                            )
+                                        "
+                                        :default-value="
+                                            formData.auth_token_password
+                                        "
+                                        :error="errors.auth_token_password"
+                                        :placeholder="
+                                            !props.integration
+                                                ? ''
+                                                : t(
+                                                      'app.landlord.tenant_integrations.placeholders.keep_password',
+                                                  )
+                                        "
+                                        class="md:col-span-3"
+                                    />
+                                    <FormTextField
+                                        id="auth_token_username_field"
+                                        name="auth_token_username_field"
+                                        :label="
+                                            t(
+                                                'app.landlord.tenant_integrations.fields.auth_token_username_field',
+                                            )
+                                        "
+                                        :default-value="
+                                            formData.auth_token_username_field
+                                        "
+                                        :error="
+                                            errors.auth_token_username_field
+                                        "
+                                        placeholder="username"
+                                        class="md:col-span-3"
+                                    />
+                                    <FormTextField
+                                        id="auth_token_password_field"
+                                        name="auth_token_password_field"
+                                        :label="
+                                            t(
+                                                'app.landlord.tenant_integrations.fields.auth_token_password_field',
+                                            )
+                                        "
+                                        :default-value="
+                                            formData.auth_token_password_field
+                                        "
+                                        :error="
+                                            errors.auth_token_password_field
+                                        "
+                                        placeholder="password"
+                                        class="md:col-span-3"
+                                    />
+                                </div>
+
+                                <div class="space-y-2">
+                                    <p class="text-sm text-muted-foreground">
+                                        {{
+                                            t(
+                                                'app.landlord.tenant_integrations.tabs.token_headers_hint',
+                                            )
+                                        }}
+                                    </p>
+                                    <KeyValueTable
+                                        v-model="authTokenHeaders"
+                                        name="auth_token_headers"
+                                    />
+                                </div>
+
+                                <div class="space-y-2">
+                                    <p class="text-sm text-muted-foreground">
+                                        {{
+                                            t(
+                                                'app.landlord.tenant_integrations.tabs.token_params_hint',
+                                            )
+                                        }}
+                                    </p>
+                                    <KeyValueTable
+                                        v-model="authTokenParams"
+                                        name="auth_token_params"
+                                    />
+                                </div>
+
+                                <div class="space-y-2">
+                                    <p class="text-sm text-muted-foreground">
+                                        {{
+                                            t(
+                                                'app.landlord.tenant_integrations.tabs.token_body_hint',
+                                            )
+                                        }}
+                                    </p>
+                                    <KeyValueTable
+                                        v-model="authTokenBody"
+                                        name="auth_token_body"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Basic Auth -->

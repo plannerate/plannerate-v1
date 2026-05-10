@@ -4,6 +4,7 @@ use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function (): void {
@@ -92,6 +93,54 @@ test('validation blocks invalid integration type and invalid url', function () {
         ]);
 });
 
+test('put stores generic bearer token fetch configuration', function () {
+    $tenant = createTenantForIntegration();
+
+    $response = $this->put(route('landlord.tenants.integration.update', $tenant), integrationPayload([
+        'integration_type' => 'generic',
+        'auth_type' => 'bearer',
+        'auth_bearer_mode' => 'fetch',
+        'auth_token_username' => 'token-user',
+        'auth_token_password' => 'token-pass',
+        'auth_token_method' => 'POST',
+        'auth_token_path' => '/oauth/token',
+        'auth_token_response_path' => 'data.access_token',
+        'auth_token_username_field' => 'usuario',
+        'auth_token_password_field' => 'senha',
+        'auth_token_headers' => [
+            ['key' => 'X-Token-Client', 'value' => 'plannerate', 'enabled' => '1'],
+        ],
+        'auth_token_params' => [
+            ['key' => 'scope', 'value' => 'imports', 'enabled' => '1'],
+        ],
+        'auth_token_body' => [
+            ['key' => 'grant_type', 'value' => 'password', 'enabled' => '1'],
+        ],
+    ]));
+
+    $response->assertRedirect(route('landlord.tenants.integration.edit', $tenant));
+
+    $integration = TenantIntegration::query()->where('tenant_id', $tenant->id)->firstOrFail();
+
+    expect($integration->integration_type)->toBe('generic')
+        ->and($integration->config['auth']['type'])->toBe('bearer')
+        ->and($integration->config['auth']['token_mode'])->toBe('fetch')
+        ->and($integration->config['auth']['credentials'])->toMatchArray([
+            'username' => 'token-user',
+            'password' => 'token-pass',
+        ])
+        ->and($integration->config['auth']['token_request'])->toMatchArray([
+            'method' => 'POST',
+            'path' => '/oauth/token',
+            'response_path' => 'data.access_token',
+            'username_field' => 'usuario',
+            'password_field' => 'senha',
+        ])
+        ->and($integration->config['auth']['token_request']['headers'][0]['key'])->toBe('X-Token-Client')
+        ->and($integration->config['auth']['token_request']['params'][0]['key'])->toBe('scope')
+        ->and($integration->config['auth']['token_request']['body'][0]['key'])->toBe('grant_type');
+});
+
 test('update keeps existing password when auth_password is blank', function () {
     $tenant = createTenantForIntegration();
     $this->put(route('landlord.tenants.integration.update', $tenant), integrationPayload());
@@ -109,7 +158,11 @@ test('update keeps existing password when auth_password is blank', function () {
         ->and($integration->config['connection']['base_url'] ?? null)->toBe('https://keep-password.example.com');
 });
 
-test('test connection returns mocked success feedback', function () {
+test('test connection returns real success feedback', function () {
+    Http::fake([
+        'https://sysmo.example.com/*' => Http::response(['pong' => true]),
+    ]);
+
     $tenant = createTenantForIntegration();
     $this->put(route('landlord.tenants.integration.update', $tenant), integrationPayload());
 
@@ -123,10 +176,14 @@ test('test connection returns mocked success feedback', function () {
     $response
         ->assertOk()
         ->assertJsonPath('ok', true)
-        ->assertJsonPath('data.mocked', true);
+        ->assertJsonPath('data.pong', true);
 });
 
-test('test connection redirect flow uses mocked feedback', function () {
+test('test connection redirect flow uses real feedback', function () {
+    Http::fake([
+        'https://sysmo.example.com/*' => Http::response(['pong' => true]),
+    ]);
+
     $tenant = createTenantForIntegration();
     $this->put(route('landlord.tenants.integration.update', $tenant), integrationPayload());
 
@@ -137,7 +194,11 @@ test('test connection redirect flow uses mocked feedback', function () {
         ->assertSessionHas('tenant_integration_test.ok', true);
 });
 
-test('test connection mocked response includes requested method and path', function () {
+test('test connection real response includes requested method and path', function () {
+    Http::fake([
+        'https://sysmo.example.com/custom/path*' => Http::response(['received' => true]),
+    ]);
+
     $tenant = createTenantForIntegration();
     $this->put(route('landlord.tenants.integration.update', $tenant), integrationPayload());
 
@@ -154,7 +215,41 @@ test('test connection mocked response includes requested method and path', funct
         ->assertJsonPath('ok', true)
         ->assertJsonPath('meta.method', 'POST')
         ->assertJsonPath('meta.path', '/custom/path')
-        ->assertJsonPath('data.mocked', true);
+        ->assertJsonPath('data.received', true);
+});
+
+test('test connection fetches bearer token before request', function () {
+    Http::fake([
+        'https://sysmo.example.com/oauth/token*' => Http::response([
+            'data' => ['access_token' => 'fetched-token'],
+        ]),
+        'https://sysmo.example.com/protected*' => Http::response(['ok' => true]),
+    ]);
+
+    $tenant = createTenantForIntegration();
+    $this->put(route('landlord.tenants.integration.update', $tenant), integrationPayload([
+        'auth_type' => 'bearer',
+        'auth_bearer_mode' => 'fetch',
+        'auth_token_username' => 'token-user',
+        'auth_token_password' => 'token-pass',
+        'auth_token_path' => '/oauth/token',
+        'auth_token_response_path' => 'data.access_token',
+    ]));
+
+    $response = $this
+        ->withHeaders(['Accept' => 'application/json'])
+        ->postJson(route('landlord.tenants.integration.test-connection', $tenant), [
+            'test_path' => '/protected',
+            'test_method' => 'GET',
+        ]);
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('ok', true)
+        ->assertJsonPath('data.ok', true);
+
+    Http::assertSent(fn ($request): bool => $request->url() === 'https://sysmo.example.com/protected'
+        && $request->hasHeader('Authorization', 'Bearer fetched-token'));
 });
 
 function createTenantForIntegration(): Tenant

@@ -62,6 +62,127 @@ test('client builds request with base url auth headers and enabled params', func
     });
 });
 
+test('client merges configured body rows for write requests', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+
+    Http::fake([
+        'https://api.example.test/products*' => Http::response(['ok' => true]),
+    ]);
+
+    $integration = new TenantIntegration([
+        'config' => [
+            'connection' => [
+                'base_url' => 'https://api.example.test',
+                'body' => [
+                    ['key' => 'partner_key', 'value' => 'abc123', 'enabled' => true],
+                    ['key' => 'disabled_key', 'value' => 'nope', 'enabled' => false],
+                ],
+            ],
+        ],
+    ]);
+
+    (new IntegrationHttpClient)->request(
+        integration: $integration,
+        method: 'POST',
+        endpoint: '/products',
+        body: ['pagina' => '1'],
+    );
+
+    Http::assertSent(function (Request $request): bool {
+        return $request->url() === 'https://api.example.test/products'
+            && $request->data() === [
+                'partner_key' => 'abc123',
+                'pagina' => '1',
+            ];
+    });
+});
+
+test('client sends manual bearer token from integration config', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+
+    Http::fake([
+        'https://api.example.test/protected*' => Http::response(['ok' => true]),
+    ]);
+
+    $integration = new TenantIntegration([
+        'config' => [
+            'auth' => [
+                'type' => 'bearer',
+                'token_mode' => 'manual',
+                'credentials' => [
+                    'token' => 'manual-token',
+                ],
+            ],
+            'connection' => [
+                'base_url' => 'https://api.example.test',
+            ],
+        ],
+    ]);
+
+    (new IntegrationHttpClient)->request(
+        integration: $integration,
+        method: 'GET',
+        endpoint: '/protected',
+    );
+
+    Http::assertSent(fn (Request $request): bool => $request->hasHeader('Authorization', 'Bearer manual-token'));
+});
+
+test('client fetches bearer token from configured endpoint and caches it', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    Cache::flush();
+
+    Http::fake([
+        'https://api.example.test/oauth/token*' => Http::response([
+            'data' => ['access_token' => 'fetched-token'],
+        ]),
+        'https://api.example.test/protected*' => Http::response(['ok' => true]),
+    ]);
+
+    $integration = new TenantIntegration([
+        'id' => '01k-generic-token-test',
+        'config' => [
+            'auth' => [
+                'type' => 'bearer',
+                'token_mode' => 'fetch',
+                'credentials' => [
+                    'username' => 'client-user',
+                    'password' => 'client-secret',
+                ],
+                'token_request' => [
+                    'method' => 'POST',
+                    'path' => '/oauth/token',
+                    'response_path' => 'data.access_token',
+                    'username_field' => 'usuario',
+                    'password_field' => 'senha',
+                    'body' => [
+                        ['key' => 'grant_type', 'value' => 'password', 'enabled' => true],
+                    ],
+                ],
+            ],
+            'connection' => [
+                'base_url' => 'https://api.example.test',
+            ],
+        ],
+    ]);
+
+    $client = new IntegrationHttpClient;
+    $client->request($integration, 'GET', '/protected');
+    $client->request($integration, 'GET', '/protected');
+
+    Http::assertSentCount(3);
+    Http::assertSent(function (Request $request): bool {
+        return $request->url() === 'https://api.example.test/oauth/token'
+            && $request->data() === [
+                'grant_type' => 'password',
+                'usuario' => 'client-user',
+                'senha' => 'client-secret',
+            ];
+    });
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.example.test/protected'
+        && $request->hasHeader('Authorization', 'Bearer fetched-token'));
+});
+
 test('sysmo importer uses configured products path when present', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
     Carbon::setTestNow('2026-05-09 12:00:00');
@@ -109,6 +230,38 @@ test('sysmo importer uses configured products path when present', function (): v
     Carbon::setTestNow();
 });
 
+test('sysmo importer uses configured body page size', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    Carbon::setTestNow('2026-05-09 12:00:00');
+
+    Http::fake([
+        'https://sysmo.example.test/custom/products*' => Http::response(['ok' => true]),
+    ]);
+
+    $integration = new TenantIntegration([
+        'config' => [
+            'connection' => [
+                'base_url' => 'https://sysmo.example.test',
+                'body' => [
+                    ['key' => 'tamanho_pagina', 'value' => '1800', 'enabled' => true],
+                ],
+            ],
+            'paths' => [
+                'products' => '/custom/products',
+            ],
+        ],
+    ]);
+
+    (new SysmoImporter(new IntegrationHttpClient, new ImportBatchPayloadStore))->importProducts($integration);
+
+    Http::assertSent(function (Request $request): bool {
+        return $request->url() === 'https://sysmo.example.test/custom/products'
+            && $request->data()['tamanho_pagina'] === '1800';
+    });
+
+    Carbon::setTestNow();
+});
+
 test('gescooper importer sends store document as empresa query param for get requests', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
     Cache::flush();
@@ -148,6 +301,41 @@ test('gescooper importer sends store document as empresa query param for get req
     Http::assertSent(function (Request $request): bool {
         return $request->url() === 'https://gescooper.example.test/Produtos/Produtos?empresa=98765432000188&pagina=1&registros_por_pagina=200&api-version=1.0'
             && $request->hasHeader('Authorization', 'Bearer test-jwt-token');
+    });
+});
+
+test('gescooper importer uses configured params page size', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    Cache::flush();
+
+    Http::fake([
+        'https://gescooper.example.test/v1/Token' => Http::response([
+            'token' => 'test-jwt-token',
+        ], 200),
+        'https://gescooper.example.test/Produtos/Produtos*' => Http::response(['ok' => true]),
+    ]);
+
+    $integration = new TenantIntegration([
+        'config' => [
+            'auth' => [
+                'credentials' => [
+                    'username' => 'GOMARKAPI',
+                    'password' => 'secret',
+                ],
+            ],
+            'connection' => [
+                'base_url' => 'https://gescooper.example.test',
+                'params' => [
+                    ['key' => 'registros_por_pagina', 'value' => '450', 'enabled' => true],
+                ],
+            ],
+        ],
+    ]);
+
+    (new GescooperImporter(new IntegrationHttpClient, new ImportBatchPayloadStore))->importProducts($integration);
+
+    Http::assertSent(function (Request $request): bool {
+        return $request->url() === 'https://gescooper.example.test/Produtos/Produtos?registros_por_pagina=450&pagina=1&api-version=1.0';
     });
 });
 
