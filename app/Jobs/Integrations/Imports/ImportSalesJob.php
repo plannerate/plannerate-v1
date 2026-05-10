@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Integrations\Imports;
 
+use App\Jobs\Integrations\Maintenance\FinalizeTenantImportsJob;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Importers\IntegrationImporter;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,6 +19,7 @@ class ImportSalesJob implements NotTenantAware, ShouldQueue
 
     public function __construct(
         public string $integrationId,
+        public bool $runFinalize = true,
     ) {
         $this->onQueue('imports');
     }
@@ -48,6 +50,10 @@ class ImportSalesJob implements NotTenantAware, ShouldQueue
         }
 
         $integrationImporter->importSales($integration);
+
+        if ($this->runFinalize) {
+            FinalizeTenantImportsJob::dispatch((string) $integration->tenant_id)->delay(now()->addMinutes(2));
+        }
     }
 
     private function tenantHasProducts(TenantIntegration $integration): bool

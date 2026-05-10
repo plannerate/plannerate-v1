@@ -11,7 +11,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-#[Signature('integrations:daily-imports {--type=all : Tipo de importação: all, sales ou products} {--clear : Limpa tabelas antes do dispatch respeitando o type}')]
+#[Signature('integrations:daily-imports {--type=all : Tipo de importação: all, sales ou products} {--clear : Limpa tabelas antes do dispatch respeitando o type} {--no-finalize : Não dispara finalização pós-import de sales}')]
 #[Description('Inicia a busca diária de produtos e vendas para integrações ativas')]
 class DispatchDailyImportsCommand extends Command
 {
@@ -47,7 +47,10 @@ class DispatchDailyImportsCommand extends Command
 
         foreach ($integrations as $integration) {
             if (in_array('sales', $types, true)) {
-                ImportSalesJob::dispatch((string) $integration->id);
+                ImportSalesJob::dispatch(
+                    integrationId: (string) $integration->id,
+                    runFinalize: ! (bool) $this->option('no-finalize'),
+                );
 
                 $dispatches[] = [
                     (string) $integration->id,
