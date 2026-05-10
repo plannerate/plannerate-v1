@@ -2,11 +2,11 @@
 
 namespace App\Services\Integrations\Importers;
 
+use App\Jobs\Integrations\Imports\ProcessImportedProductsBatchJob;
+use App\Jobs\Integrations\Imports\ProcessImportedSalesBatchJob;
 use App\Models\Store;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
-use App\Services\Integrations\Support\PersistImportedProductsService;
-use App\Services\Integrations\Support\PersistImportedSalesService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -17,8 +17,6 @@ class GescooperImporter implements ClientApiImporter
 {
     public function __construct(
         private readonly IntegrationHttpClient $httpClient,
-        private readonly PersistImportedProductsService $persistImportedProductsService,
-        private readonly PersistImportedSalesService $persistImportedSalesService,
     ) {}
 
     public function importSales(TenantIntegration $integration, ?Store $store = null): void
@@ -42,11 +40,12 @@ class GescooperImporter implements ClientApiImporter
             $payload = $response->json();
             $items = $this->resolveItems(is_array($payload) ? $payload : []);
 
-            $this->persistImportedSalesService->persist(
-                integration: $integration,
+            ProcessImportedSalesBatchJob::dispatch(
+                integrationId: (string) $integration->id,
                 provider: 'gescooper',
                 items: $items,
-                store: $store,
+                storeId: $store?->id,
+                storeDocument: $store?->document,
             );
 
             Log::info('GesCooper sales import request completed.', [
@@ -96,11 +95,11 @@ class GescooperImporter implements ClientApiImporter
             $totalPages = $this->resolveTotalPages(is_array($payload) ? $payload : [], $currentPage);
             $items = $this->resolveItems(is_array($payload) ? $payload : []);
 
-            $this->persistImportedProductsService->persist(
-                integration: $integration,
+            ProcessImportedProductsBatchJob::dispatch(
+                integrationId: (string) $integration->id,
                 provider: 'gescooper',
                 items: $items,
-                store: $store,
+                storeId: $store?->id,
             );
 
             Log::info('GesCooper products import page fetched.', [
