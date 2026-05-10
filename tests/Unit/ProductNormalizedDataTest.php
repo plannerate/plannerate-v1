@@ -35,3 +35,12 @@ test('returns null when required product keys are missing', function (): void {
         ->and($missingEan)->toBeNull();
 });
 
+test('returns null when provider-required string fields are missing', function (): void {
+    $normalized = ProductNormalizedData::fromMapped([
+        'codigo_erp' => 'PRD001',
+        'ean' => '7891000315507',
+        'name' => '   ',
+    ], [], ['name']);
+
+    expect($normalized)->toBeNull();
+});

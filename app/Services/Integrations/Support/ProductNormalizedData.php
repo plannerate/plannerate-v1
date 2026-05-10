@@ -34,14 +34,21 @@ class ProductNormalizedData
     /**
      * @param  array<string, mixed>  $mapped
      * @param  array<string, mixed>  $raw
+     * @param  list<string>  $requiredStringFields
      */
-    public static function fromMapped(array $mapped, array $raw): ?self
+    public static function fromMapped(array $mapped, array $raw, array $requiredStringFields = []): ?self
     {
         $codigoErp = self::toStringOrNull($mapped['codigo_erp'] ?? null);
         $ean = self::toStringOrNull($mapped['ean'] ?? null);
 
         if ($codigoErp === null || $ean === null) {
             return null;
+        }
+
+        foreach ($requiredStringFields as $field) {
+            if (self::toStringOrNull($mapped[$field] ?? null) === null) {
+                return null;
+            }
         }
 
         return new self(
@@ -89,4 +96,3 @@ class ProductNormalizedData
         return null;
     }
 }
-

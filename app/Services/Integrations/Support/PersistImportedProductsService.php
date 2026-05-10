@@ -75,7 +75,11 @@ class PersistImportedProductsService
                 continue;
             }
 
-            $normalized = ProductNormalizedData::fromMapped($mapped, $item);
+            $normalized = ProductNormalizedData::fromMapped(
+                $mapped,
+                $item,
+                $this->requiredStringFieldsByProvider($provider),
+            );
             if (! $normalized instanceof ProductNormalizedData) {
                 $invalidCount++;
 
@@ -256,4 +260,14 @@ class PersistImportedProductsService
         return $this->productFieldMapRegistry->resolve($provider)->passesValidation($mapped, $raw);
     }
 
+    /**
+     * @return list<string>
+     */
+    private function requiredStringFieldsByProvider(string $provider): array
+    {
+        return match ($provider) {
+            'sysmo', 'gescooper' => ['name'],
+            default => [],
+        };
+    }
 }
