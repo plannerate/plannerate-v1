@@ -23,14 +23,17 @@ class SysmoImporter implements ClientApiImporter
     public function importSales(TenantIntegration $integration, ?Store $store = null): void
     {
         $endpoint = $this->path($integration, 'sales', '/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos');
+        $salesMode = $this->salesMode($integration, $store);
         $body = [
             ...$this->connectionBody($integration),
             ...$this->storeBody($store),
-            ...$this->salesDatePayload($integration),
+            ...$this->salesDatePayload($integration, $salesMode),
             'pagina' => '1',
         ];
 
-        $this->logRequestPayload('sales', $integration, $store, $endpoint, $body);
+        $this->logRequestPayload('sales', $integration, $store, $endpoint, $body, [
+            'sales_mode' => $salesMode,
+        ]);
 
         $response = $this->httpClient->request(
             integration: $integration,
@@ -70,7 +73,7 @@ class SysmoImporter implements ClientApiImporter
             $body = [
                 ...$this->connectionBody($integration),
                 ...$this->storeBody($store),
-                ...$this->productsDatePayload($integration),
+                ...$this->productsDatePayload($integration, $store),
                 'pagina' => (string) $currentPage,
             ];
             $body['tamanho_pagina'] = (string) $this->productsPageSize($integration);
@@ -147,6 +150,7 @@ class SysmoImporter implements ClientApiImporter
         ?Store $store,
         string $endpoint,
         array $body,
+        array $context = [],
     ): void {
         Log::info('Sysmo import request payload.', [
             'resource' => $resource,
@@ -158,6 +162,7 @@ class SysmoImporter implements ClientApiImporter
             'method' => 'POST',
             'endpoint' => $endpoint,
             'body' => $body,
+            ...$context,
         ]);
     }
 
@@ -234,9 +239,9 @@ class SysmoImporter implements ClientApiImporter
     /**
      * @return array{data_ultima_alteracao: string}|array{}
      */
-    private function productsDatePayload(TenantIntegration $integration): array
+    private function productsDatePayload(TenantIntegration $integration, ?Store $store = null): array
     {
-        if (! $this->tenantHasProducts($integration)) {
+        if (! $this->tenantHasProducts($integration, $store)) {
             return [];
         }
 
@@ -245,21 +250,38 @@ class SysmoImporter implements ClientApiImporter
         ];
     }
 
-    private function tenantHasProducts(TenantIntegration $integration): bool
+    private function tenantHasProducts(TenantIntegration $integration, ?Store $store = null): bool
     {
         $tenant = $integration->tenant;
         if (! $tenant instanceof Tenant) {
             return true;
         }
 
-        return $tenant->execute(function (): bool {
+        return $tenant->execute(function () use ($integration, $store, $tenant): bool {
             $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+            $isSeparateByStore = $this->separateByStore($integration);
+
+            if ($isSeparateByStore && $store instanceof Store && is_string($store->id) && $store->id !== '') {
+                return DB::connection($connection)
+                    ->table('product_store')
+                    ->where('tenant_id', (string) $tenant->id)
+                    ->where('store_id', (string) $store->id)
+                    ->exists();
+            }
 
             return DB::connection($connection)
                 ->table('products')
                 ->whereNull('deleted_at')
                 ->exists();
         });
+    }
+
+    private function separateByStore(TenantIntegration $integration): bool
+    {
+        $config = is_array($integration->config) ? $integration->config : [];
+        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
+
+        return (bool) ($processing['separate_by_store'] ?? false);
     }
 
     private function productsPageSize(TenantIntegration $integration): int
@@ -274,17 +296,57 @@ class SysmoImporter implements ClientApiImporter
     /**
      * @return array{data_inicial: string, data_final: string}
      */
-    private function salesDatePayload(TenantIntegration $integration): array
+    private function salesDatePayload(TenantIntegration $integration, string $mode): array
     {
+        $endDate = Carbon::today();
+        if ($mode === 'daily') {
+            return [
+                'data_inicial' => $endDate->copy()->subDay()->toDateString(),
+                'data_final' => $endDate->toDateString(),
+            ];
+        }
+
         $config = is_array($integration->config) ? $integration->config : [];
         $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
         $days = max(1, (int) ($processing['sales_initial_days'] ?? 120));
-        $endDate = Carbon::yesterday();
 
         return [
             'data_inicial' => $endDate->copy()->subDays($days - 1)->toDateString(),
             'data_final' => $endDate->toDateString(),
         ];
+    }
+
+    private function salesMode(TenantIntegration $integration, ?Store $store = null): string
+    {
+        return $this->tenantHasSales($integration, $store) ? 'daily' : 'initial';
+    }
+
+    private function tenantHasSales(TenantIntegration $integration, ?Store $store = null): bool
+    {
+        $tenant = $integration->tenant;
+        if (! $tenant instanceof Tenant) {
+            return true;
+        }
+
+        return $tenant->execute(function () use ($integration, $store, $tenant): bool {
+            $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+            $isSeparateByStore = $this->separateByStore($integration);
+
+            if ($isSeparateByStore && $store instanceof Store && is_string($store->id) && $store->id !== '') {
+                return DB::connection($connection)
+                    ->table('sales')
+                    ->where('tenant_id', (string) $tenant->id)
+                    ->where('store_id', (string) $store->id)
+                    ->whereNull('deleted_at')
+                    ->exists();
+            }
+
+            return DB::connection($connection)
+                ->table('sales')
+                ->where('tenant_id', (string) $tenant->id)
+                ->whereNull('deleted_at')
+                ->exists();
+        });
     }
 
     /**

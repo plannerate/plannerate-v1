@@ -5,12 +5,15 @@ namespace App\Services\Integrations\Importers;
 use App\Jobs\Integrations\Imports\ProcessImportedProductsBatchJob;
 use App\Jobs\Integrations\Imports\ProcessImportedSalesBatchJob;
 use App\Models\Store;
+use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\Support\ImportBatchPayloadStore;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -95,6 +98,7 @@ class GescooperImporter implements ClientApiImporter
         do {
             $query = [
                 ...$this->storeQuery($store),
+                ...$this->productsDateQuery($integration, $store),
                 'pagina' => $currentPage,
                 'registros_por_pagina' => 1000,
                 'api-version' => '1.0',
@@ -355,5 +359,55 @@ class GescooperImporter implements ClientApiImporter
         }
 
         return $baseUrl.'/'.ltrim($path, '/');
+    }
+
+    /**
+     * @return array{data_cadastro_de: string, data_cadastro_ate: string}|array{}
+     */
+    private function productsDateQuery(TenantIntegration $integration, ?Store $store = null): array
+    {
+        if (! $this->tenantHasProducts($integration, $store)) {
+            return [];
+        }
+
+        return [
+            'data_cadastro_de' => Carbon::yesterday()->startOfDay()->toIso8601String(),
+            'data_cadastro_ate' => Carbon::now()->toIso8601String(),
+        ];
+    }
+
+    private function tenantHasProducts(TenantIntegration $integration, ?Store $store = null): bool
+    {
+        $tenant = $integration->tenant;
+        if (! $tenant instanceof Tenant) {
+            return false;
+        }
+
+        return $tenant->execute(function () use ($integration, $store, $tenant): bool {
+            $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
+            $isSeparateByStore = $this->separateByStore($integration);
+
+            if ($isSeparateByStore && $store instanceof Store && is_string($store->id) && $store->id !== '') {
+                return DB::connection($connection)
+                    ->table('product_store')
+                    ->where('tenant_id', (string) $tenant->id)
+                    ->where('store_id', (string) $store->id)
+                    ->exists();
+            }
+
+            return DB::connection($connection)
+                ->table('products')
+                ->where('tenant_id', (string) $tenant->id)
+                ->whereNull('deleted_at')
+                ->exists();
+        });
+    }
+
+    private function separateByStore(TenantIntegration $integration): bool
+    {
+        $config = is_array($integration->config) ? $integration->config : [];
+        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
+
+        return (bool) ($processing['separate_by_store'] ?? false);
     }
 }
