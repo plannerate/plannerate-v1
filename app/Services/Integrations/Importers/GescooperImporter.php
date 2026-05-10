@@ -6,6 +6,7 @@ use App\Models\Store;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\Support\PersistImportedProductsService;
+use App\Services\Integrations\Support\PersistImportedSalesService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -17,6 +18,7 @@ class GescooperImporter implements ClientApiImporter
     public function __construct(
         private readonly IntegrationHttpClient $httpClient,
         private readonly PersistImportedProductsService $persistImportedProductsService,
+        private readonly PersistImportedSalesService $persistImportedSalesService,
     ) {}
 
     public function importSales(TenantIntegration $integration, ?Store $store = null): void
@@ -37,10 +39,21 @@ class GescooperImporter implements ClientApiImporter
                 bearerToken: $token,
             );
 
+            $payload = $response->json();
+            $items = $this->resolveItems(is_array($payload) ? $payload : []);
+
+            $this->persistImportedSalesService->persist(
+                integration: $integration,
+                provider: 'gescooper',
+                items: $items,
+                store: $store,
+            );
+
             Log::info('GesCooper sales import request completed.', [
                 'integration_id' => (string) $integration->id,
                 'tenant_id' => (string) $integration->tenant_id,
                 'store_id' => $store?->id,
+                'items' => count($items),
                 'status' => $response->status(),
             ]);
 
@@ -190,7 +203,7 @@ class GescooperImporter implements ClientApiImporter
      */
     private function resolveItems(array $payload): array
     {
-        $items = $payload['data'] ?? null;
+        $items = $payload['data'] ?? $payload['dados'] ?? null;
         if (! is_array($items)) {
             return [];
         }

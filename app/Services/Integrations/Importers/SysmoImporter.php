@@ -6,6 +6,7 @@ use App\Models\Store;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\Support\PersistImportedProductsService;
+use App\Services\Integrations\Support\PersistImportedSalesService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -14,6 +15,7 @@ class SysmoImporter implements ClientApiImporter
     public function __construct(
         private readonly IntegrationHttpClient $httpClient,
         private readonly PersistImportedProductsService $persistImportedProductsService,
+        private readonly PersistImportedSalesService $persistImportedSalesService,
     ) {}
 
     public function importSales(TenantIntegration $integration, ?Store $store = null): void
@@ -35,10 +37,21 @@ class SysmoImporter implements ClientApiImporter
             body: $body,
         );
 
+        $payload = $response->json();
+        $items = $this->resolveItems(is_array($payload) ? $payload : []);
+
+        $this->persistImportedSalesService->persist(
+            integration: $integration,
+            provider: 'sysmo',
+            items: $items,
+            store: $store,
+        );
+
         Log::info('Sysmo sales import request completed.', [
             'integration_id' => (string) $integration->id,
             'tenant_id' => (string) $integration->tenant_id,
             'store_id' => $store?->id,
+            'items' => count($items),
             'status' => $response->status(),
         ]);
     }

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services\Integrations\Support\ProductFieldMaps;
+namespace App\Services\Integrations\Support\SalesFieldMaps;
 
-interface ProductFieldMap
+interface SalesFieldMap
 {
     public function provider(): string;
 
