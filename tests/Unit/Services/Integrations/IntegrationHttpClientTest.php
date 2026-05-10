@@ -6,6 +6,7 @@ use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\Importers\GescooperImporter;
 use App\Services\Integrations\Importers\SysmoImporter;
 use App\Services\Integrations\Support\ImportBatchPayloadStore;
+use App\Services\Integrations\Support\IntegrationResponseReader;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -181,6 +182,82 @@ test('client fetches bearer token from configured endpoint and caches it', funct
     });
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.example.test/protected'
         && $request->hasHeader('Authorization', 'Bearer fetched-token'));
+});
+
+test('response reader understands gescooper pagination shape', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+
+    $integration = new TenantIntegration(['config' => []]);
+    $payload = [
+        'data' => [
+            ['id_produto' => 1],
+            ['id_produto' => 2],
+        ],
+        'pagination' => [
+            'current_page' => 1,
+            'per_page' => 200,
+            'total' => 21754,
+            'last_page' => 109,
+        ],
+        'success' => true,
+    ];
+
+    $reader = new IntegrationResponseReader;
+
+    expect($reader->items($integration, 'products', $payload))->toHaveCount(2)
+        ->and($reader->totalPages($integration, 'products', $payload, 1))->toBe(109);
+});
+
+test('response reader understands sysmo pagination shape', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+
+    $integration = new TenantIntegration(['config' => []]);
+    $payload = [
+        'pagina' => 1,
+        'dados' => [
+            ['codigo' => 1],
+        ],
+        'total_paginas' => '30',
+    ];
+
+    $reader = new IntegrationResponseReader;
+
+    expect($reader->items($integration, 'products', $payload))->toHaveCount(1)
+        ->and($reader->totalPages($integration, 'products', $payload, 1))->toBe(30);
+});
+
+test('response reader prefers configured response paths', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+
+    $integration = new TenantIntegration([
+        'config' => [
+            'response' => [
+                'products' => [
+                    'items_path' => 'payload.records',
+                    'pagination' => [
+                        'last_page_path' => 'payload.pages.last',
+                    ],
+                ],
+            ],
+        ],
+    ]);
+    $payload = [
+        'data' => [],
+        'payload' => [
+            'records' => [
+                ['sku' => 'A'],
+                ['sku' => 'B'],
+            ],
+            'pages' => [
+                'last' => 4,
+            ],
+        ],
+    ];
+
+    $reader = new IntegrationResponseReader;
+
+    expect($reader->items($integration, 'products', $payload))->toHaveCount(2)
+        ->and($reader->totalPages($integration, 'products', $payload, 1))->toBe(4);
 });
 
 test('sysmo importer uses configured products path when present', function (): void {

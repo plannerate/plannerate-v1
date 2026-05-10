@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\Support\ImportBatchPayloadStore;
+use App\Services\Integrations\Support\IntegrationResponseReader;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class GescooperImporter implements ClientApiImporter
     public function __construct(
         private readonly IntegrationHttpClient $httpClient,
         private readonly ImportBatchPayloadStore $importBatchPayloadStore,
+        private readonly ?IntegrationResponseReader $responseReader = null,
     ) {}
 
     public function importSales(TenantIntegration $integration, ?Store $store = null): void
@@ -54,7 +56,8 @@ class GescooperImporter implements ClientApiImporter
             }
 
             $payload = $response->json();
-            $items = $this->resolveItems(is_array($payload) ? $payload : []);
+            $payload = is_array($payload) ? $payload : [];
+            $items = $this->reader()->items($integration, 'sales', $payload);
 
             $payloadKey = $this->importBatchPayloadStore->put((string) $integration->id, 'sales', $items);
             ProcessImportedSalesBatchJob::dispatch(
@@ -110,8 +113,9 @@ class GescooperImporter implements ClientApiImporter
             );
 
             $payload = $response->json();
-            $totalPages = $this->resolveTotalPages(is_array($payload) ? $payload : [], $currentPage);
-            $items = $this->resolveItems(is_array($payload) ? $payload : []);
+            $payload = is_array($payload) ? $payload : [];
+            $totalPages = $this->reader()->totalPages($integration, 'products', $payload, $currentPage);
+            $items = $this->reader()->items($integration, 'products', $payload);
 
             $payloadKey = $this->importBatchPayloadStore->put((string) $integration->id, 'products', $items);
             ProcessImportedProductsBatchJob::dispatch(
@@ -187,54 +191,6 @@ class GescooperImporter implements ClientApiImporter
     private function storeDocument(?Store $store): string
     {
         return preg_replace('/\D+/', '', (string) $store?->document) ?? '';
-    }
-
-    /**
-     * @param  array<string, mixed>  $payload
-     */
-    private function resolveTotalPages(array $payload, int $currentPage): int
-    {
-        $candidates = [
-            $payload['total_paginas'] ?? null,
-            $payload['totalPaginas'] ?? null,
-            $payload['total_pages'] ?? null,
-            $payload['last_page'] ?? null,
-            is_array($payload['pagination'] ?? null) ? ($payload['pagination']['last_page'] ?? null) : null,
-            is_array($payload['pagination'] ?? null) ? ($payload['pagination']['total_pages'] ?? null) : null,
-            is_array($payload['meta'] ?? null) ? ($payload['meta']['last_page'] ?? null) : null,
-        ];
-
-        foreach ($candidates as $candidate) {
-            if (is_numeric($candidate)) {
-                return max($currentPage, (int) $candidate);
-            }
-        }
-
-        return $currentPage;
-    }
-
-    /**
-     * @param  array<string, mixed>  $payload
-     */
-    private function resolveItemCount(array $payload): int
-    {
-        $items = $payload['data'] ?? null;
-
-        return is_array($items) ? count($items) : 0;
-    }
-
-    /**
-     * @param  array<string, mixed>  $payload
-     * @return array<int, array<string, mixed>>
-     */
-    private function resolveItems(array $payload): array
-    {
-        $items = $payload['data'] ?? $payload['dados'] ?? null;
-        if (! is_array($items)) {
-            return [];
-        }
-
-        return array_values(array_filter($items, fn (mixed $item): bool => is_array($item)));
     }
 
     /**
@@ -320,6 +276,11 @@ class GescooperImporter implements ClientApiImporter
         }
 
         return max(50, min(500, $requested));
+    }
+
+    private function reader(): IntegrationResponseReader
+    {
+        return $this->responseReader ?? new IntegrationResponseReader;
     }
 
     /**

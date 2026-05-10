@@ -6,6 +6,7 @@ use App\Models\Store;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\Support\ImportBatchPayloadStore;
+use App\Services\Integrations\Support\IntegrationResponseReader;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Http\Client\RequestException;
@@ -30,6 +31,7 @@ class FetchSysmoSalesDayJob implements NotTenantAware, ShouldQueue
     public function handle(
         IntegrationHttpClient $httpClient,
         ImportBatchPayloadStore $importBatchPayloadStore,
+        IntegrationResponseReader $responseReader,
     ): void {
         $integration = TenantIntegration::query()
             ->with('tenant')
@@ -102,8 +104,9 @@ class FetchSysmoSalesDayJob implements NotTenantAware, ShouldQueue
             }
 
             $payload = $response->json();
-            $totalPages = $this->resolveTotalPages(is_array($payload) ? $payload : [], $currentPage);
-            $items = $this->resolveItems(is_array($payload) ? $payload : []);
+            $payload = is_array($payload) ? $payload : [];
+            $totalPages = $responseReader->totalPages($integration, 'sales', $payload, $currentPage);
+            $items = $responseReader->items($integration, 'sales', $payload);
 
             $payloadKey = $importBatchPayloadStore->put((string) $integration->id, 'sales', $items);
             ProcessImportedSalesBatchJob::dispatch(
@@ -148,41 +151,5 @@ class FetchSysmoSalesDayJob implements NotTenantAware, ShouldQueue
         $path = trim((string) ($paths[$key] ?? ''));
 
         return $path !== '' ? $path : $fallback;
-    }
-
-    /**
-     * @param  array<string, mixed>  $payload
-     */
-    private function resolveTotalPages(array $payload, int $currentPage): int
-    {
-        $candidates = [
-            $payload['total_paginas'] ?? null,
-            $payload['totalPaginas'] ?? null,
-            $payload['total_pages'] ?? null,
-            is_array($payload['pagination'] ?? null) ? ($payload['pagination']['total_pages'] ?? null) : null,
-            is_array($payload['meta'] ?? null) ? ($payload['meta']['last_page'] ?? null) : null,
-        ];
-
-        foreach ($candidates as $candidate) {
-            if (is_numeric($candidate)) {
-                return max($currentPage, (int) $candidate);
-            }
-        }
-
-        return $currentPage;
-    }
-
-    /**
-     * @param  array<string, mixed>  $payload
-     * @return array<int, array<string, mixed>>
-     */
-    private function resolveItems(array $payload): array
-    {
-        $items = $payload['dados'] ?? null;
-        if (! is_array($items)) {
-            return [];
-        }
-
-        return array_values(array_filter($items, fn (mixed $item): bool => is_array($item)));
     }
 }
