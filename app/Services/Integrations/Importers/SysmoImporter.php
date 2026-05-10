@@ -7,6 +7,7 @@ use App\Jobs\Integrations\Imports\ProcessImportedSalesBatchJob;
 use App\Models\Store;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
+use App\Services\Integrations\Support\ImportBatchPayloadStore;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -14,6 +15,7 @@ class SysmoImporter implements ClientApiImporter
 {
     public function __construct(
         private readonly IntegrationHttpClient $httpClient,
+        private readonly ImportBatchPayloadStore $importBatchPayloadStore,
     ) {}
 
     public function importSales(TenantIntegration $integration, ?Store $store = null): void
@@ -38,10 +40,11 @@ class SysmoImporter implements ClientApiImporter
         $payload = $response->json();
         $items = $this->resolveItems(is_array($payload) ? $payload : []);
 
+        $payloadKey = $this->importBatchPayloadStore->put((string) $integration->id, 'sales', $items);
         ProcessImportedSalesBatchJob::dispatch(
             integrationId: (string) $integration->id,
             provider: 'sysmo',
-            items: $items,
+            payloadKey: $payloadKey,
             storeId: $store?->id,
             storeDocument: $store?->document,
         );
@@ -68,6 +71,7 @@ class SysmoImporter implements ClientApiImporter
                 ...$this->productsDatePayload($integration),
                 'pagina' => (string) $currentPage,
             ];
+            $body['tamanho_pagina'] = (string) $this->productsPageSize($integration);
 
             $this->logRequestPayload('products', $integration, $store, $endpoint, $body);
 
@@ -82,10 +86,11 @@ class SysmoImporter implements ClientApiImporter
             $totalPages = $this->resolveTotalPages(is_array($payload) ? $payload : [], $currentPage);
             $items = $this->resolveItems(is_array($payload) ? $payload : []);
 
+            $payloadKey = $this->importBatchPayloadStore->put((string) $integration->id, 'products', $items);
             ProcessImportedProductsBatchJob::dispatch(
                 integrationId: (string) $integration->id,
                 provider: 'sysmo',
-                items: $items,
+                payloadKey: $payloadKey,
                 storeId: $store?->id,
             );
 
@@ -100,6 +105,8 @@ class SysmoImporter implements ClientApiImporter
             ]);
 
             $currentPage++;
+            unset($payload, $items, $body);
+            gc_collect_cycles();
         } while ($currentPage <= $totalPages);
     }
 
@@ -234,6 +241,15 @@ class SysmoImporter implements ClientApiImporter
         return [
             'data_ultima_alteracao' => Carbon::yesterday()->subDays($days - 1)->toDateString(),
         ];
+    }
+
+    private function productsPageSize(TenantIntegration $integration): int
+    {
+        $config = is_array($integration->config) ? $integration->config : [];
+        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
+        $requested = (int) ($processing['products_page_size'] ?? 500);
+
+        return max(100, min(1000, $requested));
     }
 
     /**

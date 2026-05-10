@@ -5,6 +5,7 @@ use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\Importers\GescooperImporter;
 use App\Services\Integrations\Importers\SysmoImporter;
+use App\Services\Integrations\Support\ImportBatchPayloadStore;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -92,7 +93,7 @@ test('sysmo importer uses configured products path when present', function (): v
     ]);
     $store->id = '01jts31n2rpz1tyy4n6xv4qdp1';
 
-    (new SysmoImporter(new IntegrationHttpClient))->importProducts($integration, $store);
+    (new SysmoImporter(new IntegrationHttpClient, new ImportBatchPayloadStore))->importProducts($integration, $store);
 
     Http::assertSent(function (Request $request): bool {
         return $request->url() === 'https://sysmo.example.test/custom/products'
@@ -101,6 +102,7 @@ test('sysmo importer uses configured products path when present', function (): v
                 'empresa' => '12345678000199',
                 'data_ultima_alteracao' => '2026-05-02',
                 'pagina' => '1',
+                'tamanho_pagina' => '500',
             ];
     });
 
@@ -137,7 +139,7 @@ test('gescooper importer sends store document as empresa query param for get req
     ]);
     $store->id = '01jts31n2rpz1tyy4n6xv4qdp2';
 
-    (new GescooperImporter(new IntegrationHttpClient))->importProducts($integration, $store);
+    (new GescooperImporter(new IntegrationHttpClient, new ImportBatchPayloadStore))->importProducts($integration, $store);
 
     Http::assertSent(function (Request $request): bool {
         return $request->url() === 'https://gescooper.example.test/Produtos/Produtos?empresa=98765432000188&pagina=1&registros_por_pagina=1000&api-version=1.0';
@@ -175,7 +177,7 @@ test('gescooper importer caches token between requests', function (): void {
         ],
     ]);
 
-    $importer = new GescooperImporter(new IntegrationHttpClient);
+    $importer = new GescooperImporter(new IntegrationHttpClient, new ImportBatchPayloadStore);
     $importer->importProducts($integration);
     $importer->importProducts($integration);
 
@@ -218,7 +220,7 @@ test('sysmo importer paginates products when total_paginas is returned', functio
         ],
     ]);
 
-    (new SysmoImporter(new IntegrationHttpClient))->importProducts($integration);
+    (new SysmoImporter(new IntegrationHttpClient, new ImportBatchPayloadStore))->importProducts($integration);
 
     Http::assertSentCount(2);
     Carbon::setTestNow();
@@ -257,7 +259,51 @@ test('gescooper importer paginates products when last_page is returned', functio
         ],
     ]);
 
-    (new GescooperImporter(new IntegrationHttpClient))->importProducts($integration);
+    (new GescooperImporter(new IntegrationHttpClient, new ImportBatchPayloadStore))->importProducts($integration);
+
+    Http::assertSentCount(3);
+});
+
+test('gescooper importer paginates products when pagination.last_page is returned', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    Cache::flush();
+
+    Http::fake([
+        'https://gescooper.example.test/v1/Token' => Http::response([
+            'token' => 'test-jwt-token',
+        ], 200),
+        'https://gescooper.example.test/Produtos/Produtos*' => Http::sequence()
+            ->push([
+                'data' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'last_page' => 2,
+                ],
+            ], 200)
+            ->push([
+                'data' => [],
+                'pagination' => [
+                    'current_page' => 2,
+                    'last_page' => 2,
+                ],
+            ], 200),
+    ]);
+
+    $integration = new TenantIntegration([
+        'config' => [
+            'auth' => [
+                'credentials' => [
+                    'username' => 'GOMARKAPI',
+                    'password' => 'secret',
+                ],
+            ],
+            'connection' => [
+                'base_url' => 'https://gescooper.example.test',
+            ],
+        ],
+    ]);
+
+    (new GescooperImporter(new IntegrationHttpClient, new ImportBatchPayloadStore))->importProducts($integration);
 
     Http::assertSentCount(3);
 });

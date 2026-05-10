@@ -7,7 +7,9 @@ use App\Jobs\Integrations\Imports\ProcessImportedSalesBatchJob;
 use App\Models\Store;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
+use App\Services\Integrations\Support\ImportBatchPayloadStore;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -17,6 +19,7 @@ class GescooperImporter implements ClientApiImporter
 {
     public function __construct(
         private readonly IntegrationHttpClient $httpClient,
+        private readonly ImportBatchPayloadStore $importBatchPayloadStore,
     ) {}
 
     public function importSales(TenantIntegration $integration, ?Store $store = null): void
@@ -29,21 +32,37 @@ class GescooperImporter implements ClientApiImporter
 
             $this->logRequestPayload('sales', $integration, $store, $path, $query);
 
-            $response = $this->httpClient->request(
-                integration: $integration,
-                method: 'GET',
-                endpoint: $path,
-                query: $query,
-                bearerToken: $token,
-            );
+            try {
+                $response = $this->httpClient->request(
+                    integration: $integration,
+                    method: 'GET',
+                    endpoint: $path,
+                    query: $query,
+                    bearerToken: $token,
+                );
+            } catch (RequestException $exception) {
+                if ($exception->response?->status() === 404) {
+                    Log::info('GesCooper sales import skipped: endpoint retornou 404.', [
+                        'integration_id' => (string) $integration->id,
+                        'tenant_id' => (string) $integration->tenant_id,
+                        'store_id' => $store?->id,
+                        'endpoint' => $path,
+                    ]);
+
+                    return;
+                }
+
+                throw $exception;
+            }
 
             $payload = $response->json();
             $items = $this->resolveItems(is_array($payload) ? $payload : []);
 
+            $payloadKey = $this->importBatchPayloadStore->put((string) $integration->id, 'sales', $items);
             ProcessImportedSalesBatchJob::dispatch(
                 integrationId: (string) $integration->id,
                 provider: 'gescooper',
-                items: $items,
+                payloadKey: $payloadKey,
                 storeId: $store?->id,
                 storeDocument: $store?->document,
             );
@@ -95,10 +114,11 @@ class GescooperImporter implements ClientApiImporter
             $totalPages = $this->resolveTotalPages(is_array($payload) ? $payload : [], $currentPage);
             $items = $this->resolveItems(is_array($payload) ? $payload : []);
 
+            $payloadKey = $this->importBatchPayloadStore->put((string) $integration->id, 'products', $items);
             ProcessImportedProductsBatchJob::dispatch(
                 integrationId: (string) $integration->id,
                 provider: 'gescooper',
-                items: $items,
+                payloadKey: $payloadKey,
                 storeId: $store?->id,
             );
 
@@ -173,6 +193,7 @@ class GescooperImporter implements ClientApiImporter
             $payload['totalPaginas'] ?? null,
             $payload['total_pages'] ?? null,
             $payload['last_page'] ?? null,
+            is_array($payload['pagination'] ?? null) ? ($payload['pagination']['last_page'] ?? null) : null,
             is_array($payload['pagination'] ?? null) ? ($payload['pagination']['total_pages'] ?? null) : null,
             is_array($payload['meta'] ?? null) ? ($payload['meta']['last_page'] ?? null) : null,
         ];

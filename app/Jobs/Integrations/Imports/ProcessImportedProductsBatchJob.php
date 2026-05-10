@@ -4,6 +4,7 @@ namespace App\Jobs\Integrations\Imports;
 
 use App\Models\Store;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Support\ImportBatchPayloadStore;
 use App\Services\Integrations\Support\PersistImportedProductsService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -16,21 +17,46 @@ class ProcessImportedProductsBatchJob implements NotTenantAware, ShouldQueue
 
     public int $timeout = 1800;
 
+    public string $integrationId = '';
+
+    public string $provider = '';
+
+    public ?string $payloadKey = null;
+
     /**
-     * @param  array<int, array<string, mixed>>  $items
+     * Backward compatibility for older queued payloads.
+     *
+     * @var array<int, array<string, mixed>>
      */
+    public array $items = [];
+
+    public ?string $storeId = null;
+
     public function __construct(
-        public string $integrationId,
-        public string $provider,
-        public array $items,
-        public ?string $storeId = null,
+        string $integrationId,
+        string $provider,
+        ?string $payloadKey = null,
+        ?string $storeId = null,
+        array $items = [],
     ) {
+        $this->integrationId = $integrationId;
+        $this->provider = $provider;
+        $this->payloadKey = $payloadKey;
+        $this->storeId = $storeId;
+        $this->items = $items;
+
         $this->onQueue('imports');
     }
 
-    public function handle(PersistImportedProductsService $persistImportedProductsService): void
-    {
-        if ($this->items === []) {
+    public function handle(
+        PersistImportedProductsService $persistImportedProductsService,
+        ImportBatchPayloadStore $importBatchPayloadStore,
+    ): void {
+        $items = is_string($this->payloadKey) && $this->payloadKey !== ''
+            ? $importBatchPayloadStore->pull($this->payloadKey)
+            : $this->items;
+
+        if ($items === []) {
             return;
         }
 
@@ -59,7 +85,7 @@ class ProcessImportedProductsBatchJob implements NotTenantAware, ShouldQueue
         $persistImportedProductsService->persist(
             integration: $integration,
             provider: $this->provider,
-            items: $this->items,
+            items: $items,
             store: $store,
         );
     }
