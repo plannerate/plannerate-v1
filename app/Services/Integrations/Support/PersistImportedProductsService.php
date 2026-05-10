@@ -2,7 +2,6 @@
 
 namespace App\Services\Integrations\Support;
 
-use App\Models\EanReference;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
@@ -76,40 +75,38 @@ class PersistImportedProductsService
                 continue;
             }
 
-            $ean = $this->normalizeEan($mapped['ean'] ?? null);
-            $codigoErp = $this->normalizeCodigoErp($mapped['codigo_erp'] ?? null);
-
-            if ($ean === null || $codigoErp === null) {
+            $normalized = ProductNormalizedData::fromMapped($mapped, $item);
+            if (! $normalized instanceof ProductNormalizedData) {
                 $invalidCount++;
 
                 continue;
             }
 
-            $productId = $this->deterministicIdGenerator->productId($tenantId, $ean, $codigoErp);
+            $productId = $this->deterministicIdGenerator->productId($tenantId, $normalized->ean, $normalized->codigoErp);
 
             $productsRows[] = [
                 'id' => $productId,
                 'tenant_id' => $tenantId,
-                'name' => $this->normalizeString($mapped['name'] ?? null),
-                'ean' => $ean,
-                'codigo_erp' => $codigoErp,
-                'brand' => $this->normalizeString($mapped['brand'] ?? null),
-                'subbrand' => $this->normalizeString($mapped['subbrand'] ?? null),
-                'description' => $this->normalizeString($mapped['description'] ?? null),
-                'auxiliary_description' => $this->normalizeString($mapped['auxiliary_description'] ?? null),
-                'additional_information' => $this->normalizeString($mapped['additional_information'] ?? null),
-                'reference' => $this->normalizeString($mapped['reference'] ?? null),
-                'color' => $this->normalizeString($mapped['color'] ?? null),
-                'fragrance' => $this->normalizeString($mapped['fragrance'] ?? null),
-                'flavor' => $this->normalizeString($mapped['flavor'] ?? null),
-                'packaging_type' => $this->normalizeString($mapped['packaging_type'] ?? null),
-                'packaging_size' => $this->normalizeString($mapped['packaging_size'] ?? null),
-                'measurement_unit' => $this->normalizeString($mapped['measurement_unit'] ?? null),
-                'unit_measure' => $this->normalizeString($mapped['unit_measure'] ?? null),
-                'sortiment_attribute' => $this->normalizeString($mapped['sortiment_attribute'] ?? null),
-                'current_stock' => $this->normalizeFloat($mapped['current_stock'] ?? null),
-                'last_purchase_date' => $this->normalizeDate($mapped['last_purchase_date'] ?? null),
-                'sales_status' => $this->normalizeString($mapped['sales_status'] ?? null),
+                'name' => $normalized->name,
+                'ean' => $normalized->ean,
+                'codigo_erp' => $normalized->codigoErp,
+                'brand' => $normalized->brand,
+                'subbrand' => $normalized->subbrand,
+                'description' => $normalized->description,
+                'auxiliary_description' => $normalized->auxiliaryDescription,
+                'additional_information' => $normalized->additionalInformation,
+                'reference' => $normalized->reference,
+                'color' => $normalized->color,
+                'fragrance' => $normalized->fragrance,
+                'flavor' => $normalized->flavor,
+                'packaging_type' => $normalized->packagingType,
+                'packaging_size' => $normalized->packagingSize,
+                'measurement_unit' => $normalized->measurementUnit,
+                'unit_measure' => $normalized->unitMeasure,
+                'sortiment_attribute' => $normalized->sortimentAttribute,
+                'current_stock' => $normalized->currentStock,
+                'last_purchase_date' => $normalized->lastPurchaseDate,
+                'sales_status' => $normalized->salesStatus,
                 'status' => 'synced',
                 'sync_source' => (string) ($integration->integration_type ?: $provider),
                 'sync_at' => $now,
@@ -259,72 +256,4 @@ class PersistImportedProductsService
         return $this->productFieldMapRegistry->resolve($provider)->passesValidation($mapped, $raw);
     }
 
-    private function normalizeEan(mixed $value): ?string
-    {
-        if (! is_string($value) && ! is_numeric($value)) {
-            return null;
-        }
-
-        $normalized = EanReference::normalizeEan((string) $value);
-        if ($normalized === '' || strlen($normalized) > 13) {
-            return null;
-        }
-
-        return $normalized;
-    }
-
-    private function normalizeCodigoErp(mixed $value): ?string
-    {
-        $normalized = $this->normalizeString($value);
-        if ($normalized === null) {
-            return null;
-        }
-
-        $clean = preg_replace('/[^A-Za-z0-9]/', '', $normalized) ?? '';
-
-        return $clean !== '' ? $clean : null;
-    }
-
-    private function normalizeString(mixed $value): ?string
-    {
-        if ($value === null) {
-            return null;
-        }
-
-        if (is_scalar($value)) {
-            $normalized = trim((string) $value);
-
-            return $normalized !== '' ? $normalized : null;
-        }
-
-        return null;
-    }
-
-    private function normalizeFloat(mixed $value): ?float
-    {
-        if (is_numeric($value)) {
-            return (float) $value;
-        }
-
-        if (is_string($value)) {
-            $normalized = str_replace(',', '.', trim($value));
-
-            return is_numeric($normalized) ? (float) $normalized : null;
-        }
-
-        return null;
-    }
-
-    private function normalizeDate(mixed $value): ?string
-    {
-        if (! is_string($value) || trim($value) === '') {
-            return null;
-        }
-
-        try {
-            return Carbon::parse($value)->toDateString();
-        } catch (\Throwable) {
-            return null;
-        }
-    }
 }
