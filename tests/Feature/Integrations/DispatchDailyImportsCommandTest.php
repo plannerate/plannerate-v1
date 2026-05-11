@@ -88,6 +88,51 @@ test('daily imports command dispatches sales and products jobs for active integr
     });
 });
 
+test('daily imports command filters dispatches by path type when provided', function (): void {
+    Bus::fake();
+
+    config([
+        'app.key' => 'base64:'.base64_encode(random_bytes(32)),
+    ]);
+
+    IntegrationApi::query()->create([
+        'name' => 'Acme ERP',
+        'slug' => 'acme-erp',
+        'requests' => integrationApiRequests(),
+        'response' => ['items_path' => 'data'],
+        'is_active' => true,
+    ]);
+
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant Ativo',
+        'slug' => 'tenant-ativo',
+        'database' => 'tenant_active',
+        'status' => 'active',
+    ]));
+
+    TenantIntegration::query()->create([
+        'tenant_id' => $tenant->id,
+        'integration_type' => 'sysmo',
+        'identifier' => 'principal',
+        'config' => [],
+        'is_active' => true,
+    ]);
+
+    Artisan::call('integrations:daily-imports', [
+        '--type' => 'products',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($output)
+        ->toContain('[Passo 03] Paths despacháveis encontrados: 1.')
+        ->toContain('products')
+        ->not->toContain('sales');
+
+    Bus::assertDispatched(ImportProductsJob::class);
+    Bus::assertNotDispatched(ImportSalesJob::class);
+});
+
 test('daily imports command warns when there are no active integrations', function (): void {
     Bus::fake();
 

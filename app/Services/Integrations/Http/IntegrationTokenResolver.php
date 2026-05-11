@@ -8,6 +8,7 @@ use App\Services\Integrations\Support\ResolvedIntegrationConfig;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class IntegrationTokenResolver
@@ -85,6 +86,18 @@ class IntegrationTokenResolver
             'patch' => $request->patch($this->appendQuery($url, $params), $body),
             default => throw new RuntimeException(sprintf('Método HTTP [%s] não suportado para buscar token de integração.', $method)),
         };
+
+        if ($response->failed()) {
+            Log::warning('Integração token request failed.', [
+                'integration_id' => (string) $integration->id,
+                'tenant_id' => (string) $integration->tenant_id,
+                'provider' => (string) $integration->integration_type,
+                'method' => strtoupper($method),
+                'endpoint' => (string) ($tokenRequest['path'] ?? '/token'),
+                'url' => $url,
+                'status' => $response->status(),
+            ]);
+        }
 
         $payload = $response->throw()->json();
         $token = $this->extractToken(is_array($payload) ? $payload : [], $tokenRequest);
@@ -191,7 +204,25 @@ class IntegrationTokenResolver
             ));
         }
 
-        return $baseUrl.'/'.ltrim($endpoint, '/');
+        return $this->joinUrl($baseUrl, $endpoint);
+    }
+
+    private function joinUrl(string $baseUrl, string $endpoint): string
+    {
+        $endpoint = ltrim($endpoint, '/');
+        $basePath = trim((string) parse_url($baseUrl, PHP_URL_PATH), '/');
+        $lastBaseSegment = collect(explode('/', $basePath))->filter()->last();
+        $endpointSegments = collect(explode('/', $endpoint))->filter()->values();
+
+        if (
+            is_string($lastBaseSegment)
+            && is_string($endpointSegments->first())
+            && strcasecmp($lastBaseSegment, (string) $endpointSegments->first()) === 0
+        ) {
+            $endpoint = $endpointSegments->slice(1)->implode('/');
+        }
+
+        return rtrim($baseUrl, '/').($endpoint !== '' ? '/'.$endpoint : '');
     }
 
     /**
@@ -263,5 +294,4 @@ class IntegrationTokenResolver
     {
         return ($this->configResolver ?? app(ResolvedIntegrationConfigResolver::class))->resolve($integration);
     }
-
 }

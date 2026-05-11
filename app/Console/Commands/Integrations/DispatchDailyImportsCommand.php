@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use ReflectionClass;
 
-#[Signature('integrations:daily-imports {--clear : Limpa tabelas antes do dispatch respeitando os paths configurados} {--no-finalize : Não dispara finalização em jobs que suportam runFinalize}')]
+#[Signature('integrations:daily-imports {--clear : Limpa tabelas antes do dispatch respeitando os paths configurados} {--no-finalize : Não dispara finalização em jobs que suportam runFinalize} {--type= : Filtra integrações por tipo, por exemplo products}')]
 #[Description('Inicia a busca diária para os paths configurados nas integrações ativas')]
 class DispatchDailyImportsCommand extends Command
 {
@@ -39,6 +39,12 @@ class DispatchDailyImportsCommand extends Command
         ));
 
         $dispatchPlan = $this->dispatchPlan($integrations, $configResolver);
+
+        if (($type = $this->option('type')) !== null && $type !== '') {
+            $dispatchPlan = $dispatchPlan->filter(
+                fn (array $planRow): bool => (string) $planRow['resource'] === $type,
+            );
+        }
 
         $this->logStep(3, sprintf(
             'Paths despacháveis encontrados: %d.',

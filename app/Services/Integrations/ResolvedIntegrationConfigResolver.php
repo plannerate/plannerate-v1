@@ -32,6 +32,15 @@ class ResolvedIntegrationConfigResolver
         $apiConfig = $this->apiConfigResolver->provider((string) ($tenantPayload['integration_type'] ?? ''));
         $tenantConfig = is_array($tenantPayload['config'] ?? null) ? $tenantPayload['config'] : [];
 
+        // Se não houver requests na API config, tenta usar do tenantConfig
+        if (empty($apiConfig['requests']) && isset($tenantConfig['requests'])) {
+            $apiConfig['requests'] = $tenantConfig['requests'];
+        }
+        // Se não houver response na API config, tenta usar do tenantConfig
+        if (empty($apiConfig['response']) && isset($tenantConfig['response'])) {
+            $apiConfig['response'] = $tenantConfig['response'];
+        }
+
         return [
             ...$tenantPayload,
             'config' => array_replace_recursive($apiConfig, $tenantConfig),

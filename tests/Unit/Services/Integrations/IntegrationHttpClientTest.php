@@ -184,6 +184,75 @@ test('client fetches bearer token from configured endpoint and caches it', funct
         && $request->hasHeader('Authorization', 'Bearer fetched-token'));
 });
 
+test('client avoids duplicating base url last segment in request endpoint', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+
+    Http::fake([
+        'https://web.example.test/GesCooper/Cadastro/Api/Produtos/Produtos*' => Http::response(['ok' => true]),
+    ]);
+
+    $integration = new TenantIntegration([
+        'config' => [
+            'connection' => [
+                'base_url' => 'https://web.example.test/GesCooper/Cadastro/Api/',
+            ],
+        ],
+    ]);
+
+    (new IntegrationHttpClient)->request(
+        integration: $integration,
+        method: 'GET',
+        endpoint: '/Api/Produtos/Produtos',
+    );
+
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://web.example.test/GesCooper/Cadastro/Api/Produtos/Produtos');
+});
+
+test('client avoids duplicating base url last segment in token endpoint', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    Cache::flush();
+
+    Http::fake([
+        'https://web.example.test/GesCooper/Cadastro/Api/Token' => Http::response([
+            'token' => 'fetched-token',
+        ]),
+        'https://web.example.test/GesCooper/Cadastro/Api/Produtos/Produtos' => Http::response(['ok' => true]),
+    ]);
+
+    $integration = new TenantIntegration([
+        'id' => '01k-duplicate-api-token-test',
+        'config' => [
+            'auth' => [
+                'type' => 'bearer',
+                'token_mode' => 'fetch',
+                'credentials' => [
+                    'username' => 'client-user',
+                    'password' => 'client-secret',
+                ],
+                'token_request' => [
+                    'method' => 'POST',
+                    'path' => '/Api/Token',
+                    'response_path' => 'token',
+                    'username_field' => 'usuario',
+                    'password_field' => 'senha',
+                ],
+            ],
+            'connection' => [
+                'base_url' => 'https://web.example.test/GesCooper/Cadastro/Api/',
+            ],
+        ],
+    ]);
+
+    (new IntegrationHttpClient)->request(
+        integration: $integration,
+        method: 'GET',
+        endpoint: '/Api/Produtos/Produtos',
+    );
+
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://web.example.test/GesCooper/Cadastro/Api/Token');
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://web.example.test/GesCooper/Cadastro/Api/Produtos/Produtos');
+});
+
 test('response reader understands query-api pagination shape', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
 

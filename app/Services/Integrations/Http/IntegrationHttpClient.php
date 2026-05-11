@@ -8,6 +8,7 @@ use App\Services\Integrations\Support\ResolvedIntegrationConfig;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class IntegrationHttpClient
@@ -43,6 +44,18 @@ class IntegrationHttpClient
             'delete' => $request->delete($this->appendQuery($url, $query)),
             default => throw new RuntimeException(sprintf('Método HTTP [%s] não suportado para integrações.', $method)),
         };
+
+        if ($response->failed()) {
+            Log::warning('Integração HTTP request failed.', [
+                'integration_id' => (string) $integration->id,
+                'tenant_id' => (string) $integration->tenant_id,
+                'provider' => (string) $integration->integration_type,
+                'method' => strtoupper($method),
+                'endpoint' => $endpoint,
+                'url' => $url,
+                'status' => $response->status(),
+            ]);
+        }
 
         return $response->throw();
     }
@@ -90,7 +103,25 @@ class IntegrationHttpClient
             ));
         }
 
-        return $baseUrl.'/'.ltrim($endpoint, '/');
+        return $this->joinUrl($baseUrl, $endpoint);
+    }
+
+    private function joinUrl(string $baseUrl, string $endpoint): string
+    {
+        $endpoint = ltrim($endpoint, '/');
+        $basePath = trim((string) parse_url($baseUrl, PHP_URL_PATH), '/');
+        $lastBaseSegment = collect(explode('/', $basePath))->filter()->last();
+        $endpointSegments = collect(explode('/', $endpoint))->filter()->values();
+
+        if (
+            is_string($lastBaseSegment)
+            && is_string($endpointSegments->first())
+            && strcasecmp($lastBaseSegment, (string) $endpointSegments->first()) === 0
+        ) {
+            $endpoint = $endpointSegments->slice(1)->implode('/');
+        }
+
+        return rtrim($baseUrl, '/').($endpoint !== '' ? '/'.$endpoint : '');
     }
 
     /**
