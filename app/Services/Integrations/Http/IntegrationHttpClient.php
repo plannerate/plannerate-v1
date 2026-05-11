@@ -3,6 +3,8 @@
 namespace App\Services\Integrations\Http;
 
 use App\Models\TenantIntegration;
+use App\Services\Integrations\ResolvedIntegrationConfigResolver;
+use App\Services\Integrations\Support\ResolvedIntegrationConfig;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -12,6 +14,7 @@ class IntegrationHttpClient
 {
     public function __construct(
         private readonly ?IntegrationTokenResolver $tokenResolver = null,
+        private readonly ?ResolvedIntegrationConfigResolver $configResolver = null,
     ) {}
 
     /**
@@ -46,9 +49,9 @@ class IntegrationHttpClient
 
     private function pendingRequest(TenantIntegration $integration, ?string $bearerToken = null): PendingRequest
     {
-        $config = $this->config($integration);
-        $auth = is_array($config['auth'] ?? null) ? $config['auth'] : [];
-        $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
+        $resolvedConfig = $this->resolvedConfig($integration);
+        $auth = $resolvedConfig->auth();
+        $connection = $resolvedConfig->connection();
         $credentials = is_array($auth['credentials'] ?? null) ? $auth['credentials'] : [];
 
         $request = Http::timeout(60)
@@ -77,8 +80,7 @@ class IntegrationHttpClient
             return $endpoint;
         }
 
-        $config = $this->config($integration);
-        $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
+        $connection = $this->resolvedConfig($integration)->connection();
         $baseUrl = rtrim((string) ($connection['base_url'] ?? ''), '/');
 
         if ($baseUrl === '') {
@@ -96,8 +98,7 @@ class IntegrationHttpClient
      */
     private function mergeQuery(TenantIntegration $integration, array $query): array
     {
-        $config = $this->config($integration);
-        $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
+        $connection = $this->resolvedConfig($integration)->connection();
 
         return [
             ...$this->enabledKeyValueRows($connection['params'] ?? []),
@@ -110,8 +111,7 @@ class IntegrationHttpClient
      */
     private function mergeBody(TenantIntegration $integration, array $body): array
     {
-        $config = $this->config($integration);
-        $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
+        $connection = $this->resolvedConfig($integration)->connection();
 
         return [
             ...$this->enabledKeyValueRows($connection['body'] ?? []),
@@ -129,14 +129,6 @@ class IntegrationHttpClient
         }
 
         return $url.(str_contains($url, '?') ? '&' : '?').http_build_query($query);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function config(TenantIntegration $integration): array
-    {
-        return is_array($integration->config) ? $integration->config : [];
     }
 
     /**
@@ -190,5 +182,10 @@ class IntegrationHttpClient
         }
 
         return true;
+    }
+
+    private function resolvedConfig(TenantIntegration $integration): ResolvedIntegrationConfig
+    {
+        return ($this->configResolver ?? app(ResolvedIntegrationConfigResolver::class))->resolve($integration);
     }
 }

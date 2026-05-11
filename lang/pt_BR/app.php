@@ -470,8 +470,6 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'delete_confirm' => 'Tem certeza que deseja excluir esta integracao? Esta acao nao pode ser desfeita.',
             ],
             'types' => [
-                'sysmo' => 'Sysmo',
-                'gescooper' => 'GesCooper',
                 'generic' => 'API generica',
             ],
             'auth_types' => [

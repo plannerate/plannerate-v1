@@ -5,8 +5,7 @@ namespace App\Services\Integrations\Support;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
-use App\Services\Integrations\IntegrationApiConfigResolver;
-use App\Services\Integrations\Support\SalesFieldMaps\SalesFieldMapRegistry;
+use App\Services\Integrations\ResolvedIntegrationConfigResolver;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -16,8 +15,7 @@ class PersistImportedSalesService
     public function __construct(
         private readonly DeterministicIdGenerator $deterministicIdGenerator,
         private readonly FieldResolver $fieldResolver,
-        private readonly SalesFieldMapRegistry $salesFieldMapRegistry,
-        private readonly IntegrationApiConfigResolver $configResolver,
+        private readonly ResolvedIntegrationConfigResolver $configResolver,
     ) {}
 
     /**
@@ -64,8 +62,7 @@ class PersistImportedSalesService
         $rows = [];
         $invalidCount = 0;
 
-        $fieldMap = $this->salesFieldMapRegistry->resolve($provider);
-        $fields = $this->fieldMap($provider, 'sales', $fieldMap->fields());
+        $fields = $this->fieldMap($integration, 'sales');
 
         foreach ($items as $item) {
             if (! is_array($item)) {
@@ -91,12 +88,6 @@ class PersistImportedSalesService
                     is_array($definition['transforms'] ?? null) ? $definition['transforms'] : [],
                     $item,
                 );
-            }
-
-            if (! $fieldMap->passesValidation($mapped, $item)) {
-                $invalidCount++;
-
-                continue;
             }
 
             $normalized = SalesNormalizedData::fromMapped($mapped, $item, $store?->document);
@@ -203,45 +194,8 @@ class PersistImportedSalesService
      * @param  array<string, mixed>  $fallback
      * @return array<string, mixed>
      */
-    private function fieldMap(string $provider, string $resource, array $fallback): array
+    private function fieldMap(TenantIntegration $integration, string $resource, array $fallback = []): array
     {
-        $providerConfig = $this->configResolver->provider($provider);
-        $requests = is_array($providerConfig['requests'] ?? null) ? $providerConfig['requests'] : [];
-        $resourceConfig = is_array($requests[$resource] ?? null) ? $requests[$resource] : [];
-        $configuredRows = is_array($resourceConfig['field_map'] ?? null) ? $resourceConfig['field_map'] : [];
-
-        $configured = [];
-        foreach ($configuredRows as $row) {
-            if (! is_array($row)) {
-                continue;
-            }
-
-            $target = is_string($row['target'] ?? null) ? trim($row['target']) : '';
-            $source = is_string($row['source'] ?? null) ? trim($row['source']) : '';
-
-            if ($target === '' || $source === '') {
-                continue;
-            }
-
-            $configured[$target] = [
-                'transforms' => collect($row['transforms'] ?? [])
-                    ->filter(fn (mixed $transform): bool => is_string($transform) && trim($transform) !== '')
-                    ->values()
-                    ->all(),
-            ];
-
-            if ($this->isExpression($source)) {
-                $configured[$target]['expression'] = $source;
-            } else {
-                $configured[$target]['paths'] = [$source];
-            }
-        }
-
-        return $configured === [] ? $fallback : array_replace($fallback, $configured);
-    }
-
-    private function isExpression(string $source): bool
-    {
-        return preg_match('/\s[+\-*\/]\s|[()]/', $source) === 1;
+        return $this->configResolver->resolve($integration)->fieldMap($resource, $fallback);
     }
 }

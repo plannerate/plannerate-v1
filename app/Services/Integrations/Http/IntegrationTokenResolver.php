@@ -3,6 +3,8 @@
 namespace App\Services\Integrations\Http;
 
 use App\Models\TenantIntegration;
+use App\Services\Integrations\ResolvedIntegrationConfigResolver;
+use App\Services\Integrations\Support\ResolvedIntegrationConfig;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -10,14 +12,17 @@ use RuntimeException;
 
 class IntegrationTokenResolver
 {
+    public function __construct(
+        private readonly ?ResolvedIntegrationConfigResolver $configResolver = null,
+    ) {}
+
     public function resolve(TenantIntegration $integration, ?string $bearerToken = null): ?string
     {
         if (is_string($bearerToken) && $bearerToken !== '') {
             return $bearerToken;
         }
 
-        $config = $this->config($integration);
-        $auth = is_array($config['auth'] ?? null) ? $config['auth'] : [];
+        $auth = $this->resolvedConfig($integration)->auth();
         $credentials = is_array($auth['credentials'] ?? null) ? $auth['credentials'] : [];
         $type = (string) ($auth['type'] ?? 'none');
         $tokenMode = (string) ($auth['token_mode'] ?? 'manual');
@@ -28,7 +33,7 @@ class IntegrationTokenResolver
             return $token !== '' ? $token : null;
         }
 
-        if ($type === 'bearer_fetch' || ($type === 'bearer' && $tokenMode === 'fetch') || $this->shouldUseLegacyGescooperToken($integration, $auth)) {
+        if ($type === 'bearer_fetch' || ($type === 'bearer' && $tokenMode === 'fetch')) {
             return $this->cachedFetchedToken($integration);
         }
 
@@ -52,8 +57,7 @@ class IntegrationTokenResolver
 
     private function fetchToken(TenantIntegration $integration): string
     {
-        $config = $this->config($integration);
-        $auth = is_array($config['auth'] ?? null) ? $config['auth'] : [];
+        $auth = $this->resolvedConfig($integration)->auth();
         $credentials = is_array($auth['credentials'] ?? null) ? $auth['credentials'] : [];
         $tokenRequest = is_array($auth['token_request'] ?? null) ? $auth['token_request'] : [];
         $username = (string) ($credentials['username'] ?? '');
@@ -64,7 +68,7 @@ class IntegrationTokenResolver
         }
 
         $method = strtolower((string) ($tokenRequest['method'] ?? 'POST'));
-        $url = $this->url($integration, (string) ($tokenRequest['path'] ?? $this->legacyGescooperAuthPath($integration)));
+        $url = $this->url($integration, (string) ($tokenRequest['path'] ?? '/token'));
         $headers = $this->enabledKeyValueRows($tokenRequest['headers'] ?? []);
         $params = $this->enabledKeyValueRows($tokenRequest['params'] ?? []);
         $body = $this->tokenBody($integration, $tokenRequest, $username, $password);
@@ -99,8 +103,8 @@ class IntegrationTokenResolver
     private function tokenBody(TenantIntegration $integration, array $tokenRequest, string $username, string $password): array
     {
         $body = $this->enabledKeyValueRows($tokenRequest['body'] ?? []);
-        $usernameField = (string) ($tokenRequest['username_field'] ?? $this->legacyGescooperUsernameField($integration));
-        $passwordField = (string) ($tokenRequest['password_field'] ?? $this->legacyGescooperPasswordField($integration));
+        $usernameField = (string) ($tokenRequest['username_field'] ?? 'username');
+        $passwordField = (string) ($tokenRequest['password_field'] ?? 'password');
 
         if ($usernameField !== '' && ! array_key_exists($usernameField, $body)) {
             $body[$usernameField] = $username;
@@ -108,13 +112,6 @@ class IntegrationTokenResolver
 
         if ($passwordField !== '' && ! array_key_exists($passwordField, $body)) {
             $body[$passwordField] = $password;
-        }
-
-        if ((string) $integration->integration_type === 'gescooper' && ! array_key_exists('dispositivoUID', $body)) {
-            $config = $this->config($integration);
-            $auth = is_array($config['auth'] ?? null) ? $config['auth'] : [];
-            $credentials = is_array($auth['credentials'] ?? null) ? $auth['credentials'] : [];
-            $body['dispositivoUID'] = (string) ($credentials['dispositivo_uid'] ?? 'plannerate');
         }
 
         return $body;
@@ -169,8 +166,7 @@ class IntegrationTokenResolver
 
     private function cacheKey(TenantIntegration $integration): string
     {
-        $config = $this->config($integration);
-        $auth = is_array($config['auth'] ?? null) ? $config['auth'] : [];
+        $auth = $this->resolvedConfig($integration)->auth();
 
         return sprintf(
             'integrations:token:%s:%s',
@@ -185,8 +181,7 @@ class IntegrationTokenResolver
             return $endpoint;
         }
 
-        $config = $this->config($integration);
-        $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
+        $connection = $this->resolvedConfig($integration)->connection();
         $baseUrl = rtrim((string) ($connection['base_url'] ?? ''), '/');
 
         if ($baseUrl === '') {
@@ -209,14 +204,6 @@ class IntegrationTokenResolver
         }
 
         return $url.(str_contains($url, '?') ? '&' : '?').http_build_query($query);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function config(TenantIntegration $integration): array
-    {
-        return is_array($integration->config) ? $integration->config : [];
     }
 
     /**
@@ -272,40 +259,9 @@ class IntegrationTokenResolver
         return true;
     }
 
-    /**
-     * @param  array<string, mixed>  $auth
-     */
-    private function shouldUseLegacyGescooperToken(TenantIntegration $integration, array $auth): bool
+    private function resolvedConfig(TenantIntegration $integration): ResolvedIntegrationConfig
     {
-        if ((string) $integration->integration_type !== 'gescooper') {
-            return false;
-        }
-
-        $credentials = is_array($auth['credentials'] ?? null) ? $auth['credentials'] : [];
-
-        return (string) ($credentials['username'] ?? '') !== ''
-            && (string) ($credentials['password'] ?? '') !== '';
+        return ($this->configResolver ?? app(ResolvedIntegrationConfigResolver::class))->resolve($integration);
     }
 
-    private function legacyGescooperAuthPath(TenantIntegration $integration): string
-    {
-        if ((string) $integration->integration_type !== 'gescooper') {
-            return '/token';
-        }
-
-        $config = $this->config($integration);
-        $paths = is_array($config['paths'] ?? null) ? $config['paths'] : [];
-
-        return (string) ($paths['auth'] ?? '/v1/Token');
-    }
-
-    private function legacyGescooperUsernameField(TenantIntegration $integration): string
-    {
-        return (string) $integration->integration_type === 'gescooper' ? 'usuario' : 'username';
-    }
-
-    private function legacyGescooperPasswordField(TenantIntegration $integration): string
-    {
-        return (string) $integration->integration_type === 'gescooper' ? 'senha' : 'password';
-    }
 }

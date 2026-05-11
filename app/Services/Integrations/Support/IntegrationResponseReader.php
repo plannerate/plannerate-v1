@@ -3,12 +3,12 @@
 namespace App\Services\Integrations\Support;
 
 use App\Models\TenantIntegration;
-use App\Services\Integrations\IntegrationApiConfigResolver;
+use App\Services\Integrations\ResolvedIntegrationConfigResolver;
 
 class IntegrationResponseReader
 {
     public function __construct(
-        private readonly ?IntegrationApiConfigResolver $configResolver = null,
+        private readonly ?ResolvedIntegrationConfigResolver $configResolver = null,
     ) {}
 
     /**
@@ -103,10 +103,9 @@ class IntegrationResponseReader
      */
     private function responseConfigs(TenantIntegration $integration): array
     {
-        $provider = ($this->configResolver ?? new IntegrationApiConfigResolver)
-            ->provider((string) $integration->integration_type);
-        $providerResponse = $provider['response'] ?? [];
-        $providerResponse = is_array($providerResponse) ? $providerResponse : [];
+        $providerResponse = ($this->configResolver ?? app(ResolvedIntegrationConfigResolver::class))
+            ->resolve($integration)
+            ->response();
 
         return array_values(array_filter([
             $providerResponse,

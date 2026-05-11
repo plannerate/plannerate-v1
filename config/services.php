@@ -39,27 +39,4 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
     ],
 
-    'sysmo' => [
-        'products' => [
-            'required_flags' => [
-                'cadastro_ativo',
-                'ativo_na_empresa',
-                'pertence_ao_mix',
-            ],
-            'required_flag_allowed_values' => [
-                'cadastro_ativo' => ['S'],
-                'ativo_na_empresa' => ['S'],
-                'pertence_ao_mix' => ['S'],
-            ],
-        ],
-        'tenants' => [
-            'bruda' => [
-                'auth_password' => env('SYSMO_BRUDA_AUTH_PASSWORD', ''),
-            ],
-            'franciosi' => [
-                'auth_password' => env('SYSMO_FRANCIOSI_AUTH_PASSWORD', ''),
-            ],
-        ],
-    ],
-
 ];

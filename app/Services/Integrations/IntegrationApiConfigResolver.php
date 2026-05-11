@@ -12,15 +12,7 @@ class IntegrationApiConfigResolver
      */
     public function provider(string $slug): array
     {
-        $databaseConfig = $this->databaseProvider($slug);
-
-        if ($databaseConfig !== []) {
-            return $databaseConfig;
-        }
-
-        $config = config(sprintf('integrations.providers.%s', $slug), []);
-
-        return is_array($config) ? $config : [];
+        return $this->databaseProvider($slug);
     }
 
     /**

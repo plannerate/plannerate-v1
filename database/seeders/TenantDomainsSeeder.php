@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Module;
 use App\Models\Plan;
 use App\Models\Tenant;
-use App\Models\TenantIntegration;
 use App\Models\User;
 use App\Support\Modules\ModuleSlug;
 use Illuminate\Database\Seeder;
@@ -40,7 +39,7 @@ class TenantDomainsSeeder extends Seeder
     ];
 
     /**
-     * @var array<int, array{name: string, slug: string, host: string, database: string, admin_name: string, admin_email: string, module_slugs?: list<string>, integration?: array{integration_type: string, identifier: string, external_name: string, http_method: string, api_url: string, auth_username: string, auth_password_config: string, partner_key: string}}>
+     * @var array<int, array{name: string, slug: string, host: string, database: string, admin_name: string, admin_email: string, module_slugs?: list<string>}>
      */
     private const TENANTS = [
         [
@@ -59,16 +58,6 @@ class TenantDomainsSeeder extends Seeder
             'admin_name' => 'Administrador Bruda',
             'admin_email' => 'admin@bruda.plannerate-v1.test',
             'module_slugs' => [ModuleSlug::KANBAN],
-            'integration' => [
-                'integration_type' => 'sysmo',
-                'identifier' => '79645404000869',
-                'external_name' => 'produto',
-                'http_method' => 'POST',
-                'api_url' => 'https://brudaweb.sysmo.com.br:8443',
-                'auth_username' => 'gomark',
-                'auth_password_config' => 'services.sysmo.tenants.bruda.auth_password',
-                'partner_key' => 'Proplanner',
-            ],
         ],
         [
             'name' => 'Supermercado Franciosi',
@@ -78,16 +67,6 @@ class TenantDomainsSeeder extends Seeder
             'admin_name' => 'Administrador Franciosi',
             'admin_email' => 'admin@franciosi.plannerate-v1.test',
             'module_slugs' => [ModuleSlug::KANBAN],
-            'integration' => [
-                'integration_type' => 'sysmo',
-                'identifier' => '10623678000184',
-                'external_name' => 'produto',
-                'http_method' => 'POST',
-                'api_url' => 'https://s1mobilefranciosi.sysmo.com.br:8443',
-                'auth_username' => 'proplanner',
-                'auth_password_config' => 'services.sysmo.tenants.franciosi.auth_password',
-                'partner_key' => 'Proplanner',
-            ],
         ],
     ];
 
@@ -105,7 +84,7 @@ class TenantDomainsSeeder extends Seeder
     }
 
     /**
-     * @param  array{name: string, slug: string, host: string, database: string, admin_name: string, admin_email: string, module_slugs?: list<string>, integration?: array{integration_type: string, identifier: string, external_name: string, http_method: string, api_url: string, auth_username: string, auth_password_config: string, partner_key: string}}  $tenantDefinition
+     * @param  array{name: string, slug: string, host: string, database: string, admin_name: string, admin_email: string, module_slugs?: list<string>}  $tenantDefinition
      */
     private function seedTenant(array $tenantDefinition): void
     {
@@ -127,7 +106,6 @@ class TenantDomainsSeeder extends Seeder
         );
 
         $this->syncTenantModules($tenant, $tenantDefinition['module_slugs'] ?? []);
-        $this->seedTenantIntegration($tenant, $tenantDefinition['integration'] ?? null);
 
         $tenant->domains()->updateOrCreate(
             ['tenant_id' => $tenant->id],
@@ -218,78 +196,6 @@ class TenantDomainsSeeder extends Seeder
             ->all();
 
         $tenant->modules()->syncWithoutDetaching($moduleIds);
-    }
-
-    /**
-     * @param  array{integration_type: string, identifier: string, external_name: string, http_method: string, api_url: string, auth_username: string, auth_password_config: string, partner_key: string}|null  $integrationDefinition
-     */
-    private function seedTenantIntegration(Tenant $tenant, ?array $integrationDefinition): void
-    {
-        if ($integrationDefinition === null) {
-            return;
-        }
-
-        $password = (string) config($integrationDefinition['auth_password_config'], '');
-        $identifier = $integrationDefinition['identifier'];
-        $partnerKey = $integrationDefinition['partner_key'];
-        $apiUrl = $integrationDefinition['api_url'];
-        $username = $integrationDefinition['auth_username'];
-
-        TenantIntegration::query()->updateOrCreate(
-            ['tenant_id' => $tenant->id],
-            [
-                'integration_type' => $integrationDefinition['integration_type'],
-                'identifier' => $identifier,
-                'external_name' => $integrationDefinition['external_name'],
-                'external_name_ean' => null,
-                'external_name_status' => null,
-                'external_name_sale_date' => null,
-                'http_method' => $integrationDefinition['http_method'],
-                'api_url' => $apiUrl,
-                'authentication_headers' => [
-                    'auth_username' => $username,
-                    'auth_password' => $password,
-                ],
-                'authentication_body' => [
-                    'partner_key' => $partnerKey,
-                    'empresa' => $identifier,
-                ],
-                'config' => [
-                    'processing' => [
-                        'days_to_maintain' => 120,
-                        'sales_retention_days' => 120,
-                        'sales_initial_days' => 120,
-                        'products_initial_days' => 120,
-                        'daily_lookback_days' => 7,
-                        'sales_page_size' => 20000,
-                        'products_page_size' => 1000,
-                        'sales_tipo_consulta' => 'produto',
-                        'partner_key' => $partnerKey,
-                        'empresa' => $identifier,
-                        'auto_processing_enabled' => true,
-                        'processing_time' => '02:00',
-                        'initial_setup_date' => null,
-                    ],
-                    'auth' => [
-                        'type' => 'basic',
-                        'credentials' => [
-                            'username' => $username,
-                            'password' => $password,
-                        ],
-                    ],
-                    'connection' => [
-                        'base_url' => $apiUrl,
-                        'timeout' => 30,
-                        'connect_timeout' => 10,
-                        'verify_ssl' => true,
-                        'ping_path' => '/',
-                        'ping_method' => 'GET',
-                        'headers' => [],
-                    ],
-                ],
-                'is_active' => true,
-            ],
-        );
     }
 
     private function runTenantMigrationsIfNeeded(): void

@@ -2,18 +2,18 @@
 
 namespace App\Services\Integrations\Importers;
 
-use App\Jobs\Integrations\Imports\FetchSysmoSalesDayJob;
+use App\Jobs\Integrations\Imports\FetchIntegrationSalesDayJob;
 use App\Jobs\Integrations\Imports\ProcessImportedProductsBatchJob;
 use App\Jobs\Integrations\Imports\ProcessImportedSalesBatchJob;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
-use App\Services\Integrations\IntegrationApiConfigResolver;
+use App\Services\Integrations\ResolvedIntegrationConfigResolver;
 use App\Services\Integrations\Support\ImportBatchPayloadStore;
 use App\Services\Integrations\Support\IntegrationResponseReader;
+use App\Services\Integrations\Support\ResolvedIntegrationConfig;
 use Illuminate\Http\Client\RequestException;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -25,7 +25,7 @@ class GenericIntegrationImporter
         private readonly IntegrationHttpClient $httpClient,
         private readonly ImportBatchPayloadStore $importBatchPayloadStore,
         private readonly IntegrationResponseReader $responseReader,
-        private readonly ?IntegrationApiConfigResolver $configResolver = null,
+        private readonly ?ResolvedIntegrationConfigResolver $configResolver = null,
     ) {}
 
     public function importSales(TenantIntegration $integration, ?Store $store = null): void
@@ -293,7 +293,7 @@ class GenericIntegrationImporter
         $dates = $this->salesDates($integration, $store, $salesMode);
 
         foreach ($dates as $date) {
-            FetchSysmoSalesDayJob::dispatch(
+            FetchIntegrationSalesDayJob::dispatch(
                 integrationId: (string) $integration->id,
                 date: $date,
                 storeId: $store?->id,
@@ -399,7 +399,7 @@ class GenericIntegrationImporter
     {
         $tenant = $integration->tenant;
         if (! $tenant instanceof Tenant) {
-            return (string) $integration->integration_type === 'sysmo';
+            return false;
         }
 
         return $tenant->execute(function () use ($integration, $store, $tenant): bool {
@@ -417,9 +417,7 @@ class GenericIntegrationImporter
                 ->table('products')
                 ->whereNull('deleted_at');
 
-            if ((string) $integration->integration_type !== 'sysmo') {
-                $query->where('tenant_id', (string) $tenant->id);
-            }
+            $query->where('tenant_id', (string) $tenant->id);
 
             return $query->exists();
         });
@@ -459,11 +457,8 @@ class GenericIntegrationImporter
      */
     private function requestConfig(TenantIntegration $integration, string $resource): array
     {
-        $provider = ($this->configResolver ?? new IntegrationApiConfigResolver)
-            ->provider((string) $integration->integration_type);
-        $requests = $provider['requests'] ?? [];
-
-        if (! is_array($requests) || $requests === []) {
+        $resolvedConfig = $this->resolvedConfig($integration);
+        if ($resolvedConfig->requests() === []) {
             throw new RuntimeException(sprintf(
                 'Configuração de importação [%s] não encontrada para integração [%s].',
                 $resource,
@@ -471,12 +466,7 @@ class GenericIntegrationImporter
             ));
         }
 
-        $resourceConfig = $requests[$resource] ?? [];
-        $config = array_replace_recursive(
-            Arr::except($requests, ['products', 'sales']),
-            is_array($resourceConfig) ? $resourceConfig : [],
-        );
-
+        $config = $resolvedConfig->request($resource);
         if ($config === []) {
             throw new RuntimeException(sprintf(
                 'Configuração de importação [%s] não encontrada para integração [%s].',
@@ -490,19 +480,12 @@ class GenericIntegrationImporter
 
     private function path(TenantIntegration $integration, string $key, string $fallback): string
     {
-        $config = is_array($integration->config) ? $integration->config : [];
-        $paths = is_array($config['paths'] ?? null) ? $config['paths'] : [];
-        $path = trim((string) ($paths[$key] ?? ''));
-
-        return $path !== '' ? $path : $fallback;
+        return $this->resolvedConfig($integration)->path($key, $fallback);
     }
 
     private function separateByStore(TenantIntegration $integration): bool
     {
-        $config = is_array($integration->config) ? $integration->config : [];
-        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
-
-        return (bool) ($processing['separate_by_store'] ?? false);
+        return $this->resolvedConfig($integration)->separateByStore();
     }
 
     /**
@@ -524,5 +507,10 @@ class GenericIntegrationImporter
         }
 
         return true;
+    }
+
+    private function resolvedConfig(TenantIntegration $integration): ResolvedIntegrationConfig
+    {
+        return ($this->configResolver ?? app(ResolvedIntegrationConfigResolver::class))->resolve($integration);
     }
 }

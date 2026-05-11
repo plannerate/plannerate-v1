@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\IntegrationApiConfigResolver;
+use App\Services\Integrations\ResolvedIntegrationConfigResolver;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -29,7 +30,7 @@ class TenantIntegrationController extends Controller
         $auth = is_array($config['auth'] ?? null) ? $config['auth'] : [];
         $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
         $credentials = is_array($auth['credentials'] ?? null) ? $auth['credentials'] : [];
-        $type = (string) ($integration?->integration_type ?? 'sysmo');
+        $type = (string) ($integration?->integration_type ?? '');
 
         $authType = (string) ($auth['type'] ?? 'basic');
 
@@ -73,7 +74,7 @@ class TenantIntegrationController extends Controller
         ]);
     }
 
-    public function update(UpdateTenantIntegrationRequest $request, Tenant $tenant, IntegrationApiConfigResolver $configResolver): RedirectResponse
+    public function update(UpdateTenantIntegrationRequest $request, Tenant $tenant, ResolvedIntegrationConfigResolver $configResolver): RedirectResponse
     {
         $this->authorize('update', $tenant);
 
@@ -102,15 +103,9 @@ class TenantIntegrationController extends Controller
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
-    private function resolvedIntegrationPayload(array $payload, IntegrationApiConfigResolver $configResolver): array
+    private function resolvedIntegrationPayload(array $payload, ResolvedIntegrationConfigResolver $configResolver): array
     {
-        $apiConfig = $configResolver->provider((string) ($payload['integration_type'] ?? ''));
-        $tenantConfig = is_array($payload['config'] ?? null) ? $payload['config'] : [];
-
-        return [
-            ...$payload,
-            'config' => array_replace_recursive($apiConfig, $tenantConfig),
-        ];
+        return $configResolver->resolvedPayload($payload);
     }
 
     public function destroy(Tenant $tenant): RedirectResponse
