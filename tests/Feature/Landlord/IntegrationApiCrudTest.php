@@ -33,11 +33,12 @@ test('authenticated user can list integration apis', function (): void {
 test('authenticated user can create update and delete integration api', function (): void {
     $createResponse = $this->post(route('landlord.integration-apis.store'), integrationApiPayload());
 
-    $createResponse->assertRedirect(route('landlord.integration-apis.index'));
-
     $api = IntegrationApi::query()->where('slug', 'acme')->firstOrFail();
 
+    $createResponse->assertRedirect(route('landlord.integration-apis.edit', $api));
+
     expect($api->requests['method'] ?? null)->toBe('GET')
+        ->and($api->requests['paths']['products']['field_map'][0]['target'] ?? null)->toBe('codigo_erp')
         ->and($api->response['items_path'] ?? null)->toBe('data');
 
     $updateResponse = $this->put(route('landlord.integration-apis.update', $api), integrationApiPayload([
@@ -77,6 +78,42 @@ test('integration api requires valid json configs', function (): void {
         ->assertSessionHasErrors(['requests_json', 'response_json']);
 });
 
+test('integration api moves legacy top level resources into paths', function (): void {
+    $response = $this->post(route('landlord.integration-apis.store'), integrationApiPayload([
+        'requests_json' => json_encode([
+            'method' => 'POST',
+            'payload' => 'body',
+            'products' => [
+                'target_table' => 'products',
+                'fallback_path' => '/hubprodutos.listar_produtos',
+                'field_map' => [
+                    [
+                        'target' => 'codigo_erp',
+                        'source' => 'produto',
+                        'transforms' => ['string'],
+                    ],
+                ],
+            ],
+            'sales' => [
+                'target_table' => 'sales',
+                'fallback_path' => '/hubvendas.vendas_produtos',
+            ],
+        ], JSON_THROW_ON_ERROR),
+    ]));
+
+    $api = IntegrationApi::query()->where('slug', 'acme')->firstOrFail();
+
+    $response->assertRedirect(route('landlord.integration-apis.edit', $api));
+
+    expect($api->requests)
+        ->toHaveKey('paths')
+        ->not->toHaveKey('products')
+        ->not->toHaveKey('sales')
+        ->and($api->requests['paths'])->toHaveKey('products')
+        ->and($api->requests['paths'])->toHaveKey('sales')
+        ->and($api->requests['paths']['products']['field_map'][0]['target'])->toBe('codigo_erp');
+});
+
 /**
  * @param  array<string, mixed>  $overrides
  * @return array<string, mixed>
@@ -90,8 +127,18 @@ function integrationApiPayload(array $overrides = []): array
         'requests_json' => json_encode([
             'method' => 'GET',
             'payload' => 'query',
-            'products' => [
-                'fallback_path' => '/products',
+            'paths' => [
+                'products' => [
+                    'target_table' => 'products',
+                    'fallback_path' => '/products',
+                    'field_map' => [
+                        [
+                            'target' => 'codigo_erp',
+                            'source' => 'id',
+                            'transforms' => ['string'],
+                        ],
+                    ],
+                ],
             ],
         ], JSON_THROW_ON_ERROR),
         'response_json' => json_encode([

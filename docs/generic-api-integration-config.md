@@ -100,22 +100,24 @@ Exemplo de request configurado:
   "min_page_size": 100,
   "max_page_size": 5000,
   "store_document_field": "empresa",
-  "products": {
-    "target_table": "products",
-    "fallback_path": "/hubprodutos.listar_produtos",
-    "date_fields": {
-      "changed_since": "data_ultima_alteracao"
+  "paths": {
+    "products": {
+      "target_table": "products",
+      "fallback_path": "/hubprodutos.listar_produtos",
+      "date_fields": {
+        "changed_since": "data_ultima_alteracao"
+      },
+      "field_map": []
     },
-    "field_map": []
-  },
-  "sales": {
-    "target_table": "sales",
-    "fallback_path": "/hubvendas.vendas_produtos",
-    "date_fields": {
-      "start": "data_inicial",
-      "end": "data_final"
-    },
-    "field_map": []
+    "sales": {
+      "target_table": "sales",
+      "fallback_path": "/hubvendas.vendas_produtos",
+      "date_fields": {
+        "start": "data_inicial",
+        "end": "data_final"
+      },
+      "field_map": []
+    }
   }
 }
 ```

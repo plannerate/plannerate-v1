@@ -92,12 +92,37 @@ class ResolvedIntegrationConfig
     public function request(string $resource): array
     {
         $requests = $this->requests();
-        $resourceConfig = $requests[$resource] ?? [];
+        $resourceConfig = $this->resourceRequests()[$resource] ?? [];
 
         return array_replace_recursive(
-            Arr::except($requests, $this->resourceRequestKeys($requests)),
+            Arr::except($requests, [
+                'paths',
+                ...$this->legacyResourceRequestKeys($requests),
+            ]),
             is_array($resourceConfig) ? $resourceConfig : [],
         );
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    public function resourceRequests(): array
+    {
+        $requests = $this->requests();
+        $paths = $requests['paths'] ?? [];
+
+        if (is_array($paths) && $paths !== []) {
+            return collect($paths)
+                ->filter(fn (mixed $value, mixed $key): bool => is_string($key) && is_array($value))
+                ->map(fn (array $value): array => $value)
+                ->all();
+        }
+
+        return collect($requests)
+            ->only($this->legacyResourceRequestKeys($requests))
+            ->filter(fn (mixed $value): bool => is_array($value))
+            ->map(fn (array $value): array => $value)
+            ->all();
     }
 
     public function path(string $resource, string $fallback = ''): string
@@ -173,7 +198,7 @@ class ResolvedIntegrationConfig
      * @param  array<string, mixed>  $requests
      * @return list<string>
      */
-    private function resourceRequestKeys(array $requests): array
+    private function legacyResourceRequestKeys(array $requests): array
     {
         return collect($requests)
             ->filter(fn (mixed $value): bool => is_array($value) && (

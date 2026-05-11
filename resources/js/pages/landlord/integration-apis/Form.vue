@@ -108,6 +108,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
     const reserved = new Set([
         'method',
         'payload',
+        'paths',
         'page_field',
         'page_value_type',
         'page_size_field',
@@ -118,7 +119,14 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
         'store_document_field',
         'fixed_query',
     ]);
-    const paths = Object.entries(source)
+
+    const configuredPaths = parseObjectValue(source.paths);
+    const legacyPaths = Object.fromEntries(
+        Object.entries(source)
+            .filter(([key, value]) => !reserved.has(key) && value && typeof value === 'object' && !Array.isArray(value)),
+    );
+    const pathsSource = Object.keys(configuredPaths).length > 0 ? configuredPaths : legacyPaths;
+    const paths = Object.entries(pathsSource)
         .filter(([key, value]) => !reserved.has(key) && value && typeof value === 'object' && !Array.isArray(value))
         .map(([name, value]) => {
             const pathConfig = value as Record<string, unknown>;
@@ -198,6 +206,7 @@ function buildRequestsPayload(): Record<string, unknown> {
         max_page_size: numberValue(maxPageSize.value),
         store_document_field: storeDocumentField.value,
     };
+    const paths: Record<string, unknown> = {};
 
     requestPaths.value.forEach((requestPath) => {
         const name = requestPath.name.trim();
@@ -206,7 +215,7 @@ function buildRequestsPayload(): Record<string, unknown> {
             return;
         }
 
-        payload[name] = {
+        paths[name] = {
             target_table: requestPath.target_table,
             fallback_path: requestPath.fallback_path,
         };
@@ -221,7 +230,7 @@ function buildRequestsPayload(): Record<string, unknown> {
         );
 
         if (Object.keys(filteredDateFields).length > 0) {
-            (payload[name] as Record<string, unknown>).date_fields = filteredDateFields;
+            (paths[name] as Record<string, unknown>).date_fields = filteredDateFields;
         }
 
         const fieldMap = requestPath.field_map
@@ -233,10 +242,12 @@ function buildRequestsPayload(): Record<string, unknown> {
             }));
 
         if (fieldMap.length > 0) {
-            (payload[name] as Record<string, unknown>).field_map = fieldMap;
+            (paths[name] as Record<string, unknown>).field_map = fieldMap;
         }
 
     });
+
+    payload.paths = paths;
 
     return payload;
 }

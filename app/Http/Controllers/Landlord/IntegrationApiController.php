@@ -76,6 +76,7 @@ class IntegrationApiController extends Controller
     {
         $this->authorize('update', $integrationApi);
 
+        
         $integrationApi->update($request->payload());
 
         Inertia::flash('toast', [
@@ -149,11 +150,15 @@ class IntegrationApiController extends Controller
             'requests_json' => $this->prettyJson([
                 'method' => 'GET',
                 'payload' => 'query',
-                'products' => [
-                    'fallback_path' => '/products',
-                ],
-                'sales' => [
-                    'fallback_path' => '/sales',
+                'paths' => [
+                    'products' => [
+                        'target_table' => 'products',
+                        'fallback_path' => '/products',
+                    ],
+                    'sales' => [
+                        'target_table' => 'sales',
+                        'fallback_path' => '/sales',
+                    ],
                 ],
             ]),
             'response_json' => $this->prettyJson([

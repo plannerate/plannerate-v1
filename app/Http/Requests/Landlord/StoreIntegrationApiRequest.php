@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Landlord;
 
+use App\Http\Requests\Landlord\Concerns\NormalizesIntegrationApiRequests;
 use App\Models\IntegrationApi;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -9,6 +10,8 @@ use Illuminate\Validation\Rule;
 
 class StoreIntegrationApiRequest extends FormRequest
 {
+    use NormalizesIntegrationApiRequests;
+
     public function authorize(): bool
     {
         return $this->user()?->can('create', IntegrationApi::class) ?? false;
@@ -42,7 +45,7 @@ class StoreIntegrationApiRequest extends FormRequest
             'name' => (string) $validated['name'],
             'slug' => (string) $validated['slug'],
             'description' => $validated['description'] ?? null,
-            'requests' => $this->decodedJson('requests_json'),
+            'requests' => $this->normalizeIntegrationApiRequests($this->decodedJson('requests_json')),
             'response' => $this->decodedJson('response_json'),
             'is_active' => $this->boolean('is_active'),
         ];
