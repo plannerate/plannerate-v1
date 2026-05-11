@@ -1,9 +1,12 @@
 <?php
 
+use App\Models\IntegrationApi;
 use App\Models\Module;
 use App\Models\Plan;
 use App\Models\Tenant;
+use App\Models\TenantIntegration;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -160,4 +163,164 @@ test('tenant validation enforces unique slug database and host', function () {
     $response
         ->assertRedirect(route('landlord.tenants.edit', $second))
         ->assertSessionHasErrors(['slug', 'database', 'host']);
+});
+
+test('authenticated user can export filtered tenant configurations', function () {
+    IntegrationApi::query()->create([
+        'name' => 'API ACME',
+        'slug' => 'acme',
+        'requests' => ['method' => 'GET'],
+        'response' => ['items_path' => 'data'],
+        'is_active' => true,
+    ]);
+
+    $tenantA = Tenant::query()->create([
+        'name' => 'Tenant Alpha',
+        'slug' => 'tenant-alpha',
+        'database' => 'tenant_alpha',
+        'status' => 'active',
+    ]);
+    $tenantA->domains()->create([
+        'host' => 'alpha.test',
+        'type' => 'subdomain',
+        'is_primary' => true,
+        'is_active' => true,
+    ]);
+    TenantIntegration::query()->create([
+        'tenant_id' => $tenantA->id,
+        'integration_type' => 'acme',
+        'config' => ['connection' => ['base_url' => 'https://alpha.api']],
+        'is_active' => true,
+    ]);
+
+    $tenantB = Tenant::query()->create([
+        'name' => 'Tenant Beta',
+        'slug' => 'tenant-beta',
+        'database' => 'tenant_beta',
+        'status' => 'inactive',
+    ]);
+    $tenantB->domains()->create([
+        'host' => 'beta.test',
+        'type' => 'subdomain',
+        'is_primary' => true,
+        'is_active' => true,
+    ]);
+
+    $response = $this->get(route('landlord.tenants.export', [
+        'search' => 'alpha',
+        'status' => 'active',
+    ]));
+
+    $response->assertOk();
+
+    $payload = json_decode($response->streamedContent(), true);
+
+    expect($payload)
+        ->toBeArray()
+        ->toHaveKey('tenants')
+        ->toHaveKey('integration_apis')
+        ->and($payload['tenants'])->toHaveCount(1)
+        ->and($payload['tenants'][0]['slug'] ?? null)->toBe('tenant-alpha')
+        ->and($payload['integration_apis'][0]['slug'] ?? null)->toBe('acme');
+});
+
+test('authenticated user can import tenant configurations in batch', function () {
+    $existing = Tenant::query()->create([
+        'name' => 'Tenant Legacy',
+        'slug' => 'tenant-alpha',
+        'database' => 'tenant_alpha_old',
+        'status' => 'inactive',
+    ]);
+    $existing->domains()->create([
+        'host' => 'legacy-alpha.test',
+        'type' => 'subdomain',
+        'is_primary' => true,
+        'is_active' => false,
+    ]);
+
+    $file = UploadedFile::fake()->createWithContent(
+        'tenant-configs.json',
+        json_encode([
+            'version' => 1,
+            'integration_apis' => [
+                [
+                    'name' => 'API ACME',
+                    'slug' => 'acme',
+                    'requests' => ['method' => 'GET'],
+                    'response' => ['items_path' => 'data'],
+                    'is_active' => true,
+                ],
+            ],
+            'tenants' => [
+                [
+                    'name' => 'Tenant Alpha Atualizado',
+                    'slug' => 'tenant-alpha',
+                    'database' => 'tenant_alpha_new',
+                    'status' => 'active',
+                    'primary_domain' => [
+                        'host' => 'alpha.test',
+                        'type' => 'subdomain',
+                        'is_primary' => true,
+                        'is_active' => true,
+                    ],
+                    'integration' => [
+                        'integration_type' => 'acme',
+                        'identifier' => '123',
+                        'config' => ['paths' => ['products' => '/products']],
+                        'is_active' => true,
+                    ],
+                ],
+                [
+                    'name' => 'Tenant Novo',
+                    'slug' => 'tenant-new',
+                    'database' => 'tenant_new',
+                    'status' => 'provisioning',
+                    'primary_domain' => [
+                        'host' => 'new.test',
+                        'type' => 'subdomain',
+                        'is_primary' => true,
+                        'is_active' => true,
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR),
+    );
+
+    $response = $this->post(route('landlord.tenants.import'), [
+        'spreadsheet' => $file,
+    ]);
+
+    $response->assertRedirect(route('landlord.tenants.index'));
+
+    $this->assertDatabaseHas('tenants', [
+        'slug' => 'tenant-alpha',
+        'name' => 'Tenant Alpha Atualizado',
+        'database' => 'tenant_alpha_new',
+        'status' => 'active',
+    ], 'landlord');
+
+    $this->assertDatabaseHas('tenant_domains', [
+        'tenant_id' => $existing->id,
+        'host' => 'alpha.test',
+        'is_active' => 1,
+    ], 'landlord');
+
+    $this->assertDatabaseHas('tenant_integrations', [
+        'tenant_id' => $existing->id,
+        'integration_type' => 'acme',
+        'identifier' => '123',
+        'is_active' => 1,
+    ], 'landlord');
+
+    $this->assertDatabaseHas('tenants', [
+        'slug' => 'tenant-new',
+        'name' => 'Tenant Novo',
+        'database' => 'tenant_new',
+    ], 'landlord');
+
+    $this->assertDatabaseHas('integration_apis', [
+        'slug' => 'acme',
+        'name' => 'API ACME',
+        'is_active' => 1,
+    ], 'landlord');
 });

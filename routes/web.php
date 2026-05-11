@@ -56,6 +56,10 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::resource('tenants', LandlordTenantController::class)
         ->except(['show'])
         ->names('landlord.tenants');
+    Route::get('tenants/export', [LandlordTenantController::class, 'exportConfigurations'])
+        ->name('landlord.tenants.export');
+    Route::post('tenants/import', [LandlordTenantController::class, 'importConfigurations'])
+        ->name('landlord.tenants.import');
 
     Route::resource('roles', RoleController::class)
         ->except(['show'])

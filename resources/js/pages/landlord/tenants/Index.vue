@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { KeyRound, Layers, Link2, Users } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
 import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord/TenantIntegrationController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
+import ImportFileButton from '@/components/imports/ImportFileButton.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import ColumnActions from '@/components/table/columns/ColumnActions.vue';
@@ -73,6 +74,31 @@ const pageMeta = useCrudPageMeta({
 
 const ssoSheetOpen = ref(false);
 const ssoSheetTenant = ref<TenantRow | null>(null);
+const tenantExportPath = computed(() => {
+    const params = new URLSearchParams();
+
+    if (props.filters.search !== '') {
+        params.set('search', props.filters.search);
+    }
+
+    if (props.filters.status !== '') {
+        params.set('status', props.filters.status);
+    }
+
+    if (props.filters.plan_id !== '') {
+        params.set('plan_id', props.filters.plan_id);
+    }
+
+    if (props.filters.module !== '') {
+        params.set('module', props.filters.module);
+    }
+
+    const basePath = TenantController.exportConfigurations
+        .url()
+        .replace(/^\/\/[^/]+/, '');
+
+    return params.size > 0 ? `${basePath}?${params.toString()}` : basePath;
+});
 
 function openSsoSheet(tenant: TenantRow): void {
     ssoSheetTenant.value = tenant;
@@ -85,6 +111,24 @@ function openSsoSheet(tenant: TenantRow): void {
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
+                <Button variant="outline" size="pill-sm" as-child>
+                    <a :href="tenantExportPath">
+                        {{ t('app.landlord.tenants.actions.export') }}
+                    </a>
+                </Button>
+                <ImportFileButton
+                    :action="TenantController.importConfigurations.url()"
+                    :button-label="t('app.landlord.tenants.actions.import')"
+                    :title="t('app.landlord.tenants.import.title')"
+                    :description="t('app.landlord.tenants.import.description')"
+                    :file-label="t('app.landlord.tenants.import.file_label')"
+                    :submit-label="t('app.landlord.tenants.import.submit')"
+                    :submitting-label="t('app.landlord.tenants.import.submitting')"
+                    :cancel-label="t('app.landlord.tenants.import.cancel')"
+                    accept=".json,application/json,text/plain"
+                    drop-label="Arraste e solte o arquivo JSON aqui"
+                    drop-hint="ou clique para escolher um arquivo .json"
+                />
                 <NewActionButton :href="tenantWayfinderPath(TenantController.create.url())">
                     {{ t('app.landlord.tenants.actions.new') }}
                 </NewActionButton>

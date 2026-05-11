@@ -4,22 +4,29 @@ namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Landlord\ImportTenantConfigurationsRequest;
 use App\Http\Requests\Landlord\StoreTenantRequest;
 use App\Http\Requests\Landlord\UpdateTenantRequest;
 use App\Jobs\ProvisionTenantDatabaseJob;
+use App\Models\IntegrationApi;
 use App\Models\Module;
 use App\Models\Plan;
 use App\Models\Tenant;
+use App\Models\TenantIntegration;
 use App\Services\Cloudflare\CloudflareService;
 use App\Support\Modules\ModuleSlug;
 use App\Support\Modules\TenantModuleService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TenantController extends Controller
 {
@@ -81,19 +88,7 @@ class TenantController extends Controller
         string $module,
         int $perPage,
     ): LengthAwarePaginator {
-        return Tenant::query()
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->where(function ($where) use ($search): void {
-                    $where
-                        ->where('name', 'like', '%'.$search.'%')
-                        ->orWhere('slug', 'like', '%'.$search.'%')
-                        ->orWhere('database', 'like', '%'.$search.'%')
-                        ->orWhereHas('primaryDomain', fn ($domainQuery) => $domainQuery->where('host', 'like', '%'.$search.'%'));
-                });
-            })
-            ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->when($planId !== '', fn ($query) => $query->where('plan_id', $planId))
-            ->when($module !== '', fn ($query) => $query->whereHasActiveModule($module))
+        return $this->filteredTenantsQuery($search, $status, $planId, $module)
             ->with(['plan:id,name', 'primaryDomain:id,tenant_id,host,is_active', 'modules:id,slug,is_active', 'socialiteProvider'])
             ->latest()
             ->paginate($perPage)
@@ -125,6 +120,23 @@ class TenantController extends Controller
                 ] : null,
                 'created_at' => $tenant->created_at?->toDateTimeString(),
             ]);
+    }
+
+    private function filteredTenantsQuery(string $search, string $status, string $planId, string $module): Builder
+    {
+        return Tenant::query()
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($where) use ($search): void {
+                    $where
+                        ->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('slug', 'like', '%'.$search.'%')
+                        ->orWhere('database', 'like', '%'.$search.'%')
+                        ->orWhereHas('primaryDomain', fn ($domainQuery) => $domainQuery->where('host', 'like', '%'.$search.'%'));
+                });
+            })
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($planId !== '', fn ($query) => $query->where('plan_id', $planId))
+            ->when($module !== '', fn ($query) => $query->whereHasActiveModule($module));
     }
 
     /**
@@ -273,6 +285,245 @@ class TenantController extends Controller
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.landlord.tenants.messages.updated'),
+        ]);
+
+        return to_route('landlord.tenants.index');
+    }
+
+    public function exportConfigurations(Request $request): StreamedResponse
+    {
+        $this->authorize('viewAny', Tenant::class);
+
+        $search = $this->requestString($request, 'search');
+        $status = $this->requestEnum($request, 'status', self::AVAILABLE_STATUSES);
+        $planId = $this->requestString($request, 'plan_id');
+        $module = $this->requestString($request, 'module');
+
+        $tenants = $this->filteredTenantsQuery($search, $status, $planId, $module)
+            ->with([
+                'plan:id,slug,name',
+                'primaryDomain:id,tenant_id,host,type,is_primary,is_active',
+                'integration:id,tenant_id,integration_type,identifier,config,is_active,last_sync',
+            ])
+            ->orderBy('name')
+            ->get();
+
+        $payload = [
+            'version' => 1,
+            'generated_at' => now()->toIso8601String(),
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+                'plan_id' => $planId,
+                'module' => $module,
+            ],
+            'integration_apis' => IntegrationApi::query()
+                ->orderBy('slug')
+                ->get()
+                ->map(fn (IntegrationApi $integrationApi): array => [
+                    'name' => $integrationApi->name,
+                    'slug' => $integrationApi->slug,
+                    'description' => $integrationApi->description,
+                    'requests' => is_array($integrationApi->requests) ? $integrationApi->requests : [],
+                    'response' => is_array($integrationApi->response) ? $integrationApi->response : [],
+                    'is_active' => (bool) $integrationApi->is_active,
+                ])
+                ->values()
+                ->all(),
+            'tenants' => $tenants->map(fn (Tenant $tenant): array => [
+                'name' => $tenant->name,
+                'slug' => $tenant->slug,
+                'database' => $tenant->database,
+                'status' => $tenant->status,
+                'plan_slug' => $tenant->plan?->slug,
+                'primary_domain' => $tenant->primaryDomain ? [
+                    'host' => $tenant->primaryDomain->host,
+                    'type' => $tenant->primaryDomain->type,
+                    'is_primary' => (bool) $tenant->primaryDomain->is_primary,
+                    'is_active' => (bool) $tenant->primaryDomain->is_active,
+                ] : null,
+                'integration' => $tenant->integration ? [
+                    'integration_type' => $tenant->integration->integration_type,
+                    'identifier' => $tenant->integration->identifier,
+                    'config' => is_array($tenant->integration->config) ? $tenant->integration->config : [],
+                    'is_active' => (bool) $tenant->integration->is_active,
+                    'last_sync' => $tenant->integration->last_sync?->toIso8601String(),
+                ] : null,
+            ])->values()->all(),
+        ];
+
+        $fileName = sprintf('tenant-configs-%s.json', now()->format('Ymd-His'));
+
+        return response()->streamDownload(
+            static function () use ($payload): void {
+                echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            },
+            $fileName,
+            ['Content-Type' => 'application/json']
+        );
+    }
+
+    public function importConfigurations(ImportTenantConfigurationsRequest $request): RedirectResponse
+    {
+        $this->authorize('create', Tenant::class);
+
+        $uploadedFile = $request->file('spreadsheet');
+
+        if (! $uploadedFile instanceof UploadedFile) {
+            return to_route('landlord.tenants.index');
+        }
+
+        $decoded = json_decode((string) $uploadedFile->get(), true);
+        if (! is_array($decoded)) {
+            return back()->withErrors([
+                'spreadsheet' => __('app.landlord.tenants.messages.import_invalid_json'),
+            ]);
+        }
+
+        $rawTenants = $decoded['tenants'] ?? $decoded;
+        if (! is_array($rawTenants)) {
+            return back()->withErrors([
+                'spreadsheet' => __('app.landlord.tenants.messages.import_invalid_structure'),
+            ]);
+        }
+
+        $apiCreated = 0;
+        $apiUpdated = 0;
+
+        collect($decoded['integration_apis'] ?? [])
+            ->filter(fn (mixed $item): bool => is_array($item))
+            ->each(function (array $item) use (&$apiCreated, &$apiUpdated): void {
+                $slug = Str::of((string) ($item['slug'] ?? ''))->trim()->lower()->toString();
+                if ($slug === '') {
+                    return;
+                }
+
+                $name = Str::of((string) ($item['name'] ?? ''))->trim()->toString();
+
+                $payload = [
+                    'name' => $name !== '' ? $name : Str::of($slug)->replace(['-', '_'], ' ')->title()->toString(),
+                    'slug' => $slug,
+                    'description' => is_string($item['description'] ?? null) ? $item['description'] : null,
+                    'requests' => is_array($item['requests'] ?? null) ? $item['requests'] : [],
+                    'response' => is_array($item['response'] ?? null) ? $item['response'] : [],
+                    'is_active' => (bool) ($item['is_active'] ?? true),
+                ];
+
+                $existing = IntegrationApi::withTrashed()->where('slug', $slug)->first();
+
+                if ($existing instanceof IntegrationApi) {
+                    if ($existing->trashed()) {
+                        $existing->restore();
+                    }
+
+                    $existing->update($payload);
+                    $apiUpdated++;
+
+                    return;
+                }
+
+                IntegrationApi::query()->create($payload);
+                $apiCreated++;
+            });
+
+        $tenantCreated = 0;
+        $tenantUpdated = 0;
+        $tenantSkipped = 0;
+        $domainUpserted = 0;
+        $integrationUpserted = 0;
+
+        collect($rawTenants)
+            ->filter(fn (mixed $item): bool => is_array($item))
+            ->each(function (array $item) use (&$tenantCreated, &$tenantUpdated, &$tenantSkipped, &$domainUpserted, &$integrationUpserted): void {
+                $slug = Str::of((string) ($item['slug'] ?? ''))->trim()->lower()->toString();
+                if ($slug === '') {
+                    $tenantSkipped++;
+
+                    return;
+                }
+
+                $name = Str::of((string) ($item['name'] ?? ''))->trim()->toString();
+                $database = Str::of((string) ($item['database'] ?? ''))->trim()->toString();
+                $status = Str::of((string) ($item['status'] ?? 'provisioning'))->trim()->toString();
+                $planSlug = Str::of((string) ($item['plan_slug'] ?? ''))->trim()->toString();
+
+                $existing = Tenant::withTrashed()->where('slug', $slug)->first();
+                $planId = $planSlug !== '' ? Plan::query()->where('slug', $planSlug)->value('id') : null;
+
+                $payload = [
+                    'name' => $name !== '' ? $name : Str::of($slug)->replace(['-', '_'], ' ')->title()->toString(),
+                    'slug' => $slug,
+                    'database' => $database !== ''
+                        ? $database
+                        : ($existing?->database ?? Str::of($slug)->replace('-', '_')->toString()),
+                    'status' => in_array($status, self::AVAILABLE_STATUSES, true) ? $status : 'provisioning',
+                    'plan_id' => is_string($planId) ? $planId : null,
+                ];
+
+                if ($existing instanceof Tenant) {
+                    if ($existing->trashed()) {
+                        $existing->restore();
+                    }
+
+                    $existing->update($payload);
+                    $tenant = $existing;
+                    $tenantUpdated++;
+                } else {
+                    $tenant = Tenant::query()->create($payload);
+                    $tenantCreated++;
+                }
+
+                $primaryDomain = $item['primary_domain'] ?? null;
+                if (is_array($primaryDomain)) {
+                    $host = Str::of((string) ($primaryDomain['host'] ?? ''))->trim()->toString();
+
+                    if ($host !== '') {
+                        $tenant->domains()->updateOrCreate(
+                            ['tenant_id' => $tenant->id],
+                            [
+                                'host' => $host,
+                                'type' => (string) ($primaryDomain['type'] ?? 'subdomain'),
+                                'is_primary' => (bool) ($primaryDomain['is_primary'] ?? true),
+                                'is_active' => (bool) ($primaryDomain['is_active'] ?? true),
+                            ],
+                        );
+
+                        $domainUpserted++;
+                    }
+                }
+
+                $integration = $item['integration'] ?? null;
+                if (is_array($integration)) {
+                    $integrationType = Str::of((string) ($integration['integration_type'] ?? ''))->trim()->toString();
+
+                    if ($integrationType !== '') {
+                        TenantIntegration::query()->updateOrCreate(
+                            ['tenant_id' => $tenant->id],
+                            [
+                                'integration_type' => $integrationType,
+                                'identifier' => Str::of((string) ($integration['identifier'] ?? ''))->trim()->toString() ?: null,
+                                'config' => is_array($integration['config'] ?? null) ? $integration['config'] : [],
+                                'is_active' => (bool) ($integration['is_active'] ?? true),
+                                'last_sync' => (string) ($integration['last_sync'] ?? '') !== '' ? $integration['last_sync'] : null,
+                            ],
+                        );
+
+                        $integrationUpserted++;
+                    }
+                }
+            });
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.tenants.messages.imported', [
+                'tenant_created' => $tenantCreated,
+                'tenant_updated' => $tenantUpdated,
+                'tenant_skipped' => $tenantSkipped,
+                'domains' => $domainUpserted,
+                'integrations' => $integrationUpserted,
+                'api_created' => $apiCreated,
+                'api_updated' => $apiUpdated,
+            ]),
         ]);
 
         return to_route('landlord.tenants.index');

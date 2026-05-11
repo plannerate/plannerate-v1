@@ -184,6 +184,16 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'actions' => [
                 'new' => 'Novo tenant',
                 'edit' => 'Editar tenant',
+                'export' => 'Exportar configuracoes',
+                'import' => 'Importar configuracoes',
+            ],
+            'import' => [
+                'title' => 'Importar configuracoes de tenants',
+                'description' => 'Envie um JSON com tenants, dominios, integracoes e APIs de integracao.',
+                'file_label' => 'Arquivo JSON',
+                'submit' => 'Importar',
+                'submitting' => 'Importando...',
+                'cancel' => 'Cancelar',
             ],
             'fields' => [
                 'name' => 'Nome',
@@ -200,6 +210,9 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'updated' => 'Tenant atualizado com sucesso.',
                 'deleted' => 'Tenant removido com sucesso.',
                 'provisioning_started' => 'Provisionamento iniciado. O banco sera criado em instantes.',
+                'imported' => 'Importacao concluida. Tenants criados: :tenant_created, atualizados: :tenant_updated, ignorados: :tenant_skipped. Dominios: :domains, integracoes: :integrations, APIs criadas: :api_created, APIs atualizadas: :api_updated.',
+                'import_invalid_json' => 'O arquivo enviado nao contem um JSON valido.',
+                'import_invalid_structure' => 'Estrutura invalida. Use um arquivo com "tenants".',
             ],
             'setup' => [
                 'title' => 'Setup do tenant',
