@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
 import { FileSpreadsheet, TriangleAlert, Upload } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -49,6 +49,20 @@ const form = useForm<{ spreadsheet: File | null; truncate_before_import: boolean
     truncate_before_import: false,
 });
 
+const normalizedAction = computed(() => {
+    if (props.action.startsWith('http://') || props.action.startsWith('https://')) {
+        try {
+            const parsed = new URL(props.action);
+
+            return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+        } catch {
+            return props.action;
+        }
+    }
+
+    return props.action.replace(/^\/\/[^/]+/, '');
+});
+
 function setSpreadsheet(file: File | null): void {
     form.spreadsheet = file;
 }
@@ -92,14 +106,15 @@ function submit(): void {
     form
         .transform((data) => {
             if (!props.showTruncateOption) {
-                const { truncate_before_import: _, ...rest } = data;
+                const rest = { ...data };
+                delete rest.truncate_before_import;
 
                 return rest;
             }
 
             return data;
         })
-        .post(props.action, {
+        .post(normalizedAction.value, {
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
