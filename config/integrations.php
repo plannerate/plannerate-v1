@@ -14,14 +14,14 @@ return [
                 'max_page_size' => 5000,
                 'store_document_field' => 'empresa',
                 'products' => [
-                    'fallback_path' => '/sysmo-integrador-api/api/integradorService/hubprodutos.listar_produtos',
+                    'fallback_path' => '/hubprodutos.listar_produtos',
                     'default_page_size' => 500,
                     'date_fields' => [
                         'changed_since' => 'data_ultima_alteracao',
                     ],
                 ],
                 'sales' => [
-                    'fallback_path' => '/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos',
+                    'fallback_path' => '/hubvendas.vendas_produtos',
                     'date_fields' => [
                         'start' => 'data_inicial',
                         'end' => 'data_final',
