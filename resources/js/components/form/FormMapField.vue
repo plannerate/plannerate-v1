@@ -185,6 +185,7 @@
         </p>
 
         <InputError :message="firstError" />
+        <InputError :message="uploadError" />
 
         <!-- Region edit dialog -->
         <MapRegionDialog
@@ -351,6 +352,7 @@ const showRegionDialog = ref(false);
 const showExpandedEditor = ref(false);
 const editingRegion = ref<Region | null>(null);
 const newRegionPending = ref<Region | null>(null);
+const uploadError = ref('');
 const regionForm = ref<RegionForm>({
     label: '',
     type: 'gondola',
@@ -396,6 +398,114 @@ return '';
 const availableGondolas = computed(() => props.column.gondolas || []);
 const regionsJson = computed(() => JSON.stringify(regions.value));
 const MIN_REGION_SIZE = 20;
+const MAX_IMAGE_DIMENSION = 1600;
+const TARGET_IMAGE_MAX_BYTES = 450 * 1024;
+const MIN_IMAGE_QUALITY = 0.55;
+
+const blobToDataUrl = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            const result = reader.result;
+
+            if (typeof result === 'string') {
+                resolve(result);
+
+                return;
+            }
+
+            reject(new Error('Invalid data URL result'));
+        };
+
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(blob);
+    });
+};
+
+const dataUrlToImage = (dataUrl: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error('Failed to load image'));
+        image.src = dataUrl;
+    });
+};
+
+const canvasToBlob = (
+    canvas: HTMLCanvasElement,
+    mimeType: string,
+    quality?: number,
+): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+            if (blob) {
+                resolve(blob);
+
+                return;
+            }
+
+            reject(new Error('Failed to convert canvas to blob'));
+        }, mimeType, quality);
+    });
+};
+
+const optimizeMapImage = async (file: File): Promise<string> => {
+    const sourceDataUrl = await blobToDataUrl(file);
+
+    if (file.type === 'image/svg+xml') {
+        return sourceDataUrl;
+    }
+
+    const sourceImage = await dataUrlToImage(sourceDataUrl);
+    let width = sourceImage.naturalWidth;
+    let height = sourceImage.naturalHeight;
+
+    if (Math.max(width, height) > MAX_IMAGE_DIMENSION) {
+        const ratio = MAX_IMAGE_DIMENSION / Math.max(width, height);
+        width = Math.max(1, Math.round(width * ratio));
+        height = Math.max(1, Math.round(height * ratio));
+    }
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+
+    if (!context) {
+        throw new Error('Canvas context unavailable');
+    }
+
+    const outputType = file.type === 'image/png' ? 'image/webp' : 'image/jpeg';
+    let quality = 0.88;
+    let bestBlob: Blob | null = null;
+
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+        canvas.width = width;
+        canvas.height = height;
+        context.clearRect(0, 0, width, height);
+        context.drawImage(sourceImage, 0, 0, width, height);
+
+        const blob = await canvasToBlob(canvas, outputType, quality);
+        bestBlob = blob;
+
+        if (blob.size <= TARGET_IMAGE_MAX_BYTES) {
+            break;
+        }
+
+        if (quality > MIN_IMAGE_QUALITY) {
+            quality = Math.max(MIN_IMAGE_QUALITY, quality - 0.08);
+        } else {
+            width = Math.max(800, Math.round(width * 0.88));
+            height = Math.max(800, Math.round(height * 0.88));
+        }
+    }
+
+    if (!bestBlob) {
+        throw new Error('Failed to optimize image');
+    }
+
+    return blobToDataUrl(bestBlob);
+};
 
 const normalizeDimension = (value: number, fallback: number): number => {
     const parsed = Number(value);
@@ -438,7 +548,7 @@ const openExpandedEditor = () => {
     showExpandedEditor.value = true;
 };
 
-const handleFileUpload = (event: Event) => {
+const handleFileUpload = async (event: Event) => {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
@@ -446,14 +556,20 @@ const handleFileUpload = (event: Event) => {
 return;
 }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        mapImage.value = e.target?.result as string;
+    uploadError.value = '';
+
+    try {
+        const optimizedImage = await optimizeMapImage(file);
+        mapImage.value = optimizedImage;
         isNewImage.value = true;
         resetView();
         emitUpdate();
-    };
-    reader.readAsDataURL(file);
+    } catch {
+        uploadError.value =
+            'Nao foi possivel processar a imagem. Tente um arquivo menor.';
+    } finally {
+        input.value = '';
+    }
 };
 
 const handleImageLoaded = () => {

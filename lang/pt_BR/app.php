@@ -620,7 +620,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'categories' => [
             'navigation' => 'Categorias',
             'title' => 'Categorias',
-            'description' => 'Gerencie as categorias do tenant.',
+            'description' => 'Gerencie as categorias.',
             'actions' => [
                 'new' => 'Nova categoria',
                 'edit' => 'Editar categoria',
@@ -701,7 +701,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'stores' => [
             'navigation' => 'Lojas',
             'title' => 'Lojas',
-            'description' => 'Gerencie as lojas do tenant.',
+            'description' => 'Gerencie as lojas.',
             'actions' => [
                 'new' => 'Nova loja',
                 'edit' => 'Editar loja',
@@ -733,7 +733,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'sales' => [
             'navigation' => 'Vendas',
             'title' => 'Vendas',
-            'description' => 'Gerencie as vendas do tenant.',
+            'description' => 'Gerencie as vendas.',
             'actions' => [
                 'new' => 'Nova venda',
                 'edit' => 'Editar venda',
@@ -761,7 +761,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'clusters' => [
             'navigation' => 'Clusters',
             'title' => 'Clusters',
-            'description' => 'Gerencie os clusters do tenant.',
+            'description' => 'Gerencie os clusters.',
             'actions' => [
                 'new' => 'Novo cluster',
                 'edit' => 'Editar cluster',
@@ -784,7 +784,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'providers' => [
             'navigation' => 'Fornecedores',
             'title' => 'Fornecedores',
-            'description' => 'Gerencie os fornecedores do tenant.',
+            'description' => 'Gerencie os fornecedores.',
             'actions' => [
                 'new' => 'Novo fornecedor',
                 'edit' => 'Editar fornecedor',
@@ -807,7 +807,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'planograms' => [
             'navigation' => 'Planogramas',
             'title' => 'Planogramas',
-            'description' => 'Gerencie os planogramas do tenant.',
+            'description' => 'Gerencie os planogramas.',
             'tabs' => [
                 'identificacao' => 'Identificação',
                 'mercadologico' => 'Mercadológico',
@@ -866,7 +866,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'products' => [
             'navigation' => 'Produtos',
             'title' => 'Produtos',
-            'description' => 'Gerencie os produtos do tenant.',
+            'description' => 'Gerencie os produtos.',
             'actions' => [
                 'new' => 'Novo produto',
                 'edit' => 'Editar produto',
@@ -999,7 +999,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'users' => [
             'navigation' => 'Usuarios',
             'title' => 'Usuarios',
-            'description' => 'Gerencie os usuarios do tenant.',
+            'description' => 'Gerencie os usuarios.',
             'actions' => [
                 'new' => 'Novo usuario',
                 'edit' => 'Editar usuario',

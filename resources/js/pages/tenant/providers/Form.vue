@@ -3,8 +3,6 @@ import { Form, Head } from '@inertiajs/vue3';
 import { Truck } from 'lucide-vue-next';
 import { computed } from 'vue';
 import ProviderController from '@/actions/App/Http/Controllers/Tenant/ProviderController';
-import AddressFields from '@/components/form/AddressFields.vue';
-import FormTextareaField from '@/components/form/FormTextareaField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
@@ -90,7 +88,7 @@ const pageMeta = useCrudPageMeta({
                     <FormTextField
                         id="name"
                         name="name"
-                        :label="t('app.tenant.providers.fields.name')"
+                        label="Razão Social"
                         :default-value="props.provider?.name ?? ''"
                         :error="errors.name"
                         class="md:col-span-6"
@@ -98,29 +96,20 @@ const pageMeta = useCrudPageMeta({
                     />
 
                     <FormTextField
-                        id="code"
-                        name="code"
-                        :label="t('app.tenant.providers.fields.code')"
-                        :default-value="props.provider?.code ?? ''"
-                        :error="errors.code"
-                        class="md:col-span-3"
+                        id="description"
+                        name="description"
+                        label="Nome fantasia"
+                        :default-value="props.provider?.description ?? ''"
+                        :error="errors.description"
+                        class="md:col-span-6"
                     />
 
                     <FormTextField
                         id="cnpj"
                         name="cnpj"
-                        :label="t('app.tenant.providers.fields.cnpj')"
+                        label="CNPJ"
                         :default-value="props.provider?.cnpj ?? ''"
                         :error="errors.cnpj"
-                        class="md:col-span-3"
-                    />
-
-                    <FormTextField
-                        id="phone"
-                        name="phone"
-                        :label="t('app.tenant.providers.fields.phone')"
-                        :default-value="props.provider?.phone ?? ''"
-                        :error="errors.phone"
                         class="md:col-span-4"
                     />
 
@@ -128,20 +117,91 @@ const pageMeta = useCrudPageMeta({
                         id="email"
                         name="email"
                         type="email"
-                        :label="t('app.tenant.providers.fields.email')"
+                        label="Email"
                         :default-value="props.provider?.email ?? ''"
                         :error="errors.email"
                         class="md:col-span-4"
                     />
 
-                    <FormTextareaField
-                        id="description"
-                        name="description"
-                        :label="t('app.tenant.providers.fields.description')"
-                        :default-value="props.provider?.description ?? ''"
-                        :error="errors.description"
-                        class="md:col-span-12"
-                        :rows="2"
+                    <FormTextField
+                        id="phone"
+                        name="phone"
+                        label="Telefone"
+                        :default-value="props.provider?.phone ?? ''"
+                        :error="errors.phone"
+                        class="md:col-span-4"
+                    />
+
+                    <FormTextField
+                        id="address-zip_code"
+                        name="address[zip_code]"
+                        label="Cep"
+                        :default-value="props.address?.zip_code ?? ''"
+                        :error="errors['address.zip_code']"
+                        class="md:col-span-3"
+                    />
+
+                    <FormTextField
+                        id="address-street"
+                        name="address[street]"
+                        label="Rua"
+                        :default-value="props.address?.street ?? ''"
+                        :error="errors['address.street']"
+                        class="md:col-span-5"
+                    />
+
+                    <FormTextField
+                        id="address-number"
+                        name="address[number]"
+                        label="Numero"
+                        :default-value="props.address?.number ?? ''"
+                        :error="errors['address.number']"
+                        class="md:col-span-2"
+                    />
+
+                    <FormTextField
+                        id="address-complement"
+                        name="address[complement]"
+                        label="Complemento"
+                        :default-value="props.address?.complement ?? ''"
+                        :error="errors['address.complement']"
+                        class="md:col-span-2"
+                    />
+
+                    <FormTextField
+                        id="address-district"
+                        name="address[district]"
+                        label="Bairro"
+                        :default-value="props.address?.district ?? ''"
+                        :error="errors['address.district']"
+                        class="md:col-span-4"
+                    />
+
+                    <FormTextField
+                        id="address-city"
+                        name="address[city]"
+                        label="Cidade"
+                        :default-value="props.address?.city ?? ''"
+                        :error="errors['address.city']"
+                        class="md:col-span-4"
+                    />
+
+                    <FormTextField
+                        id="address-state"
+                        name="address[state]"
+                        label="Estado"
+                        :default-value="props.address?.state ?? ''"
+                        :error="errors['address.state']"
+                        class="md:col-span-2"
+                    />
+
+                    <FormTextField
+                        id="address-country"
+                        name="address[country]"
+                        label="Pais"
+                        :default-value="props.address?.country ?? 'Brasil'"
+                        :error="errors['address.country']"
+                        class="md:col-span-2"
                     />
                 </div>
 
@@ -154,7 +214,6 @@ const pageMeta = useCrudPageMeta({
                     <InputError :message="errors.is_default" />
                 </label>
 
-                <AddressFields :model-value="props.address" :errors="errors" />
             </FormCard>
         </Form>
         </div>

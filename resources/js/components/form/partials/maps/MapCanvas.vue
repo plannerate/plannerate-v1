@@ -251,7 +251,8 @@ return
       isPanning.value = true
       panStart.value = { x: event.clientX - props.panX, y: event.clientY - props.panY }
     } else if (props.currentTool === 'select') {
-      const clickedRegion = props.regions.find(r => {
+      // Hit-test from top-most rendered region to bottom-most.
+      const clickedRegion = [...props.regions].reverse().find(r => {
         if (r.shape === 'circle') {
           const cx = r.x + r.width / 2
           const cy = r.y + r.height / 2
