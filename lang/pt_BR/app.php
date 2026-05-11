@@ -266,6 +266,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'store_document_field' => 'Campo do documento da loja',
                 'paths' => 'Configurações de requisição',
                 'key' => 'Chave',
+                'target_table' => 'Tabela destino',
                 'fallback_path' => 'Caminho fallback',
                 'date_changed_since' => 'Alterado desde',
                 'date_start' => 'Data inicial',
@@ -287,6 +288,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             ],
             'placeholders' => [
                 'path_key' => 'products',
+                'target_table' => 'Selecione uma tabela',
                 'fallback_path' => '/hubvendas.vendas_produtos',
                 'date_changed_since' => 'data_ultima_alteracao',
                 'date_start' => 'data_inicial',

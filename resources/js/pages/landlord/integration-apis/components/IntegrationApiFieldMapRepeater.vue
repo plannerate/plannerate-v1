@@ -8,6 +8,7 @@ import type { FieldMapRow } from './types';
 
 const props = defineProps<{
     modelValue: FieldMapRow[];
+    targetOptions: string[];
 }>();
 
 const emit = defineEmits<{
@@ -39,6 +40,14 @@ function updateRow(index: number, patch: Partial<FieldMapRow>): void {
 function removeRow(index: number): void {
     emit('update:modelValue', props.modelValue.filter((_, rowIndex) => rowIndex !== index));
 }
+
+function internalFieldOptions(value: string): string[] {
+    if (value.trim() !== '' && ! props.targetOptions.includes(value)) {
+        return [value, ...props.targetOptions];
+    }
+
+    return props.targetOptions;
+}
 </script>
 
 <template>
@@ -55,7 +64,20 @@ function removeRow(index: number): void {
             >
                 <div class="grid gap-2 md:col-span-3">
                     <Label :for="`field-target-${row.id}`">{{ t('app.landlord.integration_apis.fields.internal_field') }}</Label>
+                    <select
+                        v-if="props.targetOptions.length > 0"
+                        :id="`field-target-${row.id}`"
+                        :value="row.target"
+                        class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                        @change="updateRow(index, { target: ($event.target as HTMLSelectElement).value })"
+                    >
+                        <option value="">{{ t('app.landlord.integration_apis.placeholders.internal_field') }}</option>
+                        <option v-for="option in internalFieldOptions(row.target)" :key="option" :value="option">
+                            {{ option }}
+                        </option>
+                    </select>
                     <Input
+                        v-else
                         :id="`field-target-${row.id}`"
                         :model-value="row.target"
                         :placeholder="t('app.landlord.integration_apis.placeholders.internal_field')"

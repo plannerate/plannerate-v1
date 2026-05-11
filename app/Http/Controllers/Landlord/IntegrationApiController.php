@@ -43,6 +43,7 @@ class IntegrationApiController extends Controller
         return Inertia::render('landlord/integration-apis/Form', [
             'integrationApi' => null,
             'defaults' => $this->defaultPayload(),
+            'fieldMapTables' => $this->fieldMapTables(),
         ]);
     }
 
@@ -67,6 +68,7 @@ class IntegrationApiController extends Controller
         return Inertia::render('landlord/integration-apis/Form', [
             'integrationApi' => $this->formPayload($integrationApi),
             'defaults' => $this->defaultPayload(),
+            'fieldMapTables' => $this->fieldMapTables(),
         ]);
     }
 
@@ -161,6 +163,31 @@ class IntegrationApiController extends Controller
                 ],
             ]),
         ];
+    }
+
+    /**
+     * @return array<string, array{label: string, columns: list<string>}>
+     */
+    private function fieldMapTables(): array
+    {
+        $tables = config('integrations.field_map_tables', []);
+
+        if (! is_array($tables)) {
+            return [];
+        }
+
+        return collect($tables)
+            ->filter(fn (mixed $table): bool => is_array($table))
+            ->map(function (array $table, string $key): array {
+                return [
+                    'label' => is_string($table['label'] ?? null) ? $table['label'] : $key,
+                    'columns' => collect($table['columns'] ?? [])
+                        ->filter(fn (mixed $column): bool => is_string($column) && $column !== '')
+                        ->values()
+                        ->all(),
+                ];
+            })
+            ->all();
     }
 
     private function prettyJson(mixed $value): string

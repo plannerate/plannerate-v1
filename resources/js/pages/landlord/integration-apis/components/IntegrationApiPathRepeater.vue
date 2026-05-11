@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
 import IntegrationApiCalculationRepeater from './IntegrationApiCalculationRepeater.vue';
 import IntegrationApiFieldMapRepeater from './IntegrationApiFieldMapRepeater.vue';
-import type { RequestPathRow } from './types';
+import type { FieldMapTableOption, RequestPathRow } from './types';
 
 const props = defineProps<{
     modelValue: RequestPathRow[];
+    fieldMapTables: Record<string, FieldMapTableOption>;
 }>();
 
 const emit = defineEmits<{
@@ -22,6 +23,7 @@ function newPath(): RequestPathRow {
     return {
         id: `path-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         name: '',
+        target_table: '',
         fallback_path: '',
         changed_since: '',
         start: '',
@@ -50,7 +52,12 @@ function fieldOptions(path: RequestPathRow): string[] {
     return path.field_map.map((field) => field.target).filter((field) => field.trim() !== '');
 }
 
+function tableColumns(path: RequestPathRow): string[] {
+    return props.fieldMapTables[path.target_table]?.columns ?? [];
+}
+
 const hasPaths = computed(() => props.modelValue.length > 0);
+const tableOptions = computed(() => Object.entries(props.fieldMapTables));
 </script>
 
 <template>
@@ -75,7 +82,21 @@ const hasPaths = computed(() => props.modelValue.length > 0);
                             @update:model-value="updatePath(pathIndex, { name: String($event) })"
                         />
                     </div>
-                    <div class="grid gap-2 md:col-span-7">
+                    <div class="grid gap-2 md:col-span-3">
+                        <Label :for="`path-table-${requestPath.id}`">{{ t('app.landlord.integration_apis.fields.target_table') }}</Label>
+                        <select
+                            :id="`path-table-${requestPath.id}`"
+                            :value="requestPath.target_table"
+                            class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                            @change="updatePath(pathIndex, { target_table: ($event.target as HTMLSelectElement).value })"
+                        >
+                            <option value="">{{ t('app.landlord.integration_apis.placeholders.target_table') }}</option>
+                            <option v-for="[table, option] in tableOptions" :key="table" :value="table">
+                                {{ option.label }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="grid gap-2 md:col-span-4">
                         <Label :for="`path-value-${requestPath.id}`">{{ t('app.landlord.integration_apis.fields.fallback_path') }}</Label>
                         <Input
                             :id="`path-value-${requestPath.id}`"
@@ -127,6 +148,7 @@ const hasPaths = computed(() => props.modelValue.length > 0);
 
                 <IntegrationApiFieldMapRepeater
                     :model-value="requestPath.field_map"
+                    :target-options="tableColumns(requestPath)"
                     @update:model-value="updatePath(pathIndex, { field_map: $event })"
                 />
 

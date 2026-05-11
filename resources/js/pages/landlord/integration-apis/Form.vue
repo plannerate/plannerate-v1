@@ -12,7 +12,7 @@ import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import IntegrationApiPathRepeater from './components/IntegrationApiPathRepeater.vue';
-import type { RequestPathRow } from './components/types';
+import type { FieldMapTableOption, RequestPathRow } from './components/types';
 
 type IntegrationApiPayload = {
     id: string;
@@ -32,6 +32,7 @@ const props = defineProps<{
         requests_json: string;
         response_json: string;
     };
+    fieldMapTables: Record<string, FieldMapTableOption>;
 }>();
 
 const { t } = useT();
@@ -104,15 +105,28 @@ function valueToInput(value: unknown): string {
 }
 
 function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[] {
-    const reserved = new Set(['products', 'sales']);
+    const reserved = new Set([
+        'method',
+        'payload',
+        'page_field',
+        'page_value_type',
+        'page_size_field',
+        'page_size_payload',
+        'default_page_size',
+        'min_page_size',
+        'max_page_size',
+        'store_document_field',
+        'fixed_query',
+    ]);
     const paths = Object.entries(source)
-        .filter(([key, value]) => reserved.has(key) && value && typeof value === 'object' && !Array.isArray(value))
+        .filter(([key, value]) => !reserved.has(key) && value && typeof value === 'object' && !Array.isArray(value))
         .map(([name, value]) => {
             const pathConfig = value as Record<string, unknown>;
 
             return {
                 id: newPathId(),
                 name,
+                target_table: valueToInput(pathConfig.target_table || (props.fieldMapTables[name] ? name : '')),
                 fallback_path: valueToInput(pathConfig.fallback_path),
                 changed_since: valueToInput(parseObjectValue(pathConfig.date_fields).changed_since),
                 start: valueToInput(parseObjectValue(pathConfig.date_fields).start),
@@ -128,6 +142,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
             {
                 id: newPathId(),
                 name: 'products',
+                target_table: 'products',
                 fallback_path: '/hubprodutos.listar_produtos',
                 changed_since: 'data_ultima_alteracao',
                 start: '',
@@ -138,6 +153,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
             {
                 id: newPathId(),
                 name: 'sales',
+                target_table: 'sales',
                 fallback_path: '/hubvendas.vendas_produtos',
                 changed_since: '',
                 start: 'data_inicial',
@@ -210,6 +226,7 @@ function buildRequestsPayload(): Record<string, unknown> {
         }
 
         payload[name] = {
+            target_table: requestPath.target_table,
             fallback_path: requestPath.fallback_path,
         };
 
@@ -366,7 +383,7 @@ function newPathId(): string {
                             </div>
                         </div>
                         <InputError :message="errors.requests_json" />
-                        <IntegrationApiPathRepeater v-model="requestPaths" />
+                        <IntegrationApiPathRepeater v-model="requestPaths" :field-map-tables="props.fieldMapTables" />
                     </fieldset>
 
                     <fieldset class="grid gap-4 rounded-lg border border-border bg-muted/10 p-4">
