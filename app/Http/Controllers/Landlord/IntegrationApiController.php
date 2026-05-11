@@ -4,14 +4,18 @@ namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Landlord\ImportIntegrationApiConfigRequest;
 use App\Http\Requests\Landlord\StoreIntegrationApiRequest;
 use App\Http\Requests\Landlord\UpdateIntegrationApiRequest;
 use App\Models\IntegrationApi;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class IntegrationApiController extends Controller
 {
@@ -76,7 +80,6 @@ class IntegrationApiController extends Controller
     {
         $this->authorize('update', $integrationApi);
 
-        
         $integrationApi->update($request->payload());
 
         Inertia::flash('toast', [
@@ -96,6 +99,118 @@ class IntegrationApiController extends Controller
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.landlord.integration_apis.messages.deleted'),
+        ]);
+
+        return to_route('landlord.integration-apis.index');
+    }
+
+    public function exportConfigurations(): StreamedResponse
+    {
+        $this->authorize('viewAny', IntegrationApi::class);
+
+        $payload = [
+            'version' => 1,
+            'generated_at' => now()->toIso8601String(),
+            'integration_apis' => IntegrationApi::query()
+                ->orderBy('slug')
+                ->get()
+                ->map(fn (IntegrationApi $integrationApi): array => [
+                    'name' => $integrationApi->name,
+                    'slug' => $integrationApi->slug,
+                    'description' => $integrationApi->description,
+                    'requests' => is_array($integrationApi->requests) ? $integrationApi->requests : [],
+                    'response' => is_array($integrationApi->response) ? $integrationApi->response : [],
+                    'is_active' => (bool) $integrationApi->is_active,
+                ])
+                ->values()
+                ->all(),
+        ];
+
+        $fileName = sprintf('integration-apis-%s.json', now()->format('Ymd-His'));
+
+        return response()->streamDownload(
+            static function () use ($payload): void {
+                echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            },
+            $fileName,
+            ['Content-Type' => 'application/json']
+        );
+    }
+
+    public function importConfigurations(ImportIntegrationApiConfigRequest $request): RedirectResponse
+    {
+        $this->authorize('create', IntegrationApi::class);
+
+        $uploadedFile = $request->file('spreadsheet');
+
+        if (! $uploadedFile instanceof UploadedFile) {
+            return to_route('landlord.integration-apis.index');
+        }
+
+        $decoded = json_decode((string) $uploadedFile->get(), true);
+        if (! is_array($decoded)) {
+            return back()->withErrors([
+                'spreadsheet' => __('app.landlord.integration_apis.messages.import_invalid_json'),
+            ]);
+        }
+
+        $rawItems = $decoded['integration_apis'] ?? $decoded;
+        if (! is_array($rawItems)) {
+            return back()->withErrors([
+                'spreadsheet' => __('app.landlord.integration_apis.messages.import_invalid_structure'),
+            ]);
+        }
+
+        $created = 0;
+        $updated = 0;
+        $skipped = 0;
+
+        collect($rawItems)
+            ->filter(fn (mixed $item): bool => is_array($item))
+            ->each(function (array $item) use (&$created, &$updated, &$skipped): void {
+                $slug = Str::of((string) ($item['slug'] ?? ''))->trim()->lower()->toString();
+
+                if ($slug === '') {
+                    $skipped++;
+
+                    return;
+                }
+
+                $name = Str::of((string) ($item['name'] ?? ''))->trim()->toString();
+
+                $payload = [
+                    'name' => $name !== '' ? $name : Str::of($slug)->replace(['-', '_'], ' ')->title()->toString(),
+                    'slug' => $slug,
+                    'description' => is_string($item['description'] ?? null) ? $item['description'] : null,
+                    'requests' => is_array($item['requests'] ?? null) ? $item['requests'] : [],
+                    'response' => is_array($item['response'] ?? null) ? $item['response'] : [],
+                    'is_active' => (bool) ($item['is_active'] ?? true),
+                ];
+
+                $existing = IntegrationApi::withTrashed()->where('slug', $slug)->first();
+
+                if ($existing instanceof IntegrationApi) {
+                    if ($existing->trashed()) {
+                        $existing->restore();
+                    }
+
+                    $existing->update($payload);
+                    $updated++;
+
+                    return;
+                }
+
+                IntegrationApi::query()->create($payload);
+                $created++;
+            });
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.integration_apis.messages.imported', [
+                'created' => $created,
+                'updated' => $updated,
+                'skipped' => $skipped,
+            ]),
         ]);
 
         return to_route('landlord.integration-apis.index');

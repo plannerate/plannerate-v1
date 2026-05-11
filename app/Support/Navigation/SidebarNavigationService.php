@@ -93,7 +93,7 @@ class SidebarNavigationService
                         $item
                             ->label(__('app.landlord.integration_apis.navigation'))
                             ->href(route('landlord.integration-apis.index', absolute: false))
-                            ->icon('plug')
+                            ->icon('cable')
                             ->authorize('viewAny', IntegrationApi::class)
                             ->setOrder(35);
                     })

@@ -2,6 +2,7 @@
 
 use App\Models\IntegrationApi;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -112,6 +113,83 @@ test('integration api moves legacy top level resources into paths', function ():
         ->and($api->requests['paths'])->toHaveKey('products')
         ->and($api->requests['paths'])->toHaveKey('sales')
         ->and($api->requests['paths']['products']['field_map'][0]['target'])->toBe('codigo_erp');
+});
+
+test('authenticated user can export integration api configurations', function (): void {
+    IntegrationApi::query()->create([
+        'name' => 'ACME',
+        'slug' => 'acme',
+        'description' => 'API ACME',
+        'requests' => ['method' => 'GET', 'paths' => ['products' => ['target_table' => 'products']]],
+        'response' => ['items_path' => 'data'],
+        'is_active' => true,
+    ]);
+
+    $response = $this->get(route('landlord.integration-apis.export'));
+
+    $response->assertOk();
+
+    $payload = json_decode($response->streamedContent(), true);
+
+    expect($payload)
+        ->toBeArray()
+        ->toHaveKey('integration_apis')
+        ->and($payload['integration_apis'])->toBeArray()
+        ->and($payload['integration_apis'][0]['slug'] ?? null)->toBe('acme');
+});
+
+test('authenticated user can import integration api configurations', function (): void {
+    IntegrationApi::query()->create([
+        'name' => 'Legacy ACME',
+        'slug' => 'acme',
+        'description' => 'Legacy',
+        'requests' => ['method' => 'POST'],
+        'response' => ['items_path' => 'legacy'],
+        'is_active' => false,
+    ]);
+
+    $file = UploadedFile::fake()->createWithContent(
+        'integration-apis.json',
+        json_encode([
+            'version' => 1,
+            'integration_apis' => [
+                [
+                    'name' => 'ACME Atualizada',
+                    'slug' => 'acme',
+                    'description' => 'Nova descricao',
+                    'requests' => ['method' => 'GET', 'paths' => ['products' => ['target_table' => 'products']]],
+                    'response' => ['items_path' => 'data'],
+                    'is_active' => true,
+                ],
+                [
+                    'name' => 'Nova API',
+                    'slug' => 'new-api',
+                    'description' => 'Importada',
+                    'requests' => ['method' => 'GET'],
+                    'response' => ['items_path' => 'rows'],
+                    'is_active' => true,
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR)
+    );
+
+    $response = $this->post(route('landlord.integration-apis.import'), [
+        'spreadsheet' => $file,
+    ]);
+
+    $response->assertRedirect(route('landlord.integration-apis.index'));
+
+    $this->assertDatabaseHas('integration_apis', [
+        'slug' => 'acme',
+        'name' => 'ACME Atualizada',
+        'is_active' => 1,
+    ], 'landlord');
+
+    $this->assertDatabaseHas('integration_apis', [
+        'slug' => 'new-api',
+        'name' => 'Nova API',
+        'is_active' => 1,
+    ], 'landlord');
 });
 
 /**

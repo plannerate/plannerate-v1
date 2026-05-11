@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import IntegrationApiController from '@/actions/App/Http/Controllers/Landlord/IntegrationApiController';
+import ImportFileButton from '@/components/imports/ImportFileButton.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
@@ -52,9 +53,29 @@ const pageMeta = useCrudPageMeta({
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
-            <NewActionButton :href="IntegrationApiController.create.url()">
-                {{ t('app.landlord.integration_apis.actions.new') }}
-            </NewActionButton>
+            <div class="flex items-center justify-end gap-2">
+                <Button variant="outline" size="pill-sm" as-child>
+                    <a :href="IntegrationApiController.exportConfigurations.url()">
+                        {{ t('app.landlord.integration_apis.actions.export') }}
+                    </a>
+                </Button>
+                <ImportFileButton
+                    :action="IntegrationApiController.importConfigurations.url()"
+                    :button-label="t('app.landlord.integration_apis.actions.import')"
+                    :title="t('app.landlord.integration_apis.import.title')"
+                    :description="t('app.landlord.integration_apis.import.description')"
+                    :file-label="t('app.landlord.integration_apis.import.file_label')"
+                    :submit-label="t('app.landlord.integration_apis.import.submit')"
+                    :submitting-label="t('app.landlord.integration_apis.import.submitting')"
+                    :cancel-label="t('app.landlord.integration_apis.import.cancel')"
+                    accept=".json,application/json,text/plain"
+                    drop-label="Arraste e solte o arquivo JSON aqui"
+                    drop-hint="ou clique para escolher um arquivo .json"
+                />
+                <NewActionButton :href="IntegrationApiController.create.url()">
+                    {{ t('app.landlord.integration_apis.actions.new') }}
+                </NewActionButton>
+            </div>
         </template>
 
         <ListPage

@@ -68,6 +68,10 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::resource('integration-apis', IntegrationApiController::class)
         ->except(['show'])
         ->names('landlord.integration-apis');
+    Route::get('integration-apis/export', [IntegrationApiController::class, 'exportConfigurations'])
+        ->name('landlord.integration-apis.export');
+    Route::post('integration-apis/import', [IntegrationApiController::class, 'importConfigurations'])
+        ->name('landlord.integration-apis.import');
 
     Route::resource('users', UserController::class)
         ->except(['show'])

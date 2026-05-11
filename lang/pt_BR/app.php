@@ -246,6 +246,16 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'edit' => 'Editar API',
                 'add_field' => 'Campo',
                 'add_path' => 'Configuração',
+                'export' => 'Exportar configuracoes',
+                'import' => 'Importar configuracoes',
+            ],
+            'import' => [
+                'title' => 'Importar configuracoes de API',
+                'description' => 'Envie um arquivo JSON com todas as configuracoes de APIs de integracao.',
+                'file_label' => 'Arquivo JSON',
+                'submit' => 'Importar',
+                'submitting' => 'Importando...',
+                'cancel' => 'Cancelar',
             ],
             'fields' => [
                 'name' => 'Nome',
@@ -317,6 +327,9 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'created' => 'API de integracao criada com sucesso.',
                 'updated' => 'API de integracao atualizada com sucesso.',
                 'deleted' => 'API de integracao removida com sucesso.',
+                'imported' => 'Importacao concluida. Criadas: :created, atualizadas: :updated, ignoradas: :skipped.',
+                'import_invalid_json' => 'O arquivo enviado nao contem um JSON valido.',
+                'import_invalid_structure' => 'Estrutura invalida. Use um arquivo com "integration_apis".',
             ],
         ],
         'ean_references' => [
