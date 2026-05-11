@@ -19,6 +19,7 @@ class SalesNormalizedData
         public readonly ?float $totalProfitMargin,
         public readonly ?float $valorImpostos,
         public readonly ?float $custoMedioLoja,
+        public readonly ?float $margemContribuicao,
         public readonly ?string $storeDocument,
         public readonly array $raw,
     ) {}
@@ -48,6 +49,7 @@ class SalesNormalizedData
             totalProfitMargin: self::toFloatOrNull($mapped['total_profit_margin'] ?? null),
             valorImpostos: self::toFloatOrNull($mapped['valor_impostos'] ?? null),
             custoMedioLoja: self::toFloatOrNull($mapped['custo_medio_loja'] ?? null),
+            margemContribuicao: self::toFloatOrNull($mapped['margem_contribuicao'] ?? null),
             storeDocument: self::normalizeStoreDocument(
                 self::toStringOrNull($mapped['store_document'] ?? null) ?? $fallbackStoreDocument
             ),

@@ -51,14 +51,14 @@ class IntegrationApiController extends Controller
     {
         $this->authorize('create', IntegrationApi::class);
 
-        IntegrationApi::query()->create($request->payload());
+        $integrationApi = IntegrationApi::query()->create($request->payload());
 
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.landlord.integration_apis.messages.created'),
         ]);
 
-        return to_route('landlord.integration-apis.index');
+        return to_route('landlord.integration-apis.edit', $integrationApi);
     }
 
     public function edit(IntegrationApi $integrationApi): Response
@@ -83,7 +83,7 @@ class IntegrationApiController extends Controller
             'message' => __('app.landlord.integration_apis.messages.updated'),
         ]);
 
-        return to_route('landlord.integration-apis.index');
+        return to_route('landlord.integration-apis.edit', $integrationApi);
     }
 
     public function destroy(IntegrationApi $integrationApi): RedirectResponse

@@ -71,7 +71,7 @@ function internalFieldOptions(value: string): string[] {
                         class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                         @change="updateRow(index, { target: ($event.target as HTMLSelectElement).value })"
                     >
-                        <option value="">{{ t('app.landlord.integration_apis.placeholders.internal_field') }}</option>
+                        <option value="">{{ t('app.landlord.integration_apis.placeholders.internal_field_select') }}</option>
                         <option v-for="option in internalFieldOptions(row.target)" :key="option" :value="option">
                             {{ option }}
                         </option>
@@ -85,11 +85,11 @@ function internalFieldOptions(value: string): string[] {
                     />
                 </div>
                 <div class="grid gap-2 md:col-span-3">
-                    <Label :for="`field-source-${row.id}`">{{ t('app.landlord.integration_apis.fields.api_field') }}</Label>
+                    <Label :for="`field-source-${row.id}`">{{ t('app.landlord.integration_apis.fields.api_field_or_expression') }}</Label>
                     <Input
                         :id="`field-source-${row.id}`"
                         :model-value="row.source"
-                        :placeholder="t('app.landlord.integration_apis.placeholders.api_field')"
+                        :placeholder="t('app.landlord.integration_apis.placeholders.api_field_or_expression')"
                         @update:model-value="updateRow(index, { source: String($event) })"
                     />
                 </div>

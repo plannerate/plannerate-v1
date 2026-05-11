@@ -26,7 +26,6 @@ class TenantIntegrationController extends Controller
         $integration = $tenant->integration;
         $config = is_array($integration?->config) ? $integration->config : [];
         $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
-        $paths = is_array($config['paths'] ?? null) ? $config['paths'] : [];
         $auth = is_array($config['auth'] ?? null) ? $config['auth'] : [];
         $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
         $credentials = is_array($auth['credentials'] ?? null) ? $auth['credentials'] : [];
@@ -65,9 +64,6 @@ class TenantIntegrationController extends Controller
             'products_initial_days' => (int) ($processing['products_initial_days'] ?? 120),
             'processing_time' => (string) ($processing['processing_time'] ?? '02:00'),
             'separate_by_store' => (bool) ($processing['separate_by_store'] ?? false),
-            // Paths
-            'products_path' => (string) ($paths['products'] ?? ''),
-            'sales_path' => (string) ($paths['sales'] ?? ''),
         ] : null;
 
         return Inertia::render('landlord/tenants/Integration', [
@@ -77,18 +73,21 @@ class TenantIntegrationController extends Controller
         ]);
     }
 
-    public function update(UpdateTenantIntegrationRequest $request, Tenant $tenant): RedirectResponse
+    public function update(UpdateTenantIntegrationRequest $request, Tenant $tenant, IntegrationApiConfigResolver $configResolver): RedirectResponse
     {
         $this->authorize('update', $tenant);
 
+        $payload = $request->integrationPayload();
+        $resolvedPayload = $this->resolvedIntegrationPayload($payload, $configResolver);
+
         Storage::disk('local')->put(
             $tenant->id.'/last_payload.json',
-            json_encode($request->integrationPayload(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+            json_encode($resolvedPayload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
         );
 
         TenantIntegration::query()->updateOrCreate(
             ['tenant_id' => $tenant->id],
-            $request->integrationPayload(),
+            $payload,
         );
 
         Inertia::flash('toast', [
@@ -97,6 +96,21 @@ class TenantIntegrationController extends Controller
         ]);
 
         return to_route('landlord.tenants.integration.edit', $tenant);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function resolvedIntegrationPayload(array $payload, IntegrationApiConfigResolver $configResolver): array
+    {
+        $apiConfig = $configResolver->provider((string) ($payload['integration_type'] ?? ''));
+        $tenantConfig = is_array($payload['config'] ?? null) ? $payload['config'] : [];
+
+        return [
+            ...$payload,
+            'config' => array_replace_recursive($apiConfig, $tenantConfig),
+        ];
     }
 
     public function destroy(Tenant $tenant): RedirectResponse

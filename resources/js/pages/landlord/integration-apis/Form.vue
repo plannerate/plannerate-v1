@@ -132,7 +132,6 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 start: valueToInput(parseObjectValue(pathConfig.date_fields).start),
                 end: valueToInput(parseObjectValue(pathConfig.date_fields).end),
                 field_map: objectToFieldMapRows(pathConfig.field_map),
-                calculations: objectToCalculationRows(pathConfig.calculations),
             };
         });
 
@@ -148,7 +147,6 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 start: '',
                 end: '',
                 field_map: [],
-                calculations: [],
             },
             {
                 id: newPathId(),
@@ -159,7 +157,6 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 start: 'data_inicial',
                 end: 'data_final',
                 field_map: [],
-                calculations: [],
             },
         ];
 }
@@ -175,22 +172,6 @@ function objectToFieldMapRows(value: unknown): RequestPathRow['field_map'] {
             id: newPathId(),
             target: valueToInput(row.target),
             source: valueToInput(row.source),
-            transforms: arrayOfStrings(row.transforms),
-        }));
-}
-
-function objectToCalculationRows(value: unknown): RequestPathRow['calculations'] {
-    if (!Array.isArray(value)) {
-        return [];
-    }
-
-    return value
-        .filter((row): row is Record<string, unknown> => row !== null && typeof row === 'object' && !Array.isArray(row))
-        .map((row) => ({
-            id: newPathId(),
-            target: valueToInput(row.target),
-            operation: valueToInput(row.operation || 'multiply'),
-            operands: arrayOfStrings(row.operands),
             transforms: arrayOfStrings(row.transforms),
         }));
 }
@@ -255,18 +236,6 @@ function buildRequestsPayload(): Record<string, unknown> {
             (payload[name] as Record<string, unknown>).field_map = fieldMap;
         }
 
-        const calculations = requestPath.calculations
-            .filter((calculation) => calculation.target.trim() !== '' && calculation.operands.length > 0)
-            .map((calculation) => ({
-                target: calculation.target,
-                operation: calculation.operation,
-                operands: calculation.operands,
-                transforms: calculation.transforms,
-            }));
-
-        if (calculations.length > 0) {
-            (payload[name] as Record<string, unknown>).calculations = calculations;
-        }
     });
 
     return payload;

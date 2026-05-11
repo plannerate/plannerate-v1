@@ -52,8 +52,6 @@ type IntegrationPayload = {
     products_initial_days: number;
     processing_time: string;
     separate_by_store: boolean;
-    products_path: string;
-    sales_path: string;
     is_active: boolean;
     last_sync: string | null;
     connection_headers: KeyValueRow[];
@@ -130,7 +128,7 @@ const pageMeta = useCrudPageMeta({
 });
 
 const formData = computed(() => ({
-    integration_type: props.integration?.integration_type ?? 'sysmo',
+    integration_type: props.integration?.integration_type ?? props.integration_types[0]?.value ?? '',
     api_url: props.integration?.api_url ?? '',
     auth_type: props.integration?.auth_type ?? 'none',
     auth_bearer_mode: props.integration?.auth_bearer_mode ?? 'manual',
@@ -151,8 +149,6 @@ const formData = computed(() => ({
     products_initial_days: props.integration?.products_initial_days ?? 120,
     processing_time: props.integration?.processing_time ?? '02:00',
     separate_by_store: props.integration?.separate_by_store ?? false,
-    products_path: props.integration?.products_path ?? '',
-    sales_path: props.integration?.sales_path ?? '',
     is_active: props.integration?.is_active ?? true,
 }));
 
@@ -351,6 +347,13 @@ function testConnection(): void {
                             class="md:col-span-3"
                             required
                         >
+                            <option value="" disabled>
+                                {{
+                                    t(
+                                        'app.landlord.tenant_integrations.placeholders.integration_type',
+                                    )
+                                }}
+                            </option>
                             <option
                                 v-for="type in props.integration_types"
                                 :key="type.value"
@@ -373,35 +376,6 @@ function testConnection(): void {
                             placeholder="https://api.exemplo.com"
                             class="md:col-span-9"
                             required
-                        />
-                    </div>
-
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-                        <FormTextField
-                            id="products_path"
-                            name="products_path"
-                            :label="
-                                t(
-                                    'app.landlord.tenant_integrations.fields.products_path',
-                                )
-                            "
-                            :default-value="formData.products_path"
-                            :error="errors.products_path"
-                            placeholder="/hubprodutos.listar_produtos"
-                            class="md:col-span-6"
-                        />
-                        <FormTextField
-                            id="sales_path"
-                            name="sales_path"
-                            :label="
-                                t(
-                                    'app.landlord.tenant_integrations.fields.sales_path',
-                                )
-                            "
-                            :default-value="formData.sales_path"
-                            :error="errors.sales_path"
-                            placeholder="/hubvendas.vendas_produtos"
-                            class="md:col-span-6"
                         />
                     </div>
 

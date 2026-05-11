@@ -23,6 +23,7 @@ class SysmoSalesFieldMap implements SalesFieldMap
             'total_profit_margin' => ['paths' => ['custo_comercial'], 'transforms' => ['float']],
             'valor_impostos' => ['paths' => ['valor_impostos'], 'transforms' => ['float']],
             'custo_medio_loja' => ['paths' => ['custo_medio_loja'], 'transforms' => ['float']],
+            'margem_contribuicao' => ['expression' => 'total_sale_value - valor_impostos - custo_medio_loja', 'transforms' => ['round2']],
             'store_document' => ['paths' => ['cnpj', 'loja', 'filial', 'store_identifier'], 'transforms' => ['string']],
         ];
     }

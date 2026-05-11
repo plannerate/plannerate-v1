@@ -29,7 +29,7 @@ class IntegrationApiConfigResolver
     public function options(): array
     {
         try {
-            $databaseOptions = IntegrationApi::query()
+            return IntegrationApi::query()
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get(['name', 'slug'])
@@ -39,25 +39,8 @@ class IntegrationApiConfigResolver
                 ])
                 ->all();
         } catch (QueryException) {
-            $databaseOptions = [];
+            return [];
         }
-
-        $configuredOptions = collect([
-            ...config('integrations.providers', []),
-            'generic' => [],
-        ])
-            ->filter(fn (mixed $provider, string|int $slug): bool => is_string($slug) && is_array($provider))
-            ->map(fn (mixed $provider, string $slug): array => [
-                'value' => $slug,
-                'label' => __("app.landlord.tenant_integrations.types.{$slug}"),
-            ])
-            ->values()
-            ->all();
-
-        return collect([...$databaseOptions, ...$configuredOptions])
-            ->unique('value')
-            ->values()
-            ->all();
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Services\Integrations\Support;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\IntegrationApiConfigResolver;
 use App\Services\Integrations\Support\SalesFieldMaps\SalesFieldMapRegistry;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,7 @@ class PersistImportedSalesService
         private readonly DeterministicIdGenerator $deterministicIdGenerator,
         private readonly FieldResolver $fieldResolver,
         private readonly SalesFieldMapRegistry $salesFieldMapRegistry,
+        private readonly IntegrationApiConfigResolver $configResolver,
     ) {}
 
     /**
@@ -63,7 +65,7 @@ class PersistImportedSalesService
         $invalidCount = 0;
 
         $fieldMap = $this->salesFieldMapRegistry->resolve($provider);
-        $fields = $fieldMap->fields();
+        $fields = $this->fieldMap($provider, 'sales', $fieldMap->fields());
 
         foreach ($items as $item) {
             if (! is_array($item)) {
@@ -71,8 +73,24 @@ class PersistImportedSalesService
             }
 
             $mapped = [];
+            $expressions = [];
             foreach ($fields as $field => $definition) {
+                if (is_array($definition) && is_string($definition['expression'] ?? null)) {
+                    $expressions[$field] = $definition;
+
+                    continue;
+                }
+
                 $mapped[$field] = $this->fieldResolver->resolve($item, $definition);
+            }
+
+            foreach ($expressions as $field => $definition) {
+                $mapped[$field] = $this->fieldResolver->resolveExpression(
+                    $mapped,
+                    (string) $definition['expression'],
+                    is_array($definition['transforms'] ?? null) ? $definition['transforms'] : [],
+                    $item,
+                );
             }
 
             if (! $fieldMap->passesValidation($mapped, $item)) {
@@ -111,7 +129,7 @@ class PersistImportedSalesService
                 'promotion' => $normalized->promotion,
                 'total_sale_quantity' => $normalized->totalSaleQuantity,
                 'total_sale_value' => $normalized->totalSaleValue,
-                'margem_contribuicao' => $this->margemContribuicao(
+                'margem_contribuicao' => $normalized->margemContribuicao ?? $this->margemContribuicao(
                     $normalized->totalSaleValue,
                     $normalized->valorImpostos,
                     $normalized->custoMedioLoja
@@ -179,5 +197,51 @@ class PersistImportedSalesService
         }
 
         return round($totalSaleValue - ($valorImpostos ?? 0.0) - ($custoMedioLoja ?? 0.0), 2);
+    }
+
+    /**
+     * @param  array<string, mixed>  $fallback
+     * @return array<string, mixed>
+     */
+    private function fieldMap(string $provider, string $resource, array $fallback): array
+    {
+        $providerConfig = $this->configResolver->provider($provider);
+        $requests = is_array($providerConfig['requests'] ?? null) ? $providerConfig['requests'] : [];
+        $resourceConfig = is_array($requests[$resource] ?? null) ? $requests[$resource] : [];
+        $configuredRows = is_array($resourceConfig['field_map'] ?? null) ? $resourceConfig['field_map'] : [];
+
+        $configured = [];
+        foreach ($configuredRows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $target = is_string($row['target'] ?? null) ? trim($row['target']) : '';
+            $source = is_string($row['source'] ?? null) ? trim($row['source']) : '';
+
+            if ($target === '' || $source === '') {
+                continue;
+            }
+
+            $configured[$target] = [
+                'transforms' => collect($row['transforms'] ?? [])
+                    ->filter(fn (mixed $transform): bool => is_string($transform) && trim($transform) !== '')
+                    ->values()
+                    ->all(),
+            ];
+
+            if ($this->isExpression($source)) {
+                $configured[$target]['expression'] = $source;
+            } else {
+                $configured[$target]['paths'] = [$source];
+            }
+        }
+
+        return $configured === [] ? $fallback : array_replace($fallback, $configured);
+    }
+
+    private function isExpression(string $source): bool
+    {
+        return preg_match('/\s[+\-*\/]\s|[()]/', $source) === 1;
     }
 }

@@ -73,9 +73,6 @@ class UpdateTenantIntegrationRequest extends FormRequest
             'products_initial_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
             'processing_time' => ['nullable', 'date_format:H:i'],
             'separate_by_store' => ['sometimes', 'boolean'],
-            // Paths
-            'products_path' => ['nullable', 'string', 'max:255'],
-            'sales_path' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -131,10 +128,6 @@ class UpdateTenantIntegrationRequest extends FormRequest
                     'processing_time' => (string) ($validated['processing_time'] ?? '02:00'),
                     'separate_by_store' => (bool) ($validated['separate_by_store'] ?? false),
                     'auto_processing_enabled' => true,
-                ],
-                'paths' => [
-                    'products' => (string) ($validated['products_path'] ?? ''),
-                    'sales' => (string) ($validated['sales_path'] ?? ''),
                 ],
             ],
         ];
@@ -205,11 +198,6 @@ class UpdateTenantIntegrationRequest extends FormRequest
      */
     private function integrationTypeSlugs(): array
     {
-        $configured = [
-            ...array_keys(config('integrations.providers', [])),
-            'generic',
-        ];
-
         try {
             $database = IntegrationApi::query()
                 ->where('is_active', true)
@@ -220,7 +208,6 @@ class UpdateTenantIntegrationRequest extends FormRequest
         }
 
         return array_values(array_unique(array_filter([
-            ...$configured,
             ...array_map(fn (mixed $slug): string => (string) $slug, $database),
         ], fn (string $slug): bool => $slug !== '')));
     }

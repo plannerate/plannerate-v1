@@ -5,14 +5,6 @@ export type FieldMapRow = {
     transforms: string[];
 };
 
-export type CalculationRow = {
-    id: string;
-    target: string;
-    operation: string;
-    operands: string[];
-    transforms: string[];
-};
-
 export type RequestPathRow = {
     id: string;
     name: string;
@@ -22,7 +14,6 @@ export type RequestPathRow = {
     start: string;
     end: string;
     field_map: FieldMapRow[];
-    calculations: CalculationRow[];
 };
 
 export type FieldMapTableOption = {

@@ -5,6 +5,7 @@ namespace App\Services\Integrations\Support;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\IntegrationApiConfigResolver;
 use App\Services\Integrations\Support\ProductFieldMaps\ProductFieldMapRegistry;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,7 @@ class PersistImportedProductsService
         private readonly DeterministicIdGenerator $deterministicIdGenerator,
         private readonly FieldResolver $fieldResolver,
         private readonly ProductFieldMapRegistry $productFieldMapRegistry,
+        private readonly IntegrationApiConfigResolver $configResolver,
     ) {}
 
     /**
@@ -241,14 +243,71 @@ class PersistImportedProductsService
      */
     private function mapItem(string $provider, array $item): array
     {
-        $map = $this->productFieldMapRegistry->resolve($provider)->fields();
+        $map = $this->fieldMap($provider, 'products', $this->productFieldMapRegistry->resolve($provider)->fields());
         $mapped = [];
+        $expressions = [];
 
         foreach ($map as $field => $paths) {
+            if (is_array($paths) && is_string($paths['expression'] ?? null)) {
+                $expressions[$field] = $paths;
+
+                continue;
+            }
+
             $mapped[$field] = $this->fieldResolver->resolve($item, $paths);
         }
 
+        foreach ($expressions as $field => $definition) {
+            $mapped[$field] = $this->fieldResolver->resolveExpression(
+                $mapped,
+                (string) $definition['expression'],
+                is_array($definition['transforms'] ?? null) ? $definition['transforms'] : [],
+                $item,
+            );
+        }
+
         return $mapped;
+    }
+
+    /**
+     * @param  array<string, mixed>  $fallback
+     * @return array<string, mixed>
+     */
+    private function fieldMap(string $provider, string $resource, array $fallback): array
+    {
+        $providerConfig = $this->configResolver->provider($provider);
+        $requests = is_array($providerConfig['requests'] ?? null) ? $providerConfig['requests'] : [];
+        $resourceConfig = is_array($requests[$resource] ?? null) ? $requests[$resource] : [];
+        $configuredRows = is_array($resourceConfig['field_map'] ?? null) ? $resourceConfig['field_map'] : [];
+
+        $configured = [];
+        foreach ($configuredRows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $target = is_string($row['target'] ?? null) ? trim($row['target']) : '';
+            $source = is_string($row['source'] ?? null) ? trim($row['source']) : '';
+
+            if ($target === '' || $source === '') {
+                continue;
+            }
+
+            $configured[$target] = [
+                'transforms' => collect($row['transforms'] ?? [])
+                    ->filter(fn (mixed $transform): bool => is_string($transform) && trim($transform) !== '')
+                    ->values()
+                    ->all(),
+            ];
+
+            if ($this->isExpression($source)) {
+                $configured[$target]['expression'] = $source;
+            } else {
+                $configured[$target]['paths'] = [$source];
+            }
+        }
+
+        return $configured === [] ? $fallback : array_replace($fallback, $configured);
     }
 
     /**
@@ -269,5 +328,10 @@ class PersistImportedProductsService
             'sysmo', 'gescooper' => ['name'],
             default => [],
         };
+    }
+
+    private function isExpression(string $source): bool
+    {
+        return preg_match('/\s[+\-*\/]\s|[()]/', $source) === 1;
     }
 }

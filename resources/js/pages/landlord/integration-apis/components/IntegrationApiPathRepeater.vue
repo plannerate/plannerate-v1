@@ -4,7 +4,6 @@ import { computed } from 'vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
-import IntegrationApiCalculationRepeater from './IntegrationApiCalculationRepeater.vue';
 import IntegrationApiFieldMapRepeater from './IntegrationApiFieldMapRepeater.vue';
 import type { FieldMapTableOption, RequestPathRow } from './types';
 
@@ -29,7 +28,6 @@ function newPath(): RequestPathRow {
         start: '',
         end: '',
         field_map: [],
-        calculations: [],
     };
 }
 
@@ -46,10 +44,6 @@ function updatePath(index: number, patch: Partial<RequestPathRow>): void {
 
 function removePath(index: number): void {
     emit('update:modelValue', props.modelValue.filter((_, pathIndex) => pathIndex !== index));
-}
-
-function fieldOptions(path: RequestPathRow): string[] {
-    return path.field_map.map((field) => field.target).filter((field) => field.trim() !== '');
 }
 
 function tableColumns(path: RequestPathRow): string[] {
@@ -150,12 +144,6 @@ const tableOptions = computed(() => Object.entries(props.fieldMapTables));
                     :model-value="requestPath.field_map"
                     :target-options="tableColumns(requestPath)"
                     @update:model-value="updatePath(pathIndex, { field_map: $event })"
-                />
-
-                <IntegrationApiCalculationRepeater
-                    :model-value="requestPath.calculations"
-                    :field-options="fieldOptions(requestPath)"
-                    @update:model-value="updatePath(pathIndex, { calculations: $event })"
                 />
             </div>
 
