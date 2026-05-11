@@ -53,7 +53,7 @@ Tela:
 - `resources/js/pages/landlord/tenants/Integration.vue`
 
 A tela do tenant deve listar somente APIs criadas e ativas em `integration_apis`.
-Isso garante que o tenant nao salve um tipo solto, como `sysmo` ou `generic`, sem configuracao cadastrada.
+Isso garante que o tenant nao salve um tipo solto, como `body-api` ou `generic`, sem configuracao cadastrada.
 
 ## Payload Resolvido
 
@@ -73,7 +73,7 @@ O banco continua salvando no tenant apenas a configuracao propria do tenant, par
 
 ```json
 {
-  "integration_type": "sysmo",
+  "integration_type": "body-api",
   "is_active": true,
   "config": {
     "requests": {},
@@ -122,7 +122,7 @@ Exemplo de request configurado:
 
 ## Response
 
-Exemplo Sysmo:
+Exemplo BodyApi:
 
 ```json
 {
@@ -134,7 +134,7 @@ Exemplo Sysmo:
 }
 ```
 
-Exemplo GesCooper:
+Exemplo QueryApi:
 
 ```json
 {
@@ -285,77 +285,15 @@ Frontend:
 - `resources/js/pages/landlord/integration-apis/components/IntegrationApiTransformTags.vue`
 - `resources/js/pages/landlord/tenants/Integration.vue`
 
-## Tarefa Pronta: Refatoracao e Limpeza do Sistema Generico de APIs
+## Tarefa Pronta: Proxima Limpeza
 
 ### Objetivo
 
-Criar uma camada unica de configuracao resolvida para importacoes, para que fetch, response reader e persistencia consumam a mesma estrutura gerada a partir de `IntegrationApi + TenantIntegration`.
+Fortalecer a validacao e a cobertura do sistema generico de APIs sem reintroduzir codigo por provider.
 
-### Escopo
+### Escopo Sugerido
 
-1. Criar um DTO/Value Object para configuracao resolvida.
-
-Sugestao:
-
-- `App\Services\Integrations\Support\ResolvedIntegrationConfig`
-
-Responsabilidades:
-
-- carregar API cadastrada pelo slug;
-- mesclar config da API com config do tenant;
-- expor metodos tipados:
-  - `request(string $resource): array`
-  - `response(string $resource): array`
-  - `auth(): array`
-  - `connection(): array`
-  - `processing(): array`
-  - `fieldMap(string $resource): array`
-
-2. Criar um resolver unico.
-
-Sugestao:
-
-- `App\Services\Integrations\Support\ResolvedIntegrationConfigResolver`
-
-Entrada:
-
-- `TenantIntegration`
-
-Saida:
-
-- `ResolvedIntegrationConfig`
-
-3. Trocar consumidores atuais para usar o resolver unico.
-
-Arquivos-alvo:
-
-- `GenericIntegrationImporter`
-- `IntegrationHttpClient`
-- `IntegrationTokenResolver`
-- `IntegrationResponseReader`
-- `PersistImportedProductsService`
-- `PersistImportedSalesService`
-
-4. Remover duplicacoes de leitura manual de config.
-
-Remover padroes repetidos como:
-
-```php
-$provider = $this->configResolver->provider((string) $integration->integration_type);
-$requests = $provider['requests'] ?? [];
-```
-
-e trocar por chamadas ao objeto resolvido.
-
-5. Consolidar field maps.
-
-Objetivo:
-
-- manter classes antigas (`SysmoProductFieldMap`, `GescooperSalesFieldMap`, etc.) apenas como fallback temporario;
-- priorizar sempre `IntegrationApi.requests.{resource}.field_map`;
-- depois remover os maps dedicados quando todas as APIs estiverem cadastradas no painel.
-
-6. Criar testes unitarios do resolvedor.
+1. Criar testes unitarios do resolvedor.
 
 Cenarios minimos:
 
@@ -367,17 +305,18 @@ Cenarios minimos:
 - `field_map` com `fornecedores.*.data_ultima_compra`;
 - expressao `valor_liquido - valor_impostos - custo_medio_loja`.
 
-7. Limpar docs antigas.
+2. Criar validacoes de integridade para API cadastrada.
 
-Atualizar ou descontinuar documentos que ainda falam em importers dedicados:
+Validar no backend:
 
-- `docs/integrations-import-process.md`
-- `docs/field-resolver.md`
-- documentos especificos de Sysmo/GesCooper que conflitarem com esta arquitetura.
+- recursos `products` e `sales` com `fallback_path` quando usados por importacao;
+- `field_map` minimo para produtos: `codigo_erp` e `ean`;
+- `field_map` minimo para vendas: `codigo_erp` e `sale_date`;
+- token fetch com `path`, `username_field`, `password_field` e `response_path`.
 
 ### Resultado Esperado
 
-Depois dessa refatoracao, adicionar uma API nova deve exigir apenas:
+Adicionar uma API nova deve exigir apenas:
 
 1. cadastrar API no painel;
 2. selecionar API no tenant;

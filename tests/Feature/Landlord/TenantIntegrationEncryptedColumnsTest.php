@@ -22,10 +22,10 @@ test('tenant integration encrypted arrays can be stored on landlord connection',
 
     $integration = TenantIntegration::create([
         'tenant_id' => $tenant->id,
-        'integration_type' => 'sysmo',
+        'integration_type' => 'acme-erp',
         'identifier' => 'client-1',
         'http_method' => 'POST',
-        'api_url' => 'https://sysmo.example.com',
+        'api_url' => 'https://acme.example.com',
         'authentication_headers' => [
             'auth_username' => 'planner-user',
             'auth_password' => 'planner-pass',

@@ -30,7 +30,7 @@ test('daily imports command dispatches sales and products jobs for active integr
 
     $activeIntegration = TenantIntegration::query()->create([
         'tenant_id' => $activeTenant->id,
-        'integration_type' => 'sysmo',
+        'integration_type' => 'acme-erp',
         'identifier' => 'principal',
         'config' => [],
         'is_active' => true,
@@ -38,7 +38,7 @@ test('daily imports command dispatches sales and products jobs for active integr
 
     TenantIntegration::query()->create([
         'tenant_id' => $inactiveTenant->id,
-        'integration_type' => 'sysmo',
+        'integration_type' => 'acme-erp',
         'identifier' => 'desativada',
         'config' => [],
         'is_active' => false,
@@ -93,7 +93,7 @@ test('daily imports command can dispatch only sales', function (): void {
 
     TenantIntegration::query()->create([
         'tenant_id' => $tenant->id,
-        'integration_type' => 'sysmo',
+        'integration_type' => 'acme-erp',
         'identifier' => 'vendas',
         'config' => [],
         'is_active' => true,

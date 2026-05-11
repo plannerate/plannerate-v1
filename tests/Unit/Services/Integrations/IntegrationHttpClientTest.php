@@ -184,7 +184,7 @@ test('client fetches bearer token from configured endpoint and caches it', funct
         && $request->hasHeader('Authorization', 'Bearer fetched-token'));
 });
 
-test('response reader understands gescooper pagination shape', function (): void {
+test('response reader understands query-api pagination shape', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
 
     $integration = new TenantIntegration(['config' => []]);
@@ -208,7 +208,7 @@ test('response reader understands gescooper pagination shape', function (): void
         ->and($reader->totalPages($integration, 'products', $payload, 1))->toBe(109);
 });
 
-test('response reader understands sysmo pagination shape', function (): void {
+test('response reader understands body-api pagination shape', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
 
     $integration = new TenantIntegration(['config' => []]);
@@ -268,16 +268,17 @@ test('response reader falls back to generic paths without provider config', func
 
 test('response reader uses provider config by integration type', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
-    Config::set('integrations.providers.acme.response', [
-        'items_path' => 'payload.items',
-        'pagination' => [
-            'last_page_path' => 'payload.pagination.pages',
-        ],
-    ]);
 
     $integration = new TenantIntegration([
         'integration_type' => 'acme',
-        'config' => [],
+        'config' => [
+            'response' => [
+                'items_path' => 'payload.items',
+                'pagination' => [
+                    'last_page_path' => 'payload.pagination.pages',
+                ],
+            ],
+        ],
     ]);
     $payload = [
         'payload' => [
@@ -296,14 +297,8 @@ test('response reader uses provider config by integration type', function (): vo
         ->and($reader->totalPages($integration, 'products', $payload, 1))->toBe(7);
 });
 
-test('response reader ignores tenant response config in favor of provider config', function (): void {
+test('response reader uses tenant response config from resolved configuration', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
-    Config::set('integrations.providers.acme.response', [
-        'items_path' => 'payload.items',
-        'pagination' => [
-            'last_page_path' => 'payload.pagination.pages',
-        ],
-    ]);
 
     $integration = new TenantIntegration([
         'integration_type' => 'acme',
@@ -338,23 +333,23 @@ test('response reader ignores tenant response config in favor of provider config
 
     $reader = new IntegrationResponseReader;
 
-    expect($reader->items($integration, 'products', $payload))->toHaveCount(0)
-        ->and($reader->totalPages($integration, 'products', $payload, 1))->toBe(7);
+    expect($reader->items($integration, 'products', $payload))->toHaveCount(2)
+        ->and($reader->totalPages($integration, 'products', $payload, 1))->toBe(3);
 });
 
-test('sysmo importer uses configured products path when present', function (): void {
+test('body-api importer uses configured products path when present', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
     Carbon::setTestNow('2026-05-09 12:00:00');
 
     Http::fake([
-        'https://sysmo.example.test/custom/products*' => Http::response(['ok' => true]),
+        'https://body-api.example.test/custom/products*' => Http::response(['ok' => true]),
     ]);
 
     $integration = new TenantIntegration([
-        'integration_type' => 'sysmo',
+        'integration_type' => 'body-api',
         'config' => [
             'connection' => [
-                'base_url' => 'https://sysmo.example.test',
+                'base_url' => 'https://body-api.example.test',
                 'body' => [
                     ['key' => 'partner_key', 'value' => 'abc123', 'enabled' => true],
                 ],
@@ -377,7 +372,7 @@ test('sysmo importer uses configured products path when present', function (): v
     integrationImporter()->importProducts($integration, $store);
 
     Http::assertSent(function (Request $request): bool {
-        return $request->url() === 'https://sysmo.example.test/custom/products'
+        return $request->url() === 'https://body-api.example.test/custom/products'
             && $request->data() === [
                 'partner_key' => 'abc123',
                 'empresa' => '12345678000199',
@@ -390,19 +385,19 @@ test('sysmo importer uses configured products path when present', function (): v
     Carbon::setTestNow();
 });
 
-test('sysmo importer uses configured body page size', function (): void {
+test('body-api importer uses configured body page size', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
     Carbon::setTestNow('2026-05-09 12:00:00');
 
     Http::fake([
-        'https://sysmo.example.test/custom/products*' => Http::response(['ok' => true]),
+        'https://body-api.example.test/custom/products*' => Http::response(['ok' => true]),
     ]);
 
     $integration = new TenantIntegration([
-        'integration_type' => 'sysmo',
+        'integration_type' => 'body-api',
         'config' => [
             'connection' => [
-                'base_url' => 'https://sysmo.example.test',
+                'base_url' => 'https://body-api.example.test',
                 'body' => [
                     ['key' => 'tamanho_pagina', 'value' => '1800', 'enabled' => true],
                 ],
@@ -416,26 +411,26 @@ test('sysmo importer uses configured body page size', function (): void {
     integrationImporter()->importProducts($integration);
 
     Http::assertSent(function (Request $request): bool {
-        return $request->url() === 'https://sysmo.example.test/custom/products'
+        return $request->url() === 'https://body-api.example.test/custom/products'
             && $request->data()['tamanho_pagina'] === '1800';
     });
 
     Carbon::setTestNow();
 });
 
-test('gescooper importer sends store document as empresa query param for get requests', function (): void {
+test('query-api importer sends store document as empresa query param for get requests', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
     Cache::flush();
 
     Http::fake([
-        'https://gescooper.example.test/v1/Token' => Http::response([
+        'https://query-api.example.test/v1/Token' => Http::response([
             'token' => 'test-jwt-token',
         ], 200),
-        'https://gescooper.example.test/Produtos/Produtos*' => Http::response(['ok' => true]),
+        'https://query-api.example.test/Produtos/Produtos*' => Http::response(['ok' => true]),
     ]);
 
     $integration = new TenantIntegration([
-        'integration_type' => 'gescooper',
+        'integration_type' => 'query-api',
         'config' => [
             'auth' => [
                 'credentials' => [
@@ -444,7 +439,7 @@ test('gescooper importer sends store document as empresa query param for get req
                 ],
             ],
             'connection' => [
-                'base_url' => 'https://gescooper.example.test',
+                'base_url' => 'https://query-api.example.test',
             ],
         ],
     ]);
@@ -457,28 +452,28 @@ test('gescooper importer sends store document as empresa query param for get req
     integrationImporter()->importProducts($integration, $store);
 
     Http::assertSent(function (Request $request): bool {
-        return $request->url() === 'https://gescooper.example.test/Produtos/Produtos?empresa=98765432000188&pagina=1&registros_por_pagina=200&api-version=1.0';
+        return $request->url() === 'https://query-api.example.test/Produtos/Produtos?empresa=98765432000188&pagina=1&registros_por_pagina=200&api-version=1.0';
     });
 
     Http::assertSent(function (Request $request): bool {
-        return $request->url() === 'https://gescooper.example.test/Produtos/Produtos?empresa=98765432000188&pagina=1&registros_por_pagina=200&api-version=1.0'
+        return $request->url() === 'https://query-api.example.test/Produtos/Produtos?empresa=98765432000188&pagina=1&registros_por_pagina=200&api-version=1.0'
             && $request->hasHeader('Authorization', 'Bearer test-jwt-token');
     });
 });
 
-test('gescooper importer uses configured params page size', function (): void {
+test('query-api importer uses configured params page size', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
     Cache::flush();
 
     Http::fake([
-        'https://gescooper.example.test/v1/Token' => Http::response([
+        'https://query-api.example.test/v1/Token' => Http::response([
             'token' => 'test-jwt-token',
         ], 200),
-        'https://gescooper.example.test/Produtos/Produtos*' => Http::response(['ok' => true]),
+        'https://query-api.example.test/Produtos/Produtos*' => Http::response(['ok' => true]),
     ]);
 
     $integration = new TenantIntegration([
-        'integration_type' => 'gescooper',
+        'integration_type' => 'query-api',
         'config' => [
             'auth' => [
                 'credentials' => [
@@ -487,7 +482,7 @@ test('gescooper importer uses configured params page size', function (): void {
                 ],
             ],
             'connection' => [
-                'base_url' => 'https://gescooper.example.test',
+                'base_url' => 'https://query-api.example.test',
                 'params' => [
                     ['key' => 'registros_por_pagina', 'value' => '450', 'enabled' => true],
                 ],
@@ -498,24 +493,24 @@ test('gescooper importer uses configured params page size', function (): void {
     integrationImporter()->importProducts($integration);
 
     Http::assertSent(function (Request $request): bool {
-        return $request->url() === 'https://gescooper.example.test/Produtos/Produtos?registros_por_pagina=450&pagina=1&api-version=1.0';
+        return $request->url() === 'https://query-api.example.test/Produtos/Produtos?registros_por_pagina=450&pagina=1&api-version=1.0';
     });
 });
 
-test('gescooper importer caches token between requests', function (): void {
+test('query-api importer caches token between requests', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
     Cache::flush();
 
     Http::fake([
-        'https://gescooper.example.test/v1/Token' => Http::response([
+        'https://query-api.example.test/v1/Token' => Http::response([
             'token' => 'test-jwt-token',
         ], 200),
-        'https://gescooper.example.test/Produtos/Produtos*' => Http::response(['ok' => true]),
+        'https://query-api.example.test/Produtos/Produtos*' => Http::response(['ok' => true]),
     ]);
 
     $integration = new TenantIntegration([
         'id' => '01k-token-cache-test',
-        'integration_type' => 'gescooper',
+        'integration_type' => 'query-api',
         'config' => [
             'auth' => [
                 'credentials' => [
@@ -524,7 +519,7 @@ test('gescooper importer caches token between requests', function (): void {
                 ],
             ],
             'connection' => [
-                'base_url' => 'https://gescooper.example.test',
+                'base_url' => 'https://query-api.example.test',
             ],
         ],
     ]);
@@ -534,15 +529,15 @@ test('gescooper importer caches token between requests', function (): void {
     $importer->importProducts($integration);
 
     Http::assertSentCount(3);
-    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://gescooper.example.test/v1/Token');
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://query-api.example.test/v1/Token');
 });
 
-test('sysmo importer paginates products when total_paginas is returned', function (): void {
+test('body-api importer paginates products when total_paginas is returned', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
     Carbon::setTestNow('2026-05-09 12:00:00');
 
     Http::fake([
-        'https://sysmo.example.test/custom/products' => Http::sequence()
+        'https://body-api.example.test/custom/products' => Http::sequence()
             ->push([
                 'pagina' => 1,
                 'total_paginas' => 2,
@@ -556,10 +551,10 @@ test('sysmo importer paginates products when total_paginas is returned', functio
     ]);
 
     $integration = new TenantIntegration([
-        'integration_type' => 'sysmo',
+        'integration_type' => 'body-api',
         'config' => [
             'connection' => [
-                'base_url' => 'https://sysmo.example.test',
+                'base_url' => 'https://body-api.example.test',
                 'body' => [
                     ['key' => 'partner_key', 'value' => 'abc123', 'enabled' => true],
                 ],
@@ -579,15 +574,15 @@ test('sysmo importer paginates products when total_paginas is returned', functio
     Carbon::setTestNow();
 });
 
-test('gescooper importer paginates products when last_page is returned', function (): void {
+test('query-api importer paginates products when last_page is returned', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
     Cache::flush();
 
     Http::fake([
-        'https://gescooper.example.test/v1/Token' => Http::response([
+        'https://query-api.example.test/v1/Token' => Http::response([
             'token' => 'test-jwt-token',
         ], 200),
-        'https://gescooper.example.test/Produtos/Produtos*' => Http::sequence()
+        'https://query-api.example.test/Produtos/Produtos*' => Http::sequence()
             ->push([
                 'data' => [],
                 'last_page' => 2,
@@ -599,7 +594,7 @@ test('gescooper importer paginates products when last_page is returned', functio
     ]);
 
     $integration = new TenantIntegration([
-        'integration_type' => 'gescooper',
+        'integration_type' => 'query-api',
         'config' => [
             'auth' => [
                 'credentials' => [
@@ -608,7 +603,7 @@ test('gescooper importer paginates products when last_page is returned', functio
                 ],
             ],
             'connection' => [
-                'base_url' => 'https://gescooper.example.test',
+                'base_url' => 'https://query-api.example.test',
             ],
         ],
     ]);
@@ -618,15 +613,15 @@ test('gescooper importer paginates products when last_page is returned', functio
     Http::assertSentCount(3);
 });
 
-test('gescooper importer paginates products when pagination.last_page is returned', function (): void {
+test('query-api importer paginates products when pagination.last_page is returned', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
     Cache::flush();
 
     Http::fake([
-        'https://gescooper.example.test/v1/Token' => Http::response([
+        'https://query-api.example.test/v1/Token' => Http::response([
             'token' => 'test-jwt-token',
         ], 200),
-        'https://gescooper.example.test/Produtos/Produtos*' => Http::sequence()
+        'https://query-api.example.test/Produtos/Produtos*' => Http::sequence()
             ->push([
                 'data' => [],
                 'pagination' => [
@@ -644,7 +639,7 @@ test('gescooper importer paginates products when pagination.last_page is returne
     ]);
 
     $integration = new TenantIntegration([
-        'integration_type' => 'gescooper',
+        'integration_type' => 'query-api',
         'config' => [
             'auth' => [
                 'credentials' => [
@@ -653,7 +648,7 @@ test('gescooper importer paginates products when pagination.last_page is returne
                 ],
             ],
             'connection' => [
-                'base_url' => 'https://gescooper.example.test',
+                'base_url' => 'https://query-api.example.test',
             ],
         ],
     ]);

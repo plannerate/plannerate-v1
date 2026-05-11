@@ -71,7 +71,7 @@ test('put creates tenant integration when absent and stores encrypted config', f
 
     $this->assertDatabaseHas('tenant_integrations', [
         'tenant_id' => $tenant->id,
-        'integration_type' => 'sysmo',
+        'integration_type' => 'acme-erp',
         'is_active' => 1,
     ], 'landlord');
 
@@ -82,7 +82,7 @@ test('put creates tenant integration when absent and stores encrypted config', f
         ->and($integration->config['processing']['separate_by_store'] ?? null)->toBeTrue()
         ->and($integration->config['paths']['products'] ?? null)->toBe('/products')
         ->and($integration->config['paths']['sales'] ?? null)->toBe('/sales')
-        ->and($integration->config['connection']['base_url'] ?? null)->toBe('https://sysmo.example.com')
+        ->and($integration->config['connection']['base_url'] ?? null)->toBe('https://acme.example.com')
         ->and($integration->config['auth']['type'] ?? null)->toBe('basic');
 });
 
@@ -91,7 +91,7 @@ test('put updates existing integration instead of creating another one', functio
     $this->put(route('landlord.tenants.integration.update', $tenant), integrationPayload());
 
     $response = $this->put(route('landlord.tenants.integration.update', $tenant), integrationPayload([
-        'api_url' => 'https://updated-sysmo.example.com',
+        'api_url' => 'https://updated-acme.example.com',
         'auth_password' => 'new-secret',
     ]));
 
@@ -100,7 +100,7 @@ test('put updates existing integration instead of creating another one', functio
     expect(TenantIntegration::query()->where('tenant_id', $tenant->id)->count())->toBe(1);
 
     $integration = TenantIntegration::query()->where('tenant_id', $tenant->id)->firstOrFail();
-    expect($integration->config['connection']['base_url'] ?? null)->toBe('https://updated-sysmo.example.com');
+    expect($integration->config['connection']['base_url'] ?? null)->toBe('https://updated-acme.example.com');
 });
 
 test('validation blocks invalid integration type and invalid url', function () {
@@ -124,7 +124,7 @@ test('put stores generic bearer token fetch configuration', function () {
     $tenant = createTenantForIntegration();
 
     $response = $this->put(route('landlord.tenants.integration.update', $tenant), integrationPayload([
-        'integration_type' => 'generic',
+        'integration_type' => 'token-api',
         'auth_type' => 'bearer',
         'auth_bearer_mode' => 'fetch',
         'auth_token_username' => 'token-user',
@@ -149,7 +149,7 @@ test('put stores generic bearer token fetch configuration', function () {
 
     $integration = TenantIntegration::query()->where('tenant_id', $tenant->id)->firstOrFail();
 
-    expect($integration->integration_type)->toBe('generic')
+    expect($integration->integration_type)->toBe('token-api')
         ->and($integration->config['auth']['type'])->toBe('bearer')
         ->and($integration->config['auth']['token_mode'])->toBe('fetch')
         ->and($integration->config['auth']['credentials'])->toMatchArray([
@@ -187,7 +187,7 @@ test('update keeps existing password when auth_password is blank', function () {
 
 test('test connection returns real success feedback', function () {
     Http::fake([
-        'https://sysmo.example.com/*' => Http::response(['pong' => true]),
+        'https://acme.example.com/*' => Http::response(['pong' => true]),
     ]);
 
     $tenant = createTenantForIntegration();
@@ -208,7 +208,7 @@ test('test connection returns real success feedback', function () {
 
 test('test connection redirect flow uses real feedback', function () {
     Http::fake([
-        'https://sysmo.example.com/*' => Http::response(['pong' => true]),
+        'https://acme.example.com/*' => Http::response(['pong' => true]),
     ]);
 
     $tenant = createTenantForIntegration();
@@ -221,7 +221,7 @@ test('test connection redirect flow uses real feedback', function () {
 
 test('test connection real response includes requested method and path', function () {
     Http::fake([
-        'https://sysmo.example.com/custom/path*' => Http::response(['received' => true]),
+        'https://acme.example.com/custom/path*' => Http::response(['received' => true]),
     ]);
 
     $tenant = createTenantForIntegration();
@@ -245,10 +245,10 @@ test('test connection real response includes requested method and path', functio
 
 test('test connection fetches bearer token before request', function () {
     Http::fake([
-        'https://sysmo.example.com/oauth/token*' => Http::response([
+        'https://acme.example.com/oauth/token*' => Http::response([
             'data' => ['access_token' => 'fetched-token'],
         ]),
-        'https://sysmo.example.com/protected*' => Http::response(['ok' => true]),
+        'https://acme.example.com/protected*' => Http::response(['ok' => true]),
     ]);
 
     $tenant = createTenantForIntegration();
@@ -273,7 +273,7 @@ test('test connection fetches bearer token before request', function () {
         ->assertJsonPath('ok', true)
         ->assertJsonPath('data.ok', true);
 
-    Http::assertSent(fn ($request): bool => $request->url() === 'https://sysmo.example.com/protected'
+    Http::assertSent(fn ($request): bool => $request->url() === 'https://acme.example.com/protected'
         && $request->hasHeader('Authorization', 'Bearer fetched-token'));
 });
 
@@ -298,9 +298,34 @@ function createTenantForIntegration(): Tenant
  */
 function integrationPayload(array $overrides = []): array
 {
+    $integrationType = (string) ($overrides['integration_type'] ?? 'acme-erp');
+
+    IntegrationApi::query()->firstOrCreate(
+        ['slug' => $integrationType],
+        [
+            'name' => str($integrationType)->headline()->toString(),
+            'requests' => [
+                'method' => 'GET',
+                'payload' => 'query',
+                'products' => [
+                    'fallback_path' => '/products',
+                    'field_map' => [],
+                ],
+                'sales' => [
+                    'fallback_path' => '/sales',
+                    'field_map' => [],
+                ],
+            ],
+            'response' => [
+                'items_path' => 'data',
+            ],
+            'is_active' => true,
+        ],
+    );
+
     return array_merge([
-        'integration_type' => 'sysmo',
-        'api_url' => 'https://sysmo.example.com',
+        'integration_type' => $integrationType,
+        'api_url' => 'https://acme.example.com',
         'auth_type' => 'basic',
         'auth_username' => 'planner-user',
         'auth_password' => 'planner-pass',
