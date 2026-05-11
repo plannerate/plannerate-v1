@@ -7,43 +7,37 @@ use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
-use InvalidArgumentException;
 
 class IntegrationImporter
 {
     public function __construct(
-        private readonly SysmoImporter $sysmoImporter,
-        private readonly GescooperImporter $gescooperImporter,
+        private readonly GenericIntegrationImporter $genericImporter,
     ) {}
 
-    public function importSales(TenantIntegration $integration): void
+    public function importSales(TenantIntegration $integration, ?Store $store = null): void
     {
-        $importer = $this->resolve($integration);
+        if ($store instanceof Store) {
+            $this->genericImporter->importSales($integration, $store);
 
-        $this->forEachStoreScope($integration, function (?Store $store) use ($importer, $integration): void {
-            $importer->importSales($integration, $store);
+            return;
+        }
+
+        $this->forEachStoreScope($integration, function (?Store $store) use ($integration): void {
+            $this->genericImporter->importSales($integration, $store);
         });
     }
 
-    public function importProducts(TenantIntegration $integration): void
+    public function importProducts(TenantIntegration $integration, ?Store $store = null): void
     {
-        $importer = $this->resolve($integration);
+        if ($store instanceof Store) {
+            $this->genericImporter->importProducts($integration, $store);
 
-        $this->forEachStoreScope($integration, function (?Store $store) use ($importer, $integration): void {
-            $importer->importProducts($integration, $store);
+            return;
+        }
+
+        $this->forEachStoreScope($integration, function (?Store $store) use ($integration): void {
+            $this->genericImporter->importProducts($integration, $store);
         });
-    }
-
-    private function resolve(TenantIntegration $integration): ClientApiImporter
-    {
-        return match ((string) $integration->integration_type) {
-            'sysmo' => $this->sysmoImporter,
-            'gescooper' => $this->gescooperImporter,
-            default => throw new InvalidArgumentException(sprintf(
-                'Importador não configurado para integração [%s].',
-                (string) $integration->integration_type,
-            )),
-        };
     }
 
     private function forEachStoreScope(TenantIntegration $integration, callable $callback): void
@@ -85,9 +79,6 @@ class IntegrationImporter
         return (bool) ($processing['separate_by_store'] ?? false);
     }
 
-    /**
-     * @return Collection<int, Store>
-     */
     private function storesWithDocument(Tenant $tenant): Collection
     {
         return $tenant->execute(fn (): Collection => Store::query()
