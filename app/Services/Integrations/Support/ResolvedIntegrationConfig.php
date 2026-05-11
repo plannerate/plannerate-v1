@@ -103,6 +103,74 @@ class ResolvedIntegrationConfig
         );
     }
 
+    public function pathIsEnabled(string $resource): bool
+    {
+        $request = $this->request($resource);
+
+        if (! array_key_exists('enabled', $request)) {
+            return true;
+        }
+
+        $enabled = $request['enabled'];
+
+        if (is_bool($enabled)) {
+            return $enabled;
+        }
+
+        if (is_string($enabled) || is_int($enabled)) {
+            return filter_var($enabled, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? true;
+        }
+
+        return true;
+    }
+
+    public function targetTable(string $resource): string
+    {
+        $request = $this->request($resource);
+        $targetTable = trim((string) ($request['target_table'] ?? $resource));
+
+        return $targetTable !== '' ? $targetTable : $resource;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function uniqueBy(string $resource): array
+    {
+        $request = $this->request($resource);
+        $uniqueBy = $request['unique_by'] ?? [];
+
+        if (is_string($uniqueBy)) {
+            $uniqueBy = [$uniqueBy];
+        }
+
+        if (! is_array($uniqueBy)) {
+            return [];
+        }
+
+        return collect($uniqueBy)
+            ->filter(fn (mixed $column): bool => is_string($column) && trim($column) !== '')
+            ->map(fn (string $column): string => trim($column))
+            ->values()
+            ->all();
+    }
+
+    public function dateStrategy(string $resource): string
+    {
+        $request = $this->request($resource);
+        $configured = trim((string) ($request['date_strategy'] ?? ''));
+
+        if ($configured !== '') {
+            return $configured;
+        }
+
+        return match ($this->targetTable($resource)) {
+            'products' => 'products_incremental',
+            'sales' => 'sales_incremental',
+            default => 'none',
+        };
+    }
+
     /**
      * @return array<string, array<string, mixed>>
      */

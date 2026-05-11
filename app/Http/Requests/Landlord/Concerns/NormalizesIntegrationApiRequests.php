@@ -46,6 +46,11 @@ trait NormalizesIntegrationApiRequests
             'store_document_field',
             'fixed_query',
             'fixed_body',
+            'date_strategy',
+            'enabled',
+            'unique_by',
+            'initial_days',
+            'run_finalize',
         ];
 
         return collect($requests)

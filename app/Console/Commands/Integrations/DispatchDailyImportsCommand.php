@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Integrations;
 
+use App\Jobs\Integrations\Imports\ImportIntegrationResourceJob;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\ResolvedIntegrationConfigResolver;
@@ -11,7 +12,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use ReflectionClass;
+use Illuminate\Support\Facades\Schema;
 
 #[Signature('integrations:daily-imports {--clear : Limpa tabelas antes do dispatch respeitando os paths configurados} {--no-finalize : Não dispara finalização em jobs que suportam runFinalize} {--type= : Filtra integrações por tipo, por exemplo products}')]
 #[Description('Inicia a busca diária para os paths configurados nas integrações ativas')]
@@ -52,7 +53,7 @@ class DispatchDailyImportsCommand extends Command
         ));
 
         if ($dispatchPlan->isEmpty()) {
-            $this->warn('Nenhum path configurado possui job de importação registrado.');
+            $this->warn('Nenhum path configurado está habilitado para importação.');
 
             return self::SUCCESS;
         }
@@ -76,14 +77,18 @@ class DispatchDailyImportsCommand extends Command
         foreach ($dispatchPlan as $planRow) {
             /** @var TenantIntegration $integration */
             $integration = $planRow['integration'];
-            $jobClass = $planRow['job_class'];
-            dispatch($this->makeImportJob($jobClass, (string) $integration->id));
+            dispatch(new ImportIntegrationResourceJob(
+                integrationId: (string) $integration->id,
+                resource: (string) $planRow['resource'],
+                targetTable: (string) $planRow['target_table'],
+                runFinalize: ! (bool) $this->option('no-finalize'),
+            ));
 
             $dispatches[] = [
                 (string) $integration->id,
                 $this->tenantLabel($integration),
                 $planRow['resource'],
-                class_basename($jobClass),
+                class_basename(ImportIntegrationResourceJob::class),
             ];
         }
 
@@ -112,36 +117,25 @@ class DispatchDailyImportsCommand extends Command
 
     /**
      * @param  Collection<int, TenantIntegration>  $integrations
-     * @return Collection<int, array{integration: TenantIntegration, resource: string, target_table: string, job_class: class-string}>
+     * @return Collection<int, array{integration: TenantIntegration, resource: string, target_table: string}>
      */
     private function dispatchPlan(Collection $integrations, ResolvedIntegrationConfigResolver $configResolver): Collection
     {
-        $jobMap = $this->importJobMap();
-
         return $integrations
-            ->flatMap(function (TenantIntegration $integration) use ($configResolver, $jobMap): array {
-                $resourceRequests = $configResolver->resolve($integration)->resourceRequests();
+            ->flatMap(function (TenantIntegration $integration) use ($configResolver): array {
+                $resolvedConfig = $configResolver->resolve($integration);
+                $resourceRequests = $resolvedConfig->resourceRequests();
                 $rows = [];
 
                 foreach ($resourceRequests as $resource => $request) {
-                    $targetTable = trim((string) ($request['target_table'] ?? $resource));
-                    $jobClass = $jobMap[$resource] ?? $jobMap[$targetTable] ?? null;
-
-                    if (! is_string($jobClass) || ! class_exists($jobClass)) {
-                        $this->warn(sprintf(
-                            'Path [%s] da integração %s ignorado: job de importação não registrado.',
-                            $resource,
-                            (string) $integration->id,
-                        ));
-
+                    if (! $resolvedConfig->pathIsEnabled((string) $resource)) {
                         continue;
                     }
 
                     $rows[] = [
                         'integration' => $integration,
                         'resource' => (string) $resource,
-                        'target_table' => $targetTable,
-                        'job_class' => $jobClass,
+                        'target_table' => $resolvedConfig->targetTable((string) $resource),
                     ];
                 }
 
@@ -156,22 +150,6 @@ class DispatchDailyImportsCommand extends Command
                 return $rows;
             })
             ->values();
-    }
-
-    /**
-     * @return array<string, class-string>
-     */
-    private function importJobMap(): array
-    {
-        $configured = config('integrations.import_jobs', []);
-
-        if (! is_array($configured)) {
-            return [];
-        }
-
-        return collect($configured)
-            ->filter(fn (mixed $jobClass, mixed $key): bool => is_string($key) && is_string($jobClass))
-            ->all();
     }
 
     private function tenantLabel(TenantIntegration $integration): string
@@ -199,7 +177,7 @@ class DispatchDailyImportsCommand extends Command
     }
 
     /**
-     * @param  Collection<int, array{integration: TenantIntegration, resource: string, target_table: string, job_class: class-string}>  $dispatchPlan
+     * @param  Collection<int, array{integration: TenantIntegration, resource: string, target_table: string}>  $dispatchPlan
      */
     private function clearTablesForActiveIntegrations(Collection $dispatchPlan): void
     {
@@ -212,10 +190,7 @@ class DispatchDailyImportsCommand extends Command
                 continue;
             }
 
-            $tables = $clearTables[$planRow['resource']] ?? $clearTables[$planRow['target_table']] ?? [];
-            if ($tables === []) {
-                continue;
-            }
+            $tables = $clearTables[$planRow['resource']] ?? $clearTables[$planRow['target_table']] ?? [(string) $planRow['target_table']];
 
             $tenantId = (string) $tenant->id;
             $tenantRows[$tenantId] ??= [
@@ -248,6 +223,15 @@ class DispatchDailyImportsCommand extends Command
                 $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
 
                 foreach ($tables as $table) {
+                    if (! $this->canClearTable($connection, $table)) {
+                        Log::warning('Limpeza de tabela de importação ignorada: tabela inválida, inexistente ou sem tenant_id.', [
+                            'tenant_id' => (string) $tenant->id,
+                            'table' => $table,
+                        ]);
+
+                        continue;
+                    }
+
                     DB::connection($connection)->table($table)->where('tenant_id', (string) $tenant->id)->delete();
                 }
             });
@@ -280,21 +264,11 @@ class DispatchDailyImportsCommand extends Command
             ->all();
     }
 
-    private function makeImportJob(string $jobClass, string $integrationId): object
+    private function canClearTable(string $connection, string $table): bool
     {
-        $arguments = ['integrationId' => $integrationId];
-        $constructor = (new ReflectionClass($jobClass))->getConstructor();
-
-        if ($constructor !== null) {
-            $supportsRunFinalize = collect($constructor->getParameters())
-                ->contains(fn (\ReflectionParameter $parameter): bool => $parameter->getName() === 'runFinalize');
-
-            if ($supportsRunFinalize) {
-                $arguments['runFinalize'] = ! (bool) $this->option('no-finalize');
-            }
-        }
-
-        return app($jobClass, $arguments);
+        return preg_match('/^[A-Za-z0-9_]+$/', $table) === 1
+            && Schema::connection($connection)->hasTable($table)
+            && Schema::connection($connection)->hasColumn($table, 'tenant_id');
     }
 
     private function logStep(int $step, string $message): void

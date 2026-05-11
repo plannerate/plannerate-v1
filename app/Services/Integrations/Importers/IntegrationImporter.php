@@ -16,27 +16,24 @@ class IntegrationImporter
 
     public function importSales(TenantIntegration $integration, ?Store $store = null): void
     {
-        if ($store instanceof Store) {
-            $this->genericImporter->importSales($integration, $store);
-
-            return;
-        }
-
-        $this->forEachStoreScope($integration, function (?Store $store) use ($integration): void {
-            $this->genericImporter->importSales($integration, $store);
-        });
+        $this->importResource($integration, 'sales', 'sales', $store);
     }
 
     public function importProducts(TenantIntegration $integration, ?Store $store = null): void
     {
+        $this->importResource($integration, 'products', 'products', $store);
+    }
+
+    public function importResource(TenantIntegration $integration, string $resource, string $targetTable, ?Store $store = null): void
+    {
         if ($store instanceof Store) {
-            $this->genericImporter->importProducts($integration, $store);
+            $this->genericImporter->importResource($integration, $resource, $targetTable, $store);
 
             return;
         }
 
-        $this->forEachStoreScope($integration, function (?Store $store) use ($integration): void {
-            $this->genericImporter->importProducts($integration, $store);
+        $this->forEachStoreScope($integration, function (?Store $store) use ($integration, $resource, $targetTable): void {
+            $this->genericImporter->importResource($integration, $resource, $targetTable, $store);
         });
     }
 

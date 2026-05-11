@@ -46,7 +46,6 @@ return [
             'sslmode' => 'prefer',
         ],
 
-
         'landlord' => [
             'driver' => env('DB_LANDLORD_CONNECTION', 'pgsql'),
             'url' => env('DB_LANDLORD_URL'),
@@ -62,7 +61,7 @@ return [
         ],
 
         'tenant' => [
-            'driver' => 'pgsql',
+            'driver' => env('DB_TENANT_CONNECTION', 'pgsql'),
             'url' => env('DB_TENANT_URL'),
             'host' => env('DB_TENANT_HOST', env('DB_HOST', '127.0.0.1')),
             'port' => env('DB_TENANT_PORT', env('DB_PORT', '5432')),
@@ -75,7 +74,6 @@ return [
             'search_path' => 'public',
             'sslmode' => 'prefer',
         ],
-
 
         'sqlite' => [
             'driver' => 'sqlite',
@@ -197,7 +195,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')) . '-database-'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 

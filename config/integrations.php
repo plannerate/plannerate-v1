@@ -1,14 +1,6 @@
 <?php
 
-use App\Jobs\Integrations\Imports\ImportProductsJob;
-use App\Jobs\Integrations\Imports\ImportSalesJob;
-
 return [
-    'import_jobs' => [
-        'products' => ImportProductsJob::class,
-        'sales' => ImportSalesJob::class,
-    ],
-
     'import_clear_tables' => [
         'products' => ['product_store', 'products'],
         'sales' => ['sales'],

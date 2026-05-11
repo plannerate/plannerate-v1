@@ -267,12 +267,18 @@ class IntegrationApiController extends Controller
                 'payload' => 'query',
                 'paths' => [
                     'products' => [
+                        'enabled' => true,
                         'target_table' => 'products',
                         'fallback_path' => '/products',
+                        'unique_by' => ['codigo_erp'],
+                        'date_strategy' => 'products_incremental',
                     ],
                     'sales' => [
+                        'enabled' => true,
                         'target_table' => 'sales',
                         'fallback_path' => '/sales',
+                        'unique_by' => ['codigo_erp', 'sale_date', 'promotion'],
+                        'date_strategy' => 'sales_incremental',
                     ],
                 ],
             ]),

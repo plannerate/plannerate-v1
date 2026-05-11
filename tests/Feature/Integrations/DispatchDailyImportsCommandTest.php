@@ -1,23 +1,63 @@
 <?php
 
-use App\Jobs\Integrations\Imports\ImportProductsJob;
-use App\Jobs\Integrations\Imports\ImportSalesJob;
+use App\Jobs\Integrations\Imports\ImportIntegrationResourceJob;
 use App\Models\IntegrationApi;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Tests\TestCase;
+
+uses(TestCase::class);
 
 beforeEach(function (): void {
-    Artisan::call('migrate:fresh', [
-        '--database' => 'landlord',
-        '--path' => 'database/migrations/landlord',
-        '--force' => true,
-        '--no-interaction' => true,
+    config()->set('database.connections.landlord', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+        'prefix' => '',
+        'foreign_key_constraints' => true,
     ]);
+    DB::purge('landlord');
+
+    Schema::connection('landlord')->dropIfExists('tenant_integrations');
+    Schema::connection('landlord')->dropIfExists('integration_apis');
+    Schema::connection('landlord')->dropIfExists('tenants');
+
+    Schema::connection('landlord')->create('tenants', function (Blueprint $table): void {
+        $table->ulid('id')->primary();
+        $table->string('name');
+        $table->string('slug')->unique();
+        $table->string('database')->nullable();
+        $table->string('status')->default('active');
+        $table->timestamps();
+    });
+
+    Schema::connection('landlord')->create('integration_apis', function (Blueprint $table): void {
+        $table->ulid('id')->primary();
+        $table->string('name');
+        $table->string('slug')->unique();
+        $table->json('requests')->nullable();
+        $table->json('response')->nullable();
+        $table->boolean('is_active')->default(true);
+        $table->timestamps();
+    });
+
+    Schema::connection('landlord')->create('tenant_integrations', function (Blueprint $table): void {
+        $table->ulid('id')->primary();
+        $table->ulid('tenant_id');
+        $table->string('integration_type');
+        $table->string('identifier')->nullable();
+        $table->json('config')->nullable();
+        $table->boolean('is_active')->default(true);
+        $table->timestamp('last_sync')->nullable();
+        $table->timestamps();
+    });
 });
 
-test('daily imports command dispatches sales and products jobs for active integrations', function (): void {
+test('daily imports command dispatches enabled paths for active integrations', function (): void {
     Bus::fake();
 
     config([
@@ -74,17 +114,20 @@ test('daily imports command dispatches sales and products jobs for active integr
         ->toContain('principal')
         ->toContain('sales')
         ->toContain('products')
-        ->toContain('ImportSalesJob')
-        ->toContain('ImportProductsJob')
+        ->toContain('ImportIntegrationResourceJob')
         ->not->toContain('Tenant Inativo')
         ->not->toContain('desativada');
 
-    Bus::assertDispatched(ImportSalesJob::class, function (ImportSalesJob $job) use ($activeIntegration): bool {
-        return $job->integrationId === (string) $activeIntegration->id;
+    Bus::assertDispatched(ImportIntegrationResourceJob::class, function (ImportIntegrationResourceJob $job) use ($activeIntegration): bool {
+        return $job->integrationId === (string) $activeIntegration->id
+            && $job->resource === 'sales'
+            && $job->targetTable === 'sales';
     });
 
-    Bus::assertDispatched(ImportProductsJob::class, function (ImportProductsJob $job) use ($activeIntegration): bool {
-        return $job->integrationId === (string) $activeIntegration->id;
+    Bus::assertDispatched(ImportIntegrationResourceJob::class, function (ImportIntegrationResourceJob $job) use ($activeIntegration): bool {
+        return $job->integrationId === (string) $activeIntegration->id
+            && $job->resource === 'products'
+            && $job->targetTable === 'products';
     });
 });
 
@@ -129,8 +172,8 @@ test('daily imports command filters dispatches by path type when provided', func
         ->toContain('products')
         ->not->toContain('sales');
 
-    Bus::assertDispatched(ImportProductsJob::class);
-    Bus::assertNotDispatched(ImportSalesJob::class);
+    Bus::assertDispatched(ImportIntegrationResourceJob::class, fn (ImportIntegrationResourceJob $job): bool => $job->resource === 'products');
+    Bus::assertNotDispatched(ImportIntegrationResourceJob::class, fn (ImportIntegrationResourceJob $job): bool => $job->resource === 'sales');
 });
 
 test('daily imports command warns when there are no active integrations', function (): void {
@@ -143,7 +186,7 @@ test('daily imports command warns when there are no active integrations', functi
     Bus::assertNothingDispatched();
 });
 
-test('daily imports command dispatches only configured paths with registered jobs', function (): void {
+test('daily imports command dispatches generic configured paths and skips disabled paths', function (): void {
     Bus::fake();
 
     config([
@@ -158,6 +201,7 @@ test('daily imports command dispatches only configured paths with registered job
                 'products' => [
                     'target_table' => 'products',
                     'fallback_path' => '/products',
+                    'enabled' => false,
                 ],
                 'stores' => [
                     'target_table' => 'stores',
@@ -189,12 +233,13 @@ test('daily imports command dispatches only configured paths with registered job
     $output = Artisan::output();
 
     expect($output)
-        ->toContain('Path [stores]')
         ->toContain('[Passo 03] Paths despacháveis encontrados: 1.')
-        ->toContain('products');
+        ->toContain('stores')
+        ->not->toContain('products');
 
-    Bus::assertDispatched(ImportProductsJob::class);
-    Bus::assertNotDispatched(ImportSalesJob::class);
+    Bus::assertDispatched(ImportIntegrationResourceJob::class, fn (ImportIntegrationResourceJob $job): bool => $job->resource === 'stores'
+        && $job->targetTable === 'stores');
+    Bus::assertNotDispatched(ImportIntegrationResourceJob::class, fn (ImportIntegrationResourceJob $job): bool => $job->resource === 'products');
 });
 
 /**

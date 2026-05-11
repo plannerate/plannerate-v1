@@ -2,9 +2,7 @@
 
 namespace App\Services\Integrations\Importers;
 
-use App\Jobs\Integrations\Imports\FetchIntegrationSalesDayJob;
-use App\Jobs\Integrations\Imports\ProcessImportedProductsBatchJob;
-use App\Jobs\Integrations\Imports\ProcessImportedSalesBatchJob;
+use App\Jobs\Integrations\Imports\ProcessImportedResourceBatchJob;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
@@ -17,6 +15,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
 class GenericIntegrationImporter
@@ -30,19 +29,25 @@ class GenericIntegrationImporter
 
     public function importSales(TenantIntegration $integration, ?Store $store = null): void
     {
-        $request = $this->requestConfig($integration, 'sales');
+        $this->importResource($integration, 'sales', 'sales', $store);
+    }
 
-        if ((bool) ($request['dispatch_by_day'] ?? false)) {
-            $this->dispatchSalesDays($integration, $store);
+    public function importProducts(TenantIntegration $integration, ?Store $store = null): void
+    {
+        $this->importResource($integration, 'products', 'products', $store);
+    }
 
-            return;
-        }
+    public function importResource(TenantIntegration $integration, string $resource, string $targetTable, ?Store $store = null): void
+    {
+        $request = $this->requestConfig($integration, $resource);
+        $endpoint = $this->path($integration, $resource, (string) ($request['fallback_path'] ?? ''));
 
-        $endpoint = $this->path($integration, 'sales', (string) ($request['fallback_path'] ?? ''));
         if ($endpoint === '') {
-            Log::info('Integração sales import skipped: endpoint ainda não definido.', [
+            Log::warning('Integração import skipped: endpoint ainda não definido.', [
                 'integration_id' => (string) $integration->id,
                 'tenant_id' => (string) $integration->tenant_id,
+                'resource' => $resource,
+                'target_table' => $targetTable,
                 'store_id' => $store?->id,
                 'provider' => (string) $integration->integration_type,
             ]);
@@ -50,100 +55,87 @@ class GenericIntegrationImporter
             return;
         }
 
-        [$query, $body] = $this->payload($integration, $store, 'sales', $request);
-
-        try {
-            $response = $this->httpClient->request(
-                integration: $integration,
-                method: (string) ($request['method'] ?? 'GET'),
-                endpoint: $endpoint,
-                query: $query,
-                body: $body,
-            );
-        } catch (RequestException $exception) {
-            if ($this->shouldSkipStatus($request, $exception->response?->status())) {
-                Log::info('Integração sales import skipped por status do provider.', [
-                    'integration_id' => (string) $integration->id,
-                    'tenant_id' => (string) $integration->tenant_id,
-                    'store_id' => $store?->id,
-                    'provider' => (string) $integration->integration_type,
-                    'endpoint' => $endpoint,
-                    'status' => $exception->response?->status(),
-                ]);
-
-                return;
+        if ($this->dateStrategy($integration, $resource) === 'sales_incremental') {
+            foreach ($this->salesDates($integration, $targetTable, $request, $store) as $date) {
+                $this->importPages($integration, $resource, $targetTable, $request, $endpoint, $store, $date);
             }
 
-            throw $exception;
+            return;
         }
 
-        $payload = $response->json();
-        $payload = is_array($payload) ? $payload : [];
-        $items = $this->responseReader->items($integration, 'sales', $payload);
-
-        $payloadKey = $this->importBatchPayloadStore->put((string) $integration->id, 'sales', $items);
-        ProcessImportedSalesBatchJob::dispatch(
-            integrationId: (string) $integration->id,
-            provider: (string) $integration->integration_type,
-            payloadKey: $payloadKey,
-            storeId: $store?->id,
-            storeDocument: $store?->document,
-        );
-
-        Log::info('Integração sales import request completed.', [
-            'integration_id' => (string) $integration->id,
-            'tenant_id' => (string) $integration->tenant_id,
-            'store_id' => $store?->id,
-            'provider' => (string) $integration->integration_type,
-            'items' => count($items),
-            'status' => $response->status(),
-        ]);
+        $this->importPages($integration, $resource, $targetTable, $request, $endpoint, $store);
     }
 
-    public function importProducts(TenantIntegration $integration, ?Store $store = null): void
-    {
-        $request = $this->requestConfig($integration, 'products');
-        $endpoint = $this->path($integration, 'products', (string) ($request['fallback_path'] ?? ''));
-
-        if ($endpoint === '') {
-            throw new RuntimeException(sprintf(
-                'Endpoint de produtos não configurado para integração [%s].',
-                (string) $integration->id,
-            ));
-        }
-
+    /**
+     * @param  array<string, mixed>  $request
+     */
+    private function importPages(
+        TenantIntegration $integration,
+        string $resource,
+        string $targetTable,
+        array $request,
+        string $endpoint,
+        ?Store $store,
+        ?string $date = null,
+    ): void {
         $currentPage = 1;
         $totalPages = 1;
 
         do {
-            [$query, $body] = $this->payload($integration, $store, 'products', $request, $currentPage);
+            [$query, $body] = $this->payload($integration, $store, $resource, $targetTable, $request, $currentPage, $date);
 
-            $response = $this->httpClient->request(
-                integration: $integration,
-                method: (string) ($request['method'] ?? 'GET'),
-                endpoint: $endpoint,
-                query: $query,
-                body: $body,
-            );
+            try {
+                $response = $this->httpClient->request(
+                    integration: $integration,
+                    method: (string) ($request['method'] ?? 'GET'),
+                    endpoint: $endpoint,
+                    query: $query,
+                    body: $body,
+                );
+            } catch (RequestException $exception) {
+                if ($this->shouldSkipStatus($request, $exception->response?->status())) {
+                    Log::info('Integração import skipped por status do provider.', [
+                        'integration_id' => (string) $integration->id,
+                        'tenant_id' => (string) $integration->tenant_id,
+                        'resource' => $resource,
+                        'target_table' => $targetTable,
+                        'store_id' => $store?->id,
+                        'provider' => (string) $integration->integration_type,
+                        'endpoint' => $endpoint,
+                        'date' => $date,
+                        'status' => $exception->response?->status(),
+                    ]);
+
+                    return;
+                }
+
+                throw $exception;
+            }
 
             $payload = $response->json();
             $payload = is_array($payload) ? $payload : [];
-            $totalPages = $this->responseReader->totalPages($integration, 'products', $payload, $currentPage);
-            $items = $this->responseReader->items($integration, 'products', $payload);
+            $totalPages = $this->responseReader->totalPages($integration, $resource, $payload, $currentPage);
+            $items = $this->responseReader->items($integration, $resource, $payload);
 
-            $payloadKey = $this->importBatchPayloadStore->put((string) $integration->id, 'products', $items);
-            ProcessImportedProductsBatchJob::dispatch(
+            $payloadKey = $this->importBatchPayloadStore->put((string) $integration->id, $resource, $items);
+            ProcessImportedResourceBatchJob::dispatch(
                 integrationId: (string) $integration->id,
                 provider: (string) $integration->integration_type,
+                resource: $resource,
+                targetTable: $targetTable,
                 payloadKey: $payloadKey,
                 storeId: $store?->id,
+                storeDocument: $store?->document,
             );
 
-            Log::info('Integração products import page fetched.', [
+            Log::info('Integração import page fetched.', [
                 'integration_id' => (string) $integration->id,
                 'tenant_id' => (string) $integration->tenant_id,
+                'resource' => $resource,
+                'target_table' => $targetTable,
                 'store_id' => $store?->id,
                 'provider' => (string) $integration->integration_type,
+                'date' => $date,
                 'page' => $currentPage,
                 'total_pages' => $totalPages,
                 'items' => count($items),
@@ -160,13 +152,20 @@ class GenericIntegrationImporter
      * @param  array<string, mixed>  $request
      * @return array{0: array<string, mixed>, 1: array<string, mixed>}
      */
-    private function payload(TenantIntegration $integration, ?Store $store, string $resource, array $request, ?int $page = null): array
-    {
+    private function payload(
+        TenantIntegration $integration,
+        ?Store $store,
+        string $resource,
+        string $targetTable,
+        array $request,
+        ?int $page = null,
+        ?string $date = null,
+    ): array {
         $query = is_array($request['fixed_query'] ?? null) ? $request['fixed_query'] : [];
         $body = is_array($request['fixed_body'] ?? null) ? $request['fixed_body'] : [];
         $values = [
             ...$this->storePayload($store, $request),
-            ...$this->datePayload($integration, $store, $resource, $request),
+            ...$this->datePayload($integration, $store, $resource, $targetTable, $request, $date),
             ...$this->pagePayload($integration, $request, $page),
         ];
 
@@ -195,44 +194,56 @@ class GenericIntegrationImporter
      * @param  array<string, mixed>  $request
      * @return array<string, mixed>
      */
-    private function datePayload(TenantIntegration $integration, ?Store $store, string $resource, array $request): array
-    {
+    private function datePayload(
+        TenantIntegration $integration,
+        ?Store $store,
+        string $resource,
+        string $targetTable,
+        array $request,
+        ?string $date = null,
+    ): array {
         $fields = is_array($request['date_fields'] ?? null) ? $request['date_fields'] : [];
+        $strategy = $this->dateStrategy($integration, $resource);
 
-        if ($resource === 'sales') {
-            return $this->salesDatePayload($integration, $store, $fields);
-        }
-
-        if ($resource !== 'products' || ! $this->tenantHasProducts($integration, $store)) {
+        if ($strategy === 'none') {
             return [];
         }
 
-        if (is_string($fields['changed_since'] ?? null)) {
-            return [(string) $fields['changed_since'] => Carbon::yesterday()->toDateString()];
+        if ($strategy === 'sales_incremental' && is_string($date) && $date !== '') {
+            return $this->rangeDatePayload($fields, Carbon::parse($date), Carbon::parse($date), true);
         }
 
-        if (is_string($fields['created_from'] ?? null) && is_string($fields['created_to'] ?? null)) {
-            return [
-                (string) $fields['created_from'] => Carbon::yesterday()->startOfDay()->toIso8601String(),
-                (string) $fields['created_to'] => Carbon::now()->toIso8601String(),
-            ];
+        if (! in_array($strategy, ['products_incremental', 'range_incremental'], true)) {
+            return [];
         }
 
-        return [];
+        $endDate = Carbon::today();
+        $startDate = $this->targetHasRows($integration, $targetTable, $store)
+            ? $endDate->copy()->subDay()
+            : $endDate->copy()->subDays($this->initialDays($integration, $targetTable, $request) - 1);
+
+        return $this->rangeDatePayload($fields, $startDate, $endDate, false);
     }
 
     /**
      * @param  array<string, mixed>  $fields
      * @return array<string, mixed>
      */
-    private function salesDatePayload(TenantIntegration $integration, ?Store $store, array $fields): array
+    private function rangeDatePayload(array $fields, Carbon $startDate, Carbon $endDate, bool $defaultSalesFields): array
     {
-        $startField = (string) ($fields['start'] ?? '');
-        $endField = (string) ($fields['end'] ?? '');
-        $endDate = Carbon::today();
-        $startDate = $this->tenantHasSales($integration, $store)
-            ? $endDate->copy()->subDay()
-            : $endDate->copy()->subDays($this->salesLookbackDays($integration) - 1);
+        if (is_string($fields['changed_since'] ?? null)) {
+            return [(string) $fields['changed_since'] => $startDate->toDateString()];
+        }
+
+        if (is_string($fields['created_from'] ?? null) && is_string($fields['created_to'] ?? null)) {
+            return [
+                (string) $fields['created_from'] => $startDate->copy()->startOfDay()->toIso8601String(),
+                (string) $fields['created_to'] => $endDate->copy()->endOfDay()->toIso8601String(),
+            ];
+        }
+
+        $startField = (string) ($fields['start'] ?? ($defaultSalesFields ? 'data_inicial' : ''));
+        $endField = (string) ($fields['end'] ?? ($defaultSalesFields ? 'data_final' : ''));
 
         return array_filter([
             $startField => $startDate->toDateString(),
@@ -310,102 +321,85 @@ class GenericIntegrationImporter
         return null;
     }
 
-    private function dispatchSalesDays(TenantIntegration $integration, ?Store $store = null): void
+    /**
+     * @param  array<string, mixed>  $request
+     * @return list<string>
+     */
+    private function salesDates(TenantIntegration $integration, string $targetTable, array $request, ?Store $store): array
     {
-        $salesMode = $this->tenantHasSales($integration, $store) ? 'daily' : 'initial';
-        $dates = $this->salesDates($integration, $store, $salesMode);
+        $endDate = Carbon::today();
+        $lookbackDays = $this->initialDays($integration, $targetTable, $request);
 
-        foreach ($dates as $date) {
-            FetchIntegrationSalesDayJob::dispatch(
-                integrationId: (string) $integration->id,
-                date: $date,
-                storeId: $store?->id,
-                storeDocument: $store?->document,
-            );
+        if (! $this->targetHasRows($integration, $targetTable, $store)) {
+            return $this->dateRange($endDate->copy()->subDays($lookbackDays - 1), $endDate);
         }
 
-        Log::info('Integração sales day fetch jobs dispatched.', [
-            'integration_id' => (string) $integration->id,
-            'tenant_id' => (string) $integration->tenant_id,
-            'store_id' => $store?->id,
-            'provider' => (string) $integration->integration_type,
-            'sales_mode' => $salesMode,
-            'days_dispatched' => count($dates),
-            'start_date' => $dates[0] ?? null,
-            'end_date' => $dates[count($dates) - 1] ?? null,
-        ]);
+        $baseDates = [
+            $endDate->copy()->subDay()->toDateString(),
+            $endDate->toDateString(),
+        ];
+        $missingDates = $this->resolveMissingDates($integration, $targetTable, $request, $store, $lookbackDays);
+        $merged = array_values(array_unique([...$baseDates, ...$missingDates]));
+        sort($merged);
+
+        return $merged;
     }
 
     /**
      * @return list<string>
      */
-    private function salesDates(TenantIntegration $integration, ?Store $store, string $mode): array
+    private function dateRange(Carbon $startDate, Carbon $endDate): array
     {
-        $endDate = Carbon::today();
-        $lookbackDays = $this->salesLookbackDays($integration);
-
-        if ($mode === 'daily') {
-            $baseDates = [
-                $endDate->copy()->subDay()->toDateString(),
-                $endDate->toDateString(),
-            ];
-            $missingDates = $this->resolveMissingSalesDates($integration, $store, $lookbackDays);
-
-            $merged = array_values(array_unique([...$baseDates, ...$missingDates]));
-            sort($merged);
-
-            return $merged;
-        }
-
         $dates = [];
-        for ($i = $lookbackDays - 1; $i >= 0; $i--) {
-            $dates[] = $endDate->copy()->subDays($i)->toDateString();
+
+        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+            $dates[] = $date->toDateString();
         }
 
         return $dates;
     }
 
-    private function salesLookbackDays(TenantIntegration $integration): int
-    {
-        $config = is_array($integration->config) ? $integration->config : [];
-        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
-
-        return max(1, (int) ($processing['sales_initial_days'] ?? 120));
-    }
-
     /**
+     * @param  array<string, mixed>  $request
      * @return list<string>
      */
-    private function resolveMissingSalesDates(TenantIntegration $integration, ?Store $store, int $lookbackDays): array
+    private function resolveMissingDates(TenantIntegration $integration, string $targetTable, array $request, ?Store $store, int $lookbackDays): array
     {
         $tenant = $integration->tenant;
-        if (! $tenant instanceof Tenant) {
+        if (! $tenant instanceof Tenant || ! $this->validTableName($targetTable)) {
             return [];
         }
 
         $endDate = Carbon::today();
         $startDate = $endDate->copy()->subDays($lookbackDays - 1);
-        $expectedDates = [];
+        $expectedDates = $this->dateRange($startDate, $endDate);
+        $dateColumn = (string) ($request['date_column'] ?? 'sale_date');
 
-        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
-            $expectedDates[] = $date->toDateString();
-        }
-
-        $existingDates = $tenant->execute(function () use ($integration, $store, $tenant, $startDate, $endDate): array {
+        $existingDates = $tenant->execute(function () use ($store, $tenant, $targetTable, $dateColumn, $startDate, $endDate): array {
             $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
-            $query = DB::connection($connection)
-                ->table('sales')
-                ->where('tenant_id', (string) $tenant->id)
-                ->whereNull('deleted_at')
-                ->whereBetween('sale_date', [$startDate->toDateString(), $endDate->toDateString()]);
+            if (! Schema::connection($connection)->hasTable($targetTable) || ! Schema::connection($connection)->hasColumn($targetTable, $dateColumn)) {
+                return [];
+            }
 
-            if ($this->separateByStore($integration) && $store instanceof Store && is_string($store->id) && $store->id !== '') {
+            $query = DB::connection($connection)
+                ->table($targetTable)
+                ->whereBetween($dateColumn, [$startDate->toDateString(), $endDate->toDateString()]);
+
+            if (Schema::connection($connection)->hasColumn($targetTable, 'tenant_id')) {
+                $query->where('tenant_id', (string) $tenant->id);
+            }
+
+            if (Schema::connection($connection)->hasColumn($targetTable, 'deleted_at')) {
+                $query->whereNull('deleted_at');
+            }
+
+            if ($store instanceof Store && is_string($store->id) && $store->id !== '' && Schema::connection($connection)->hasColumn($targetTable, 'store_id')) {
                 $query->where('store_id', (string) $store->id);
             }
 
             return $query
                 ->distinct()
-                ->pluck('sale_date')
+                ->pluck($dateColumn)
                 ->filter(fn (mixed $date): bool => is_string($date) && $date !== '')
                 ->map(fn (string $date): string => Carbon::parse($date)->toDateString())
                 ->values()
@@ -418,54 +412,68 @@ class GenericIntegrationImporter
         return $missingDates;
     }
 
-    private function tenantHasProducts(TenantIntegration $integration, ?Store $store = null): bool
+    /**
+     * @param  array<string, mixed>  $request
+     */
+    private function initialDays(TenantIntegration $integration, string $targetTable, array $request): int
+    {
+        if (isset($request['initial_days'])) {
+            return max(1, (int) $request['initial_days']);
+        }
+
+        $config = is_array($integration->config) ? $integration->config : [];
+        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
+        $targetKey = $targetTable.'_initial_days';
+
+        if (isset($processing[$targetKey])) {
+            return max(1, (int) $processing[$targetKey]);
+        }
+
+        if ($targetTable === 'sales') {
+            return max(1, (int) ($processing['sales_initial_days'] ?? 120));
+        }
+
+        if ($targetTable === 'products') {
+            return max(1, (int) ($processing['products_initial_days'] ?? 120));
+        }
+
+        return 120;
+    }
+
+    private function targetHasRows(TenantIntegration $integration, string $targetTable, ?Store $store = null): bool
     {
         $tenant = $integration->tenant;
-        if (! $tenant instanceof Tenant) {
+        if (! $tenant instanceof Tenant || ! $this->validTableName($targetTable)) {
             return false;
         }
 
-        return $tenant->execute(function () use ($integration, $store, $tenant): bool {
+        return $tenant->execute(function () use ($store, $tenant, $targetTable): bool {
             $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
-
-            if ($this->separateByStore($integration) && $store instanceof Store && is_string($store->id) && $store->id !== '') {
-                return DB::connection($connection)
-                    ->table('product_store')
-                    ->where('tenant_id', (string) $tenant->id)
-                    ->where('store_id', (string) $store->id)
-                    ->exists();
+            if (! Schema::connection($connection)->hasTable($targetTable)) {
+                return false;
             }
 
-            $query = DB::connection($connection)
-                ->table('products')
-                ->whereNull('deleted_at');
+            $query = DB::connection($connection)->table($targetTable);
 
-            $query->where('tenant_id', (string) $tenant->id);
+            if (Schema::connection($connection)->hasColumn($targetTable, 'tenant_id')) {
+                $query->where('tenant_id', (string) $tenant->id);
+            }
 
-            return $query->exists();
-        });
-    }
+            if (Schema::connection($connection)->hasColumn($targetTable, 'deleted_at')) {
+                $query->whereNull('deleted_at');
+            }
 
-    private function tenantHasSales(TenantIntegration $integration, ?Store $store = null): bool
-    {
-        $tenant = $integration->tenant;
-        if (! $tenant instanceof Tenant) {
-            return true;
-        }
-
-        return $tenant->execute(function () use ($integration, $store, $tenant): bool {
-            $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
-            $query = DB::connection($connection)
-                ->table('sales')
-                ->where('tenant_id', (string) $tenant->id)
-                ->whereNull('deleted_at');
-
-            if ($this->separateByStore($integration) && $store instanceof Store && is_string($store->id) && $store->id !== '') {
+            if ($store instanceof Store && is_string($store->id) && $store->id !== '' && Schema::connection($connection)->hasColumn($targetTable, 'store_id')) {
                 $query->where('store_id', (string) $store->id);
             }
 
             return $query->exists();
         });
+    }
+
+    private function dateStrategy(TenantIntegration $integration, string $resource): string
+    {
+        return $this->resolvedConfig($integration)->dateStrategy($resource);
     }
 
     private function shouldSkipStatus(array $request, ?int $status): bool
@@ -506,11 +514,6 @@ class GenericIntegrationImporter
         return $this->resolvedConfig($integration)->path($key, $fallback);
     }
 
-    private function separateByStore(TenantIntegration $integration): bool
-    {
-        return $this->resolvedConfig($integration)->separateByStore();
-    }
-
     /**
      * @param  array<string, mixed>  $row
      */
@@ -530,6 +533,11 @@ class GenericIntegrationImporter
         }
 
         return true;
+    }
+
+    private function validTableName(string $table): bool
+    {
+        return preg_match('/^[A-Za-z0-9_]+$/', $table) === 1;
     }
 
     private function resolvedConfig(TenantIntegration $integration): ResolvedIntegrationConfig
