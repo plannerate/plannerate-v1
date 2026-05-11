@@ -5,6 +5,7 @@ namespace App\Support\Navigation;
 use App\Models\Category;
 use App\Models\Cluster;
 use App\Models\EanReference;
+use App\Models\IntegrationApi;
 use App\Models\Module;
 use App\Models\Permission;
 use App\Models\Plan;
@@ -87,6 +88,14 @@ class SidebarNavigationService
                             ->icon('blocks')
                             ->authorize('viewAny', Module::class)
                             ->setOrder(30);
+                    })
+                    ->item('landlord.integration-apis', function ($item): void {
+                        $item
+                            ->label(__('app.landlord.integration_apis.navigation'))
+                            ->href(route('landlord.integration-apis.index', absolute: false))
+                            ->icon('plug')
+                            ->authorize('viewAny', IntegrationApi::class)
+                            ->setOrder(35);
                     })
                     ->item('landlord.ean-references', function ($item): void {
                         $item

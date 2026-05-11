@@ -64,6 +64,16 @@ final class PermissionName
 
     public const LANDLORD_MODULES_DELETE = 'landlord.modules.delete';
 
+    public const LANDLORD_INTEGRATION_APIS_VIEW_ANY = 'landlord.integration-apis.viewAny';
+
+    public const LANDLORD_INTEGRATION_APIS_VIEW = 'landlord.integration-apis.view';
+
+    public const LANDLORD_INTEGRATION_APIS_CREATE = 'landlord.integration-apis.create';
+
+    public const LANDLORD_INTEGRATION_APIS_UPDATE = 'landlord.integration-apis.update';
+
+    public const LANDLORD_INTEGRATION_APIS_DELETE = 'landlord.integration-apis.delete';
+
     public const LANDLORD_USEFUL_LINKS_VIEW_ANY = 'landlord.useful-links.viewAny';
 
     public const LANDLORD_USEFUL_LINKS_VIEW = 'landlord.useful-links.view';
@@ -234,6 +244,11 @@ final class PermissionName
             self::LANDLORD_MODULES_CREATE,
             self::LANDLORD_MODULES_UPDATE,
             self::LANDLORD_MODULES_DELETE,
+            self::LANDLORD_INTEGRATION_APIS_VIEW_ANY,
+            self::LANDLORD_INTEGRATION_APIS_VIEW,
+            self::LANDLORD_INTEGRATION_APIS_CREATE,
+            self::LANDLORD_INTEGRATION_APIS_UPDATE,
+            self::LANDLORD_INTEGRATION_APIS_DELETE,
             self::LANDLORD_USEFUL_LINKS_VIEW_ANY,
             self::LANDLORD_USEFUL_LINKS_VIEW,
             self::LANDLORD_USEFUL_LINKS_CREATE,

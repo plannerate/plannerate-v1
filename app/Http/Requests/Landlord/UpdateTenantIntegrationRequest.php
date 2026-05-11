@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Landlord;
 
+use App\Models\IntegrationApi;
 use App\Models\Tenant;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -25,7 +27,7 @@ class UpdateTenantIntegrationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'integration_type' => ['required', 'string', Rule::in(['sysmo', 'gescooper', 'generic'])],
+            'integration_type' => ['required', 'string', Rule::in($this->integrationTypeSlugs())],
             'is_active' => ['sometimes', 'boolean'],
             // Connection
             'api_url' => ['required', 'url', 'max:255'],
@@ -196,5 +198,30 @@ class UpdateTenantIntegrationRequest extends FormRequest
         }
 
         return $result;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function integrationTypeSlugs(): array
+    {
+        $configured = [
+            ...array_keys(config('integrations.providers', [])),
+            'generic',
+        ];
+
+        try {
+            $database = IntegrationApi::query()
+                ->where('is_active', true)
+                ->pluck('slug')
+                ->all();
+        } catch (QueryException) {
+            $database = [];
+        }
+
+        return array_values(array_unique(array_filter([
+            ...$configured,
+            ...array_map(fn (mixed $slug): string => (string) $slug, $database),
+        ], fn (string $slug): bool => $slug !== '')));
     }
 }

@@ -9,6 +9,7 @@ use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
+use App\Services\Integrations\IntegrationApiConfigResolver;
 use App\Services\Integrations\Support\ImportBatchPayloadStore;
 use App\Services\Integrations\Support\IntegrationResponseReader;
 use Illuminate\Http\Client\RequestException;
@@ -24,6 +25,7 @@ class GenericIntegrationImporter
         private readonly IntegrationHttpClient $httpClient,
         private readonly ImportBatchPayloadStore $importBatchPayloadStore,
         private readonly IntegrationResponseReader $responseReader,
+        private readonly ?IntegrationApiConfigResolver $configResolver = null,
     ) {}
 
     public function importSales(TenantIntegration $integration, ?Store $store = null): void
@@ -457,7 +459,9 @@ class GenericIntegrationImporter
      */
     private function requestConfig(TenantIntegration $integration, string $resource): array
     {
-        $requests = config(sprintf('integrations.providers.%s.requests', (string) $integration->integration_type), []);
+        $provider = ($this->configResolver ?? new IntegrationApiConfigResolver)
+            ->provider((string) $integration->integration_type);
+        $requests = $provider['requests'] ?? [];
 
         if (! is_array($requests) || $requests === []) {
             throw new RuntimeException(sprintf(

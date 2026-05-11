@@ -7,6 +7,7 @@ use App\Http\Requests\Landlord\UpdateTenantIntegrationRequest;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
+use App\Services\Integrations\IntegrationApiConfigResolver;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +19,7 @@ use Throwable;
 
 class TenantIntegrationController extends Controller
 {
-    public function edit(Tenant $tenant): Response
+    public function edit(Tenant $tenant, IntegrationApiConfigResolver $configResolver): Response
     {
         $this->authorize('update', $tenant);
 
@@ -72,11 +73,7 @@ class TenantIntegrationController extends Controller
         return Inertia::render('landlord/tenants/Integration', [
             'tenant' => ['id' => $tenant->id, 'name' => $tenant->name],
             'integration' => $integrationData,
-            'integration_types' => [
-                ['value' => 'sysmo',     'label' => __('app.landlord.tenant_integrations.types.sysmo')],
-                ['value' => 'gescooper', 'label' => __('app.landlord.tenant_integrations.types.gescooper')],
-                ['value' => 'generic',   'label' => __('app.landlord.tenant_integrations.types.generic')],
-            ],
+            'integration_types' => $configResolver->options(),
         ]);
     }
 

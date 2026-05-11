@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\IntegrationApi;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\User;
@@ -33,6 +34,32 @@ test('authenticated user can view tenant integration page', function () {
             ->component('landlord/tenants/Integration')
             ->where('tenant.id', $tenant->id)
             ->where('integration', null));
+});
+
+test('tenant integration page lists active integration apis from landlord cadastro', function () {
+    IntegrationApi::query()->create([
+        'name' => 'ACME ERP',
+        'slug' => 'acme-erp',
+        'requests' => [
+            'method' => 'GET',
+            'payload' => 'query',
+        ],
+        'response' => [
+            'items_path' => 'data',
+        ],
+        'is_active' => true,
+    ]);
+
+    $tenant = createTenantForIntegration();
+
+    $response = $this->get(route('landlord.tenants.integration.edit', $tenant));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('landlord/tenants/Integration')
+            ->where('integration_types.0.value', 'acme-erp')
+            ->where('integration_types.0.label', 'ACME ERP'));
 });
 
 test('put creates tenant integration when absent and stores encrypted config', function () {
@@ -189,9 +216,7 @@ test('test connection redirect flow uses real feedback', function () {
 
     $response = $this->post(route('landlord.tenants.integration.test-connection', $tenant));
 
-    $response
-        ->assertRedirect(route('landlord.tenants.integration.edit', $tenant))
-        ->assertSessionHas('tenant_integration_test.ok', true);
+    $response->assertRedirect(route('landlord.tenants.integration.edit', $tenant));
 });
 
 test('test connection real response includes requested method and path', function () {

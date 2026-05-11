@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\TenantSocialiteController;
 use App\Http\Controllers\Landlord\DashboardController as LandlordDashboardController;
 use App\Http\Controllers\Landlord\EanReferenceController as LandlordEanReferenceController;
+use App\Http\Controllers\Landlord\IntegrationApiController;
 use App\Http\Controllers\Landlord\ModuleController;
 use App\Http\Controllers\Landlord\PermissionController;
 use App\Http\Controllers\Landlord\PlanController;
@@ -37,7 +38,6 @@ use App\Http\Middleware\SetPermissionTeamContext;
 use App\Support\Modules\ModuleSlug;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
 Route::get('/health', function () {
@@ -47,7 +47,6 @@ Route::get('/health', function () {
 // ── LANDLORD (rota raiz, sem tenant) ──────────────────────────
 Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPermissionTeamContext::class])->group(function (): void {
 
-    
     Route::get('/', [LandlordDashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('plans', PlanController::class)
@@ -65,6 +64,10 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::resource('modules', ModuleController::class)
         ->except(['show'])
         ->names('landlord.modules');
+
+    Route::resource('integration-apis', IntegrationApiController::class)
+        ->except(['show'])
+        ->names('landlord.integration-apis');
 
     Route::resource('users', UserController::class)
         ->except(['show'])
@@ -125,7 +128,7 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::delete('tenants/{tenant}/integration', [TenantIntegrationController::class, 'destroy'])
         ->name('landlord.tenants.integration.destroy');
 
-    Route::middleware('tenant.module.active:' . ModuleSlug::KANBAN)->group(function (): void {
+    Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
         Route::get('tenants/{tenant}/kanban/templates', [LandlordWorkflowTemplateController::class, 'index'])
             ->name('landlord.tenants.kanban.templates.index');
         Route::get('tenants/{tenant}/kanban/templates/create', [LandlordWorkflowTemplateController::class, 'create'])
@@ -210,7 +213,7 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->except(['show'])
             ->names('planograms');
 
-        Route::middleware('tenant.module.active:' . ModuleSlug::KANBAN)
+        Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)
             ->get('planograms/kanban', [PlanogramController::class, 'kanban'])
             ->name('planograms.kanban');
 
@@ -251,7 +254,7 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::delete('notifications/{id}', [NotificationController::class, 'destroy'])
             ->name('notifications.destroy');
 
-        Route::middleware('tenant.module.active:' . ModuleSlug::KANBAN)->group(function (): void {
+        Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
             // ── KANBAN ────────────────────────────────────────────────
             Route::get('kanban', [WorkflowKanbanController::class, 'index'])->name('kanban.index');
 
@@ -294,4 +297,4 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Broadcast::routes();
     });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';
