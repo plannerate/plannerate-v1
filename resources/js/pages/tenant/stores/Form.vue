@@ -3,11 +3,9 @@ import { Form, Head } from '@inertiajs/vue3';
 import { Store as StoreIcon } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
-import AddressFields from '@/components/form/AddressFields.vue';
+import CepLookupField from '@/components/form/CepLookupField.vue';
 import FormMapField from '@/components/form/FormMapField.vue';
-import FormStatusField from '@/components/form/FormStatusField.vue';
 import FormTabsBar from '@/components/form/FormTabsBar.vue';
-import FormTextareaField from '@/components/form/FormTextareaField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import FormCard from '@/components/FormCard.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
@@ -64,7 +62,7 @@ type MapData = {
     regions: MapRegion[];
 };
 
-type TabKey = 'identificacao' | 'endereco' | 'mapa_da_loja';
+type TabKey = 'identificacao' | 'mapa_da_loja';
 
 const props = defineProps<{
     subdomain: string;
@@ -79,15 +77,19 @@ const storesIndexPath = StoreController.index
     .replace(/^\/\/[^/]+/, '');
 const activeTab = ref<TabKey>('identificacao');
 const storeMap = ref<MapData | null>(props.store?.map ?? null);
+const addressZipCode = ref(props.address?.zip_code ?? '');
+const addressStreet = ref(props.address?.street ?? '');
+const addressNumber = ref(props.address?.number ?? '');
+const addressComplement = ref(props.address?.complement ?? '');
+const addressDistrict = ref(props.address?.district ?? '');
+const addressCity = ref(props.address?.city ?? '');
+const addressState = ref(props.address?.state ?? '');
+const addressCountry = ref(props.address?.country ?? 'Brasil');
 
 const tabs = computed(() => [
     {
         key: 'identificacao' as const,
         label: t('app.tenant.stores.tabs.identificacao'),
-    },
-    {
-        key: 'endereco' as const,
-        label: t('app.tenant.stores.tabs.endereco'),
     },
     {
         key: 'mapa_da_loja' as const,
@@ -100,6 +102,23 @@ const mapColumn = computed(() => ({
     label: t('app.tenant.stores.fields.map'),
     helpText: t('app.tenant.stores.hints.map'),
 }));
+
+function onAddressCepResolved(payload: {
+    street: string;
+    district: string;
+    city: string;
+    state: string;
+    complement: string;
+}): void {
+    addressStreet.value = payload.street;
+    addressDistrict.value = payload.district;
+    addressCity.value = payload.city;
+    addressState.value = payload.state;
+
+    if (payload.complement !== '') {
+        addressComplement.value = payload.complement;
+    }
+}
 
 const pageMeta = useCrudPageMeta(
     {
@@ -162,92 +181,182 @@ const pageMeta = useCrudPageMeta(
                         v-show="activeTab === 'identificacao'"
                         class="grid grid-cols-1 gap-4 md:grid-cols-12"
                     >
-                        <FormTextField
-                            id="name"
-                            name="name"
-                            :label="t('app.tenant.stores.fields.name')"
-                            :default-value="props.store?.name ?? ''"
-                            :error="errors.name"
-                            class="md:col-span-6"
-                            required
-                        />
-
-                        <FormTextField
-                            id="document"
-                            name="document"
-                            :label="t('app.tenant.stores.fields.document')"
-                            :default-value="props.store?.document ?? ''"
-                            :error="errors.document"
-                            class="md:col-span-3"
+                        <input
+                            type="hidden"
+                            name="status"
+                            :value="props.store?.status ?? 'draft'"
                         />
 
                         <FormTextField
                             id="code"
                             name="code"
-                            :label="t('app.tenant.stores.fields.code')"
+                            label="Código loja"
                             :default-value="props.store?.code ?? ''"
                             :error="errors.code"
                             class="md:col-span-3"
                         />
 
                         <FormTextField
+                            id="name"
+                            name="name"
+                            label="Nome da loja"
+                            :default-value="props.store?.name ?? ''"
+                            :error="errors.name"
+                            class="md:col-span-5"
+                            required
+                        />
+
+                        <FormTextField
                             id="slug"
                             name="slug"
-                            label="Slug"
+                            label="Cluster"
                             :default-value="props.store?.slug ?? ''"
                             :error="errors.slug"
                             class="md:col-span-4"
                         />
 
                         <FormTextField
-                            id="phone"
-                            name="phone"
-                            :label="t('app.tenant.stores.fields.phone')"
-                            :default-value="props.store?.phone ?? ''"
-                            :error="errors.phone"
-                            class="md:col-span-4"
+                            id="document"
+                            name="document"
+                            label="CNPJ"
+                            :default-value="props.store?.document ?? ''"
+                            :error="errors.document"
+                            class="md:col-span-3"
                         />
 
                         <FormTextField
                             id="email"
                             name="email"
                             type="email"
-                            :label="t('app.tenant.stores.fields.email')"
+                            label="Email"
                             :default-value="props.store?.email ?? ''"
                             :error="errors.email"
+                            class="md:col-span-5"
+                        />
+
+                        <FormTextField
+                            id="phone"
+                            name="phone"
+                            label="Telefone"
+                            :default-value="props.store?.phone ?? ''"
+                            :error="errors.phone"
                             class="md:col-span-4"
                         />
 
-                        <FormStatusField
-                            id="status"
-                            name="status"
-                            :label="t('app.tenant.stores.fields.status')"
-                            :default-value="props.store?.status ?? 'draft'"
-                            :error="errors.status"
-                            class="md:col-span-3"
-                            :options="[
-                                { value: 'draft', label: 'Draft' },
-                                { value: 'published', label: 'Published' },
-                            ]"
-                        />
+                        <div class="md:col-span-12">
+                            <div class="space-y-4 rounded-xl border border-border/70 bg-muted/20 p-4 md:p-5">
+                                <input
+                                    type="hidden"
+                                    name="address[id]"
+                                    :value="props.address?.id ?? ''"
+                                />
+                                <input
+                                    type="hidden"
+                                    name="address[type]"
+                                    :value="props.address?.type ?? 'home'"
+                                />
+                                <input
+                                    type="hidden"
+                                    name="address[name]"
+                                    :value="props.address?.name ?? ''"
+                                />
+                                <input
+                                    type="hidden"
+                                    name="address[reference]"
+                                    :value="props.address?.reference ?? ''"
+                                />
+                                <input
+                                    type="hidden"
+                                    name="address[additional_information]"
+                                    :value="props.address?.additional_information ?? ''"
+                                />
+                                <input
+                                    type="hidden"
+                                    name="address[is_default]"
+                                    :value="props.address?.is_default ? '1' : '0'"
+                                />
+                                <input
+                                    type="hidden"
+                                    name="address[status]"
+                                    :value="props.address?.status ?? 'draft'"
+                                />
 
-                        <FormTextareaField
-                            id="description"
-                            name="description"
-                            :label="t('app.tenant.stores.fields.description')"
-                            :default-value="props.store?.description ?? ''"
-                            :error="errors.description"
-                            class="col-span-12"
-                            :rows="2"
-                        />
-                    </div>
+                                <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                                    <CepLookupField
+                                        id="address-zip_code"
+                                        v-model="addressZipCode"
+                                        name="address[zip_code]"
+                                        label="Cep"
+                                        :error="errors['address.zip_code']"
+                                        class="md:col-span-3"
+                                        @resolved="onAddressCepResolved"
+                                    />
 
-                    <!-- Tab: Endereço -->
-                    <div v-show="activeTab === 'endereco'">
-                        <AddressFields
-                            :model-value="props.address"
-                            :errors="errors"
-                        />
+                                    <FormTextField
+                                        id="address-street"
+                                        v-model="addressStreet"
+                                        name="address[street]"
+                                        label="Rua"
+                                        :error="errors['address.street']"
+                                        class="md:col-span-6"
+                                    />
+
+                                    <FormTextField
+                                        id="address-number"
+                                        v-model="addressNumber"
+                                        name="address[number]"
+                                        label="Numero"
+                                        :error="errors['address.number']"
+                                        class="md:col-span-3"
+                                    />
+
+                                    <FormTextField
+                                        id="address-complement"
+                                        v-model="addressComplement"
+                                        name="address[complement]"
+                                        label="Complemento"
+                                        :error="errors['address.complement']"
+                                        class="md:col-span-4"
+                                    />
+
+                                    <FormTextField
+                                        id="address-district"
+                                        v-model="addressDistrict"
+                                        name="address[district]"
+                                        label="Bairro"
+                                        :error="errors['address.district']"
+                                        class="md:col-span-4"
+                                    />
+
+                                    <FormTextField
+                                        id="address-city"
+                                        v-model="addressCity"
+                                        name="address[city]"
+                                        label="Cidade"
+                                        :error="errors['address.city']"
+                                        class="md:col-span-4"
+                                    />
+
+                                    <FormTextField
+                                        id="address-state"
+                                        v-model="addressState"
+                                        name="address[state]"
+                                        label="Estado"
+                                        :error="errors['address.state']"
+                                        class="md:col-span-3"
+                                    />
+
+                                    <FormTextField
+                                        id="address-country"
+                                        v-model="addressCountry"
+                                        name="address[country]"
+                                        label="Pais"
+                                        :error="errors['address.country']"
+                                        class="md:col-span-9"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Tab: Mapa Da Loja -->
