@@ -7,6 +7,7 @@ use App\Models\Traits\UsesTenantConnection;
 use Database\Factories\StoreFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -73,6 +74,14 @@ class Store extends Model
         return $this->belongsToMany(Product::class, 'product_store')
             ->withPivot(['tenant_id', 'last_synced_at'])
             ->withTimestamps();
+    }
+
+    /**
+     * @param  Builder<Store>  $query
+     */
+    public function scopePublished(Builder $query): void
+    {
+        $query->where('status', 'published');
     }
 
     /**

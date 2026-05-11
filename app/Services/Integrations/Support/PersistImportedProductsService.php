@@ -182,11 +182,18 @@ class PersistImportedProductsService
     private function resolveStoreIds(string $tenantId, ?Store $store): array
     {
         if ($store instanceof Store && (string) $store->id !== '') {
-            return [(string) $store->id];
+            $storeId = Store::query()
+                ->where('tenant_id', $tenantId)
+                ->published()
+                ->whereKey((string) $store->id)
+                ->value('id');
+
+            return is_string($storeId) && $storeId !== '' ? [$storeId] : [];
         }
 
         return Store::query()
             ->where('tenant_id', $tenantId)
+            ->published()
             ->whereNull('deleted_at')
             ->pluck('id')
             ->filter(fn (mixed $id): bool => is_string($id) && $id !== '')

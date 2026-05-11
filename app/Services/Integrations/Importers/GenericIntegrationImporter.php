@@ -199,6 +199,10 @@ class GenericIntegrationImporter
     {
         $fields = is_array($request['date_fields'] ?? null) ? $request['date_fields'] : [];
 
+        if ($resource === 'sales') {
+            return $this->salesDatePayload($integration, $store, $fields);
+        }
+
         if ($resource !== 'products' || ! $this->tenantHasProducts($integration, $store)) {
             return [];
         }
@@ -215,6 +219,25 @@ class GenericIntegrationImporter
         }
 
         return [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $fields
+     * @return array<string, mixed>
+     */
+    private function salesDatePayload(TenantIntegration $integration, ?Store $store, array $fields): array
+    {
+        $startField = (string) ($fields['start'] ?? '');
+        $endField = (string) ($fields['end'] ?? '');
+        $endDate = Carbon::today();
+        $startDate = $this->tenantHasSales($integration, $store)
+            ? $endDate->copy()->subDay()
+            : $endDate->copy()->subDays($this->salesLookbackDays($integration) - 1);
+
+        return array_filter([
+            $startField => $startDate->toDateString(),
+            $endField => $endDate->toDateString(),
+        ], fn (string $value, string $key): bool => $key !== '', ARRAY_FILTER_USE_BOTH);
     }
 
     /**

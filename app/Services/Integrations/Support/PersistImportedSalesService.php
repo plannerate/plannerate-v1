@@ -148,6 +148,8 @@ class PersistImportedSalesService
             return;
         }
 
+        $rows = $this->deduplicateRowsById($rows);
+
         DB::connection($connectionName)->table('sales')->upsert(
             $rows,
             ['id'],
@@ -179,6 +181,18 @@ class PersistImportedSalesService
             'invalid_count' => $invalidCount,
             'upserted_sales' => count($rows),
         ]);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     */
+    private function deduplicateRowsById(array $rows): array
+    {
+        return collect($rows)
+            ->keyBy(fn (array $row): string => (string) $row['id'])
+            ->values()
+            ->all();
     }
 
     private function margemContribuicao(?float $totalSaleValue, ?float $valorImpostos, ?float $custoMedioLoja): ?float

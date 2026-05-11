@@ -1,6 +1,8 @@
 <?php
 
+use App\Jobs\Integrations\Imports\FetchIntegrationSalesDayJob;
 use App\Models\Store;
+use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\Importers\GenericIntegrationImporter;
@@ -9,6 +11,7 @@ use App\Services\Integrations\Support\ImportBatchPayloadStore;
 use App\Services\Integrations\Support\IntegrationResponseReader;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
@@ -483,6 +486,125 @@ test('body-api importer uses configured body page size', function (): void {
         return $request->url() === 'https://body-api.example.test/custom/products'
             && $request->data()['tamanho_pagina'] === '1800';
     });
+
+    Carbon::setTestNow();
+});
+
+test('sales importer sends yesterday to today when tenant already has sales', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    Carbon::setTestNow('2026-05-09 12:00:00');
+    Bus::fake();
+    Http::fake([
+        'https://body-api.example.test/hubvendas.vendas_produtos*' => Http::response([
+            'dados' => [],
+            'total_paginas' => 1,
+        ]),
+    ]);
+
+    $integration = new TenantIntegration([
+        'integration_type' => 'sales-date-api',
+        'config' => [
+            'connection' => [
+                'base_url' => 'https://body-api.example.test',
+            ],
+            'processing' => [
+                'sales_initial_days' => 2,
+            ],
+            'requests' => [
+                'method' => 'POST',
+                'payload' => 'body',
+                'paths' => [
+                    'sales' => [
+                        'target_table' => 'sales',
+                        'fallback_path' => '/hubvendas.vendas_produtos',
+                        'dispatch_by_day' => false,
+                        'page_field' => 'pagina',
+                        'page_value_type' => 'string',
+                        'page_size_field' => 'tamanho_pagina',
+                        'default_page_size' => 5000,
+                        'max_page_size' => 5000,
+                        'date_fields' => [
+                            'start' => 'data_inicial',
+                            'end' => 'data_final',
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+    $integration->id = '01k-sales-daily-fetch-test';
+    $tenant = Mockery::mock(Tenant::class)->makePartial();
+    $tenant->shouldReceive('execute')->once()->andReturn(true);
+    $integration->setRelation('tenant', $tenant);
+
+    integrationImporter()->importSales($integration);
+
+    Http::assertSent(function (Request $request): bool {
+        parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
+        $payload = [...$query, ...$request->data()];
+
+        return str_contains($request->url(), 'hubvendas.vendas_produtos')
+            && ($payload['data_inicial'] ?? null) === '2026-05-08'
+            && ($payload['data_final'] ?? null) === '2026-05-09';
+    });
+    Bus::assertNotDispatched(FetchIntegrationSalesDayJob::class);
+
+    Carbon::setTestNow();
+});
+
+test('sales importer sends initial sales period when tenant has no sales', function (): void {
+    Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    Carbon::setTestNow('2026-05-09 12:00:00');
+    Bus::fake();
+    Http::fake([
+        'https://body-api.example.test/hubvendas.vendas_produtos*' => Http::response([
+            'dados' => [],
+            'total_paginas' => 1,
+        ]),
+    ]);
+
+    $integration = new TenantIntegration([
+        'integration_type' => 'sales-date-api',
+        'config' => [
+            'connection' => [
+                'base_url' => 'https://body-api.example.test',
+            ],
+            'processing' => [
+                'sales_initial_days' => 5,
+            ],
+            'requests' => [
+                'method' => 'POST',
+                'payload' => 'body',
+                'paths' => [
+                    'sales' => [
+                        'target_table' => 'sales',
+                        'fallback_path' => '/hubvendas.vendas_produtos',
+                        'dispatch_by_day' => false,
+                        'date_fields' => [
+                            'start' => 'data_inicial',
+                            'end' => 'data_final',
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+    $integration->id = '01k-sales-initial-fetch-test';
+    $tenant = Mockery::mock(Tenant::class)->makePartial();
+    $tenant->shouldReceive('execute')->once()->andReturn(false);
+    $integration->setRelation('tenant', $tenant);
+
+    integrationImporter()->importSales($integration);
+
+    Http::assertSent(function (Request $request): bool {
+        parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
+        $payload = [...$query, ...$request->data()];
+
+        return str_contains($request->url(), 'hubvendas.vendas_produtos')
+            && ($payload['data_inicial'] ?? null) === '2026-05-05'
+            && ($payload['data_final'] ?? null) === '2026-05-09';
+    });
+    Bus::assertNotDispatched(FetchIntegrationSalesDayJob::class);
 
     Carbon::setTestNow();
 });
