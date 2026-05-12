@@ -201,7 +201,7 @@ class UpdateTenantIntegrationRequest extends FormRequest
         try {
             $database = IntegrationApi::query()
                 ->where('is_active', true)
-                ->pluck('slug')
+                ->pluck('id')
                 ->all();
         } catch (QueryException) {
             $database = [];

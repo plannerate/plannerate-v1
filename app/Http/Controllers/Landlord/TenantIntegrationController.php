@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Landlord;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\UpdateTenantIntegrationRequest;
+use App\Models\IntegrationApi;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
@@ -21,7 +22,7 @@ use Throwable;
 
 class TenantIntegrationController extends Controller
 {
-    public function edit(Tenant $tenant, IntegrationApiConfigResolver $configResolver): Response
+    public function edit(Tenant $tenant): Response
     {
         $this->authorize('update', $tenant);
 
@@ -67,25 +68,32 @@ class TenantIntegrationController extends Controller
             'processing_time' => (string) ($processing['processing_time'] ?? '02:00'),
             'separate_by_store' => (bool) ($processing['separate_by_store'] ?? false),
         ] : null;
-
+ 
         return Inertia::render('landlord/tenants/Integration', [
             'tenant' => ['id' => $tenant->id, 'name' => $tenant->name],
             'integration' => $integrationData,
-            'integration_types' => $configResolver->options(),
+            'integration_types' => IntegrationApi::query()
+                ->where('is_active', true)
+                ->get()
+                ->map(fn(IntegrationApi $api) => [
+                    'value' => $api->id,
+                    'label' => $api->name,
+                    'slug' => $api->slug,
+                ])->values(),
         ]);
     }
 
-    public function update(UpdateTenantIntegrationRequest $request, Tenant $tenant, ResolvedIntegrationConfigResolver $configResolver): RedirectResponse
+    public function update(UpdateTenantIntegrationRequest $request, Tenant $tenant): RedirectResponse
     {
         $this->authorize('update', $tenant);
 
         $payload = $request->integrationPayload();
-        $resolvedPayload = $this->resolvedIntegrationPayload($payload, $configResolver);
+        // $resolvedPayload = $this->resolvedIntegrationPayload($payload, $configResolver);
 
-        Storage::disk('local')->put(
-            $tenant->id.'/last_payload.json',
-            json_encode($resolvedPayload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
-        );
+        // Storage::disk('local')->put(
+        //     $tenant->id.'/last_payload.json',
+        //     json_encode($resolvedPayload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+        // );
 
         TenantIntegration::query()->updateOrCreate(
             ['tenant_id' => $tenant->id],
@@ -104,9 +112,9 @@ class TenantIntegrationController extends Controller
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
-    private function resolvedIntegrationPayload(array $payload, ResolvedIntegrationConfigResolver $configResolver): array
+    private function resolvedIntegrationPayload(array $payload, object $configResolver): array
     {
-        return $configResolver->resolvedPayload($payload);
+        return $payload;
     }
 
     public function destroy(Tenant $tenant): RedirectResponse
@@ -150,44 +158,11 @@ class TenantIntegrationController extends Controller
         return to_route('landlord.tenants.integration.edit', $tenant);
     }
 
-    public function testConnection(Request $request, Tenant $tenant, IntegrationHttpClient $httpClient, ResolvedIntegrationConfigResolver $configResolver): RedirectResponse|JsonResponse
+    public function testConnection(Request $request, Tenant $tenant, IntegrationHttpClient $httpClient): RedirectResponse|JsonResponse
     {
         $this->authorize('update', $tenant);
 
-        $integration = $tenant->integration;
-
-        if (! $integration instanceof TenantIntegration) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'ok' => false,
-                    'message' => __('app.landlord.tenant_integrations.messages.missing_configuration'),
-                ], 422);
-            }
-
-            Inertia::flash('toast', [
-                'type' => 'error',
-                'message' => __('app.landlord.tenant_integrations.messages.missing_configuration'),
-            ]);
-            Inertia::flash('tenant_integration_test', [
-                'ok' => false,
-                'message' => __('app.landlord.tenant_integrations.messages.missing_configuration'),
-            ]);
-
-            return to_route('landlord.tenants.integration.edit', $tenant);
-        }
-
-        $resolvedConfig = $configResolver->resolve($integration);
-        $payload = $this->connectionTestPayload($request, $resolvedConfig, $httpClient);
-
-        if ($request->expectsJson()) {
-            return response()->json($payload);
-        }
-
-        Inertia::flash('toast', [
-            'type' => 'info',
-            'message' => $payload['message'],
-        ]);
-        Inertia::flash('tenant_integration_test', $payload);
+      
 
         return to_route('landlord.tenants.integration.edit', $tenant);
     }
@@ -219,55 +194,13 @@ class TenantIntegrationController extends Controller
     }
 
     /** @return array{ok: bool, message: string, meta: array<string, mixed>, data?: mixed} */
-    private function connectionTestPayload(Request $request, ResolvedIntegrationConfig $config, IntegrationHttpClient $httpClient): array
+    private function connectionTestPayload(Request $request ,IntegrationHttpClient $httpClient): array
     {
-        $method = strtoupper((string) ($request->string('test_method') ?: 'GET'));
-        $path = (string) ($request->string('test_path') ?: '/');
-
-        try {
-            $response = $httpClient->request(
-                integration: $config,
-                method: $method,
-                endpoint: $path,
-                body: $this->testBody($request),
-            );
-
-            return [
-                'ok' => true,
-                'message' => __('app.landlord.tenant_integrations.messages.connection_success'),
-                'meta' => [
-                    'status' => $response->status(),
-                    'method' => $method,
-                    'path' => $path,
-                ],
-                'data' => $response->json(),
-            ];
-        } catch (RequestException $exception) {
-            return [
-                'ok' => false,
-                'message' => __('app.landlord.tenant_integrations.messages.connection_failed', [
-                    'error' => $exception->getMessage(),
-                ]),
-                'meta' => [
-                    'status' => $exception->response?->status(),
-                    'method' => $method,
-                    'path' => $path,
-                ],
-                'data' => $exception->response?->json(),
-            ];
-        } catch (Throwable $exception) {
-            return [
-                'ok' => false,
-                'message' => __('app.landlord.tenant_integrations.messages.connection_failed', [
-                    'error' => $exception->getMessage(),
-                ]),
-                'meta' => [
-                    'status' => null,
-                    'method' => $method,
-                    'path' => $path,
-                ],
-            ];
-        }
+        return [
+            'ok' => false,
+            'message' => '',
+            'meta' => [],
+        ];
     }
 
     /**
