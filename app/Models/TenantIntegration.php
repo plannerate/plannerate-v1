@@ -38,4 +38,9 @@ class TenantIntegration extends Model
     {
         return $this->belongsTo(Tenant::class);
     }
+
+    public function api(): BelongsTo
+    {
+        return $this->belongsTo(IntegrationApi::class, 'integration_type', 'slug');
+    }
 }
