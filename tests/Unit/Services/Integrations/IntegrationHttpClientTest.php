@@ -466,7 +466,7 @@ test('body-api importer uses configured body page size', function (): void {
         ],
     ]);
 
-    integrationImporter()->importResource($integration, 'products', 'products');
+    genericIntegrationImporter()->importResource($integration, 'products', 'products', integrationTestStore());
 
     Http::assertSent(function (Request $request): bool {
         return $request->url() === 'https://body-api.example.test/custom/products'
@@ -524,7 +524,7 @@ test('sales importer sends yesterday to today when tenant already has sales', fu
     $tenant->shouldReceive('execute')->once()->andReturn(true);
     $integration->setRelation('tenant', $tenant);
 
-    integrationImporter()->importResource($integration, 'sales', 'sales');
+    genericIntegrationImporter()->importResource($integration, 'sales', 'sales', integrationTestStore());
 
     Http::assertSent(function (Request $request): bool {
         parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
@@ -582,7 +582,7 @@ test('sales importer sends initial sales period when tenant has no sales', funct
     $tenant->shouldReceive('execute')->once()->andReturn(false);
     $integration->setRelation('tenant', $tenant);
 
-    integrationImporter()->importResource($integration, 'sales', 'sales');
+    genericIntegrationImporter()->importResource($integration, 'sales', 'sales', integrationTestStore());
 
     Http::assertSent(function (Request $request): bool {
         parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
@@ -679,7 +679,7 @@ test('query-api importer uses configured params page size', function (): void {
         ],
     ]);
 
-    integrationImporter()->importResource($integration, 'products', 'products');
+    genericIntegrationImporter()->importResource($integration, 'products', 'products', integrationTestStore());
 
     Http::assertSent(function (Request $request): bool {
         return $request->url() === 'https://query-api.example.test/Produtos/Produtos?registros_por_pagina=450&pagina=1&api-version=1.0';
@@ -718,9 +718,9 @@ test('query-api importer caches token between requests', function (): void {
         ],
     ]);
 
-    $importer = integrationImporter();
-    $importer->importResource($integration, 'products', 'products');
-    $importer->importResource($integration, 'products', 'products');
+    $importer = genericIntegrationImporter();
+    $importer->importResource($integration, 'products', 'products', integrationTestStore());
+    $importer->importResource($integration, 'products', 'products', integrationTestStore());
 
     Http::assertSentCount(3);
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://query-api.example.test/v1/Token');
@@ -760,7 +760,7 @@ test('body-api importer paginates products when total_paginas is returned', func
         ],
     ]);
 
-    integrationImporter()->importResource($integration, 'products', 'products');
+    genericIntegrationImporter()->importResource($integration, 'products', 'products', integrationTestStore());
 
     Http::assertSentCount(2);
     Carbon::setTestNow();
@@ -805,7 +805,7 @@ test('query-api importer paginates products when last_page is returned', functio
         ],
     ]);
 
-    integrationImporter()->importResource($integration, 'products', 'products');
+    genericIntegrationImporter()->importResource($integration, 'products', 'products', integrationTestStore());
 
     Http::assertSentCount(3);
 });
@@ -855,7 +855,7 @@ test('query-api importer paginates products when pagination.last_page is returne
         ],
     ]);
 
-    integrationImporter()->importResource($integration, 'products', 'products');
+    genericIntegrationImporter()->importResource($integration, 'products', 'products', integrationTestStore());
 
     Http::assertSentCount(3);
 });
@@ -872,6 +872,14 @@ function genericIntegrationImporter(): GenericIntegrationImporter
         new ImportBatchPayloadStore,
         new IntegrationResponseReader,
     );
+}
+
+function integrationTestStore(): Store
+{
+    $store = new Store;
+    $store->id = '01jts31n2rpz1tyy4n6xv4qdp0';
+
+    return $store;
 }
 
 /**

@@ -73,7 +73,7 @@ test('products incremental strategy uses initial window when target table is emp
         ],
     ]);
 
-    genericResourceImporter()->importResource($integration, 'products', 'products');
+    genericResourceImporter()->importResource($integration, 'products', 'products', genericImporterStore());
 
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.example.test/products?data_alteracao=2026-05-08&pagina=1');
 });
@@ -102,7 +102,7 @@ test('products incremental strategy uses yesterday when target table has rows', 
         'updated_at' => now(),
     ]);
 
-    genericResourceImporter()->importResource($integration, 'products', 'products');
+    genericResourceImporter()->importResource($integration, 'products', 'products', genericImporterStore());
 
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.example.test/products?data_alteracao=2026-05-09');
 });
@@ -170,6 +170,14 @@ function genericResourceImporter(): GenericIntegrationImporter
         new ImportBatchPayloadStore,
         new IntegrationResponseReader,
     );
+}
+
+function genericImporterStore(): Store
+{
+    $store = new Store;
+    $store->id = 'STORE-A';
+
+    return $store;
 }
 
 /**

@@ -27,7 +27,7 @@ class GenericIntegrationImporter
         private readonly ?ResolvedIntegrationConfigResolver $configResolver = null,
     ) {}
 
-    public function importResource(TenantIntegration $integration, string $resource, string $targetTable, ?Store $store = null): void
+    public function importResource(TenantIntegration $integration, string $resource, string $targetTable, Store $store): void
     {
         $request = $this->requestConfig($integration, $resource);
         $endpoint = $this->path($integration, $resource, (string) ($request['fallback_path'] ?? ''));
@@ -38,7 +38,7 @@ class GenericIntegrationImporter
                 'tenant_id' => (string) $integration->tenant_id,
                 'resource' => $resource,
                 'target_table' => $targetTable,
-                'store_id' => $store?->id,
+                'store_id' => $store->id,
                 'provider' => (string) $integration->integration_type,
             ]);
 
@@ -65,7 +65,7 @@ class GenericIntegrationImporter
         string $targetTable,
         array $request,
         string $endpoint,
-        ?Store $store,
+        Store $store,
         ?string $date = null,
     ): void {
         $currentPage = 1;
@@ -89,7 +89,7 @@ class GenericIntegrationImporter
                         'tenant_id' => (string) $integration->tenant_id,
                         'resource' => $resource,
                         'target_table' => $targetTable,
-                        'store_id' => $store?->id,
+                        'store_id' => $store->id,
                         'provider' => (string) $integration->integration_type,
                         'endpoint' => $endpoint,
                         'date' => $date,
@@ -114,8 +114,8 @@ class GenericIntegrationImporter
                 resource: $resource,
                 targetTable: $targetTable,
                 payloadKey: $payloadKey,
-                storeId: $store?->id,
-                storeDocument: $store?->document,
+                storeId: $store->id,
+                storeDocument: $store->document,
             );
 
             Log::info('Integração import page fetched.', [
@@ -123,7 +123,7 @@ class GenericIntegrationImporter
                 'tenant_id' => (string) $integration->tenant_id,
                 'resource' => $resource,
                 'target_table' => $targetTable,
-                'store_id' => $store?->id,
+                'store_id' => $store->id,
                 'provider' => (string) $integration->integration_type,
                 'date' => $date,
                 'page' => $currentPage,
@@ -144,7 +144,7 @@ class GenericIntegrationImporter
      */
     private function payload(
         TenantIntegration $integration,
-        ?Store $store,
+        Store $store,
         string $resource,
         string $targetTable,
         array $request,
@@ -172,10 +172,10 @@ class GenericIntegrationImporter
      * @param  array<string, mixed>  $request
      * @return array<string, mixed>
      */
-    private function storePayload(?Store $store, array $request): array
+    private function storePayload(Store $store, array $request): array
     {
         $field = (string) ($request['store_document_field'] ?? '');
-        $document = preg_replace('/\D+/', '', (string) $store?->document) ?? '';
+        $document = preg_replace('/\D+/', '', (string) $store->document) ?? '';
 
         return $field !== '' && $document !== '' ? [$field => $document] : [];
     }
@@ -186,7 +186,7 @@ class GenericIntegrationImporter
      */
     private function datePayload(
         TenantIntegration $integration,
-        ?Store $store,
+        Store $store,
         string $resource,
         string $targetTable,
         array $request,
@@ -315,7 +315,7 @@ class GenericIntegrationImporter
      * @param  array<string, mixed>  $request
      * @return list<string>
      */
-    private function salesDates(TenantIntegration $integration, string $targetTable, array $request, ?Store $store): array
+    private function salesDates(TenantIntegration $integration, string $targetTable, array $request, Store $store): array
     {
         $endDate = Carbon::today();
         $lookbackDays = $this->initialDays($integration, $targetTable, $request);
@@ -353,7 +353,7 @@ class GenericIntegrationImporter
      * @param  array<string, mixed>  $request
      * @return list<string>
      */
-    private function resolveMissingDates(TenantIntegration $integration, string $targetTable, array $request, ?Store $store, int $lookbackDays): array
+    private function resolveMissingDates(TenantIntegration $integration, string $targetTable, array $request, Store $store, int $lookbackDays): array
     {
         $tenant = $integration->tenant;
         if (! $tenant instanceof Tenant || ! $this->validTableName($targetTable)) {
@@ -383,7 +383,7 @@ class GenericIntegrationImporter
                 $query->whereNull('deleted_at');
             }
 
-            if ($store instanceof Store && is_string($store->id) && $store->id !== '' && Schema::connection($connection)->hasColumn($targetTable, 'store_id')) {
+            if (Schema::connection($connection)->hasColumn($targetTable, 'store_id')) {
                 $query->where('store_id', (string) $store->id);
             }
 
@@ -430,7 +430,7 @@ class GenericIntegrationImporter
         return 120;
     }
 
-    private function targetHasRows(TenantIntegration $integration, string $targetTable, ?Store $store = null): bool
+    private function targetHasRows(TenantIntegration $integration, string $targetTable, Store $store): bool
     {
         $tenant = $integration->tenant;
         if (! $tenant instanceof Tenant || ! $this->validTableName($targetTable)) {
@@ -453,7 +453,7 @@ class GenericIntegrationImporter
                 $query->whereNull('deleted_at');
             }
 
-            if ($store instanceof Store && is_string($store->id) && $store->id !== '' && Schema::connection($connection)->hasColumn($targetTable, 'store_id')) {
+            if (Schema::connection($connection)->hasColumn($targetTable, 'store_id')) {
                 $query->where('store_id', (string) $store->id);
             }
 
