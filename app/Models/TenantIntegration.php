@@ -41,6 +41,6 @@ class TenantIntegration extends Model
 
     public function api(): BelongsTo
     {
-        return $this->belongsTo(IntegrationApi::class, 'integration_type', 'slug');
+        return $this->belongsTo(IntegrationApi::class, 'integration_type', 'id');
     }
 }

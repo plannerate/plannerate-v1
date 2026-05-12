@@ -89,15 +89,16 @@ class TenantIntegrationController extends Controller
 
         $payload = $request->integrationPayload();
         // $resolvedPayload = $this->resolvedIntegrationPayload($payload, $configResolver);
-
-        // Storage::disk('local')->put(
-        //     $tenant->id.'/last_payload.json',
-        //     json_encode($resolvedPayload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
-        // );
-
         TenantIntegration::query()->updateOrCreate(
             ['tenant_id' => $tenant->id],
             $payload,
+        );
+
+        $payload['api'] = IntegrationApi::query()->where('id', $payload['integration_type'])->first()?->toArray();
+
+        Storage::disk('local')->put(
+            $tenant->id.'/last_payload.json',
+            json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
         );
 
         Inertia::flash('toast', [
