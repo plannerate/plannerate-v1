@@ -17,6 +17,13 @@ class DispatchDailyImportsCommand extends Command
     {
         $integrations = TenantIntegration::query()
             ->where('is_active', true)
+            ->whereExists(function ($query): void {
+                $query->selectRaw('1')
+                    ->from('integration_apis')
+                    ->whereColumn('integration_apis.slug', 'tenant_integrations.integration_type')
+                    ->where('integration_apis.is_active', true)
+                    ->whereNull('integration_apis.deleted_at');
+            })
             ->orderBy('tenant_id')
             ->get(['id', 'tenant_id', 'integration_type', 'config', 'is_active']);
 
