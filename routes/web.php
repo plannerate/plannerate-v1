@@ -5,6 +5,7 @@ use App\Http\Controllers\Landlord\DashboardController as LandlordDashboardContro
 use App\Http\Controllers\Landlord\EanReferenceController as LandlordEanReferenceController;
 use App\Http\Controllers\Landlord\IntegrationApiController;
 use App\Http\Controllers\Landlord\ModuleController;
+use App\Http\Controllers\Landlord\NotificationController as LandlordNotificationController;
 use App\Http\Controllers\Landlord\PermissionController;
 use App\Http\Controllers\Landlord\PlanController;
 use App\Http\Controllers\Landlord\RoleController;
@@ -91,6 +92,18 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::resource('useful-links', UsefulLinkController::class)
         ->except(['show'])
         ->names('landlord.useful-links');
+
+    Route::post('notifications/read-all', [LandlordNotificationController::class, 'markAllRead'])
+        ->name('landlord.notifications.read-all');
+    Route::delete('notifications', [LandlordNotificationController::class, 'destroyAll'])
+        ->name('landlord.notifications.destroy-all');
+    Route::patch('notifications/{id}/read', [LandlordNotificationController::class, 'markRead'])
+        ->name('landlord.notifications.read');
+    Route::get('notifications/{id}/download', [LandlordNotificationController::class, 'download'])
+        ->name('landlord.notifications.download');
+    Route::delete('notifications/{id}', [LandlordNotificationController::class, 'destroy'])
+        ->name('landlord.notifications.destroy');
+
     Route::post('ean-references/image/upload', [LandlordEanReferenceController::class, 'uploadImage'])
         ->name('landlord.ean-references.image.upload');
     Route::post('ean-references/{ean_reference}/fetch-image', [LandlordEanReferenceController::class, 'fetchImage'])
