@@ -294,6 +294,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'date_start' => 'Data inicial',
                 'date_end' => 'Data final',
                 'unique_by' => 'Campos únicos (unique_by)',
+                'include_store_in_id' => 'ID por loja',
                 'field_map' => 'Mapeamento de campos',
                 'internal_field' => 'Campo interno',
                 'api_field' => 'Campo da API',

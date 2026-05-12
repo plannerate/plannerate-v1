@@ -12,6 +12,7 @@ export type RequestPathRow = {
     target_table: string;
     fallback_path: string;
     unique_by: string;
+    include_store_in_id: boolean;
     changed_since: string;
     start: string;
     end: string;

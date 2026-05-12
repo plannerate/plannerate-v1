@@ -137,6 +137,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 target_table: valueToInput(pathConfig.target_table || (props.fieldMapTables[name] ? name : '')),
                 fallback_path: valueToInput(pathConfig.fallback_path),
                 unique_by: arrayOfStrings(pathConfig.unique_by).join(', '),
+                include_store_in_id: pathConfig.include_store_in_id === true,
                 changed_since: valueToInput(parseObjectValue(pathConfig.date_fields).changed_since),
                 start: valueToInput(parseObjectValue(pathConfig.date_fields).start),
                 end: valueToInput(parseObjectValue(pathConfig.date_fields).end),
@@ -153,6 +154,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 target_table: 'products',
                 fallback_path: '/hubprodutos.listar_produtos',
                 unique_by: '',
+                include_store_in_id: false,
                 changed_since: 'data_ultima_alteracao',
                 start: '',
                 end: '',
@@ -164,6 +166,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 target_table: 'sales',
                 fallback_path: '/hubvendas.vendas_produtos',
                 unique_by: '',
+                include_store_in_id: true,
                 changed_since: '',
                 start: 'data_inicial',
                 end: 'data_final',
@@ -228,6 +231,7 @@ function buildRequestsPayload(): Record<string, unknown> {
             target_table: requestPath.target_table,
             fallback_path: requestPath.fallback_path,
             ...(uniqueBy.length > 0 ? { unique_by: uniqueBy } : {}),
+            ...(requestPath.include_store_in_id ? { include_store_in_id: true } : {}),
         };
 
         const dateFields = {

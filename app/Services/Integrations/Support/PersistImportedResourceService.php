@@ -80,6 +80,8 @@ class PersistImportedResourceService
         $columns = Schema::connection($connectionName)->getColumnListing($targetTable);
         $columnSet = array_fill_keys($columns, true);
         $config = $this->configResolver->resolve($integration);
+        $request = $config->request($resource);
+        $includeStoreInId = (bool) ($request['include_store_in_id'] ?? false);
         $uniqueBy = $this->effectiveUniqueBy($config, $resource, $columnSet);
 
         Log::info('Persistência de recurso: unique_by resolvido.', [
@@ -149,7 +151,7 @@ class PersistImportedResourceService
             }
 
             if (isset($columnSet['id']) && ! $this->hasValue($row['id'] ?? null)) {
-                $row['id'] = $this->deterministicId($tenantId, $targetTable, $row, $uniqueBy);
+                $row['id'] = $this->deterministicId($tenantId, $targetTable, $row, $uniqueBy, $includeStoreInId);
             }
 
             if (! $this->hasUniqueValues($row, $uniqueBy)) {
@@ -278,9 +280,9 @@ class PersistImportedResourceService
      * @param  array<string, mixed>  $row
      * @param  list<string>  $uniqueBy
      */
-    private function deterministicId(string $tenantId, string $targetTable, array $row, array $uniqueBy): string
+    private function deterministicId(string $tenantId, string $targetTable, array $row, array $uniqueBy, bool $includeStoreInId = false): string
     {
-        $storeId = (string) ($row['store_id'] ?? '');
+        $storeId = $includeStoreInId ? (string) ($row['store_id'] ?? '') : '';
         $identity = collect($uniqueBy)
             ->filter(fn (string $column): bool => ! in_array($column, ['tenant_id', 'store_id'], true))
             ->map(fn (string $column): string => (string) ($row[$column] ?? ''))

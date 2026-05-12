@@ -25,6 +25,7 @@ function newPath(): RequestPathRow {
         target_table: '',
         fallback_path: '',
         unique_by: '',
+        include_store_in_id: false,
         changed_since: '',
         start: '',
         end: '',
@@ -143,8 +144,8 @@ const tableOptions = computed(() => Object.entries(props.fieldMapTables));
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 gap-3">
-                    <div class="grid gap-2">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
+                    <div class="grid gap-2 md:col-span-10">
                         <Label :for="`path-unique-by-${requestPath.id}`">{{ t('app.landlord.integration_apis.fields.unique_by') }}</Label>
                         <Input
                             :id="`path-unique-by-${requestPath.id}`"
@@ -152,6 +153,20 @@ const tableOptions = computed(() => Object.entries(props.fieldMapTables));
                             :placeholder="t('app.landlord.integration_apis.placeholders.unique_by')"
                             @update:model-value="updatePath(pathIndex, { unique_by: String($event) })"
                         />
+                    </div>
+                    <div class="flex flex-col justify-end gap-2 md:col-span-2">
+                        <Label :for="`path-store-id-${requestPath.id}`" class="text-xs leading-tight">
+                            {{ t('app.landlord.integration_apis.fields.include_store_in_id') }}
+                        </Label>
+                        <div class="flex h-9 items-center">
+                            <input
+                                :id="`path-store-id-${requestPath.id}`"
+                                type="checkbox"
+                                :checked="requestPath.include_store_in_id"
+                                class="size-4 rounded border-input accent-primary"
+                                @change="updatePath(pathIndex, { include_store_in_id: ($event.target as HTMLInputElement).checked })"
+                            />
+                        </div>
                     </div>
                 </div>
 
