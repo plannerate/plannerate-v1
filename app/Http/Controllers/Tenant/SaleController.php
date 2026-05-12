@@ -188,7 +188,7 @@ class SaleController extends Controller
         $sale = Sale::query()->findOrFail($sale);
         $this->authorize('delete', $sale);
 
-        $sale->delete();
+        $sale->forceDelete();
 
         Inertia::flash('toast', [
             'type' => 'success',

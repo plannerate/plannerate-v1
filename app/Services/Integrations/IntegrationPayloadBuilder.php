@@ -24,17 +24,15 @@ class IntegrationPayloadBuilder
     ) {}
 
     /**
-     * Monta o payload final para a página 1.
-     *
      * @param  bool  $useMinPageSize  Usa min_page_size em vez de max (para chamadas de descoberta)
      * @return array<string, mixed>
      */
-    public function build(?string $dateStart, ?string $dateEnd, ?string $storeDocument = null, bool $useMinPageSize = false): array
+    public function build(?string $dateStart, ?string $dateEnd, ?string $storeDocument = null, bool $useMinPageSize = false, int $page = 1): array
     {
         $method = strtolower((string) data_get($this->requests, 'method', 'get'));
 
         $payload = $this->baseParams($method);
-        $payload = $this->applyPagination($payload, $useMinPageSize);
+        $payload = $this->applyPagination($payload, $useMinPageSize, $page);
         $payload = $this->applyDateFields($payload, $dateStart, $dateEnd);
         $payload = $this->applyStoreDocument($payload, $storeDocument);
 
@@ -74,13 +72,13 @@ class IntegrationPayloadBuilder
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
-    private function applyPagination(array $payload, bool $useMinPageSize = false): array
+    private function applyPagination(array $payload, bool $useMinPageSize = false, int $page = 1): array
     {
         $pageSize = $useMinPageSize
             ? (int) data_get($this->requests, 'min_page_size', 1)
             : (int) data_get($this->requests, 'max_page_size', 100);
 
-        $payload[(string) data_get($this->requests, 'page_field', 'page')] = 1;
+        $payload[(string) data_get($this->requests, 'page_field', 'page')] = $page;
         $payload[(string) data_get($this->requests, 'page_size_field', 'per_page')] = $pageSize;
 
         return $payload;
