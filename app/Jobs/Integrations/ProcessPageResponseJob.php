@@ -12,6 +12,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
+use Throwable;
 
 /**
  * Lê o arquivo de registros já mapeados pelo FetchIntegrationPageJob
@@ -79,6 +80,18 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
         $this->deleteFile();
     }
 
+    public function failed(Throwable $exception): void
+    {
+        Log::warning('ProcessPageResponseJob: job falhou, removendo arquivo temporário', [
+            'integration_id' => $this->integrationId,
+            'path_key' => $this->pathKey,
+            'file' => $this->filePath,
+            'error' => $exception->getMessage(),
+        ]);
+
+        $this->deleteFile();
+    }
+
     // ─── Leitura ─────────────────────────────────────────────────────────────
 
     /** @return array<int, array<string, mixed>>|null */
@@ -112,7 +125,18 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
 
     private function deleteFile(): void
     {
-        Storage::disk('local')->delete($this->filePath);
+        $disk = Storage::disk('local');
+
+        if (! $disk->exists($this->filePath)) {
+            return;
+        }
+
+        if (! $disk->delete($this->filePath)) {
+            Log::warning('ProcessPageResponseJob: falha ao remover arquivo temporário', [
+                'integration_id' => $this->integrationId,
+                'file' => $this->filePath,
+            ]);
+        }
     }
 
     // ─── Carregamento ────────────────────────────────────────────────────────
