@@ -18,6 +18,16 @@ type IntegrationProcessFinishedPayload = {
     errorMessage?: string | null;
 };
 
+type IntegrationProcessStartedPayload = {
+    tenant_id?: string;
+    tenantId?: string;
+    integration_id?: string;
+    integrationId?: string;
+    resource?: string;
+    reference_date?: string;
+    referenceDate?: string;
+};
+
 const page = usePage();
 const { t } = useT();
 const isEchoConfigured = typeof window !== 'undefined' && window.__plannerateEchoConfigured === true;
@@ -29,6 +39,16 @@ const tenantId = computed(() => {
 });
 
 if (isEchoConfigured && tenantId.value) {
+    useEcho(`tenant.${tenantId.value}`, '.integration.process.started', (raw: IntegrationProcessStartedPayload) => {
+        const resource = raw.resource ?? 'integration';
+        const referenceDate = raw.reference_date ?? raw.referenceDate ?? 'N/A';
+
+        toast.info(t('app.landlord.tenant_integrations.messages.process_started_detail', {
+            resource,
+            date: referenceDate,
+        }));
+    });
+
     useEcho(`tenant.${tenantId.value}`, '.integration.process.finished', (raw: IntegrationProcessFinishedPayload) => {
         const resource = raw.resource ?? 'integration';
         const referenceDate = raw.reference_date ?? raw.referenceDate ?? 'N/A';

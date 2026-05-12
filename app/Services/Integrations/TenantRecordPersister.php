@@ -58,23 +58,23 @@ class TenantRecordPersister
      */
     private static function logPersistStart(string $integrationId, string $targetTable, array $records, array $pivotConfigs): void
     {
-        Log::debug('TenantRecordPersister: iniciando persist', [
-            'integration_id' => $integrationId,
-            'target_table' => $targetTable,
-            'records' => count($records),
-            'pivot_configs' => count($pivotConfigs),
-            'pivot_tables' => array_column($pivotConfigs, 'table'),
-            'first_record_keys' => array_keys($records[0] ?? []),
-        ]);
+        // Log::debug('TenantRecordPersister: iniciando persist', [
+        //     'integration_id' => $integrationId,
+        //     'target_table' => $targetTable,
+        //     'records' => count($records),
+        //     'pivot_configs' => count($pivotConfigs),
+        //     'pivot_tables' => array_column($pivotConfigs, 'table'),
+        //     'first_record_keys' => array_keys($records[0] ?? []),
+        // ]);
     }
 
     private static function logPersistFinished(string $integrationId, string $targetTable, int $upserted): void
     {
-        Log::info('TenantRecordPersister: registros persistidos', [
-            'integration_id' => $integrationId,
-            'target_table' => $targetTable,
-            'upserted' => $upserted,
-        ]);
+        // Log::info('TenantRecordPersister: registros persistidos', [
+        //     'integration_id' => $integrationId,
+        //     'target_table' => $targetTable,
+        //     'upserted' => $upserted,
+        // ]);
     }
 
     /**

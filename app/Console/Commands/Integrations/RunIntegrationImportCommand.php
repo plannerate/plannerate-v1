@@ -2,12 +2,16 @@
 
 namespace App\Console\Commands\Integrations;
 
+use App\Events\Tenant\IntegrationProcessFinished;
+use App\Events\Tenant\IntegrationProcessStarted;
 use App\Jobs\Integrations\DiscoverIntegrationPagesJob;
 use App\Models\TenantIntegration;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class RunIntegrationImportCommand extends Command
 {
@@ -28,9 +32,45 @@ class RunIntegrationImportCommand extends Command
         $this->info(sprintf('Integrações ativas: %d', $integrations->count()));
 
         $totalJobs = 0;
+        $referenceDate = now()->toDateString();
 
         foreach ($integrations as $integration) {
-            $totalJobs += $this->processIntegration($integration);
+            $tenantId = (string) $integration->tenant_id;
+            $integrationId = (string) $integration->id;
+
+            event(new IntegrationProcessStarted(
+                tenantId: $tenantId,
+                integrationId: $integrationId,
+                resource: 'integration_import',
+                referenceDate: $referenceDate,
+            ));
+
+            try {
+                $totalJobs += $this->processIntegration($integration);
+
+                event(new IntegrationProcessFinished(
+                    tenantId: $tenantId,
+                    integrationId: $integrationId,
+                    resource: 'integration_import',
+                    referenceDate: $referenceDate,
+                    status: 'success',
+                ));
+            } catch (Throwable $exception) {
+                event(new IntegrationProcessFinished(
+                    tenantId: $tenantId,
+                    integrationId: $integrationId,
+                    resource: 'integration_import',
+                    referenceDate: $referenceDate,
+                    status: 'failed',
+                    errorMessage: $exception->getMessage(),
+                ));
+
+                Log::error('RunIntegrationImportCommand: falha ao processar integração', [
+                    'integration_id' => $integrationId,
+                    'tenant_id' => $tenantId,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
         }
 
         $this->info(sprintf('Jobs de descoberta despachados: %d (queue: imports).', $totalJobs));

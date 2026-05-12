@@ -42,16 +42,6 @@ class TenantPivotRecordPersister
         $relatedKey = $normalizedConfig['related_key'];
         $uniqueBy = $normalizedConfig['unique_by'];
 
-        Log::debug('TenantPivotRecordPersister: persistindo pivot', [
-            'table' => $table,
-            'local_key' => $localKey,
-            'foreign_key' => $foreignKey,
-            'related_key' => $relatedKey,
-            'unique_by' => $uniqueBy,
-            'records' => count($records),
-            'sample_related_values' => array_slice(array_column($records, $relatedKey), 0, 3),
-        ]);
-
         if (! self::isValidPivotConfig($normalizedConfig)) {
             Log::warning('TenantPivotRecordPersister: pivot config incompleta', [
                 'table' => $table,
@@ -161,13 +151,6 @@ class TenantPivotRecordPersister
 
             $rows[] = $row;
         }
-
-        Log::debug('TenantPivotRecordPersister: pivot rows construídos', [
-            'table' => $pivotConfig['table'],
-            'rows' => count($rows),
-            'skipped_null' => $skipped,
-            'sample' => array_slice($rows, 0, 2),
-        ]);
 
         return $rows;
     }

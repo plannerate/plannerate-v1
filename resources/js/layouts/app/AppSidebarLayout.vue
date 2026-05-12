@@ -6,7 +6,7 @@ import AppShell from '@/components/AppShell.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
 import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
 import TenantCategoriesImportListener from '@/components/broadcast/TenantCategoriesImportListener.vue';
-import TenantIntegrationProcessFinishedListener from '@/components/broadcast/TenantIntegrationProcessFinishedListener.vue';
+import TenantIntegrationProcessListener from '@/components/broadcast/TenantIntegrationProcessListener.vue';
 import { Toaster } from '@/components/ui/sonner';
 import type { BreadcrumbItem, LayoutPageHeader } from '@/types';
 
@@ -38,7 +38,7 @@ const hasEchoPrivateTenantChannel = computed(() => {
 <template>
     <AppShell variant="sidebar">
         <TenantCategoriesImportListener v-if="hasEchoPrivateChannelUser" />
-        <TenantIntegrationProcessFinishedListener v-if="hasEchoPrivateTenantChannel" />
+        <TenantIntegrationProcessListener v-if="hasEchoPrivateTenantChannel" />
         <AppSidebar />
         <AppContent variant="sidebar" class="overflow-x-hidden">
             <AppSidebarHeader :breadcrumbs="breadcrumbs" :page-header="pageHeader">
