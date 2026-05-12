@@ -7,7 +7,8 @@ use Tests\TestCase;
 uses(TestCase::class);
 
 it('filters columns, normalizes ids, and keeps the last duplicate record', function (): void {
-    Log::shouldReceive('warning')->twice();
+    Log::shouldReceive('warning')->once();
+    Log::shouldReceive('info')->once();
 
     $prepared = TenantUpsertRecordPreparer::prepare(
         [
@@ -43,4 +44,21 @@ it('resolves upsert update columns excluding id and created_at', function (): vo
     ]);
 
     expect($columns)->toBe(['name', 'tenant_id', 'updated_at']);
+});
+
+it('deduplicates by normalized id and discards invalid ids', function (): void {
+    Log::shouldReceive('info')->once();
+
+    $rows = TenantUpsertRecordPreparer::deduplicateById([
+        ['id' => '  item-1  ', 'name' => 'First'],
+        ['id' => 'item-1', 'name' => 'Second'],
+        ['id' => '', 'name' => 'Invalid empty'],
+        ['id' => null, 'name' => 'Invalid null'],
+        ['id' => 'item-2', 'name' => 'Another'],
+    ]);
+
+    expect($rows)->toBe([
+        ['id' => 'item-1', 'name' => 'Second'],
+        ['id' => 'item-2', 'name' => 'Another'],
+    ]);
 });

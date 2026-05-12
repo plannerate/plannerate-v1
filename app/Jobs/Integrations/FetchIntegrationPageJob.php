@@ -8,6 +8,7 @@ use App\Services\Integrations\FieldValueResolver;
 use App\Services\Integrations\IntegrationHttpClient;
 use App\Services\Integrations\IntegrationPayloadBuilder;
 use App\Services\Integrations\RecordMapper;
+use App\Services\Integrations\TenantUpsertRecordPreparer;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -195,7 +196,20 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             ]);
         }
 
-        return array_values($mappedRecords);
+        $deduplicatedRecords = TenantUpsertRecordPreparer::deduplicateById($mappedRecords);
+        $removedDuplicates = count($mappedRecords) - count($deduplicatedRecords);
+
+        if ($removedDuplicates > 0) {
+            Log::info('FetchIntegrationPageJob: registros duplicados deduplicados no fetch', [
+                'integration_id' => $integrationId,
+                'path_key' => $this->pathKey,
+                'page' => $this->page,
+                'store_id' => $this->storeId,
+                'removed' => $removedDuplicates,
+            ]);
+        }
+
+        return array_values($deduplicatedRecords);
     }
 
     /** @param array<int, array<string, mixed>> $records */

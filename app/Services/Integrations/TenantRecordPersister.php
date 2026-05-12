@@ -148,19 +148,17 @@ class TenantRecordPersister
         $upserted = 0;
 
         foreach (array_chunk($records, self::CHUNK_SIZE) as $chunk) {
-            $deduplicatedChunk = TenantUpsertRecordPreparer::deduplicateById($chunk);
-
-            if ($deduplicatedChunk === []) {
+            if ($chunk === []) {
                 continue;
             }
 
             self::tenantConnection()->table($targetTable)->upsert(
-                $deduplicatedChunk,
+                $chunk,
                 ['id'],
                 $updateColumns,
             );
 
-            $upserted += count($deduplicatedChunk);
+            $upserted += count($chunk);
         }
 
         return $upserted;

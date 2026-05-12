@@ -51,15 +51,9 @@ class TenantUpsertRecordPreparer
         $duplicates = [];
 
         foreach ($rows as $row) {
-            $id = $row['id'] ?? null;
+            $normalizedId = self::normalizeId($row['id'] ?? null);
 
-            if (! is_scalar($id) || (string) $id === '') {
-                continue;
-            }
-
-            $normalizedId = trim((string) $id);
-
-            if ($normalizedId === '') {
+            if ($normalizedId === null) {
                 continue;
             }
 
@@ -73,13 +67,24 @@ class TenantUpsertRecordPreparer
         }
 
         if ($duplicates !== []) {
-            Log::warning('TenantUpsertRecordPreparer: ids duplicados detectados no lote', [
+            Log::info('TenantUpsertRecordPreparer: ids duplicados detectados no lote', [
                 'count' => count($duplicates),
                 'sample' => array_slice(array_keys($duplicates), 0, 10),
             ]);
         }
 
         return array_values($indexed);
+    }
+
+    private static function normalizeId(mixed $id): ?string
+    {
+        if (! is_scalar($id) || (string) $id === '') {
+            return null;
+        }
+
+        $normalizedId = trim((string) $id);
+
+        return $normalizedId !== '' ? $normalizedId : null;
     }
 
     /**
