@@ -40,7 +40,7 @@ const notifications = ref<AppNotification[]>((auth.value.notifications ?? []) as
 const unreadCount = ref<number>(auth.value.unread_count ?? 0);
 
 onClickOutside(panelRef, () => {
- isOpen.value = false; 
+    isOpen.value = false;
 });
 
 const connectionStatus = isEchoConfigured ? useConnectionStatus() : ref<ConnectionStatus>('disconnected');
@@ -74,28 +74,28 @@ function relativeTime(iso: string): string {
     const mins = Math.floor(diff / 60000);
 
     if (mins < 1) {
-return 'agora';
-}
+        return 'agora';
+    }
 
     if (mins < 60) {
-return `${mins}min atrás`;
-}
+        return `${mins}min atrás`;
+    }
 
     const hrs = Math.floor(mins / 60);
 
     if (hrs < 24) {
-return `${hrs}h atrás`;
-}
+        return `${hrs}h atrás`;
+    }
 
     const days = Math.floor(hrs / 24);
 
     if (days === 1) {
-return '1d atrás';
-}
+        return '1d atrás';
+    }
 
     if (days < 7) {
-return `${days}d atrás`;
-}
+        return `${days}d atrás`;
+    }
 
     return new Date(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
 }
@@ -107,12 +107,12 @@ function dayBucket(iso: string): string {
     yesterday.setDate(today.getDate() - 1);
 
     if (d.toDateString() === today.toDateString()) {
-return 'hoje';
-}
+        return 'hoje';
+    }
 
     if (d.toDateString() === yesterday.toDateString()) {
-return 'ontem';
-}
+        return 'ontem';
+    }
 
     return 'anteriores';
 }
@@ -151,20 +151,20 @@ const typeIcon = (type: NotificationData['notification_type']) =>
     ({ info: Info, success: CheckCircle2, warning: AlertTriangle, error: XCircle }[type] ?? Info);
 
 const typeIconBg = (type: NotificationData['notification_type']) =>
-    ({
-        info: 'bg-blue-500/10 dark:bg-blue-500/15',
-        success: 'bg-green-500/10 dark:bg-green-500/15',
-        warning: 'bg-yellow-500/10 dark:bg-yellow-500/15',
-        error: 'bg-destructive/10 dark:bg-destructive/15',
-    }[type] ?? 'bg-blue-500/10');
+({
+    info: 'bg-blue-500/10 dark:bg-blue-500/15',
+    success: 'bg-green-500/10 dark:bg-green-500/15',
+    warning: 'bg-yellow-500/10 dark:bg-yellow-500/15',
+    error: 'bg-destructive/10 dark:bg-destructive/15',
+}[type] ?? 'bg-blue-500/10');
 
 const typeIconColor = (type: NotificationData['notification_type']) =>
-    ({
-        info: 'text-blue-600 dark:text-blue-400',
-        success: 'text-green-600 dark:text-green-400',
-        warning: 'text-yellow-600 dark:text-yellow-400',
-        error: 'text-destructive',
-    }[type] ?? 'text-blue-600');
+({
+    info: 'text-blue-600 dark:text-blue-400',
+    success: 'text-green-600 dark:text-green-400',
+    warning: 'text-yellow-600 dark:text-yellow-400',
+    error: 'text-destructive',
+}[type] ?? 'text-blue-600');
 
 // --- Actions ---
 
@@ -173,8 +173,8 @@ function markAllRead() {
         preserveScroll: true,
         onSuccess: () => {
             notifications.value.forEach((n) => {
- n.read_at = n.read_at ?? new Date().toISOString(); 
-});
+                n.read_at = n.read_at ?? new Date().toISOString();
+            });
             unreadCount.value = 0;
         },
     });
@@ -201,8 +201,8 @@ function destroy(id: string) {
                 notifications.value.splice(idx, 1);
 
                 if (wasUnread) {
-unreadCount.value = Math.max(0, unreadCount.value - 1);
-}
+                    unreadCount.value = Math.max(0, unreadCount.value - 1);
+                }
             }
         },
     });
@@ -214,77 +214,49 @@ const getDownloadUrl = (id: string) => downloadRoute.url({ subdomain, id });
 <template>
     <div ref="panelRef" class="relative">
         <!-- Trigger -->
-        <button
-            type="button"
+        <button type="button"
             class="relative flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             :aria-label="`Notificações${unreadCount > 0 ? ` (${unreadCount} não lidas)` : ''}`"
-            @click="isOpen = !isOpen"
-        >
+            @click="isOpen = !isOpen">
             <Bell class="size-4" />
-            <span
-                v-if="unreadCount > 0"
-                class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold leading-none text-primary-foreground"
-            >
+            <span v-if="unreadCount > 0"
+                class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold leading-none text-primary-foreground">
                 {{ unreadCount > 99 ? '99+' : unreadCount }}
             </span>
         </button>
 
         <!-- Panel -->
-        <Transition
-            enter-active-class="transition duration-150 ease-out"
-            enter-from-class="scale-95 opacity-0"
-            enter-to-class="scale-100 opacity-100"
-            leave-active-class="transition duration-100 ease-in"
-            leave-from-class="scale-100 opacity-100"
-            leave-to-class="scale-95 opacity-0"
-        >
-            <div
-                v-if="isOpen"
-                role="dialog"
-                aria-label="Painel de notificações"
-                class="absolute right-0 top-[calc(100%+8px)] z-50 w-80 origin-top-right overflow-hidden rounded-xl border border-border bg-popover shadow-xl shadow-black/10 ring-1 ring-border/40"
-            >
+        <Transition enter-active-class="transition duration-150 ease-out" enter-from-class="scale-95 opacity-0"
+            enter-to-class="scale-100 opacity-100" leave-active-class="transition duration-100 ease-in"
+            leave-from-class="scale-100 opacity-100" leave-to-class="scale-95 opacity-0">
+            <div v-if="isOpen" role="dialog" aria-label="Painel de notificações"
+                class="absolute right-0 top-[calc(100%+8px)] z-50 w-80 origin-top-right overflow-hidden rounded-xl border border-border bg-popover shadow-xl shadow-black/10 ring-1 ring-border/40">
                 <!-- Header -->
                 <div class="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-3">
                     <div class="flex items-center gap-2">
                         <h3 class="text-sm font-semibold text-foreground">Notificações</h3>
-                        <span
-                            class="flex items-center gap-1 text-[10px] font-medium text-muted-foreground"
-                            :title="connConfig.label"
-                        >
-                            <component
-                                :is="connConfig.icon"
-                                :class="['size-2.5', connConfig.color, connectionStatus === 'connecting' || connectionStatus === 'reconnecting' ? 'animate-spin' : '']"
-                            />
+                        <span class="flex items-center gap-1 text-[10px] font-medium text-muted-foreground"
+                            :title="connConfig.label">
+                            <component :is="connConfig.icon"
+                                :class="['size-2.5', connConfig.color, connectionStatus === 'connecting' || connectionStatus === 'reconnecting' ? 'animate-spin' : '']" />
                             <span class="hidden sm:inline">{{ connConfig.label }}</span>
                         </span>
                     </div>
                     <div class="flex items-center gap-1">
-                        <button
-                            v-if="unreadCount > 0"
-                            type="button"
-                            title="Marcar todas como lidas"
+                        <button v-if="unreadCount > 0" type="button" title="Marcar todas como lidas"
                             class="flex items-center gap-1 rounded px-1.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                            @click="markAllRead"
-                        >
+                            @click="markAllRead">
                             <CheckCheck class="size-3" />
-                            <span>Ler todas</span>
+                            <span class="sr-only">Ler todas</span>
                         </button>
-                        <button
-                            v-if="notifications.length > 0"
-                            type="button"
-                            title="Limpar todas as notificações"
+                        <button v-if="notifications.length > 0" type="button" title="Limpar todas as notificações"
                             class="flex items-center gap-1 rounded px-1.5 py-1 text-[11px] font-medium text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
-                            @click="destroyAll"
-                        >
+                            @click="destroyAll">
                             <Trash2 class="size-3" />
                         </button>
-                        <button
-                            type="button"
-                            title="Fechar"
+                        <button type="button" title="Fechar"
                             class="flex size-6 items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-accent hover:text-foreground"
-                            @click="isOpen = false"
-                        >
+                            @click="isOpen = false">
                             <X class="size-3.5" />
                         </button>
                     </div>
@@ -295,54 +267,52 @@ const getDownloadUrl = (id: string) => downloadRoute.url({ subdomain, id });
                     <template v-if="notifications.length > 0">
                         <div v-for="group in groupedNotifications" :key="group.key">
                             <!-- Day header (sticky) -->
-                            <div class="sticky top-0 z-10 border-b border-border/40 bg-popover/80 px-4 py-1.5 backdrop-blur-sm">
-                                <span class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                            <div
+                                class="sticky top-0 z-10 border-b border-border/40 bg-popover/80 px-4 py-1.5 backdrop-blur-sm">
+                                <span
+                                    class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
                                     {{ group.label }}
                                 </span>
                             </div>
 
                             <!-- Items -->
-                            <div
-                                v-for="n in group.items"
-                                :key="n.id"
-                                :class="[
-                                    'group/item flex cursor-pointer items-start gap-3 px-4 py-3 transition-colors hover:bg-accent/50',
-                                    !n.read_at && 'bg-primary/[0.03] dark:bg-primary/[0.06]',
-                                ]"
-                            >
+                            <div v-for="n in group.items" :key="n.id" :class="[
+                                'group/item flex cursor-pointer items-start gap-3 px-4 py-3 transition-colors hover:bg-accent/50',
+                                !n.read_at && 'bg-primary/[0.03] dark:bg-primary/[0.06]',
+                            ]">
                                 <!-- Icon bg -->
-                                <div :class="['mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg', typeIconBg(n.data.notification_type)]">
-                                    <component :is="typeIcon(n.data.notification_type)" :class="['size-3.5', typeIconColor(n.data.notification_type)]" />
+                                <div
+                                    :class="['mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg', typeIconBg(n.data.notification_type)]">
+                                    <component :is="typeIcon(n.data.notification_type)"
+                                        :class="['size-3.5', typeIconColor(n.data.notification_type)]" />
                                 </div>
 
                                 <!-- Content -->
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-start justify-between gap-2">
-                                        <p :class="['truncate text-sm leading-tight', !n.read_at ? 'font-semibold text-foreground' : 'font-medium text-foreground/80']">
+                                        <p
+                                            :class="['truncate text-sm leading-tight', !n.read_at ? 'font-semibold text-foreground' : 'font-medium text-foreground/80']">
                                             {{ n.data.title }}
                                         </p>
-                                        <span v-if="!n.read_at" class="mt-1 size-1.5 shrink-0 rounded-full bg-primary" title="Não lida" />
+                                        <span v-if="!n.read_at" class="mt-1 size-1.5 shrink-0 rounded-full bg-primary"
+                                            title="Não lida" />
                                     </div>
-                                    <p class="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{{ n.data.message }}</p>
-                                    <a
-                                        v-if="n.data.download_url"
-                                        :href="getDownloadUrl(n.id)"
+                                    <p class="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{{ n.data.message }}
+                                    </p>
+                                    <a v-if="n.data.download_url" :href="getDownloadUrl(n.id)"
                                         class="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                                        @click.stop
-                                    >
+                                        @click.stop>
                                         <Download class="size-3" />
                                         Baixar
                                     </a>
-                                    <p class="mt-1 text-[10px] text-muted-foreground/60">{{ relativeTime(n.created_at) }}</p>
+                                    <p class="mt-1 text-[10px] text-muted-foreground/60">{{ relativeTime(n.created_at)
+                                        }}</p>
                                 </div>
 
                                 <!-- Remove on hover -->
-                                <button
-                                    type="button"
-                                    title="Remover notificação"
+                                <button type="button" title="Remover notificação"
                                     class="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground/40 opacity-0 transition-[opacity,colors] hover:bg-destructive/10 hover:text-destructive group-hover/item:opacity-100"
-                                    @click.stop="destroy(n.id)"
-                                >
+                                    @click.stop="destroy(n.id)">
                                     <X class="size-3.5" />
                                 </button>
                             </div>
@@ -356,10 +326,12 @@ const getDownloadUrl = (id: string) => downloadRoute.url({ subdomain, id });
                 </div>
 
                 <!-- Footer -->
-                <div v-if="notifications.length > 0" class="border-t border-border/40 px-4 py-2 text-[11px] text-muted-foreground">
+                <div v-if="notifications.length > 0"
+                    class="border-t border-border/40 px-4 py-2 text-[11px] text-muted-foreground">
                     {{ notifications.length }} notificaç{{ notifications.length === 1 ? 'ão' : 'ões' }}
                     <template v-if="unreadCount > 0">
-                        · <span class="font-semibold text-primary">{{ unreadCount }} não {{ unreadCount === 1 ? 'lida' : 'lidas' }}</span>
+                        · <span class="font-semibold text-primary">{{ unreadCount }} não {{ unreadCount === 1 ? 'lida' :
+                            'lidas' }}</span>
                     </template>
                 </div>
             </div>

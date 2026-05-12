@@ -11,8 +11,9 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class NotificationController extends Controller
 {
-    public function markRead(Request $request, string $id): RedirectResponse
+    public function markRead(Request $request, string $subdomain,  string $id): RedirectResponse
     {
+        unset($subdomain); // não é necessário, mas evita warnings de variável não usada
         $notification = $request->user()
             ->notifications()
             ->findOrFail($id);
@@ -22,22 +23,25 @@ class NotificationController extends Controller
         return back();
     }
 
-    public function markAllRead(Request $request): RedirectResponse
+    public function markAllRead(Request $request, string $subdomain): RedirectResponse
     {
+        unset($subdomain); // não é necessário, mas evita warnings de variável não usada
         $request->user()->unreadNotifications()->update(['read_at' => now()]);
 
         return back();
     }
 
-    public function destroyAll(Request $request): RedirectResponse
+    public function destroyAll(Request $request, string $subdomain): RedirectResponse
     {
+        unset($subdomain); // não é necessário, mas evita warnings de variável não usada
         $request->user()->notifications()->delete();
 
         return back();
     }
 
-    public function destroy(Request $request, string $id): RedirectResponse
+    public function destroy(Request $request, string $subdomain, string $id): RedirectResponse
     {
+        unset($subdomain); // não é necessário, mas evita warnings de variável não usada
         $request->user()
             ->notifications()
             ->findOrFail($id)
@@ -46,8 +50,9 @@ class NotificationController extends Controller
         return back();
     }
 
-    public function download(Request $request, string $id): BinaryFileResponse|Response
+    public function download(Request $request, string $subdomain, string $id): BinaryFileResponse|Response
     {
+        unset($subdomain); // não é necessário, mas evita warnings de variável não usada
         $notification = $request->user()
             ->notifications()
             ->findOrFail($id);
