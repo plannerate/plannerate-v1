@@ -41,7 +41,16 @@ class FieldResolver
             }
         }
 
-        return $this->applyTransforms(null, $transforms);
+        $resolved = $this->applyTransforms(null, $transforms);
+        $nullValue = is_array($definition) && is_string($definition['null_value'] ?? null) && $definition['null_value'] !== ''
+            ? $definition['null_value']
+            : null;
+
+        if (($resolved === null || $resolved === '') && $nullValue !== null) {
+            return $nullValue;
+        }
+
+        return $resolved;
     }
 
     /**

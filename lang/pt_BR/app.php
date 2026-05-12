@@ -299,6 +299,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'api_field' => 'Campo da API',
                 'api_field_or_expression' => 'Campo da API ou expressão',
                 'transforms' => 'Transforms',
+                'null_value' => 'Valor padrão',
                 'items_path' => 'Caminho dos itens',
                 'pagination' => 'Paginacao',
                 'current_page_path' => 'Caminho da pagina atual',
@@ -318,6 +319,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'internal_field_select' => 'Selecione um campo interno',
                 'api_field' => 'produto',
                 'api_field_or_expression' => 'produto ou total_sale_value - valor_impostos - custo_medio_loja',
+                'null_value' => 'N',
             ],
             'empty_states' => [
                 'paths' => 'Nenhuma configuração de requisição criada.',

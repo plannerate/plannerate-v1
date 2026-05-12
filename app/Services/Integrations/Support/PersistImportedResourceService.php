@@ -256,11 +256,6 @@ class PersistImportedResourceService
             array_unshift($uniqueBy, 'tenant_id');
         }
 
-        if ($config->separateByStore() && isset($columnSet['store_id']) && ! in_array('store_id', $uniqueBy, true)) {
-            $tenantIdx = array_search('tenant_id', $uniqueBy, true);
-            array_splice($uniqueBy, $tenantIdx !== false ? $tenantIdx + 1 : 0, 0, ['store_id']);
-        }
-
         return array_values(array_unique($uniqueBy));
     }
 
@@ -285,10 +280,12 @@ class PersistImportedResourceService
      */
     private function deterministicId(string $tenantId, string $targetTable, array $row, array $uniqueBy): string
     {
+        $storeId = (string) ($row['store_id'] ?? '');
         $identity = collect($uniqueBy)
+            ->filter(fn (string $column): bool => ! in_array($column, ['tenant_id', 'store_id'], true))
             ->map(fn (string $column): string => (string) ($row[$column] ?? ''))
             ->implode('|');
-        $hash = hash('sha256', $tenantId.'|'.$targetTable.'|'.$identity);
+        $hash = hash('sha256', $tenantId.'|'.$storeId.'|'.$targetTable.'|'.$identity);
 
         return 'G1'.strtoupper(substr($hash, 0, 24));
     }

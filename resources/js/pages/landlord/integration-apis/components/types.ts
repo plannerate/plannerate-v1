@@ -3,6 +3,7 @@ export type FieldMapRow = {
     target: string;
     source: string;
     transforms: string[];
+    null_value: string;
 };
 
 export type RequestPathRow = {

@@ -219,6 +219,14 @@ class ResolvedIntegrationConfig
                     ->all(),
             ];
 
+            $nullValue = is_string($row['null_value'] ?? null) && ($row['null_value'] ?? '') !== ''
+                ? $row['null_value']
+                : null;
+
+            if ($nullValue !== null) {
+                $configured[$target]['null_value'] = $nullValue;
+            }
+
             if ($this->isExpression($source)) {
                 $configured[$target]['expression'] = $source;
             } else {

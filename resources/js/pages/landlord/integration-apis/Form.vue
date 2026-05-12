@@ -184,6 +184,7 @@ function objectToFieldMapRows(value: unknown): RequestPathRow['field_map'] {
             target: valueToInput(row.target),
             source: valueToInput(row.source),
             transforms: arrayOfStrings(row.transforms),
+            null_value: valueToInput(row.null_value),
         }));
 }
 
@@ -244,11 +245,17 @@ function buildRequestsPayload(): Record<string, unknown> {
 
         const fieldMap = requestPath.field_map
             .filter((field) => field.target.trim() !== '' && field.source.trim() !== '')
-            .map((field) => ({
-                target: field.target,
-                source: field.source,
-                transforms: field.transforms,
-            }));
+            .map((field) => {
+                const entry: Record<string, unknown> = {
+                    target: field.target,
+                    source: field.source,
+                    transforms: field.transforms,
+                };
+                if (field.null_value.trim() !== '') {
+                    entry.null_value = field.null_value.trim();
+                }
+                return entry;
+            });
 
         if (fieldMap.length > 0) {
             (paths[name] as Record<string, unknown>).field_map = fieldMap;
