@@ -264,7 +264,6 @@ class IntegrationApiController extends Controller
         return [
             'requests_json' => $this->prettyJson([
                 'method' => 'GET',
-                'payload' => 'query',
                 'paths' => [
                     'products' => [
                         'enabled' => true,
