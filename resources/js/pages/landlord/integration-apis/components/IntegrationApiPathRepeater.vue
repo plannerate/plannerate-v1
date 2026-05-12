@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Plus, Trash2 } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
@@ -54,6 +54,81 @@ function tableColumns(path: RequestPathRow): string[] {
 
 const hasPaths = computed(() => props.modelValue.length > 0);
 const tableOptions = computed(() => Object.entries(props.fieldMapTables));
+
+const fieldMapOpenCookieName = 'integration_api_field_map_open';
+const fieldMapOpenState = ref<Record<string, boolean>>({});
+
+function pathStateKey(path: RequestPathRow, index: number): string {
+    const table = path.target_table.trim();
+
+    return table !== '' ? table : `index-${index}`;
+}
+
+function readCookie(name: string): string | null {
+    if (typeof document === 'undefined') {
+        return null;
+    }
+
+    const prefix = `${name}=`;
+    const cookie = document.cookie
+        .split(';')
+        .map((part) => part.trim())
+        .find((part) => part.startsWith(prefix));
+
+    return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null;
+}
+
+function writeCookie(name: string, value: string): void {
+    if (typeof document === 'undefined') {
+        return;
+    }
+
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`;
+}
+
+function persistFieldMapState(): void {
+    writeCookie(fieldMapOpenCookieName, JSON.stringify(fieldMapOpenState.value));
+}
+
+function isFieldMapOpen(path: RequestPathRow, index: number): boolean {
+    const key = pathStateKey(path, index);
+    const savedState = fieldMapOpenState.value[key];
+
+    if (savedState !== undefined) {
+        return savedState;
+    }
+
+    return path.field_map.length > 0;
+}
+
+function handleFieldMapToggle(event: Event, path: RequestPathRow, index: number): void {
+    const target = event.target;
+
+    if (!(target instanceof HTMLDetailsElement)) {
+        return;
+    }
+
+    fieldMapOpenState.value[pathStateKey(path, index)] = target.open;
+    persistFieldMapState();
+}
+
+onMounted(() => {
+    const raw = readCookie(fieldMapOpenCookieName);
+
+    if (!raw) {
+        return;
+    }
+
+    try {
+        const parsed = JSON.parse(raw);
+
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            fieldMapOpenState.value = parsed as Record<string, boolean>;
+        }
+    } catch {
+        fieldMapOpenState.value = {};
+    }
+});
 </script>
 
 <template>
@@ -150,8 +225,11 @@ const tableOptions = computed(() => Object.entries(props.fieldMapTables));
                     </div>
                 </div>
 
-                <details class="rounded-md border border-border bg-background/60"
-                    :open="requestPath.field_map.length > 0">
+                <details
+                    class="rounded-md border border-border bg-background/60"
+                    :open="isFieldMapOpen(requestPath, pathIndex)"
+                    @toggle="handleFieldMapToggle($event, requestPath, pathIndex)"
+                >
                     <summary class="cursor-pointer px-3 py-2 text-sm font-medium text-muted-foreground">
                         {{ t('app.landlord.integration_apis.fields.field_map') }}
                     </summary>
