@@ -5,8 +5,10 @@ use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\Importers\GenericIntegrationImporter;
+use App\Services\Integrations\ResolvedIntegrationConfigResolver;
 use App\Services\Integrations\Support\ImportBatchPayloadStore;
 use App\Services\Integrations\Support\IntegrationResponseReader;
+use App\Services\Integrations\Support\ResolvedIntegrationConfig;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
@@ -73,7 +75,7 @@ test('products incremental strategy uses initial window when target table is emp
         ],
     ]);
 
-    genericResourceImporter()->importResource($integration, 'products', 'products', genericImporterStore());
+    genericResourceImporter()->importResource(resolvedConfigForTest($integration), 'products', 'products', genericImporterStore());
 
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.example.test/products?data_alteracao=2026-05-08&pagina=1');
 });
@@ -102,7 +104,7 @@ test('products incremental strategy uses yesterday when target table has rows', 
         'updated_at' => now(),
     ]);
 
-    genericResourceImporter()->importResource($integration, 'products', 'products', genericImporterStore());
+    genericResourceImporter()->importResource(resolvedConfigForTest($integration), 'products', 'products', genericImporterStore());
 
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.example.test/products?data_alteracao=2026-05-09');
 });
@@ -155,7 +157,7 @@ test('sales incremental strategy fetches yesterday today and missing store days'
     $store = new Store;
     $store->id = 'STORE-A';
 
-    genericResourceImporter()->importResource($integration, 'sales', 'sales', $store);
+    genericResourceImporter()->importResource(resolvedConfigForTest($integration), 'sales', 'sales', $store);
 
     Http::assertSentCount(3);
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.example.test/sales?data_inicial=2026-05-08&data_final=2026-05-08');
@@ -170,6 +172,11 @@ function genericResourceImporter(): GenericIntegrationImporter
         new ImportBatchPayloadStore,
         new IntegrationResponseReader,
     );
+}
+
+function resolvedConfigForTest(TenantIntegration $integration): ResolvedIntegrationConfig
+{
+    return app(ResolvedIntegrationConfigResolver::class)->resolve($integration);
 }
 
 function genericImporterStore(): Store

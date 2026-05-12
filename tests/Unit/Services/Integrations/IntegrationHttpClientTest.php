@@ -7,8 +7,10 @@ use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\Importers\GenericIntegrationImporter;
 use App\Services\Integrations\Importers\IntegrationImporter;
+use App\Services\Integrations\ResolvedIntegrationConfigResolver;
 use App\Services\Integrations\Support\ImportBatchPayloadStore;
 use App\Services\Integrations\Support\IntegrationResponseReader;
+use App\Services\Integrations\Support\ResolvedIntegrationConfig;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
@@ -859,6 +861,11 @@ test('query-api importer paginates products when pagination.last_page is returne
 
     Http::assertSentCount(3);
 });
+
+function resolvedConfigForHttpClientTest(TenantIntegration $integration): ResolvedIntegrationConfig
+{
+    return app(ResolvedIntegrationConfigResolver::class)->resolve($integration);
+}
 
 function integrationImporter(): IntegrationImporter
 {

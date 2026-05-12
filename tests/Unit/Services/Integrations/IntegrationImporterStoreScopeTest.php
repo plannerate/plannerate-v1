@@ -85,11 +85,18 @@ test('store scoped imports only use published stores with documents', function (
     $genericImporter
         ->shouldReceive('importResource')
         ->once()
-        ->withArgs(fn (TenantIntegration $receivedIntegration, string $resource, string $targetTable, Store $store): bool => $receivedIntegration === $integration
-            && $resource === 'products'
-            && $targetTable === 'products'
-            && $store->id === '01jts31n2rpz1tyy4n6xv4qdp1'
-            && $store->document === '11.111.111/0001-11');
+        ->withArgs(function (mixed $receivedIntegration, string $resource, string $targetTable, Store $store) use ($integration): bool {
+            $receivedModel = $receivedIntegration instanceof TenantIntegration
+                ? $receivedIntegration
+                : ($receivedIntegration->integration ?? null);
+
+            return $receivedModel instanceof TenantIntegration
+                && $receivedModel === $integration
+                && $resource === 'products'
+                && $targetTable === 'products'
+                && $store->id === '01jts31n2rpz1tyy4n6xv4qdp1'
+                && $store->document === '11.111.111/0001-11';
+        });
 
     (new IntegrationImporter($genericImporter))->importResource($integration, 'products', 'products');
 });

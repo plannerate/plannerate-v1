@@ -9,6 +9,7 @@ use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\IntegrationApiConfigResolver;
 use App\Services\Integrations\ResolvedIntegrationConfigResolver;
+use App\Services\Integrations\Support\ResolvedIntegrationConfig;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -149,7 +150,7 @@ class TenantIntegrationController extends Controller
         return to_route('landlord.tenants.integration.edit', $tenant);
     }
 
-    public function testConnection(Request $request, Tenant $tenant, IntegrationHttpClient $httpClient): RedirectResponse|JsonResponse
+    public function testConnection(Request $request, Tenant $tenant, IntegrationHttpClient $httpClient, ResolvedIntegrationConfigResolver $configResolver): RedirectResponse|JsonResponse
     {
         $this->authorize('update', $tenant);
 
@@ -175,7 +176,8 @@ class TenantIntegrationController extends Controller
             return to_route('landlord.tenants.integration.edit', $tenant);
         }
 
-        $payload = $this->connectionTestPayload($request, $integration, $httpClient);
+        $resolvedConfig = $configResolver->resolve($integration);
+        $payload = $this->connectionTestPayload($request, $resolvedConfig, $httpClient);
 
         if ($request->expectsJson()) {
             return response()->json($payload);
@@ -217,14 +219,14 @@ class TenantIntegrationController extends Controller
     }
 
     /** @return array{ok: bool, message: string, meta: array<string, mixed>, data?: mixed} */
-    private function connectionTestPayload(Request $request, TenantIntegration $integration, IntegrationHttpClient $httpClient): array
+    private function connectionTestPayload(Request $request, ResolvedIntegrationConfig $config, IntegrationHttpClient $httpClient): array
     {
         $method = strtoupper((string) ($request->string('test_method') ?: 'GET'));
         $path = (string) ($request->string('test_path') ?: '/');
 
         try {
             $response = $httpClient->request(
-                integration: $integration,
+                integration: $config,
                 method: $method,
                 endpoint: $path,
                 body: $this->testBody($request),

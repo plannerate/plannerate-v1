@@ -44,7 +44,7 @@ class ImportIntegrationResourceJob implements NotTenantAware, ShouldQueue
             return;
         }
 
-        $integrationImporter->importResource($integration, $this->resource, $this->targetTable);
+        $integrationImporter->importResource($resolvedConfig, $this->resource, $this->targetTable);
 
         $request = $resolvedConfig->request($this->resource);
         if ($this->runFinalize && (bool) ($request['run_finalize'] ?? false)) {

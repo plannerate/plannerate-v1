@@ -26,27 +26,29 @@ class GenericIntegrationImporter
         private readonly ?ResolvedIntegrationConfigResolver $configResolver = null,
     ) {}
 
-    public function importResource(TenantIntegration $integration, string $resource, string $targetTable, Store $store): void
+    public function importResource(ResolvedIntegrationConfig|TenantIntegration $config, string $resource, string $targetTable, Store $store): void
     {
-        $request = $this->requestConfig($integration, $resource);
-        $endpoint = $this->path($integration, $resource, (string) ($request['fallback_path'] ?? ''));
+        $config = $this->resolveConfig($config);
 
-        if ($this->dateStrategy($integration, $resource) === 'sales_incremental') {
-            foreach ($this->salesDates($integration, $targetTable, $request, $store) as $date) {
-                $this->importPages($integration, $resource, $targetTable, $request, $endpoint, $store, $date);
+        $request = $config->request($resource);
+        $endpoint = $config->path($resource, (string) ($request['fallback_path'] ?? ''));
+
+        if ($config->dateStrategy($resource) === 'sales_incremental') {
+            foreach ($this->salesDates($config, $targetTable, $request, $store) as $date) {
+                $this->importPages($config, $resource, $targetTable, $request, $endpoint, $store, $date);
             }
 
             return;
         }
 
-        $this->importPages($integration, $resource, $targetTable, $request, $endpoint, $store);
+        $this->importPages($config, $resource, $targetTable, $request, $endpoint, $store);
     }
 
     /**
      * @param  array<string, mixed>  $request
      */
     private function importPages(
-        TenantIntegration $integration,
+        ResolvedIntegrationConfig $config,
         string $resource,
         string $targetTable,
         array $request,
@@ -54,15 +56,16 @@ class GenericIntegrationImporter
         Store $store,
         ?string $date = null,
     ): void {
+        $integration = $config->integration;
         $currentPage = 1;
         $totalPages = 1;
 
         do {
-            [$query, $body] = $this->payload($integration, $store, $resource, $targetTable, $request, $currentPage, $date);
+            [$query, $body] = $this->payload($config, $store, $resource, $targetTable, $request, $currentPage, $date);
 
             try {
                 $response = $this->httpClient->request(
-                    integration: $integration,
+                    integration: $config,
                     method: (string) ($request['method'] ?? 'GET'),
                     endpoint: $endpoint,
                     query: $query,
@@ -76,7 +79,7 @@ class GenericIntegrationImporter
                         'resource' => $resource,
                         'target_table' => $targetTable,
                         'store_id' => $store->id,
-                        'provider' => (string) $integration->integration_type,
+                        'provider' => $config->provider(),
                         'endpoint' => $endpoint,
                         'date' => $date,
                         'status' => $exception->response?->status(),
@@ -90,13 +93,13 @@ class GenericIntegrationImporter
 
             $payload = $response->json();
             $payload = is_array($payload) ? $payload : [];
-            $totalPages = $this->responseReader->totalPages($integration, $resource, $payload, $currentPage);
-            $items = $this->responseReader->items($integration, $resource, $payload);
+            $totalPages = $this->responseReader->totalPages($config, $resource, $payload, $currentPage);
+            $items = $this->responseReader->items($config, $resource, $payload);
 
             $payloadKey = $this->importBatchPayloadStore->put((string) $integration->id, $resource, $items);
             ProcessImportedResourceBatchJob::dispatch(
                 integrationId: (string) $integration->id,
-                provider: (string) $integration->integration_type,
+                provider: $config->provider(),
                 resource: $resource,
                 targetTable: $targetTable,
                 payloadKey: $payloadKey,
@@ -110,7 +113,7 @@ class GenericIntegrationImporter
                 'resource' => $resource,
                 'target_table' => $targetTable,
                 'store_id' => $store->id,
-                'provider' => (string) $integration->integration_type,
+                'provider' => $config->provider(),
                 'date' => $date,
                 'page' => $currentPage,
                 'total_pages' => $totalPages,
@@ -129,7 +132,7 @@ class GenericIntegrationImporter
      * @return array{0: array<string, mixed>, 1: array<string, mixed>}
      */
     private function payload(
-        TenantIntegration $integration,
+        ResolvedIntegrationConfig $config,
         Store $store,
         string $resource,
         string $targetTable,
@@ -141,8 +144,8 @@ class GenericIntegrationImporter
         $body = is_array($request['fixed_body'] ?? null) ? $request['fixed_body'] : [];
         $values = [
             ...$this->storePayload($store, $request),
-            ...$this->datePayload($integration, $store, $resource, $targetTable, $request, $date),
-            ...$this->pagePayload($integration, $request, $page),
+            ...$this->datePayload($config, $store, $resource, $targetTable, $request, $date),
+            ...$this->pagePayload($config, $request, $page),
         ];
 
         if ((string) ($request['payload'] ?? 'query') === 'body') {
@@ -171,7 +174,7 @@ class GenericIntegrationImporter
      * @return array<string, mixed>
      */
     private function datePayload(
-        TenantIntegration $integration,
+        ResolvedIntegrationConfig $config,
         Store $store,
         string $resource,
         string $targetTable,
@@ -179,7 +182,7 @@ class GenericIntegrationImporter
         ?string $date = null,
     ): array {
         $fields = is_array($request['date_fields'] ?? null) ? $request['date_fields'] : [];
-        $strategy = $this->dateStrategy($integration, $resource);
+        $strategy = $config->dateStrategy($resource);
 
         if ($strategy === 'none') {
             return [];
@@ -193,10 +196,11 @@ class GenericIntegrationImporter
             return [];
         }
 
+        $integration = $config->integration;
         $endDate = Carbon::today();
         $startDate = $this->targetHasRows($integration, $targetTable, $store)
             ? $endDate->copy()->subDay()
-            : $endDate->copy()->subDays($this->initialDays($integration, $targetTable, $request) - 1);
+            : $endDate->copy()->subDays($this->initialDays($config, $targetTable, $request) - 1);
 
         return $this->rangeDatePayload($fields, $startDate, $endDate, false);
     }
@@ -231,7 +235,7 @@ class GenericIntegrationImporter
      * @param  array<string, mixed>  $request
      * @return array<string, mixed>
      */
-    private function pagePayload(TenantIntegration $integration, array $request, ?int $page): array
+    private function pagePayload(ResolvedIntegrationConfig $config, array $request, ?int $page): array
     {
         $field = (string) ($request['page_field'] ?? '');
         if ($page === null || $field === '') {
@@ -241,7 +245,7 @@ class GenericIntegrationImporter
         $pageValue = (string) ($request['page_value_type'] ?? 'integer') === 'string' ? (string) $page : $page;
         $payload = [$field => $pageValue];
         $pageSizeField = (string) ($request['page_size_field'] ?? '');
-        $pageSize = $this->pageSize($integration, $request);
+        $pageSize = $this->pageSize($config, $request);
 
         if ($pageSize !== null && $pageSizeField !== '') {
             $payload[$pageSizeField] = $pageSize;
@@ -250,18 +254,15 @@ class GenericIntegrationImporter
         return $payload;
     }
 
-    /**
-     * @param  array<string, mixed>  $request
-     */
-    private function pageSize(TenantIntegration $integration, array $request): int|string|null
+    private function pageSize(ResolvedIntegrationConfig $config, array $request): int|string|null
     {
         $field = (string) ($request['page_size_field'] ?? '');
-        if ($field === '' || $this->configuredRequestValue($integration, $request, $field) !== null) {
+        if ($field === '' || $this->configuredRequestValue($config, $request, $field) !== null) {
             return null;
         }
 
-        $config = is_array($integration->config) ? $integration->config : [];
-        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
+        $tenantConfig = $config->tenantConfig();
+        $processing = is_array($tenantConfig['processing'] ?? null) ? $tenantConfig['processing'] : [];
         $requested = (int) ($processing['products_page_size'] ?? $request['default_page_size'] ?? 200);
         $min = (int) ($request['min_page_size'] ?? 1);
         $max = (int) ($request['max_page_size'] ?? max($min, $requested));
@@ -270,13 +271,9 @@ class GenericIntegrationImporter
         return (string) ($request['page_value_type'] ?? 'integer') === 'string' ? (string) $pageSize : $pageSize;
     }
 
-    /**
-     * @param  array<string, mixed>  $request
-     */
-    private function configuredRequestValue(TenantIntegration $integration, array $request, string $field): ?string
+    private function configuredRequestValue(ResolvedIntegrationConfig $config, array $request, string $field): ?string
     {
-        $config = is_array($integration->config) ? $integration->config : [];
-        $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
+        $connection = $config->connection();
         $payloadKey = (string) ($request['page_size_payload'] ?? $request['payload'] ?? 'query') === 'body' ? 'body' : 'params';
         $rows = is_array($connection[$payloadKey] ?? null) ? $connection[$payloadKey] : [];
 
@@ -301,10 +298,11 @@ class GenericIntegrationImporter
      * @param  array<string, mixed>  $request
      * @return list<string>
      */
-    private function salesDates(TenantIntegration $integration, string $targetTable, array $request, Store $store): array
+    private function salesDates(ResolvedIntegrationConfig $config, string $targetTable, array $request, Store $store): array
     {
+        $integration = $config->integration;
         $endDate = Carbon::today();
-        $lookbackDays = $this->initialDays($integration, $targetTable, $request);
+        $lookbackDays = $this->initialDays($config, $targetTable, $request);
 
         if (! $this->targetHasRows($integration, $targetTable, $store)) {
             return $this->dateRange($endDate->copy()->subDays($lookbackDays - 1), $endDate);
@@ -391,14 +389,14 @@ class GenericIntegrationImporter
     /**
      * @param  array<string, mixed>  $request
      */
-    private function initialDays(TenantIntegration $integration, string $targetTable, array $request): int
+    private function initialDays(ResolvedIntegrationConfig $config, string $targetTable, array $request): int
     {
         if (isset($request['initial_days'])) {
             return max(1, (int) $request['initial_days']);
         }
 
-        $config = is_array($integration->config) ? $integration->config : [];
-        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
+        $tenantConfig = $config->tenantConfig();
+        $processing = is_array($tenantConfig['processing'] ?? null) ? $tenantConfig['processing'] : [];
         $targetKey = $targetTable.'_initial_days';
 
         if (isset($processing[$targetKey])) {
@@ -447,11 +445,6 @@ class GenericIntegrationImporter
         });
     }
 
-    private function dateStrategy(TenantIntegration $integration, string $resource): string
-    {
-        return $this->resolvedConfig($integration)->dateStrategy($resource);
-    }
-
     private function shouldSkipStatus(array $request, ?int $status): bool
     {
         $statuses = is_array($request['skip_statuses'] ?? null) ? $request['skip_statuses'] : [];
@@ -459,22 +452,6 @@ class GenericIntegrationImporter
         return is_int($status) && in_array($status, array_map('intval', $statuses), true);
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function requestConfig(TenantIntegration $integration, string $resource): array
-    {
-        return $this->resolvedConfig($integration)->request($resource);
-    }
-
-    private function path(TenantIntegration $integration, string $key, string $fallback): string
-    {
-        return $this->resolvedConfig($integration)->path($key, $fallback);
-    }
-
-    /**
-     * @param  array<string, mixed>  $row
-     */
     private function rowIsEnabled(array $row): bool
     {
         if (! array_key_exists('enabled', $row)) {
@@ -498,8 +475,12 @@ class GenericIntegrationImporter
         return preg_match('/^[A-Za-z0-9_]+$/', $table) === 1;
     }
 
-    private function resolvedConfig(TenantIntegration $integration): ResolvedIntegrationConfig
+    private function resolveConfig(ResolvedIntegrationConfig|TenantIntegration $config): ResolvedIntegrationConfig
     {
-        return ($this->configResolver ?? app(ResolvedIntegrationConfigResolver::class))->resolve($integration);
+        if ($config instanceof ResolvedIntegrationConfig) {
+            return $config;
+        }
+
+        return ($this->configResolver ?? app(ResolvedIntegrationConfigResolver::class))->resolve($config);
     }
 }

@@ -2,8 +2,6 @@
 
 namespace App\Services\Integrations\Http;
 
-use App\Models\TenantIntegration;
-use App\Services\Integrations\ResolvedIntegrationConfigResolver;
 use App\Services\Integrations\Support\ResolvedIntegrationConfig;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -13,17 +11,13 @@ use RuntimeException;
 
 class IntegrationTokenResolver
 {
-    public function __construct(
-        private readonly ?ResolvedIntegrationConfigResolver $configResolver = null,
-    ) {}
-
-    public function resolve(TenantIntegration $integration, ?string $bearerToken = null): ?string
+    public function resolve(ResolvedIntegrationConfig $config, ?string $bearerToken = null): ?string
     {
         if (is_string($bearerToken) && $bearerToken !== '') {
             return $bearerToken;
         }
 
-        $auth = $this->resolvedConfig($integration)->auth();
+        $auth = $config->auth();
         $credentials = is_array($auth['credentials'] ?? null) ? $auth['credentials'] : [];
         $type = (string) ($auth['type'] ?? 'none');
         $tokenMode = (string) ($auth['token_mode'] ?? 'manual');
@@ -35,30 +29,31 @@ class IntegrationTokenResolver
         }
 
         if ($type === 'bearer_fetch' || ($type === 'bearer' && $tokenMode === 'fetch')) {
-            return $this->cachedFetchedToken($integration);
+            return $this->cachedFetchedToken($config);
         }
 
         return null;
     }
 
-    private function cachedFetchedToken(TenantIntegration $integration): string
+    private function cachedFetchedToken(ResolvedIntegrationConfig $config): string
     {
-        $cacheKey = $this->cacheKey($integration);
+        $cacheKey = $this->cacheKey($config);
         $cached = Cache::get($cacheKey);
 
         if (is_string($cached) && $cached !== '') {
             return $cached;
         }
 
-        $token = $this->fetchToken($integration);
+        $token = $this->fetchToken($config);
         Cache::put($cacheKey, $token, $this->tokenExpiration($token));
 
         return $token;
     }
 
-    private function fetchToken(TenantIntegration $integration): string
+    private function fetchToken(ResolvedIntegrationConfig $config): string
     {
-        $auth = $this->resolvedConfig($integration)->auth();
+        $integration = $config->integration;
+        $auth = $config->auth();
         $credentials = is_array($auth['credentials'] ?? null) ? $auth['credentials'] : [];
         $tokenRequest = is_array($auth['token_request'] ?? null) ? $auth['token_request'] : [];
         $username = (string) ($credentials['username'] ?? '');
@@ -69,10 +64,10 @@ class IntegrationTokenResolver
         }
 
         $method = strtolower((string) ($tokenRequest['method'] ?? 'POST'));
-        $url = $this->url($integration, (string) ($tokenRequest['path'] ?? '/token'));
+        $url = $this->url($config, (string) ($tokenRequest['path'] ?? '/token'));
         $headers = $this->enabledKeyValueRows($tokenRequest['headers'] ?? []);
         $params = $this->enabledKeyValueRows($tokenRequest['params'] ?? []);
-        $body = $this->tokenBody($integration, $tokenRequest, $username, $password);
+        $body = $this->tokenBody($tokenRequest, $username, $password);
 
         $request = Http::timeout(60)
             ->connectTimeout(15)
@@ -113,7 +108,7 @@ class IntegrationTokenResolver
      * @param  array<string, mixed>  $tokenRequest
      * @return array<string, mixed>
      */
-    private function tokenBody(TenantIntegration $integration, array $tokenRequest, string $username, string $password): array
+    private function tokenBody(array $tokenRequest, string $username, string $password): array
     {
         $body = $this->enabledKeyValueRows($tokenRequest['body'] ?? []);
         $usernameField = (string) ($tokenRequest['username_field'] ?? 'username');
@@ -177,30 +172,30 @@ class IntegrationTokenResolver
         return CarbonImmutable::now()->addMinutes(55);
     }
 
-    private function cacheKey(TenantIntegration $integration): string
+    private function cacheKey(ResolvedIntegrationConfig $config): string
     {
-        $auth = $this->resolvedConfig($integration)->auth();
+        $integration = $config->integration;
 
         return sprintf(
             'integrations:token:%s:%s',
             (string) ($integration->id ?: spl_object_id($integration)),
-            sha1(json_encode($auth, JSON_THROW_ON_ERROR)),
+            sha1(json_encode($config->auth(), JSON_THROW_ON_ERROR)),
         );
     }
 
-    private function url(TenantIntegration $integration, string $endpoint): string
+    private function url(ResolvedIntegrationConfig $config, string $endpoint): string
     {
         if (str_starts_with($endpoint, 'http://') || str_starts_with($endpoint, 'https://')) {
             return $endpoint;
         }
 
-        $connection = $this->resolvedConfig($integration)->connection();
+        $connection = $config->connection();
         $baseUrl = rtrim((string) ($connection['base_url'] ?? ''), '/');
 
         if ($baseUrl === '') {
             throw new RuntimeException(sprintf(
                 'Base URL não configurada para integração [%s].',
-                (string) $integration->id,
+                (string) $config->integration->id,
             ));
         }
 
@@ -288,10 +283,5 @@ class IntegrationTokenResolver
         }
 
         return true;
-    }
-
-    private function resolvedConfig(TenantIntegration $integration): ResolvedIntegrationConfig
-    {
-        return ($this->configResolver ?? app(ResolvedIntegrationConfigResolver::class))->resolve($integration);
     }
 }

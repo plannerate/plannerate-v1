@@ -94,7 +94,7 @@ class FetchIntegrationSalesDayJob implements NotTenantAware, ShouldQueue
 
             try {
                 $response = $httpClient->request(
-                    integration: $integration,
+                    integration: $resolvedConfig,
                     method: $method,
                     endpoint: $endpoint,
                     query: $query,
@@ -120,8 +120,8 @@ class FetchIntegrationSalesDayJob implements NotTenantAware, ShouldQueue
 
             $payload = $response->json();
             $payload = is_array($payload) ? $payload : [];
-            $totalPages = $responseReader->totalPages($integration, 'sales', $payload, $currentPage);
-            $items = $responseReader->items($integration, 'sales', $payload);
+            $totalPages = $responseReader->totalPages($resolvedConfig, 'sales', $payload, $currentPage);
+            $items = $responseReader->items($resolvedConfig, 'sales', $payload);
 
             $payloadKey = $importBatchPayloadStore->put((string) $integration->id, 'sales', $items);
             ProcessImportedSalesBatchJob::dispatch(

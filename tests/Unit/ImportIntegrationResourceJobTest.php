@@ -100,9 +100,16 @@ test('imports active enabled resource and dispatches finalize when configured', 
     $importer
         ->shouldReceive('importResource')
         ->once()
-        ->withArgs(fn (TenantIntegration $receivedIntegration, string $resource, string $targetTable): bool => $receivedIntegration->is($integration)
-            && $resource === 'sales'
-            && $targetTable === 'sales');
+        ->withArgs(function (mixed $receivedIntegration, string $resource, string $targetTable) use ($integration): bool {
+            $receivedModel = $receivedIntegration instanceof TenantIntegration
+                ? $receivedIntegration
+                : ($receivedIntegration->integration ?? null);
+
+            return $receivedModel instanceof TenantIntegration
+                && $receivedModel->is($integration)
+                && $resource === 'sales'
+                && $targetTable === 'sales';
+        });
 
     app()->instance(IntegrationImporter::class, $importer);
 

@@ -12,12 +12,14 @@ class IntegrationResponseReader
     ) {}
 
     /**
-     * @param  array<string, mixed>  $payload
+     * @param  array<int, array<string, mixed>>  $payload
      * @return array<int, array<string, mixed>>
      */
-    public function items(TenantIntegration $integration, string $resource, array $payload): array
+    public function items(ResolvedIntegrationConfig|TenantIntegration $config, string $resource, array $payload): array
     {
-        foreach ($this->itemsPaths($integration, $resource) as $path) {
+        $config = $this->resolveConfig($config);
+
+        foreach ($this->itemsPaths($config, $resource) as $path) {
             $items = data_get($payload, $path);
 
             if (is_array($items)) {
@@ -31,9 +33,11 @@ class IntegrationResponseReader
     /**
      * @param  array<string, mixed>  $payload
      */
-    public function totalPages(TenantIntegration $integration, string $resource, array $payload, int $currentPage): int
+    public function totalPages(ResolvedIntegrationConfig|TenantIntegration $config, string $resource, array $payload, int $currentPage): int
     {
-        foreach ($this->lastPagePaths($integration, $resource) as $path) {
+        $config = $this->resolveConfig($config);
+
+        foreach ($this->lastPagePaths($config, $resource) as $path) {
             $candidate = data_get($payload, $path);
 
             if (is_numeric($candidate)) {
@@ -44,12 +48,10 @@ class IntegrationResponseReader
         return $currentPage;
     }
 
-    /**
-     * @return list<string>
-     */
-    private function itemsPaths(TenantIntegration $integration, string $resource): array
+    /** @return list<string> */
+    private function itemsPaths(ResolvedIntegrationConfig $config, string $resource): array
     {
-        return $this->paths($integration, $resource, 'items_path', [
+        return $this->paths($config, $resource, 'items_path', [
             'data',
             'dados',
             'items',
@@ -57,12 +59,10 @@ class IntegrationResponseReader
         ]);
     }
 
-    /**
-     * @return list<string>
-     */
-    private function lastPagePaths(TenantIntegration $integration, string $resource): array
+    /** @return list<string> */
+    private function lastPagePaths(ResolvedIntegrationConfig $config, string $resource): array
     {
-        return $this->paths($integration, $resource, 'last_page_path', [
+        return $this->paths($config, $resource, 'last_page_path', [
             'pagination.last_page',
             'pagination.total_pages',
             'meta.last_page',
@@ -77,11 +77,13 @@ class IntegrationResponseReader
      * @param  list<string>  $fallbacks
      * @return list<string>
      */
-    private function paths(TenantIntegration $integration, string $resource, string $key, array $fallbacks): array
+    private function paths(ResolvedIntegrationConfig $config, string $resource, string $key, array $fallbacks): array
     {
+        $providerResponse = $config->response();
+        $responseConfigs = $providerResponse !== [] ? [$providerResponse] : [];
         $configured = [];
 
-        foreach ($this->responseConfigs($integration) as $response) {
+        foreach ($responseConfigs as $response) {
             $resourceResponse = is_array($response[$resource] ?? null) ? $response[$resource] : [];
             $responsePagination = is_array($response['pagination'] ?? null) ? $response['pagination'] : [];
             $resourcePagination = is_array($resourceResponse['pagination'] ?? null) ? $resourceResponse['pagination'] : [];
@@ -98,17 +100,12 @@ class IntegrationResponseReader
         ], fn (string $path): bool => $path !== '')));
     }
 
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private function responseConfigs(TenantIntegration $integration): array
+    private function resolveConfig(ResolvedIntegrationConfig|TenantIntegration $config): ResolvedIntegrationConfig
     {
-        $providerResponse = ($this->configResolver ?? app(ResolvedIntegrationConfigResolver::class))
-            ->resolve($integration)
-            ->response();
+        if ($config instanceof ResolvedIntegrationConfig) {
+            return $config;
+        }
 
-        return array_values(array_filter([
-            $providerResponse,
-        ], fn (array $response): bool => $response !== []));
+        return ($this->configResolver ?? app(ResolvedIntegrationConfigResolver::class))->resolve($config);
     }
 }
