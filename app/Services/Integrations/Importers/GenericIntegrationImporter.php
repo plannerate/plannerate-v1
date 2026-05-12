@@ -305,8 +305,7 @@ class GenericIntegrationImporter
             return max(1, (int) $request['initial_days']);
         }
 
-        $tenantConfig = $config->tenantConfig();
-        $processing = is_array($tenantConfig['processing'] ?? null) ? $tenantConfig['processing'] : [];
+        $processing = is_array($config->config()['processing'] ?? null) ? $config->config()['processing'] : [];
         $targetKey = $targetTable.'_initial_days';
 
         if (isset($processing[$targetKey])) {

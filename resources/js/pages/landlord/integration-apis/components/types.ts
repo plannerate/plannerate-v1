@@ -10,6 +10,7 @@ export type RequestPathRow = {
     name: string;
     target_table: string;
     fallback_path: string;
+    unique_by: string;
     changed_since: string;
     start: string;
     end: string;

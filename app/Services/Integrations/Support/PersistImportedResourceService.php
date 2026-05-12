@@ -81,6 +81,14 @@ class PersistImportedResourceService
         $columnSet = array_fill_keys($columns, true);
         $uniqueBy = $this->effectiveUniqueBy($integration, $resource, $columnSet);
 
+        Log::info('Persistência de recurso: unique_by resolvido.', [
+            'integration_id' => (string) $integration->id,
+            'tenant_id' => $tenantId,
+            'resource' => $resource,
+            'target_table' => $targetTable,
+            'unique_by' => $uniqueBy,
+        ]);
+
         if ($uniqueBy === []) {
             Log::warning('Persistência de recurso ignorada: unique_by não configurado.', [
                 'integration_id' => (string) $integration->id,
@@ -138,14 +146,14 @@ class PersistImportedResourceService
                 $row['deleted_at'] = null;
             }
 
+            if (isset($columnSet['id']) && ! $this->hasValue($row['id'] ?? null)) {
+                $row['id'] = $this->deterministicId($tenantId, $targetTable, $row, $uniqueBy);
+            }
+
             if (! $this->hasUniqueValues($row, $uniqueBy)) {
                 $invalidCount++;
 
                 continue;
-            }
-
-            if (isset($columnSet['id']) && ! $this->hasValue($row['id'] ?? null)) {
-                $row['id'] = $this->deterministicId($tenantId, $targetTable, $row, $uniqueBy);
             }
 
             $rows[] = $row;
@@ -234,7 +242,7 @@ class PersistImportedResourceService
         $uniqueBy = $this->configResolver->resolve($integration)->uniqueBy($resource);
 
         if ($uniqueBy === []) {
-            return [];
+            return ['id'];
         }
 
         $uniqueBy = collect($uniqueBy)

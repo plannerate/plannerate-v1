@@ -24,6 +24,7 @@ function newPath(): RequestPathRow {
         name: '',
         target_table: '',
         fallback_path: '',
+        unique_by: '',
         changed_since: '',
         start: '',
         end: '',
@@ -138,6 +139,18 @@ const tableOptions = computed(() => Object.entries(props.fieldMapTables));
                             :model-value="requestPath.end"
                             :placeholder="t('app.landlord.integration_apis.placeholders.date_end')"
                             @update:model-value="updatePath(pathIndex, { end: String($event) })"
+                        />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3">
+                    <div class="grid gap-2">
+                        <Label :for="`path-unique-by-${requestPath.id}`">{{ t('app.landlord.integration_apis.fields.unique_by') }}</Label>
+                        <Input
+                            :id="`path-unique-by-${requestPath.id}`"
+                            :model-value="requestPath.unique_by"
+                            :placeholder="t('app.landlord.integration_apis.placeholders.unique_by')"
+                            @update:model-value="updatePath(pathIndex, { unique_by: String($event) })"
                         />
                     </div>
                 </div>
