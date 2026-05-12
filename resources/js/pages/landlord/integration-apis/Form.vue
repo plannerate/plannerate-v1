@@ -138,6 +138,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 fallback_path: valueToInput(pathConfig.fallback_path),
                 unique_by: arrayOfStrings(pathConfig.unique_by).join(', '),
                 include_store_in_id: pathConfig.include_store_in_id === true,
+                initial_days: valueToInput(pathConfig.initial_days),
                 changed_since: valueToInput(parseObjectValue(pathConfig.date_fields).changed_since),
                 start: valueToInput(parseObjectValue(pathConfig.date_fields).start),
                 end: valueToInput(parseObjectValue(pathConfig.date_fields).end),
@@ -155,6 +156,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 fallback_path: '/hubprodutos.listar_produtos',
                 unique_by: '',
                 include_store_in_id: false,
+                initial_days: '120',
                 changed_since: 'data_ultima_alteracao',
                 start: '',
                 end: '',
@@ -167,6 +169,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 fallback_path: '/hubvendas.vendas_produtos',
                 unique_by: '',
                 include_store_in_id: true,
+                initial_days: '120',
                 changed_since: '',
                 start: 'data_inicial',
                 end: 'data_final',
@@ -232,6 +235,7 @@ function buildRequestsPayload(): Record<string, unknown> {
             fallback_path: requestPath.fallback_path,
             ...(uniqueBy.length > 0 ? { unique_by: uniqueBy } : {}),
             ...(requestPath.include_store_in_id ? { include_store_in_id: true } : {}),
+            ...(requestPath.initial_days.trim() !== '' ? { initial_days: numberValue(requestPath.initial_days) } : {}),
         };
 
         const dateFields = {

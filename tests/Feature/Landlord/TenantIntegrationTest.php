@@ -77,9 +77,7 @@ test('put creates tenant integration when absent and stores encrypted config', f
 
     $integration = TenantIntegration::query()->where('tenant_id', $tenant->id)->firstOrFail();
 
-    expect($integration->config['processing']['sales_initial_days'] ?? null)->toBe(120)
-        ->and($integration->config['processing']['products_initial_days'] ?? null)->toBe(120)
-        ->and($integration->config['processing']['separate_by_store'] ?? null)->toBeTrue()
+    expect($integration->config['processing']['separate_by_store'] ?? null)->toBeTrue()
         ->and($integration->config['paths']['products'] ?? null)->toBe('/products')
         ->and($integration->config['paths']['sales'] ?? null)->toBe('/sales')
         ->and($integration->config['connection']['base_url'] ?? null)->toBe('https://acme.example.com')
@@ -329,8 +327,6 @@ function integrationPayload(array $overrides = []): array
         'auth_type' => 'basic',
         'auth_username' => 'planner-user',
         'auth_password' => 'planner-pass',
-        'sales_initial_days' => 120,
-        'products_initial_days' => 120,
         'processing_time' => '02:00',
         'separate_by_store' => true,
         'products_path' => '/products',

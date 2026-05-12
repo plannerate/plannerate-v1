@@ -13,6 +13,7 @@ export type RequestPathRow = {
     fallback_path: string;
     unique_by: string;
     include_store_in_id: boolean;
+    initial_days: string;
     changed_since: string;
     start: string;
     end: string;

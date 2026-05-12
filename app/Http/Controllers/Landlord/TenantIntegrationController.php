@@ -8,17 +8,12 @@ use App\Models\IntegrationApi;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\Http\IntegrationHttpClient;
-use App\Services\Integrations\IntegrationApiConfigResolver;
-use App\Services\Integrations\ResolvedIntegrationConfigResolver;
-use App\Services\Integrations\Support\ResolvedIntegrationConfig;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
-use Throwable;
 
 class TenantIntegrationController extends Controller
 {
@@ -63,19 +58,17 @@ class TenantIntegrationController extends Controller
             'auth_token_params' => $this->formatKeyValueRowsForFrontend($auth['token_request']['params'] ?? []),
             'auth_token_body' => $this->formatKeyValueRowsForFrontend($auth['token_request']['body'] ?? []),
             // Processing
-            'sales_initial_days' => (int) ($processing['sales_initial_days'] ?? 120),
-            'products_initial_days' => (int) ($processing['products_initial_days'] ?? 120),
             'processing_time' => (string) ($processing['processing_time'] ?? '02:00'),
             'separate_by_store' => (bool) ($processing['separate_by_store'] ?? false),
         ] : null;
- 
+
         return Inertia::render('landlord/tenants/Integration', [
             'tenant' => ['id' => $tenant->id, 'name' => $tenant->name],
             'integration' => $integrationData,
             'integration_types' => IntegrationApi::query()
                 ->where('is_active', true)
                 ->get()
-                ->map(fn(IntegrationApi $api) => [
+                ->map(fn (IntegrationApi $api) => [
                     'value' => $api->id,
                     'label' => $api->name,
                     'slug' => $api->slug,
@@ -94,11 +87,18 @@ class TenantIntegrationController extends Controller
             $payload,
         );
 
-        $payload['api'] = IntegrationApi::query()->where('id', $payload['integration_type'])->first()?->toArray();
+        $data['tenant_integration'] = [
+            'model' => TenantIntegration::class,
+            'data' => $payload,
+        ];
+        $data['integration_api'] = [
+            'model' => IntegrationApi::class,
+            'data' => IntegrationApi::query()->where('id', $payload['integration_type'])->first()?->toArray(),
+        ];
 
         Storage::disk('local')->put(
             $tenant->id.'/last_payload.json',
-            json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+            json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
         );
 
         Inertia::flash('toast', [
@@ -159,11 +159,9 @@ class TenantIntegrationController extends Controller
         return to_route('landlord.tenants.integration.edit', $tenant);
     }
 
-    public function testConnection(Request $request, Tenant $tenant, IntegrationHttpClient $httpClient): RedirectResponse|JsonResponse
+    public function testConnection(Request $request, Tenant $tenant): RedirectResponse|JsonResponse
     {
         $this->authorize('update', $tenant);
-
-      
 
         return to_route('landlord.tenants.integration.edit', $tenant);
     }
@@ -195,7 +193,7 @@ class TenantIntegrationController extends Controller
     }
 
     /** @return array{ok: bool, message: string, meta: array<string, mixed>, data?: mixed} */
-    private function connectionTestPayload(Request $request ,IntegrationHttpClient $httpClient): array
+    private function connectionTestPayload(Request $request): array
     {
         return [
             'ok' => false,

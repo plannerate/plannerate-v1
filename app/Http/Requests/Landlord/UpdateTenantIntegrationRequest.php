@@ -69,8 +69,6 @@ class UpdateTenantIntegrationRequest extends FormRequest
             'auth_token_body.*.value' => ['required_with:auth_token_body.*', 'string', 'max:1000'],
             'auth_token_body.*.enabled' => ['sometimes', 'boolean'],
             // Processing
-            'sales_initial_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
-            'products_initial_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
             'processing_time' => ['nullable', 'date_format:H:i'],
             'separate_by_store' => ['sometimes', 'boolean'],
         ];
@@ -123,8 +121,6 @@ class UpdateTenantIntegrationRequest extends FormRequest
                     'body' => $this->buildKeyValueArray($validated['body'] ?? []),
                 ],
                 'processing' => [
-                    'sales_initial_days' => (int) ($validated['sales_initial_days'] ?? 120),
-                    'products_initial_days' => (int) ($validated['products_initial_days'] ?? 120),
                     'processing_time' => (string) ($validated['processing_time'] ?? '02:00'),
                     'separate_by_store' => (bool) ($validated['separate_by_store'] ?? false),
                     'auto_processing_enabled' => true,

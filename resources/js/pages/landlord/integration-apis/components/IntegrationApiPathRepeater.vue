@@ -26,6 +26,7 @@ function newPath(): RequestPathRow {
         fallback_path: '',
         unique_by: '',
         include_store_in_id: false,
+        initial_days: '',
         changed_since: '',
         start: '',
         end: '',
@@ -145,13 +146,23 @@ const tableOptions = computed(() => Object.entries(props.fieldMapTables));
                 </div>
 
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
-                    <div class="grid gap-2 md:col-span-10">
+                    <div class="grid gap-2 md:col-span-8">
                         <Label :for="`path-unique-by-${requestPath.id}`">{{ t('app.landlord.integration_apis.fields.unique_by') }}</Label>
                         <Input
                             :id="`path-unique-by-${requestPath.id}`"
                             :model-value="requestPath.unique_by"
                             :placeholder="t('app.landlord.integration_apis.placeholders.unique_by')"
                             @update:model-value="updatePath(pathIndex, { unique_by: String($event) })"
+                        />
+                    </div>
+                    <div class="grid gap-2 md:col-span-2">
+                        <Label :for="`path-initial-days-${requestPath.id}`">{{ t('app.landlord.integration_apis.fields.initial_days') }}</Label>
+                        <Input
+                            :id="`path-initial-days-${requestPath.id}`"
+                            type="number"
+                            :model-value="requestPath.initial_days"
+                            :placeholder="t('app.landlord.integration_apis.placeholders.initial_days')"
+                            @update:model-value="updatePath(pathIndex, { initial_days: String($event) })"
                         />
                     </div>
                     <div class="flex flex-col justify-end gap-2 md:col-span-2">

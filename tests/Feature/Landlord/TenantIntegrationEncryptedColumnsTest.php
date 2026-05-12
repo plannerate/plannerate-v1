@@ -35,7 +35,7 @@ test('tenant integration encrypted arrays can be stored on landlord connection',
         ],
         'config' => [
             'processing' => [
-                'sales_initial_days' => 120,
+                'processing_time' => '02:00',
             ],
         ],
         'is_active' => true,
@@ -45,5 +45,5 @@ test('tenant integration encrypted arrays can be stored on landlord connection',
 
     expect($integration->authentication_headers['auth_username'])->toBe('planner-user')
         ->and($integration->authentication_body['partner_key'])->toBe('partner-123')
-        ->and($integration->config['processing']['sales_initial_days'])->toBe(120);
+        ->and($integration->config['processing']['processing_time'])->toBe('02:00');
 });

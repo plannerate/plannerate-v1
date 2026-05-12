@@ -48,8 +48,6 @@ type IntegrationPayload = {
     auth_token_headers: KeyValueRow[];
     auth_token_params: KeyValueRow[];
     auth_token_body: KeyValueRow[];
-    sales_initial_days: number;
-    products_initial_days: number;
     processing_time: string;
     separate_by_store: boolean;
     is_active: boolean;
@@ -145,8 +143,6 @@ const formData = computed(() => ({
         props.integration?.auth_token_username_field ?? 'username',
     auth_token_password_field:
         props.integration?.auth_token_password_field ?? 'password',
-    sales_initial_days: props.integration?.sales_initial_days ?? 120,
-    products_initial_days: props.integration?.products_initial_days ?? 120,
     processing_time: props.integration?.processing_time ?? '02:00',
     separate_by_store: props.integration?.separate_by_store ?? false,
     is_active: props.integration?.is_active ?? true,
@@ -778,34 +774,6 @@ function testConnection(): void {
 
                     <!-- Processamento — fora das tabs -->
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-                        <FormTextField
-                            id="sales_initial_days"
-                            name="sales_initial_days"
-                            type="number"
-                            :label="
-                                t(
-                                    'app.landlord.tenant_integrations.fields.sales_initial_days',
-                                )
-                            "
-                            :default-value="String(formData.sales_initial_days)"
-                            :error="errors.sales_initial_days"
-                            class="md:col-span-3"
-                        />
-                        <FormTextField
-                            id="products_initial_days"
-                            name="products_initial_days"
-                            type="number"
-                            :label="
-                                t(
-                                    'app.landlord.tenant_integrations.fields.products_initial_days',
-                                )
-                            "
-                            :default-value="
-                                String(formData.products_initial_days)
-                            "
-                            :error="errors.products_initial_days"
-                            class="md:col-span-3"
-                        />
                         <FormTextField
                             id="processing_time"
                             name="processing_time"
