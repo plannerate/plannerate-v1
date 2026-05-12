@@ -56,13 +56,12 @@ afterEach(function (): void {
     DB::purge('tenant');
 });
 
-test('products incremental strategy uses initial window when target table is empty', function (): void {
+test('non-sales with no data fetches all pages without date filter', function (): void {
     Carbon::setTestNow('2026-05-10 12:00:00');
     Bus::fake();
     Http::fake(['https://api.example.test/products*' => Http::response(['data' => []])]);
 
     $integration = resourceIntegrationForGenericImporter('products', [
-        'processing' => ['products_initial_days' => 3],
         'requests' => [
             'paths' => [
                 'products' => [
@@ -77,10 +76,11 @@ test('products incremental strategy uses initial window when target table is emp
 
     genericResourceImporter()->importResource(resolvedConfigForTest($integration), 'products', 'products', genericImporterStore());
 
-    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.example.test/products?data_alteracao=2026-05-08&pagina=1');
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.example.test/products?pagina=1');
+    Http::assertSentCount(1);
 });
 
-test('products incremental strategy uses yesterday when target table has rows', function (): void {
+test('non-sales with existing data uses changed_since = yesterday', function (): void {
     Carbon::setTestNow('2026-05-10 12:00:00');
     Bus::fake();
     Http::fake(['https://api.example.test/products*' => Http::response(['data' => []])]);
@@ -109,19 +109,17 @@ test('products incremental strategy uses yesterday when target table has rows', 
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.example.test/products?data_alteracao=2026-05-09');
 });
 
-test('sales incremental strategy fetches yesterday today and missing store days', function (): void {
+test('sales with existing data fetches yesterday and today', function (): void {
     Carbon::setTestNow('2026-05-10 12:00:00');
     Bus::fake();
     Http::fake(['https://api.example.test/sales*' => Http::response(['data' => []])]);
 
     $integration = resourceIntegrationForGenericImporter('sales', [
-        'processing' => ['sales_initial_days' => 4],
         'requests' => [
             'paths' => [
                 'sales' => [
                     'target_table' => 'sales',
                     'fallback_path' => '/sales',
-                    'date_column' => 'sale_date',
                     'date_fields' => ['start' => 'data_inicial', 'end' => 'data_final'],
                 ],
             ],
@@ -129,29 +127,38 @@ test('sales incremental strategy fetches yesterday today and missing store days'
     ]);
 
     DB::connection('tenant')->table('sales')->insert([
-        [
-            'id' => 'S-A-7',
-            'tenant_id' => (string) $integration->tenant_id,
-            'store_id' => 'STORE-A',
-            'sale_date' => '2026-05-07',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ],
-        [
-            'id' => 'S-A-9',
-            'tenant_id' => (string) $integration->tenant_id,
-            'store_id' => 'STORE-A',
-            'sale_date' => '2026-05-09',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ],
-        [
-            'id' => 'S-B-8',
-            'tenant_id' => (string) $integration->tenant_id,
-            'store_id' => 'STORE-B',
-            'sale_date' => '2026-05-08',
-            'created_at' => now(),
-            'updated_at' => now(),
+        'id' => 'S1',
+        'tenant_id' => (string) $integration->tenant_id,
+        'store_id' => 'STORE-A',
+        'sale_date' => '2026-05-09',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $store = new Store;
+    $store->id = 'STORE-A';
+
+    genericResourceImporter()->importResource(resolvedConfigForTest($integration), 'sales', 'sales', $store);
+
+    Http::assertSentCount(1);
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.example.test/sales?data_inicial=2026-05-09&data_final=2026-05-10');
+});
+
+test('sales with no data fetches one request per day for sales_initial_days', function (): void {
+    Carbon::setTestNow('2026-05-10 12:00:00');
+    Bus::fake();
+    Http::fake(['https://api.example.test/sales*' => Http::response(['data' => []])]);
+
+    $integration = resourceIntegrationForGenericImporter('sales', [
+        'processing' => ['sales_initial_days' => 3],
+        'requests' => [
+            'paths' => [
+                'sales' => [
+                    'target_table' => 'sales',
+                    'fallback_path' => '/sales',
+                    'date_fields' => ['start' => 'data_inicial', 'end' => 'data_final'],
+                ],
+            ],
         ],
     ]);
 

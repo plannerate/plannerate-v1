@@ -26,15 +26,13 @@ class DispatchDailyImportsCommand extends Command
             foreach (array_keys($resolvedConfig->resourceRequests()) as $resource) {
                 $resource = (string) $resource;
 
-
                 if (! $resolvedConfig->pathIsEnabled($resource)) {
                     continue;
-                } 
+                }
 
                 dispatch(new ImportIntegrationResourceJob(
                     integrationId: (string) $integration->id,
                     resource: $resource,
-                    targetTable: $resolvedConfig->targetTable($resource),
                     runFinalize: ! (bool) $this->option('no-finalize'),
                 ));
             }

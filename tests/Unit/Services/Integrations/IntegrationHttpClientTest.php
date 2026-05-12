@@ -1,6 +1,5 @@
 <?php
 
-use App\Jobs\Integrations\Imports\FetchIntegrationSalesDayJob;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
@@ -438,7 +437,6 @@ test('body-api importer uses configured products path when present', function ()
             && $request->data() === [
                 'partner_key' => 'abc123',
                 'empresa' => '12345678000199',
-                'data_ultima_alteracao' => '2026-05-08',
                 'pagina' => '1',
                 'tamanho_pagina' => '500',
             ];
@@ -536,7 +534,6 @@ test('sales importer sends yesterday to today when tenant already has sales', fu
             && ($payload['data_inicial'] ?? null) === '2026-05-08'
             && ($payload['data_final'] ?? null) === '2026-05-09';
     });
-    Bus::assertNotDispatched(FetchIntegrationSalesDayJob::class);
 
     Carbon::setTestNow();
 });
@@ -586,15 +583,21 @@ test('sales importer sends initial sales period when tenant has no sales', funct
 
     genericIntegrationImporter()->importResource($integration, 'sales', 'sales', integrationTestStore());
 
+    Http::assertSentCount(5);
     Http::assertSent(function (Request $request): bool {
-        parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
-        $payload = [...$query, ...$request->data()];
+        $payload = $request->data();
 
         return str_contains($request->url(), 'hubvendas.vendas_produtos')
             && ($payload['data_inicial'] ?? null) === '2026-05-05'
+            && ($payload['data_final'] ?? null) === '2026-05-05';
+    });
+    Http::assertSent(function (Request $request): bool {
+        $payload = $request->data();
+
+        return str_contains($request->url(), 'hubvendas.vendas_produtos')
+            && ($payload['data_inicial'] ?? null) === '2026-05-09'
             && ($payload['data_final'] ?? null) === '2026-05-09';
     });
-    Bus::assertNotDispatched(FetchIntegrationSalesDayJob::class);
 
     Carbon::setTestNow();
 });

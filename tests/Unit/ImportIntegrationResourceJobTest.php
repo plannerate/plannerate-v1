@@ -100,15 +100,14 @@ test('imports active enabled resource and dispatches finalize when configured', 
     $importer
         ->shouldReceive('importResource')
         ->once()
-        ->withArgs(function (mixed $receivedIntegration, string $resource, string $targetTable) use ($integration): bool {
+        ->withArgs(function (mixed $receivedIntegration, string $resource) use ($integration): bool {
             $receivedModel = $receivedIntegration instanceof TenantIntegration
                 ? $receivedIntegration
                 : ($receivedIntegration->integration ?? null);
 
             return $receivedModel instanceof TenantIntegration
                 && $receivedModel->is($integration)
-                && $resource === 'sales'
-                && $targetTable === 'sales';
+                && $resource === 'sales';
         });
 
     app()->instance(IntegrationImporter::class, $importer);
@@ -117,7 +116,6 @@ test('imports active enabled resource and dispatches finalize when configured', 
         new ImportIntegrationResourceJob(
             integrationId: (string) $integration->id,
             resource: 'sales',
-            targetTable: 'sales',
         ),
         'handle',
     ]);
@@ -168,7 +166,6 @@ test('does not import disabled resource', function (): void {
         new ImportIntegrationResourceJob(
             integrationId: (string) $integration->id,
             resource: 'products',
-            targetTable: 'products',
         ),
         'handle',
     ]);
@@ -188,7 +185,6 @@ test('does not import missing integration', function (): void {
         new ImportIntegrationResourceJob(
             integrationId: '01jts31n2rpz1tyy4n6xv4qdn0',
             resource: 'products',
-            targetTable: 'products',
         ),
         'handle',
     ]);

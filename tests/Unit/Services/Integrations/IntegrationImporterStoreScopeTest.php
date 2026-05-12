@@ -98,5 +98,5 @@ test('store scoped imports only use published stores with documents', function (
                 && $store->document === '11.111.111/0001-11';
         });
 
-    (new IntegrationImporter($genericImporter))->importResource($integration, 'products', 'products');
+    (new IntegrationImporter($genericImporter))->importResource($integration, 'products');
 });

@@ -16,9 +16,10 @@ class IntegrationImporter
         private readonly ?ResolvedIntegrationConfigResolver $configResolver = null,
     ) {}
 
-    public function importResource(ResolvedIntegrationConfig|TenantIntegration $config, string $resource, string $targetTable): void
+    public function importResource(ResolvedIntegrationConfig|TenantIntegration $config, string $resource): void
     {
         $config = $this->resolveConfig($config);
+        $targetTable = $config->targetTable($resource);
 
         $this->forEachStoreScope($config, function (Store $store) use ($config, $resource, $targetTable): void {
             $this->genericImporter->importResource($config, $resource, $targetTable, $store);

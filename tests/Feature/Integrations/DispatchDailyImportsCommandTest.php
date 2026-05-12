@@ -107,14 +107,12 @@ test('daily imports command dispatches enabled paths for active integrations', f
 
     Bus::assertDispatched(ImportIntegrationResourceJob::class, function (ImportIntegrationResourceJob $job) use ($activeIntegration): bool {
         return $job->integrationId === (string) $activeIntegration->id
-            && $job->resource === 'sales'
-            && $job->targetTable === 'sales';
+            && $job->resource === 'sales';
     });
 
     Bus::assertDispatched(ImportIntegrationResourceJob::class, function (ImportIntegrationResourceJob $job) use ($activeIntegration): bool {
         return $job->integrationId === (string) $activeIntegration->id
-            && $job->resource === 'products'
-            && $job->targetTable === 'products';
+            && $job->resource === 'products';
     });
 });
 
@@ -214,8 +212,7 @@ test('daily imports command dispatches generic configured paths and skips disabl
 
     expect(Artisan::output())->toBe('');
 
-    Bus::assertDispatched(ImportIntegrationResourceJob::class, fn (ImportIntegrationResourceJob $job): bool => $job->resource === 'stores'
-        && $job->targetTable === 'stores');
+    Bus::assertDispatched(ImportIntegrationResourceJob::class, fn (ImportIntegrationResourceJob $job): bool => $job->resource === 'stores');
     Bus::assertNotDispatched(ImportIntegrationResourceJob::class, fn (ImportIntegrationResourceJob $job): bool => $job->resource === 'products');
 });
 

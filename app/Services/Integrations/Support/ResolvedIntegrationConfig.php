@@ -160,22 +160,6 @@ class ResolvedIntegrationConfig
             ->all();
     }
 
-    public function dateStrategy(string $resource): string
-    {
-        $request = $this->request($resource);
-        $configured = trim((string) ($request['date_strategy'] ?? ''));
-
-        if ($configured !== '') {
-            return $configured;
-        }
-
-        return match ($this->targetTable($resource)) {
-            'products' => 'products_incremental',
-            'sales' => 'sales_incremental',
-            default => 'none',
-        };
-    }
-
     /**
      * @return array<string, array<string, mixed>>
      */

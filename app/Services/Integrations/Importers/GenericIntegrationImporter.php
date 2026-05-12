@@ -32,19 +32,30 @@ class GenericIntegrationImporter
     public function importResource(ResolvedIntegrationConfig|TenantIntegration $config, string $resource, string $targetTable, Store $store): void
     {
         $config = $this->resolveConfig($config);
-
         $request = $config->request($resource);
         $endpoint = $config->path($resource, (string) ($request['fallback_path'] ?? ''));
+        $isSales = $targetTable === 'sales';
+        $hasData = $this->targetHasRows($config->integration, $targetTable, $store);
 
-        if ($config->dateStrategy($resource) === 'sales_incremental') {
-            foreach ($this->datesForIncrementalStrategy($config, $targetTable, $request, $store) as $date) {
-                $this->importPages($config, $resource, $targetTable, $request, $endpoint, $store, $date);
+        if ($isSales && ! $hasData) {
+            foreach ($this->salesInitialDates($config, $targetTable, $request) as $date) {
+                $this->importPages($config, $resource, $targetTable, $request, $endpoint, $store,
+                    startDate: $date, endDate: $date);
             }
 
             return;
         }
 
-        $this->importPages($config, $resource, $targetTable, $request, $endpoint, $store);
+        if ($isSales) {
+            $this->importPages($config, $resource, $targetTable, $request, $endpoint, $store,
+                startDate: Carbon::yesterday()->toDateString(),
+                endDate: Carbon::today()->toDateString());
+
+            return;
+        }
+
+        $changedSince = $hasData ? Carbon::yesterday()->toDateString() : null;
+        $this->importPages($config, $resource, $targetTable, $request, $endpoint, $store, changedSince: $changedSince);
     }
 
     /**
@@ -57,14 +68,16 @@ class GenericIntegrationImporter
         array $request,
         string $endpoint,
         Store $store,
-        ?string $date = null,
+        ?string $startDate = null,
+        ?string $endDate = null,
+        ?string $changedSince = null,
     ): void {
         $integration = $config->integration;
         $currentPage = 1;
         $totalPages = 1;
 
         do {
-            [$query, $body] = $this->payload($config, $store, $resource, $targetTable, $request, $currentPage, $date);
+            [$query, $body] = $this->payload($config, $store, $resource, $request, $currentPage, $startDate, $endDate, $changedSince);
 
             try {
                 $response = $this->httpClient->request(
@@ -84,7 +97,6 @@ class GenericIntegrationImporter
                         'store_id' => $store->id,
                         'provider' => $config->provider(),
                         'endpoint' => $endpoint,
-                        'date' => $date,
                         'status' => $exception->response?->status(),
                     ]);
 
@@ -117,7 +129,9 @@ class GenericIntegrationImporter
                 'target_table' => $targetTable,
                 'store_id' => $store->id,
                 'provider' => $config->provider(),
-                'date' => $date,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'changed_since' => $changedSince,
                 'page' => $currentPage,
                 'total_pages' => $totalPages,
                 'items' => count($items),
@@ -138,16 +152,17 @@ class GenericIntegrationImporter
         ResolvedIntegrationConfig $config,
         Store $store,
         string $resource,
-        string $targetTable,
         array $request,
         ?int $page = null,
-        ?string $date = null,
+        ?string $startDate = null,
+        ?string $endDate = null,
+        ?string $changedSince = null,
     ): array {
         $query = is_array($request['fixed_query'] ?? null) ? $request['fixed_query'] : [];
         $body = is_array($request['fixed_body'] ?? null) ? $request['fixed_body'] : [];
         $values = [
             ...$this->storePayload($store, $request),
-            ...$this->datePayload($config, $store, $resource, $targetTable, $request, $date),
+            ...$this->datePayload($request, $startDate, $endDate, $changedSince),
             ...$this->pagePayload($config, $request, $page),
         ];
 
@@ -176,62 +191,28 @@ class GenericIntegrationImporter
      * @param  array<string, mixed>  $request
      * @return array<string, mixed>
      */
-    private function datePayload(
-        ResolvedIntegrationConfig $config,
-        Store $store,
-        string $resource,
-        string $targetTable,
-        array $request,
-        ?string $date = null,
-    ): array {
-        $fields = is_array($request['date_fields'] ?? null) ? $request['date_fields'] : [];
-        $strategy = $config->dateStrategy($resource);
-
-        if ($strategy === 'none') {
-            return [];
-        }
-
-        if ($strategy === 'sales_incremental' && is_string($date) && $date !== '') {
-            return $this->rangeDatePayload($fields, Carbon::parse($date), Carbon::parse($date));
-        }
-
-        if (! in_array($strategy, ['products_incremental', 'range_incremental'], true)) {
-            return [];
-        }
-
-        $integration = $config->integration;
-        $endDate = Carbon::today();
-        $startDate = $this->targetHasRows($integration, $targetTable, $store)
-            ? $endDate->copy()->subDay()
-            : $endDate->copy()->subDays($this->initialDays($config, $targetTable, $request) - 1);
-
-        return $this->rangeDatePayload($fields, $startDate, $endDate);
-    }
-
-    /**
-     * @param  array<string, mixed>  $fields
-     * @return array<string, mixed>
-     */
-    private function rangeDatePayload(array $fields, Carbon $startDate, Carbon $endDate): array
+    private function datePayload(array $request, ?string $startDate, ?string $endDate, ?string $changedSince): array
     {
-        if (is_string($fields['changed_since'] ?? null)) {
-            return [(string) $fields['changed_since'] => $startDate->toDateString()];
+        $fields = is_array($request['date_fields'] ?? null) ? $request['date_fields'] : [];
+
+        if ($startDate !== null) {
+            $startField = (string) ($fields['start'] ?? '');
+            $endField = (string) ($fields['end'] ?? '');
+
+            return array_filter(
+                [$startField => $startDate, $endField => $endDate],
+                fn (mixed $v, string $k): bool => $k !== '' && is_string($v),
+                ARRAY_FILTER_USE_BOTH,
+            );
         }
 
-        if (is_string($fields['created_from'] ?? null) && is_string($fields['created_to'] ?? null)) {
-            return [
-                (string) $fields['created_from'] => $startDate->copy()->startOfDay()->toIso8601String(),
-                (string) $fields['created_to'] => $endDate->copy()->endOfDay()->toIso8601String(),
-            ];
+        if ($changedSince !== null) {
+            $field = (string) ($fields['changed_since'] ?? '');
+
+            return $field !== '' ? [$field => $changedSince] : [];
         }
 
-        $startField = (string) ($fields['start'] ?? '');
-        $endField = (string) ($fields['end'] ?? '');
-
-        return array_filter([
-            $startField => $startDate->toDateString(),
-            $endField => $endDate->toDateString(),
-        ], fn (string $value, string $key): bool => $key !== '', ARRAY_FILTER_USE_BOTH);
+        return [];
     }
 
     /**
@@ -301,96 +282,18 @@ class GenericIntegrationImporter
      * @param  array<string, mixed>  $request
      * @return list<string>
      */
-    private function datesForIncrementalStrategy(ResolvedIntegrationConfig $config, string $targetTable, array $request, Store $store): array
+    private function salesInitialDates(ResolvedIntegrationConfig $config, string $targetTable, array $request): array
     {
-        $integration = $config->integration;
-        $endDate = Carbon::today();
-        $lookbackDays = $this->initialDays($config, $targetTable, $request);
-
-        if (! $this->targetHasRows($integration, $targetTable, $store)) {
-            return $this->dateRange($endDate->copy()->subDays($lookbackDays - 1), $endDate);
-        }
-
-        $baseDates = [
-            $endDate->copy()->subDay()->toDateString(),
-            $endDate->toDateString(),
-        ];
-        $missingDates = $this->resolveMissingDates($integration, $targetTable, $request, $store, $lookbackDays);
-        $merged = array_values(array_unique([...$baseDates, ...$missingDates]));
-        sort($merged);
-
-        return $merged;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function dateRange(Carbon $startDate, Carbon $endDate): array
-    {
+        $days = $this->initialDays($config, $targetTable, $request);
+        $end = Carbon::today();
+        $start = $end->copy()->subDays($days - 1);
         $dates = [];
 
-        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+        for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
             $dates[] = $date->toDateString();
         }
 
         return $dates;
-    }
-
-    /**
-     * @param  array<string, mixed>  $request
-     * @return list<string>
-     */
-    private function resolveMissingDates(TenantIntegration $integration, string $targetTable, array $request, Store $store, int $lookbackDays): array
-    {
-        $tenant = $integration->tenant;
-        if (! $tenant instanceof Tenant || ! $this->validTableName($targetTable)) {
-            return [];
-        }
-
-        $endDate = Carbon::today();
-        $startDate = $endDate->copy()->subDays($lookbackDays - 1);
-        $expectedDates = $this->dateRange($startDate, $endDate);
-        $dateColumn = (string) ($request['date_column'] ?? '');
-
-        $existingDates = $tenant->execute(function () use ($store, $tenant, $targetTable, $dateColumn, $startDate, $endDate): array {
-            $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
-            if (
-                $dateColumn === ''
-                || ! Schema::connection($connection)->hasTable($targetTable)
-                || ! Schema::connection($connection)->hasColumn($targetTable, $dateColumn)
-            ) {
-                return [];
-            }
-
-            $query = DB::connection($connection)
-                ->table($targetTable)
-                ->whereBetween($dateColumn, [$startDate->toDateString(), $endDate->toDateString()]);
-
-            if (Schema::connection($connection)->hasColumn($targetTable, 'tenant_id')) {
-                $query->where('tenant_id', (string) $tenant->id);
-            }
-
-            if (Schema::connection($connection)->hasColumn($targetTable, 'deleted_at')) {
-                $query->whereNull('deleted_at');
-            }
-
-            if (Schema::connection($connection)->hasColumn($targetTable, 'store_id')) {
-                $query->where('store_id', (string) $store->id);
-            }
-
-            return $query
-                ->distinct()
-                ->pluck($dateColumn)
-                ->filter(fn (mixed $date): bool => is_string($date) && $date !== '')
-                ->map(fn (string $date): string => Carbon::parse($date)->toDateString())
-                ->values()
-                ->all();
-        });
-
-        $missingDates = array_values(array_diff($expectedDates, $existingDates));
-        sort($missingDates);
-
-        return $missingDates;
     }
 
     /**

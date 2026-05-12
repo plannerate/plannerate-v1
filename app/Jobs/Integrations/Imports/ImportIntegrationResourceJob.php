@@ -19,7 +19,6 @@ class ImportIntegrationResourceJob implements NotTenantAware, ShouldQueue
     public function __construct(
         public string $integrationId,
         public string $resource,
-        public string $targetTable,
         public bool $runFinalize = true,
     ) {
         $this->onQueue('imports');
@@ -40,9 +39,12 @@ class ImportIntegrationResourceJob implements NotTenantAware, ShouldQueue
         }
 
         $resolvedConfig = $configResolver->resolve($integration);
-       
 
-        $integrationImporter->importResource($resolvedConfig, $this->resource, $this->targetTable);
+        if (! $resolvedConfig->pathIsEnabled($this->resource)) {
+            return;
+        }
+
+        $integrationImporter->importResource($resolvedConfig, $this->resource);
 
         $request = $resolvedConfig->request($this->resource);
         if ($this->runFinalize && (bool) ($request['run_finalize'] ?? false)) {
