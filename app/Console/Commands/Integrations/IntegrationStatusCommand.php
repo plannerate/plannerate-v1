@@ -67,7 +67,7 @@ class IntegrationStatusCommand extends Command
     {
         $tenants = Tenant::query()
             ->orderBy('name')
-            ->get(['id', 'name']);
+            ->get(['id', 'name', 'database']);
 
         if ($tenants->isEmpty()) {
             $this->warn('Nenhum tenant encontrado.');
@@ -77,12 +77,32 @@ class IntegrationStatusCommand extends Command
 
         if ($tenants->count() === 1) {
             $tenant = $tenants->first();
+
+            if (! $this->hasDatabaseConfigured($tenant)) {
+                $this->warn("Tenant {$tenant->name} sem database configurado.");
+
+                return null;
+            }
+
             $this->line("Tenant: <info>{$tenant->name}</info>");
 
             return $tenant;
         }
 
-        $options = $tenants->mapWithKeys(fn (Tenant $t): array => [
+        $eligibleTenants = $tenants->filter(fn (Tenant $tenant): bool => $this->hasDatabaseConfigured($tenant));
+
+        if ($eligibleTenants->isEmpty()) {
+            $this->warn('Nenhum tenant com database configurado encontrado.');
+
+            return null;
+        }
+
+        if ($eligibleTenants->count() !== $tenants->count()) {
+            $ignored = $tenants->count() - $eligibleTenants->count();
+            $this->warn("{$ignored} tenant(s) ignorado(s) por não ter database configurado.");
+        }
+
+        $options = $eligibleTenants->mapWithKeys(fn (Tenant $t): array => [
             (string) $t->id => "{$t->name}",
         ])->all();
 
@@ -91,7 +111,14 @@ class IntegrationStatusCommand extends Command
             options: $options,
         );
 
-        return $tenants->firstWhere('id', $tenantId);
+        return $eligibleTenants->firstWhere('id', $tenantId);
+    }
+
+    private function hasDatabaseConfigured(Tenant $tenant): bool
+    {
+        $database = $tenant->getAttribute('database');
+
+        return is_string($database) && trim($database) !== '';
     }
 
     // ─── Table discovery ─────────────────────────────────────────────────────
@@ -184,19 +211,30 @@ class IntegrationStatusCommand extends Command
             return;
         }
 
-        foreach ($tables as $table) {
-            $count = 0;
+        $countsBeforeDelete = [];
 
-            $tenant->execute(function () use ($table, &$count): void {
+        $tenant->execute(function () use ($tables, &$countsBeforeDelete): void {
+            foreach ($tables as $table) {
+                if (! Schema::connection('tenant')->hasTable($table)) {
+                    $countsBeforeDelete[$table] = 0;
+
+                    continue;
+                }
+
+                $countsBeforeDelete[$table] = DB::connection('tenant')->table($table)->count();
+            }
+        });
+
+        foreach ($tables as $table) {
+            $tenant->execute(function () use ($table): void {
                 if (! Schema::connection('tenant')->hasTable($table)) {
                     return;
                 }
 
-                $count = DB::connection('tenant')->table($table)->count();
                 DB::connection('tenant')->statement("TRUNCATE TABLE \"{$table}\" CASCADE");
             });
 
-            $this->line(sprintf('  [%s] %d registros removidos.', $table, $count));
+            $this->line(sprintf('  [%s] %d registros removidos.', $table, (int) ($countsBeforeDelete[$table] ?? 0)));
         }
 
         $this->newLine();
