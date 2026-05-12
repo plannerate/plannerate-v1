@@ -5,8 +5,7 @@ namespace App\Services\Integrations\Importers;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Collection; 
 
 class IntegrationImporter
 {
@@ -14,24 +13,8 @@ class IntegrationImporter
         private readonly GenericIntegrationImporter $genericImporter,
     ) {}
 
-    public function importSales(TenantIntegration $integration, ?Store $store = null): void
+    public function importResource(TenantIntegration $integration, string $resource, string $targetTable): void
     {
-        $this->importResource($integration, 'sales', 'sales', $store);
-    }
-
-    public function importProducts(TenantIntegration $integration, ?Store $store = null): void
-    {
-        $this->importResource($integration, 'products', 'products', $store);
-    }
-
-    public function importResource(TenantIntegration $integration, string $resource, string $targetTable, ?Store $store = null): void
-    {
-        if ($store instanceof Store) {
-            $this->genericImporter->importResource($integration, $resource, $targetTable, $store);
-
-            return;
-        }
-
         $this->forEachStoreScope($integration, function (?Store $store) use ($integration, $resource, $targetTable): void {
             $this->genericImporter->importResource($integration, $resource, $targetTable, $store);
         });
@@ -39,33 +22,18 @@ class IntegrationImporter
 
     private function forEachStoreScope(TenantIntegration $integration, callable $callback): void
     {
-        if (! $this->separateByStore($integration)) {
-            $callback(null);
-
-            return;
-        }
-
+      
         $tenant = $integration->tenant;
         if (! $tenant instanceof Tenant) {
-            Log::warning('Importação por loja ignorada: tenant da integração não encontrado.', [
-                'integration_id' => (string) $integration->id,
-                'tenant_id' => (string) $integration->tenant_id,
-            ]);
-
             return;
         }
 
         $stores = $this->storesWithDocument($tenant);
         if ($stores->isEmpty()) {
-            Log::warning('Importação por loja ignorada: nenhuma loja com documento encontrada.', [
-                'integration_id' => (string) $integration->id,
-                'tenant_id' => (string) $integration->tenant_id,
-            ]);
-
             return;
         }
 
-        $stores->each(fn (Store $store): mixed => $callback($store));
+        $stores->each(fn(Store $store): mixed => $callback($store));
     }
 
     private function separateByStore(TenantIntegration $integration): bool
@@ -78,7 +46,7 @@ class IntegrationImporter
 
     private function storesWithDocument(Tenant $tenant): Collection
     {
-        return $tenant->execute(fn (): Collection => Store::query()
+        return $tenant->execute(fn(): Collection => Store::query()
             ->where('tenant_id', $tenant->id)
             ->published()
             ->whereNotNull('document')

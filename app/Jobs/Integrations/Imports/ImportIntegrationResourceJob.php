@@ -8,7 +8,6 @@ use App\Services\Integrations\Importers\IntegrationImporter;
 use App\Services\Integrations\ResolvedIntegrationConfigResolver;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Log;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
 
 class ImportIntegrationResourceJob implements NotTenantAware, ShouldQueue
@@ -37,24 +36,11 @@ class ImportIntegrationResourceJob implements NotTenantAware, ShouldQueue
             ->first();
 
         if (! $integration instanceof TenantIntegration) {
-            Log::warning('Importação de recurso ignorada: integração ativa não encontrada.', [
-                'integration_id' => $this->integrationId,
-                'resource' => $this->resource,
-                'target_table' => $this->targetTable,
-            ]);
-
             return;
         }
 
         $resolvedConfig = $configResolver->resolve($integration);
         if (! $resolvedConfig->pathIsEnabled($this->resource)) {
-            Log::info('Importação de recurso ignorada: path desativado.', [
-                'integration_id' => (string) $integration->id,
-                'tenant_id' => (string) $integration->tenant_id,
-                'resource' => $this->resource,
-                'target_table' => $this->targetTable,
-            ]);
-
             return;
         }
 

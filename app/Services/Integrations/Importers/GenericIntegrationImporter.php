@@ -27,16 +27,6 @@ class GenericIntegrationImporter
         private readonly ?ResolvedIntegrationConfigResolver $configResolver = null,
     ) {}
 
-    public function importSales(TenantIntegration $integration, ?Store $store = null): void
-    {
-        $this->importResource($integration, 'sales', 'sales', $store);
-    }
-
-    public function importProducts(TenantIntegration $integration, ?Store $store = null): void
-    {
-        $this->importResource($integration, 'products', 'products', $store);
-    }
-
     public function importResource(TenantIntegration $integration, string $resource, string $targetTable, ?Store $store = null): void
     {
         $request = $this->requestConfig($integration, $resource);

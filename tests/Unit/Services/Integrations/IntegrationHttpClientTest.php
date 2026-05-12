@@ -303,16 +303,7 @@ test('response reader falls back to generic paths without provider config', func
 
     $integration = new TenantIntegration([
         'integration_type' => 'unknown',
-        'config' => [
-            'response' => [
-                'products' => [
-                    'items_path' => 'payload.records',
-                    'pagination' => [
-                        'last_page_path' => 'payload.pages.last',
-                    ],
-                ],
-            ],
-        ],
+        'config' => [],
     ]);
     $payload = [
         'data' => [
@@ -429,10 +420,7 @@ test('body-api importer uses configured products path when present', function ()
             'processing' => [
                 'products_initial_days' => 7,
             ],
-            'paths' => [
-                'products' => '/custom/products',
-                'sales' => '/custom/sales',
-            ],
+            'requests' => bodyProductsRequests('/custom/products'),
         ],
     ]);
 
@@ -441,7 +429,7 @@ test('body-api importer uses configured products path when present', function ()
     ]);
     $store->id = '01jts31n2rpz1tyy4n6xv4qdp1';
 
-    integrationImporter()->importProducts($integration, $store);
+    genericIntegrationImporter()->importResource($integration, 'products', 'products', $store);
 
     Http::assertSent(function (Request $request): bool {
         return $request->url() === 'https://body-api.example.test/custom/products'
@@ -474,13 +462,11 @@ test('body-api importer uses configured body page size', function (): void {
                     ['key' => 'tamanho_pagina', 'value' => '1800', 'enabled' => true],
                 ],
             ],
-            'paths' => [
-                'products' => '/custom/products',
-            ],
+            'requests' => bodyProductsRequests('/custom/products'),
         ],
     ]);
 
-    integrationImporter()->importProducts($integration);
+    integrationImporter()->importResource($integration, 'products', 'products');
 
     Http::assertSent(function (Request $request): bool {
         return $request->url() === 'https://body-api.example.test/custom/products'
@@ -518,6 +504,7 @@ test('sales importer sends yesterday to today when tenant already has sales', fu
                         'target_table' => 'sales',
                         'fallback_path' => '/hubvendas.vendas_produtos',
                         'dispatch_by_day' => false,
+                        'date_strategy' => 'range_incremental',
                         'page_field' => 'pagina',
                         'page_value_type' => 'string',
                         'page_size_field' => 'tamanho_pagina',
@@ -537,7 +524,7 @@ test('sales importer sends yesterday to today when tenant already has sales', fu
     $tenant->shouldReceive('execute')->once()->andReturn(true);
     $integration->setRelation('tenant', $tenant);
 
-    integrationImporter()->importSales($integration);
+    integrationImporter()->importResource($integration, 'sales', 'sales');
 
     Http::assertSent(function (Request $request): bool {
         parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
@@ -580,6 +567,7 @@ test('sales importer sends initial sales period when tenant has no sales', funct
                         'target_table' => 'sales',
                         'fallback_path' => '/hubvendas.vendas_produtos',
                         'dispatch_by_day' => false,
+                        'date_strategy' => 'range_incremental',
                         'date_fields' => [
                             'start' => 'data_inicial',
                             'end' => 'data_final',
@@ -594,7 +582,7 @@ test('sales importer sends initial sales period when tenant has no sales', funct
     $tenant->shouldReceive('execute')->once()->andReturn(false);
     $integration->setRelation('tenant', $tenant);
 
-    integrationImporter()->importSales($integration);
+    integrationImporter()->importResource($integration, 'sales', 'sales');
 
     Http::assertSent(function (Request $request): bool {
         parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
@@ -624,6 +612,10 @@ test('query-api importer sends store document as empresa query param for get req
         'integration_type' => 'query-api',
         'config' => [
             'auth' => [
+                'type' => 'bearer_fetch',
+                'token_request' => [
+                    'path' => '/v1/Token',
+                ],
                 'credentials' => [
                     'username' => 'GOMARKAPI',
                     'password' => 'secret',
@@ -632,6 +624,7 @@ test('query-api importer sends store document as empresa query param for get req
             'connection' => [
                 'base_url' => 'https://query-api.example.test',
             ],
+            'requests' => queryProductsRequests(),
         ],
     ]);
 
@@ -640,7 +633,7 @@ test('query-api importer sends store document as empresa query param for get req
     ]);
     $store->id = '01jts31n2rpz1tyy4n6xv4qdp2';
 
-    integrationImporter()->importProducts($integration, $store);
+    genericIntegrationImporter()->importResource($integration, 'products', 'products', $store);
 
     Http::assertSent(function (Request $request): bool {
         return $request->url() === 'https://query-api.example.test/Produtos/Produtos?empresa=98765432000188&pagina=1&registros_por_pagina=200&api-version=1.0';
@@ -667,6 +660,10 @@ test('query-api importer uses configured params page size', function (): void {
         'integration_type' => 'query-api',
         'config' => [
             'auth' => [
+                'type' => 'bearer_fetch',
+                'token_request' => [
+                    'path' => '/v1/Token',
+                ],
                 'credentials' => [
                     'username' => 'GOMARKAPI',
                     'password' => 'secret',
@@ -678,10 +675,11 @@ test('query-api importer uses configured params page size', function (): void {
                     ['key' => 'registros_por_pagina', 'value' => '450', 'enabled' => true],
                 ],
             ],
+            'requests' => queryProductsRequests(),
         ],
     ]);
 
-    integrationImporter()->importProducts($integration);
+    integrationImporter()->importResource($integration, 'products', 'products');
 
     Http::assertSent(function (Request $request): bool {
         return $request->url() === 'https://query-api.example.test/Produtos/Produtos?registros_por_pagina=450&pagina=1&api-version=1.0';
@@ -704,6 +702,10 @@ test('query-api importer caches token between requests', function (): void {
         'integration_type' => 'query-api',
         'config' => [
             'auth' => [
+                'type' => 'bearer_fetch',
+                'token_request' => [
+                    'path' => '/v1/Token',
+                ],
                 'credentials' => [
                     'username' => 'GOMARKAPI',
                     'password' => 'secret',
@@ -712,12 +714,13 @@ test('query-api importer caches token between requests', function (): void {
             'connection' => [
                 'base_url' => 'https://query-api.example.test',
             ],
+            'requests' => queryProductsRequests(),
         ],
     ]);
 
     $importer = integrationImporter();
-    $importer->importProducts($integration);
-    $importer->importProducts($integration);
+    $importer->importResource($integration, 'products', 'products');
+    $importer->importResource($integration, 'products', 'products');
 
     Http::assertSentCount(3);
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://query-api.example.test/v1/Token');
@@ -753,13 +756,11 @@ test('body-api importer paginates products when total_paginas is returned', func
             'processing' => [
                 'products_initial_days' => 7,
             ],
-            'paths' => [
-                'products' => '/custom/products',
-            ],
+            'requests' => bodyProductsRequests('/custom/products'),
         ],
     ]);
 
-    integrationImporter()->importProducts($integration);
+    integrationImporter()->importResource($integration, 'products', 'products');
 
     Http::assertSentCount(2);
     Carbon::setTestNow();
@@ -788,6 +789,10 @@ test('query-api importer paginates products when last_page is returned', functio
         'integration_type' => 'query-api',
         'config' => [
             'auth' => [
+                'type' => 'bearer_fetch',
+                'token_request' => [
+                    'path' => '/v1/Token',
+                ],
                 'credentials' => [
                     'username' => 'GOMARKAPI',
                     'password' => 'secret',
@@ -796,10 +801,11 @@ test('query-api importer paginates products when last_page is returned', functio
             'connection' => [
                 'base_url' => 'https://query-api.example.test',
             ],
+            'requests' => queryProductsRequests(),
         ],
     ]);
 
-    integrationImporter()->importProducts($integration);
+    integrationImporter()->importResource($integration, 'products', 'products');
 
     Http::assertSentCount(3);
 });
@@ -833,6 +839,10 @@ test('query-api importer paginates products when pagination.last_page is returne
         'integration_type' => 'query-api',
         'config' => [
             'auth' => [
+                'type' => 'bearer_fetch',
+                'token_request' => [
+                    'path' => '/v1/Token',
+                ],
                 'credentials' => [
                     'username' => 'GOMARKAPI',
                     'password' => 'secret',
@@ -841,19 +851,77 @@ test('query-api importer paginates products when pagination.last_page is returne
             'connection' => [
                 'base_url' => 'https://query-api.example.test',
             ],
+            'requests' => queryProductsRequests(),
         ],
     ]);
 
-    integrationImporter()->importProducts($integration);
+    integrationImporter()->importResource($integration, 'products', 'products');
 
     Http::assertSentCount(3);
 });
 
 function integrationImporter(): IntegrationImporter
 {
-    return new IntegrationImporter(new GenericIntegrationImporter(
+    return new IntegrationImporter(genericIntegrationImporter());
+}
+
+function genericIntegrationImporter(): GenericIntegrationImporter
+{
+    return new GenericIntegrationImporter(
         new IntegrationHttpClient,
         new ImportBatchPayloadStore,
         new IntegrationResponseReader,
-    ));
+    );
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function bodyProductsRequests(string $path): array
+{
+    return [
+        'method' => 'POST',
+        'payload' => 'body',
+        'paths' => [
+            'products' => [
+                'target_table' => 'products',
+                'fallback_path' => $path,
+                'store_document_field' => 'empresa',
+                'initial_days' => 2,
+                'date_fields' => [
+                    'changed_since' => 'data_ultima_alteracao',
+                ],
+                'page_field' => 'pagina',
+                'page_value_type' => 'string',
+                'page_size_field' => 'tamanho_pagina',
+                'default_page_size' => 500,
+                'max_page_size' => 500,
+            ],
+        ],
+    ];
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function queryProductsRequests(): array
+{
+    return [
+        'method' => 'GET',
+        'payload' => 'query',
+        'paths' => [
+            'products' => [
+                'target_table' => 'products',
+                'fallback_path' => '/Produtos/Produtos',
+                'store_document_field' => 'empresa',
+                'page_field' => 'pagina',
+                'page_size_field' => 'registros_por_pagina',
+                'default_page_size' => 200,
+                'max_page_size' => 200,
+                'fixed_query' => [
+                    'api-version' => '1.0',
+                ],
+            ],
+        ],
+    ];
 }

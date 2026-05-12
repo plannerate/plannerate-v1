@@ -83,11 +83,13 @@ test('store scoped imports only use published stores with documents', function (
 
     $genericImporter = Mockery::mock(GenericIntegrationImporter::class);
     $genericImporter
-        ->shouldReceive('importProducts')
+        ->shouldReceive('importResource')
         ->once()
-        ->withArgs(fn (TenantIntegration $receivedIntegration, Store $store): bool => $receivedIntegration === $integration
+        ->withArgs(fn (TenantIntegration $receivedIntegration, string $resource, string $targetTable, Store $store): bool => $receivedIntegration === $integration
+            && $resource === 'products'
+            && $targetTable === 'products'
             && $store->id === '01jts31n2rpz1tyy4n6xv4qdp1'
             && $store->document === '11.111.111/0001-11');
 
-    (new IntegrationImporter($genericImporter))->importProducts($integration);
+    (new IntegrationImporter($genericImporter))->importResource($integration, 'products', 'products');
 });

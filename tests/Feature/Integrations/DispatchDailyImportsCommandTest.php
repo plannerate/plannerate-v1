@@ -9,9 +9,6 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 beforeEach(function (): void {
     config()->set('database.connections.landlord', [
@@ -42,6 +39,7 @@ beforeEach(function (): void {
         $table->json('requests')->nullable();
         $table->json('response')->nullable();
         $table->boolean('is_active')->default(true);
+        $table->softDeletes();
         $table->timestamps();
     });
 
@@ -53,6 +51,7 @@ beforeEach(function (): void {
         $table->json('config')->nullable();
         $table->boolean('is_active')->default(true);
         $table->timestamp('last_sync')->nullable();
+        $table->softDeletes();
         $table->timestamps();
     });
 });
@@ -104,19 +103,7 @@ test('daily imports command dispatches enabled paths for active integrations', f
 
     Artisan::call('integrations:daily-imports');
 
-    $output = Artisan::output();
-
-    expect($output)
-        ->toContain('[Passo 01] Iniciando importações diárias usando requests.paths.')
-        ->toContain('[Passo 03] Paths despacháveis encontrados: 2.')
-        ->toContain('Integrações ativas encontradas para importação diária: 1')
-        ->toContain('Tenant Ativo')
-        ->toContain('principal')
-        ->toContain('sales')
-        ->toContain('products')
-        ->toContain('ImportIntegrationResourceJob')
-        ->not->toContain('Tenant Inativo')
-        ->not->toContain('desativada');
+    expect(Artisan::output())->toBe('');
 
     Bus::assertDispatched(ImportIntegrationResourceJob::class, function (ImportIntegrationResourceJob $job) use ($activeIntegration): bool {
         return $job->integrationId === (string) $activeIntegration->id
@@ -155,7 +142,7 @@ test('daily imports command filters dispatches by path type when provided', func
 
     TenantIntegration::query()->create([
         'tenant_id' => $tenant->id,
-        'integration_type' => 'sysmo',
+        'integration_type' => 'acme-erp',
         'identifier' => 'principal',
         'config' => [],
         'is_active' => true,
@@ -165,23 +152,18 @@ test('daily imports command filters dispatches by path type when provided', func
         '--type' => 'products',
     ]);
 
-    $output = Artisan::output();
-
-    expect($output)
-        ->toContain('[Passo 03] Paths despacháveis encontrados: 1.')
-        ->toContain('products')
-        ->not->toContain('sales');
+    expect(Artisan::output())->toBe('');
 
     Bus::assertDispatched(ImportIntegrationResourceJob::class, fn (ImportIntegrationResourceJob $job): bool => $job->resource === 'products');
     Bus::assertNotDispatched(ImportIntegrationResourceJob::class, fn (ImportIntegrationResourceJob $job): bool => $job->resource === 'sales');
 });
 
-test('daily imports command warns when there are no active integrations', function (): void {
+test('daily imports command stays quiet when there are no active integrations', function (): void {
     Bus::fake();
 
     Artisan::call('integrations:daily-imports');
 
-    expect(Artisan::output())->toContain('Nenhuma integração ativa encontrada para a busca diária.');
+    expect(Artisan::output())->toBe('');
 
     Bus::assertNothingDispatched();
 });
@@ -230,12 +212,7 @@ test('daily imports command dispatches generic configured paths and skips disabl
 
     Artisan::call('integrations:daily-imports');
 
-    $output = Artisan::output();
-
-    expect($output)
-        ->toContain('[Passo 03] Paths despacháveis encontrados: 1.')
-        ->toContain('stores')
-        ->not->toContain('products');
+    expect(Artisan::output())->toBe('');
 
     Bus::assertDispatched(ImportIntegrationResourceJob::class, fn (ImportIntegrationResourceJob $job): bool => $job->resource === 'stores'
         && $job->targetTable === 'stores');
