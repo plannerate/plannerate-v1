@@ -121,6 +121,7 @@ test('sales incremental strategy fetches yesterday today and missing store days'
                 'sales' => [
                     'target_table' => 'sales',
                     'fallback_path' => '/sales',
+                    'date_column' => 'sale_date',
                     'date_fields' => ['start' => 'data_inicial', 'end' => 'data_final'],
                 ],
             ],

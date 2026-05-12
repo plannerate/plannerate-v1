@@ -6,6 +6,7 @@ use App\Jobs\Integrations\Imports\ProcessImportedResourceBatchJob;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Concerns\HasIntegrationHelpers;
 use App\Services\Integrations\Http\IntegrationHttpClient;
 use App\Services\Integrations\ResolvedIntegrationConfigResolver;
 use App\Services\Integrations\Support\ImportBatchPayloadStore;
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\Schema;
 
 class GenericIntegrationImporter
 {
+    use HasIntegrationHelpers;
+
     public function __construct(
         private readonly IntegrationHttpClient $httpClient,
         private readonly ImportBatchPayloadStore $importBatchPayloadStore,
@@ -34,7 +37,7 @@ class GenericIntegrationImporter
         $endpoint = $config->path($resource, (string) ($request['fallback_path'] ?? ''));
 
         if ($config->dateStrategy($resource) === 'sales_incremental') {
-            foreach ($this->salesDates($config, $targetTable, $request, $store) as $date) {
+            foreach ($this->datesForIncrementalStrategy($config, $targetTable, $request, $store) as $date) {
                 $this->importPages($config, $resource, $targetTable, $request, $endpoint, $store, $date);
             }
 
@@ -189,7 +192,7 @@ class GenericIntegrationImporter
         }
 
         if ($strategy === 'sales_incremental' && is_string($date) && $date !== '') {
-            return $this->rangeDatePayload($fields, Carbon::parse($date), Carbon::parse($date), true);
+            return $this->rangeDatePayload($fields, Carbon::parse($date), Carbon::parse($date));
         }
 
         if (! in_array($strategy, ['products_incremental', 'range_incremental'], true)) {
@@ -202,14 +205,14 @@ class GenericIntegrationImporter
             ? $endDate->copy()->subDay()
             : $endDate->copy()->subDays($this->initialDays($config, $targetTable, $request) - 1);
 
-        return $this->rangeDatePayload($fields, $startDate, $endDate, false);
+        return $this->rangeDatePayload($fields, $startDate, $endDate);
     }
 
     /**
      * @param  array<string, mixed>  $fields
      * @return array<string, mixed>
      */
-    private function rangeDatePayload(array $fields, Carbon $startDate, Carbon $endDate, bool $defaultSalesFields): array
+    private function rangeDatePayload(array $fields, Carbon $startDate, Carbon $endDate): array
     {
         if (is_string($fields['changed_since'] ?? null)) {
             return [(string) $fields['changed_since'] => $startDate->toDateString()];
@@ -222,8 +225,8 @@ class GenericIntegrationImporter
             ];
         }
 
-        $startField = (string) ($fields['start'] ?? ($defaultSalesFields ? 'data_inicial' : ''));
-        $endField = (string) ($fields['end'] ?? ($defaultSalesFields ? 'data_final' : ''));
+        $startField = (string) ($fields['start'] ?? '');
+        $endField = (string) ($fields['end'] ?? '');
 
         return array_filter([
             $startField => $startDate->toDateString(),
@@ -298,7 +301,7 @@ class GenericIntegrationImporter
      * @param  array<string, mixed>  $request
      * @return list<string>
      */
-    private function salesDates(ResolvedIntegrationConfig $config, string $targetTable, array $request, Store $store): array
+    private function datesForIncrementalStrategy(ResolvedIntegrationConfig $config, string $targetTable, array $request, Store $store): array
     {
         $integration = $config->integration;
         $endDate = Carbon::today();
@@ -347,11 +350,15 @@ class GenericIntegrationImporter
         $endDate = Carbon::today();
         $startDate = $endDate->copy()->subDays($lookbackDays - 1);
         $expectedDates = $this->dateRange($startDate, $endDate);
-        $dateColumn = (string) ($request['date_column'] ?? 'sale_date');
+        $dateColumn = (string) ($request['date_column'] ?? '');
 
         $existingDates = $tenant->execute(function () use ($store, $tenant, $targetTable, $dateColumn, $startDate, $endDate): array {
             $connection = (string) (config('multitenancy.tenant_database_connection_name') ?: config('database.default'));
-            if (! Schema::connection($connection)->hasTable($targetTable) || ! Schema::connection($connection)->hasColumn($targetTable, $dateColumn)) {
+            if (
+                $dateColumn === ''
+                || ! Schema::connection($connection)->hasTable($targetTable)
+                || ! Schema::connection($connection)->hasColumn($targetTable, $dateColumn)
+            ) {
                 return [];
             }
 
@@ -403,15 +410,7 @@ class GenericIntegrationImporter
             return max(1, (int) $processing[$targetKey]);
         }
 
-        if ($targetTable === 'sales') {
-            return max(1, (int) ($processing['sales_initial_days'] ?? 120));
-        }
-
-        if ($targetTable === 'products') {
-            return max(1, (int) ($processing['products_initial_days'] ?? 120));
-        }
-
-        return 120;
+        return max(1, (int) ($processing['initial_days'] ?? 120));
     }
 
     private function targetHasRows(TenantIntegration $integration, string $targetTable, Store $store): bool
@@ -450,37 +449,5 @@ class GenericIntegrationImporter
         $statuses = is_array($request['skip_statuses'] ?? null) ? $request['skip_statuses'] : [];
 
         return is_int($status) && in_array($status, array_map('intval', $statuses), true);
-    }
-
-    private function rowIsEnabled(array $row): bool
-    {
-        if (! array_key_exists('enabled', $row)) {
-            return true;
-        }
-
-        $enabled = $row['enabled'];
-        if (is_bool($enabled)) {
-            return $enabled;
-        }
-
-        if (is_string($enabled) || is_int($enabled)) {
-            return filter_var($enabled, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? true;
-        }
-
-        return true;
-    }
-
-    private function validTableName(string $table): bool
-    {
-        return preg_match('/^[A-Za-z0-9_]+$/', $table) === 1;
-    }
-
-    private function resolveConfig(ResolvedIntegrationConfig|TenantIntegration $config): ResolvedIntegrationConfig
-    {
-        if ($config instanceof ResolvedIntegrationConfig) {
-            return $config;
-        }
-
-        return ($this->configResolver ?? app(ResolvedIntegrationConfigResolver::class))->resolve($config);
     }
 }

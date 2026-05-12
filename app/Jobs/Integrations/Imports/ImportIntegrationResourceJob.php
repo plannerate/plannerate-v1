@@ -40,9 +40,7 @@ class ImportIntegrationResourceJob implements NotTenantAware, ShouldQueue
         }
 
         $resolvedConfig = $configResolver->resolve($integration);
-        if (! $resolvedConfig->pathIsEnabled($this->resource)) {
-            return;
-        }
+       
 
         $integrationImporter->importResource($resolvedConfig, $this->resource, $this->targetTable);
 

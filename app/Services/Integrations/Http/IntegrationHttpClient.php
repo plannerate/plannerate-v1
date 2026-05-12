@@ -3,6 +3,7 @@
 namespace App\Services\Integrations\Http;
 
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Concerns\HasIntegrationHelpers;
 use App\Services\Integrations\ResolvedIntegrationConfigResolver;
 use App\Services\Integrations\Support\ResolvedIntegrationConfig;
 use Illuminate\Http\Client\PendingRequest;
@@ -13,6 +14,8 @@ use RuntimeException;
 
 class IntegrationHttpClient
 {
+    use HasIntegrationHelpers;
+
     public function __construct(
         private readonly ?IntegrationTokenResolver $tokenResolver = null,
         private readonly ?ResolvedIntegrationConfigResolver $configResolver = null,
@@ -193,35 +196,5 @@ class IntegrationHttpClient
         }
 
         return $values;
-    }
-
-    /**
-     * @param  array<string, mixed>  $row
-     */
-    private function rowIsEnabled(array $row): bool
-    {
-        if (! array_key_exists('enabled', $row)) {
-            return true;
-        }
-
-        $enabled = $row['enabled'];
-        if (is_bool($enabled)) {
-            return $enabled;
-        }
-
-        if (is_string($enabled) || is_int($enabled)) {
-            return filter_var($enabled, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? true;
-        }
-
-        return true;
-    }
-
-    private function resolveConfig(ResolvedIntegrationConfig|TenantIntegration $config): ResolvedIntegrationConfig
-    {
-        if ($config instanceof ResolvedIntegrationConfig) {
-            return $config;
-        }
-
-        return ($this->configResolver ?? app(ResolvedIntegrationConfigResolver::class))->resolve($config);
     }
 }

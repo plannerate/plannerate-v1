@@ -29,14 +29,14 @@ class DispatchDailyImportsCommand extends Command
 
                 if (! $resolvedConfig->pathIsEnabled($resource)) {
                     continue;
-                }
+                } 
 
-                dispatch(new ImportIntegrationResourceJob(
-                    integrationId: (string) $integration->id,
-                    resource: $resource,
-                    targetTable: $resolvedConfig->targetTable($resource),
-                    runFinalize: ! (bool) $this->option('no-finalize'),
-                ));
+                // dispatch(new ImportIntegrationResourceJob(
+                //     integrationId: (string) $integration->id,
+                //     resource: $resource,
+                //     targetTable: $resolvedConfig->targetTable($resource),
+                //     runFinalize: ! (bool) $this->option('no-finalize'),
+                // ));
             }
         }
 
