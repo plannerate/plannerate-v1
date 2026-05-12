@@ -4,6 +4,10 @@ namespace App\Jobs\Integrations;
 
 use App\Models\IntegrationApi;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\FieldValueResolver;
+use App\Services\Integrations\RecordMapper;
+use App\Services\Integrations\Support\DeterministicIdGenerator;
+use App\Services\Integrations\TenantRecordPersister;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -82,7 +86,11 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
             'file' => $this->filePath,
         ]);
 
-        // TODO: PersistImportedRecordsService::handle($integration, $pathConfig, $this->storeId, $items);
+        $persister = new TenantRecordPersister(
+            new RecordMapper(new FieldValueResolver),
+            new DeterministicIdGenerator,
+        );
+        $persister->handle($integration, $pathConfig, $this->storeId, $items);
 
         $this->deleteFile();
     }

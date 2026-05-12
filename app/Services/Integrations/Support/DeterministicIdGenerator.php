@@ -2,49 +2,45 @@
 
 namespace App\Services\Integrations\Support;
 
+/**
+ * Gera IDs determinísticos para registros importados.
+ *
+ * Usa os campos de unique_by do path config para garantir
+ * que o mesmo registro sempre gera o mesmo ID, independente
+ * de quantas vezes for importado.
+ */
 class DeterministicIdGenerator
 {
-    public function productId(string $tenantId, ?string $ean, ?string $codigoErp): string
-    {
-        $identity = $ean ?? $codigoErp ?? 'sem-chave';
-        $hash = md5($tenantId.'|'.$identity);
-
-        return 'P1'.strtoupper(substr($hash, 0, 24));
-    }
-
-    public function saleId(
+    /**
+     * Gera um ID determinístico a partir dos campos unique_by do registro mapeado.
+     *
+     * @param  array<string, mixed>  $record  Registro já mapeado pelo field_map
+     * @param  array<string, mixed>  $pathConfig  Config do path (unique_by, include_store_in_id, id_prefix)
+     */
+    public function fromRecord(
         string $tenantId,
         string $integrationId,
-        ?string $storeDocument,
-        string $codigoErp,
-        string $saleDate,
-        ?string $promotion,
+        array $record,
+        array $pathConfig,
+        ?string $storeId,
     ): string {
-        $uniqueKey = implode('|', [
-            $tenantId,
-            $integrationId,
-            $storeDocument ?? 'sem-documento-loja',
-            preg_replace('/[^A-Za-z0-9]/', '', $codigoErp) ?? $codigoErp,
-            preg_replace('/[^0-9]/', '', $saleDate) ?? $saleDate,
-            strtoupper($promotion ?? 'N'),
-        ]);
+        $uniqueBy = (array) data_get($pathConfig, 'unique_by', []);
+        $includeStore = (bool) data_get($pathConfig, 'include_store_in_id', false);
+        $prefix = (string) data_get($pathConfig, 'id_prefix', 'I1');
 
-        $hash = hash('sha256', $uniqueKey);
+        $parts = [$tenantId, $integrationId];
 
-        return 'S1'.strtoupper(substr($hash, 0, 24));
-    }
+        if ($includeStore) {
+            $parts[] = $storeId ?? 'sem-loja';
+        }
 
-    public function providerId(string $tenantId, string $codigo): string
-    {
-        $hash = md5($tenantId.'|fornecedor|'.$codigo);
+        foreach ($uniqueBy as $field) {
+            $value = (string) ($record[$field] ?? '');
+            $parts[] = preg_replace('/[^A-Za-z0-9]/', '', $value) ?: $value;
+        }
 
-        return 'F1'.strtoupper(substr($hash, 0, 24));
-    }
+        $hash = hash('sha256', implode('|', $parts));
 
-    public function providerAddressId(string $tenantId, string $codigo): string
-    {
-        $hash = md5($tenantId.'|fornecedor-endereco|'.$codigo);
-
-        return 'FA'.strtoupper(substr($hash, 0, 24));
+        return $prefix.strtoupper(substr($hash, 0, 24));
     }
 }

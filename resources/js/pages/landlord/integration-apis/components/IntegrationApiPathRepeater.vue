@@ -23,6 +23,7 @@ function newPath(): RequestPathRow {
         id: `path-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         target_table: '',
         fallback_path: '',
+        id_prefix: '',
         unique_by: '',
         include_store_in_id: false,
         initial_days: '',
@@ -194,14 +195,21 @@ onMounted(() => {
                 </div>
 
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
-                    <div class="grid gap-2 md:col-span-5">
+                    <div class="grid gap-2 md:col-span-4">
                         <Label :for="`path-unique-by-${requestPath.id}`">{{
                             t('app.landlord.integration_apis.fields.unique_by') }}</Label>
                         <Input :id="`path-unique-by-${requestPath.id}`" :model-value="requestPath.unique_by"
                             :placeholder="t('app.landlord.integration_apis.placeholders.unique_by')"
                             @update:model-value="updatePath(pathIndex, { unique_by: String($event) })" />
                     </div>
-                    <div class="grid gap-2 md:col-span-3">
+                    <div class="grid gap-2 md:col-span-2">
+                        <Label :for="`path-id-prefix-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.id_prefix') }}</Label>
+                        <Input :id="`path-id-prefix-${requestPath.id}`" :model-value="requestPath.id_prefix"
+                            :placeholder="t('app.landlord.integration_apis.placeholders.id_prefix')"
+                            @update:model-value="updatePath(pathIndex, { id_prefix: String($event) })" />
+                    </div>
+                    <div class="grid gap-2 md:col-span-2">
                         <Label :for="`path-initial-days-${requestPath.id}`">{{
                             t('app.landlord.integration_apis.fields.initial_days') }}</Label>
                         <Input :id="`path-initial-days-${requestPath.id}`" type="number"
