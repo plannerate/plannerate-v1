@@ -154,8 +154,6 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         $lastPage = (int) ceil($lastPageAtMinSize * $minPageSize / $maxPageSize);
         $lastPage = $this->applyMaxPageLimit($lastPage, $pathConfig);
 
-        $this->logDiscovery($lastPage, $lastPageAtMinSize, $minPageSize, $maxPageSize, $storeId, $responseData, $responseMeta);
-
         $this->dispatchPageJobs($lastPage, $storeId, $storeDocument);
     }
 
@@ -235,28 +233,6 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
                 $this->dateStart, $this->dateEnd, $storeId, $storeDocument,
             );
         }
-    }
-
-    // ─── Log ─────────────────────────────────────────────────────────────────
-
-    /** @param array<string, mixed> $responseData */
-    private function logDiscovery(int $lastPage, int $lastPageAtMinSize, int $minPageSize, int $maxPageSize, ?string $storeId, array $responseData, array $responseMeta): void
-    {
-        $totalPath = (string) data_get($responseMeta, 'pagination.total_path', '');
-        $total = $totalPath !== '' ? (int) data_get($responseData, $totalPath, 0) : 0;
-
-        Log::info('DiscoverIntegrationPagesJob: descoberta concluída', [
-            'integration_id' => $this->integrationId,
-            'path_key' => $this->pathKey,
-            'store_id' => $storeId,
-            'pages_at_min_size' => $lastPageAtMinSize,
-            'min_page_size' => $minPageSize,
-            'max_page_size' => $maxPageSize,
-            'fetch_jobs' => $lastPage,
-            'total_records' => $total,
-            'date_start' => $this->dateStart,
-            'date_end' => $this->dateEnd,
-        ]);
     }
 
     // ─── Horizon tags ────────────────────────────────────────────────────────

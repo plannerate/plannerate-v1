@@ -67,7 +67,7 @@ class IntegrationStatusCommand extends Command
     {
         $tenants = Tenant::query()
             ->orderBy('name')
-            ->get(['id', 'name', 'database']);
+            ->get(['id', 'name']);
 
         if ($tenants->isEmpty()) {
             $this->warn('Nenhum tenant encontrado.');
@@ -164,23 +164,6 @@ class IntegrationStatusCommand extends Command
                     $min = $q->min('sale_date');
                     $max = $q->max('sale_date');
                     $this->line(sprintf('  Período (sale_date) : %s → %s', $min ?? '—', $max ?? '—'));
-                }
-
-                if ($count === 0) {
-                    $this->warn('  Tabela vazia — sem amostra.');
-
-                    return;
-                }
-
-                $sample = $q->inRandomOrder()->first();
-
-                if ($sample !== null) {
-                    $this->newLine();
-                    $this->line('  Amostra aleatória:');
-                    foreach ((array) $sample as $col => $val) {
-                        $display = is_null($val) ? '<null>' : (string) $val;
-                        $this->line(sprintf('    %-30s %s', $col, $display));
-                    }
                 }
             });
         }

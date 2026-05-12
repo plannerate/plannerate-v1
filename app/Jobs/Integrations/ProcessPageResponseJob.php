@@ -67,24 +67,10 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
         }
 
         if ($records === []) {
-            Log::info('ProcessPageResponseJob: arquivo sem registros', [
-                'integration_id' => $this->integrationId,
-                'path_key' => $this->pathKey,
-                'file' => $this->filePath,
-            ]);
-
             $this->deleteFile();
 
             return;
         }
-
-        Log::info('ProcessPageResponseJob: persistindo registros', [
-            'integration_id' => $this->integrationId,
-            'path_key' => $this->pathKey,
-            'store_id' => $this->storeId,
-            'count' => count($records),
-            'file' => $this->filePath,
-        ]);
 
         $pivotConfigs = $this->normalizePivotConfigs((array) data_get($pathConfig, 'pivot_tables', []));
 
@@ -173,7 +159,6 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
     private function normalizePivotConfigs(array $pivotConfigs): array
     {
         $normalized = [];
-        $adjusted = 0;
 
         foreach ($pivotConfigs as $pivotConfig) {
             if (! is_array($pivotConfig)) {
@@ -198,7 +183,6 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
 
             if ($table === 'product_store' && ! in_array('tenant_id', $uniqueBy, true)) {
                 $uniqueBy = ['tenant_id', ...$uniqueBy];
-                $adjusted++;
             }
 
             if ($uniqueBy !== []) {
@@ -206,14 +190,6 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
             }
 
             $normalized[] = $pivotConfig;
-        }
-
-        if ($adjusted > 0) {
-            Log::info('ProcessPageResponseJob: pivot unique_by normalizado com tenant_id', [
-                'integration_id' => $this->integrationId,
-                'path_key' => $this->pathKey,
-                'adjusted_configs' => $adjusted,
-            ]);
         }
 
         return $normalized;

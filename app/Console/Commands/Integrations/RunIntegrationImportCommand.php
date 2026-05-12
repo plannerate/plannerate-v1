@@ -25,15 +25,15 @@ class RunIntegrationImportCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->info(sprintf('Encontradas %d integração(ões) ativa(s).', $integrations->count()));
-        $this->newLine();
+        $this->info(sprintf('Integrações ativas: %d', $integrations->count()));
+
+        $totalJobs = 0;
 
         foreach ($integrations as $integration) {
-            $this->processIntegration($integration);
+            $totalJobs += $this->processIntegration($integration);
         }
 
-        $this->newLine();
-        $this->info('Jobs despachados na queue [imports].');
+        $this->info(sprintf('Jobs de descoberta despachados: %d (queue: imports).', $totalJobs));
 
         return self::SUCCESS;
     }
@@ -48,22 +48,23 @@ class RunIntegrationImportCommand extends Command
             ->get();
     }
 
-    private function processIntegration(TenantIntegration $integration): void
+    private function processIntegration(TenantIntegration $integration): int
     {
         $api = $integration->api;
         $paths = data_get($api->requests ?? [], 'paths', []);
-
-        $this->info("Integração: {$api->name} | Tenant: {$integration->tenant_id}");
+        $dispatched = 0;
 
         foreach ($paths as $pathKey => $pathConfig) {
-            $this->dispatchPathJobs($integration, (string) $pathKey, (array) $pathConfig);
+            $dispatched += $this->dispatchPathJobs($integration, (string) $pathKey, (array) $pathConfig);
         }
 
-        $this->newLine();
+        $this->line(sprintf(' - %s (%s): %d job(s)', $api->name, (string) $integration->tenant_id, $dispatched));
+
+        return $dispatched;
     }
 
     /** @param array<string, mixed> $pathConfig */
-    private function dispatchPathJobs(TenantIntegration $integration, string $pathKey, array $pathConfig): void
+    private function dispatchPathJobs(TenantIntegration $integration, string $pathKey, array $pathConfig): int
     {
         $dateFields = data_get($pathConfig, 'date_fields', []);
         $initialDays = (int) data_get($pathConfig, 'initial_days', 0);
@@ -75,23 +76,19 @@ class RunIntegrationImportCommand extends Command
             if ($hasRecords) {
                 $yesterday = now()->subDay()->toDateString();
                 DiscoverIntegrationPagesJob::dispatch($integration->id, $pathKey, $yesterday, now()->toDateString());
-                $this->line(sprintf('   [%s] 1 job incremental [%s]', $pathKey, $yesterday));
             } else {
                 $start = $initialDays > 0 ? now()->subDays($initialDays)->toDateString() : null;
                 DiscoverIntegrationPagesJob::dispatch($integration->id, $pathKey, $start, now()->toDateString());
-                $label = $start ?? 'sem limite de data';
-                $this->line(sprintf('   [%s] 1 job setup [%s]', $pathKey, $label));
             }
 
-            return;
+            return 1;
         }
 
         $changedSince = $this->resolveChangedSince($pathConfig, $hasRecords);
 
         DiscoverIntegrationPagesJob::dispatch($integration->id, $pathKey, $changedSince, null);
 
-        $label = $changedSince !== null ? "desde {$changedSince}" : 'completo (sem filtro de data)';
-        $this->line(sprintf('   [%s] 1 job [%s]', $pathKey, $label));
+        return 1;
     }
 
     /**

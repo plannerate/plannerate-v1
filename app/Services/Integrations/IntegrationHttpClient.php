@@ -5,7 +5,6 @@ namespace App\Services\Integrations;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /**
@@ -30,12 +29,6 @@ class IntegrationHttpClient
     public function call(string $method, string $url, array $payload): Response
     {
         $http = $this->prepare();
-
-        Log::info('IntegrationHttpClient: executando chamada HTTP', [
-            'method' => strtoupper($method),
-            'url' => $url,
-            'payload' => $payload,
-        ]);
 
         return match ($method) {
             'post' => $http->post($url, $payload),

@@ -8,8 +8,8 @@ use App\Services\Integrations\FieldValueResolver;
 use App\Services\Integrations\IntegrationHttpClient;
 use App\Services\Integrations\IntegrationPayloadBuilder;
 use App\Services\Integrations\RecordMapper;
-use App\Services\Integrations\TenantUpsertRecordPreparer;
 use App\Services\Integrations\Support\DeterministicIdGenerator;
+use App\Services\Integrations\TenantUpsertRecordPreparer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -96,26 +96,10 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         );
 
         if ($records === []) {
-            Log::info('FetchIntegrationPageJob: nenhum item mapeado', [
-                'integration_id' => $this->integrationId,
-                'path_key' => $this->pathKey,
-                'page' => $this->page,
-                'store_id' => $this->storeId,
-            ]);
-
             return;
         }
 
         $filePath = $this->saveRecords($records);
-
-        Log::info('FetchIntegrationPageJob: registros mapeados e salvos', [
-            'integration_id' => $this->integrationId,
-            'path_key' => $this->pathKey,
-            'page' => $this->page,
-            'store_id' => $this->storeId,
-            'count' => count($records),
-            'file' => $filePath,
-        ]);
 
         ProcessPageResponseJob::dispatch(
             $this->integrationId, $this->pathKey, $this->storeId, $filePath,
@@ -197,17 +181,6 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         }
 
         $deduplicatedRecords = TenantUpsertRecordPreparer::deduplicateById($mappedRecords);
-        $removedDuplicates = count($mappedRecords) - count($deduplicatedRecords);
-
-        if ($removedDuplicates > 0) {
-            Log::info('FetchIntegrationPageJob: registros duplicados deduplicados no fetch', [
-                'integration_id' => $integrationId,
-                'path_key' => $this->pathKey,
-                'page' => $this->page,
-                'store_id' => $this->storeId,
-                'removed' => $removedDuplicates,
-            ]);
-        }
 
         return array_values($deduplicatedRecords);
     }
