@@ -79,7 +79,8 @@ class PersistImportedResourceService
 
         $columns = Schema::connection($connectionName)->getColumnListing($targetTable);
         $columnSet = array_fill_keys($columns, true);
-        $uniqueBy = $this->effectiveUniqueBy($integration, $resource, $columnSet);
+        $config = $this->configResolver->resolve($integration);
+        $uniqueBy = $this->effectiveUniqueBy($config, $resource, $columnSet);
 
         Log::info('Persistência de recurso: unique_by resolvido.', [
             'integration_id' => (string) $integration->id,
@@ -87,6 +88,7 @@ class PersistImportedResourceService
             'resource' => $resource,
             'target_table' => $targetTable,
             'unique_by' => $uniqueBy,
+            'separate_by_store' => $config->separateByStore(),
         ]);
 
         if ($uniqueBy === []) {
@@ -101,7 +103,7 @@ class PersistImportedResourceService
             return;
         }
 
-        $fieldMap = $this->configResolver->resolve($integration)->fieldMap($resource);
+        $fieldMap = $config->fieldMap($resource);
         if ($fieldMap === []) {
             Log::warning('Persistência de recurso ignorada: field_map não configurado.', [
                 'integration_id' => (string) $integration->id,
@@ -237,9 +239,9 @@ class PersistImportedResourceService
      * @param  array<string, bool>  $columnSet
      * @return list<string>
      */
-    private function effectiveUniqueBy(TenantIntegration $integration, string $resource, array $columnSet): array
+    private function effectiveUniqueBy(ResolvedIntegrationConfig $config, string $resource, array $columnSet): array
     {
-        $uniqueBy = $this->configResolver->resolve($integration)->uniqueBy($resource);
+        $uniqueBy = $config->uniqueBy($resource);
 
         if ($uniqueBy === []) {
             return ['id'];
@@ -252,6 +254,11 @@ class PersistImportedResourceService
 
         if (isset($columnSet['tenant_id']) && ! in_array('tenant_id', $uniqueBy, true)) {
             array_unshift($uniqueBy, 'tenant_id');
+        }
+
+        if ($config->separateByStore() && isset($columnSet['store_id']) && ! in_array('store_id', $uniqueBy, true)) {
+            $tenantIdx = array_search('tenant_id', $uniqueBy, true);
+            array_splice($uniqueBy, $tenantIdx !== false ? $tenantIdx + 1 : 0, 0, ['store_id']);
         }
 
         return array_values(array_unique($uniqueBy));
