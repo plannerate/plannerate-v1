@@ -100,6 +100,7 @@ return [
         'redis:critical' => 30,
         'redis:default' => 120,
         'redis:imports' => 600,
+        'redis:integrations' => 600,
         'redis:maintenance' => 300,
     ],
 

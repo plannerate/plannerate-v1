@@ -3,6 +3,7 @@
 namespace App\Jobs\Integrations;
 
 use App\Models\IntegrationApi;
+use App\Models\Store;
 use App\Models\TenantIntegration;
 use App\Services\Integrations\IntegrationHttpClient;
 use App\Services\Integrations\IntegrationPayloadBuilder;
@@ -16,7 +17,7 @@ use Spatie\Multitenancy\Jobs\NotTenantAware;
 
 /**
  * Descobre quantas páginas existem para um path da integração
- * e despacha um FetchIntegrationPageJob por página.
+ * e despacha um FetchIntegrationPageJob por página × loja.
  */
 class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
 {
@@ -53,11 +54,81 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         $config = $integration->config ?? [];
         $requests = $api->requests ?? [];
 
+        $minPageSize = max(1, (int) data_get($requests, 'min_page_size', 1));
+        $maxPageSize = max(1, (int) data_get($requests, 'max_page_size', 100));
+
+        $stores = $this->loadStores($integration, $requests);
+
+        foreach ($stores as $store) {
+            $this->discoverForStore($api, $config, $requests, $pathConfig, $minPageSize, $maxPageSize, $store);
+        }
+    }
+
+    // ─── Lojas ───────────────────────────────────────────────────────────────
+
+    /**
+     * Retorna a lista de lojas relevantes para a integração.
+     *
+     * Se a API não exige filtro por loja, retorna um array com null
+     * (uma iteração sem storeDocument/storeId).
+     *
+     * @param  array<string, mixed>  $requests
+     * @return array<int, array{id: string, document: string}|null>
+     */
+    private function loadStores(TenantIntegration $integration, array $requests): array
+    {
+        $storeDocumentField = (string) data_get($requests, 'store_document_field', '');
+
+        if ($storeDocumentField === '' || $integration->tenant === null) {
+            return [null];
+        }
+
+        $stores = $integration->tenant->execute(function (): array {
+            return Store::published()
+                ->get(['id', 'document'])
+                ->map(fn (Store $store): array => [
+                    'id' => (string) $store->id,
+                    'document' => preg_replace('/\D/', '', (string) $store->document) ?? '',
+                ])
+                ->filter(fn (array $s): bool => $s['document'] !== '')
+                ->values()
+                ->all();
+        });
+
+        if ($stores === []) {
+            Log::warning('DiscoverIntegrationPagesJob: nenhuma loja publicada encontrada', [
+                'integration_id' => $this->integrationId,
+            ]);
+        }
+
+        return $stores;
+    }
+
+    // ─── Descoberta por loja ─────────────────────────────────────────────────
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @param  array<string, mixed>  $requests
+     * @param  array<string, mixed>  $pathConfig
+     * @param  array{id: string, document: string}|null  $store
+     */
+    private function discoverForStore(
+        IntegrationApi $api,
+        array $config,
+        array $requests,
+        array $pathConfig,
+        int $minPageSize,
+        int $maxPageSize,
+        ?array $store,
+    ): void {
+        $storeDocument = data_get($store, 'document');
+        $storeId = data_get($store, 'id');
+
         $url = $this->buildUrl($config, $pathConfig);
         $method = strtolower((string) data_get($requests, 'method', 'get'));
 
         $payload = (new IntegrationPayloadBuilder($config, $requests, $pathConfig))
-            ->build($this->dateStart, $this->dateEnd);
+            ->build($this->dateStart, $this->dateEnd, $storeDocument, useMinPageSize: true);
 
         $response = (new IntegrationHttpClient($config))
             ->call($method, $url, $payload);
@@ -66,6 +137,7 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
             Log::error('DiscoverIntegrationPagesJob: falha na chamada HTTP', [
                 'integration_id' => $this->integrationId,
                 'path_key' => $this->pathKey,
+                'store_id' => $storeId,
                 'status' => $response->status(),
                 'url' => $url,
             ]);
@@ -75,21 +147,15 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
             return;
         }
 
-        Log::info('DiscoverIntegrationPagesJob: resposta HTTP recebida', [
-            'integration_id' => $this->integrationId,
-            'path_key' => $this->pathKey,
-            'status' => $response->status(),
-            'url' => $url,
-        ]);
-
         $responseData = $response->json();
         $responseMeta = $api->response ?? [];
 
-        $lastPage = $this->readLastPage($responseData, $responseMeta);
+        $lastPageAtMinSize = $this->readLastPage($responseData, $responseMeta);
+        $lastPage = (int) ceil($lastPageAtMinSize * $minPageSize / $maxPageSize);
 
-        $this->logDiscovery($lastPage, $responseData, $responseMeta);
+        $this->logDiscovery($lastPage, $lastPageAtMinSize, $minPageSize, $maxPageSize, $storeId, $responseData, $responseMeta);
 
-        $this->dispatchPageJobs($lastPage);
+        $this->dispatchPageJobs($lastPage, $storeId, $storeDocument);
     }
 
     // ─── Carregamento ────────────────────────────────────────────────────────
@@ -97,7 +163,7 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
     private function loadIntegration(): ?TenantIntegration
     {
         $integration = TenantIntegration::query()
-            ->with('api')
+            ->with(['api', 'tenant'])
             ->whereKey($this->integrationId)
             ->first();
 
@@ -148,14 +214,18 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
 
     // ─── Dispatch ────────────────────────────────────────────────────────────
 
-    private function dispatchPageJobs(int $lastPage): void
+    private function dispatchPageJobs(int $lastPage, ?string $storeId, ?string $_storeDocument): void
     {
         for ($page = 1; $page <= $lastPage; $page++) {
-            // FetchIntegrationPageJob::dispatch($this->integrationId, $this->pathKey, $page, $this->dateStart, $this->dateEnd);
-            Log::info("DiscoverIntegrationPagesJob: dispatching FetchIntegrationPageJob for page {$page}", [
+            // FetchIntegrationPageJob::dispatch(
+            //     $this->integrationId, $this->pathKey, $page,
+            //     $this->dateStart, $this->dateEnd, $storeId, $_storeDocument,
+            // );
+            Log::info('DiscoverIntegrationPagesJob: dispatching FetchIntegrationPageJob', [
                 'integration_id' => $this->integrationId,
                 'path_key' => $this->pathKey,
                 'page' => $page,
+                'store_id' => $storeId,
             ]);
         }
     }
@@ -163,7 +233,7 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
     // ─── Log ─────────────────────────────────────────────────────────────────
 
     /** @param array<string, mixed> $responseData */
-    private function logDiscovery(int $lastPage, array $responseData, array $responseMeta): void
+    private function logDiscovery(int $lastPage, int $lastPageAtMinSize, int $minPageSize, int $maxPageSize, ?string $storeId, array $responseData, array $responseMeta): void
     {
         $totalPath = (string) data_get($responseMeta, 'pagination.total_path', '');
         $total = $totalPath !== '' ? (int) data_get($responseData, $totalPath, 0) : 0;
@@ -171,7 +241,11 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         Log::info('DiscoverIntegrationPagesJob: descoberta concluída', [
             'integration_id' => $this->integrationId,
             'path_key' => $this->pathKey,
-            'last_page' => $lastPage,
+            'store_id' => $storeId,
+            'pages_at_min_size' => $lastPageAtMinSize,
+            'min_page_size' => $minPageSize,
+            'max_page_size' => $maxPageSize,
+            'fetch_jobs' => $lastPage,
             'total_records' => $total,
             'date_start' => $this->dateStart,
             'date_end' => $this->dateEnd,
