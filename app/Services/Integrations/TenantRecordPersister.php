@@ -3,6 +3,7 @@
 namespace App\Services\Integrations;
 
 use App\Models\TenantIntegration;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -55,10 +56,23 @@ class TenantRecordPersister
                 $records,
             ));
 
+            $beforeDedupCount = count($filtered);
+            $filtered = self::deduplicateById($filtered);
+            $removedDuplicates = $beforeDedupCount - count($filtered);
+
+            if ($removedDuplicates > 0) {
+                Log::warning('TenantRecordPersister: registros duplicados removidos antes do upsert', [
+                    'table' => $targetTable,
+                    'removed' => $removedDuplicates,
+                ]);
+            }
+
             if ($filtered !== []) {
                 $updateColumns = array_values(array_diff(array_keys($filtered[0]), ['id', 'created_at']));
 
                 foreach (array_chunk($filtered, self::CHUNK_SIZE) as $chunk) {
+                    $chunk = self::deduplicateById($chunk);
+
                     DB::connection('tenant')->table($targetTable)->upsert(
                         $chunk,
                         ['id'],
@@ -133,17 +147,152 @@ class TenantRecordPersister
             return;
         }
 
+        $beforeDedupCount = count($rows);
+        $rows = self::deduplicatePivotRows($rows, $uniqueBy);
+        $removedDuplicates = $beforeDedupCount - count($rows);
+
+        if ($removedDuplicates > 0) {
+            Log::warning('TenantRecordPersister: registros duplicados removidos antes do upsert de pivot', [
+                'table' => $table,
+                'removed' => $removedDuplicates,
+            ]);
+        }
+
         foreach (array_chunk($rows, self::CHUNK_SIZE) as $chunk) {
-            DB::connection('tenant')->table($table)->upsert(
-                $chunk,
-                $uniqueBy,
-                ['updated_at'],
-            );
+            self::upsertPivotChunk($table, $chunk, $uniqueBy, $pivotColumns);
         }
 
         Log::info('TenantRecordPersister: pivot persistida', [
             'table' => $table,
             'rows' => count($rows),
         ]);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $chunk
+     * @param  array<int, string>  $uniqueBy
+     * @param  array<int, string>  $pivotColumns
+     */
+    private static function upsertPivotChunk(string $table, array $chunk, array $uniqueBy, array $pivotColumns): void
+    {
+        try {
+            DB::connection('tenant')->table($table)->upsert(
+                $chunk,
+                $uniqueBy,
+                ['updated_at'],
+            );
+
+            return;
+        } catch (QueryException $exception) {
+            $canFallbackToTenantKey = self::isInvalidConflictTarget($exception)
+                && in_array('tenant_id', $pivotColumns, true)
+                && ! in_array('tenant_id', $uniqueBy, true);
+
+            if (! $canFallbackToTenantKey) {
+                throw $exception;
+            }
+
+            $fallbackUniqueBy = array_values(array_unique(['tenant_id', ...$uniqueBy]));
+            $dedupedChunk = self::deduplicatePivotRows($chunk, $fallbackUniqueBy);
+
+            Log::warning('TenantRecordPersister: fallback do upsert de pivot com tenant_id no conflict target', [
+                'table' => $table,
+                'original_unique_by' => $uniqueBy,
+                'fallback_unique_by' => $fallbackUniqueBy,
+                'chunk_size' => count($chunk),
+                'chunk_size_after_dedup' => count($dedupedChunk),
+            ]);
+
+            DB::connection('tenant')->table($table)->upsert(
+                $dedupedChunk,
+                $fallbackUniqueBy,
+                ['updated_at'],
+            );
+        }
+    }
+
+    private static function isInvalidConflictTarget(QueryException $exception): bool
+    {
+        if ($exception->getCode() === '42P10') {
+            return true;
+        }
+
+        return str_contains($exception->getMessage(), 'no unique or exclusion constraint matching the ON CONFLICT specification');
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return array<int, array<string, mixed>>
+     */
+    private static function deduplicateById(array $rows): array
+    {
+        $indexed = [];
+        $duplicates = [];
+
+        foreach ($rows as $row) {
+            $id = $row['id'] ?? null;
+
+            if (! is_scalar($id) || (string) $id === '') {
+                continue;
+            }
+
+            $normalizedId = trim((string) $id);
+
+            if ($normalizedId === '') {
+                continue;
+            }
+
+            if (isset($indexed[$normalizedId])) {
+                $duplicates[$normalizedId] = true;
+            }
+
+            $row['id'] = $normalizedId;
+
+            // Keep the last occurrence for the same id within the batch.
+            $indexed[$normalizedId] = $row;
+        }
+
+        if ($duplicates !== []) {
+            Log::warning('TenantRecordPersister: ids duplicados detectados no lote', [
+                'count' => count($duplicates),
+                'sample' => array_slice(array_keys($duplicates), 0, 10),
+            ]);
+        }
+
+        return array_values($indexed);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @param  array<int, string>  $uniqueBy
+     * @return array<int, array<string, mixed>>
+     */
+    private static function deduplicatePivotRows(array $rows, array $uniqueBy): array
+    {
+        if ($uniqueBy === []) {
+            return $rows;
+        }
+
+        $indexed = [];
+
+        foreach ($rows as $row) {
+            $keyParts = [];
+
+            foreach ($uniqueBy as $column) {
+                $value = $row[$column] ?? null;
+                $keyParts[] = is_scalar($value) ? (string) $value : '';
+            }
+
+            $compositeKey = implode('|', $keyParts);
+
+            if ($compositeKey === '') {
+                continue;
+            }
+
+            // Keep the last occurrence for the same unique key in this batch.
+            $indexed[$compositeKey] = $row;
+        }
+
+        return array_values($indexed);
     }
 }

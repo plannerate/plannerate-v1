@@ -86,7 +86,7 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
             'file' => $this->filePath,
         ]);
 
-        $pivotConfigs = (array) data_get($pathConfig, 'pivot_tables', []);
+        $pivotConfigs = $this->normalizePivotConfigs((array) data_get($pathConfig, 'pivot_tables', []));
 
         TenantRecordPersister::persist($integration, $targetTable, $records, $pivotConfigs);
 
@@ -164,6 +164,59 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
         }
 
         return $pathConfig;
+    }
+
+    /**
+     * @param  array<int, mixed>  $pivotConfigs
+     * @return array<int, array<string, mixed>>
+     */
+    private function normalizePivotConfigs(array $pivotConfigs): array
+    {
+        $normalized = [];
+        $adjusted = 0;
+
+        foreach ($pivotConfigs as $pivotConfig) {
+            if (! is_array($pivotConfig)) {
+                continue;
+            }
+
+            $table = (string) ($pivotConfig['table'] ?? '');
+            $foreignKey = (string) ($pivotConfig['foreign_key'] ?? '');
+            $relatedKey = (string) ($pivotConfig['related_key'] ?? '');
+
+            $uniqueBy = collect(is_array($pivotConfig['unique_by'] ?? null) ? $pivotConfig['unique_by'] : [])
+                ->filter(fn (mixed $column): bool => is_string($column) && $column !== '')
+                ->values()
+                ->all();
+
+            if ($uniqueBy === []) {
+                $uniqueBy = collect([$foreignKey, $relatedKey])
+                    ->filter(fn (string $column): bool => $column !== '')
+                    ->values()
+                    ->all();
+            }
+
+            if ($table === 'product_store' && ! in_array('tenant_id', $uniqueBy, true)) {
+                $uniqueBy = ['tenant_id', ...$uniqueBy];
+                $adjusted++;
+            }
+
+            if ($uniqueBy !== []) {
+                $pivotConfig['unique_by'] = array_values(array_unique($uniqueBy));
+            }
+
+            $normalized[] = $pivotConfig;
+        }
+
+        if ($adjusted > 0) {
+            Log::info('ProcessPageResponseJob: pivot unique_by normalizado com tenant_id', [
+                'integration_id' => $this->integrationId,
+                'path_key' => $this->pathKey,
+                'adjusted_configs' => $adjusted,
+            ]);
+        }
+
+        return $normalized;
     }
 
     // ─── Horizon tags ────────────────────────────────────────────────────────

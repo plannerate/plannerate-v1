@@ -109,10 +109,28 @@ class IntegrationStatusCommand extends Command
         $tables = [];
 
         foreach ($paths as $pathConfig) {
+            if (! is_array($pathConfig)) {
+                continue;
+            }
+
             $table = (string) data_get($pathConfig, 'target_table', '');
 
             if ($table !== '' && ! in_array($table, $tables, true)) {
                 $tables[] = $table;
+            }
+
+            $pivotTables = (array) data_get($pathConfig, 'pivot_tables', []);
+
+            foreach ($pivotTables as $pivotConfig) {
+                if (! is_array($pivotConfig)) {
+                    continue;
+                }
+
+                $pivotTable = (string) data_get($pivotConfig, 'table', '');
+
+                if ($pivotTable !== '' && ! in_array($pivotTable, $tables, true)) {
+                    $tables[] = $pivotTable;
+                }
             }
         }
 
