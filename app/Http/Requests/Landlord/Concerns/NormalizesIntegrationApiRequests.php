@@ -10,6 +10,14 @@ trait NormalizesIntegrationApiRequests
      */
     private function normalizeIntegrationApiRequests(array $requests): array
     {
+        if (($requests['payload'] ?? null) === 'body') {
+            unset($requests['payload']);
+        }
+
+        if (($requests['page_size_payload'] ?? null) === 'body') {
+            unset($requests['page_size_payload']);
+        }
+
         $paths = is_array($requests['paths'] ?? null) ? $requests['paths'] : [];
 
         foreach ($this->legacyPathKeys($requests) as $key) {
@@ -34,7 +42,6 @@ trait NormalizesIntegrationApiRequests
     {
         $reserved = [
             'method',
-            'payload',
             'paths',
             'page_field',
             'page_value_type',

@@ -39,6 +39,7 @@ test('authenticated user can create update and delete integration api', function
     $createResponse->assertRedirect(route('landlord.integration-apis.edit', $api));
 
     expect($api->requests['method'] ?? null)->toBe('GET')
+        ->and($api->requests)->not->toHaveKey('payload')
         ->and($api->requests['paths']['products']['field_map'][0]['target'] ?? null)->toBe('codigo_erp')
         ->and($api->response['items_path'] ?? null)->toBe('data');
 
