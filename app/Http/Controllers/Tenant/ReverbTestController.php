@@ -34,6 +34,7 @@ class ReverbTestController extends Controller
             type: $validated['type'],
             downloadUrl: $validated['download_url'] ?? null,
             downloadName: $validated['download_name'] ?? null,
+            tenantId: tenant('id'),
         ));
 
         return back()->with('toast', [

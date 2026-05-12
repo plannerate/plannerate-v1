@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Contracts\ProductImageAiEditor;
+use App\Listeners\UpdateNotificationTenantId;
 use App\Models\Category;
 use App\Models\Cluster;
 use App\Models\EanReference;
@@ -42,6 +43,7 @@ use App\Services\OpenAiProductImageEditor;
 use App\Support\Navigation\Menu\Contracts\ResolvesMenuAuthorization;
 use App\Support\Navigation\Menu\MenuAuthorizationResolver;
 use Carbon\CarbonImmutable;
+use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -68,6 +70,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->ensureRuntimeDirectories();
         Tenant::observe(TenantObserver::class);
+        Event::listen(NotificationSent::class, UpdateNotificationTenantId::class);
         $this->registerPolicies();
         $this->configureDefaults();
         $this->registerSocialiteProviders();

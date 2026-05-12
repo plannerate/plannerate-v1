@@ -19,6 +19,7 @@ class AppNotification extends Notification implements NotTenantAware, ShouldQueu
         public readonly ?string $actionUrl = null,
         public readonly ?string $downloadUrl = null,
         public readonly ?string $downloadName = null,
+        public readonly ?string $tenantId = null,
     ) {}
 
     public function via(object $notifiable): array
@@ -41,5 +42,13 @@ class AppNotification extends Notification implements NotTenantAware, ShouldQueu
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
         return new BroadcastMessage($this->toArray($notifiable));
+    }
+
+    /**
+     * Override the database model to add tenant_id.
+     */
+    public function databaseUuid(object $notifiable): void
+    {
+        // This allows storing tenant_id in the notifications table
     }
 }

@@ -11,11 +11,13 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class NotificationController extends Controller
 {
-    public function markRead(Request $request, string $subdomain,  string $id): RedirectResponse
+    public function markRead(Request $request, string $subdomain, string $id): RedirectResponse
     {
         unset($subdomain); // não é necessário, mas evita warnings de variável não usada
+        $tenantId = tenant('id');
         $notification = $request->user()
             ->notifications()
+            ->where('tenant_id', $tenantId)
             ->findOrFail($id);
 
         $notification->markAsRead();
@@ -26,7 +28,10 @@ class NotificationController extends Controller
     public function markAllRead(Request $request, string $subdomain): RedirectResponse
     {
         unset($subdomain); // não é necessário, mas evita warnings de variável não usada
-        $request->user()->unreadNotifications()->update(['read_at' => now()]);
+        $tenantId = tenant('id');
+        $request->user()->unreadNotifications()
+            ->where('tenant_id', $tenantId)
+            ->update(['read_at' => now()]);
 
         return back();
     }
@@ -34,7 +39,10 @@ class NotificationController extends Controller
     public function destroyAll(Request $request, string $subdomain): RedirectResponse
     {
         unset($subdomain); // não é necessário, mas evita warnings de variável não usada
-        $request->user()->notifications()->delete();
+        $tenantId = tenant('id');
+        $request->user()->notifications()
+            ->where('tenant_id', $tenantId)
+            ->delete();
 
         return back();
     }
@@ -42,8 +50,10 @@ class NotificationController extends Controller
     public function destroy(Request $request, string $subdomain, string $id): RedirectResponse
     {
         unset($subdomain); // não é necessário, mas evita warnings de variável não usada
+        $tenantId = tenant('id');
         $request->user()
             ->notifications()
+            ->where('tenant_id', $tenantId)
             ->findOrFail($id)
             ->delete();
 
@@ -53,8 +63,10 @@ class NotificationController extends Controller
     public function download(Request $request, string $subdomain, string $id): BinaryFileResponse|Response
     {
         unset($subdomain); // não é necessário, mas evita warnings de variável não usada
+        $tenantId = tenant('id');
         $notification = $request->user()
             ->notifications()
+            ->where('tenant_id', $tenantId)
             ->findOrFail($id);
 
         $filePath = $notification->data['download_url'] ?? null;
