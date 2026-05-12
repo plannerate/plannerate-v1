@@ -3,53 +3,147 @@
 namespace App\Services\Integrations;
 
 use App\Models\TenantIntegration;
-use App\Services\Integrations\Support\DeterministicIdGenerator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 /**
- * Mapeia e persiste registros importados na tabela alvo do tenant.
+ * Persiste registros pré-mapeados na tabela alvo do tenant via upsert.
+ *
+ * Suporta tabelas pivot via `pivot_tables` no pathConfig:
+ *   [
+ *     'table'      => 'product_store',
+ *     'local_key'  => 'id',          // campo do registro principal → foreign_key na pivot
+ *     'foreign_key'=> 'product_id',  // coluna na pivot que referencia a tabela principal
+ *     'related_key'=> 'store_id',    // coluna presente no registro e na pivot
+ *     'unique_by'  => ['product_id', 'store_id'],  // padrão: [foreign_key, related_key]
+ *   ]
  */
 class TenantRecordPersister
 {
-    public function __construct(
-        private readonly RecordMapper $mapper,
-        private readonly DeterministicIdGenerator $idGenerator,
-    ) {}
+    private const CHUNK_SIZE = 500;
 
     /**
-     * @param  array<string, mixed>  $pathConfig
-     * @param  array<int, array<string, mixed>>  $items
+     * @param  array<int, array<string, mixed>>  $records
+     * @param  array<int, array<string, mixed>>  $pivotConfigs
      */
-    public function handle(
+    public static function persist(
         TenantIntegration $integration,
-        array $pathConfig,
-        ?string $storeId,
-        array $items,
+        string $targetTable,
+        array $records,
+        array $pivotConfigs = [],
     ): void {
-        $fieldMap = (array) data_get($pathConfig, 'field_map', []);
-        $targetTable = (string) data_get($pathConfig, 'target_table', '');
-        $tenantId = (string) $integration->tenant_id;
+        if ($targetTable === '' || $records === []) {
+            return;
+        }
+
         $integrationId = (string) $integration->id;
+        $upserted = 0;
 
-        $records = array_map(function (array $item) use ($fieldMap, $pathConfig, $tenantId, $integrationId, $storeId): array {
-            $record = $this->mapper->map($item, $fieldMap, $storeId);
-            $record['id'] = $this->idGenerator->fromRecord($tenantId, $integrationId, $record, $pathConfig, $storeId);
+        $integration->tenant->execute(function () use ($targetTable, $records, $pivotConfigs, &$upserted): void {
+            if (! Schema::connection('tenant')->hasTable($targetTable)) {
+                Log::warning('TenantRecordPersister: tabela não encontrada', ['table' => $targetTable]);
 
-            return $record;
-        }, $items);
+                return;
+            }
 
-        Log::info('TenantRecordPersister: registros mapeados', [
+            $tableColumns = Schema::connection('tenant')->getColumnListing($targetTable);
+
+            $filtered = array_values(array_map(
+                fn (array $record): array => array_intersect_key($record, array_flip($tableColumns)),
+                $records,
+            ));
+
+            if ($filtered !== []) {
+                $updateColumns = array_values(array_diff(array_keys($filtered[0]), ['id', 'created_at']));
+
+                foreach (array_chunk($filtered, self::CHUNK_SIZE) as $chunk) {
+                    DB::connection('tenant')->table($targetTable)->upsert(
+                        $chunk,
+                        ['id'],
+                        $updateColumns,
+                    );
+                    $upserted += count($chunk);
+                }
+            }
+
+            foreach ($pivotConfigs as $pivotConfig) {
+                self::upsertPivot($records, $pivotConfig);
+            }
+        });
+
+        Log::info('TenantRecordPersister: registros persistidos', [
             'integration_id' => $integrationId,
             'target_table' => $targetTable,
-            'store_id' => $storeId,
-            'count' => count($records),
-            'sample' => array_slice($records, 0, 2),
+            'upserted' => $upserted,
         ]);
+    }
 
-        // TODO: persist to tenant DB
-        // $integration->tenant->execute(function () use ($targetTable, $records, $pathConfig) {
-        //     $uniqueBy = (array) data_get($pathConfig, 'unique_by', []);
-        //     DB::table($targetTable)->upsert($records, ['id'], array_keys($records[0]));
-        // });
+    /**
+     * @param  array<int, array<string, mixed>>  $records
+     * @param  array{table: string, local_key: string, foreign_key: string, related_key: string, unique_by?: array<string>}  $pivotConfig
+     */
+    private static function upsertPivot(array $records, array $pivotConfig): void
+    {
+        $table = (string) ($pivotConfig['table'] ?? '');
+        $localKey = (string) ($pivotConfig['local_key'] ?? 'id');
+        $foreignKey = (string) ($pivotConfig['foreign_key'] ?? '');
+        $relatedKey = (string) ($pivotConfig['related_key'] ?? '');
+        $uniqueBy = (array) ($pivotConfig['unique_by'] ?? [$foreignKey, $relatedKey]);
+
+        if ($table === '' || $foreignKey === '' || $relatedKey === '') {
+            return;
+        }
+
+        if (! Schema::connection('tenant')->hasTable($table)) {
+            Log::warning('TenantRecordPersister: tabela pivot não encontrada', ['table' => $table]);
+
+            return;
+        }
+
+        $pivotColumns = Schema::connection('tenant')->getColumnListing($table);
+        $now = now()->toDateTimeString();
+
+        $rows = [];
+        foreach ($records as $record) {
+            $localValue = $record[$localKey] ?? null;
+            $relatedValue = $record[$relatedKey] ?? null;
+
+            if ($localValue === null || $relatedValue === null) {
+                continue;
+            }
+
+            $row = [$foreignKey => $localValue, $relatedKey => $relatedValue];
+
+            foreach ($pivotColumns as $col) {
+                if (isset($record[$col]) && ! isset($row[$col])) {
+                    $row[$col] = $record[$col];
+                }
+            }
+
+            $row['id'] = (string) Str::ulid();
+            $row['created_at'] = $now;
+            $row['updated_at'] = $now;
+
+            $rows[] = array_intersect_key($row, array_flip($pivotColumns));
+        }
+
+        if ($rows === []) {
+            return;
+        }
+
+        foreach (array_chunk($rows, self::CHUNK_SIZE) as $chunk) {
+            DB::connection('tenant')->table($table)->upsert(
+                $chunk,
+                $uniqueBy,
+                ['updated_at'],
+            );
+        }
+
+        Log::info('TenantRecordPersister: pivot persistida', [
+            'table' => $table,
+            'rows' => count($rows),
+        ]);
     }
 }

@@ -12,7 +12,7 @@ import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import IntegrationApiPathRepeater from './components/IntegrationApiPathRepeater.vue';
-import type { FieldMapTableOption, RequestPathRow } from './components/types';
+import type { FieldMapTableOption, PivotTableRow, RequestPathRow } from './components/types';
 
 type IntegrationApiPayload = {
     id: string;
@@ -44,7 +44,7 @@ const pageField = ref(valueToInput(initialRequests.page_field || 'pagina'));
 const pageValueType = ref(valueToInput(initialRequests.page_value_type || 'string'));
 const pageSizeField = ref(valueToInput(initialRequests.page_size_field || 'tamanho_pagina'));
 const minPageSize = ref(valueToInput(initialRequests.min_page_size || 100));
-const maxPageSize = ref(valueToInput(initialRequests.max_page_size || 5000));
+const maxPageSize = ref(valueToInput(initialRequests.max_page_size || 1000));
 const storeDocumentField = ref(valueToInput(initialRequests.store_document_field || 'empresa'));
 const requestPaths = ref<RequestPathRow[]>(objectToRequestPaths(initialRequests));
 const responseItemsPath = ref(valueToInput(initialResponse.items_path || 'data'));
@@ -140,6 +140,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 start: valueToInput(parseObjectValue(pathConfig.date_fields).start),
                 end: valueToInput(parseObjectValue(pathConfig.date_fields).end),
                 field_map: objectToFieldMapRows(pathConfig.field_map),
+                pivot_tables: objectToPivotRows(pathConfig.pivot_tables),
             };
         });
 
@@ -158,6 +159,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 start: '',
                 end: '',
                 field_map: [],
+                pivot_tables: [],
             },
             {
                 id: newPathId(),
@@ -171,8 +173,26 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 start: 'data_inicial',
                 end: 'data_final',
                 field_map: [],
+                pivot_tables: [],
             },
         ];
+}
+
+function objectToPivotRows(value: unknown): PivotTableRow[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .filter((row): row is Record<string, unknown> => row !== null && typeof row === 'object' && !Array.isArray(row))
+        .map((row) => ({
+            id: newPathId(),
+            table: valueToInput(row.table),
+            local_key: valueToInput(row.local_key || 'id'),
+            foreign_key: valueToInput(row.foreign_key),
+            related_key: valueToInput(row.related_key),
+            unique_by: arrayOfStrings(row.unique_by).join(', '),
+        }));
 }
 
 function objectToFieldMapRows(value: unknown): RequestPathRow['field_map'] {
@@ -262,6 +282,26 @@ function buildRequestsPayload(): Record<string, unknown> {
             (paths[pathKey] as Record<string, unknown>).field_map = fieldMap;
         }
 
+        const pivotTables = requestPath.pivot_tables
+            .filter((pivot) => pivot.table.trim() !== '' && pivot.foreign_key.trim() !== '' && pivot.related_key.trim() !== '')
+            .map((pivot) => {
+                const uniqueBy = pivot.unique_by
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter((s) => s !== '');
+
+                return {
+                    table: pivot.table.trim(),
+                    local_key: pivot.local_key.trim() || 'id',
+                    foreign_key: pivot.foreign_key.trim(),
+                    related_key: pivot.related_key.trim(),
+                    ...(uniqueBy.length > 0 ? { unique_by: uniqueBy } : {}),
+                };
+            });
+
+        if (pivotTables.length > 0) {
+            (paths[pathKey] as Record<string, unknown>).pivot_tables = pivotTables;
+        }
     });
 
     payload.paths = paths;

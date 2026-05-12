@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
 import IntegrationApiFieldMapRepeater from './IntegrationApiFieldMapRepeater.vue';
+import IntegrationApiPivotRepeater from './IntegrationApiPivotRepeater.vue';
 import type { FieldMapTableOption, RequestPathRow } from './types';
 
 const props = defineProps<{
@@ -31,6 +32,7 @@ function newPath(): RequestPathRow {
         start: '',
         end: '',
         field_map: [],
+        pivot_tables: [],
     };
 }
 
@@ -245,6 +247,21 @@ onMounted(() => {
                         <IntegrationApiFieldMapRepeater :model-value="requestPath.field_map"
                             :target-options="tableColumns(requestPath)"
                             @update:model-value="updatePath(pathIndex, { field_map: $event })" />
+                    </div>
+                </details>
+
+                <details class="rounded-md border border-border bg-background/60">
+                    <summary class="cursor-pointer px-3 py-2 text-sm font-medium text-muted-foreground">
+                        {{ t('app.landlord.integration_apis.fields.pivot_tables') }}
+                        <span v-if="requestPath.pivot_tables.length > 0" class="ml-1 text-xs text-primary">
+                            ({{ requestPath.pivot_tables.length }})
+                        </span>
+                    </summary>
+                    <div class="border-t border-border p-3">
+                        <IntegrationApiPivotRepeater
+                            :model-value="requestPath.pivot_tables"
+                            @update:model-value="updatePath(pathIndex, { pivot_tables: $event })"
+                        />
                     </div>
                 </details>
             </div>

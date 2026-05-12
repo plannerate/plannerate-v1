@@ -2,11 +2,7 @@
 
 namespace App\Jobs\Integrations;
 
-use App\Models\IntegrationApi;
 use App\Models\TenantIntegration;
-use App\Services\Integrations\FieldValueResolver;
-use App\Services\Integrations\RecordMapper;
-use App\Services\Integrations\Support\DeterministicIdGenerator;
 use App\Services\Integrations\TenantRecordPersister;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,8 +14,8 @@ use Illuminate\Support\Facades\Storage;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
 
 /**
- * Lê o arquivo de resposta salvo pelo FetchIntegrationPageJob,
- * extrai os itens e os passa para o serviço de persistência.
+ * Lê o arquivo de registros já mapeados pelo FetchIntegrationPageJob
+ * e persiste no banco do tenant via upsert.
  */
 class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
 {
@@ -27,7 +23,7 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
 
     public int $tries = 3;
 
-    public int $timeout = 300;
+    public int $timeout = 120;
 
     public function __construct(
         public readonly string $integrationId,
@@ -48,8 +44,7 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
             return;
         }
 
-        $api = $integration->api;
-        $pathConfig = $this->resolvePathConfig($api);
+        $pathConfig = $this->resolvePathConfig($integration);
 
         if ($pathConfig === null) {
             $this->deleteFile();
@@ -57,19 +52,24 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
             return;
         }
 
-        $responseData = $this->readFile();
+        $targetTable = (string) data_get($pathConfig, 'target_table', '');
 
-        if ($responseData === null) {
+        if ($targetTable === '') {
+            $this->deleteFile();
+
             return;
         }
 
-        $items = $this->extractItems($responseData, $api->response ?? []);
+        $records = $this->readRecords();
 
-        if ($items === []) {
-            Log::info('ProcessPageResponseJob: nenhum item na resposta', [
+        if ($records === null) {
+            return;
+        }
+
+        if ($records === []) {
+            Log::info('ProcessPageResponseJob: arquivo sem registros', [
                 'integration_id' => $this->integrationId,
                 'path_key' => $this->pathKey,
-                'store_id' => $this->storeId,
                 'file' => $this->filePath,
             ]);
 
@@ -78,27 +78,25 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
             return;
         }
 
-        Log::info('ProcessPageResponseJob: itens extraídos', [
+        Log::info('ProcessPageResponseJob: persistindo registros', [
             'integration_id' => $this->integrationId,
             'path_key' => $this->pathKey,
             'store_id' => $this->storeId,
-            'count' => count($items),
+            'count' => count($records),
             'file' => $this->filePath,
         ]);
 
-        $persister = new TenantRecordPersister(
-            new RecordMapper(new FieldValueResolver),
-            new DeterministicIdGenerator,
-        );
-        $persister->handle($integration, $pathConfig, $this->storeId, $items);
+        $pivotConfigs = (array) data_get($pathConfig, 'pivot_tables', []);
+
+        TenantRecordPersister::persist($integration, $targetTable, $records, $pivotConfigs);
 
         $this->deleteFile();
     }
 
-    // ─── Leitura do arquivo ───────────────────────────────────────────────────
+    // ─── Leitura ─────────────────────────────────────────────────────────────
 
-    /** @return array<string, mixed>|null */
-    private function readFile(): ?array
+    /** @return array<int, array<string, mixed>>|null */
+    private function readRecords(): ?array
     {
         if (! Storage::disk('local')->exists($this->filePath)) {
             Log::warning('ProcessPageResponseJob: arquivo não encontrado', [
@@ -123,39 +121,12 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
             return null;
         }
 
-        return $data;
+        return array_values(array_filter($data, fn (mixed $r): bool => is_array($r)));
     }
 
     private function deleteFile(): void
     {
         Storage::disk('local')->delete($this->filePath);
-    }
-
-    // ─── Extração de itens ────────────────────────────────────────────────────
-
-    /**
-     * Extrai o array de itens da resposta usando o items_path configurado.
-     * Normaliza objeto associativo para array indexado quando necessário.
-     *
-     * @param  array<string, mixed>  $responseData
-     * @param  array<string, mixed>  $responseMeta
-     * @return array<int, array<string, mixed>>
-     */
-    private function extractItems(array $responseData, array $responseMeta): array
-    {
-        $itemsPath = (string) data_get($responseMeta, 'items_path', '');
-        $raw = $itemsPath !== '' ? data_get($responseData, $itemsPath) : $responseData;
-
-        if (! is_array($raw) || $raw === []) {
-            return [];
-        }
-
-        // Normalize associative object {"0": {...}, "1": {...}} to indexed array
-        if (array_keys($raw) !== range(0, count($raw) - 1)) {
-            $raw = array_values($raw);
-        }
-
-        return array_filter($raw, fn (mixed $item): bool => is_array($item));
     }
 
     // ─── Carregamento ────────────────────────────────────────────────────────
@@ -178,9 +149,10 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
         return $integration;
     }
 
-    private function resolvePathConfig(IntegrationApi $api): ?array
+    /** @return array<string, mixed>|null */
+    private function resolvePathConfig(TenantIntegration $integration): ?array
     {
-        $pathConfig = data_get($api->requests ?? [], "paths.{$this->pathKey}");
+        $pathConfig = data_get($integration->api->requests ?? [], "paths.{$this->pathKey}");
 
         if (! is_array($pathConfig)) {
             Log::warning('ProcessPageResponseJob: path não encontrado na API', [

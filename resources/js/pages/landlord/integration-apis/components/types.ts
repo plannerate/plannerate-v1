@@ -5,6 +5,15 @@ export type FieldMapRow = {
     transforms: string[];
 };
 
+export type PivotTableRow = {
+    id: string;
+    table: string;
+    local_key: string;
+    foreign_key: string;
+    related_key: string;
+    unique_by: string;
+};
+
 export type RequestPathRow = {
     id: string;
     target_table: string;
@@ -17,6 +26,7 @@ export type RequestPathRow = {
     start: string;
     end: string;
     field_map: FieldMapRow[];
+    pivot_tables: PivotTableRow[];
 };
 
 export type FieldMapTableOption = {

@@ -4,13 +4,17 @@ namespace App\Jobs\Integrations;
 
 use App\Models\IntegrationApi;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\FieldValueResolver;
 use App\Services\Integrations\IntegrationHttpClient;
 use App\Services\Integrations\IntegrationPayloadBuilder;
+use App\Services\Integrations\RecordMapper;
+use App\Services\Integrations\Support\DeterministicIdGenerator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -82,13 +86,33 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             return;
         }
 
-        $filePath = $this->saveResponse($response->body());
+        $records = $this->mapResponse(
+            $response->body(),
+            $api->response ?? [],
+            $pathConfig,
+            (string) $integration->tenant_id,
+            (string) $integration->id,
+        );
 
-        Log::info('FetchIntegrationPageJob: resposta salva', [
+        if ($records === []) {
+            Log::info('FetchIntegrationPageJob: nenhum item mapeado', [
+                'integration_id' => $this->integrationId,
+                'path_key' => $this->pathKey,
+                'page' => $this->page,
+                'store_id' => $this->storeId,
+            ]);
+
+            return;
+        }
+
+        $filePath = $this->saveRecords($records);
+
+        Log::info('FetchIntegrationPageJob: registros mapeados e salvos', [
             'integration_id' => $this->integrationId,
             'path_key' => $this->pathKey,
             'page' => $this->page,
             'store_id' => $this->storeId,
+            'count' => count($records),
             'file' => $filePath,
         ]);
 
@@ -97,12 +121,66 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         );
     }
 
-    // ─── Persistência da resposta ─────────────────────────────────────────────
+    // ─── Mapping e persistência em arquivo ───────────────────────────────────
 
-    private function saveResponse(string $body): string
+    /**
+     * Extrai itens da resposta e aplica o field_map, retornando registros prontos para upsert.
+     *
+     * @param  array<string, mixed>  $responseMeta
+     * @param  array<string, mixed>  $pathConfig
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapResponse(
+        string $body,
+        array $responseMeta,
+        array $pathConfig,
+        string $tenantId,
+        string $integrationId,
+    ): array {
+        $data = json_decode($body, true);
+
+        if (! is_array($data)) {
+            return [];
+        }
+
+        $itemsPath = (string) data_get($responseMeta, 'items_path', '');
+        $raw = $itemsPath !== '' ? data_get($data, $itemsPath) : $data;
+
+        if (! is_array($raw) || $raw === []) {
+            return [];
+        }
+
+        if (array_keys($raw) !== range(0, count($raw) - 1)) {
+            $raw = array_values($raw);
+        }
+
+        $items = array_filter($raw, fn (mixed $item): bool => is_array($item));
+
+        if ($items === []) {
+            return [];
+        }
+
+        $fieldMap = (array) data_get($pathConfig, 'field_map', []);
+        $mapper = new RecordMapper(new FieldValueResolver);
+        $idGenerator = new DeterministicIdGenerator;
+        $now = Carbon::now()->toDateTimeString();
+
+        return array_values(array_map(function (array $item) use ($fieldMap, $pathConfig, $tenantId, $integrationId, $now, $mapper, $idGenerator): array {
+            $record = $mapper->map($item, $fieldMap, $this->storeId);
+            $record['id'] = $idGenerator->fromRecord($tenantId, $integrationId, $record, $pathConfig, $this->storeId);
+            $record['tenant_id'] = $tenantId;
+            $record['created_at'] = $now;
+            $record['updated_at'] = $now;
+
+            return $record;
+        }, $items));
+    }
+
+    /** @param array<int, array<string, mixed>> $records */
+    private function saveRecords(array $records): string
     {
         $path = 'imports/'.Str::ulid().'.json';
-        Storage::disk('local')->put($path, $body);
+        Storage::disk('local')->put($path, json_encode($records));
 
         return $path;
     }

@@ -55,7 +55,7 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         $requests = $api->requests ?? [];
 
         $minPageSize = max(1, (int) data_get($requests, 'min_page_size', 1));
-        $maxPageSize = max(1, (int) data_get($requests, 'max_page_size', 100));
+        $maxPageSize = max(1, (int) data_get($requests, 'max_page_size', 1000));
 
         $stores = $this->loadStores($integration, $requests);
 
