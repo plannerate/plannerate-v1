@@ -28,6 +28,7 @@ function newPath(): RequestPathRow {
         unique_by: '',
         include_store_in_id: false,
         initial_days: '',
+        max_page: '',
         changed_since: '',
         start: '',
         end: '',
@@ -197,7 +198,7 @@ onMounted(() => {
                 </div>
 
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
-                    <div class="grid gap-2 md:col-span-4">
+                    <div class="grid gap-2 md:col-span-3">
                         <Label :for="`path-unique-by-${requestPath.id}`">{{
                             t('app.landlord.integration_apis.fields.unique_by') }}</Label>
                         <Input :id="`path-unique-by-${requestPath.id}`" :model-value="requestPath.unique_by"
@@ -219,7 +220,15 @@ onMounted(() => {
                             :placeholder="t('app.landlord.integration_apis.placeholders.initial_days')"
                             @update:model-value="updatePath(pathIndex, { initial_days: String($event) })" />
                     </div>
-                    <div class="grid gap-1 md:col-span-4">
+                    <div class="grid gap-2 md:col-span-2">
+                        <Label :for="`path-max-page-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.max_page') }}</Label>
+                        <Input :id="`path-max-page-${requestPath.id}`" type="number"
+                            :model-value="requestPath.max_page"
+                            :placeholder="t('app.landlord.integration_apis.placeholders.max_page')"
+                            @update:model-value="updatePath(pathIndex, { max_page: String($event) })" />
+                    </div>
+                    <div class="grid gap-1 md:col-span-3">
                         <Label :for="`path-store-id-${requestPath.id}`" class="text-xs leading-tight flex flex-col justify-start items-start">
                             <span> {{ t('app.landlord.integration_apis.fields.include_store_in_id') }}</span>
                             <div class="flex h-9 items-start space-x-1 ">

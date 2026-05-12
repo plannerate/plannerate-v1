@@ -152,6 +152,7 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
 
         $lastPageAtMinSize = $this->readLastPage($responseData, $responseMeta);
         $lastPage = (int) ceil($lastPageAtMinSize * $minPageSize / $maxPageSize);
+        $lastPage = $this->applyMaxPageLimit($lastPage, $pathConfig);
 
         $this->logDiscovery($lastPage, $lastPageAtMinSize, $minPageSize, $maxPageSize, $storeId, $responseData, $responseMeta);
 
@@ -210,6 +211,18 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         $path = (string) data_get($responseMeta, 'pagination.last_page_path', '');
 
         return $path !== '' ? (int) data_get($responseData, $path, 1) : 1;
+    }
+
+    /** @param array<string, mixed> $pathConfig */
+    private function applyMaxPageLimit(int $lastPage, array $pathConfig): int
+    {
+        $maxPage = (int) data_get($pathConfig, 'max_page', 0);
+
+        if ($maxPage <= 0) {
+            return max(1, $lastPage);
+        }
+
+        return max(1, min($lastPage, $maxPage));
     }
 
     // ─── Dispatch ────────────────────────────────────────────────────────────

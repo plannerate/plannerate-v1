@@ -136,6 +136,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 unique_by: arrayOfStrings(pathConfig.unique_by).join(', '),
                 include_store_in_id: pathConfig.include_store_in_id === true,
                 initial_days: valueToInput(pathConfig.initial_days),
+                max_page: valueToInput(pathConfig.max_page),
                 changed_since: valueToInput(parseObjectValue(pathConfig.date_fields).changed_since),
                 start: valueToInput(parseObjectValue(pathConfig.date_fields).start),
                 end: valueToInput(parseObjectValue(pathConfig.date_fields).end),
@@ -155,6 +156,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 unique_by: '',
                 include_store_in_id: false,
                 initial_days: '120',
+                max_page: '1000',
                 changed_since: 'data_ultima_alteracao',
                 start: '',
                 end: '',
@@ -169,6 +171,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 unique_by: '',
                 include_store_in_id: true,
                 initial_days: '120',
+                max_page: '',
                 changed_since: '',
                 start: 'data_inicial',
                 end: 'data_final',
@@ -253,6 +256,7 @@ function buildRequestsPayload(): Record<string, unknown> {
             ...(uniqueBy.length > 0 ? { unique_by: uniqueBy } : {}),
             ...(requestPath.include_store_in_id ? { include_store_in_id: true } : {}),
             ...(requestPath.initial_days.trim() !== '' ? { initial_days: numberValue(requestPath.initial_days) } : {}),
+            ...(requestPath.max_page.trim() !== '' ? { max_page: numberValue(requestPath.max_page) } : {}),
         };
 
         const dateFields = {
