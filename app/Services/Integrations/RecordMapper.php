@@ -13,9 +13,9 @@ class RecordMapper
      * @param  array<string, mixed>  $item
      * @param  array<int, array{target: string, source: string, transforms?: array<int, string>}>  $fieldMap
      * @param  string|null  $storeId  ID da loja no tenant DB
-     * @return array<string, mixed>
+     * @return array<string, mixed>|null
      */
-    public function map(array $item, array $fieldMap, ?string $storeId = null): array
+    public function map(array $item, array $fieldMap, ?string $storeId = null): ?array
     {
         $record = [];
 
@@ -28,7 +28,13 @@ class RecordMapper
                 continue;
             }
 
-            $record[$target] = $this->resolver->resolve($item, $source, $transforms);
+            $value = $this->resolver->resolve($item, $source, $transforms);
+
+            if ($this->isRequiredAndMissing($transforms, $value)) {
+                return null;
+            }
+
+            $record[$target] = $value;
         }
 
         if ($storeId !== null) {
@@ -36,5 +42,29 @@ class RecordMapper
         }
 
         return $record;
+    }
+
+    /**
+     * @param  array<int, string>  $transforms
+     */
+    private function isRequiredAndMissing(array $transforms, mixed $value): bool
+    {
+        if (! in_array('not_null', $transforms, true)) {
+            return false;
+        }
+
+        if ($value === null) {
+            return true;
+        }
+
+        if (is_string($value)) {
+            return trim($value) === '';
+        }
+
+        if (is_array($value)) {
+            return $value === [];
+        }
+
+        return false;
     }
 }

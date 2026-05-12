@@ -1,0 +1,103 @@
+<?php
+
+namespace App\Services\Integrations;
+
+use Illuminate\Support\Facades\Log;
+
+/**
+ * Prepara registros da tabela principal para upsert.
+ *
+ * Esta etapa filtra colunas inexistentes, normaliza ids, remove duplicidades
+ * dentro do lote e expõe as colunas que podem ser atualizadas no upsert.
+ */
+class TenantUpsertRecordPreparer
+{
+    /**
+     * @param  array<int, array<string, mixed>>  $records
+     * @param  array<int, string>  $tableColumns
+     * @return array<int, array<string, mixed>>
+     */
+    public static function prepare(array $records, array $tableColumns, string $targetTable): array
+    {
+        $filteredRecords = array_values(array_map(
+            fn (array $record): array => array_intersect_key($record, array_flip($tableColumns)),
+            $records,
+        ));
+
+        return self::logDeduplicatedRows(
+            self::deduplicateById($filteredRecords),
+            count($filteredRecords),
+            'TenantUpsertRecordPreparer: registros duplicados removidos antes do upsert',
+            ['table' => $targetTable],
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $record
+     * @return array<int, string>
+     */
+    public static function resolveUpdateColumns(array $record): array
+    {
+        return array_values(array_diff(array_keys($record), ['id', 'created_at']));
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return array<int, array<string, mixed>>
+     */
+    public static function deduplicateById(array $rows): array
+    {
+        $indexed = [];
+        $duplicates = [];
+
+        foreach ($rows as $row) {
+            $id = $row['id'] ?? null;
+
+            if (! is_scalar($id) || (string) $id === '') {
+                continue;
+            }
+
+            $normalizedId = trim((string) $id);
+
+            if ($normalizedId === '') {
+                continue;
+            }
+
+            if (isset($indexed[$normalizedId])) {
+                $duplicates[$normalizedId] = true;
+            }
+
+            $row['id'] = $normalizedId;
+
+            $indexed[$normalizedId] = $row;
+        }
+
+        if ($duplicates !== []) {
+            Log::warning('TenantUpsertRecordPreparer: ids duplicados detectados no lote', [
+                'count' => count($duplicates),
+                'sample' => array_slice(array_keys($duplicates), 0, 10),
+            ]);
+        }
+
+        return array_values($indexed);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @param  array<string, mixed>  $context
+     * @return array<int, array<string, mixed>>
+     */
+    private static function logDeduplicatedRows(array $rows, int $originalCount, string $message, array $context = []): array
+    {
+        $removedDuplicates = $originalCount - count($rows);
+
+        if ($removedDuplicates > 0) {
+            Log::warning($message, [
+                ...$context,
+                'removed' => $removedDuplicates,
+            ]);
+        }
+
+        return $rows;
+    }
+}

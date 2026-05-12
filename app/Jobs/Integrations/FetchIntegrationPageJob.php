@@ -165,15 +165,37 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         $idGenerator = new DeterministicIdGenerator;
         $now = Carbon::now()->toDateTimeString();
 
-        return array_values(array_map(function (array $item) use ($fieldMap, $pathConfig, $tenantId, $integrationId, $now, $mapper, $idGenerator): array {
+        $skippedRequired = 0;
+        $mappedRecords = [];
+
+        foreach ($items as $item) {
             $record = $mapper->map($item, $fieldMap, $this->storeId);
+
+            if ($record === null) {
+                $skippedRequired++;
+
+                continue;
+            }
+
             $record['id'] = $idGenerator->fromRecord($tenantId, $integrationId, $record, $pathConfig, $this->storeId);
             $record['tenant_id'] = $tenantId;
             $record['created_at'] = $now;
             $record['updated_at'] = $now;
 
-            return $record;
-        }, $items));
+            $mappedRecords[] = $record;
+        }
+
+        if ($skippedRequired > 0) {
+            Log::warning('FetchIntegrationPageJob: registros descartados por not_null', [
+                'integration_id' => $integrationId,
+                'path_key' => $this->pathKey,
+                'page' => $this->page,
+                'store_id' => $this->storeId,
+                'skipped' => $skippedRequired,
+            ]);
+        }
+
+        return array_values($mappedRecords);
     }
 
     /** @param array<int, array<string, mixed>> $records */

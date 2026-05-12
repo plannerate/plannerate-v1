@@ -3,27 +3,21 @@
 namespace App\Services\Integrations;
 
 use App\Models\TenantIntegration;
-use Illuminate\Database\QueryException;
+use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 
 /**
- * Persiste registros pré-mapeados na tabela alvo do tenant via upsert.
+ * Persiste registros pré-mapeados na tabela principal do tenant via upsert.
  *
- * Suporta tabelas pivot via `pivot_tables` no pathConfig:
- *   [
- *     'table'      => 'product_store',
- *     'local_key'  => 'id',          // campo do registro principal → foreign_key na pivot
- *     'foreign_key'=> 'product_id',  // coluna na pivot que referencia a tabela principal
- *     'related_key'=> 'store_id',    // coluna presente no registro e na pivot
- *     'unique_by'  => ['product_id', 'store_id'],  // padrão: [foreign_key, related_key]
- *   ]
+ * A persistência de tabelas pivot é delegada ao TenantPivotRecordPersister para
+ * manter o fluxo principal enxuto e escalável.
  */
 class TenantRecordPersister
 {
     private const CHUNK_SIZE = 500;
+
+    private const TENANT_CONNECTION = 'tenant';
 
     /**
      * @param  array<int, array<string, mixed>>  $records
@@ -35,58 +29,47 @@ class TenantRecordPersister
         array $records,
         array $pivotConfigs = [],
     ): void {
-        if ($targetTable === '' || $records === []) {
+        if (self::shouldSkipPersist($targetTable, $records)) {
             return;
         }
 
         $integrationId = (string) $integration->id;
-        $upserted = 0;
 
-        $integration->tenant->execute(function () use ($targetTable, $records, $pivotConfigs, &$upserted): void {
-            if (! Schema::connection('tenant')->hasTable($targetTable)) {
-                Log::warning('TenantRecordPersister: tabela não encontrada', ['table' => $targetTable]);
+        self::logPersistStart($integrationId, $targetTable, $records, $pivotConfigs);
 
-                return;
-            }
+        $upserted = self::persistWithinTenant($integration, $targetTable, $records, $pivotConfigs);
 
-            $tableColumns = Schema::connection('tenant')->getColumnListing($targetTable);
+        self::logPersistFinished($integrationId, $targetTable, $upserted);
+    }
 
-            $filtered = array_values(array_map(
-                fn (array $record): array => array_intersect_key($record, array_flip($tableColumns)),
-                $records,
-            ));
+    /**
+     * @param  array<int, array<string, mixed>>  $records
+     */
+    private static function shouldSkipPersist(string $targetTable, array $records): bool
+    {
+        return $targetTable === '' || $records === [];
+    }
 
-            $beforeDedupCount = count($filtered);
-            $filtered = self::deduplicateById($filtered);
-            $removedDuplicates = $beforeDedupCount - count($filtered);
+    /**
+     * Registra o contexto inicial da operação para facilitar rastreabilidade.
+     *
+     * @param  array<int, array<string, mixed>>  $records
+     * @param  array<int, array<string, mixed>>  $pivotConfigs
+     */
+    private static function logPersistStart(string $integrationId, string $targetTable, array $records, array $pivotConfigs): void
+    {
+        Log::debug('TenantRecordPersister: iniciando persist', [
+            'integration_id' => $integrationId,
+            'target_table' => $targetTable,
+            'records' => count($records),
+            'pivot_configs' => count($pivotConfigs),
+            'pivot_tables' => array_column($pivotConfigs, 'table'),
+            'first_record_keys' => array_keys($records[0] ?? []),
+        ]);
+    }
 
-            if ($removedDuplicates > 0) {
-                Log::warning('TenantRecordPersister: registros duplicados removidos antes do upsert', [
-                    'table' => $targetTable,
-                    'removed' => $removedDuplicates,
-                ]);
-            }
-
-            if ($filtered !== []) {
-                $updateColumns = array_values(array_diff(array_keys($filtered[0]), ['id', 'created_at']));
-
-                foreach (array_chunk($filtered, self::CHUNK_SIZE) as $chunk) {
-                    $chunk = self::deduplicateById($chunk);
-
-                    DB::connection('tenant')->table($targetTable)->upsert(
-                        $chunk,
-                        ['id'],
-                        $updateColumns,
-                    );
-                    $upserted += count($chunk);
-                }
-            }
-
-            foreach ($pivotConfigs as $pivotConfig) {
-                self::upsertPivot($records, $pivotConfig);
-            }
-        });
-
+    private static function logPersistFinished(string $integrationId, string $targetTable, int $upserted): void
+    {
         Log::info('TenantRecordPersister: registros persistidos', [
             'integration_id' => $integrationId,
             'target_table' => $targetTable,
@@ -95,204 +78,91 @@ class TenantRecordPersister
     }
 
     /**
+     * Executa toda a persistência em contexto de tenant e em uma única transação.
+     *
      * @param  array<int, array<string, mixed>>  $records
-     * @param  array{table: string, local_key: string, foreign_key: string, related_key: string, unique_by?: array<string>}  $pivotConfig
+     * @param  array<int, array<string, mixed>>  $pivotConfigs
      */
-    private static function upsertPivot(array $records, array $pivotConfig): void
+    private static function persistWithinTenant(
+        TenantIntegration $integration,
+        string $targetTable,
+        array $records,
+        array $pivotConfigs,
+    ): int {
+        $upserted = 0;
+
+        $integration->tenant->execute(function () use ($targetTable, $records, $pivotConfigs, &$upserted): void {
+            if (! self::tenantTableExists($targetTable)) {
+                Log::warning('TenantRecordPersister: tabela não encontrada', ['table' => $targetTable]);
+
+                return;
+            }
+
+            $upserted = DB::connection(self::TENANT_CONNECTION)->transaction(
+                function () use ($targetTable, $records, $pivotConfigs): int {
+                    $tableColumns = self::tenantTableColumns($targetTable);
+                    $preparedRecords = TenantUpsertRecordPreparer::prepare($records, $tableColumns, $targetTable);
+
+                    $upserted = self::upsertTargetRecords($targetTable, $preparedRecords);
+
+                    TenantPivotRecordPersister::persist(self::tenantConnection(), $records, $pivotConfigs);
+
+                    return $upserted;
+                },
+            );
+        });
+
+        return $upserted;
+    }
+
+    private static function tenantTableExists(string $table): bool
     {
-        $table = (string) ($pivotConfig['table'] ?? '');
-        $localKey = (string) ($pivotConfig['local_key'] ?? 'id');
-        $foreignKey = (string) ($pivotConfig['foreign_key'] ?? '');
-        $relatedKey = (string) ($pivotConfig['related_key'] ?? '');
-        $uniqueBy = (array) ($pivotConfig['unique_by'] ?? [$foreignKey, $relatedKey]);
-
-        if ($table === '' || $foreignKey === '' || $relatedKey === '') {
-            return;
-        }
-
-        if (! Schema::connection('tenant')->hasTable($table)) {
-            Log::warning('TenantRecordPersister: tabela pivot não encontrada', ['table' => $table]);
-
-            return;
-        }
-
-        $pivotColumns = Schema::connection('tenant')->getColumnListing($table);
-        $now = now()->toDateTimeString();
-
-        $rows = [];
-        foreach ($records as $record) {
-            $localValue = $record[$localKey] ?? null;
-            $relatedValue = $record[$relatedKey] ?? null;
-
-            if ($localValue === null || $relatedValue === null) {
-                continue;
-            }
-
-            $row = [$foreignKey => $localValue, $relatedKey => $relatedValue];
-
-            foreach ($pivotColumns as $col) {
-                if (isset($record[$col]) && ! isset($row[$col])) {
-                    $row[$col] = $record[$col];
-                }
-            }
-
-            $row['id'] = (string) Str::ulid();
-            $row['created_at'] = $now;
-            $row['updated_at'] = $now;
-
-            $rows[] = array_intersect_key($row, array_flip($pivotColumns));
-        }
-
-        if ($rows === []) {
-            return;
-        }
-
-        $beforeDedupCount = count($rows);
-        $rows = self::deduplicatePivotRows($rows, $uniqueBy);
-        $removedDuplicates = $beforeDedupCount - count($rows);
-
-        if ($removedDuplicates > 0) {
-            Log::warning('TenantRecordPersister: registros duplicados removidos antes do upsert de pivot', [
-                'table' => $table,
-                'removed' => $removedDuplicates,
-            ]);
-        }
-
-        foreach (array_chunk($rows, self::CHUNK_SIZE) as $chunk) {
-            self::upsertPivotChunk($table, $chunk, $uniqueBy, $pivotColumns);
-        }
-
-        Log::info('TenantRecordPersister: pivot persistida', [
-            'table' => $table,
-            'rows' => count($rows),
-        ]);
+        return self::tenantConnection()->getSchemaBuilder()->hasTable($table);
     }
 
     /**
-     * @param  array<int, array<string, mixed>>  $chunk
-     * @param  array<int, string>  $uniqueBy
-     * @param  array<int, string>  $pivotColumns
+     * @return array<int, string>
      */
-    private static function upsertPivotChunk(string $table, array $chunk, array $uniqueBy, array $pivotColumns): void
+    private static function tenantTableColumns(string $table): array
     {
-        try {
-            DB::connection('tenant')->table($table)->upsert(
-                $chunk,
-                $uniqueBy,
-                ['updated_at'],
+        return self::tenantConnection()->getSchemaBuilder()->getColumnListing($table);
+    }
+
+    private static function tenantConnection(): Connection
+    {
+        return DB::connection(self::TENANT_CONNECTION);
+    }
+
+    /**
+     * Persiste o conjunto principal em lotes para manter previsibilidade de memória e lock.
+     *
+     * @param  array<int, array<string, mixed>>  $records
+     */
+    private static function upsertTargetRecords(string $targetTable, array $records): int
+    {
+        if ($records === []) {
+            return 0;
+        }
+
+        $updateColumns = TenantUpsertRecordPreparer::resolveUpdateColumns($records[0]);
+        $upserted = 0;
+
+        foreach (array_chunk($records, self::CHUNK_SIZE) as $chunk) {
+            $deduplicatedChunk = TenantUpsertRecordPreparer::deduplicateById($chunk);
+
+            if ($deduplicatedChunk === []) {
+                continue;
+            }
+
+            self::tenantConnection()->table($targetTable)->upsert(
+                $deduplicatedChunk,
+                ['id'],
+                $updateColumns,
             );
 
-            return;
-        } catch (QueryException $exception) {
-            $canFallbackToTenantKey = self::isInvalidConflictTarget($exception)
-                && in_array('tenant_id', $pivotColumns, true)
-                && ! in_array('tenant_id', $uniqueBy, true);
-
-            if (! $canFallbackToTenantKey) {
-                throw $exception;
-            }
-
-            $fallbackUniqueBy = array_values(array_unique(['tenant_id', ...$uniqueBy]));
-            $dedupedChunk = self::deduplicatePivotRows($chunk, $fallbackUniqueBy);
-
-            Log::warning('TenantRecordPersister: fallback do upsert de pivot com tenant_id no conflict target', [
-                'table' => $table,
-                'original_unique_by' => $uniqueBy,
-                'fallback_unique_by' => $fallbackUniqueBy,
-                'chunk_size' => count($chunk),
-                'chunk_size_after_dedup' => count($dedupedChunk),
-            ]);
-
-            DB::connection('tenant')->table($table)->upsert(
-                $dedupedChunk,
-                $fallbackUniqueBy,
-                ['updated_at'],
-            );
-        }
-    }
-
-    private static function isInvalidConflictTarget(QueryException $exception): bool
-    {
-        if ($exception->getCode() === '42P10') {
-            return true;
+            $upserted += count($deduplicatedChunk);
         }
 
-        return str_contains($exception->getMessage(), 'no unique or exclusion constraint matching the ON CONFLICT specification');
-    }
-
-    /**
-     * @param  array<int, array<string, mixed>>  $rows
-     * @return array<int, array<string, mixed>>
-     */
-    private static function deduplicateById(array $rows): array
-    {
-        $indexed = [];
-        $duplicates = [];
-
-        foreach ($rows as $row) {
-            $id = $row['id'] ?? null;
-
-            if (! is_scalar($id) || (string) $id === '') {
-                continue;
-            }
-
-            $normalizedId = trim((string) $id);
-
-            if ($normalizedId === '') {
-                continue;
-            }
-
-            if (isset($indexed[$normalizedId])) {
-                $duplicates[$normalizedId] = true;
-            }
-
-            $row['id'] = $normalizedId;
-
-            // Keep the last occurrence for the same id within the batch.
-            $indexed[$normalizedId] = $row;
-        }
-
-        if ($duplicates !== []) {
-            Log::warning('TenantRecordPersister: ids duplicados detectados no lote', [
-                'count' => count($duplicates),
-                'sample' => array_slice(array_keys($duplicates), 0, 10),
-            ]);
-        }
-
-        return array_values($indexed);
-    }
-
-    /**
-     * @param  array<int, array<string, mixed>>  $rows
-     * @param  array<int, string>  $uniqueBy
-     * @return array<int, array<string, mixed>>
-     */
-    private static function deduplicatePivotRows(array $rows, array $uniqueBy): array
-    {
-        if ($uniqueBy === []) {
-            return $rows;
-        }
-
-        $indexed = [];
-
-        foreach ($rows as $row) {
-            $keyParts = [];
-
-            foreach ($uniqueBy as $column) {
-                $value = $row[$column] ?? null;
-                $keyParts[] = is_scalar($value) ? (string) $value : '';
-            }
-
-            $compositeKey = implode('|', $keyParts);
-
-            if ($compositeKey === '') {
-                continue;
-            }
-
-            // Keep the last occurrence for the same unique key in this batch.
-            $indexed[$compositeKey] = $row;
-        }
-
-        return array_values($indexed);
+        return $upserted;
     }
 }

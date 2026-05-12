@@ -29,8 +29,8 @@ class FieldValueResolver
 
     private function extractSource(array $item, string $source): mixed
     {
-        // Arithmetic expression: "field_a - field_b - field_c"
-        if (preg_match('/\s[-+]\s/', $source)) {
+        // Arithmetic expression: "field_a - field_b * field_c / field_d"
+        if (preg_match('/\S\s*[+\-*\/]\s*\S/', $source)) {
             return $this->evalExpression($item, $source);
         }
 
@@ -50,22 +50,86 @@ class FieldValueResolver
     /** @param  array<string, mixed>  $item */
     private function evalExpression(array $item, string $expr): float
     {
-        $result = 0.0;
-        $tokens = preg_split('/\s*([-+])\s*/', $expr, -1, PREG_SPLIT_DELIM_CAPTURE) ?: [];
-        $sign = 1;
+        $tokens = preg_split('/\s*([+\-*\/])\s*/', $expr, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY) ?: [];
 
-        foreach ($tokens as $token) {
-            if ($token === '-') {
-                $sign = -1;
-            } elseif ($token === '+') {
-                $sign = 1;
-            } else {
-                $result += $sign * (float) data_get($item, trim($token), 0);
-                $sign = 1;
+        if ($tokens === []) {
+            return 0.0;
+        }
+
+        $values = [];
+        $ops = [];
+
+        foreach ($tokens as $index => $token) {
+            if ($index % 2 === 0) {
+                $resolved = data_get($item, trim($token), 0);
+                $values[] = $this->toFloat($resolved);
+
+                continue;
             }
+
+            $ops[] = $token;
+        }
+
+        if ($values === []) {
+            return 0.0;
+        }
+
+        // First pass: * and /
+        $reducedValues = [$values[0]];
+        $reducedOps = [];
+
+        foreach ($ops as $index => $operator) {
+            $right = $values[$index + 1] ?? 0.0;
+
+            if ($operator === '*') {
+                $reducedValues[count($reducedValues) - 1] *= $right;
+
+                continue;
+            }
+
+            if ($operator === '/') {
+                $reducedValues[count($reducedValues) - 1] = $right !== 0.0
+                    ? $reducedValues[count($reducedValues) - 1] / $right
+                    : 0.0;
+
+                continue;
+            }
+
+            $reducedOps[] = $operator;
+            $reducedValues[] = $right;
+        }
+
+        // Second pass: + and -
+        $result = $reducedValues[0] ?? 0.0;
+
+        foreach ($reducedOps as $index => $operator) {
+            $right = $reducedValues[$index + 1] ?? 0.0;
+
+            if ($operator === '+') {
+                $result += $right;
+
+                continue;
+            }
+
+            $result -= $right;
         }
 
         return $result;
+    }
+
+    private function toFloat(mixed $value): float
+    {
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        if (is_string($value)) {
+            $normalized = str_replace(',', '.', trim($value));
+
+            return is_numeric($normalized) ? (float) $normalized : 0.0;
+        }
+
+        return 0.0;
     }
 
     /**
@@ -134,6 +198,7 @@ class FieldValueResolver
             'filter_filled' => is_array($value) ? array_values(array_filter($value, fn (mixed $v): bool => $v !== null && $v !== '')) : $value,
             'max_date' => $this->maxDate($value),
             'ean' => $this->normalizeEan($value),
+            'not_null' => $value,
             'round2' => $value !== null ? round((float) $value, 2) : null,
             default => $value,
         };

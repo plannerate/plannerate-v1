@@ -25,6 +25,23 @@ type IntegrationApiPayload = {
 
 let nextPathId = 1;
 
+const supportedTransforms = new Set([
+    'string',
+    'alnum',
+    'decimal',
+    'integer',
+    'ean',
+    'date',
+    'document',
+    'boolean',
+    'first',
+    'filter_filled',
+    'max',
+    'max_date',
+    'not_null',
+    'round2',
+]);
+
 const props = defineProps<{
     integrationApi: IntegrationApiPayload | null;
     defaults: {
@@ -209,12 +226,24 @@ function objectToFieldMapRows(value: unknown): RequestPathRow['field_map'] {
             id: newPathId(),
             target: valueToInput(row.target),
             source: valueToInput(row.source),
-            transforms: arrayOfStrings(row.transforms),
+            transforms: normalizeTransforms(row.transforms),
         }));
 }
 
 function arrayOfStrings(value: unknown): string[] {
     return Array.isArray(value) ? value.map((item) => String(item)).filter((item) => item.trim() !== '') : [];
+}
+
+function normalizeTransforms(value: unknown): string[] {
+    const values = Array.isArray(value)
+        ? value.map((item) => String(item))
+        : typeof value === 'string'
+            ? value.split(/[|,]/)
+            : [];
+
+    return values
+        .map((item) => item.trim())
+        .filter((item) => item !== '' && supportedTransforms.has(item));
 }
 
 function numberValue(value: string): number {
@@ -278,7 +307,7 @@ function buildRequestsPayload(): Record<string, unknown> {
                 return {
                     target: field.target,
                     source: field.source,
-                    transforms: field.transforms,
+                    transforms: normalizeTransforms(field.transforms),
                 };
             });
 

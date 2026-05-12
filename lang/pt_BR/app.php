@@ -361,6 +361,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'filter_filled' => 'filter_filled',
                 'max' => 'max',
                 'max_date' => 'max_date',
+                'not_null' => 'not_null',
                 'round2' => 'round2',
             ],
             'messages' => [

@@ -9,7 +9,7 @@ const emit = defineEmits<{
     'update:modelValue': [value: string[]];
 }>();
 
-const options = ['string', 'alnum', 'decimal', 'integer', 'ean', 'date', 'document', 'boolean', 'first', 'filter_filled', 'max', 'max_date', 'round2'];
+const options = ['string', 'alnum', 'decimal', 'integer', 'ean', 'date', 'document', 'boolean', 'first', 'filter_filled', 'max', 'max_date', 'not_null', 'round2'];
 const { t } = useT();
 
 function toggleTransform(transform: string): void {
