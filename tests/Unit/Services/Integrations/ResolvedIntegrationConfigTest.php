@@ -53,3 +53,22 @@ test('resolved integration config keeps legacy top level resource requests compa
         ->and($config->request('products')['method'])->toBe('GET')
         ->and($config->path('products'))->toBe('/products');
 });
+
+test('path is not enabled when endpoint is blank', function (): void {
+    $config = new ResolvedIntegrationConfig(
+        integration: new TenantIntegration(['integration_type' => 'blank-path']),
+        apiConfig: [
+            'requests' => [
+                'paths' => [
+                    'products' => [
+                        'target_table' => 'products',
+                        'fallback_path' => '',
+                    ],
+                ],
+            ],
+        ],
+        tenantConfig: [],
+    );
+
+    expect($config->pathIsEnabled('products'))->toBeFalse();
+});

@@ -106,6 +106,11 @@ class ResolvedIntegrationConfig
     public function pathIsEnabled(string $resource): bool
     {
         $request = $this->request($resource);
+        $path = $this->path($resource, (string) ($request['fallback_path'] ?? ''));
+
+        if ($path === '') {
+            return false;
+        }
 
         if (! array_key_exists('enabled', $request)) {
             return true;

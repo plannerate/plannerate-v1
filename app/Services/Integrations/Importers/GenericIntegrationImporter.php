@@ -16,7 +16,6 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
-use RuntimeException;
 
 class GenericIntegrationImporter
 {
@@ -31,19 +30,6 @@ class GenericIntegrationImporter
     {
         $request = $this->requestConfig($integration, $resource);
         $endpoint = $this->path($integration, $resource, (string) ($request['fallback_path'] ?? ''));
-
-        if ($endpoint === '') {
-            Log::warning('Integração import skipped: endpoint ainda não definido.', [
-                'integration_id' => (string) $integration->id,
-                'tenant_id' => (string) $integration->tenant_id,
-                'resource' => $resource,
-                'target_table' => $targetTable,
-                'store_id' => $store->id,
-                'provider' => (string) $integration->integration_type,
-            ]);
-
-            return;
-        }
 
         if ($this->dateStrategy($integration, $resource) === 'sales_incremental') {
             foreach ($this->salesDates($integration, $targetTable, $request, $store) as $date) {
@@ -478,25 +464,7 @@ class GenericIntegrationImporter
      */
     private function requestConfig(TenantIntegration $integration, string $resource): array
     {
-        $resolvedConfig = $this->resolvedConfig($integration);
-        if ($resolvedConfig->requests() === []) {
-            throw new RuntimeException(sprintf(
-                'Configuração de importação [%s] não encontrada para integração [%s].',
-                $resource,
-                (string) $integration->integration_type,
-            ));
-        }
-
-        $config = $resolvedConfig->request($resource);
-        if ($config === []) {
-            throw new RuntimeException(sprintf(
-                'Configuração de importação [%s] não encontrada para integração [%s].',
-                $resource,
-                (string) $integration->integration_type,
-            ));
-        }
-
-        return $config;
+        return $this->resolvedConfig($integration)->request($resource);
     }
 
     private function path(TenantIntegration $integration, string $key, string $fallback): string

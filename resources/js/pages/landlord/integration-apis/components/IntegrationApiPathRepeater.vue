@@ -81,6 +81,7 @@ const tableOptions = computed(() => Object.entries(props.fieldMapTables));
                         <select
                             :id="`path-table-${requestPath.id}`"
                             :value="requestPath.target_table"
+                            required
                             class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                             @change="updatePath(pathIndex, { target_table: ($event.target as HTMLSelectElement).value })"
                         >
@@ -96,6 +97,7 @@ const tableOptions = computed(() => Object.entries(props.fieldMapTables));
                             :id="`path-value-${requestPath.id}`"
                             :model-value="requestPath.fallback_path"
                             :placeholder="t('app.landlord.integration_apis.placeholders.fallback_path')"
+                            required
                             @update:model-value="updatePath(pathIndex, { fallback_path: String($event) })"
                         />
                     </div>
