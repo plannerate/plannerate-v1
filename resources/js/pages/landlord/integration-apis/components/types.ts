@@ -3,12 +3,10 @@ export type FieldMapRow = {
     target: string;
     source: string;
     transforms: string[];
-    null_value: string;
 };
 
 export type RequestPathRow = {
     id: string;
-    name: string;
     target_table: string;
     fallback_path: string;
     unique_by: string;

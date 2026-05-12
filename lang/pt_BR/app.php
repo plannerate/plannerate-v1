@@ -294,7 +294,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'date_start' => 'Data inicial',
                 'date_end' => 'Data final',
                 'unique_by' => 'Campos únicos (unique_by)',
-                'include_store_in_id' => 'ID por loja',
+                'include_store_in_id' => 'Incluir ID da loja no identificador',
+                'initial_days' => 'Quantidade de dias a processar',
                 'field_map' => 'Mapeamento de campos',
                 'internal_field' => 'Campo interno',
                 'api_field' => 'Campo da API',
@@ -316,6 +317,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'date_start' => 'data_inicial',
                 'date_end' => 'data_final',
                 'unique_by' => 'codigo_erp, sale_date',
+                'initial_days' => '120',
                 'internal_field' => 'codigo_erp',
                 'internal_field_select' => 'Selecione um campo interno',
                 'api_field' => 'produto',
@@ -325,6 +327,9 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'empty_states' => [
                 'paths' => 'Nenhuma configuração de requisição criada.',
                 'field_map' => 'Nenhum campo mapeado.',
+            ],
+            'hints' => [
+                'include_store_in_id' => 'Incluir ID/documento da loja na geração do identificador dos registros.',
             ],
             'transforms' => [
                 'string' => 'string',

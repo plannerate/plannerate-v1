@@ -7,7 +7,6 @@ use App\Http\Requests\Landlord\UpdateTenantIntegrationRequest;
 use App\Models\IntegrationApi;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
-use App\Services\Integrations\Http\IntegrationHttpClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -57,9 +56,6 @@ class TenantIntegrationController extends Controller
             'auth_token_headers' => $this->formatKeyValueRowsForFrontend($auth['token_request']['headers'] ?? []),
             'auth_token_params' => $this->formatKeyValueRowsForFrontend($auth['token_request']['params'] ?? []),
             'auth_token_body' => $this->formatKeyValueRowsForFrontend($auth['token_request']['body'] ?? []),
-            // Processing
-            'processing_time' => (string) ($processing['processing_time'] ?? '02:00'),
-            'separate_by_store' => (bool) ($processing['separate_by_store'] ?? false),
         ] : null;
 
         return Inertia::render('landlord/tenants/Integration', [
@@ -97,7 +93,7 @@ class TenantIntegrationController extends Controller
         ];
 
         Storage::disk('local')->put(
-            $tenant->id.'/last_payload.json',
+            '/last_payload/'.$tenant->id.'.json',
             json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
         );
 

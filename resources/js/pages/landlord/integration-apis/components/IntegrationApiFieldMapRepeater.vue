@@ -23,7 +23,6 @@ function newRow(): FieldMapRow {
         target: '',
         source: '',
         transforms: [],
-        null_value: '',
     };
 }
 
@@ -94,20 +93,11 @@ function internalFieldOptions(value: string): string[] {
                         @update:model-value="updateRow(index, { source: String($event) })"
                     />
                 </div>
-                <div class="grid gap-2 md:col-span-3">
+                <div class="grid gap-2 md:col-span-5">
                     <Label>{{ t('app.landlord.integration_apis.fields.transforms') }}</Label>
                     <IntegrationApiTransformTags
                         :model-value="row.transforms"
                         @update:model-value="updateRow(index, { transforms: $event })"
-                    />
-                </div>
-                <div class="grid gap-2 md:col-span-2">
-                    <Label :for="`field-null-value-${row.id}`">{{ t('app.landlord.integration_apis.fields.null_value') }}</Label>
-                    <Input
-                        :id="`field-null-value-${row.id}`"
-                        :model-value="row.null_value"
-                        :placeholder="t('app.landlord.integration_apis.placeholders.null_value')"
-                        @update:model-value="updateRow(index, { null_value: String($event) })"
                     />
                 </div>
                 <div class="flex items-end justify-end md:col-span-1">

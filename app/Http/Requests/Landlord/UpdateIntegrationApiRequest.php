@@ -6,7 +6,6 @@ use App\Http\Requests\Landlord\Concerns\NormalizesIntegrationApiRequests;
 use App\Models\IntegrationApi;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateIntegrationApiRequest extends FormRequest
 {
@@ -27,18 +26,8 @@ class UpdateIntegrationApiRequest extends FormRequest
      */
     public function rules(): array
     {
-        /** @var IntegrationApi|null $integrationApi */
-        $integrationApi = $this->route('integration_api');
-
         return [
             'name' => ['required', 'string', 'max:255'],
-            'slug' => [
-                'required',
-                'string',
-                'max:100',
-                'alpha_dash:ascii',
-                Rule::unique('landlord.integration_apis', 'slug')->ignore($integrationApi?->id),
-            ],
             'description' => ['nullable', 'string', 'max:2000'],
             'requests_json' => ['required', 'json'],
             'response_json' => ['required', 'json'],
@@ -47,7 +36,7 @@ class UpdateIntegrationApiRequest extends FormRequest
     }
 
     /**
-     * @return array{name: string, slug: string, description: string|null, requests: array<string, mixed>, response: array<string, mixed>, is_active: bool}
+     * @return array{name: string, description: string|null, requests: array<string, mixed>, response: array<string, mixed>, is_active: bool}
      */
     public function payload(): array
     {
@@ -55,7 +44,6 @@ class UpdateIntegrationApiRequest extends FormRequest
 
         return [
             'name' => (string) $validated['name'],
-            'slug' => (string) $validated['slug'],
             'description' => $validated['description'] ?? null,
             'requests' => $this->normalizeIntegrationApiRequests($this->decodedJson('requests_json')),
             'response' => $this->decodedJson('response_json'),

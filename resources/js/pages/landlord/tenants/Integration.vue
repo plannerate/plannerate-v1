@@ -48,8 +48,6 @@ type IntegrationPayload = {
     auth_token_headers: KeyValueRow[];
     auth_token_params: KeyValueRow[];
     auth_token_body: KeyValueRow[];
-    processing_time: string;
-    separate_by_store: boolean;
     is_active: boolean;
     last_sync: string | null;
     connection_headers: KeyValueRow[];
@@ -143,8 +141,6 @@ const formData = computed(() => ({
         props.integration?.auth_token_username_field ?? 'username',
     auth_token_password_field:
         props.integration?.auth_token_password_field ?? 'password',
-    processing_time: props.integration?.processing_time ?? '02:00',
-    separate_by_store: props.integration?.separate_by_store ?? false,
     is_active: props.integration?.is_active ?? true,
 }));
 
@@ -771,58 +767,6 @@ function testConnection(): void {
                         </p>
                         <KeyValueTable v-model="connectionBody" name="body" />
                     </div>
-
-                    <!-- Processamento — fora das tabs -->
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-                        <FormTextField
-                            id="processing_time"
-                            name="processing_time"
-                            :label="
-                                t(
-                                    'app.landlord.tenant_integrations.fields.processing_time',
-                                )
-                            "
-                            :default-value="formData.processing_time"
-                            :error="errors.processing_time"
-                            placeholder="02:00"
-                            class="md:col-span-3"
-                        />
-                    </div>
-
-                    <label
-                        class="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3"
-                    >
-                        <input
-                            type="hidden"
-                            name="separate_by_store"
-                            value="0"
-                        />
-                        <input
-                            name="separate_by_store"
-                            type="checkbox"
-                            value="1"
-                            :checked="formData.separate_by_store"
-                            class="mt-1 accent-primary"
-                        />
-                        <span class="space-y-1">
-                            <span
-                                class="block text-sm font-medium text-foreground"
-                            >
-                                {{
-                                    t(
-                                        'app.landlord.tenant_integrations.fields.separate_by_store',
-                                    )
-                                }}
-                            </span>
-                            <span class="block text-sm text-muted-foreground">
-                                {{
-                                    t(
-                                        'app.landlord.tenant_integrations.hints.separate_by_store',
-                                    )
-                                }}
-                            </span>
-                        </span>
-                    </label>
 
                     <!-- Seção de teste de conexão -->
                     <div

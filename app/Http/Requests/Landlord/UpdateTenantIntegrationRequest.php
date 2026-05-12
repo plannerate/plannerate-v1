@@ -68,9 +68,6 @@ class UpdateTenantIntegrationRequest extends FormRequest
             'auth_token_body.*.key' => ['required_with:auth_token_body.*', 'string', 'max:255'],
             'auth_token_body.*.value' => ['required_with:auth_token_body.*', 'string', 'max:1000'],
             'auth_token_body.*.enabled' => ['sometimes', 'boolean'],
-            // Processing
-            'processing_time' => ['nullable', 'date_format:H:i'],
-            'separate_by_store' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -119,11 +116,6 @@ class UpdateTenantIntegrationRequest extends FormRequest
                     'headers' => $this->buildKeyValueArray($validated['headers'] ?? []),
                     'params' => $this->buildKeyValueArray($validated['params'] ?? []),
                     'body' => $this->buildKeyValueArray($validated['body'] ?? []),
-                ],
-                'processing' => [
-                    'processing_time' => (string) ($validated['processing_time'] ?? '02:00'),
-                    'separate_by_store' => (bool) ($validated['separate_by_store'] ?? false),
-                    'auto_processing_enabled' => true,
                 ],
             ],
         ];

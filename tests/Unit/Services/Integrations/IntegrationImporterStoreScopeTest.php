@@ -74,8 +74,10 @@ test('store scoped imports only use published stores with documents', function (
     $integration = new TenantIntegration([
         'tenant_id' => $tenant->id,
         'config' => [
-            'processing' => [
-                'separate_by_store' => true,
+            'paths' => [
+                'products' => [
+                    'include_store_in_id' => true,
+                ],
             ],
         ],
     ]);

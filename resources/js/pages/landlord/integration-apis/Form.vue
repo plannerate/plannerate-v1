@@ -17,7 +17,6 @@ import type { FieldMapTableOption, RequestPathRow } from './components/types';
 type IntegrationApiPayload = {
     id: string;
     name: string;
-    slug: string;
     description: string | null;
     requests_json: string;
     response_json: string;
@@ -41,11 +40,9 @@ const integrationApisIndexPath = IntegrationApiController.index.url().replace(/^
 const initialRequests = parseObject(props.integrationApi?.requests_json ?? props.defaults.requests_json);
 const initialResponse = parseObject(props.integrationApi?.response_json ?? props.defaults.response_json);
 const requestMethod = ref(valueToInput(initialRequests.method || 'POST'));
-const requestPayload = ref(valueToInput(initialRequests.payload || 'body'));
 const pageField = ref(valueToInput(initialRequests.page_field || 'pagina'));
 const pageValueType = ref(valueToInput(initialRequests.page_value_type || 'string'));
 const pageSizeField = ref(valueToInput(initialRequests.page_size_field || 'tamanho_pagina'));
-const pageSizePayload = ref(valueToInput(initialRequests.page_size_payload || 'body'));
 const minPageSize = ref(valueToInput(initialRequests.min_page_size || 100));
 const maxPageSize = ref(valueToInput(initialRequests.max_page_size || 5000));
 const storeDocumentField = ref(valueToInput(initialRequests.store_document_field || 'empresa'));
@@ -133,7 +130,6 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
 
             return {
                 id: newPathId(),
-                name,
                 target_table: valueToInput(pathConfig.target_table || (props.fieldMapTables[name] ? name : '')),
                 fallback_path: valueToInput(pathConfig.fallback_path),
                 unique_by: arrayOfStrings(pathConfig.unique_by).join(', '),
@@ -151,7 +147,6 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
         : [
             {
                 id: newPathId(),
-                name: 'products',
                 target_table: 'products',
                 fallback_path: '/hubprodutos.listar_produtos',
                 unique_by: '',
@@ -164,7 +159,6 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
             },
             {
                 id: newPathId(),
-                name: 'sales',
                 target_table: 'sales',
                 fallback_path: '/hubvendas.vendas_produtos',
                 unique_by: '',
@@ -190,7 +184,6 @@ function objectToFieldMapRows(value: unknown): RequestPathRow['field_map'] {
             target: valueToInput(row.target),
             source: valueToInput(row.source),
             transforms: arrayOfStrings(row.transforms),
-            null_value: valueToInput(row.null_value),
         }));
 }
 
@@ -207,11 +200,11 @@ function numberValue(value: string): number {
 function buildRequestsPayload(): Record<string, unknown> {
     const payload: Record<string, unknown> = {
         method: requestMethod.value,
-        payload: requestPayload.value,
+        payload: 'body',
         page_field: pageField.value,
         page_value_type: pageValueType.value,
         page_size_field: pageSizeField.value,
-        page_size_payload: pageSizePayload.value,
+        page_size_payload: 'body',
         min_page_size: numberValue(minPageSize.value),
         max_page_size: numberValue(maxPageSize.value),
         store_document_field: storeDocumentField.value,
@@ -219,9 +212,9 @@ function buildRequestsPayload(): Record<string, unknown> {
     const paths: Record<string, unknown> = {};
 
     requestPaths.value.forEach((requestPath) => {
-        const name = requestPath.name.trim();
+        const pathKey = requestPath.target_table.trim();
 
-        if (name === '') {
+        if (pathKey === '') {
             return;
         }
 
@@ -230,7 +223,7 @@ function buildRequestsPayload(): Record<string, unknown> {
             .map((s) => s.trim())
             .filter((s) => s !== '');
 
-        paths[name] = {
+        paths[pathKey] = {
             target_table: requestPath.target_table,
             fallback_path: requestPath.fallback_path,
             ...(uniqueBy.length > 0 ? { unique_by: uniqueBy } : {}),
@@ -248,25 +241,21 @@ function buildRequestsPayload(): Record<string, unknown> {
         );
 
         if (Object.keys(filteredDateFields).length > 0) {
-            (paths[name] as Record<string, unknown>).date_fields = filteredDateFields;
+            (paths[pathKey] as Record<string, unknown>).date_fields = filteredDateFields;
         }
 
         const fieldMap = requestPath.field_map
             .filter((field) => field.target.trim() !== '' && field.source.trim() !== '')
             .map((field) => {
-                const entry: Record<string, unknown> = {
+                return {
                     target: field.target,
                     source: field.source,
                     transforms: field.transforms,
                 };
-                if (field.null_value.trim() !== '') {
-                    entry.null_value = field.null_value.trim();
-                }
-                return entry;
             });
 
         if (fieldMap.length > 0) {
-            (paths[name] as Record<string, unknown>).field_map = fieldMap;
+            (paths[pathKey] as Record<string, unknown>).field_map = fieldMap;
         }
 
     });
@@ -311,16 +300,10 @@ function newPathId(): string {
                     </template>
 
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-                        <div class="grid gap-2 md:col-span-6">
+                        <div class="grid gap-2 md:col-span-12">
                             <Label for="name">{{ t('app.landlord.integration_apis.fields.name') }}</Label>
                             <Input id="name" name="name" :default-value="props.integrationApi?.name ?? ''" required />
                             <InputError :message="errors.name" />
-                        </div>
-
-                        <div class="grid gap-2 md:col-span-6">
-                            <Label for="slug">{{ t('app.landlord.integration_apis.fields.slug') }}</Label>
-                            <Input id="slug" name="slug" :default-value="props.integrationApi?.slug ?? ''" required />
-                            <InputError :message="errors.slug" />
                         </div>
                     </div>
 
@@ -341,19 +324,11 @@ function newPathId(): string {
                                     <option value="DELETE">DELETE</option>
                                 </select>
                             </div>
-                            <div class="grid gap-2 md:col-span-3">
-                                <Label for="request_payload">{{ t('app.landlord.integration_apis.fields.payload') }}</Label>
-                                <select id="request_payload" v-model="requestPayload"
-                                    class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
-                                    <option value="body">body</option>
-                                    <option value="query">query</option>
-                                </select>
-                            </div>
-                            <div class="grid gap-2 md:col-span-3">
+                            <div class="grid gap-2 md:col-span-5">
                                 <Label for="page_field">{{ t('app.landlord.integration_apis.fields.page_field') }}</Label>
                                 <Input id="page_field" v-model="pageField" />
                             </div>
-                            <div class="grid gap-2 md:col-span-3">
+                            <div class="grid gap-2 md:col-span-4">
                                 <Label for="page_value_type">{{ t('app.landlord.integration_apis.fields.page_value_type') }}</Label>
                                 <select id="page_value_type" v-model="pageValueType"
                                     class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
@@ -366,22 +341,14 @@ function newPathId(): string {
                                 <Input id="page_size_field" v-model="pageSizeField" />
                             </div>
                             <div class="grid gap-2 md:col-span-3">
-                                <Label for="page_size_payload">{{ t('app.landlord.integration_apis.fields.page_size_payload') }}</Label>
-                                <select id="page_size_payload" v-model="pageSizePayload"
-                                    class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
-                                    <option value="body">body</option>
-                                    <option value="query">query</option>
-                                </select>
-                            </div>
-                            <div class="grid gap-2 md:col-span-2">
                                 <Label for="min_page_size">{{ t('app.landlord.integration_apis.fields.min_page_size') }}</Label>
                                 <Input id="min_page_size" v-model="minPageSize" type="number" />
                             </div>
-                            <div class="grid gap-2 md:col-span-2">
+                            <div class="grid gap-2 md:col-span-3">
                                 <Label for="max_page_size">{{ t('app.landlord.integration_apis.fields.max_page_size') }}</Label>
                                 <Input id="max_page_size" v-model="maxPageSize" type="number" />
                             </div>
-                            <div class="grid gap-2 md:col-span-2">
+                            <div class="grid gap-2 md:col-span-3">
                                 <Label for="store_document_field">{{ t('app.landlord.integration_apis.fields.store_document_field') }}</Label>
                                 <Input id="store_document_field" v-model="storeDocumentField" />
                             </div>
