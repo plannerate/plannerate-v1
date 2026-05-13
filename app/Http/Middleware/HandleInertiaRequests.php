@@ -53,18 +53,51 @@ class HandleInertiaRequests extends Middleware
             'locale' => app()->getLocale(),
             'auth' => [
                 'user' => $request->user(),
-                'notifications' => fn (): ?array => $request->user()?->notifications()
-                    ->latest()
-                    ->take(15)
-                    ->get()
-                    ->map(fn ($n) => [
-                        'id' => $n->id,
-                        'read_at' => $n->read_at,
-                        'data' => $n->data,
-                        'created_at' => $n->created_at->toISOString(),
-                    ])
-                    ->all(),
-                'unread_count' => fn (): int => $request->user()?->unreadNotifications()->count() ?? 0,
+                'notifications' => function () use ($request): ?array {
+                    $user = $request->user();
+
+                    if ($user === null) {
+                        return null;
+                    }
+
+                    $tenantId = $this->resolveTenantFromContext($request)?->getKey();
+                    $query = $user->notifications()->latest();
+
+                    if (is_string($tenantId) && $tenantId !== '') {
+                        $query->where('tenant_id', $tenantId);
+                    } else {
+                        $query->whereNull('tenant_id');
+                    }
+
+                    return $query
+                        ->take(15)
+                        ->get()
+                        ->map(fn ($n) => [
+                            'id' => $n->id,
+                            'read_at' => $n->read_at,
+                            'data' => $n->data,
+                            'created_at' => $n->created_at->toISOString(),
+                        ])
+                        ->all();
+                },
+                'unread_count' => function () use ($request): int {
+                    $user = $request->user();
+
+                    if ($user === null) {
+                        return 0;
+                    }
+
+                    $tenantId = $this->resolveTenantFromContext($request)?->getKey();
+                    $query = $user->unreadNotifications();
+
+                    if (is_string($tenantId) && $tenantId !== '') {
+                        $query->where('tenant_id', $tenantId);
+                    } else {
+                        $query->whereNull('tenant_id');
+                    }
+
+                    return $query->count();
+                },
             ],
             'tenant' => [
                 'id' => fn (): ?string => $this->resolveTenantFromContext($request)?->getKey(),

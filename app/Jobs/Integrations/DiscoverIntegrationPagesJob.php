@@ -130,6 +130,10 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         $payload = (new IntegrationPayloadBuilder($config, $requests, $pathConfig))
             ->build($this->dateStart, $this->dateEnd, $storeDocument, useMinPageSize: true);
 
+        Log::info('DiscoverIntegrationPagesJob: iniciando descoberta de páginas', [
+            'payload' => $payload,
+        ]);
+
         $response = (new IntegrationHttpClient($config))
             ->call($method, $url, $payload);
 
@@ -153,6 +157,17 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         $lastPageAtMinSize = $this->readLastPage($responseData, $responseMeta);
         $lastPage = (int) ceil($lastPageAtMinSize * $minPageSize / $maxPageSize);
         $lastPage = $this->applyMaxPageLimit($lastPage, $pathConfig);
+
+        Log::info('DiscoverIntegrationPagesJob: descoberta concluída', [
+            'integration_id' => $this->integrationId,
+            'path_key' => $this->pathKey,
+            'store_id' => $storeId,
+            'pages_at_min_size' => $lastPageAtMinSize,
+            'min_page_size' => $minPageSize,
+            'max_page_size' => $maxPageSize,
+            'fetch_jobs' => $lastPage,
+            'url' => $url,
+        ]);
 
         $this->dispatchPageJobs($lastPage, $storeId, $storeDocument);
     }
@@ -236,13 +251,7 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
             FetchIntegrationPageJob::dispatch(
                 $this->integrationId, $this->pathKey, $page,
                 $this->dateStart, $this->dateEnd, $storeId, $storeDocument,
-            );
-            Log::info('DiscoverIntegrationPagesJob: dispatching FetchIntegrationPageJob', [
-                'integration_id' => $this->integrationId,
-                'path_key' => $this->pathKey,
-                'page' => $page,
-                'store_id' => $storeId,
-            ]);
+            ); 
         }
     }
 

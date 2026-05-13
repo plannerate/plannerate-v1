@@ -15,6 +15,7 @@ class NotificationController extends Controller
     {
         $notification = $request->user()
             ->notifications()
+            ->whereNull('tenant_id')
             ->findOrFail($id);
 
         $notification->markAsRead();
@@ -24,14 +25,18 @@ class NotificationController extends Controller
 
     public function markAllRead(Request $request): RedirectResponse
     {
-        $request->user()->unreadNotifications()->update(['read_at' => now()]);
+        $request->user()->unreadNotifications()
+            ->whereNull('tenant_id')
+            ->update(['read_at' => now()]);
 
         return back();
     }
 
     public function destroyAll(Request $request): RedirectResponse
     {
-        $request->user()->notifications()->delete();
+        $request->user()->notifications()
+            ->whereNull('tenant_id')
+            ->delete();
 
         return back();
     }
@@ -40,6 +45,7 @@ class NotificationController extends Controller
     {
         $request->user()
             ->notifications()
+            ->whereNull('tenant_id')
             ->findOrFail($id)
             ->delete();
 
@@ -50,6 +56,7 @@ class NotificationController extends Controller
     {
         $notification = $request->user()
             ->notifications()
+            ->whereNull('tenant_id')
             ->findOrFail($id);
 
         $filePath = $notification->data['download_url'] ?? null;

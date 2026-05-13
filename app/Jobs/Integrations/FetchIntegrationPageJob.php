@@ -69,6 +69,15 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         $payload = (new IntegrationPayloadBuilder($config, $requests, $pathConfig))
             ->build($this->dateStart, $this->dateEnd, $this->storeDocument, page: $this->page);
 
+        Log::info('FetchIntegrationPageJob: requisição', [
+            'integration_id' => $this->integrationId,
+            'path_key' => $this->pathKey,
+            'page' => $this->page,
+            'store_id' => $this->storeId,
+            'url' => $url,
+            'payload' => $payload,
+        ]);
+
         $response = (new IntegrationHttpClient($config))
             ->call($method, $url, $payload);
 
@@ -97,8 +106,23 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         );
 
         if ($records === []) {
+            Log::info('FetchIntegrationPageJob: nenhum registro mapeado', [
+                'integration_id' => $this->integrationId,
+                'path_key' => $this->pathKey,
+                'page' => $this->page,
+                'store_id' => $this->storeId,
+            ]);
+
             return;
         }
+
+        Log::info('FetchIntegrationPageJob: registros mapeados', [
+            'integration_id' => $this->integrationId,
+            'path_key' => $this->pathKey,
+            'page' => $this->page,
+            'store_id' => $this->storeId,
+            'count' => count($records),
+        ]);
 
         $filePath = $this->saveRecords($records);
 
