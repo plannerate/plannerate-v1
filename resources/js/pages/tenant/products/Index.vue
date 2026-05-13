@@ -227,7 +227,19 @@ const pageMeta = useCrudPageMeta({
                         <td class="px-4 py-3">{{ product.ean ?? '-' }}</td>
                         <td class="px-4 py-3">{{ product.category ?? '-' }}</td>
                         <td class="px-4 py-3">
-                            {{ product.stores.length > 0 ? product.stores.join(', ') : '-' }}
+                            <div
+                                v-if="product.stores.length > 0"
+                                class="flex flex-wrap gap-1.5"
+                            >
+                                <span
+                                    v-for="store in product.stores"
+                                    :key="`${product.id}-${store}`"
+                                    class="inline-flex items-center rounded-md border border-border bg-muted px-2 py-0.5 text-xs text-foreground"
+                                >
+                                    {{ store }}
+                                </span>
+                            </div>
+                            <span v-else>-</span>
                         </td>
                         <td class="px-4 py-3">
                             <ColumnStatusBadge :status="product.status" />
