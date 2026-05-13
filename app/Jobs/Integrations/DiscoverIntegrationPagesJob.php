@@ -160,7 +160,8 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         $responseMeta = $api->response ?? [];
 
         $lastPageAtMinSize = $this->readLastPage($responseData, $responseMeta);
-        $lastPage = (int) ceil($lastPageAtMinSize * $minPageSize / $maxPageSize);
+        $actualPerPage = $this->readPerPage($responseData, $responseMeta, $minPageSize);
+        $lastPage = (int) ceil($lastPageAtMinSize * $actualPerPage / $maxPageSize);
         $lastPage = $this->applyMaxPageLimit($lastPage, $pathConfig);
 
         Log::info('DiscoverIntegrationPagesJob: descoberta concluída', [
@@ -168,13 +169,14 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
             'path_key' => $this->pathKey,
             'store_id' => $storeId,
             'pages_at_min_size' => $lastPageAtMinSize,
+            'actual_per_page' => $actualPerPage,
             'min_page_size' => $minPageSize,
             'max_page_size' => $maxPageSize,
             'fetch_jobs' => $lastPage,
             'url' => $url,
         ]);
 
-        $this->dispatchPageJobs($lastPage, $storeId, $storeDocument);
+        $this->dispatchPageJobs($lastPage, $storeId, $storeDocument, $effectiveDateStart, $effectiveDateEnd);
     }
 
     // ─── Datas por loja ──────────────────────────────────────────────────────
@@ -316,6 +318,27 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         return $path !== '' ? (int) data_get($responseData, $path, 1) : 1;
     }
 
+    /**
+     * Lê o per_page real da resposta para corrigir a fórmula de paginação
+     * quando a API ignora o min_page_size configurado.
+     * Retorna $defaultPageSize se o path não estiver configurado ou o valor for inválido.
+     *
+     * @param  array<string, mixed>  $responseData
+     * @param  array<string, mixed>  $responseMeta
+     */
+    private function readPerPage(array $responseData, array $responseMeta, int $defaultPageSize): int
+    {
+        $path = (string) data_get($responseMeta, 'pagination.per_page_path', '');
+
+        if ($path === '') {
+            return $defaultPageSize;
+        }
+
+        $perPage = (int) data_get($responseData, $path, 0);
+
+        return $perPage > 0 ? $perPage : $defaultPageSize;
+    }
+
     /** @param array<string, mixed> $pathConfig */
     private function applyMaxPageLimit(int $lastPage, array $pathConfig): int
     {
@@ -335,12 +358,12 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
 
     // ─── Dispatch ────────────────────────────────────────────────────────────
 
-    private function dispatchPageJobs(int $lastPage, ?string $storeId, ?string $storeDocument): void
+    private function dispatchPageJobs(int $lastPage, ?string $storeId, ?string $storeDocument, ?string $dateStart, ?string $dateEnd): void
     {
         for ($page = 1; $page <= $lastPage; $page++) {
             FetchIntegrationPageJob::dispatch(
                 $this->integrationId, $this->pathKey, $page,
-                $this->dateStart, $this->dateEnd, $storeId, $storeDocument,
+                $dateStart, $dateEnd, $storeId, $storeDocument,
             );
         }
     }
