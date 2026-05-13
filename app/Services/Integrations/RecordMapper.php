@@ -17,6 +17,19 @@ class RecordMapper
      */
     public function map(array $item, array $fieldMap, ?string $storeId = null): ?array
     {
+        return $this->mapWithRejectionReason($item, $fieldMap, $storeId)[0];
+    }
+
+    /**
+     * Returns the mapped record and, when null, the field that caused rejection.
+     *
+     * @param  array<string, mixed>  $item
+     * @param  array<int, array{target: string, source: string, transforms?: array<int, string>}>  $fieldMap
+     * @param  string|null  $storeId  ID da loja no tenant DB
+     * @return array{0: array<string, mixed>|null, 1: string|null}
+     */
+    public function mapWithRejectionReason(array $item, array $fieldMap, ?string $storeId = null): array
+    {
         $record = [];
 
         foreach ($fieldMap as $mapping) {
@@ -31,7 +44,7 @@ class RecordMapper
             $value = $this->resolver->resolve($item, $source, $transforms);
 
             if ($this->isRequiredAndMissing($transforms, $value)) {
-                return null;
+                return [null, $target];
             }
 
             $record[$target] = $value;
@@ -41,7 +54,7 @@ class RecordMapper
             $record['store_id'] = $storeId;
         }
 
-        return $record;
+        return [$record, null];
     }
 
     /**

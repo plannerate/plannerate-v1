@@ -179,13 +179,19 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         $now = Carbon::now()->toDateTimeString();
 
         $skippedRequired = 0;
+        /** @var array<string, int> $skippedByField */
+        $skippedByField = [];
         $mappedRecords = [];
 
         foreach ($items as $item) {
-            $record = $mapper->map($item, $fieldMap, $this->storeId);
+            [$record, $rejectedField] = $mapper->mapWithRejectionReason($item, $fieldMap, $this->storeId);
 
             if ($record === null) {
                 $skippedRequired++;
+
+                if ($rejectedField !== null) {
+                    $skippedByField[$rejectedField] = ($skippedByField[$rejectedField] ?? 0) + 1;
+                }
 
                 continue;
             }
@@ -205,6 +211,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
                 'page' => $this->page,
                 'store_id' => $this->storeId,
                 'skipped' => $skippedRequired,
+                'skipped_by_field' => $skippedByField,
             ]);
         }
 
