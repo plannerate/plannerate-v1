@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
 import IntegrationApiFieldMapRepeater from './IntegrationApiFieldMapRepeater.vue';
 import IntegrationApiPivotRepeater from './IntegrationApiPivotRepeater.vue';
+import IntegrationApiValidationRepeater from './IntegrationApiValidationRepeater.vue';
 import type { FieldMapTableOption, RequestPathRow } from './types';
 
 const props = defineProps<{
@@ -36,6 +37,7 @@ function newPath(): RequestPathRow {
         end: '',
         field_map: [],
         pivot_tables: [],
+        validations: [],
     };
 }
 
@@ -291,6 +293,21 @@ onMounted(() => {
                         <IntegrationApiPivotRepeater
                             :model-value="requestPath.pivot_tables"
                             @update:model-value="updatePath(pathIndex, { pivot_tables: $event })"
+                        />
+                    </div>
+                </details>
+
+                <details class="rounded-md border border-border bg-background/60">
+                    <summary class="cursor-pointer px-3 py-2 text-sm font-medium text-muted-foreground">
+                        Validações de grupo
+                        <span v-if="requestPath.validations.length > 0" class="ml-1 text-xs text-primary">
+                            ({{ requestPath.validations.length }})
+                        </span>
+                    </summary>
+                    <div class="border-t border-border p-3">
+                        <IntegrationApiValidationRepeater
+                            :model-value="requestPath.validations"
+                            @update:model-value="updatePath(pathIndex, { validations: $event })"
                         />
                     </div>
                 </details>

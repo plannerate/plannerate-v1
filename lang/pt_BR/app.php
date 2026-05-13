@@ -1113,6 +1113,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'select_planogram' => 'Selecione um planograma',
             'execution_status' => 'Status da execucao',
             'all_statuses' => 'Todos os status',
+            'responsible' => 'Responsavel',
+            'all_responsibles' => 'Todos os responsaveis',
             'display_options' => 'Opcoes de exibicao',
             'only_overdue' => 'Apenas atrasadas',
             'show_completed' => 'Mostrar concluidas',

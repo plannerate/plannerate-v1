@@ -29,7 +29,7 @@ class WorkflowKanbanController extends Controller
     {
         $this->authorize('viewAny', WorkflowGondolaExecution::class);
 
-        $filters = $request->only(['planogram_id', 'store_id', 'gondola_search', 'execution_status']);
+        $filters = $request->only(['planogram_id', 'store_id', 'gondola_search', 'execution_status', 'current_responsible_id']);
         $selectedPlanogram = $this->selectedPlanogram($request);
 
         if ($selectedPlanogram !== null) {
@@ -48,6 +48,7 @@ class WorkflowKanbanController extends Controller
                 $request->input('store_id'),
                 $request->input('execution_status'),
                 $request->input('gondola_search'),
+                $request->input('current_responsible_id'),
             ),
             'selected_planogram' => $selectedPlanogram ? [
                 'id' => $selectedPlanogram->id,

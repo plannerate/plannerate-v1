@@ -13,23 +13,31 @@ class RecordMapper
      * @param  array<string, mixed>  $item
      * @param  array<int, array{target: string, source: string, transforms?: array<int, string>}>  $fieldMap
      * @param  string|null  $storeId  ID da loja no tenant DB
+     * @param  array<int, array{type: string, sources: array<int, string>, allowed_values?: array<int, string>}>  $validations
      * @return array<string, mixed>|null
      */
-    public function map(array $item, array $fieldMap, ?string $storeId = null): ?array
+    public function map(array $item, array $fieldMap, ?string $storeId = null, array $validations = []): ?array
     {
-        return $this->mapWithRejectionReason($item, $fieldMap, $storeId)[0];
+        return $this->mapWithRejectionReason($item, $fieldMap, $storeId, $validations)[0];
     }
 
     /**
      * Returns the mapped record and, when null, the field that caused rejection.
      *
      * @param  array<string, mixed>  $item
-     * @param  array<int, array{target: string, source: string, transforms?: array<int, string>}>  $fieldMap
+     * @param  array<int, array{target: string, source: string, transforms?: array<int, string>, allowed_values?: array<int, string>}>  $fieldMap
      * @param  string|null  $storeId  ID da loja no tenant DB
+     * @param  array<int, array{type: string, sources: array<int, string>, allowed_values?: array<int, string>}>  $validations
      * @return array{0: array<string, mixed>|null, 1: string|null}
      */
-    public function mapWithRejectionReason(array $item, array $fieldMap, ?string $storeId = null): array
+    public function mapWithRejectionReason(array $item, array $fieldMap, ?string $storeId = null, array $validations = []): array
     {
+        foreach ($validations as $validation) {
+            if (! $this->passesGroupValidation($item, $validation)) {
+                return [null, null];
+            }
+        }
+
         $record = [];
 
         foreach ($fieldMap as $mapping) {
@@ -47,6 +55,10 @@ class RecordMapper
                 return [null, $target];
             }
 
+            if (array_key_exists('allowed_values', $mapping) && $this->isValueNotAllowed($mapping['allowed_values'], $value)) {
+                return [null, $target];
+            }
+
             $record[$target] = $value;
         }
 
@@ -55,6 +67,67 @@ class RecordMapper
         }
 
         return [$record, null];
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @param  array{type: string, sources: array<int, string>, allowed_values?: array<int, string>}  $validation
+     */
+    private function passesGroupValidation(array $item, array $validation): bool
+    {
+        $type = (string) ($validation['type'] ?? '');
+        $sources = array_values(array_filter(
+            (array) ($validation['sources'] ?? []),
+            static fn (mixed $s): bool => is_string($s) && $s !== '',
+        ));
+
+        $allowedValues = array_values(array_filter(
+            (array) ($validation['allowed_values'] ?? ['S']),
+            static fn (mixed $v): bool => is_string($v) && trim($v) !== '',
+        ));
+
+        if ($sources === []) {
+            return true;
+        }
+
+        return match ($type) {
+            'any_of' => $this->anyOfPasses($item, $sources, $allowedValues),
+            default => true,
+        };
+    }
+
+    /**
+     * Returns true if at least one source field value is in $allowedValues.
+     *
+     * @param  array<string, mixed>  $item
+     * @param  array<int, string>  $sources
+     * @param  array<int, string>  $allowedValues
+     */
+    private function anyOfPasses(array $item, array $sources, array $allowedValues): bool
+    {
+        foreach ($sources as $source) {
+            $value = (string) data_get($item, $source, '');
+
+            if (in_array($value, $allowedValues, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isValueNotAllowed(mixed $allowedValuesConfig, mixed $value): bool
+    {
+        $allowedValues = array_values(array_filter(
+            (array) $allowedValuesConfig,
+            static fn (mixed $v): bool => is_string($v) && trim($v) !== '',
+        ));
+
+        if ($allowedValues === []) {
+            return $value === 'N';
+        }
+
+        return ! in_array($value, $allowedValues, true);
     }
 
     /**

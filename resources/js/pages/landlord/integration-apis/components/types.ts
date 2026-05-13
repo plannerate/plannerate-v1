@@ -5,6 +5,13 @@ export type FieldMapRow = {
     transforms: string[];
 };
 
+export type ValidationRow = {
+    id: string;
+    type: string;
+    sources: string;
+    allowed_values: string;
+};
+
 export type PivotTableRow = {
     id: string;
     table: string;
@@ -30,6 +37,7 @@ export type RequestPathRow = {
     end: string;
     field_map: FieldMapRow[];
     pivot_tables: PivotTableRow[];
+    validations: ValidationRow[];
 };
 
 export type FieldMapTableOption = {

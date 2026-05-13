@@ -12,7 +12,7 @@ import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 import IntegrationApiPathRepeater from './components/IntegrationApiPathRepeater.vue';
-import type { FieldMapTableOption, PivotTableRow, RequestPathRow } from './components/types';
+import type { FieldMapTableOption, PivotTableRow, RequestPathRow, ValidationRow } from './components/types';
 
 type IntegrationApiPayload = {
     id: string;
@@ -159,6 +159,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 end: valueToInput(parseObjectValue(pathConfig.date_fields).end),
                 field_map: objectToFieldMapRows(pathConfig.field_map),
                 pivot_tables: objectToPivotRows(pathConfig.pivot_tables),
+                validations: objectToValidationRows(pathConfig.validations),
             };
         });
 
@@ -181,6 +182,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 end: '',
                 field_map: [],
                 pivot_tables: [],
+                validations: [],
             },
             {
                 id: newPathId(),
@@ -198,6 +200,7 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 end: 'data_final',
                 field_map: [],
                 pivot_tables: [],
+                validations: [],
             },
         ];
 }
@@ -216,6 +219,21 @@ function objectToPivotRows(value: unknown): PivotTableRow[] {
             foreign_key: valueToInput(row.foreign_key),
             related_key: valueToInput(row.related_key),
             unique_by: arrayOfStrings(row.unique_by).join(', '),
+        }));
+}
+
+function objectToValidationRows(value: unknown): ValidationRow[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .filter((row): row is Record<string, unknown> => row !== null && typeof row === 'object' && !Array.isArray(row))
+        .map((row) => ({
+            id: newPathId(),
+            type: valueToInput(row.type || 'any_of'),
+            sources: arrayOfStrings(row.sources).join(', '),
+            allowed_values: arrayOfStrings(row.allowed_values).join(', '),
         }));
 }
 
@@ -338,6 +356,26 @@ function buildRequestsPayload(): Record<string, unknown> {
 
         if (pivotTables.length > 0) {
             (paths[pathKey] as Record<string, unknown>).pivot_tables = pivotTables;
+        }
+
+        const validations = requestPath.validations
+            .map((v) => {
+                const sources = v.sources
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter((s) => s !== '');
+
+                const allowedValues = v.allowed_values
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter((s) => s !== '');
+
+                return { type: v.type, sources, allowed_values: allowedValues };
+            })
+            .filter((v) => v.sources.length > 0);
+
+        if (validations.length > 0) {
+            (paths[pathKey] as Record<string, unknown>).validations = validations;
         }
     });
 

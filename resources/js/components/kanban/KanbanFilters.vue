@@ -8,7 +8,14 @@ const props = defineProps<{
     subdomain: string;
     planograms: Array<{ id: string; name: string; store: string | null; store_id: string | null }>;
     stores: Array<{ id: string; name: string }>;
-    filters: { planogram_id?: string; store_id?: string; gondola_search?: string; execution_status?: string };
+    users: Array<{ id: string; name: string }>;
+    filters: {
+        planogram_id?: string;
+        store_id?: string;
+        gondola_search?: string;
+        execution_status?: string;
+        current_responsible_id?: string;
+    };
     onlyOverdue: boolean;
     showCompleted: boolean;
 }>();
@@ -94,6 +101,23 @@ const filteredPlanograms = computed(() => {
                 <option value="paused">{{ t('app.kanban.executions.status.paused') }}</option>
                 <option value="completed">{{ t('app.kanban.executions.status.completed') }}</option>
                 <option value="cancelled">{{ t('app.kanban.executions.status.cancelled') }}</option>
+            </select>
+        </div>
+
+        <div class="flex flex-col gap-1">
+            <label for="kanban-responsible" class="text-xs font-medium text-foreground">
+                {{ t('app.kanban.filters.responsible') }}
+            </label>
+            <select
+                id="kanban-responsible"
+                name="current_responsible_id"
+                :value="filters.current_responsible_id ?? ''"
+                class="h-9 min-w-52 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            >
+                <option value="">{{ t('app.kanban.filters.all_responsibles') }}</option>
+                <option v-for="user in users" :key="user.id" :value="user.id">
+                    {{ user.name }}
+                </option>
             </select>
         </div>
 

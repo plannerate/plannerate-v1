@@ -79,4 +79,9 @@ class WorkflowGondolaExecution extends Model
     {
         return $query->where('workflow_planogram_step_id', $stepId);
     }
+
+    public function scopeForResponsible(Builder $query, string $responsibleId): Builder
+    {
+        return $query->where('current_responsible_id', $responsibleId);
+    }
 }

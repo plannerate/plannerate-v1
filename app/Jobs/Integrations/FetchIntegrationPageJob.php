@@ -174,6 +174,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         }
 
         $fieldMap = (array) data_get($pathConfig, 'field_map', []);
+        $validations = (array) data_get($pathConfig, 'validations', []);
         $mapper = new RecordMapper(new FieldValueResolver);
         $idGenerator = new DeterministicIdGenerator;
         $now = Carbon::now()->toDateTimeString();
@@ -184,7 +185,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         $mappedRecords = [];
 
         foreach ($items as $item) {
-            [$record, $rejectedField] = $mapper->mapWithRejectionReason($item, $fieldMap, $this->storeId);
+            [$record, $rejectedField] = $mapper->mapWithRejectionReason($item, $fieldMap, $this->storeId, $validations);
 
             if ($record === null) {
                 $skippedRequired++;

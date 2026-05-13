@@ -1,12 +1,16 @@
 <?php
 
 use App\Jobs\ProvisionTenantDatabaseJob;
+use App\Models\Gondola;
 use App\Models\Module;
 use App\Models\Planogram;
 use App\Models\Role;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\WorkflowGondolaExecution;
+use App\Models\WorkflowPlanogramStep;
+use App\Models\WorkflowTemplate;
 use App\Support\Modules\ModuleSlug;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
@@ -98,6 +102,78 @@ test('kanban index filtra planogramas por store_id', function (): void {
         ->assertInertia(fn (Assert $page) => $page
             ->where('planograms', fn ($planograms) => count($planograms) === 1 && $planograms[0]['id'] === $planogramNaLoja->id
             )
+        );
+});
+
+test('kanban index filtra execucoes por current_responsible_id', function (): void {
+    $context = setupKanbanTenantCtx('kanban-ctrl-responsible');
+    $this->actingAs($context['user']);
+
+    $responsavelSelecionado = User::factory()->create();
+    $outroResponsavel = User::factory()->create();
+
+    $planogram = Planogram::factory()->create([
+        'tenant_id' => $context['tenant']->id,
+    ]);
+
+    $gondolaA = Gondola::factory()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+    ]);
+
+    $gondolaB = Gondola::factory()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+    ]);
+
+    $template = WorkflowTemplate::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'name' => 'Etapa Teste',
+        'slug' => 'etapa-teste-'.Str::lower(Str::random(8)),
+        'suggested_order' => 1,
+        'status' => 'published',
+    ]);
+
+    $step = WorkflowPlanogramStep::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+        'workflow_template_id' => $template->id,
+        'status' => 'published',
+    ]);
+
+    $execucaoFiltrada = WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondolaA->id,
+        'workflow_planogram_step_id' => $step->id,
+        'status' => 'active',
+        'current_responsible_id' => $responsavelSelecionado->id,
+    ]);
+
+    WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondolaB->id,
+        'workflow_planogram_step_id' => $step->id,
+        'status' => 'active',
+        'current_responsible_id' => $outroResponsavel->id,
+    ]);
+
+    $this->get(route('tenant.kanban.index', [
+        'subdomain' => $context['subdomain'],
+        'planogram_id' => $planogram->id,
+        'current_responsible_id' => $responsavelSelecionado->id,
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.current_responsible_id', $responsavelSelecionado->id)
+            ->where('board', function (array $board) use ($execucaoFiltrada): bool {
+                $executionIds = collect($board)
+                    ->flatMap(fn (array $column) => $column['executions'] ?? [])
+                    ->pluck('id')
+                    ->values()
+                    ->all();
+
+                return $executionIds === [$execucaoFiltrada->id];
+            })
         );
 });
 

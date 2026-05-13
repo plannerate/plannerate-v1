@@ -27,6 +27,7 @@ class WorkflowKanbanService
         ?string $storeId = null,
         ?string $executionStatus = null,
         ?string $gondolaSearch = null,
+        ?string $currentResponsibleId = null,
     ): array {
         $templates = WorkflowTemplate::query()
             ->where('status', 'published')
@@ -63,6 +64,10 @@ class WorkflowKanbanService
                 'step:id,name,workflow_template_id',
             ])
             ->when($executionStatus, fn ($query) => $query->where('status', $executionStatus))
+            ->when(
+                $currentResponsibleId,
+                fn ($query) => $query->forResponsible($currentResponsibleId)
+            )
             ->when(
                 $gondolaSearch,
                 fn ($query) => $query->whereHas(

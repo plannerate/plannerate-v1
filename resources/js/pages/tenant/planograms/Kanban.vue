@@ -212,6 +212,7 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
                     :subdomain="props.subdomain"
                     :planograms="props.planograms"
                     :stores="props.stores"
+                    :users="props.users"
                     :filters="props.filters"
                     :only-overdue="onlyOverdue"
                     :show-completed="showCompleted"
