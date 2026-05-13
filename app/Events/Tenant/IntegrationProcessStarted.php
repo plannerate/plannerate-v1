@@ -7,6 +7,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class IntegrationProcessStarted implements ShouldBroadcastNow
 {
@@ -41,6 +42,13 @@ class IntegrationProcessStarted implements ShouldBroadcastNow
      */
     public function broadcastWith(): array
     {
+        Log::info('Broadcasting IntegrationProcessStarted event', [
+            'tenant_id' => $this->tenantId,
+            'integration_id' => $this->integrationId,
+            'resource' => $this->resource,
+            'reference_date' => $this->referenceDate,
+        ]);
+
         return [
             'tenant_id' => $this->tenantId,
             'integration_id' => $this->integrationId,

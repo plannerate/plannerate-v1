@@ -237,6 +237,12 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
                 $this->integrationId, $this->pathKey, $page,
                 $this->dateStart, $this->dateEnd, $storeId, $storeDocument,
             );
+            Log::info('DiscoverIntegrationPagesJob: dispatching FetchIntegrationPageJob', [
+                'integration_id' => $this->integrationId,
+                'path_key' => $this->pathKey,
+                'page' => $page,
+                'store_id' => $storeId,
+            ]);
         }
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -14,7 +15,7 @@ class NotificationController extends Controller
     public function markRead(Request $request, string $subdomain, string $id): RedirectResponse
     {
         unset($subdomain); // não é necessário, mas evita warnings de variável não usada
-        $tenantId = tenant('id');
+        $tenantId = (string) (Tenant::current()?->getKey() ?? '');
         $notification = $request->user()
             ->notifications()
             ->where('tenant_id', $tenantId)
@@ -28,7 +29,7 @@ class NotificationController extends Controller
     public function markAllRead(Request $request, string $subdomain): RedirectResponse
     {
         unset($subdomain); // não é necessário, mas evita warnings de variável não usada
-        $tenantId = tenant('id');
+        $tenantId = (string) (Tenant::current()?->getKey() ?? '');
         $request->user()->unreadNotifications()
             ->where('tenant_id', $tenantId)
             ->update(['read_at' => now()]);
@@ -39,7 +40,7 @@ class NotificationController extends Controller
     public function destroyAll(Request $request, string $subdomain): RedirectResponse
     {
         unset($subdomain); // não é necessário, mas evita warnings de variável não usada
-        $tenantId = tenant('id');
+        $tenantId = (string) (Tenant::current()?->getKey() ?? '');
         $request->user()->notifications()
             ->where('tenant_id', $tenantId)
             ->delete();
@@ -50,7 +51,7 @@ class NotificationController extends Controller
     public function destroy(Request $request, string $subdomain, string $id): RedirectResponse
     {
         unset($subdomain); // não é necessário, mas evita warnings de variável não usada
-        $tenantId = tenant('id');
+        $tenantId = (string) (Tenant::current()?->getKey() ?? '');
         $request->user()
             ->notifications()
             ->where('tenant_id', $tenantId)
@@ -63,7 +64,7 @@ class NotificationController extends Controller
     public function download(Request $request, string $subdomain, string $id): BinaryFileResponse|Response
     {
         unset($subdomain); // não é necessário, mas evita warnings de variável não usada
-        $tenantId = tenant('id');
+        $tenantId = (string) (Tenant::current()?->getKey() ?? '');
         $notification = $request->user()
             ->notifications()
             ->where('tenant_id', $tenantId)

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Models\Tenant;
 use App\Notifications\AppNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,7 +35,7 @@ class ReverbTestController extends Controller
             type: $validated['type'],
             downloadUrl: $validated['download_url'] ?? null,
             downloadName: $validated['download_name'] ?? null,
-            tenantId: tenant('id'),
+            tenantId: (string) (Tenant::current()?->getKey() ?? ''),
         ));
 
         return back()->with('toast', [

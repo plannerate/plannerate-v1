@@ -2,6 +2,7 @@
 
 namespace App\Events\Tenant;
 
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
@@ -9,7 +10,7 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class IntegrationProcessFinished implements ShouldBroadcastNow
+class TenantIsolationCheckEvent implements ShouldBroadcastNow
 {
     use Dispatchable;
     use InteractsWithSockets;
@@ -17,49 +18,50 @@ class IntegrationProcessFinished implements ShouldBroadcastNow
 
     public function __construct(
         public string $tenantId,
-        public string $integrationId,
+        public string $currentTenantId,
+        public string $tenantSlug,
         public string $resource,
-        public string $referenceDate,
+        public string $testedAt,
         public string $status,
-        public ?string $errorMessage = null,
     ) {}
 
     /**
-     * @return array<int, PrivateChannel>
+     * @return array<int, Channel|PrivateChannel>
      */
     public function broadcastOn(): array
     {
         return [
             new PrivateChannel('tenant.'.$this->tenantId),
+            new Channel('landlord.diagnostics'),
         ];
     }
 
     public function broadcastAs(): string
     {
-        return 'integration.process.finished';
+        return 'tenant.isolation.checked';
     }
 
     /**
-     * @return array<string, string|null>
+     * @return array<string, string>
      */
     public function broadcastWith(): array
     {
-        Log::info('Broadcasting IntegrationProcessFinished event', [
+        Log::info('Broadcasting TenantIsolationCheckEvent', [
             'tenant_id' => $this->tenantId,
-            'integration_id' => $this->integrationId,
+            'current_tenant_id' => $this->currentTenantId,
+            'tenant_slug' => $this->tenantSlug,
             'resource' => $this->resource,
-            'reference_date' => $this->referenceDate,
+            'tested_at' => $this->testedAt,
             'status' => $this->status,
-            'error_message' => $this->errorMessage,
         ]);
 
         return [
             'tenant_id' => $this->tenantId,
-            'integration_id' => $this->integrationId,
+            'current_tenant_id' => $this->currentTenantId,
+            'tenant_slug' => $this->tenantSlug,
             'resource' => $this->resource,
-            'reference_date' => $this->referenceDate,
+            'tested_at' => $this->testedAt,
             'status' => $this->status,
-            'error_message' => $this->errorMessage,
         ];
     }
 }

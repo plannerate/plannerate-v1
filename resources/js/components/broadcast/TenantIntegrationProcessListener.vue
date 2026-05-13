@@ -28,6 +28,19 @@ type IntegrationProcessStartedPayload = {
     referenceDate?: string;
 };
 
+type TenantIsolationCheckedPayload = {
+    tenant_id?: string;
+    tenantId?: string;
+    current_tenant_id?: string;
+    currentTenantId?: string;
+    tenant_slug?: string;
+    tenantSlug?: string;
+    resource?: string;
+    tested_at?: string;
+    testedAt?: string;
+    status?: 'ok' | 'mismatch';
+};
+
 const page = usePage();
 const { t } = useT();
 const isEchoConfigured = typeof window !== 'undefined' && window.__plannerateEchoConfigured === true;
@@ -68,6 +81,20 @@ if (isEchoConfigured && tenantId.value) {
         }
 
         toast.success(detail);
+    });
+
+    useEcho(`tenant.${tenantId.value}`, '.tenant.isolation.checked', (raw: TenantIsolationCheckedPayload) => {
+        const status = raw.status ?? 'mismatch';
+        const currentTenantId = raw.current_tenant_id ?? raw.currentTenantId ?? 'N/A';
+        const resource = raw.resource ?? 'isolation_test';
+
+        if (status === 'ok') {
+            toast.success(`Tenant isolation OK [${resource}] (tenant atual: ${currentTenantId})`);
+
+            return;
+        }
+
+        toast.error(`Tenant isolation mismatch [${resource}] (tenant atual: ${currentTenantId})`);
     });
 }
 </script>
