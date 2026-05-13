@@ -23,6 +23,8 @@ export type RequestPathRow = {
     include_store_in_id: boolean;
     initial_days: string;
     max_page: string;
+    min_page_size: string;
+    max_page_size: string;
     changed_since: string;
     start: string;
     end: string;

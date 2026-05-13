@@ -75,8 +75,8 @@ class IntegrationPayloadBuilder
     private function applyPagination(array $payload, bool $useMinPageSize = false, int $page = 1): array
     {
         $pageSize = $useMinPageSize
-            ? (int) data_get($this->requests, 'min_page_size', 1)
-            : (int) data_get($this->requests, 'max_page_size', 100);
+            ? (int) (data_get($this->pathConfig, 'min_page_size') ?? data_get($this->requests, 'min_page_size', 1))
+            : (int) (data_get($this->pathConfig, 'max_page_size') ?? data_get($this->requests, 'max_page_size', 100));
 
         $payload[(string) data_get($this->requests, 'page_field', 'page')] = $page;
         $payload[(string) data_get($this->requests, 'page_size_field', 'per_page')] = $pageSize;

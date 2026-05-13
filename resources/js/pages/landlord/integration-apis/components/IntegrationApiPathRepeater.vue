@@ -29,6 +29,8 @@ function newPath(): RequestPathRow {
         include_store_in_id: false,
         initial_days: '',
         max_page: '',
+        min_page_size: '',
+        max_page_size: '',
         changed_since: '',
         start: '',
         end: '',
@@ -241,6 +243,25 @@ onMounted(() => {
                                 </p>
                             </div>
                         </Label>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
+                    <div class="grid gap-2 md:col-span-4">
+                        <Label :for="`path-min-page-size-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.min_page_size') }}</Label>
+                        <Input :id="`path-min-page-size-${requestPath.id}`" type="number"
+                            :model-value="requestPath.min_page_size"
+                            placeholder="1"
+                            @update:model-value="updatePath(pathIndex, { min_page_size: String($event) })" />
+                    </div>
+                    <div class="grid gap-2 md:col-span-4">
+                        <Label :for="`path-max-page-size-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.max_page_size') }}</Label>
+                        <Input :id="`path-max-page-size-${requestPath.id}`" type="number"
+                            :model-value="requestPath.max_page_size"
+                            placeholder="1000"
+                            @update:model-value="updatePath(pathIndex, { max_page_size: String($event) })" />
                     </div>
                 </div>
 

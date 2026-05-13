@@ -49,7 +49,7 @@ it('logs a warning and skips upsert when the target table does not exist', funct
     $integration->shouldReceive('getAttribute')->with('tenant')->andReturn($tenant);
 
     Log::shouldReceive('warning')->once();
-    Log::shouldReceive('info')->once();
+    Log::shouldReceive('info')->twice();
 
     TenantRecordPersister::persist($integration, 'products', [
         ['id' => 'abc', 'name' => 'foo', 'tenant_id' => 't1', 'created_at' => '2026-01-01', 'updated_at' => '2026-01-01'],
@@ -86,7 +86,7 @@ it('filters out columns not present in the target table before upsert', function
     $integration->shouldReceive('getAttribute')->with('id')->andReturn('01integ000000000000000001');
     $integration->shouldReceive('getAttribute')->with('tenant')->andReturn($tenant);
 
-    Log::shouldReceive('info')->once();
+    Log::shouldReceive('info')->twice();
 
     TenantRecordPersister::persist($integration, 'products', [
         ['id' => 'abc', 'name' => 'Milk', 'store_id' => 'store1', 'tenant_id' => 't1', 'created_at' => '2026-01-01', 'updated_at' => '2026-01-01'],
@@ -137,7 +137,7 @@ it('chunks records into batches of 500', function (): void {
     $integration->shouldReceive('getAttribute')->with('id')->andReturn('01integ000000000000000001');
     $integration->shouldReceive('getAttribute')->with('tenant')->andReturn($tenant);
 
-    Log::shouldReceive('info')->once();
+    Log::shouldReceive('info')->twice();
 
     TenantRecordPersister::persist($integration, 'sales', $records);
 
@@ -183,7 +183,7 @@ it('persists pivot rows with their own filtered payload', function (): void {
     $integration->shouldReceive('getAttribute')->with('id')->andReturn('01integ000000000000000001');
     $integration->shouldReceive('getAttribute')->with('tenant')->andReturn($tenant);
 
-    Log::shouldReceive('info')->twice();
+    Log::shouldReceive('info')->times(3);
 
     TenantRecordPersister::persist(
         $integration,

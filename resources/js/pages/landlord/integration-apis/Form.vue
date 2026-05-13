@@ -60,8 +60,6 @@ const requestMethod = ref(valueToInput(initialRequests.method || 'POST'));
 const pageField = ref(valueToInput(initialRequests.page_field || 'pagina'));
 const pageValueType = ref(valueToInput(initialRequests.page_value_type || 'string'));
 const pageSizeField = ref(valueToInput(initialRequests.page_size_field || 'tamanho_pagina'));
-const minPageSize = ref(valueToInput(initialRequests.min_page_size || 100));
-const maxPageSize = ref(valueToInput(initialRequests.max_page_size || 1000));
 const storeDocumentField = ref(valueToInput(initialRequests.store_document_field || 'empresa'));
 const requestPaths = ref<RequestPathRow[]>(objectToRequestPaths(initialRequests));
 const responseItemsPath = ref(valueToInput(initialResponse.items_path || 'data'));
@@ -154,6 +152,8 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 include_store_in_id: pathConfig.include_store_in_id === true,
                 initial_days: valueToInput(pathConfig.initial_days),
                 max_page: valueToInput(pathConfig.max_page),
+                min_page_size: valueToInput(pathConfig.min_page_size),
+                max_page_size: valueToInput(pathConfig.max_page_size),
                 changed_since: valueToInput(parseObjectValue(pathConfig.date_fields).changed_since),
                 start: valueToInput(parseObjectValue(pathConfig.date_fields).start),
                 end: valueToInput(parseObjectValue(pathConfig.date_fields).end),
@@ -174,6 +174,8 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 include_store_in_id: false,
                 initial_days: '120',
                 max_page: '1000',
+                min_page_size: '1',
+                max_page_size: '1000',
                 changed_since: 'data_ultima_alteracao',
                 start: '',
                 end: '',
@@ -189,6 +191,8 @@ function objectToRequestPaths(source: Record<string, unknown>): RequestPathRow[]
                 include_store_in_id: true,
                 initial_days: '120',
                 max_page: '',
+                min_page_size: '1',
+                max_page_size: '1000',
                 changed_since: '',
                 start: 'data_inicial',
                 end: 'data_final',
@@ -260,8 +264,6 @@ function buildRequestsPayload(): Record<string, unknown> {
         page_value_type: pageValueType.value,
         page_size_field: pageSizeField.value,
         page_size_payload: 'body',
-        min_page_size: numberValue(minPageSize.value),
-        max_page_size: numberValue(maxPageSize.value),
         store_document_field: storeDocumentField.value,
     };
     const paths: Record<string, unknown> = {};
@@ -286,6 +288,8 @@ function buildRequestsPayload(): Record<string, unknown> {
             ...(requestPath.include_store_in_id ? { include_store_in_id: true } : {}),
             ...(requestPath.initial_days.trim() !== '' ? { initial_days: numberValue(requestPath.initial_days) } : {}),
             ...(requestPath.max_page.trim() !== '' ? { max_page: numberValue(requestPath.max_page) } : {}),
+            ...(requestPath.min_page_size.trim() !== '' ? { min_page_size: numberValue(requestPath.min_page_size) } : {}),
+            ...(requestPath.max_page_size.trim() !== '' ? { max_page_size: numberValue(requestPath.max_page_size) } : {}),
         };
 
         const dateFields = {
@@ -416,14 +420,6 @@ function newPathId(): string {
                             <div class="grid gap-2 md:col-span-3">
                                 <Label for="page_size_field">{{ t('app.landlord.integration_apis.fields.page_size_field') }}</Label>
                                 <Input id="page_size_field" v-model="pageSizeField" />
-                            </div>
-                            <div class="grid gap-2 md:col-span-3">
-                                <Label for="min_page_size">{{ t('app.landlord.integration_apis.fields.min_page_size') }}</Label>
-                                <Input id="min_page_size" v-model="minPageSize" type="number" />
-                            </div>
-                            <div class="grid gap-2 md:col-span-3">
-                                <Label for="max_page_size">{{ t('app.landlord.integration_apis.fields.max_page_size') }}</Label>
-                                <Input id="max_page_size" v-model="maxPageSize" type="number" />
                             </div>
                             <div class="grid gap-2 md:col-span-3">
                                 <Label for="store_document_field">{{ t('app.landlord.integration_apis.fields.store_document_field') }}</Label>

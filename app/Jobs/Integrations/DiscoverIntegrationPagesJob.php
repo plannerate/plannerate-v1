@@ -54,8 +54,8 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         $config = $integration->config ?? [];
         $requests = $api->requests ?? [];
 
-        $minPageSize = max(1, (int) data_get($requests, 'min_page_size', 1));
-        $maxPageSize = max(1, (int) data_get($requests, 'max_page_size', 1000));
+        $minPageSize = max(1, (int) (data_get($pathConfig, 'min_page_size') ?? data_get($requests, 'min_page_size', 1)));
+        $maxPageSize = max(1, (int) (data_get($pathConfig, 'max_page_size') ?? data_get($requests, 'max_page_size', 1000)));
 
         $stores = $this->loadStores($integration, $requests);
 
@@ -251,7 +251,7 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
             FetchIntegrationPageJob::dispatch(
                 $this->integrationId, $this->pathKey, $page,
                 $this->dateStart, $this->dateEnd, $storeId, $storeDocument,
-            ); 
+            );
         }
     }
 
