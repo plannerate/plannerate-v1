@@ -4,6 +4,7 @@ namespace App\Console\Commands\Integrations;
 
 use App\Models\Tenant;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -26,36 +27,36 @@ class IntegrationStatusCommand extends Command
             return self::SUCCESS;
         }
 
-        // 2 — carrega integrações do tenant e descobre tabelas
-        $tables = $this->discoverTables($tenant);
-
-        if ($tables === []) {
-            $this->warn('Nenhuma tabela de integração encontrada para este tenant.');
-
-            return self::SUCCESS;
-        }
-
-        // 3 — seleciona tabelas
-        $selected = multiselect(
-            label: 'Quais tabelas você quer inspecionar?',
-            options: $tables,
-            default: $tables,
-            required: true,
-        );
-
-        // 4 — ação: visualizar ou excluir
+        // 2 — ação: visualizar ou excluir
         $action = select(
             label: 'O que deseja fazer?',
             options: [
                 'view' => 'Visualizar stats + amostra de dados',
-                'delete' => 'Excluir registros',
+                'delete' => 'Excluir dados por loja (sales, product_store e products órfãos)',
             ],
         );
 
         if ($action === 'view') {
+            // 3 — carrega integrações do tenant e descobre tabelas
+            $tables = $this->discoverTables($tenant);
+
+            if ($tables === []) {
+                $this->warn('Nenhuma tabela de integração encontrada para este tenant.');
+
+                return self::SUCCESS;
+            }
+
+            // 4 — seleciona tabelas
+            $selected = multiselect(
+                label: 'Quais tabelas você quer inspecionar?',
+                options: $tables,
+                default: $tables,
+                required: true,
+            );
+
             $this->showStats($tenant, $selected);
         } else {
-            $this->deleteRecords($tenant, $selected);
+            $this->deleteRecordsByStores($tenant);
         }
 
         return self::SUCCESS;
@@ -200,44 +201,144 @@ class IntegrationStatusCommand extends Command
 
     // ─── Delete ──────────────────────────────────────────────────────────────
 
-    /** @param list<string> $tables */
-    private function deleteRecords(Tenant $tenant, array $tables): void
+    private function deleteRecordsByStores(Tenant $tenant): void
     {
-        $list = implode(', ', $tables);
+        $startedAt = microtime(true);
 
-        if (! confirm("Confirma excluir TODOS os registros de [{$list}] do tenant {$tenant->name}?", default: false)) {
+        $stores = $this->pickStores($tenant);
+
+        if ($stores->isEmpty()) {
             $this->info('Operação cancelada.');
 
             return;
         }
 
-        $countsBeforeDelete = [];
+        $storeIds = $stores->pluck('id')->map(fn (mixed $id): string => (string) $id)->all();
+        $storeNames = $stores->pluck('name')->map(fn (mixed $name): string => trim((string) $name) !== '' ? (string) $name : '(sem nome)')->all();
+        $list = implode(', ', $storeNames);
 
-        $tenant->execute(function () use ($tables, &$countsBeforeDelete): void {
-            foreach ($tables as $table) {
-                if (! Schema::connection('tenant')->hasTable($table)) {
-                    $countsBeforeDelete[$table] = 0;
+        if (! confirm("Confirma excluir dados das lojas [{$list}] do tenant {$tenant->name}?", default: false)) {
+            $this->info('Operação cancelada.');
 
-                    continue;
+            return;
+        }
+
+        $summary = [
+            'sales_deleted' => 0,
+            'product_store_deleted' => 0,
+            'products_deleted' => 0,
+        ];
+
+        $tenantId = (string) $tenant->id;
+
+        $tenant->execute(function () use ($storeIds, &$summary, $tenantId): void {
+            $connection = DB::connection('tenant');
+
+            $connection->transaction(function () use ($connection, $storeIds, &$summary, $tenantId): void {
+                if (Schema::connection('tenant')->hasTable('sales')) {
+                    $this->line('  Limpando [sales]...');
+
+                    $summary['sales_deleted'] = $connection
+                        ->table('sales')
+                        ->where('tenant_id', $tenantId)
+                        ->whereIn('store_id', $storeIds)
+                        ->delete();
                 }
 
-                $countsBeforeDelete[$table] = DB::connection('tenant')->table($table)->count();
-            }
-        });
+                $productIdsFromSelectedStores = collect();
 
-        foreach ($tables as $table) {
-            $tenant->execute(function () use ($table): void {
-                if (! Schema::connection('tenant')->hasTable($table)) {
+                if (Schema::connection('tenant')->hasTable('product_store')) {
+                    $this->line('  Mapeando produtos vinculados nas lojas selecionadas...');
+
+                    $productIdsFromSelectedStores = $connection
+                        ->table('product_store')
+                        ->where('tenant_id', $tenantId)
+                        ->whereIn('store_id', $storeIds)
+                        ->pluck('product_id')
+                        ->map(fn (mixed $productId): string => (string) $productId)
+                        ->unique()
+                        ->filter();
+
+                    $this->line('  Limpando [product_store]...');
+
+                    $summary['product_store_deleted'] = $connection
+                        ->table('product_store')
+                        ->where('tenant_id', $tenantId)
+                        ->whereIn('store_id', $storeIds)
+                        ->delete();
+                }
+
+                if (! Schema::connection('tenant')->hasTable('products') || $productIdsFromSelectedStores->isEmpty()) {
                     return;
                 }
 
-                DB::connection('tenant')->statement("TRUNCATE TABLE \"{$table}\" CASCADE");
-            });
+                $this->line('  Limpando [products] órfãos...');
 
-            $this->line(sprintf('  [%s] %d registros removidos.', $table, (int) ($countsBeforeDelete[$table] ?? 0)));
-        }
+                $summary['products_deleted'] = $connection
+                    ->table('products')
+                    ->where('tenant_id', $tenantId)
+                    ->whereIn('id', $productIdsFromSelectedStores->values()->all())
+                    ->whereNotExists(function ($query) use ($tenantId): void {
+                        $query->selectRaw('1')
+                            ->from('product_store as ps')
+                            ->where('ps.tenant_id', $tenantId)
+                            ->whereColumn('ps.product_id', 'products.id');
+                    })
+                    ->delete();
+            });
+        });
+
+        $this->line(sprintf('  [sales] %d registros removidos.', $summary['sales_deleted']));
+        $this->line(sprintf('  [product_store] %d registros removidos.', $summary['product_store_deleted']));
+        $this->line(sprintf('  [products] %d registros removidos (somente órfãos sem loja).', $summary['products_deleted']));
+        $this->line(sprintf('  Tempo total: %.2fs', microtime(true) - $startedAt));
 
         $this->newLine();
-        $this->info('Limpeza concluída.');
+        $this->info('Limpeza por loja concluída.');
+    }
+
+    /** @return Collection<int, object{id: string, name: string|null}> */
+    private function pickStores(Tenant $tenant): Collection
+    {
+        /** @var Collection<int, object{id: string, name: string|null}> $stores */
+        $stores = $tenant->execute(function (): Collection {
+            if (! Schema::connection('tenant')->hasTable('stores')) {
+                return collect();
+            }
+
+            return DB::connection('tenant')
+                ->table('stores')
+                ->whereNull('deleted_at')
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        });
+
+        if ($stores->isEmpty()) {
+            $this->warn('Nenhuma loja encontrada para este tenant.');
+
+            return collect();
+        }
+
+        $options = $stores->mapWithKeys(function (object $store): array {
+            $name = trim((string) ($store->name ?? ''));
+
+            return [
+                (string) $store->id => ($name !== '' ? $name : '(sem nome)').' ['.(string) $store->id.']',
+            ];
+        })->all();
+
+        $selectedStoreIds = multiselect(
+            label: 'Selecione uma ou mais lojas para excluir dados:',
+            options: $options,
+            required: true,
+        );
+
+        if ($selectedStoreIds === []) {
+            return collect();
+        }
+
+        return $stores
+            ->filter(fn (object $store): bool => in_array((string) $store->id, $selectedStoreIds, true))
+            ->values();
     }
 }
