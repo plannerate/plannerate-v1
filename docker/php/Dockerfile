@@ -23,4 +23,6 @@ RUN docker-php-ext-install \
 
 RUN pecl install redis && docker-php-ext-enable redis
 
+RUN echo "memory_limit = 512M" > /usr/local/etc/php/conf.d/memory-limit.ini
+
 WORKDIR /var/www

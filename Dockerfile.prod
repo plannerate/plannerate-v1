@@ -71,7 +71,8 @@ RUN apt-get update \
     && pecl install swoole \
     && pecl install pcov \
     && docker-php-ext-enable igbinary msgpack redis imagick memcached swoole pcov \
-    && rm -rf /var/lib/apt/lists/* /tmp/pear
+    && rm -rf /var/lib/apt/lists/* /tmp/pear \
+    && echo "memory_limit = 512M" > /usr/local/etc/php/conf.d/memory-limit.ini
 
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 

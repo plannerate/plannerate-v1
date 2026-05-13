@@ -185,7 +185,7 @@ class PlanogramController extends Controller
                 'l.id as layer_id',
                 'l.segment_id',
                 'l.product_id',
-                'p_all.ean',
+                'l.ean',
                 'l.updated_at',
             ])
             ->paginate($perPage)
