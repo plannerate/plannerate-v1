@@ -86,22 +86,22 @@ const formatProductDimensions = (product: ProductRow): string | null => {
 
     const unitSuffix = unit && unit.trim() !== '' ? ` ${unit.trim()}` : '';
 
-    return `Dim: ${dimensions.join('x')}${unitSuffix}`;
+    return `${t('app.tenant.products.form.labels.dimensions')} ${dimensions.join('x')}${unitSuffix}`;
 };
 
 const formatStockAndLastPurchase = (product: ProductRow): string | null => {
     const currentStock = product.current_stock !== null && String(product.current_stock).trim() !== ''
-        ? `Estoque: ${product.current_stock}`
+        ? `${t('app.tenant.products.form.labels.stock')} ${product.current_stock}`
         : null;
     const lastPurchase = product.last_purchase_date
-        ? `Ult. compra: ${new Date(product.last_purchase_date).toLocaleDateString('pt-BR')}`
+        ? `${t('app.tenant.products.form.labels.last_purchase')} ${new Date(product.last_purchase_date).toLocaleDateString('pt-BR')}`
         : null;
 
     return [currentStock, lastPurchase].filter(Boolean).join(' | ') || null;
 };
 
 const formatSyncDate = (product: ProductRow): string | null => {
-    return product.sync_at ? `Última sincronização: ${new Date(product.sync_at).toLocaleDateString('pt-BR')}` : null;
+    return product.sync_at ? `${t('app.tenant.products.form.labels.sync_date')} ${new Date(product.sync_at).toLocaleDateString('pt-BR')}` : null;
 };
 
 const pageMeta = useCrudPageMeta({
@@ -138,10 +138,10 @@ const pageMeta = useCrudPageMeta({
                 <select name="status" :value="filters.status"
                     class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
                     <option value="">{{ t('app.tenant.common.all') }}</option>
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                    <option value="synced">Synced</option>
-                    <option value="error">Error</option>
+                    <option value="draft">{{ t('app.tenant.products.status_options.draft') }}</option>
+                    <option value="published">{{ t('app.tenant.products.status_options.published') }}</option>
+                    <option value="synced">{{ t('app.tenant.products.status_options.synced') }}</option>
+                    <option value="error">{{ t('app.tenant.products.status_options.error') }}</option>
                 </select>
                 <input type="hidden" name="category_id" :value="categoryId ?? ''" />
 
@@ -193,7 +193,7 @@ const pageMeta = useCrudPageMeta({
                             t('app.tenant.products.fields.category')
                             }}</ColumnHeader>
                         <th class="px-4 py-3 font-medium">
-                            Lojas
+                            {{ t('app.tenant.products.fields.stores') }}
                         </th>
                         <ColumnHeader field="status">{{
                             t('app.tenant.products.fields.status')

@@ -1,105 +1,590 @@
-GuzzleHttp\Exception\ConnectException: cURL error 28: Operation timed out after 30003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos in /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277
-Stack trace:
-#0 /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php(207): GuzzleHttp\Handler\CurlFactory::createRejection(Object(GuzzleHttp\Handler\EasyHandle), Array)
-#1 /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php(159): GuzzleHttp\Handler\CurlFactory::finishError(Object(GuzzleHttp\Handler\CurlHandler), Object(GuzzleHttp\Handler\EasyHandle), Object(GuzzleHttp\Handler\CurlFactory))
-#2 /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlHandler.php(47): GuzzleHttp\Handler\CurlFactory::finish(Object(GuzzleHttp\Handler\CurlHandler), Object(GuzzleHttp\Handler\EasyHandle), Object(GuzzleHttp\Handler\CurlFactory))
-#3 /var/www/vendor/guzzlehttp/guzzle/src/Handler/Proxy.php(28): GuzzleHttp\Handler\CurlHandler->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
-#4 /var/www/vendor/guzzlehttp/guzzle/src/Handler/Proxy.php(48): GuzzleHttp\Handler\Proxy::{closure:GuzzleHttp\Handler\Proxy::wrapSync():27}(Object(GuzzleHttp\Psr7\Request), Array)
-#5 /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php(1523): GuzzleHttp\Handler\Proxy::{closure:GuzzleHttp\Handler\Proxy::wrapStreaming():47}(Object(GuzzleHttp\Psr7\Request), Array)
-#6 /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php(1480): Illuminate\Http\Client\PendingRequest->{closure:{closure:Illuminate\Http\Client\PendingRequest::buildStubHandler():1505}:1506}(Object(GuzzleHttp\Psr7\Request), Array)
-#7 /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php(1466): Illuminate\Http\Client\PendingRequest->{closure:{closure:Illuminate\Http\Client\PendingRequest::buildRecorderHandler():1478}:1479}(Object(GuzzleHttp\Psr7\Request), Array)
-#8 /var/www/vendor/guzzlehttp/guzzle/src/PrepareBodyMiddleware.php(64): Illuminate\Http\Client\PendingRequest->{closure:{closure:Illuminate\Http\Client\PendingRequest::buildBeforeSendingHandler():1464}:1465}(Object(GuzzleHttp\Psr7\Request), Array)
-#9 /var/www/vendor/guzzlehttp/guzzle/src/Middleware.php(38): GuzzleHttp\PrepareBodyMiddleware->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
-#10 /var/www/vendor/guzzlehttp/guzzle/src/RedirectMiddleware.php(71): GuzzleHttp\Middleware::{closure:{closure:GuzzleHttp\Middleware::cookies():28}:29}(Object(GuzzleHttp\Psr7\Request), Array)
-#11 /var/www/vendor/guzzlehttp/guzzle/src/Middleware.php(63): GuzzleHttp\RedirectMiddleware->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
-#12 /var/www/vendor/guzzlehttp/guzzle/src/HandlerStack.php(75): GuzzleHttp\Middleware::{closure:{closure:GuzzleHttp\Middleware::httpErrors():60}:61}(Object(GuzzleHttp\Psr7\Request), Array)
-#13 /var/www/vendor/guzzlehttp/guzzle/src/Client.php(333): GuzzleHttp\HandlerStack->__invoke(Object(GuzzleHttp\Psr7\Request), Array)
-#14 /var/www/vendor/guzzlehttp/guzzle/src/Client.php(169): GuzzleHttp\Client->transfer(Object(GuzzleHttp\Psr7\Request), Array)
-#15 /var/www/vendor/guzzlehttp/guzzle/src/Client.php(189): GuzzleHttp\Client->requestAsync('POST', Object(GuzzleHttp\Psr7\Uri), Array)
-#16 /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php(1306): GuzzleHttp\Client->request('POST', 'https://s1mobil...', Array)
-#17 /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php(1043): Illuminate\Http\Client\PendingRequest->sendRequest('POST', 'https://s1mobil...', Array)
-#18 /var/www/vendor/laravel/framework/src/Illuminate/Support/helpers.php(328): Illuminate\Http\Client\PendingRequest->{closure:Illuminate\Http\Client\PendingRequest::send():1041}(1)
-#19 /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php(1041): retry(0, Object(Closure), 100, Object(Closure))
-#20 /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php(885): Illuminate\Http\Client\PendingRequest->send('POST', 'https://s1mobil...', Array)
-#21 /var/www/app/Services/Integrations/IntegrationHttpClient.php(34): Illuminate\Http\Client\PendingRequest->post('https://s1mobil...', Array)
-#22 /var/www/app/Jobs/Integrations/FetchIntegrationPageJob.php(82): App\Services\Integrations\IntegrationHttpClient->call('post', 'https://s1mobil...', Array)
-#23 /var/www/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): App\Jobs\Integrations\FetchIntegrationPageJob->handle()
-#24 /var/www/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\Container\BoundMethod::{closure:Illuminate\Container\BoundMethod::call():35}()
-#25 /var/www/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\Container\Util::unwrapIfClosure(Object(Closure))
-#26 /var/www/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\Container\BoundMethod::callBoundMethod(Object(Illuminate\Foundation\Application), Array, Object(Closure))
-#27 /var/www/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\Container\BoundMethod::call(Object(Illuminate\Foundation\Application), Array, Array, NULL)
-#28 /var/www/vendor/laravel/framework/src/Illuminate/Bus/Dispatcher.php(136): Illuminate\Container\Container->call(Array)
-#29 /var/www/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Illuminate\Bus\Dispatcher->{closure:Illuminate\Bus\Dispatcher::dispatchNow():133}(Object(App\Jobs\Integrations\FetchIntegrationPageJob))
-#30 /var/www/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate\Pipeline\Pipeline->{closure:Illuminate\Pipeline\Pipeline::prepareDestination():178}(Object(App\Jobs\Integrations\FetchIntegrationPageJob))
-#31 /var/www/vendor/laravel/framework/src/Illuminate/Bus/Dispatcher.php(140): Illuminate\Pipeline\Pipeline->then(Object(Closure))
-#32 /var/www/vendor/laravel/framework/src/Illuminate/Queue/CallQueuedHandler.php(140): Illuminate\Bus\Dispatcher->dispatchNow(Object(App\Jobs\Integrations\FetchIntegrationPageJob), false)
-#33 /var/www/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Illuminate\Queue\CallQueuedHandler->{closure:Illuminate\Queue\CallQueuedHandler::dispatchThroughMiddleware():133}(Object(App\Jobs\Integrations\FetchIntegrationPageJob))
-#34 /var/www/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate\Pipeline\Pipeline->{closure:Illuminate\Pipeline\Pipeline::prepareDestination():178}(Object(App\Jobs\Integrations\FetchIntegrationPageJob))
-#35 /var/www/vendor/laravel/framework/src/Illuminate/Queue/CallQueuedHandler.php(133): Illuminate\Pipeline\Pipeline->then(Object(Closure))
-#36 /var/www/vendor/laravel/framework/src/Illuminate/Queue/CallQueuedHandler.php(74): Illuminate\Queue\CallQueuedHandler->dispatchThroughMiddleware(Object(Illuminate\Queue\Jobs\RedisJob), Object(App\Jobs\Integrations\FetchIntegrationPageJob))
-#37 /var/www/vendor/laravel/framework/src/Illuminate/Queue/Jobs/Job.php(102): Illuminate\Queue\CallQueuedHandler->call(Object(Illuminate\Queue\Jobs\RedisJob), Array)
-#38 /var/www/vendor/laravel/framework/src/Illuminate/Queue/Worker.php(502): Illuminate\Queue\Jobs\Job->fire()
-#39 /var/www/vendor/laravel/framework/src/Illuminate/Queue/Worker.php(450): Illuminate\Queue\Worker->process('redis', Object(Illuminate\Queue\Jobs\RedisJob), Object(Illuminate\Queue\WorkerOptions))
-#40 /var/www/vendor/laravel/framework/src/Illuminate/Queue/Worker.php(215): Illuminate\Queue\Worker->runJob(Object(Illuminate\Queue\Jobs\RedisJob), 'redis', Object(Illuminate\Queue\WorkerOptions))
-#41 /var/www/vendor/laravel/framework/src/Illuminate/Queue/Console/WorkCommand.php(148): Illuminate\Queue\Worker->daemon('redis', 'imports-fetch', Object(Illuminate\Queue\WorkerOptions))
-#42 /var/www/vendor/laravel/framework/src/Illuminate/Queue/Console/WorkCommand.php(131): Illuminate\Queue\Console\WorkCommand->runWorker('redis', 'imports-fetch')
-#43 /var/www/vendor/laravel/horizon/src/Console/WorkCommand.php(52): Illuminate\Queue\Console\WorkCommand->handle()
-#44 /var/www/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Laravel\Horizon\Console\WorkCommand->handle()
-#45 /var/www/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\Container\BoundMethod::{closure:Illuminate\Container\BoundMethod::call():35}()
-#46 /var/www/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\Container\Util::unwrapIfClosure(Object(Closure))
-#47 /var/www/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\Container\BoundMethod::callBoundMethod(Object(Illuminate\Foundation\Application), Array, Object(Closure))
-#48 /var/www/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\Container\BoundMethod::call(Object(Illuminate\Foundation\Application), Array, Array, NULL)
-#49 /var/www/vendor/laravel/framework/src/Illuminate/Console/Command.php(280): Illuminate\Container\Container->call(Array)
-#50 /var/www/vendor/symfony/console/Command/Command.php(291): Illuminate\Console\Command->execute(Object(Symfony\Component\Console\Input\ArgvInput), Object(Illuminate\Console\OutputStyle))
-#51 /var/www/vendor/laravel/framework/src/Illuminate/Console/Command.php(249): Symfony\Component\Console\Command\Command->run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Illuminate\Console\OutputStyle))
-#52 /var/www/vendor/symfony/console/Application.php(1107): Illuminate\Console\Command->run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
-#53 /var/www/vendor/symfony/console/Application.php(356): Symfony\Component\Console\Application->doRunCommand(Object(Laravel\Horizon\Console\WorkCommand), Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
-#54 /var/www/vendor/symfony/console/Application.php(195): Symfony\Component\Console\Application->doRun(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
-#55 /var/www/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\Component\Console\Application->run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
-#56 /var/www/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate\Foundation\Console\Kernel->handle(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
-#57 /var/www/artisan(16): Illuminate\Foundation\Application->handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
-#58 {main}
-Next Illuminate\Http\Client\ConnectionException: cURL error 28: Operation timed out after 30003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos in /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805
-Stack trace:
-#0 /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php(1081): Illuminate\Http\Client\PendingRequest->marshalConnectionException(Object(GuzzleHttp\Exception\ConnectException))
-#1 /var/www/vendor/laravel/framework/src/Illuminate/Support/helpers.php(328): Illuminate\Http\Client\PendingRequest->{closure:Illuminate\Http\Client\PendingRequest::send():1041}(1)
-#2 /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php(1041): retry(0, Object(Closure), 100, Object(Closure))
-#3 /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php(885): Illuminate\Http\Client\PendingRequest->send('POST', 'https://s1mobil...', Array)
-#4 /var/www/app/Services/Integrations/IntegrationHttpClient.php(34): Illuminate\Http\Client\PendingRequest->post('https://s1mobil...', Array)
-#5 /var/www/app/Jobs/Integrations/FetchIntegrationPageJob.php(82): App\Services\Integrations\IntegrationHttpClient->call('post', 'https://s1mobil...', Array)
-#6 /var/www/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): App\Jobs\Integrations\FetchIntegrationPageJob->handle()
-#7 /var/www/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\Container\BoundMethod::{closure:Illuminate\Container\BoundMethod::call():35}()
-#8 /var/www/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\Container\Util::unwrapIfClosure(Object(Closure))
-#9 /var/www/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\Container\BoundMethod::callBoundMethod(Object(Illuminate\Foundation\Application), Array, Object(Closure))
-#10 /var/www/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\Container\BoundMethod::call(Object(Illuminate\Foundation\Application), Array, Array, NULL)
-#11 /var/www/vendor/laravel/framework/src/Illuminate/Bus/Dispatcher.php(136): Illuminate\Container\Container->call(Array)
-#12 /var/www/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Illuminate\Bus\Dispatcher->{closure:Illuminate\Bus\Dispatcher::dispatchNow():133}(Object(App\Jobs\Integrations\FetchIntegrationPageJob))
-#13 /var/www/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate\Pipeline\Pipeline->{closure:Illuminate\Pipeline\Pipeline::prepareDestination():178}(Object(App\Jobs\Integrations\FetchIntegrationPageJob))
-#14 /var/www/vendor/laravel/framework/src/Illuminate/Bus/Dispatcher.php(140): Illuminate\Pipeline\Pipeline->then(Object(Closure))
-#15 /var/www/vendor/laravel/framework/src/Illuminate/Queue/CallQueuedHandler.php(140): Illuminate\Bus\Dispatcher->dispatchNow(Object(App\Jobs\Integrations\FetchIntegrationPageJob), false)
-#16 /var/www/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Illuminate\Queue\CallQueuedHandler->{closure:Illuminate\Queue\CallQueuedHandler::dispatchThroughMiddleware():133}(Object(App\Jobs\Integrations\FetchIntegrationPageJob))
-#17 /var/www/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate\Pipeline\Pipeline->{closure:Illuminate\Pipeline\Pipeline::prepareDestination():178}(Object(App\Jobs\Integrations\FetchIntegrationPageJob))
-#18 /var/www/vendor/laravel/framework/src/Illuminate/Queue/CallQueuedHandler.php(133): Illuminate\Pipeline\Pipeline->then(Object(Closure))
-#19 /var/www/vendor/laravel/framework/src/Illuminate/Queue/CallQueuedHandler.php(74): Illuminate\Queue\CallQueuedHandler->dispatchThroughMiddleware(Object(Illuminate\Queue\Jobs\RedisJob), Object(App\Jobs\Integrations\FetchIntegrationPageJob))
-#20 /var/www/vendor/laravel/framework/src/Illuminate/Queue/Jobs/Job.php(102): Illuminate\Queue\CallQueuedHandler->call(Object(Illuminate\Queue\Jobs\RedisJob), Array)
-#21 /var/www/vendor/laravel/framework/src/Illuminate/Queue/Worker.php(502): Illuminate\Queue\Jobs\Job->fire()
-#22 /var/www/vendor/laravel/framework/src/Illuminate/Queue/Worker.php(450): Illuminate\Queue\Worker->process('redis', Object(Illuminate\Queue\Jobs\RedisJob), Object(Illuminate\Queue\WorkerOptions))
-#23 /var/www/vendor/laravel/framework/src/Illuminate/Queue/Worker.php(215): Illuminate\Queue\Worker->runJob(Object(Illuminate\Queue\Jobs\RedisJob), 'redis', Object(Illuminate\Queue\WorkerOptions))
-#24 /var/www/vendor/laravel/framework/src/Illuminate/Queue/Console/WorkCommand.php(148): Illuminate\Queue\Worker->daemon('redis', 'imports-fetch', Object(Illuminate\Queue\WorkerOptions))
-#25 /var/www/vendor/laravel/framework/src/Illuminate/Queue/Console/WorkCommand.php(131): Illuminate\Queue\Console\WorkCommand->runWorker('redis', 'imports-fetch')
-#26 /var/www/vendor/laravel/horizon/src/Console/WorkCommand.php(52): Illuminate\Queue\Console\WorkCommand->handle()
-#27 /var/www/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Laravel\Horizon\Console\WorkCommand->handle()
-#28 /var/www/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\Container\BoundMethod::{closure:Illuminate\Container\BoundMethod::call():35}()
-#29 /var/www/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\Container\Util::unwrapIfClosure(Object(Closure))
-#30 /var/www/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\Container\BoundMethod::callBoundMethod(Object(Illuminate\Foundation\Application), Array, Object(Closure))
-#31 /var/www/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\Container\BoundMethod::call(Object(Illuminate\Foundation\Application), Array, Array, NULL)
-#32 /var/www/vendor/laravel/framework/src/Illuminate/Console/Command.php(280): Illuminate\Container\Container->call(Array)
-#33 /var/www/vendor/symfony/console/Command/Command.php(291): Illuminate\Console\Command->execute(Object(Symfony\Component\Console\Input\ArgvInput), Object(Illuminate\Console\OutputStyle))
-#34 /var/www/vendor/laravel/framework/src/Illuminate/Console/Command.php(249): Symfony\Component\Console\Command\Command->run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Illuminate\Console\OutputStyle))
-#35 /var/www/vendor/symfony/console/Application.php(1107): Illuminate\Console\Command->run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
-#36 /var/www/vendor/symfony/console/Application.php(356): Symfony\Component\Console\Application->doRunCommand(Object(Laravel\Horizon\Console\WorkCommand), Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
-#37 /var/www/vendor/symfony/console/Application.php(195): Symfony\Component\Console\Application->doRun(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
-#38 /var/www/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\Component\Console\Application->run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
-#39 /var/www/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate\Foundation\Console\Kernel->handle(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
-#40 /var/www/artisan(16): Illuminate\Foundation\Application->handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
-#41 {main}
+Data	Nível	Ambiente	Mensagem
+2026-05-13 16:55:03	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":99,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":99,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:55:03	ERROR	production	
+cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:54:51	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":98,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":98,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:54:51	ERROR	production	
+cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:54:41	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":97,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":97,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:54:41	ERROR	production	
+cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:54:31	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":96,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":96,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:54:31	ERROR	production	
+cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:54:21	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":95,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":95,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:54:21	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:54:03	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":94,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":94,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:54:03	ERROR	production	
+cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:53:51	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":93,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":93,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:53:51	ERROR	production	
+cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:53:41	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":92,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":92,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:53:41	ERROR	production	
+cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:53:31	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":91,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":91,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:53:31	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:53:21	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":90,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":90,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:53:21	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:53:03	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":89,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":89,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:53:03	ERROR	production	
+cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:52:51	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":88,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":88,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:52:51	ERROR	production	
+cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:52:41	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":87,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":87,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:52:41	ERROR	production	
+cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:52:31	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":86,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":86,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:52:31	ERROR	production	
+cURL error 28: Operation timed out after 60001 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60001 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60001 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:52:21	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":85,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":85,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:52:21	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:52:03	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":84,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":84,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:52:03	ERROR	production	
+cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:51:51	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":83,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":83,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:51:51	ERROR	production	
+cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:51:41	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":82,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":82,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:51:41	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:51:31	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":81,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":81,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:51:31	ERROR	production	
+cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:51:21	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":80,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":80,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:51:21	ERROR	production	
+cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:51:03	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":79,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":79,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:51:03	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:50:51	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":78,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":78,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:50:51	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:50:41	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":77,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":77,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:50:41	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:50:31	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":76,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":76,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:50:31	ERROR	production	
+cURL error 28: Operation timed out after 60005 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60005 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60005 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:50:21	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":75,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":75,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:50:21	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:50:05	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:50:05	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:50:03	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":74,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":74,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:50:03	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":69,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:49:53	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:49:53	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:49:51	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":73,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":73,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:49:51	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":68,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:49:44	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:49:44	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:49:41	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":72,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":72,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:49:41	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":67,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:49:32	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:49:32	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:49:31	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":71,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":71,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:49:31	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":66,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:49:21	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":70,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":70,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:49:21	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:49:09	INFO	production	
+🗑️ Cache de produtos invalidado {"gondola_id":"01krhaqmdy2hw39pmjx60y0x8h","planogram_id":"01kr1q10hyw5wsg29p9e18xrse","pattern":"products_planogram_01kr1q10hyw5wsg29p9e18xrse_category_null_tenant_01kh72a47xwdsnc228kbyvfveq_*"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:49:03	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":69,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":69,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:49:03	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:48:51	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":68,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":68,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:48:51	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:48:41	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":67,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":67,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:48:41	ERROR	production	
+cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:48:31	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":66,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":66,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:48:31	ERROR	production	
+cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:48:21	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":65,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":65,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:48:21	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:48:03	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":64,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":64,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:48:03	ERROR	production	
+cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:47:51	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":63,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":63,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:47:51	ERROR	production	
+cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:47:46	INFO	production	
+🗑️ Cache de produtos invalidado {"gondola_id":"01krhaqmdy2hw39pmjx60y0x8h","planogram_id":"01kr1q10hyw5wsg29p9e18xrse","pattern":"products_planogram_01kr1q10hyw5wsg29p9e18xrse_category_null_tenant_01kh72a47xwdsnc228kbyvfveq_*"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:47:41	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":62,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":62,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:47:41	ERROR	production	
+cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:47:31	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":61,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":61,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:47:31	ERROR	production	
+cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:47:30	INFO	production	
+🗑️ Cache de produtos invalidado {"gondola_id":"01krhaqmdy2hw39pmjx60y0x8h","planogram_id":"01kr1q10hyw5wsg29p9e18xrse","pattern":"products_planogram_01kr1q10hyw5wsg29p9e18xrse_category_null_tenant_01kh72a47xwdsnc228kbyvfveq_*"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:47:21	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":60,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":60,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:47:21	ERROR	production	
+cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:47:09	INFO	production	
+🗑️ Cache de produtos invalidado {"gondola_id":"01krhaqmdy2hw39pmjx60y0x8h","planogram_id":"01kr1q10hyw5wsg29p9e18xrse","pattern":"products_planogram_01kr1q10hyw5wsg29p9e18xrse_category_null_tenant_01kh72a47xwdsnc228kbyvfveq_*"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:47:03	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":59,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":59,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:47:03	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:46:51	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":58,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":58,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:46:51	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:46:41	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":57,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":57,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:46:41	ERROR	production	
+cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60002 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:46:33	INFO	production	
+🗑️ Cache de produtos invalidado {"gondola_id":"01krhaqmdy2hw39pmjx60y0x8h","planogram_id":"01kr1q10hyw5wsg29p9e18xrse","pattern":"products_planogram_01kr1q10hyw5wsg29p9e18xrse_category_null_tenant_01kh72a47xwdsnc228kbyvfveq_*"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:31	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":56,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":56,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:46:31	ERROR	production	
+cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:46:21	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":55,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":55,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:46:21	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:46:11	INFO	production	
+✅ Layer criada para segment {"layer_id":"01KRHDZZJBG42H37FG7Q2M35RS","segment_id":"01KRHDZZJBAHYD0P502DGZXG3G","product_id":"P13CCC3CB647AB4BBF1CD50B0D"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:11	INFO	production	
+✅ Segment criado para shelf {"segment_id":"01KRHDZZJBAHYD0P502DGZXG3G","shelf_id":"01KRHDZZJ90VEK6JFHQ77M1X3R"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:11	INFO	production	
+✅ Layer criada para segment {"layer_id":"01KRHDZZJADTFGCPSX295SE4QZ","segment_id":"01KRHDZZJA3VVEBW29J4NRKGQW","product_id":"P1C600F6A18E2C70D2859A6574"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:11	INFO	production	
+✅ Segment criado para shelf {"segment_id":"01KRHDZZJA3VVEBW29J4NRKGQW","shelf_id":"01KRHDZZJ90VEK6JFHQ77M1X3R"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:11	INFO	production	
+✅ Layer criada para segment {"layer_id":"01KRHDZZJAYEPA2SVWFDWDYEPH","segment_id":"01KRHDZZJATH6XAX7H1XHGAHXF","product_id":"P19E669D0779B41CB875438768"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:11	INFO	production	
+✅ Segment criado para shelf {"segment_id":"01KRHDZZJATH6XAX7H1XHGAHXF","shelf_id":"01KRHDZZJ90VEK6JFHQ77M1X3R"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:11	INFO	production	
+✅ Layer criada para segment {"layer_id":"01KRHDZZJAA81WVFPEYX87ZTRV","segment_id":"01KRHDZZJA3TRP98ZHFTJDZYYH","product_id":"P1080AB9F398C64B4B2F730BF2"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:11	INFO	production	
+✅ Segment criado para shelf {"segment_id":"01KRHDZZJA3TRP98ZHFTJDZYYH","shelf_id":"01KRHDZZJ90VEK6JFHQ77M1X3R"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:11	INFO	production	
+✅ Layer criada para segment {"layer_id":"01KRHDZZJADK04EHNV3H27MV63","segment_id":"01KRHDZZJACZ1JD8J2SAMTVAZ8","product_id":"P1ACAA7A6ADC8C7CD2C7A5747A"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:11	INFO	production	
+✅ Segment criado para shelf {"segment_id":"01KRHDZZJACZ1JD8J2SAMTVAZ8","shelf_id":"01KRHDZZJ90VEK6JFHQ77M1X3R"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:11	INFO	production	
+✅ Layer criada para segment {"layer_id":"01KRHDZZJATDCSFC38R696QPN4","segment_id":"01KRHDZZJA1HJFRVSW35BKJMX3","product_id":"P1E86174650FD3F8E3F4AD61DB"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:11	INFO	production	
+✅ Segment criado para shelf {"segment_id":"01KRHDZZJA1HJFRVSW35BKJMX3","shelf_id":"01KRHDZZJ90VEK6JFHQ77M1X3R"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:11	INFO	production	
+✅ Layer criada para segment {"layer_id":"01KRHDZZJAZ74YQNG2V1GJ9BX6","segment_id":"01KRHDZZJ9REV9DBTGTNQ1S7Y7","product_id":"P12CE760862EF74FD92865019E"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:11	INFO	production	
+✅ Segment criado para shelf {"segment_id":"01KRHDZZJ9REV9DBTGTNQ1S7Y7","shelf_id":"01KRHDZZJ90VEK6JFHQ77M1X3R"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:11	INFO	production	
+✅ Shelf criada {"shelf_id":"01KRHDZZJ90VEK6JFHQ77M1X3R","section_id":"01krhaqmftp0vn4x24zejae3zn"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:46:03	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":10,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":10,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:46:03	ERROR	production	
+cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:45:51	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":54,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":54,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:45:51	ERROR	production	
+cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:45:41	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":53,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":53,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:45:41	ERROR	production	
+cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:45:36	INFO	production	
+🗑️ Cache de produtos invalidado {"gondola_id":"01krhaqmdy2hw39pmjx60y0x8h","planogram_id":"01kr1q10hyw5wsg29p9e18xrse","pattern":"products_planogram_01kr1q10hyw5wsg29p9e18xrse_category_null_tenant_01kh72a47xwdsnc228kbyvfveq_*"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:45:36	INFO	production	
+✅ Dimensões do produto atualizadas {"product_id":"P10C74B3E202DB2F8F66B854BB","updates":{"height":30}} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:45:36	INFO	production	
+✅ Dimensões do produto atualizadas {"product_id":"P10C74B3E202DB2F8F66B854BB","updates":{"height":30}} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:45:31	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":52,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":52,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:45:31	ERROR	production	
+cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60000 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:45:21	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":51,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":51,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:45:21	ERROR	production	
+cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60003 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:45:04	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:45:04	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:45:03	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":50,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":50,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:45:03	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":45,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:44:52	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:44:52	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:44:51	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":49,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":49,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:44:51	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":44,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:44:48	INFO	production	
+🗑️ Cache de produtos invalidado {"gondola_id":"01krhaqmdy2hw39pmjx60y0x8h","planogram_id":"01kr1q10hyw5wsg29p9e18xrse","pattern":"products_planogram_01kr1q10hyw5wsg29p9e18xrse_category_null_tenant_01kh72a47xwdsnc228kbyvfveq_*"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:44:48	INFO	production	
+✅ Dimensões do produto atualizadas {"product_id":"P1CBBE131CEC26F537F26DE499","updates":{"width":18}} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:44:48	INFO	production	
+✅ Dimensões do produto atualizadas {"product_id":"P1CBBE131CEC26F537F26DE499","updates":{"width":18}} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:44:43	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:44:43	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:44:41	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":48,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":48,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:44:41	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":43,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:44:34	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:44:34	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:44:31	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":47,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":47,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:44:31	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":42,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:44:26	INFO	production	
+🗑️ Cache de produtos invalidado {"gondola_id":"01krhaqmdy2hw39pmjx60y0x8h","planogram_id":"01kr1q10hyw5wsg29p9e18xrse","pattern":"products_planogram_01kr1q10hyw5wsg29p9e18xrse_category_null_tenant_01kh72a47xwdsnc228kbyvfveq_*"} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:44:26	INFO	production	
+✅ Dimensões do produto atualizadas {"product_id":"P16ED9F555C96FA8A92CF1AE0C","updates":{"width":18,"height":30}} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:44:26	INFO	production	
+✅ Dimensões do produto atualizadas {"product_id":"P16ED9F555C96FA8A92CF1AE0C","updates":{"width":18,"height":30}} {"tenantId":"01kh72a47xwdsnc228kbyvfveq"}
+2026-05-13 16:44:22	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:44:22	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:44:21	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":46,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":46,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:44:21	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":41,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:44:04	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:44:03	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:44:03	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":45,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":45,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:44:03	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":40,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:43:55	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:43:54	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:43:52	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":44,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":44,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:43:52	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":39,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:43:42	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:43:42	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:43:41	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":43,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":43,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:43:41	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":38,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:43:33	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:43:33	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:43:32	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":42,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":42,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:43:32	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":37,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:43:21	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:43:21	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:43:21	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":41,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":41,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:43:21	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":36,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:43:12	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:43:12	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:43:11	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":40,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":40,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:43:11	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":35,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave
+2026-05-13 16:42:57	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"products","upserted":882}
+ponto-chave
+2026-05-13 16:42:57	INFO	production	
+TenantPivotRecordPersister: pivot persistida {"table":"product_store","rows":882} {"tenantId":"01jym02qk8n1cwdq2hd5drpgsz"}
+2026-05-13 16:42:57	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":39,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":39,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:42:57	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:42:57	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"products","records":882,"pivot_configs":1}
+ponto-chave
+2026-05-13 16:42:55	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":38,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":38,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:42:55	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"products","page":40,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":882}
+ponto-chave
+2026-05-13 16:42:55	WARNING	production	
+FetchIntegrationPageJob: registros descartados por not_null {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"products","page":40,"store_id":"01jym95780x1xfbsp7v45f9nhj","skipped":80,"skipped_by_field":{"ean":80}}
+ponto-chave
+2026-05-13 16:42:51	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"products","upserted":959}
+ponto-chave
+2026-05-13 16:42:51	INFO	production	
+TenantPivotRecordPersister: pivot persistida {"table":"product_store","rows":959} {"tenantId":"01jym02qk8n1cwdq2hd5drpgsz"}
+2026-05-13 16:42:51	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"products","records":959,"pivot_configs":1}
+ponto-chave
+2026-05-13 16:42:49	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"products","page":40,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubprodutos.listar_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":40,"tipo_consulta":"produto","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:42:49	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"products","page":39,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":959}
+ponto-chave
+2026-05-13 16:42:49	WARNING	production	
+FetchIntegrationPageJob: registros descartados por not_null {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"products","page":39,"store_id":"01jym95780x1xfbsp7v45f9nhj","skipped":41,"skipped_by_field":{"ean":41}}
+ponto-chave
+2026-05-13 16:42:42	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"products","page":39,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubprodutos.listar_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":39,"tipo_consulta":"produto","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:42:42	ERROR	production	
+cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/laravel/framework/src/Illuminate/Http/Client/PendingRequest.php:1805) [stacktrace] [previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: Operation timed out after 60004 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos at /var/www/vendor/guzzlehttp/guzzle/src/Handler/CurlFactory.php:277) [stacktrace] "}
+ponto-chave
+2026-05-13 16:42:36	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"products","upserted":965}
+ponto-chave
+2026-05-13 16:42:36	INFO	production	
+TenantPivotRecordPersister: pivot persistida {"table":"product_store","rows":965} {"tenantId":"01jym02qk8n1cwdq2hd5drpgsz"}
+2026-05-13 16:42:36	INFO	production	
+TenantRecordPersister: registros persistidos {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","upserted":1000}
+ponto-chave
+2026-05-13 16:42:36	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"products","records":965,"pivot_configs":1}
+ponto-chave
+2026-05-13 16:42:35	INFO	production	
+TenantRecordPersister: iniciando persist {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","target_table":"sales","records":1000,"pivot_configs":0}
+ponto-chave
+2026-05-13 16:42:35	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":37,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":37,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:42:35	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"products","page":38,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":965}
+ponto-chave
+2026-05-13 16:42:35	WARNING	production	
+FetchIntegrationPageJob: registros descartados por not_null {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"products","page":38,"store_id":"01jym95780x1xfbsp7v45f9nhj","skipped":35,"skipped_by_field":{"ean":35}}
+ponto-chave
+2026-05-13 16:42:35	INFO	production	
+FetchIntegrationPageJob: requisição {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":36,"store_id":"01jym95780x1xfbsp7v45f9nhj","url":"https://s1mobilealberti.sysmo.com.br:8443/sysmo-integrador-api/api/integradorService/hubvendas.vendas_produtos","payload":{"partner_key":"Proplanner","tamanho_pagina":1000,"pagina":36,"tipo_consulta":"produto","data_inicial":"2026-01-13","data_final":"2026-05-13","empresa":"05318772000190"}}
+ponto-chave
+2026-05-13 16:42:35	INFO	production	
+FetchIntegrationPageJob: registros mapeados {"integration_id":"01kqz5f5athpqg16f6cfybm6dk","path_key":"sales","page":32,"store_id":"01jym95780x1xfbsp7v45f9nhj","count":1000}
+ponto-chave

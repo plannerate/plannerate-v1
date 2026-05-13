@@ -943,6 +943,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'name' => 'Nome',
                 'ean' => 'EAN',
                 'category' => 'Categoria',
+                'stores' => 'Lojas',
                 'codigo_erp' => 'Codigo ERP',
                 'status' => 'Status',
                 'brand' => 'Marca',
@@ -1061,6 +1062,12 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'logistics' => 'Logistica e flags',
                 'sidebar_title' => 'Identificacao e midia',
                 'sidebar_dimensions' => 'Metadados de dimensoes',
+                'labels' => [
+                    'dimensions' => 'Dim:',
+                    'stock' => 'Estoque:',
+                    'last_purchase' => 'Ult. compra:',
+                    'sync_date' => 'Última sincronização:',
+                ],
             ],
         ],
         'users' => [
