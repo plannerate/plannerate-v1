@@ -289,10 +289,27 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
     public function middleware(): array
     {
         return [
-            (new WithoutOverlapping($this->integrationId))
+            (new WithoutOverlapping($this->overlapKey()))
                 ->releaseAfter(20)
                 ->expireAfter(180),
         ];
+    }
+
+    private function overlapKey(): string
+    {
+        return implode(':', [
+            'integration',
+            $this->integrationId,
+            'path',
+            $this->pathKey,
+            'page',
+            (string) $this->page,
+            'store',
+            $this->storeId ?? $this->storeDocument ?? 'all',
+            'date',
+            $this->dateStart ?? 'all',
+            $this->dateEnd ?? 'all',
+        ]);
     }
 
     /** @return array<int, string> */

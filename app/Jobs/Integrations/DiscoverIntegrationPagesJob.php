@@ -12,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -183,8 +184,15 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
 
     /**
      * Resolve o intervalo de datas efetivo para uma loja específica.
-     * Se a loja já tem registros na tabela alvo (ou na pivot), usa ontem.
-     * Caso contrário, usa initial_days atrás (ou null se initial_days = 0).
+     *
+     * Modo chunk (quando chunk_days > 0 e last_date_column configurado):
+     *   - Banco vazio  → start = initial_days atrás, end = start + chunk_days
+     *   - Atrasado     → start = última data no banco, end = start + chunk_days
+     *   - Em dia       → start = ontem, end = hoje (modo diário normal)
+     *
+     * Modo legado (sem chunk_days):
+     *   - Banco vazio  → start = initial_days atrás, end = hoje
+     *   - Tem dados    → start = ontem, end = hoje
      *
      * @param  array<string, mixed>  $pathConfig
      * @param  array{id: string, document: string}|null  $store
@@ -194,17 +202,27 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
     {
         $dateFields = (array) data_get($pathConfig, 'date_fields', []);
         $initialDays = (int) data_get($pathConfig, 'initial_days', 0);
+        $chunkDays = (int) data_get($pathConfig, 'chunk_days', 0);
+        $lastDateColumn = (string) data_get($pathConfig, 'last_date_column', '');
         $targetTable = (string) data_get($pathConfig, 'target_table', '');
         $pivotTables = (array) data_get($pathConfig, 'pivot_tables', []);
         $storeId = data_get($store, 'id');
 
-        $hasRecords = $this->storeHasRecords($integration, $targetTable, $pivotTables, $storeId);
+        $useChunkMode = $chunkDays > 0 && $lastDateColumn !== '' && $targetTable !== '';
 
-        $startIfEmpty = $initialDays > 0 ? now()->subDays($initialDays)->toDateString() : null;
-        $effectiveDateStart = $hasRecords ? now()->subDay()->toDateString() : $startIfEmpty;
+        if ($useChunkMode) {
+            [$effectiveDateStart, $effectiveDateEnd] = $this->resolveChunkDates(
+                $integration, $targetTable, $storeId, $initialDays, $chunkDays, $lastDateColumn,
+            );
+        } else {
+            $hasRecords = $this->storeHasRecords($integration, $targetTable, $pivotTables, $storeId);
+            $startIfEmpty = $initialDays > 0 ? now()->subDays($initialDays)->toDateString() : null;
+            $effectiveDateStart = $hasRecords ? now()->subDay()->toDateString() : $startIfEmpty;
+            $effectiveDateEnd = now()->toDateString();
+        }
 
         if (isset($dateFields['start']) && isset($dateFields['end'])) {
-            return [$effectiveDateStart, now()->toDateString()];
+            return [$effectiveDateStart, $effectiveDateEnd];
         }
 
         if (isset($dateFields['changed_since'])) {
@@ -212,6 +230,71 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         }
 
         return [null, null];
+    }
+
+    /**
+     * Calcula o intervalo de datas no modo chunk.
+     *
+     * @return array{?string, string}
+     */
+    private function resolveChunkDates(
+        TenantIntegration $integration,
+        string $targetTable,
+        ?string $storeId,
+        int $initialDays,
+        int $chunkDays,
+        string $lastDateColumn,
+    ): array {
+        $lastDate = $this->getLastRecordDate($integration, $targetTable, $storeId, $lastDateColumn);
+        $today = now()->toDateString();
+
+        if ($lastDate === null) {
+            $start = $initialDays > 0 ? now()->subDays($initialDays)->toDateString() : null;
+        } else {
+            $lastCarbon = Carbon::parse($lastDate);
+
+            // Considera "em dia" se a última data é anteontem ou mais recente
+            if ($lastCarbon->gte(now()->subDays(2))) {
+                return [now()->subDay()->toDateString(), $today];
+            }
+
+            $start = $lastCarbon->toDateString();
+        }
+
+        if ($start === null) {
+            return [null, $today];
+        }
+
+        $end = Carbon::parse($start)->addDays($chunkDays)->toDateString();
+
+        return [$start, min($end, $today)];
+    }
+
+    private function getLastRecordDate(
+        TenantIntegration $integration,
+        string $targetTable,
+        ?string $storeId,
+        string $lastDateColumn,
+    ): ?string {
+        if ($integration->tenant === null) {
+            return null;
+        }
+
+        return $integration->tenant->execute(function () use ($targetTable, $storeId, $lastDateColumn): ?string {
+            if (! Schema::connection('tenant')->hasTable($targetTable)) {
+                return null;
+            }
+
+            $query = DB::connection('tenant')
+                ->table($targetTable)
+                ->selectRaw("MAX({$lastDateColumn}) as last_date");
+
+            if ($storeId !== null && Schema::connection('tenant')->hasColumn($targetTable, 'store_id')) {
+                $query->where('store_id', $storeId);
+            }
+
+            return $query->value('last_date');
+        });
     }
 
     /**
