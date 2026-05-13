@@ -215,12 +215,17 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
     private function applyMaxPageLimit(int $lastPage, array $pathConfig): int
     {
         $maxPage = (int) data_get($pathConfig, 'max_page', 0);
+        $lastPage = max(1, $lastPage);
 
         if ($maxPage <= 0) {
-            return max(1, $lastPage);
+            return $lastPage;
         }
 
-        return max(1, min($lastPage, $maxPage));
+        if ($maxPage >= $lastPage) {
+            return $lastPage;
+        }
+
+        return $maxPage;
     }
 
     // ─── Dispatch ────────────────────────────────────────────────────────────

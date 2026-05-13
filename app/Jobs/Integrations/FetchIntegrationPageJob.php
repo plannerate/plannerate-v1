@@ -74,6 +74,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
 
         if (! $response->successful()) {
             Log::error('FetchIntegrationPageJob: falha na chamada HTTP', [
+                'payload' => $payload,
                 'integration_id' => $this->integrationId,
                 'path_key' => $this->pathKey,
                 'page' => $this->page,
@@ -102,7 +103,10 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         $filePath = $this->saveRecords($records);
 
         ProcessPageResponseJob::dispatch(
-            $this->integrationId, $this->pathKey, $this->storeId, $filePath,
+            $this->integrationId,
+            $this->pathKey,
+            $this->storeId,
+            $filePath,
         );
     }
 
