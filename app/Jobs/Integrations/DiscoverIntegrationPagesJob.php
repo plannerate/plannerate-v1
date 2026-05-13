@@ -12,7 +12,9 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Multitenancy\Jobs\NotTenantAware;
 
 /**
@@ -60,7 +62,8 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         $stores = $this->loadStores($integration, $requests);
 
         foreach ($stores as $store) {
-            $this->discoverForStore($api, $config, $requests, $pathConfig, $minPageSize, $maxPageSize, $store);
+            [$effectiveDateStart, $effectiveDateEnd] = $this->resolveEffectiveDates($integration, $pathConfig, $store);
+            $this->discoverForStore($api, $config, $requests, $pathConfig, $minPageSize, $maxPageSize, $store, $effectiveDateStart, $effectiveDateEnd);
         }
     }
 
@@ -120,6 +123,8 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         int $minPageSize,
         int $maxPageSize,
         ?array $store,
+        ?string $effectiveDateStart,
+        ?string $effectiveDateEnd,
     ): void {
         $storeDocument = data_get($store, 'document');
         $storeId = data_get($store, 'id');
@@ -128,7 +133,7 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         $method = strtolower((string) data_get($requests, 'method', 'get'));
 
         $payload = (new IntegrationPayloadBuilder($config, $requests, $pathConfig))
-            ->build($this->dateStart, $this->dateEnd, $storeDocument, useMinPageSize: true);
+            ->build($effectiveDateStart, $effectiveDateEnd, $storeDocument, useMinPageSize: true);
 
         Log::info('DiscoverIntegrationPagesJob: iniciando descoberta de páginas', [
             'payload' => $payload,
@@ -170,6 +175,91 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         ]);
 
         $this->dispatchPageJobs($lastPage, $storeId, $storeDocument);
+    }
+
+    // ─── Datas por loja ──────────────────────────────────────────────────────
+
+    /**
+     * Resolve o intervalo de datas efetivo para uma loja específica.
+     * Se a loja já tem registros na tabela alvo (ou na pivot), usa ontem.
+     * Caso contrário, usa initial_days atrás (ou null se initial_days = 0).
+     *
+     * @param  array<string, mixed>  $pathConfig
+     * @param  array{id: string, document: string}|null  $store
+     * @return array{?string, ?string}
+     */
+    private function resolveEffectiveDates(TenantIntegration $integration, array $pathConfig, ?array $store): array
+    {
+        $dateFields = (array) data_get($pathConfig, 'date_fields', []);
+        $initialDays = (int) data_get($pathConfig, 'initial_days', 0);
+        $targetTable = (string) data_get($pathConfig, 'target_table', '');
+        $pivotTables = (array) data_get($pathConfig, 'pivot_tables', []);
+        $storeId = data_get($store, 'id');
+
+        $hasRecords = $this->storeHasRecords($integration, $targetTable, $pivotTables, $storeId);
+
+        $startIfEmpty = $initialDays > 0 ? now()->subDays($initialDays)->toDateString() : null;
+        $effectiveDateStart = $hasRecords ? now()->subDay()->toDateString() : $startIfEmpty;
+
+        if (isset($dateFields['start']) && isset($dateFields['end'])) {
+            return [$effectiveDateStart, now()->toDateString()];
+        }
+
+        if (isset($dateFields['changed_since'])) {
+            return [$effectiveDateStart, null];
+        }
+
+        return [null, null];
+    }
+
+    /**
+     * Verifica se já existem registros para uma loja específica.
+     * Para tabelas com pivot (ex: product_store), verifica nela com store_id.
+     * Para tabelas com store_id direto (ex: sales), filtra pela coluna.
+     *
+     * @param  array<int, array<string, mixed>>  $pivotTables
+     */
+    private function storeHasRecords(
+        TenantIntegration $integration,
+        string $targetTable,
+        array $pivotTables,
+        ?string $storeId,
+    ): bool {
+        if ($targetTable === '' || $integration->tenant === null) {
+            return false;
+        }
+
+        return (bool) $integration->tenant->execute(function () use ($targetTable, $pivotTables, $storeId): bool {
+            if (! Schema::connection('tenant')->hasTable($targetTable)) {
+                return false;
+            }
+
+            // Verifica pivot table primeiro (ex: product_store com store_id)
+            foreach ($pivotTables as $pivot) {
+                $pivotTable = (string) data_get($pivot, 'table', '');
+
+                if ($pivotTable === '' || ! Schema::connection('tenant')->hasTable($pivotTable)) {
+                    continue;
+                }
+
+                $query = DB::connection('tenant')->table($pivotTable);
+
+                if ($storeId !== null) {
+                    $query->where('store_id', $storeId);
+                }
+
+                return $query->exists();
+            }
+
+            // Verifica tabela principal com store_id (ex: sales)
+            $query = DB::connection('tenant')->table($targetTable);
+
+            if ($storeId !== null && Schema::connection('tenant')->hasColumn($targetTable, 'store_id')) {
+                $query->where('store_id', $storeId);
+            }
+
+            return $query->exists();
+        });
     }
 
     // ─── Carregamento ────────────────────────────────────────────────────────

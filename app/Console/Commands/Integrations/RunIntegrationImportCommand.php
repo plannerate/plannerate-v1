@@ -8,9 +8,7 @@ use App\Jobs\Integrations\DiscoverIntegrationPagesJob;
 use App\Models\TenantIntegration;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 use Throwable;
 
 class RunIntegrationImportCommand extends Command
@@ -107,64 +105,17 @@ class RunIntegrationImportCommand extends Command
     private function dispatchPathJobs(TenantIntegration $integration, string $pathKey, array $pathConfig): int
     {
         $dateFields = data_get($pathConfig, 'date_fields', []);
-        $initialDays = (int) data_get($pathConfig, 'initial_days', 0);
-        $targetTable = (string) data_get($pathConfig, 'target_table', '');
-        $hasRecords = $this->tableHasRecords($integration, $targetTable);
         $hasDateRange = isset($dateFields['start']) && isset($dateFields['end']);
 
+        // Resolução de datas é feita por loja no DiscoverIntegrationPagesJob
         if ($hasDateRange) {
-            if ($hasRecords) {
-                $yesterday = now()->subDay()->toDateString();
-                DiscoverIntegrationPagesJob::dispatch($integration->id, $pathKey, $yesterday, now()->toDateString());
-            } else {
-                $start = $initialDays > 0 ? now()->subDays($initialDays)->toDateString() : null;
-                DiscoverIntegrationPagesJob::dispatch($integration->id, $pathKey, $start, now()->toDateString());
-            }
+            DiscoverIntegrationPagesJob::dispatch($integration->id, $pathKey, null, now()->toDateString());
 
             return 1;
         }
 
-        $changedSince = $this->resolveChangedSince($pathConfig, $hasRecords);
-
-        DiscoverIntegrationPagesJob::dispatch($integration->id, $pathKey, $changedSince, null);
+        DiscoverIntegrationPagesJob::dispatch($integration->id, $pathKey, null, null);
 
         return 1;
-    }
-
-    /**
-     * - tabela com registros → ontem
-     * - tabela vazia + initial_days > 0 → now() - N dias
-     * - tabela vazia + initial_days = 0 → null (sem filtro)
-     *
-     * @param  array<string, mixed>  $pathConfig
-     */
-    private function resolveChangedSince(array $pathConfig, bool $hasRecords): ?string
-    {
-        if (! isset(data_get($pathConfig, 'date_fields', [])['changed_since'])) {
-            return null;
-        }
-
-        if ($hasRecords) {
-            return now()->subDay()->toDateString();
-        }
-
-        $initialDays = (int) data_get($pathConfig, 'initial_days', 0);
-
-        return $initialDays > 0 ? now()->subDays($initialDays)->toDateString() : null;
-    }
-
-    private function tableHasRecords(TenantIntegration $integration, string $targetTable): bool
-    {
-        if ($targetTable === '' || $integration->tenant === null) {
-            return false;
-        }
-
-        return (bool) $integration->tenant->execute(function () use ($targetTable): bool {
-            if (! Schema::connection('tenant')->hasTable($targetTable)) {
-                return false;
-            }
-
-            return DB::connection('tenant')->table($targetTable)->exists();
-        });
     }
 }
