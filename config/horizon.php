@@ -99,7 +99,8 @@ return [
     'waits' => [
         'redis:critical' => 30,
         'redis:default' => 120,
-        'redis:imports' => 600,
+        'redis:imports-fetch' => 300,
+        'redis:imports-process' => 600,
         'redis:integrations' => 600,
         'redis:maintenance' => 300,
     ],
@@ -229,14 +230,25 @@ return [
             'memory' => 256,
             'nice' => 0,
         ],
-        'supervisor-imports' => [
+        'supervisor-imports-fetch' => [
             'connection' => 'redis',
-            'queue' => ['imports'],
+            'queue' => ['imports-fetch'],
             'balance' => 'simple',
             'minProcesses' => 1,
-            'maxProcesses' => 2,
-            'tries' => 1,
-            'timeout' => 1860,
+            'maxProcesses' => 5,
+            'tries' => 3,
+            'timeout' => 180,
+            'memory' => 256,
+            'nice' => 5,
+        ],
+        'supervisor-imports-process' => [
+            'connection' => 'redis',
+            'queue' => ['imports-process'],
+            'balance' => 'simple',
+            'minProcesses' => 1,
+            'maxProcesses' => 3,
+            'tries' => 3,
+            'timeout' => 180,
             'memory' => 512,
             'nice' => 5,
         ],
@@ -261,8 +273,11 @@ return [
             'supervisor-default' => [
                 'maxProcesses' => 3,
             ],
-            'supervisor-imports' => [
-                'maxProcesses' => 2,
+            'supervisor-imports-fetch' => [
+                'maxProcesses' => 5,
+            ],
+            'supervisor-imports-process' => [
+                'maxProcesses' => 3,
             ],
             'supervisor-maintenance' => [
                 'maxProcesses' => 1,
@@ -276,8 +291,11 @@ return [
             'supervisor-default' => [
                 'maxProcesses' => 2,
             ],
-            'supervisor-imports' => [
-                'maxProcesses' => 1,
+            'supervisor-imports-fetch' => [
+                'maxProcesses' => 3,
+            ],
+            'supervisor-imports-process' => [
+                'maxProcesses' => 2,
             ],
             'supervisor-maintenance' => [
                 'maxProcesses' => 1,
@@ -291,7 +309,10 @@ return [
             'supervisor-default' => [
                 'maxProcesses' => 2,
             ],
-            'supervisor-imports' => [
+            'supervisor-imports-fetch' => [
+                'maxProcesses' => 2,
+            ],
+            'supervisor-imports-process' => [
                 'maxProcesses' => 1,
             ],
             'supervisor-maintenance' => [

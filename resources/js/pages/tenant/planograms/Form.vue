@@ -215,17 +215,15 @@ const pageMeta = useCrudPageMeta({
                             :error="errors.status"
                             class="md:col-span-12"
                             :options="[
-                                { value: 'draft', label: 'Draft' },
-                                { value: 'published', label: 'Published' },
+                                { value: 'draft', label: t('app.tenant.planograms.status_draft') },
+                                { value: 'published', label: t('app.tenant.planograms.status_published') },
                             ]"
                         />
 
                         <FormTextareaField
                             id="description"
                             name="description"
-                            :label="
-                                t('app.tenant.planograms.fields.description')
-                            "
+                            :label="t('app.tenant.planograms.fields.description')"
                             :default-value="props.planogram?.description ?? ''"
                             :error="errors.description"
                             class="md:col-span-12"

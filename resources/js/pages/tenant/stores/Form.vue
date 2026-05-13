@@ -5,6 +5,7 @@ import { computed, ref } from 'vue';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
 import CepLookupField from '@/components/form/CepLookupField.vue';
 import FormMapField from '@/components/form/FormMapField.vue';
+import FormStatusField from '@/components/form/FormStatusField.vue';
 import FormTabsBar from '@/components/form/FormTabsBar.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import FormCard from '@/components/FormCard.vue';
@@ -181,12 +182,6 @@ const pageMeta = useCrudPageMeta(
                         v-show="activeTab === 'identificacao'"
                         class="grid grid-cols-1 gap-4 md:grid-cols-12"
                     >
-                        <input
-                            type="hidden"
-                            name="status"
-                            :value="props.store?.status ?? 'draft'"
-                        />
-
                         <FormTextField
                             id="code"
                             name="code"
@@ -357,6 +352,19 @@ const pageMeta = useCrudPageMeta(
                                 </div>
                             </div>
                         </div>
+
+                        <FormStatusField
+                            id="status"
+                            name="status"
+                            :label="t('app.tenant.stores.fields.status')"
+                            :default-value="props.store?.status ?? 'draft'"
+                            :error="errors.status"
+                            class="md:col-span-12"
+                            :options="[
+                                { value: 'draft', label: t('app.tenant.stores.status_draft') },
+                                { value: 'published', label: t('app.tenant.stores.status_published') },
+                            ]"
+                        />
                     </div>
 
                     <!-- Tab: Mapa Da Loja -->

@@ -776,6 +776,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'description' => 'Descricao',
                 'map' => 'Mapa Da Loja',
             ],
+            'status_draft' => 'Rascunho',
+            'status_published' => 'Publicado',
             'hints' => [
                 'map' => 'Envie a planta da loja e marque as áreas como gôndolas, ilhas, entradas e checkouts.',
             ],
@@ -830,6 +832,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'status' => 'Status',
                 'description' => 'Descricao',
             ],
+            'status_draft' => 'Rascunho',
+            'status_published' => 'Publicado',
             'messages' => [
                 'created' => 'Cluster criado com sucesso.',
                 'updated' => 'Cluster atualizado com sucesso.',
@@ -887,6 +891,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'status' => 'Status',
                 'description' => 'Descricao',
             ],
+            'status_draft' => 'Rascunho',
+            'status_published' => 'Publicado',
             'messages' => [
                 'created' => 'Planograma criado com sucesso.',
                 'updated' => 'Planograma atualizado com sucesso.',
@@ -912,6 +918,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'scale_factor' => 'Escala',
                 'status' => 'Status',
             ],
+            'status_draft' => 'Rascunho',
+            'status_published' => 'Publicado',
             'messages' => [
                 'created' => 'Gondola criada com sucesso.',
                 'updated' => 'Gondola atualizada com sucesso.',
@@ -926,6 +934,10 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'new' => 'Novo produto',
                 'edit' => 'Editar produto',
             ],
+            'status_draft' => 'Rascunho',
+            'status_published' => 'Publicado',
+            'status_synced' => 'Sincronizado',
+            'status_error' => 'Erro',
             'fields' => [
                 'image' => 'Imagem',
                 'name' => 'Nome',
@@ -973,6 +985,16 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'created' => 'Produto criado com sucesso.',
                 'updated' => 'Produto atualizado com sucesso.',
                 'deleted' => 'Produto removido com sucesso.',
+            ],
+            'status_options' => [
+                'draft' => 'Rascunho',
+                'published' => 'Publicado',
+                'synced' => 'Sincronizado',
+                'error' => 'Erro',
+            ],
+            'dimensions_status_options' => [
+                'draft' => 'Rascunho',
+                'published' => 'Publicado',
             ],
             'form' => [
                 'tabs' => [
@@ -1039,16 +1061,6 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'logistics' => 'Logistica e flags',
                 'sidebar_title' => 'Identificacao e midia',
                 'sidebar_dimensions' => 'Metadados de dimensoes',
-            ],
-            'status_options' => [
-                'draft' => 'Rascunho',
-                'published' => 'Publicado',
-                'synced' => 'Sincronizado',
-                'error' => 'Erro',
-            ],
-            'dimensions_status_options' => [
-                'draft' => 'Rascunho',
-                'published' => 'Publicado',
             ],
         ],
         'users' => [

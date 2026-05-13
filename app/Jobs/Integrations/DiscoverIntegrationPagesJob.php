@@ -33,7 +33,7 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
         public readonly ?string $dateStart = null,
         public readonly ?string $dateEnd = null,
     ) {
-        $this->onQueue('imports');
+        $this->onQueue('imports-fetch');
     }
 
     public function handle(): void

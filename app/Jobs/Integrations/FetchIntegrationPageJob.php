@@ -42,7 +42,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         public readonly ?string $storeId = null,
         public readonly ?string $storeDocument = null,
     ) {
-        $this->onQueue('imports');
+        $this->onQueue('imports-fetch');
     }
 
     public function handle(): void

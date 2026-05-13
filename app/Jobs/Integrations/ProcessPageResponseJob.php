@@ -32,7 +32,7 @@ class ProcessPageResponseJob implements NotTenantAware, ShouldQueue
         public readonly ?string $storeId,
         public readonly string $filePath,
     ) {
-        $this->onQueue('imports');
+        $this->onQueue('imports-process');
     }
 
     public function handle(): void
