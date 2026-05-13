@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'timeout' => env('INTEGRATION_TIMEOUT', 60),
+
+    'fetch_delay' => env('INTEGRATION_FETCH_DELAY', 3),
+
     'import_clear_tables' => [
         'products' => ['product_store', 'products'],
         'sales' => ['sales'],

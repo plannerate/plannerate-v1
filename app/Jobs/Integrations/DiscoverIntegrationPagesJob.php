@@ -360,11 +360,13 @@ class DiscoverIntegrationPagesJob implements NotTenantAware, ShouldQueue
 
     private function dispatchPageJobs(int $lastPage, ?string $storeId, ?string $storeDocument, ?string $dateStart, ?string $dateEnd): void
     {
+        $delaySeconds = (int) config('integrations.fetch_delay', 3);
+
         for ($page = 1; $page <= $lastPage; $page++) {
             FetchIntegrationPageJob::dispatch(
                 $this->integrationId, $this->pathKey, $page,
                 $dateStart, $dateEnd, $storeId, $storeDocument,
-            );
+            )->delay(now()->addSeconds(($page - 1) * $delaySeconds));
         }
     }
 
