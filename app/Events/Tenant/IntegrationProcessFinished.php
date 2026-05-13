@@ -44,15 +44,7 @@ class IntegrationProcessFinished implements ShouldBroadcastNow
      */
     public function broadcastWith(): array
     {
-        Log::info('Broadcasting IntegrationProcessFinished event', [
-            'tenant_id' => $this->tenantId,
-            'integration_id' => $this->integrationId,
-            'resource' => $this->resource,
-            'reference_date' => $this->referenceDate,
-            'status' => $this->status,
-            'error_message' => $this->errorMessage,
-        ]);
-
+       
         return [
             'tenant_id' => $this->tenantId,
             'integration_id' => $this->integrationId,

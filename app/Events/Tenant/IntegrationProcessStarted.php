@@ -42,13 +42,7 @@ class IntegrationProcessStarted implements ShouldBroadcastNow
      */
     public function broadcastWith(): array
     {
-        Log::info('Broadcasting IntegrationProcessStarted event', [
-            'tenant_id' => $this->tenantId,
-            'integration_id' => $this->integrationId,
-            'resource' => $this->resource,
-            'reference_date' => $this->referenceDate,
-        ]);
-
+       
         return [
             'tenant_id' => $this->tenantId,
             'integration_id' => $this->integrationId,
