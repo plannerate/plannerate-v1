@@ -29,9 +29,17 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 3;
+    public int $tries = 5;
+
+    public int $maxExceptions = 3;
 
     public int $timeout = 120;
+
+    /** @return array<int, int> */
+    public function backoff(): array
+    {
+        return [30, 60, 120, 300];
+    }
 
     public function __construct(
         public readonly string $integrationId,

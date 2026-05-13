@@ -41,7 +41,8 @@ class IntegrationHttpClient
     /** Prepara o PendingRequest com auth e headers. */
     private function prepare(): PendingRequest
     {
-        $http = Http::timeout(30);
+        $http = Http::timeout(config('integrations.timeout', 60))
+            ->connectTimeout(10);
         $http = $this->applyAuth($http);
         $http = $this->applyHeaders($http);
 
@@ -103,8 +104,8 @@ class IntegrationHttpClient
         ];
 
         $response = match ($method) {
-            'get' => Http::timeout(30)->get($url, $credentials),
-            default => Http::timeout(30)->post($url, $credentials),
+            'get' => Http::timeout(config('integrations.timeout', 60))->connectTimeout(10)->get($url, $credentials),
+            default => Http::timeout(config('integrations.timeout', 60))->connectTimeout(10)->post($url, $credentials),
         };
 
         if (! $response->successful()) {
