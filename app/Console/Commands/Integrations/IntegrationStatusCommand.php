@@ -32,7 +32,7 @@ class IntegrationStatusCommand extends Command
             label: 'O que deseja fazer?',
             options: [
                 'view' => 'Visualizar stats + amostra de dados',
-                'delete' => 'Excluir dados por loja (sales, product_store e products órfãos)',
+                'delete' => 'Excluir registros (filtra por loja e tabela)',
             ],
         );
 
@@ -213,11 +213,20 @@ class IntegrationStatusCommand extends Command
             return;
         }
 
+        $tables = $this->pickTablesToDelete();
+
+        if ($tables === []) {
+            $this->info('Operação cancelada.');
+
+            return;
+        }
+
         $storeIds = $stores->pluck('id')->map(fn (mixed $id): string => (string) $id)->all();
         $storeNames = $stores->pluck('name')->map(fn (mixed $name): string => trim((string) $name) !== '' ? (string) $name : '(sem nome)')->all();
-        $list = implode(', ', $storeNames);
+        $tableList = implode(', ', $tables);
+        $storeList = implode(', ', $storeNames);
 
-        if (! confirm("Confirma excluir dados das lojas [{$list}] do tenant {$tenant->name}?", default: false)) {
+        if (! confirm("Confirma excluir [{$tableList}] das lojas [{$storeList}] do tenant {$tenant->name}?", default: false)) {
             $this->info('Operação cancelada.');
 
             return;
@@ -231,11 +240,11 @@ class IntegrationStatusCommand extends Command
 
         $tenantId = (string) $tenant->id;
 
-        $tenant->execute(function () use ($storeIds, &$summary, $tenantId): void {
+        $tenant->execute(function () use ($storeIds, $tables, &$summary, $tenantId): void {
             $connection = DB::connection('tenant');
 
-            $connection->transaction(function () use ($connection, $storeIds, &$summary, $tenantId): void {
-                if (Schema::connection('tenant')->hasTable('sales')) {
+            $connection->transaction(function () use ($connection, $storeIds, $tables, &$summary, $tenantId): void {
+                if (in_array('sales', $tables, true) && Schema::connection('tenant')->hasTable('sales')) {
                     $this->line('  Limpando [sales]...');
 
                     $summary['sales_deleted'] = $connection
@@ -247,7 +256,7 @@ class IntegrationStatusCommand extends Command
 
                 $productIdsFromSelectedStores = collect();
 
-                if (Schema::connection('tenant')->hasTable('product_store')) {
+                if (in_array('product_store', $tables, true) && Schema::connection('tenant')->hasTable('product_store')) {
                     $this->line('  Mapeando produtos vinculados nas lojas selecionadas...');
 
                     $productIdsFromSelectedStores = $connection
@@ -268,7 +277,7 @@ class IntegrationStatusCommand extends Command
                         ->delete();
                 }
 
-                if (! Schema::connection('tenant')->hasTable('products') || $productIdsFromSelectedStores->isEmpty()) {
+                if (! in_array('products', $tables, true) || ! Schema::connection('tenant')->hasTable('products') || $productIdsFromSelectedStores->isEmpty()) {
                     return;
                 }
 
@@ -288,13 +297,39 @@ class IntegrationStatusCommand extends Command
             });
         });
 
-        $this->line(sprintf('  [sales] %d registros removidos.', $summary['sales_deleted']));
-        $this->line(sprintf('  [product_store] %d registros removidos.', $summary['product_store_deleted']));
-        $this->line(sprintf('  [products] %d registros removidos (somente órfãos sem loja).', $summary['products_deleted']));
+        if (in_array('sales', $tables, true)) {
+            $this->line(sprintf('  [sales] %d registros removidos.', $summary['sales_deleted']));
+        }
+
+        if (in_array('product_store', $tables, true)) {
+            $this->line(sprintf('  [product_store] %d registros removidos.', $summary['product_store_deleted']));
+        }
+
+        if (in_array('products', $tables, true)) {
+            $this->line(sprintf('  [products] %d registros removidos (somente órfãos sem loja).', $summary['products_deleted']));
+        }
+
         $this->line(sprintf('  Tempo total: %.2fs', microtime(true) - $startedAt));
 
         $this->newLine();
-        $this->info('Limpeza por loja concluída.');
+        $this->info('Limpeza concluída.');
+    }
+
+    /** @return list<string> */
+    private function pickTablesToDelete(): array
+    {
+        $options = [
+            'sales' => 'sales — vendas das lojas selecionadas',
+            'product_store' => 'product_store — vínculos produto↔loja',
+            'products' => 'products — produtos órfãos (sem loja após limpeza)',
+        ];
+
+        return multiselect(
+            label: 'Quais tabelas deseja limpar?',
+            options: $options,
+            default: array_keys($options),
+            required: true,
+        );
     }
 
     /** @return Collection<int, object{id: string, name: string|null}> */
