@@ -24,10 +24,10 @@ Schedule::command('sync:products-from-ean-references')
     ->withoutOverlapping()
     ->name('sync-products-from-ean-references');
 
-Schedule::command('integrations:daily-imports')
+Schedule::command('integration:run')
     ->dailyAt('06:00')
     ->withoutOverlapping()
-    ->name('integrations-daily-imports');
+    ->name('integration:run');
 
 Schedule::command('horizon:snapshot')
     ->everyFiveMinutes()
