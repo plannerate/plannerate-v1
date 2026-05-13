@@ -92,8 +92,29 @@ class RecordMapper
 
         return match ($type) {
             'any_of' => $this->anyOfPasses($item, $sources, $allowedValues),
+            'all_of' => $this->allOfPasses($item, $sources, $allowedValues),
             default => true,
         };
+    }
+
+    /**
+     * Returns true if every source field value is in $allowedValues.
+     *
+     * @param  array<string, mixed>  $item
+     * @param  array<int, string>  $sources
+     * @param  array<int, string>  $allowedValues
+     */
+    private function allOfPasses(array $item, array $sources, array $allowedValues): bool
+    {
+        foreach ($sources as $source) {
+            $value = (string) data_get($item, $source, '');
+
+            if (! in_array($value, $allowedValues, true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

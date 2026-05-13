@@ -55,7 +55,8 @@ function removeRow(index: number): void {
                         class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                         @change="updateRow(index, { type: ($event.target as HTMLSelectElement).value })"
                     >
-                        <option value="any_of">any_of — pelo menos 1</option>
+                        <option value="all_of">all_of — todos devem passar</option>
+                    <option value="any_of">any_of — pelo menos 1</option>
                     </select>
                 </div>
 
@@ -97,9 +98,16 @@ function removeRow(index: number): void {
 
                 <div v-if="row.sources.trim() !== ''" class="md:col-span-12">
                     <p class="text-xs text-muted-foreground">
-                        Rejeita o item se nenhum dos campos
+                        <template v-if="row.type === 'all_of'">
+                            Rejeita o item se <strong>qualquer</strong> campo de
+                        </template>
+                        <template v-else>
+                            Rejeita o item se <strong>nenhum</strong> campo de
+                        </template>
                         <span class="font-mono text-foreground">{{ row.sources }}</span>
-                        tiver valor igual a
+                        <template v-if="row.type === 'all_of'"> não tiver</template>
+                        <template v-else> tiver</template>
+                        valor igual a
                         <span class="font-mono text-foreground">{{ row.allowed_values || 'S' }}</span>.
                     </p>
                 </div>

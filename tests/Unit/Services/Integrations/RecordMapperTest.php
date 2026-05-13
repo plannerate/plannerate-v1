@@ -57,6 +57,34 @@ it('skips group validation when sources list is empty', function (): void {
     expect($record)->toBe(['name' => 'Produto']);
 });
 
+// ─── all_of validations ──────────────────────────────────────────────────────
+
+it('rejects record when any all_of source fails the allowed value check', function (): void {
+    $mapper = new RecordMapper(new FieldValueResolver);
+
+    $record = $mapper->map(
+        ['cadastro_ativo' => 'S', 'ativo_na_empresa' => 'N', 'pertence_ao_mix' => 'S', 'descricao' => 'Produto'],
+        [['target' => 'name', 'source' => 'descricao', 'transforms' => ['string']]],
+        null,
+        [['type' => 'all_of', 'sources' => ['cadastro_ativo', 'ativo_na_empresa', 'pertence_ao_mix'], 'allowed_values' => ['S']]],
+    );
+
+    expect($record)->toBeNull();
+});
+
+it('keeps record when all all_of sources have an allowed value', function (): void {
+    $mapper = new RecordMapper(new FieldValueResolver);
+
+    $record = $mapper->map(
+        ['cadastro_ativo' => 'S', 'ativo_na_empresa' => 'S', 'pertence_ao_mix' => 'S', 'descricao' => 'Produto'],
+        [['target' => 'name', 'source' => 'descricao', 'transforms' => ['string']]],
+        null,
+        [['type' => 'all_of', 'sources' => ['cadastro_ativo', 'ativo_na_empresa', 'pertence_ao_mix'], 'allowed_values' => ['S']]],
+    );
+
+    expect($record)->toBe(['name' => 'Produto']);
+});
+
 // ─── not_null ────────────────────────────────────────────────────────────────
 
 it('returns null when a not_null mapped field resolves to null', function (): void {
