@@ -29,6 +29,8 @@ export type RequestPathRow = {
     unique_by: string;
     include_store_in_id: boolean;
     initial_days: string;
+    chunk_days: string;
+    last_date_column: string;
     max_page: string;
     min_page_size: string;
     max_page_size: string;

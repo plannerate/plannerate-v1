@@ -29,6 +29,8 @@ function newPath(): RequestPathRow {
         unique_by: '',
         include_store_in_id: false,
         initial_days: '',
+        chunk_days: '',
+        last_date_column: '',
         max_page: '',
         min_page_size: '',
         max_page_size: '',
@@ -225,6 +227,14 @@ onMounted(() => {
                             @update:model-value="updatePath(pathIndex, { initial_days: String($event) })" />
                     </div>
                     <div class="grid gap-2 md:col-span-2">
+                        <Label :for="`path-chunk-days-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.chunk_days') }}</Label>
+                        <Input :id="`path-chunk-days-${requestPath.id}`" type="number"
+                            :model-value="requestPath.chunk_days"
+                            :placeholder="t('app.landlord.integration_apis.placeholders.chunk_days')"
+                            @update:model-value="updatePath(pathIndex, { chunk_days: String($event) })" />
+                    </div>
+                    <div class="grid gap-2 md:col-span-2">
                         <Label :for="`path-max-page-${requestPath.id}`">{{
                             t('app.landlord.integration_apis.fields.max_page') }}</Label>
                         <Input :id="`path-max-page-${requestPath.id}`" type="number"
@@ -249,7 +259,7 @@ onMounted(() => {
                 </div>
 
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
-                    <div class="grid gap-2 md:col-span-4">
+                    <div class="grid gap-2 md:col-span-3">
                         <Label :for="`path-min-page-size-${requestPath.id}`">{{
                             t('app.landlord.integration_apis.fields.min_page_size') }}</Label>
                         <Input :id="`path-min-page-size-${requestPath.id}`" type="number"
@@ -257,13 +267,21 @@ onMounted(() => {
                             placeholder="1"
                             @update:model-value="updatePath(pathIndex, { min_page_size: String($event) })" />
                     </div>
-                    <div class="grid gap-2 md:col-span-4">
+                    <div class="grid gap-2 md:col-span-3">
                         <Label :for="`path-max-page-size-${requestPath.id}`">{{
                             t('app.landlord.integration_apis.fields.max_page_size') }}</Label>
                         <Input :id="`path-max-page-size-${requestPath.id}`" type="number"
                             :model-value="requestPath.max_page_size"
                             placeholder="1000"
                             @update:model-value="updatePath(pathIndex, { max_page_size: String($event) })" />
+                    </div>
+                    <div class="grid gap-2 md:col-span-6">
+                        <Label :for="`path-last-date-column-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.last_date_column') }}</Label>
+                        <Input :id="`path-last-date-column-${requestPath.id}`"
+                            :model-value="requestPath.last_date_column"
+                            :placeholder="t('app.landlord.integration_apis.placeholders.last_date_column')"
+                            @update:model-value="updatePath(pathIndex, { last_date_column: String($event) })" />
                     </div>
                 </div>
 
