@@ -69,6 +69,10 @@ class FinalizeTenantImportsJob implements NotTenantAware, ShouldBeUnique, Should
             '--sync' => true,
         ]);
 
+        Artisan::call('sync:cleanup', [
+            '--tenant' => (string) $tenant->id,
+        ]);
+
         Log::info('Finalização de imports concluída.', [
             'tenant_id' => (string) $tenant->id,
             'tenant_name' => (string) $tenant->name,

@@ -462,9 +462,7 @@ class ImportLegacyBaseClientCommand extends Command
                     $ean = is_string($record->ean ?? null) ? trim($record->ean) : '';
 
                     // Gera product_id deterministico via EAN (sem consultar o banco)
-                    $row['product_id'] = $ean !== ''
-                        ? $generator->productId($tenantId, $ean, null)
-                        : null;
+                    $row['product_id'] = $generator->productIdFromEan($tenantId, $ean);
 
                     // Salva o ean na layer se a coluna existir
                     if ($hasEan && $ean !== '') {

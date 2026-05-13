@@ -9,6 +9,8 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 
+use function Laravel\Prompts\multiselect;
+
 #[Signature('sync:products-from-ean-references {--tenant= : ID do tenant específico} {--preview : Apenas mostra o que seria feito}')]
 #[Description('Padroniza produtos usando a tabela ean_references')]
 class SyncProductsFromEanReferencesCommand extends Command
@@ -41,16 +43,38 @@ class SyncProductsFromEanReferencesCommand extends Command
     /**
      * @return Collection<int, Tenant>
      */
-    private function getTenants()
+    private function getTenants(): Collection
     {
-        $query = Tenant::query()->where('status', 'active');
-
         $tenantId = $this->option('tenant');
+
         if (is_string($tenantId) && $tenantId !== '') {
-            $query->whereKey($tenantId);
+            return Tenant::query()
+                ->where('status', 'active')
+                ->whereKey($tenantId)
+                ->get(['id', 'name', 'database']);
         }
 
-        return $query->get(['id', 'name', 'database']);
+        $allTenants = Tenant::query()
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name', 'database']);
+
+        if ($allTenants->isEmpty()) {
+            return $allTenants;
+        }
+
+        $options = $allTenants->mapWithKeys(
+            fn (Tenant $tenant): array => [(string) $tenant->id => $tenant->name]
+        )->all();
+
+        $selectedIds = multiselect(
+            label: 'Selecione os tenants para processar:',
+            options: $options,
+            default: array_keys($options),
+            hint: 'Pressione espaço para selecionar/deselecionar. Enter para confirmar.',
+        );
+
+        return $allTenants->whereIn('id', $selectedIds)->values();
     }
 
     private function processTenant(Tenant $tenant, bool $preview, SyncProductsFromEanReferencesService $syncProductsFromEanReferencesService): void

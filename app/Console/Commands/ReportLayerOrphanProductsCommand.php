@@ -192,7 +192,7 @@ class ReportLayerOrphanProductsCommand extends Command
 
         return [
             'path' => Storage::disk('public')->path($filename),
-            'url' => url(Storage::disk('public')->url($filename)),
+            'url' => url(Storage::disk('public')?->url($filename)),
         ];
     }
 

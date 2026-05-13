@@ -43,4 +43,12 @@ class DeterministicIdGenerator
 
         return $prefix.strtoupper(substr($hash, 0, 24));
     }
+
+    public function productIdFromEan(string $tenantId, string $ean): string
+    {
+        $prefix = 'P1';
+        $hash = hash('sha256', $tenantId.'|'.$ean);
+
+        return $prefix.strtoupper(substr($hash, 0, 24));
+    }
 }
