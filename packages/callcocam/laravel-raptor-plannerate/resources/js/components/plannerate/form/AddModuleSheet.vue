@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
+import { useForm, usePage } from '@inertiajs/vue3';
 import { computed, watch } from 'vue';
+import { store as storeSectionRoute } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/SectionController';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +30,7 @@ import {
 } from '@/composables/plannerate/useShelfFields';
 import { useT } from '@/composables/useT';
 import type { Section } from '@/types/planogram';
+import { wayfinderPath } from '../../../libs/wayfinderPath';
 
 interface Props {
     open?: boolean;
@@ -51,6 +53,22 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 const { t } = useT();
+const isBrowser = typeof window !== 'undefined';
+const page = usePage<{ subdomain?: string }>();
+
+const resolvedSubdomain = computed(() => {
+    const subdomainFromPage = page.props.subdomain?.toString().trim();
+
+    if (subdomainFromPage) {
+        return subdomainFromPage;
+    }
+
+    if (!isBrowser) {
+        return '';
+    }
+
+    return window.location.hostname.split('.')[0] || '';
+});
 
 // Função para obter valores da última seção ou valores padrão usando composables
 const getInitialFormData = () => {
@@ -84,7 +102,7 @@ const getInitialFormData = () => {
         name:
             sectionFields.name ||
             t('plannerate.form.add_module.module_default_name', {
-                number: sectionIndex + 1,
+                number: String(sectionIndex + 1),
             }),
         height: sectionSnake.height ?? props.gondolaHeight ?? 200,
         width: sectionSnake.width ?? 100,
@@ -134,13 +152,18 @@ const handleClose = () => {
 };
 
 const handleSubmit = () => {
-    if (!props.gondolaId) {
-        console.error('Gondola ID não fornecido');
+    const subdomain = resolvedSubdomain.value;
+
+    if (!props.gondolaId || !subdomain) {
+        console.error('Não foi possível resolver subdomínio/gôndola para criar módulo.', {
+            gondolaId: props.gondolaId,
+            subdomain,
+        });
 
         return;
     }
 
-    form.post(`/api/editor/gondolas/${props.gondolaId}/sections`, {
+    form.post(wayfinderPath(storeSectionRoute.url({ subdomain, gondola: props.gondolaId })), {
         preserveScroll: true,
         preserveState: false,
         onSuccess: (/* _response */) => {
@@ -155,7 +178,7 @@ const handleSubmit = () => {
     <Sheet :open="open" @update:open="(val) => emit('update:open', val)">
         <SheetContent side="right" class="flex w-full flex-col md:max-w-4xl">
             <SheetHeader class="shrink-0 py-2">
-                <SheetTitle>{{ t('plannerate.form.add_module.title') }}</SheetTitle>
+                <SheetTitle>{{ t('plannerate.form.add_module.title') }} </SheetTitle>
                 <SheetDescription>
                     {{ t('plannerate.form.add_module.description') }}
                 </SheetDescription>

@@ -31,7 +31,7 @@ class SectionController extends Controller
         return 'tenant';
     }
 
-    public function store(Request $request, string $gondola)
+    public function store(Request $request, string $subdomain, string $gondola)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -50,7 +50,7 @@ class SectionController extends Controller
             'num_shelves' => 'nullable|integer|min:0',
             'product_type' => 'nullable|string|in:normal,hook',
         ]);
-
+ 
         try {
             $this->plannerateTenantDatabase()->beginTransaction();
 
