@@ -153,14 +153,7 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
                 <!-- Indicador de fluxo -->
                 <div class="relative h-8 mb-2">
                     <Indicador :is-left-to-right="isLeftToRight" />
-                </div>
-
-                <!-- Badge Vista Frontal -->
-                <div class="flex justify-center mb-3">
-                    <span class="bg-primary text-primary-foreground text-[10px] font-bold px-5 py-1.5 uppercase tracking-widest">
-                        Vista Frontal
-                    </span>
-                </div>
+                </div> 
 
                 <!-- Seção + indicador de altura -->
                 <div class="flex items-start gap-4">

@@ -171,7 +171,7 @@ export function usePdfGenerator() {
       scale,
     })
 
-    const imgData = canvas.toDataURL('image/png', quality)
+    const imgData = canvas.toDataURL('image/jpeg', quality)
     const imgWidth = canvas.width
     const imgHeight = canvas.height
 
@@ -198,7 +198,7 @@ export function usePdfGenerator() {
     const imgX = marginSides + (availableWidth - finalWidth) / 2
     const imgY = marginTop + (availableHeight - finalHeight) / 2
 
-    pdf.addImage(imgData, 'PNG', imgX, imgY, finalWidth, finalHeight)
+    pdf.addImage(imgData, 'JPEG', imgX, imgY, finalWidth, finalHeight)
 
     return pdf
   }
@@ -241,7 +241,7 @@ export function usePdfGenerator() {
         scale,
       })
 
-      const imgData = canvas.toDataURL('image/png', quality)
+      const imgData = canvas.toDataURL('image/jpeg', quality)
       const imgWidth = canvas.width
       const imgHeight = canvas.height
 
@@ -260,7 +260,7 @@ export function usePdfGenerator() {
         pdf.addPage()
       }
 
-      pdf.addImage(imgData, 'PNG', imgX, imgY, finalWidth, finalHeight)
+      pdf.addImage(imgData, 'JPEG', imgX, imgY, finalWidth, finalHeight)
     }
 
     return pdf
@@ -321,7 +321,10 @@ export function usePdfGenerator() {
       if (autoDownload) {
         pdf.save(filename)
       } else {
-        window.open(pdf.output('bloburl'), '_blank')
+        const blob = pdf.output('blob')
+        const blobUrl = URL.createObjectURL(blob)
+        window.open(blobUrl, '_blank')
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
       }
     } catch (error) {
       console.error('Erro ao gerar PDF:', error)
