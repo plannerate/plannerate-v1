@@ -31,14 +31,16 @@ if (typeof window !== 'undefined') {
     const reverbScheme = (metaContent('plannerate-reverb-scheme') ?? import.meta.env.VITE_REVERB_SCHEME ?? window.location.protocol.replace(':', '')) as string;
 
     if (reverbAppKey.trim() !== '') {
+        const forceTLS = reverbScheme === 'https';
+
         configureEcho({
             broadcaster: 'reverb',
             key: reverbAppKey,
             wsHost: reverbHost,
             wsPort: reverbPort,
             wssPort: reverbPort,
-            forceTLS: reverbScheme === 'https',
-            enabledTransports: ['ws', 'wss'],
+            forceTLS,
+            enabledTransports: [forceTLS ? 'wss' : 'ws'],
         });
         window.__plannerateEchoConfigured = true;
     } else {

@@ -90,6 +90,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=web"
       - "traefik.http.routers.reverb.rule=Host(`ws.plannerate.localhost`)"
+      - "traefik.http.routers.reverb.priority=100"
       - "traefik.http.services.reverb.loadbalancer.server.port=8080"
 
     working_dir: /var/www
