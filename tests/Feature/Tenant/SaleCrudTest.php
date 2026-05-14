@@ -139,6 +139,64 @@ test('tenant sales index is isolated by tenant_id', function (): void {
             ->where('sales.data.0.codigo_erp', 'SALE-A'));
 });
 
+test('tenant sales index filters by sale date range', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenant('tenant-sales-date-filter');
+    assignTenantAdminRole($user, $tenant->id);
+
+    $store = Store::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Loja Data',
+        'status' => 'published',
+    ]);
+
+    Sale::query()->create([
+        'tenant_id' => $tenant->id,
+        'store_id' => $store->id,
+        'codigo_erp' => 'SALE-BEFORE',
+        'sale_date' => '2026-04-22',
+        'promotion' => 'P-BEFORE',
+        'total_sale_value' => '5.00',
+    ]);
+
+    Sale::query()->create([
+        'tenant_id' => $tenant->id,
+        'store_id' => $store->id,
+        'codigo_erp' => 'SALE-IN-RANGE',
+        'sale_date' => '2026-04-23',
+        'promotion' => 'P-RANGE',
+        'total_sale_value' => '10.00',
+    ]);
+
+    Sale::query()->create([
+        'tenant_id' => $tenant->id,
+        'store_id' => $store->id,
+        'codigo_erp' => 'SALE-AFTER',
+        'sale_date' => '2026-04-24',
+        'promotion' => 'P-AFTER',
+        'total_sale_value' => '20.00',
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-sales-date-filter.'.config('app.landlord_domain')])
+        ->get(route('tenant.sales.index', [
+            'subdomain' => 'tenant-sales-date-filter',
+            'sale_date_from' => '2026-04-23',
+            'sale_date_to' => '2026-04-23',
+        ], false));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/sales/Index')
+            ->has('sales.data', 1)
+            ->where('sales.data.0.codigo_erp', 'SALE-IN-RANGE')
+            ->where('filters.sale_date_from', '2026-04-23')
+            ->where('filters.sale_date_to', '2026-04-23'));
+});
+
 test('tenant sale store validates required fields', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);

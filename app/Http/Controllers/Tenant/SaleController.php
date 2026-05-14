@@ -28,6 +28,8 @@ class SaleController extends Controller
 
         $search = $this->requestString($request, 'search');
         $storeId = $this->requestString($request, 'store_id');
+        $saleDateFrom = $this->requestString($request, 'sale_date_from');
+        $saleDateTo = $this->requestString($request, 'sale_date_to');
         $requestedSort = trim((string) $request->query('sort', ''));
         $sort = in_array($requestedSort, ['codigo_erp', 'store', 'sale_date', 'total_sale_quantity', 'total_sale_value'], true)
             ? $requestedSort
@@ -39,6 +41,8 @@ class SaleController extends Controller
         return $this->renderDeferredIndex('tenant/sales/Index', 'sales', fn (): LengthAwarePaginator => $this->salesPaginator(
             $search,
             $storeId,
+            $saleDateFrom,
+            $saleDateTo,
             $trashed,
             $sort,
             $direction,
@@ -48,6 +52,8 @@ class SaleController extends Controller
             'filters' => [
                 'search' => $search,
                 'store_id' => $storeId,
+                'sale_date_from' => $saleDateFrom,
+                'sale_date_to' => $saleDateTo,
                 'trashed' => $trashed,
             ],
             'filter_options' => [
@@ -59,6 +65,8 @@ class SaleController extends Controller
     private function salesPaginator(
         string $search,
         string $storeId,
+        string $saleDateFrom,
+        string $saleDateTo,
         string $trashed,
         ?string $sort,
         string $direction,
@@ -80,6 +88,8 @@ class SaleController extends Controller
                 });
             })
             ->when($hasStoreFilter, fn ($query) => $query->where('store_id', $storeId))
+            ->when($saleDateFrom !== '', fn ($query) => $query->whereDate('sale_date', '>=', $saleDateFrom))
+            ->when($saleDateTo !== '', fn ($query) => $query->whereDate('sale_date', '<=', $saleDateTo))
             ->when(
                 $sort !== null,
                 function ($query) use ($sort, $direction): void {

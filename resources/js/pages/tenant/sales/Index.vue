@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { BadgeDollarSign, CalendarDays, Hash, Package, Store } from 'lucide-vue-next';
-import { computed } from 'vue';
+import {
+    BadgeDollarSign,
+    CalendarDays,
+    Hash,
+    Package,
+    Store,
+} from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import SaleController from '@/actions/App/Http/Controllers/Tenant/SaleController';
+import MonthRangeFilter from '@/components/filters/MonthRangeFilter.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { ColumnActions, ColumnLabel } from '@/components/table/columns';
@@ -31,6 +38,8 @@ const props = defineProps<{
     filters: {
         search: string;
         store_id: string;
+        sale_date_from: string;
+        sale_date_to: string;
         trashed: 'without' | 'only' | 'with';
     };
     filter_options: {
@@ -39,8 +48,13 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
-const salesIndexPath = SaleController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
-const salesCreatePath = SaleController.create.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const listPageRef = ref<InstanceType<typeof ListPage> | null>(null);
+const salesIndexPath = SaleController.index
+    .url(props.subdomain)
+    .replace(/^\/\/[^/]+/, '');
+const salesCreatePath = SaleController.create
+    .url(props.subdomain)
+    .replace(/^\/\/[^/]+/, '');
 const loadingSalesMeta: Omit<Paginator<SaleRow>, 'data'> = {
     links: [],
     from: null,
@@ -88,7 +102,9 @@ function formatCurrency(value: string | null): string {
 
     const parsedValue = Number(value);
 
-    return Number.isFinite(parsedValue) ? moneyFormatter.format(parsedValue) : value;
+    return Number.isFinite(parsedValue)
+        ? moneyFormatter.format(parsedValue)
+        : value;
 }
 
 function formatQuantity(value: string | null): string {
@@ -98,7 +114,9 @@ function formatQuantity(value: string | null): string {
 
     const parsedValue = Number(value);
 
-    return Number.isFinite(parsedValue) ? quantityFormatter.format(parsedValue) : value;
+    return Number.isFinite(parsedValue)
+        ? quantityFormatter.format(parsedValue)
+        : value;
 }
 
 const pageMeta = useCrudPageMeta({
@@ -106,7 +124,10 @@ const pageMeta = useCrudPageMeta({
     title: t('app.tenant.sales.title'),
     description: t('app.tenant.sales.description'),
     breadcrumbs: [
-        { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
+        {
+            title: t('app.navigation.dashboard'),
+            href: dashboard.url().replace(/^\/\/[^/]+/, ''),
+        },
         { title: t('app.tenant.sales.navigation'), href: salesIndexPath },
     ],
 });
@@ -124,6 +145,7 @@ const pageMeta = useCrudPageMeta({
         </template>
 
         <ListPage
+            ref="listPageRef"
             :meta="salesMeta"
             label="venda"
             :action="salesIndexPath"
@@ -135,16 +157,35 @@ const pageMeta = useCrudPageMeta({
             :trashed-value="props.filters.trashed"
         >
             <template #filters>
-                <select name="store_id" :value="props.filters.store_id" class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
+                <MonthRangeFilter
+                    :label="t('app.tenant.sales.fields.sale_date')"
+                    start-name="sale_date_from"
+                    end-name="sale_date_to"
+                    :start-value="props.filters.sale_date_from"
+                    :end-value="props.filters.sale_date_to"
+                    placeholder="Selecionar mês/ano"
+                    @complete="listPageRef?.submitForm()"
+                />
+                <select
+                    name="store_id"
+                    :value="props.filters.store_id"
+                    class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                >
                     <option value="">{{ t('app.tenant.common.all') }}</option>
-                    <option v-for="store in props.filter_options.stores" :key="store.id" :value="store.id">
+                    <option
+                        v-for="store in props.filter_options.stores"
+                        :key="store.id"
+                        :value="store.id"
+                    >
                         {{ store.name }}
                     </option>
                 </select>
             </template>
 
             <table class="w-full text-sm">
-                <thead class="sticky top-0 z-20 bg-background/95 text-left text-muted-foreground backdrop-blur supports-[backdrop-filter]:bg-background/80">
+                <thead
+                    class="sticky top-0 z-20 bg-background/95 text-left text-muted-foreground backdrop-blur supports-[backdrop-filter]:bg-background/80"
+                >
                     <tr>
                         <ColumnHeader field="codigo_erp">
                             <span class="inline-flex items-center gap-1.5">
@@ -167,16 +208,26 @@ const pageMeta = useCrudPageMeta({
                         <ColumnHeader field="total_sale_quantity">
                             <span class="inline-flex items-center gap-1.5">
                                 <Package class="size-3.5" />
-                                {{ t('app.tenant.sales.fields.total_sale_quantity') }}
+                                {{
+                                    t(
+                                        'app.tenant.sales.fields.total_sale_quantity',
+                                    )
+                                }}
                             </span>
                         </ColumnHeader>
                         <ColumnHeader field="total_sale_value">
                             <span class="inline-flex items-center gap-1.5">
                                 <BadgeDollarSign class="size-3.5" />
-                                {{ t('app.tenant.sales.fields.total_sale_value') }}
+                                {{
+                                    t(
+                                        'app.tenant.sales.fields.total_sale_value',
+                                    )
+                                }}
                             </span>
                         </ColumnHeader>
-                        <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+                        <th class="px-4 py-3 text-right font-medium">
+                            {{ t('app.tenant.common.actions') }}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -195,7 +246,12 @@ const pageMeta = useCrudPageMeta({
                     >
                         <td class="px-4 py-3">
                             <div class="space-y-1">
-                                <ColumnLabel :label="sale.codigo_erp ?? '-'" :description="sale.ean ? `EAN ${sale.ean}` : null" />
+                                <ColumnLabel
+                                    :label="sale.codigo_erp ?? '-'"
+                                    :description="
+                                        sale.ean ? `EAN ${sale.ean}` : null
+                                    "
+                                />
                                 <span
                                     v-if="sale.promotion"
                                     class="inline-flex max-w-full truncate rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-900/30 dark:text-emerald-300"
@@ -206,13 +262,33 @@ const pageMeta = useCrudPageMeta({
                             </div>
                         </td>
                         <td class="px-4 py-3">{{ sale.store ?? '-' }}</td>
-                        <td class="px-4 py-3">{{ formatDate(sale.sale_date) }}</td>
-                        <td class="px-4 py-3">{{ formatQuantity(sale.total_sale_quantity) }}</td>
-                        <td class="px-4 py-3 font-medium text-foreground">{{ formatCurrency(sale.total_sale_value) }}</td>
+                        <td class="px-4 py-3">
+                            {{ formatDate(sale.sale_date) }}
+                        </td>
+                        <td class="px-4 py-3">
+                            {{ formatQuantity(sale.total_sale_quantity) }}
+                        </td>
+                        <td class="px-4 py-3 font-medium text-foreground">
+                            {{ formatCurrency(sale.total_sale_value) }}
+                        </td>
                         <td class="px-4 py-3 text-right">
                             <ColumnActions
-                                :edit-href="SaleController.edit.url({ subdomain: props.subdomain, sale: sale.id }).replace(/^\/\/[^/]+/, '')"
-                                :delete-href="SaleController.destroy.url({ subdomain: props.subdomain, sale: sale.id }).replace(/^\/\/[^/]+/, '')"
+                                :edit-href="
+                                    SaleController.edit
+                                        .url({
+                                            subdomain: props.subdomain,
+                                            sale: sale.id,
+                                        })
+                                        .replace(/^\/\/[^/]+/, '')
+                                "
+                                :delete-href="
+                                    SaleController.destroy
+                                        .url({
+                                            subdomain: props.subdomain,
+                                            sale: sale.id,
+                                        })
+                                        .replace(/^\/\/[^/]+/, '')
+                                "
                                 :delete-label="sale.codigo_erp ?? undefined"
                                 :require-confirm-word="true"
                             />
