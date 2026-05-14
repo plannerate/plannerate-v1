@@ -40,6 +40,7 @@ interface Props {
 const props = defineProps<Props>();
 const { t } = useT();
 
+const moduleAnchorId = computed(() => `pdf-module-${props.index + 1}`);
 const isLeftToRight = computed(() => props.gondola.flow !== 'right_to_left');
 
 const dimensionsLabel = computed(() => {
@@ -51,6 +52,7 @@ const dimensionsLabel = computed(() => {
 
 const flowPositions = computed(() =>
     Array.from({ length: props.total }, (_, i) => ({
+        anchorId: `pdf-module-${i + 1}`,
         position: i + 1,
         isCurrent: i === props.index,
     })),
@@ -66,13 +68,29 @@ const flowEndLabel = computed(() =>
         ? t('plannerate.print.module_page.end_flow')
         : t('plannerate.print.module_page.start_flow'),
 );
+
+function scrollToModule(anchorId: string): void {
+    const target = document.getElementById(anchorId);
+
+    if (!target) {
+        return;
+    }
+
+    target.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+    });
+
+    window.history.replaceState(null, '', `#${anchorId}`);
+}
 </script>
 
 <template>
     <div
+        :id="moduleAnchorId"
         :data-pdf-module-page="section.id"
         :data-section-id="section.id"
-        class="w-full overflow-hidden border border-slate-200 bg-white shadow-lg"
+        class="w-full scroll-mt-28 overflow-hidden border border-slate-200 bg-white shadow-lg"
     >
         <!-- HEADER -->
         <div class="border-b border-slate-200 px-6 py-4">
@@ -366,8 +384,16 @@ const flowEndLabel = computed(() =>
                             </div>
 
                             <!-- Caixa de posição -->
-                            <div
-                                class="w-24 rounded border-2 px-2 py-1.5 text-center"
+                            <a
+                                :href="`#${pos.anchorId}`"
+                                @click.prevent="scrollToModule(pos.anchorId)"
+                                :aria-label="
+                                    t(
+                                        'plannerate.print.module_page.module_anchor_label',
+                                        { position: String(pos.position) },
+                                    )
+                                "
+                                class="block w-24 rounded border-2 px-2 py-1.5 text-center transition-colors hover:border-primary/70 hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
                                 :class="
                                     pos.isCurrent
                                         ? 'border-primary bg-primary/10'
@@ -398,7 +424,7 @@ const flowEndLabel = computed(() =>
                                 >
                                     {{ pos.position }}
                                 </p>
-                            </div>
+                            </a>
                         </template>
 
                         <!-- Última seta -->
