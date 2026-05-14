@@ -354,7 +354,7 @@ class ImportLegacyProductsCommand extends Command
                     ? trim($record->codigo_erp)
                     : null;
 
-                $row['id'] = $generator->productId($tenantId, $ean, $codigoErp);
+                $row['id'] = $generator->productIdFromReference($tenantId, $ean);
                 $row['category_id'] = $this->resolveProductCategoryId($ean, $eanRefMap, $categoryMaps);
 
                 // Aplica defaults para colunas NOT NULL que vêm de LEFT JOINs opcionais.

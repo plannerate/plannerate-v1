@@ -9,9 +9,13 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     libpng-dev \
     libonig-dev \
-    libxml2-dev
+    libxml2-dev \
+    libjpeg62-turbo-dev \
+    libwebp-dev \
+    libfreetype6-dev
 
-RUN docker-php-ext-install \
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install \
     pdo \
     pdo_pgsql \
     pgsql \
@@ -19,7 +23,8 @@ RUN docker-php-ext-install \
     mbstring \
     zip \
     exif \
-    pcntl
+    pcntl \
+    gd
 
 RUN pecl install redis && docker-php-ext-enable redis
 

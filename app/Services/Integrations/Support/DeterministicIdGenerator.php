@@ -51,4 +51,12 @@ class DeterministicIdGenerator
 
         return $prefix.strtoupper(substr($hash, 0, 24));
     }
+
+    public function productIdFromReference(string $tenantId, string $reference): string
+    {
+        $prefix = 'P1';
+        $hash = hash('sha256', $tenantId.'|'.$reference);
+
+        return $prefix.strtoupper(substr($hash, 0, 24));
+    }
 }
