@@ -12,9 +12,9 @@ defineProps<Props>()
 </script>
 
 <template>
-    <div class="flex-1 px-6 pb-6 bg-slate-50 dark:bg-slate-800/50 overflow-x-auto">
+    <div class="flex-1 px-6 pb-6  overflow-x-auto">
         <div
-            class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 px-6 pb-6 w-max min-w-full"
+            class="bg-white dark:bg-slate-900   px-6 pb-6 w-max min-w-full"
             :style="{ paddingTop: `${Math.ceil(localScale * 50)}px` }"
         >
             <div class="flex flex-row items-end gap-0 w-max">

@@ -141,7 +141,7 @@ async function generatePDF(autoDownload = false, selectedSectionIds?: string[]) 
     } catch (error) {
         alert(
             t('plannerate.print.preview.error_prefix') +
-                (error instanceof Error ? error.message : t('plannerate.header.auto_generate.unknown_error'))
+            (error instanceof Error ? error.message : t('plannerate.header.auto_generate.unknown_error'))
         )
     } finally {
         abcClassification.setVisibility(previousAbcVisibility)
@@ -173,74 +173,44 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right')
 </script>
 
 <template>
-    <div class="min-h-screen bg-slate-100 dark:bg-[#010912] text-slate-900 dark:text-slate-100 transition-colors flex flex-col">
+    <div
+        class="min-h-screen bg-slate-100 dark:bg-[#010912] text-slate-900 dark:text-slate-100 transition-colors flex flex-col">
         <!-- Toolbar fixo -->
-        <PdfPreviewToolbar
-            :gondola="(gondola as any)"
-            :sections-count="sections.length"
-            :flow-label="flowLabel"
-            :local-scale="localScale"
-            :scale-min="SCALE_MIN"
-            :scale-max="SCALE_MAX"
-            :layout-direction="layoutDirection"
-            :is-generating="pdfGenerator.isGenerating.value"
-            :is-downloading="isDownloading"
-            :analysis="analysis"
-            @increase-scale="increaseScale"
-            @decrease-scale="decreaseScale"
-            @toggle-layout="toggleLayout"
-            @download-pdf="handleDownloadPdf"
-        />
+        <PdfPreviewToolbar :gondola="(gondola as any)" :sections-count="sections.length" :flow-label="flowLabel"
+            :local-scale="localScale" :scale-min="SCALE_MIN" :scale-max="SCALE_MAX" :layout-direction="layoutDirection"
+            :is-generating="pdfGenerator.isGenerating.value" :is-downloading="isDownloading" :analysis="analysis"
+            @increase-scale="increaseScale" @decrease-scale="decreaseScale" @toggle-layout="toggleLayout"
+            @download-pdf="handleDownloadPdf" />
 
-        <!-- Indicador de direção — apenas no modo row -->
-        <div v-if="layoutDirection === 'row'" class="mt-16 h-10 relative z-10">
-            <Indicador :isLeftToRight="isLeftToRight" />
-        </div>
-        <!-- Spacer no modo column para compensar a toolbar fixa -->
-        <div v-else class="mt-16"></div>
 
         <!-- MODO ROW: página de visualização completa -->
-        <div v-if="layoutDirection === 'row'" class="flex-1 flex flex-col">
+        <div v-if="layoutDirection === 'row'" class="flex-1 flex flex-col relative mt-16 ">
+
             <!-- Página capturada para PDF single-page -->
             <div data-pdf-page class="bg-white dark:bg-slate-900 flex-1 flex flex-col shadow-sm">
-                <PdfPageHeader
-                    :gondola="(gondola as any)"
-                    :tenant-name="tenantName"
-                    :responsavel="responsavel"
-                    :flow-label="flowLabel"
-                />
-                <PdfGondolaCanvas
-                    :sections="sections"
-                    :local-scale="localScale"
-                    :alignment="gondola.alignment ?? 'justify'"
-                />
+                <PdfPageHeader :gondola="(gondola as any)" :tenant-name="tenantName" :responsavel="responsavel"
+                    :flow-label="flowLabel" />
+                <!-- Indicador de direção — apenas no modo row -->
+                <div class="h-10 relative z-10">
+                    <Indicador :isLeftToRight="isLeftToRight" />
+                </div>
+                <PdfGondolaCanvas :sections="sections" :local-scale="localScale"
+                    :alignment="gondola.alignment ?? 'justify'" />
                 <PdfPageFooter :observacoes="observacoes" />
             </div>
         </div>
 
         <!-- MODO COLUMN: uma página por módulo (estilo PdfModulePage) -->
-        <div v-else class="pt-6 pb-12">
-            <div class="flex flex-col gap-10 w-full">
-                <PdfModulePage
-                    v-for="(section, index) in sections"
-                    :key="section.id"
-                    :section="section"
-                    :gondola="(gondola as any)"
-                    :scale-factor="localScale"
-                    :alignment="gondola.alignment ?? 'justify'"
-                    :index="index"
-                    :total="sections.length"
-                    :responsavel="responsavel"
-                    :tenant-name="tenantName"
-                />
+        <div v-else class="pt-6 pb-12  mt-14">
+            <div class="flex flex-col gap-10 w-full lg:max-w-7xl mx-auto px-4">
+                <PdfModulePage v-for="(section, index) in sections" :key="section.id" :section="section"
+                    :gondola="(gondola as any)" :scale-factor="localScale" :alignment="gondola.alignment ?? 'justify'"
+                    :index="index" :total="sections.length" :responsavel="responsavel" :tenant-name="tenantName" />
             </div>
         </div>
 
         <!-- Modal de seleção de módulos -->
-        <PdfModuleSelector
-            v-model:open="showModuleSelector"
-            :sections="sections"
-            @generate="handleGenerateFromSelector"
-        />
+        <PdfModuleSelector v-model:open="showModuleSelector" :sections="sections"
+            @generate="handleGenerateFromSelector" />
     </div>
 </template>

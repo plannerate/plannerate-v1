@@ -64,7 +64,7 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
             <div class="flex items-start justify-between gap-6">
                 <!-- Logo + título -->
                 <div class="flex items-center gap-3">
-                    <div class="w-14 h-14 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
+                    <div class="w-14 h-14 bg-primary rounded-xl flex items-center justify-center shrink-0">
                         <ShoppingCartIcon class="w-7 h-7 text-primary-foreground" />
                     </div>
                     <div>
@@ -82,16 +82,16 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
                 <div class="grid grid-cols-3 gap-x-4 gap-y-1 border border-slate-200 rounded-lg p-3">
                     <div class="flex flex-col gap-1">
                         <div class="flex items-center gap-1">
-                            <CalendarDaysIcon class="w-3 h-3 text-primary flex-shrink-0" />
+                            <CalendarDaysIcon class="w-3 h-3 text-primary shrink-0" />
                             <span class="text-[9px] text-slate-400 uppercase tracking-wider">Data de Publicação</span>
                         </div>
-                        <span class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-300 pb-0.5 min-w-[80px]">
+                        <span class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-300 pb-0.5 min-w-20">
                             {{ gondola.planogram?.start_date || '—' }}
                         </span>
                     </div>
                     <div class="flex flex-col gap-1">
                         <span class="text-[9px] text-slate-400 uppercase tracking-wider">Loja</span>
-                        <span class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-300 pb-0.5 min-w-[80px]">
+                        <span class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-300 pb-0.5 min-w-20">
                             {{ gondola.location || '—' }}
                         </span>
                     </div>
@@ -213,7 +213,7 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
             </div>
 
             <!-- Direita: Posição do Fluxo + Observações -->
-            <div class="w-44 p-4 flex flex-col gap-5 flex-shrink-0">
+            <div class="w-44 p-4 flex flex-col gap-5 shrink-0">
                 <!-- Posição do Fluxo -->
                 <div>
                     <div class="flex justify-center mb-3">
@@ -282,7 +282,7 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
         <!-- RODAPÉ -->
         <div class="border-t border-slate-200 bg-slate-50 px-6 py-3 flex items-center gap-4">
             <div class="flex-1 border-r border-slate-200 pr-4 flex items-center gap-2">
-                <ClipboardListIcon class="w-4 h-4 text-primary flex-shrink-0" />
+                <ClipboardListIcon class="w-4 h-4 text-primary shrink-0" />
                 <div>
                     <p class="text-[9px] text-slate-400 uppercase tracking-wider">Responsável</p>
                     <p class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-300 pb-0.5 min-w-[100px]">
@@ -298,7 +298,7 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
                 <p class="text-[9px] text-slate-400 uppercase tracking-wider">Data de Aprovação</p>
                 <p class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-300 pb-0.5">—/—/—</p>
             </div>
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
                 <div class="bg-primary text-primary-foreground px-4 py-2 rounded text-center">
                     <p class="text-[9px] uppercase tracking-wider leading-none mb-0.5">Versão</p>
                     <p class="text-sm font-black leading-none">V1.0</p>
