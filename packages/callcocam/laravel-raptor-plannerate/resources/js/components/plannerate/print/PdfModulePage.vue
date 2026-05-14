@@ -197,7 +197,7 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
                 <!-- Identificação do módulo + largura -->
                 <div class="mt-4 text-center">
                     <p class="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                        Módulo #{{ section.ordering }} — Frente
+                        Módulo #{{ section.ordering + 1 }} — Frente
                     </p>
                     <div class="flex items-center gap-2 mt-1 justify-center">
                         <div class="h-px flex-1 bg-slate-400 relative">
@@ -213,9 +213,8 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
                 </div>
             </div>
 
-            <!-- Direita: Posição do Fluxo + Observações -->
+            <!-- Direita: Posição do Fluxo -->
             <div class="w-44 p-4 flex flex-col gap-5 shrink-0">
-                <!-- Posição do Fluxo -->
                 <div>
                     <div class="flex justify-center mb-3">
                         <span class="bg-primary text-primary-foreground text-[9px] font-bold px-3 py-1.5 uppercase tracking-widest">
@@ -263,20 +262,20 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
                         <p class="text-[9px] text-slate-500 uppercase tracking-wider mt-1">{{ flowEndLabel }}</p>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Observações -->
-                <div class="flex-1 flex flex-col">
-                    <div class="flex justify-center mb-2">
-                        <span class="bg-primary text-primary-foreground text-[9px] font-bold px-3 py-1.5 uppercase tracking-widest">
-                            Observações
-                        </span>
-                    </div>
-                    <div class="border border-slate-200 rounded p-2 flex-1 min-h-16">
-                        <p class="text-[10px] text-slate-500 leading-relaxed">
-                            {{ gondola.planogram?.description || '' }}
-                        </p>
-                    </div>
-                </div>
+        <!-- Observações -->
+        <div class="border-t border-slate-200 px-6 py-4">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="bg-primary text-primary-foreground text-[9px] font-bold px-3 py-1 uppercase tracking-widest">
+                    Observações
+                </span>
+            </div>
+            <div class="border border-slate-200 rounded p-3 min-h-14">
+                <p class="text-[10px] text-slate-500 leading-relaxed">
+                    {{ gondola.planogram?.description || '' }}
+                </p>
             </div>
         </div>
 

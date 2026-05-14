@@ -19,6 +19,7 @@ import { useT } from '@/composables/useT'
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue'
 import type { AbcAnalysis, StockAnalysis } from '@/types/planogram'
 import DropdownPerformance from '../../DropdownPerformance.vue'
+import PdfPageHeader from './PdfPageHeader.vue'
 
 interface GondolaInfo {
     id: string
@@ -91,59 +92,9 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`)
 
             <!-- Separador + metadados compactos -->
             <div class="w-px h-8 bg-slate-200 dark:bg-slate-700 shrink-0"></div>
-            <div class="flex items-center gap-4 flex-1 min-w-0 overflow-x-auto">
-                <div class="flex flex-col gap-0.5 shrink-0">
-                    <div class="flex items-center gap-0.5">
-                        <StoreIcon class="w-2.5 h-2.5 text-primary shrink-0" />
-                        <span class="text-[8px] text-slate-400 uppercase tracking-wider">Loja</span>
-                    </div>
-                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{ gondola.location ||
-                        '—' }}</span>
-                </div>
-                <div class="flex flex-col gap-0.5 shrink-0">
-                    <div class="flex items-center gap-0.5">
-                        <FileTextIcon class="w-2.5 h-2.5 text-primary shrink-0" />
-                        <span class="text-[8px] text-slate-400 uppercase tracking-wider">Setor</span>
-                    </div>
-                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{ gondola.side || '—'
-                    }}</span>
-                </div>
-                <div class="flex flex-col gap-0.5 shrink-0">
-                    <div class="flex items-center gap-0.5">
-                        <PackageIcon class="w-2.5 h-2.5 text-primary shrink-0" />
-                        <span class="text-[8px] text-slate-400 uppercase tracking-wider">Categoria</span>
-                    </div>
-                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{
-                        gondola.planogram?.category?.name || '—' }}</span>
-                </div>
-                <div class="flex flex-col gap-0.5 shrink-0">
-                    <div class="flex items-center gap-0.5">
-                        <CalendarDaysIcon class="w-2.5 h-2.5 text-primary shrink-0" />
-                        <span class="text-[8px] text-slate-400 uppercase tracking-wider">Publicação</span>
-                    </div>
-                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{
-                        gondola.planogram?.start_date || '—' }}</span>
-                </div>
-                <div class="flex flex-col gap-0.5 shrink-0">
-                    <div class="flex items-center gap-0.5">
-                        <UserIcon class="w-2.5 h-2.5 text-primary shrink-0" />
-                        <span class="text-[8px] text-slate-400 uppercase tracking-wider">Responsável</span>
-                    </div>
-                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{ responsavel || '—'
-                    }}</span>
-                </div>
-                <div class="flex flex-col gap-0.5 shrink-0">
-                    <div class="flex items-center gap-0.5">
-                        <ArrowRightIcon class="w-2.5 h-2.5 text-primary shrink-0" />
-                        <span class="text-[8px] text-slate-400 uppercase tracking-wider">Fluxo</span>
-                    </div>
-                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{ flowLabel }}</span>
-                </div>
-                <div
-                    class="flex flex-col items-center justify-center bg-primary text-primary-foreground rounded px-2 py-1 shrink-0">
-                    <span class="text-[7px] uppercase tracking-wider leading-none opacity-80">Versão</span>
-                    <span class="text-xs font-black leading-none">V1.0</span>
-                </div>
+            <div class="flex-1">
+                <PdfPageHeader :gondola="gondola" :tenant-name="tenantName" :responsavel="responsavel"
+                    :flow-label="flowLabel" />
             </div>
 
             <!-- Ações -->
@@ -155,7 +106,7 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`)
                         <ZoomOut class="size-4" />
                     </ButtonWithTooltip>
                     <span class="w-10 text-center text-xs font-medium tabular-nums select-none">{{ scaleDisplay
-                    }}</span>
+                        }}</span>
                     <ButtonWithTooltip variant="ghost" size="icon" class="size-7" :disabled="localScale >= scaleMax"
                         :tooltip="t('plannerate.toolbar.zoom_in')" @click="emit('increase-scale')">
                         <ZoomIn class="size-4" />
@@ -168,7 +119,7 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`)
 
                 <Separator orientation="vertical" class="h-7" />
 
-                <ButtonWithTooltip variant="outline"  size="sm"
+                <ButtonWithTooltip variant="outline" size="sm"
                     :tooltip="layoutDirection === 'column' ? t('plannerate.print.preview.switch_to_row') : t('plannerate.print.preview.switch_to_column')"
                     @click="emit('toggle-layout')">
                     <div v-if="layoutDirection === 'column'" class="flex  justify-center items-center space-x-1">
