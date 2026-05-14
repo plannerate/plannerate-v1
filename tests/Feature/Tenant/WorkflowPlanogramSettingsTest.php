@@ -768,6 +768,7 @@ test('execution move requires active status and blocks skipped target steps', fu
         ->firstOrFail();
 
     $skippedStep->update(['is_skipped' => true]);
+    $nextStep->availableUsers()->sync([$context['user']->id]);
 
     $gondola = Gondola::query()->create([
         'tenant_id' => $context['tenant']->id,
@@ -819,6 +820,10 @@ test('execution move requires active status and blocks skipped target steps', fu
     $this->assertDatabaseHas('workflow_gondola_executions', [
         'id' => $activeExecution->id,
         'workflow_planogram_step_id' => $nextStep->id,
+        'status' => 'pending',
+        'current_responsible_id' => null,
+        'execution_started_by' => null,
+        'started_at' => null,
     ]);
 
     $this->assertDatabaseHas('workflow_histories', [
@@ -827,6 +832,21 @@ test('execution move requires active status and blocks skipped target steps', fu
         'from_step_id' => $firstStep->id,
         'to_step_id' => $nextStep->id,
         'description' => 'Movido para a próxima etapa disponível.',
+    ]);
+
+    $this->patchJson(route('tenant.kanban.executions.start', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $activeExecution->id,
+    ]), [
+        'notes' => 'Iniciado na etapa seguinte.',
+    ])->assertOk();
+
+    $this->assertDatabaseHas('workflow_gondola_executions', [
+        'id' => $activeExecution->id,
+        'workflow_planogram_step_id' => $nextStep->id,
+        'status' => 'active',
+        'current_responsible_id' => $context['user']->id,
+        'execution_started_by' => $context['user']->id,
     ]);
 });
 

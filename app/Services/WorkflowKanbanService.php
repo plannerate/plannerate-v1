@@ -27,7 +27,6 @@ class WorkflowKanbanService
         ?string $storeId = null,
         ?string $executionStatus = null,
         ?string $gondolaSearch = null,
-        ?string $currentResponsibleId = null,
     ): array {
         $templates = WorkflowTemplate::query()
             ->where('status', 'published')
@@ -64,10 +63,6 @@ class WorkflowKanbanService
                 'step:id,name,workflow_template_id',
             ])
             ->when($executionStatus, fn ($query) => $query->where('status', $executionStatus))
-            ->when(
-                $currentResponsibleId,
-                fn ($query) => $query->forResponsible($currentResponsibleId)
-            )
             ->when(
                 $gondolaSearch,
                 fn ($query) => $query->whereHas(
@@ -196,7 +191,9 @@ class WorkflowKanbanService
             $execution->update([
                 'workflow_planogram_step_id' => $targetStep->id,
                 'status' => WorkflowExecutionStatus::Pending,
-                'started_at' => now(),
+                'current_responsible_id' => null,
+                'execution_started_by' => null,
+                'started_at' => null,
                 'paused_at' => null,
             ]);
 
