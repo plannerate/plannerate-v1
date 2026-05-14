@@ -2,6 +2,7 @@
 import { ArrowUpIcon, CalendarDaysIcon, ClipboardListIcon, ShoppingCartIcon } from 'lucide-vue-next'
 import { computed } from 'vue'
 import type { Section } from '@/types/planogram'
+import Indicador from '../Indicador.vue'
 import PdfSection from './partials/PdfSection.vue'
 
 interface GondolaMeta {
@@ -147,9 +148,14 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
         <!-- CONTEÚDO PRINCIPAL -->
         <div class="flex">
             <!-- Esquerda: Vista Frontal + seção -->
-            <div class="flex-1 p-6 border-r border-slate-200 min-w-0">
+            <div class="flex-1 p-4 border-r border-slate-200 min-w-0">
+                <!-- Indicador de fluxo -->
+                <div class="relative h-8 mb-2">
+                    <Indicador :is-left-to-right="isLeftToRight" />
+                </div>
+
                 <!-- Badge Vista Frontal -->
-                <div class="flex justify-center mb-4">
+                <div class="flex justify-center mb-3">
                     <span class="bg-primary text-primary-foreground text-[10px] font-bold px-5 py-1.5 uppercase tracking-widest">
                         Vista Frontal
                     </span>
@@ -157,13 +163,16 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
 
                 <!-- Seção + indicador de altura -->
                 <div class="flex items-start gap-4">
-                    <!-- Gondola section rendering -->
-                    <div class="flex-1 flex justify-center overflow-hidden">
+                    <!-- Gondola section rendering — layout row evita mt-12 do modo coluna -->
+                    <div
+                        class="flex-1 flex justify-center overflow-x-auto"
+                        :style="{ paddingTop: `${Math.ceil(scaleFactor * 50)}px` }"
+                    >
                         <PdfSection
                             :section="section"
                             :scale-factor="scaleFactor"
                             :alignment="alignment"
-                            :layout-direction="'column'"
+                            layout-direction="row"
                             :index="0"
                             :extra-height="0"
                         />

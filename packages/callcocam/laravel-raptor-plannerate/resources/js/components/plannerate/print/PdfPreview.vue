@@ -297,10 +297,12 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right')
             </div>
         </div>
 
-        <!-- Indicador de direção (dentro do fluxo, acima da página) -->
-        <div class="mt-16 relative z-10">
+        <!-- Indicador de direção — apenas no modo row -->
+        <div v-if="layoutDirection === 'row'" class="mt-16 h-10 relative z-10">
             <Indicador :isLeftToRight="isLeftToRight" />
         </div>
+        <!-- Spacer no modo column para compensar a toolbar fixa -->
+        <div v-else class="mt-16"></div>
 
         <!-- MODO ROW: página de visualização completa -->
         <div v-if="layoutDirection === 'row'" class="flex-1 flex flex-col">
@@ -312,7 +314,7 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right')
                     <div class="flex flex-wrap items-start justify-between gap-6">
                         <!-- Logo + empresa + título -->
                         <div class="flex items-center gap-4">
-                            <div class="w-16 h-16 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
+                            <div class="w-16 h-16 bg-primary rounded-xl flex items-center justify-center shrink-0">
                                 <ShoppingCartIcon class="w-8 h-8 text-primary-foreground" />
                             </div>
                             <div>
@@ -332,43 +334,43 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right')
                         <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-4 grid grid-cols-2 gap-x-8 gap-y-3">
                             <!-- Loja -->
                             <div class="flex items-center gap-2 text-sm">
-                                <StoreIcon class="w-4 h-4 text-primary flex-shrink-0" />
+                                <StoreIcon class="w-4 h-4 text-primary shrink-0" />
                                 <span class="text-slate-500 dark:text-slate-400">Loja:</span>
                                 <span class="font-medium text-slate-800 dark:text-slate-200">{{ gondola.location || '—' }}</span>
                             </div>
                             <!-- Data de publicação -->
                             <div class="flex items-center gap-2 text-sm">
-                                <CalendarDaysIcon class="w-4 h-4 text-primary flex-shrink-0" />
+                                <CalendarDaysIcon class="w-4 h-4 text-primary shrink-0" />
                                 <span class="text-slate-500 dark:text-slate-400">Data de publicação:</span>
                                 <span class="font-medium text-slate-800 dark:text-slate-200">{{ gondola.planogram?.start_date || '—' }}</span>
                             </div>
                             <!-- Setor -->
                             <div class="flex items-center gap-2 text-sm">
-                                <FileTextIcon class="w-4 h-4 text-primary flex-shrink-0" />
+                                <FileTextIcon class="w-4 h-4 text-primary shrink-0" />
                                 <span class="text-slate-500 dark:text-slate-400">Setor:</span>
                                 <span class="font-medium text-slate-800 dark:text-slate-200">{{ gondola.side || '—' }}</span>
                             </div>
                             <!-- Versão -->
                             <div class="flex items-center gap-2 text-sm">
-                                <FileTextIcon class="w-4 h-4 text-primary flex-shrink-0" />
+                                <FileTextIcon class="w-4 h-4 text-primary shrink-0" />
                                 <span class="text-slate-500 dark:text-slate-400">Versão:</span>
                                 <span class="font-medium text-slate-800 dark:text-slate-200">V1.0</span>
                             </div>
                             <!-- Categoria -->
                             <div class="flex items-center gap-2 text-sm">
-                                <PackageIcon class="w-4 h-4 text-primary flex-shrink-0" />
+                                <PackageIcon class="w-4 h-4 text-primary shrink-0" />
                                 <span class="text-slate-500 dark:text-slate-400">Categoria:</span>
                                 <span class="font-medium text-slate-800 dark:text-slate-200">{{ gondola.planogram?.category?.name || '—' }}</span>
                             </div>
                             <!-- Responsável -->
                             <div class="flex items-center gap-2 text-sm">
-                                <UserIcon class="w-4 h-4 text-primary flex-shrink-0" />
+                                <UserIcon class="w-4 h-4 text-primary shrink-0" />
                                 <span class="text-slate-500 dark:text-slate-400">Responsável:</span>
                                 <span class="font-medium text-slate-800 dark:text-slate-200">{{ responsavel || '—' }}</span>
                             </div>
                             <!-- Posição do fluxo -->
                             <div class="flex items-center gap-2 text-sm col-span-2">
-                                <ArrowRightIcon class="w-4 h-4 text-primary flex-shrink-0" />
+                                <ArrowRightIcon class="w-4 h-4 text-primary shrink-0" />
                                 <span class="text-slate-500 dark:text-slate-400">Posição do fluxo:</span>
                                 <span class="font-medium text-slate-800 dark:text-slate-200">{{ flowLabel }}</span>
                             </div>
@@ -377,8 +379,11 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right')
                 </div>
 
                 <!-- ÁREA DAS SEÇÕES (gondola) -->
-                <div class="flex-1 p-6 bg-slate-50 dark:bg-slate-800/50 overflow-x-auto">
-                    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-6 w-max min-w-full">
+                <div class="flex-1 px-6 pb-6 bg-slate-50 dark:bg-slate-800/50 overflow-x-auto">
+                    <div
+                        class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 px-6 pb-6 w-max min-w-full"
+                        :style="{ paddingTop: `${Math.ceil(localScale * 50)}px` }"
+                    >
                         <div class="flex flex-row items-end gap-0 w-max">
                             <PdfSection
                                 v-for="(section, index) in sections"
@@ -397,7 +402,7 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right')
 
                 <!-- RODAPÉ: observações -->
                 <div class="px-6 py-4 flex items-start gap-4 border-t border-slate-100 dark:border-slate-800">
-                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center shrink-0">
                         <ClipboardListIcon class="w-5 h-5 text-primary-foreground" />
                     </div>
                     <div>
