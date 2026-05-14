@@ -80,7 +80,7 @@ const flowLabel = computed(() =>
 const observacoes = computed(
     () =>
         props.gondola.planogram?.description ||
-        'Documento para consulta e execução em loja.',
+        t('plannerate.print.preview.default_observations'),
 );
 
 function removeSavedLayoutDirection(): void {

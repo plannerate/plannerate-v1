@@ -1,26 +1,43 @@
 <script setup lang="ts">
-import { ClipboardListIcon } from 'lucide-vue-next'
+import { ClipboardListIcon } from 'lucide-vue-next';
+import { useT } from '@/composables/useT';
 
 interface Props {
-    observacoes: string
+    observacoes: string;
 }
 
-defineProps<Props>()
+defineProps<Props>();
+
+const { t } = useT();
 </script>
 
 <template>
     <div>
-        <div class="px-6 py-4 flex items-start gap-4 border-t border-slate-100 dark:border-slate-800">
-            <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center shrink-0">
-                <ClipboardListIcon class="w-5 h-5 text-primary-foreground" />
+        <div
+            class="flex items-start gap-4 border-t border-slate-100 px-6 py-4 dark:border-slate-800"
+        >
+            <div
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary"
+            >
+                <ClipboardListIcon class="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-                <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Observações:</p>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ observacoes }}</p>
+                <p
+                    class="text-sm font-semibold text-slate-800 dark:text-slate-200"
+                >
+                    {{ t('plannerate.print.labels.observations') }}:
+                </p>
+                <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    {{ observacoes }}
+                </p>
             </div>
         </div>
-        <div class="h-10 bg-slate-900 dark:bg-slate-950 relative overflow-hidden">
-            <div class="absolute bottom-0 right-0 w-20 h-20 bg-primary rounded-tl-full"></div>
+        <div
+            class="relative h-10 overflow-hidden bg-slate-900 dark:bg-slate-950"
+        >
+            <div
+                class="absolute right-0 bottom-0 h-20 w-20 rounded-tl-full bg-primary"
+            ></div>
         </div>
     </div>
 </template>
