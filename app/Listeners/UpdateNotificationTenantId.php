@@ -4,7 +4,6 @@ namespace App\Listeners;
 
 use App\Notifications\AppNotification;
 use Illuminate\Notifications\Events\NotificationSent;
-use Illuminate\Support\Facades\DB;
 
 class UpdateNotificationTenantId
 {
@@ -18,7 +17,8 @@ class UpdateNotificationTenantId
         // The notification ID is stored in the notification object
         // We need to update the database record to add the tenant_id
         if ($event->channel === 'database') {
-            DB::table('notifications')
+            $event->notifiable
+                ->notifications()
                 ->where('id', $event->notification->id)
                 ->update(['tenant_id' => $event->notification->tenantId]);
         }

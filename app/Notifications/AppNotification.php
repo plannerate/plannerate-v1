@@ -6,9 +6,8 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
-use Spatie\Multitenancy\Jobs\NotTenantAware;
 
-class AppNotification extends Notification implements NotTenantAware, ShouldQueue
+class AppNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 

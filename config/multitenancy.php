@@ -5,7 +5,6 @@ use App\Multitenancy\TenantFinder\DomainTenantWithDomainsFinder;
 use Illuminate\Broadcasting\BroadcastEvent;
 use Illuminate\Events\CallQueuedListener;
 use Illuminate\Mail\SendQueuedMailable;
-use Illuminate\Notifications\Events\BroadcastNotificationCreated;
 use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Queue\CallQueuedClosure;
 use Spatie\Multitenancy\Actions\ForgetCurrentTenantAction;
@@ -133,6 +132,6 @@ return [
      * Jobs not tenant aware even if these don't implement the NotTenantAware interface.
      */
     'not_tenant_aware_jobs' => [
-        BroadcastNotificationCreated::class,
+        // ...
     ],
 ];
