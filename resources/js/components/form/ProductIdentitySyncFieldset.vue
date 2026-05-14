@@ -46,15 +46,6 @@ const codigoErpModel = computed({
         <legend class="px-1 text-sm font-semibold">Identificação</legend>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
             <FormTextField
-                id="ean"
-                v-model="eanModel"
-                name="ean"
-                :label="eanLabel"
-                :placeholder="eanLabel"
-                :error="eanError"
-                class="md:col-span-5"
-            />
-            <FormTextField
                 id="codigo_erp"
                 v-model="codigoErpModel"
                 name="codigo_erp"
@@ -62,6 +53,15 @@ const codigoErpModel = computed({
                 :placeholder="codigoErpLabel"
                 :error="codigoErpError"
                 class="md:col-span-4"
+            />
+            <FormTextField
+                id="ean"
+                v-model="eanModel"
+                name="ean"
+                :label="eanLabel"
+                :placeholder="eanLabel"
+                :error="eanError"
+                class="md:col-span-5"
             />
             <div class="md:col-span-3 md:pt-4.5">
                 <ProductEanSyncButton

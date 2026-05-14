@@ -142,28 +142,12 @@ const tabs = computed(() => [
 const fieldTabMap: Record<string, TabKey> = {
     name: 'identification',
     ean: 'identification',
+    codigo_erp: 'identification',
     status: 'identification',
     url: 'identification',
-    category_id: 'market',
 
-    type: 'market',
-    reference: 'market',
-    codigo_erp: 'market',
-    brand: 'market',
-    subbrand: 'market',
-    color: 'market',
-    fragrance: 'market',
-    flavor: 'market',
-    packaging_type: 'market',
-    packaging_size: 'market',
-    packaging_content: 'market',
-    measurement_unit: 'market',
-    unit_measure: 'market',
-    sortiment_attribute: 'additional',
-    stackable: 'additional',
-    perishable: 'additional',
-    flammable: 'additional',
-    hangable: 'additional',
+    category_id: 'market',
+    sortiment_attribute: 'market',
 
     width: 'dimensions',
     height: 'dimensions',
@@ -173,9 +157,25 @@ const fieldTabMap: Record<string, TabKey> = {
     dimensions_status: 'dimensions',
     dimensions_description: 'dimensions',
 
+    type: 'additional',
+    reference: 'additional',
+    color: 'additional',
+    flavor: 'additional',
+    fragrance: 'additional',
+    brand: 'additional',
+    subbrand: 'additional',
+    packaging_type: 'additional',
+    packaging_size: 'additional',
+    packaging_content: 'additional',
+    measurement_unit: 'additional',
+    unit_measure: 'additional',
+    description: 'additional',
     auxiliary_description: 'additional',
     additional_information: 'additional',
-    description: 'additional',
+    stackable: 'additional',
+    perishable: 'additional',
+    flammable: 'additional',
+    hangable: 'additional',
 };
 
 watch(
@@ -357,19 +357,6 @@ const pageMeta = useCrudPageMeta({
                     class="grid grid-cols-1 gap-6 lg:grid-cols-12"
                 >
                     <div class="space-y-4 lg:col-span-8">
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-                            <FormTextField
-                                id="name"
-                                v-model="productName"
-                                name="name"
-                                :label="t('app.tenant.products.fields.name')"
-                                :required="true"
-                                :placeholder="t('app.tenant.products.fields.name')"
-                                :error="resolveError('name', errors)"
-                                class="md:col-span-12"
-                            />
-                        </div>
-
                         <ProductIdentitySyncFieldset
                             :subdomain="props.subdomain"
                             v-model:ean="ean"
@@ -382,31 +369,14 @@ const pageMeta = useCrudPageMeta({
                         />
 
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-                            <FormTextareaField
-                                id="auxiliary_description"
-                                name="auxiliary_description"
-                                :label="t('app.tenant.products.fields.auxiliary_description')"
-                                :placeholder="t('app.tenant.products.fields.auxiliary_description')"
-                                :default-value="props.product?.auxiliary_description ?? ''"
-                                :error="resolveError('auxiliary_description', errors)"
-                                class="md:col-span-6"
-                            />
-                            <FormTextareaField
-                                id="additional_information"
-                                name="additional_information"
-                                :label="t('app.tenant.products.fields.additional_information')"
-                                :placeholder="t('app.tenant.products.fields.additional_information')"
-                                :default-value="props.product?.additional_information ?? ''"
-                                :error="resolveError('additional_information', errors)"
-                                class="md:col-span-6"
-                            />
-                            <FormTextareaField
-                                id="description"
-                                name="description"
-                                :label="t('app.tenant.products.fields.description')"
-                                :default-value="props.product?.description ?? ''"
-                                :rows="4"
-                                :error="resolveError('description', errors)"
+                            <FormTextField
+                                id="name"
+                                v-model="productName"
+                                name="name"
+                                :label="t('app.tenant.products.fields.name')"
+                                :required="true"
+                                :placeholder="t('app.tenant.products.fields.name')"
+                                :error="resolveError('name', errors)"
                                 class="md:col-span-12"
                             />
                             <FormSelectField
@@ -416,7 +386,7 @@ const pageMeta = useCrudPageMeta({
                                 :label="t('app.tenant.products.form.status_product')"
                                 :required="true"
                                 :error="resolveError('status', errors)"
-                                class="md:col-span-12"
+                                class="md:col-span-6"
                             >
                                 <option value="draft">
                                     {{ t('app.tenant.products.status_options.draft') }}
@@ -511,6 +481,14 @@ const pageMeta = useCrudPageMeta({
                             />
                         </div>
                     </fieldset>
+                    <FormTextField
+                        id="sortiment_attribute"
+                        name="sortiment_attribute"
+                        :label="t('app.tenant.products.fields.sortiment_attribute')"
+                        :default-value="props.product?.sortiment_attribute ?? ''"
+                        :error="resolveError('sortiment_attribute', errors)"
+                        class="md:col-span-6"
+                    />
                 </div>
 
                 <div
@@ -518,22 +496,22 @@ const pageMeta = useCrudPageMeta({
                     class="grid grid-cols-1 gap-4 md:grid-cols-12"
                 >
                     <FormDecimalField
-                        id="width"
-                        v-model="width"
-                        name="width"
-                        :label="`${t('app.tenant.products.fields.width')} (cm)`"
-                        :hint="t('app.tenant.products.form.hints.width')"
-                        :error="resolveError('width', errors)"
-                        :decimals="3"
-                        class="md:col-span-2"
-                    />
-                    <FormDecimalField
                         id="height"
                         v-model="height"
                         name="height"
                         :label="`${t('app.tenant.products.fields.height')} (cm)`"
                         :hint="t('app.tenant.products.form.hints.height')"
                         :error="resolveError('height', errors)"
+                        :decimals="3"
+                        class="md:col-span-2"
+                    />
+                    <FormDecimalField
+                        id="width"
+                        v-model="width"
+                        name="width"
+                        :label="`${t('app.tenant.products.fields.width')} (cm)`"
+                        :hint="t('app.tenant.products.form.hints.width')"
+                        :error="resolveError('width', errors)"
                         :decimals="3"
                         class="md:col-span-2"
                     />
@@ -612,6 +590,30 @@ const pageMeta = useCrudPageMeta({
                         class="md:col-span-3"
                     />
                     <FormTextField
+                        id="color"
+                        name="color"
+                        :label="t('app.tenant.products.fields.color')"
+                        :default-value="props.product?.color ?? ''"
+                        :error="resolveError('color', errors)"
+                        class="md:col-span-3"
+                    />
+                    <FormTextField
+                        id="flavor"
+                        name="flavor"
+                        :label="t('app.tenant.products.fields.flavor')"
+                        :default-value="props.product?.flavor ?? ''"
+                        :error="resolveError('flavor', errors)"
+                        class="md:col-span-3"
+                    />
+                    <FormTextField
+                        id="fragrance"
+                        name="fragrance"
+                        :label="t('app.tenant.products.fields.fragrance')"
+                        :default-value="props.product?.fragrance ?? ''"
+                        :error="resolveError('fragrance', errors)"
+                        class="md:col-span-3"
+                    />
+                    <FormTextField
                         id="brand"
                         name="brand"
                         :label="t('app.tenant.products.fields.brand')"
@@ -627,46 +629,31 @@ const pageMeta = useCrudPageMeta({
                         :error="resolveError('subbrand', errors)"
                         class="md:col-span-3"
                     />
-                    <FormTextField
-                        id="color"
-                        name="color"
-                        :label="t('app.tenant.products.fields.color')"
-                        :default-value="props.product?.color ?? ''"
-                        :error="resolveError('color', errors)"
-                        class="md:col-span-3"
-                    />
-                    <FormTextField
-                        id="fragrance"
-                        name="fragrance"
-                        :label="t('app.tenant.products.fields.fragrance')"
-                        :default-value="props.product?.fragrance ?? ''"
-                        :error="resolveError('fragrance', errors)"
-                        class="md:col-span-3"
-                    />
-                    <FormTextField
-                        id="flavor"
-                        name="flavor"
-                        :label="t('app.tenant.products.fields.flavor')"
-                        :default-value="props.product?.flavor ?? ''"
-                        :error="resolveError('flavor', errors)"
-                        class="md:col-span-3"
-                    />
-                    <FormTextField
+                    <FormSelectField
                         id="packaging_type"
                         name="packaging_type"
                         :label="t('app.tenant.products.fields.packaging_type')"
                         :default-value="props.product?.packaging_type ?? ''"
                         :error="resolveError('packaging_type', errors)"
                         class="md:col-span-3"
-                    />
-                    <FormTextField
-                        id="packaging_size"
-                        name="packaging_size"
-                        :label="t('app.tenant.products.fields.packaging_size')"
-                        :default-value="props.product?.packaging_size ?? ''"
-                        :error="resolveError('packaging_size', errors)"
-                        class="md:col-span-3"
-                    />
+                    >
+                        <option value="">—</option>
+                        <option value="BJ">BJ – Bisnaga</option>
+                        <option value="BL">BL – Blíster</option>
+                        <option value="BM">BM – Bandeja</option>
+                        <option value="BT">BT – Balde</option>
+                        <option value="CX">CX – Caixa</option>
+                        <option value="FD">FD – Fardo</option>
+                        <option value="FR">FR – Frasco</option>
+                        <option value="GR">GR – Granel</option>
+                        <option value="LA">LA – Lata</option>
+                        <option value="PC">PC – Pacote</option>
+                        <option value="PT">PT – Pote</option>
+                        <option value="SC">SC – Sachê</option>
+                        <option value="TB">TB – Tubo</option>
+                        <option value="UN">UN – Unitário</option>
+                        <option value="VD">VD – Vidro</option>
+                    </FormSelectField>
                     <FormTextField
                         id="packaging_content"
                         name="packaging_content"
@@ -675,29 +662,51 @@ const pageMeta = useCrudPageMeta({
                         :error="resolveError('packaging_content', errors)"
                         class="md:col-span-3"
                     />
-                    <FormTextField
+                    <FormSelectField
                         id="measurement_unit"
                         name="measurement_unit"
                         :label="t('app.tenant.products.fields.measurement_unit')"
                         :default-value="props.product?.measurement_unit ?? ''"
                         :error="resolveError('measurement_unit', errors)"
                         class="md:col-span-3"
+                    >
+                        <option value="">—</option>
+                        <option value="UN">UN – Unidade</option>
+                        <option value="KG">KG – Quilograma</option>
+                        <option value="G">G – Grama</option>
+                        <option value="MG">MG – Miligrama</option>
+                        <option value="L">L – Litro</option>
+                        <option value="ML">ML – Mililitro</option>
+                        <option value="MT">MT – Metro</option>
+                        <option value="CM">CM – Centímetro</option>
+                    </FormSelectField>
+
+                    <FormTextareaField
+                        id="description"
+                        name="description"
+                        :label="t('app.tenant.products.fields.description')"
+                        :default-value="props.product?.description ?? ''"
+                        :rows="4"
+                        :error="resolveError('description', errors)"
+                        class="md:col-span-12"
                     />
-                    <FormTextField
-                        id="unit_measure"
-                        name="unit_measure"
-                        :label="t('app.tenant.products.fields.unit_measure')"
-                        :default-value="props.product?.unit_measure ?? ''"
-                        :error="resolveError('unit_measure', errors)"
-                        class="md:col-span-3"
+                    <FormTextareaField
+                        id="auxiliary_description"
+                        name="auxiliary_description"
+                        :label="t('app.tenant.products.fields.auxiliary_description')"
+                        :placeholder="t('app.tenant.products.fields.auxiliary_description')"
+                        :default-value="props.product?.auxiliary_description ?? ''"
+                        :error="resolveError('auxiliary_description', errors)"
+                        class="md:col-span-6"
                     />
-                    <FormTextField
-                        id="sortiment_attribute"
-                        name="sortiment_attribute"
-                        :label="t('app.tenant.products.fields.sortiment_attribute')"
-                        :default-value="props.product?.sortiment_attribute ?? ''"
-                        :error="resolveError('sortiment_attribute', errors)"
-                        class="md:col-span-4"
+                    <FormTextareaField
+                        id="additional_information"
+                        name="additional_information"
+                        :label="t('app.tenant.products.fields.additional_information')"
+                        :placeholder="t('app.tenant.products.fields.additional_information')"
+                        :default-value="props.product?.additional_information ?? ''"
+                        :error="resolveError('additional_information', errors)"
+                        class="md:col-span-6"
                     />
 
                     <div

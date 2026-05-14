@@ -10,6 +10,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
 use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\LayerRepository;
 use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\SegmentRepository;
+use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\ShelfRepository;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -20,7 +21,8 @@ class SegmentService
 {
     public function __construct(
         private SegmentRepository $repository,
-        private LayerRepository $layerRepository
+        private LayerRepository $layerRepository,
+        private ShelfRepository $shelfRepository
     ) {}
 
     /**
@@ -33,7 +35,7 @@ class SegmentService
         $type = $change['type'];
 
         return match ($type) {
-            'segment_copy' => $this->copySegment($change['data']),
+            'segment_copy' => $this->copySegment($change['entityId'], $change['data']),
             'segment_transfer' => $this->transferSegment($change['entityId'], $change['data']),
             'segment_reorder' => $this->reorderSegment($change['entityId'], $change['data']),
             'segment_update' => $this->update($change['entityId'], $change['data']),
@@ -48,7 +50,7 @@ class SegmentService
      *
      * @param  array<string, mixed>  $data
      */
-    public function copySegment(array $data): bool
+    public function copySegment(string $segmentId, array $data): bool
     {
         // Validação: deve ter source_segment_id, shelf_id e layer
         if (! isset($data['source_segment_id'], $data['shelf_id'], $data['layer'])) {
@@ -58,15 +60,13 @@ class SegmentService
         }
 
         $layer = $data['layer'];
+        $newSegmentId = $segmentId !== '' ? $segmentId : ($layer['segment_id'] ?? null);
         // Validações adicionais da layer
-        if (! isset($layer['id'], $layer['segment_id'], $layer['product_id'])) {
+        if (! isset($layer['id'], $layer['product_id']) || ! is_string($newSegmentId) || $newSegmentId === '') {
             Log::warning('⚠️ segment_copy com layer incompleta', ['data' => $data]);
 
             return false;
         }
-
-        // Busca tenant_id do usuário autenticado
-        $tenantId = auth()->user()?->tenant_id ?? null;
 
         $oldSegment = $this->repository->find($data['source_segment_id']);
         if (! $oldSegment) {
@@ -75,11 +75,22 @@ class SegmentService
             return false;
         }
 
+        $targetShelf = $this->shelfRepository->find($data['shelf_id']);
+        if (! $targetShelf) {
+            Log::warning('⚠️ segment_copy com shelf_id inválido', ['shelf_id' => $data['shelf_id']]);
+
+            return false;
+        }
+
+        $position = $data['position'] ?? $oldSegment->ordering ?? 0;
+        $tenantId = $targetShelf->tenant_id ?? null;
+
         // Cria o novo segment com os dados recebidos
         $segmentData = [
-            'id' => $layer['segment_id'], // O novo segment_id vem da layer
+            'id' => $newSegmentId,
             'shelf_id' => $data['shelf_id'],
-            'ordering' => $oldSegment->ordering ?? 0,
+            'ordering' => $position,
+            'position' => $position,
             'quantity' => $oldSegment->quantity ?? 1,
         ];
 
@@ -101,6 +112,7 @@ class SegmentService
         // Filtra campos válidos da layer
         $layerFields = ['id', 'segment_id', 'product_id', 'height', 'alignment', 'spacing', 'quantity'];
         $layerData = array_intersect_key($layer, array_flip($layerFields));
+        $layerData['segment_id'] = $newSegmentId;
 
         // Cria layer copiada usando o repository diretamente
         $layerCreated = $this->layerRepository->create(array_merge($layerData, [
