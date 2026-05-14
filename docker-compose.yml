@@ -39,6 +39,9 @@ services:
       mysql:
         condition: service_started
 
+    extra_hosts:
+      - "base-teste-api.localhost:host-gateway"
+
     working_dir: /var/www
 
     networks:
@@ -59,6 +62,9 @@ services:
     depends_on:
       - redis
       - php
+
+    extra_hosts:
+      - "base-teste-api.localhost:host-gateway"
 
     working_dir: /var/www
 

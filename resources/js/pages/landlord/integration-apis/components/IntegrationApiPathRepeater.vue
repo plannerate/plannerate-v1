@@ -9,6 +9,14 @@ import IntegrationApiPivotRepeater from './IntegrationApiPivotRepeater.vue';
 import IntegrationApiValidationRepeater from './IntegrationApiValidationRepeater.vue';
 import type { FieldMapTableOption, RequestPathRow } from './types';
 
+function pathImportMode(path: RequestPathRow): 'daily' | 'page' {
+    const hasInitialDays = path.initial_days.trim() !== '' && Number(path.initial_days) > 0;
+    const hasLastDateColumn = path.last_date_column.trim() !== '';
+    const hasTargetTable = path.target_table.trim() !== '';
+
+    return hasInitialDays && hasLastDateColumn && hasTargetTable ? 'daily' : 'page';
+}
+
 const props = defineProps<{
     modelValue: RequestPathRow[];
     fieldMapTables: Record<string, FieldMapTableOption>;
@@ -150,6 +158,8 @@ onMounted(() => {
         <div class="space-y-3">
             <div v-for="(requestPath, pathIndex) in props.modelValue" :key="requestPath.id"
                 class="space-y-4 rounded-lg border border-border bg-muted/10 p-3">
+
+                <!-- Linha 1: tabela + rota + badge de modo + excluir -->
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
                     <div class="grid gap-2 md:col-span-4">
                         <Label :for="`path-table-${requestPath.id}`">{{
@@ -163,22 +173,31 @@ onMounted(() => {
                             </option>
                         </select>
                     </div>
-                    <div class="grid gap-2 md:col-span-7">
+                    <div class="grid gap-2 md:col-span-6">
                         <Label :for="`path-value-${requestPath.id}`">{{
                             t('app.landlord.integration_apis.fields.fallback_path') }}</Label>
                         <Input :id="`path-value-${requestPath.id}`" :model-value="requestPath.fallback_path"
                             :placeholder="t('app.landlord.integration_apis.placeholders.fallback_path')" required
                             @update:model-value="updatePath(pathIndex, { fallback_path: String($event) })" />
                     </div>
-                    <div class="flex items-end justify-end md:col-span-1">
+                    <div class="flex items-end gap-2 md:col-span-2">
+                        <span v-if="pathImportMode(requestPath) === 'daily'"
+                            class="inline-flex h-9 flex-1 items-center justify-center rounded-md bg-blue-50 px-2 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-400/10 dark:text-blue-400 dark:ring-blue-400/30">
+                            Diário
+                        </span>
+                        <span v-else
+                            class="inline-flex h-9 flex-1 items-center justify-center rounded-md bg-muted px-2 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-border">
+                            Por página
+                        </span>
                         <button type="button"
-                            class="flex size-9 items-center justify-center rounded-md text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                            class="flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
                             @click="removePath(pathIndex)">
                             <Trash2 class="size-4" />
                         </button>
                     </div>
                 </div>
 
+                <!-- Linha 2: campos de data da API (payload) -->
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
                     <div class="grid gap-2 md:col-span-4">
                         <Label :for="`path-changed-${requestPath.id}`">{{
@@ -203,6 +222,55 @@ onMounted(() => {
                     </div>
                 </div>
 
+                <!-- Linha 3: período / modo de importação -->
+                <!-- initial_days + last_date_column juntos ativam o Modo Diário -->
+                <!-- chunk_days é exclusivo do Modo Por Página -->
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
+                    <div class="grid gap-2 md:col-span-2">
+                        <Label :for="`path-initial-days-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.initial_days') }}</Label>
+                        <Input :id="`path-initial-days-${requestPath.id}`" type="number"
+                            :model-value="requestPath.initial_days"
+                            :placeholder="t('app.landlord.integration_apis.placeholders.initial_days')"
+                            @update:model-value="updatePath(pathIndex, { initial_days: String($event) })" />
+                    </div>
+                    <div class="grid gap-2 md:col-span-4">
+                        <Label :for="`path-last-date-column-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.last_date_column') }}</Label>
+                        <Input :id="`path-last-date-column-${requestPath.id}`"
+                            :model-value="requestPath.last_date_column"
+                            :placeholder="t('app.landlord.integration_apis.placeholders.last_date_column')"
+                            @update:model-value="updatePath(pathIndex, { last_date_column: String($event) })" />
+                        <p class="text-xs text-muted-foreground">
+                            Coluna de data para detectar lacunas (ativa modo diário junto com dias iniciais)
+                        </p>
+                    </div>
+                    <div class="grid gap-2 md:col-span-2">
+                        <Label :for="`path-chunk-days-${requestPath.id}`"
+                            :class="pathImportMode(requestPath) === 'daily' ? 'opacity-40' : ''">
+                            {{ t('app.landlord.integration_apis.fields.chunk_days') }}
+                        </Label>
+                        <Input :id="`path-chunk-days-${requestPath.id}`" type="number"
+                            :model-value="requestPath.chunk_days"
+                            :placeholder="t('app.landlord.integration_apis.placeholders.chunk_days')"
+                            :disabled="pathImportMode(requestPath) === 'daily'"
+                            :class="pathImportMode(requestPath) === 'daily' ? 'opacity-40' : ''"
+                            @update:model-value="updatePath(pathIndex, { chunk_days: String($event) })" />
+                        <p v-if="pathImportMode(requestPath) === 'daily'" class="text-xs text-muted-foreground opacity-60">
+                            Não usado no modo diário
+                        </p>
+                    </div>
+                    <div class="grid gap-2 md:col-span-2">
+                        <Label :for="`path-max-page-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.max_page') }}</Label>
+                        <Input :id="`path-max-page-${requestPath.id}`" type="number"
+                            :model-value="requestPath.max_page"
+                            :placeholder="t('app.landlord.integration_apis.placeholders.max_page')"
+                            @update:model-value="updatePath(pathIndex, { max_page: String($event) })" />
+                    </div>
+                </div>
+
+                <!-- Linha 4: identificação + paginação -->
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
                     <div class="grid gap-2 md:col-span-3">
                         <Label :for="`path-unique-by-${requestPath.id}`">{{
@@ -219,33 +287,25 @@ onMounted(() => {
                             @update:model-value="updatePath(pathIndex, { id_prefix: String($event) })" />
                     </div>
                     <div class="grid gap-2 md:col-span-2">
-                        <Label :for="`path-initial-days-${requestPath.id}`">{{
-                            t('app.landlord.integration_apis.fields.initial_days') }}</Label>
-                        <Input :id="`path-initial-days-${requestPath.id}`" type="number"
-                            :model-value="requestPath.initial_days"
-                            :placeholder="t('app.landlord.integration_apis.placeholders.initial_days')"
-                            @update:model-value="updatePath(pathIndex, { initial_days: String($event) })" />
+                        <Label :for="`path-min-page-size-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.min_page_size') }}</Label>
+                        <Input :id="`path-min-page-size-${requestPath.id}`" type="number"
+                            :model-value="requestPath.min_page_size"
+                            placeholder="1"
+                            @update:model-value="updatePath(pathIndex, { min_page_size: String($event) })" />
                     </div>
                     <div class="grid gap-2 md:col-span-2">
-                        <Label :for="`path-chunk-days-${requestPath.id}`">{{
-                            t('app.landlord.integration_apis.fields.chunk_days') }}</Label>
-                        <Input :id="`path-chunk-days-${requestPath.id}`" type="number"
-                            :model-value="requestPath.chunk_days"
-                            :placeholder="t('app.landlord.integration_apis.placeholders.chunk_days')"
-                            @update:model-value="updatePath(pathIndex, { chunk_days: String($event) })" />
-                    </div>
-                    <div class="grid gap-2 md:col-span-2">
-                        <Label :for="`path-max-page-${requestPath.id}`">{{
-                            t('app.landlord.integration_apis.fields.max_page') }}</Label>
-                        <Input :id="`path-max-page-${requestPath.id}`" type="number"
-                            :model-value="requestPath.max_page"
-                            :placeholder="t('app.landlord.integration_apis.placeholders.max_page')"
-                            @update:model-value="updatePath(pathIndex, { max_page: String($event) })" />
+                        <Label :for="`path-max-page-size-${requestPath.id}`">{{
+                            t('app.landlord.integration_apis.fields.max_page_size') }}</Label>
+                        <Input :id="`path-max-page-size-${requestPath.id}`" type="number"
+                            :model-value="requestPath.max_page_size"
+                            placeholder="1000"
+                            @update:model-value="updatePath(pathIndex, { max_page_size: String($event) })" />
                     </div>
                     <div class="grid gap-1 md:col-span-3">
-                        <Label :for="`path-store-id-${requestPath.id}`" class="text-xs leading-tight flex flex-col justify-start items-start">
-                            <span> {{ t('app.landlord.integration_apis.fields.include_store_in_id') }}</span>
-                            <div class="flex h-9 items-start space-x-1 ">
+                        <Label :for="`path-store-id-${requestPath.id}`" class="flex flex-col items-start justify-start text-xs leading-tight">
+                            <span>{{ t('app.landlord.integration_apis.fields.include_store_in_id') }}</span>
+                            <div class="flex h-9 items-start space-x-1">
                                 <input :id="`path-store-id-${requestPath.id}`" type="checkbox"
                                     :checked="requestPath.include_store_in_id"
                                     class="size-4 rounded border-input accent-primary"
@@ -255,33 +315,6 @@ onMounted(() => {
                                 </p>
                             </div>
                         </Label>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
-                    <div class="grid gap-2 md:col-span-3">
-                        <Label :for="`path-min-page-size-${requestPath.id}`">{{
-                            t('app.landlord.integration_apis.fields.min_page_size') }}</Label>
-                        <Input :id="`path-min-page-size-${requestPath.id}`" type="number"
-                            :model-value="requestPath.min_page_size"
-                            placeholder="1"
-                            @update:model-value="updatePath(pathIndex, { min_page_size: String($event) })" />
-                    </div>
-                    <div class="grid gap-2 md:col-span-3">
-                        <Label :for="`path-max-page-size-${requestPath.id}`">{{
-                            t('app.landlord.integration_apis.fields.max_page_size') }}</Label>
-                        <Input :id="`path-max-page-size-${requestPath.id}`" type="number"
-                            :model-value="requestPath.max_page_size"
-                            placeholder="1000"
-                            @update:model-value="updatePath(pathIndex, { max_page_size: String($event) })" />
-                    </div>
-                    <div class="grid gap-2 md:col-span-6">
-                        <Label :for="`path-last-date-column-${requestPath.id}`">{{
-                            t('app.landlord.integration_apis.fields.last_date_column') }}</Label>
-                        <Input :id="`path-last-date-column-${requestPath.id}`"
-                            :model-value="requestPath.last_date_column"
-                            :placeholder="t('app.landlord.integration_apis.placeholders.last_date_column')"
-                            @update:model-value="updatePath(pathIndex, { last_date_column: String($event) })" />
                     </div>
                 </div>
 

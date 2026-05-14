@@ -81,11 +81,11 @@ class DailyModeDiscoverer
         $rangeStart = now()->subDays($initialDays)->toDateString();
 
         $allDates = [];
-        $cursor = now()->copy();
+        $cursor = now();
 
         for ($i = 0; $i <= $initialDays; $i++) {
             $allDates[] = $cursor->toDateString();
-            $cursor->subDay();
+            $cursor = $cursor->subDay();
         }
 
         $existingDates = $this->getExistingDates(
@@ -138,6 +138,7 @@ class DailyModeDiscoverer
             FetchIntegrationPageJob::dispatch(
                 $this->integrationId, $this->pathKey, 1,
                 $day, $day, $storeId, $storeDocument,
+                autoPage: true,
             )->delay(now()->addSeconds($index * $delaySeconds));
         }
     }

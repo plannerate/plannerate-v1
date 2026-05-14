@@ -50,6 +50,7 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
         public readonly ?string $dateEnd = null,
         public readonly ?string $storeId = null,
         public readonly ?string $storeDocument = null,
+        public readonly bool $autoPage = false,
     ) {
         $this->onQueue('imports-fetch');
     }
@@ -106,9 +107,12 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             return;
         }
 
+        $responseData = $response->json();
+        $responseMeta = $api->response ?? [];
+
         $records = $this->mapResponse(
             $response->body(),
-            $api->response ?? [],
+            $responseMeta,
             $pathConfig,
             (string) $integration->tenant_id,
             (string) $integration->id,
@@ -140,6 +144,57 @@ class FetchIntegrationPageJob implements NotTenantAware, ShouldQueue
             $this->pathKey,
             $this->storeId,
             $filePath,
+        );
+
+        if ($this->autoPage) {
+            $this->dispatchNextPageIfNeeded($responseData, $responseMeta, $pathConfig);
+        }
+    }
+
+    // ─── Auto-paginação ──────────────────────────────────────────────────────
+
+    /**
+     * Lê o last_page da resposta e despacha o próximo FetchIntegrationPageJob
+     * quando ainda há páginas a buscar. Usado somente no modo diário.
+     *
+     * @param  array<string, mixed>  $responseData
+     * @param  array<string, mixed>  $responseMeta
+     * @param  array<string, mixed>  $pathConfig
+     */
+    private function dispatchNextPageIfNeeded(array $responseData, array $responseMeta, array $pathConfig): void
+    {
+        $lastPagePath = (string) data_get($responseMeta, 'pagination.last_page_path', '');
+
+        if ($lastPagePath === '') {
+            return;
+        }
+
+        $lastPage = (int) data_get($responseData, $lastPagePath, 1);
+        $maxPage = (int) data_get($pathConfig, 'max_page', 0);
+
+        if ($maxPage > 0) {
+            $lastPage = min($lastPage, $maxPage);
+        }
+
+        if ($this->page >= $lastPage) {
+            return;
+        }
+
+        $nextPage = $this->page + 1;
+
+        Log::info('FetchIntegrationPageJob: despachando próxima página', [
+            'integration_id' => $this->integrationId,
+            'path_key' => $this->pathKey,
+            'next_page' => $nextPage,
+            'last_page' => $lastPage,
+            'store_id' => $this->storeId,
+            'date_start' => $this->dateStart,
+        ]);
+
+        self::dispatch(
+            $this->integrationId, $this->pathKey, $nextPage,
+            $this->dateStart, $this->dateEnd, $this->storeId, $this->storeDocument,
+            autoPage: true,
         );
     }
 
