@@ -14,9 +14,10 @@ import {
     UserIcon,
 } from 'lucide-vue-next'
 import { computed } from 'vue'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Separator } from '@/components/ui/separator'
 import { useT } from '@/composables/useT'
+import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue'
 import type { AbcAnalysis, StockAnalysis } from '@/types/planogram'
 import DropdownPerformance from '../../DropdownPerformance.vue'
 
@@ -140,34 +141,58 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`)
 
             <!-- Ações -->
             <div class="flex items-center gap-2 shrink-0">
-                <div class="flex items-center gap-1 rounded-md border border-slate-200 bg-background p-1 dark:border-slate-700">
-                    <Button variant="ghost" size="icon" class="size-7" :disabled="localScale <= scaleMin" @click="emit('decrease-scale')">
-                        <Minus class="size-3.5" />
-                    </Button>
+                <!-- Zoom -->
+                <div class="flex items-center gap-1 rounded-md border bg-background p-1">
+                    <ButtonWithTooltip
+                        variant="ghost"
+                        size="icon"
+                        class="size-7"
+                        :disabled="localScale <= scaleMin"
+                        :tooltip="t('plannerate.toolbar.zoom_out')"
+                        @click="emit('decrease-scale')"
+                    >
+                        <Minus class="size-4" />
+                    </ButtonWithTooltip>
                     <Input :model-value="scaleDisplay" class="h-7 w-14 text-center text-xs" readonly />
-                    <Button variant="ghost" size="icon" class="size-7" :disabled="localScale >= scaleMax" @click="emit('increase-scale')">
-                        <Plus class="size-3.5" />
-                    </Button>
+                    <ButtonWithTooltip
+                        variant="ghost"
+                        size="icon"
+                        class="size-7"
+                        :disabled="localScale >= scaleMax"
+                        :tooltip="t('plannerate.toolbar.zoom_in')"
+                        @click="emit('increase-scale')"
+                    >
+                        <Plus class="size-4" />
+                    </ButtonWithTooltip>
                 </div>
+
+                <Separator orientation="vertical" class="h-8" />
 
                 <DropdownPerformance :gondola="(gondola as any)" :analysis="analysis" />
 
-                <Button
+                <Separator orientation="vertical" class="h-8" />
+
+                <ButtonWithTooltip
                     variant="outline"
                     size="sm"
-                    :title="layoutDirection === 'column' ? t('plannerate.print.preview.switch_to_row') : t('plannerate.print.preview.switch_to_column')"
+                    :tooltip="layoutDirection === 'column' ? t('plannerate.print.preview.switch_to_row') : t('plannerate.print.preview.switch_to_column')"
                     @click="emit('toggle-layout')"
                 >
                     <Rows v-if="layoutDirection === 'column'" class="mr-2 h-4 w-4" />
                     <Columns v-else class="mr-2 h-4 w-4" />
                     {{ layoutDirection === 'column' ? t('plannerate.print.preview.in_row') : t('plannerate.print.preview.in_column') }}
-                </Button>
+                </ButtonWithTooltip>
 
-                <Button size="sm" :disabled="isGenerating || isDownloading" @click="emit('download-pdf')">
+                <ButtonWithTooltip
+                    size="sm"
+                    :disabled="isGenerating || isDownloading"
+                    :tooltip="t('plannerate.print.preview.download_pdf')"
+                    @click="emit('download-pdf')"
+                >
                     <Loader2 v-if="isDownloading" class="mr-2 h-4 w-4 animate-spin" />
                     <Download v-else class="mr-2 h-4 w-4" />
                     {{ isDownloading ? t('plannerate.print.preview.downloading') : t('plannerate.print.preview.download_pdf') }}
-                </Button>
+                </ButtonWithTooltip>
             </div>
         </div>
 
