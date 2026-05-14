@@ -2,13 +2,13 @@
     <!-- Dropdown Performance -->
     <DropdownMenu>
         <DropdownMenuTrigger as-child>
-            <Button variant="destructive" size="sm" class="gap-2 rounded-lg"> 
-                    <Gauge class="size-4 text-destructive-foreground" /> 
+            <Button variant="destructive" size="sm" class="gap-2 rounded-lg">
+                <Gauge class="size-4 text-destructive-foreground" />
                 {{ t('plannerate.dropdown.performance.title') }}
                 <ChevronDown class="size-3" />
             </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" class="z-[9999] w-64">
+        <DropdownMenuContent align="end" class=" w-64" style="z-index: 9999;">
             <DropdownMenuItem @click="showPerformanceModal = true">
                 <Gauge class="mr-2 size-4" />
                 {{ t('plannerate.dropdown.performance.open_analyses') }}
@@ -16,32 +16,23 @@
             <DropdownMenuSeparator />
 
             <!-- Controles Individuais -->
-            <DropdownMenuItem
-                @click="performance.abc.toggleVisibility()"
-                :disabled="!performance.abc.hasData.value"
-            >
-                <Eye
-                    v-if="!performance.abc.isVisible.value"
-                    class="mr-2 size-4 text-green-600"
-                />
+            <DropdownMenuItem @click="performance.abc.toggleVisibility()" :disabled="!performance.abc.hasData.value">
+                <Eye v-if="!performance.abc.isVisible.value" class="mr-2 size-4 text-green-600" />
                 <EyeOff v-else class="mr-2 size-4 text-green-600" />
-                {{ performance.abc.isVisible.value ? t('plannerate.dropdown.performance.hide') : t('plannerate.dropdown.performance.show') }}
+                {{ performance.abc.isVisible.value ? t('plannerate.dropdown.performance.hide') :
+                    t('plannerate.dropdown.performance.show') }}
                 {{ t('plannerate.dropdown.performance.assortment_analysis') }}
                 <span class="ml-auto text-xs text-muted-foreground">
                     ({{ performance.abc.stats.value.total }})
                 </span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem
-                @click="performance.targetStock.toggleVisibility()"
-                :disabled="!performance.targetStock.hasData.value"
-            >
-                <Eye
-                    v-if="!performance.targetStock.isVisible.value"
-                    class="mr-2 size-4 text-blue-600"
-                />
+            <DropdownMenuItem @click="performance.targetStock.toggleVisibility()"
+                :disabled="!performance.targetStock.hasData.value">
+                <Eye v-if="!performance.targetStock.isVisible.value" class="mr-2 size-4 text-blue-600" />
                 <EyeOff v-else class="mr-2 size-4 text-blue-600" />
-                {{ performance.targetStock.isVisible.value ? t('plannerate.dropdown.performance.hide') : t('plannerate.dropdown.performance.show') }}
+                {{ performance.targetStock.isVisible.value ? t('plannerate.dropdown.performance.hide') :
+                    t('plannerate.dropdown.performance.show') }}
                 {{ t('plannerate.dropdown.performance.target_stock') }}
                 <span class="ml-auto text-xs text-muted-foreground">
                     ({{ performance.targetStock.stats.value.total }})
@@ -51,41 +42,32 @@
             <DropdownMenuSeparator />
 
             <!-- Controle Geral -->
-            <DropdownMenuItem
-                @click="performance.toggleAllIndicators()"
-                :disabled="!performance.hasAnyData.value"
-            >
+            <DropdownMenuItem @click="performance.toggleAllIndicators()" :disabled="!performance.hasAnyData.value">
                 <Eye v-if="!performance.anyVisible.value" class="mr-2 size-4" />
                 <EyeOff v-else class="mr-2 size-4" />
-                {{ performance.anyVisible.value ? t('plannerate.dropdown.performance.hide') : t('plannerate.dropdown.performance.show') }}
+                {{ performance.anyVisible.value ? t('plannerate.dropdown.performance.hide') :
+                    t('plannerate.dropdown.performance.show') }}
                 {{ t('plannerate.dropdown.performance.all') }}
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
 
-            <DropdownMenuItem
-                @click="performance.clearAllAnalysis(gondola.id)"
-                :disabled="!performance.hasAnyData.value"
-                class="text-destructive"
-            >
+            <DropdownMenuItem @click="performance.clearAllAnalysis(gondola.id)"
+                :disabled="!performance.hasAnyData.value" class="text-destructive">
                 <Trash2 class="mr-2 size-4" />
                 {{ t('plannerate.dropdown.performance.clear_all') }}
             </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
     <!-- Performance Modal -->
-    <Performance
-        v-model:open="showPerformanceModal"
-        :gondola-id="gondola.id"
-        :planogram="planogram"
-        :analysis="props.analysis"
-    />
+    <Performance v-model:open="showPerformanceModal" :gondola-id="gondola.id" :planogram="planogram"
+        :analysis="props.analysis" />
 </template>
 <script setup lang="ts">
 import { ChevronDown, Eye, EyeOff, Gauge, Trash2 } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import Performance from '@/components/plannerate/header/Performance.vue';
-import { Button } from '@/components/ui/button'; 
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -170,7 +152,7 @@ watch(
             // Mudou de gôndola - limpar análises antigas COMPLETAMENTE
             performance.abc.clearClassifications();
             performance.targetStock.clearTargetStockData();
-            
+
             // Recarregar preferências de visibilidade da nova gôndola
             loadVisibilityPreferences();
         }
@@ -183,7 +165,7 @@ watch(
     (analysis) => {
         // Sempre limpa antes de carregar para evitar dados residuais
         performance.abc.clearClassifications();
-        
+
         // Só carrega se há dados válidos
         if (analysis?.results && Array.isArray(analysis.results) && analysis.results.length > 0) {
             performance.abc.setClassifications(analysis.results);
@@ -198,7 +180,7 @@ watch(
     (analysis) => {
         // Sempre limpa antes de carregar para evitar dados residuais
         performance.targetStock.clearTargetStockData();
-        
+
         // Só carrega se há dados válidos
         if (analysis?.results && Array.isArray(analysis.results) && analysis.results.length > 0) {
             performance.targetStock.setTargetStockDataBatch(
