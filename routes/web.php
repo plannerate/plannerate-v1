@@ -47,6 +47,7 @@ Route::get('/health', function () {
 
 // ── LANDLORD (rota raiz, sem tenant) ──────────────────────────
 Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPermissionTeamContext::class])->group(function (): void {
+    Broadcast::routes();
 
     Route::get('/', [LandlordDashboardController::class, 'index'])->name('dashboard');
 

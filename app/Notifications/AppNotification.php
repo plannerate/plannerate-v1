@@ -36,6 +36,7 @@ class AppNotification extends Notification implements NotTenantAware, ShouldQueu
             'action_url' => $this->actionUrl,
             'download_url' => $this->downloadUrl,
             'download_name' => $this->downloadName,
+            'tenant_id' => $this->tenantId,
         ];
     }
 

@@ -16,6 +16,7 @@ export type NotificationData = {
     action_url?: string | null;
     download_url?: string | null;
     download_name?: string | null;
+    tenant_id?: string | null;
 };
 
 export type AppNotification = {
