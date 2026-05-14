@@ -24,73 +24,99 @@ interface Props {
     tenantName?: string
     responsavel?: string
     flowLabel: string
+    isLeftToRight: boolean
 }
 
 defineProps<Props>()
 </script>
 
 <template>
-    <div class="px-6 py-5 border-b-2 border-primary">
-        <div class="flex flex-wrap items-start justify-between gap-6">
+    <div class="border-b-2 border-primary">
+        <!-- Linha 1: logo + metadados -->
+        <div class="px-6 py-4 flex items-center justify-between gap-6">
             <!-- Logo + empresa + título -->
-            <div class="flex items-center gap-4">
-                <div class="w-16 h-16 bg-primary rounded-xl flex items-center justify-center shrink-0">
-                    <ShoppingCartIcon class="w-8 h-8 text-primary-foreground" />
+            <div class="flex items-center gap-3 shrink-0">
+                <div class="w-14 h-14 bg-primary rounded-xl flex items-center justify-center shrink-0">
+                    <ShoppingCartIcon class="w-7 h-7 text-primary-foreground" />
                 </div>
                 <div>
                     <p
                         v-if="tenantName"
-                        class="text-sm font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest leading-none mb-1"
+                        class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none mb-0.5"
                     >
                         {{ tenantName }}
                     </p>
                     <div class="flex items-center gap-2">
-                        <div class="w-1 h-8 bg-primary rounded-full"></div>
-                        <h2 class="text-2xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide leading-none">
+                        <div class="w-1 h-7 bg-primary rounded-full"></div>
+                        <h2 class="text-xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide leading-none">
                             Planograma de Exposição
                         </h2>
                     </div>
                 </div>
             </div>
 
-            <!-- Grid de metadados -->
-            <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-4 grid grid-cols-2 gap-x-8 gap-y-3">
-                <div class="flex items-center gap-2 text-sm">
-                    <StoreIcon class="w-4 h-4 text-primary shrink-0" />
-                    <span class="text-slate-500 dark:text-slate-400">Loja:</span>
-                    <span class="font-medium text-slate-800 dark:text-slate-200">{{ gondola.location || '—' }}</span>
+            <!-- Metadados compactos -->
+            <div class="flex items-center gap-5">
+                <div class="flex flex-col gap-0.5">
+                    <div class="flex items-center gap-1">
+                        <StoreIcon class="w-3 h-3 text-primary shrink-0" />
+                        <span class="text-[9px] text-slate-400 uppercase tracking-wider">Loja</span>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 border-b border-dashed border-slate-300 pb-0.5 min-w-[60px]">
+                        {{ gondola.location || '—' }}
+                    </span>
                 </div>
-                <div class="flex items-center gap-2 text-sm">
-                    <CalendarDaysIcon class="w-4 h-4 text-primary shrink-0" />
-                    <span class="text-slate-500 dark:text-slate-400">Data de publicação:</span>
-                    <span class="font-medium text-slate-800 dark:text-slate-200">{{ gondola.planogram?.start_date || '—' }}</span>
+                <div class="flex flex-col gap-0.5">
+                    <div class="flex items-center gap-1">
+                        <FileTextIcon class="w-3 h-3 text-primary shrink-0" />
+                        <span class="text-[9px] text-slate-400 uppercase tracking-wider">Setor</span>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 border-b border-dashed border-slate-300 pb-0.5 min-w-[50px]">
+                        {{ gondola.side || '—' }}
+                    </span>
                 </div>
-                <div class="flex items-center gap-2 text-sm">
-                    <FileTextIcon class="w-4 h-4 text-primary shrink-0" />
-                    <span class="text-slate-500 dark:text-slate-400">Setor:</span>
-                    <span class="font-medium text-slate-800 dark:text-slate-200">{{ gondola.side || '—' }}</span>
+                <div class="flex flex-col gap-0.5">
+                    <div class="flex items-center gap-1">
+                        <PackageIcon class="w-3 h-3 text-primary shrink-0" />
+                        <span class="text-[9px] text-slate-400 uppercase tracking-wider">Categoria</span>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 border-b border-dashed border-slate-300 pb-0.5 min-w-[80px]">
+                        {{ gondola.planogram?.category?.name || '—' }}
+                    </span>
                 </div>
-                <div class="flex items-center gap-2 text-sm">
-                    <FileTextIcon class="w-4 h-4 text-primary shrink-0" />
-                    <span class="text-slate-500 dark:text-slate-400">Versão:</span>
-                    <span class="font-medium text-slate-800 dark:text-slate-200">V1.0</span>
+                <div class="flex flex-col gap-0.5">
+                    <div class="flex items-center gap-1">
+                        <CalendarDaysIcon class="w-3 h-3 text-primary shrink-0" />
+                        <span class="text-[9px] text-slate-400 uppercase tracking-wider">Publicação</span>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 border-b border-dashed border-slate-300 pb-0.5 min-w-[75px]">
+                        {{ gondola.planogram?.start_date || '—' }}
+                    </span>
                 </div>
-                <div class="flex items-center gap-2 text-sm">
-                    <PackageIcon class="w-4 h-4 text-primary shrink-0" />
-                    <span class="text-slate-500 dark:text-slate-400">Categoria:</span>
-                    <span class="font-medium text-slate-800 dark:text-slate-200">{{ gondola.planogram?.category?.name || '—' }}</span>
+                <div class="flex flex-col gap-0.5">
+                    <div class="flex items-center gap-1">
+                        <UserIcon class="w-3 h-3 text-primary shrink-0" />
+                        <span class="text-[9px] text-slate-400 uppercase tracking-wider">Responsável</span>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 border-b border-dashed border-slate-300 pb-0.5 min-w-[75px]">
+                        {{ responsavel || '—' }}
+                    </span>
                 </div>
-                <div class="flex items-center gap-2 text-sm">
-                    <UserIcon class="w-4 h-4 text-primary shrink-0" />
-                    <span class="text-slate-500 dark:text-slate-400">Responsável:</span>
-                    <span class="font-medium text-slate-800 dark:text-slate-200">{{ responsavel || '—' }}</span>
+                <div class="flex flex-col gap-0.5">
+                    <div class="flex items-center gap-1">
+                        <ArrowRightIcon class="w-3 h-3 text-primary shrink-0" />
+                        <span class="text-[9px] text-slate-400 uppercase tracking-wider">Fluxo</span>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 border-b border-dashed border-slate-300 pb-0.5 min-w-[90px]">
+                        {{ flowLabel }}
+                    </span>
                 </div>
-                <div class="flex items-center gap-2 text-sm col-span-2">
-                    <ArrowRightIcon class="w-4 h-4 text-primary shrink-0" />
-                    <span class="text-slate-500 dark:text-slate-400">Posição do fluxo:</span>
-                    <span class="font-medium text-slate-800 dark:text-slate-200">{{ flowLabel }}</span>
+                <div class="flex flex-col items-center justify-center bg-primary text-primary-foreground rounded-lg px-3 py-2 shrink-0">
+                    <span class="text-[8px] uppercase tracking-wider leading-none opacity-80">Versão</span>
+                    <span class="text-base font-black leading-none mt-0.5">V1.0</span>
                 </div>
             </div>
         </div>
+
     </div>
 </template>

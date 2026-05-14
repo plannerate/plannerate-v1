@@ -97,7 +97,7 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
                     </div>
                     <div class="flex flex-col gap-1">
                         <span class="text-[9px] text-slate-400 uppercase tracking-wider">Cód. Loja</span>
-                        <span class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-300 pb-0.5 min-w-[60px]">—</span>
+                        <span class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-300 pb-0.5 min-w-16">—</span>
                     </div>
                 </div>
             </div>
@@ -106,37 +106,37 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
         <!-- INFO BAR -->
         <div class="bg-slate-50 border-b border-slate-200 px-6 py-2">
             <div class="flex items-start gap-0 divide-x divide-slate-200">
-                <div class="pr-4 flex flex-col gap-0.5 min-w-[90px]">
+                <div class="pr-4 flex flex-col gap-0.5 min-w-20">
                     <span class="text-[9px] text-slate-400 uppercase tracking-wider">Categoria</span>
                     <span class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-400 pb-0.5">
                         {{ gondola.planogram?.category?.name || '—' }}
                     </span>
                 </div>
-                <div class="px-4 flex flex-col gap-0.5 min-w-[90px]">
+                <div class="px-4 flex flex-col gap-0.5 min-w-20">
                     <span class="text-[9px] text-slate-400 uppercase tracking-wider">Subcategoria</span>
                     <span class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-400 pb-0.5">
                         {{ gondola.side || '—' }}
                     </span>
                 </div>
-                <div class="px-4 flex flex-col gap-0.5 min-w-[90px]">
+                <div class="px-4 flex flex-col gap-0.5 min-w-20">
                     <span class="text-[9px] text-slate-400 uppercase tracking-wider">Tipo de Gôndola</span>
                     <span class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-400 pb-0.5">
                         {{ gondola.name || '—' }}
                     </span>
                 </div>
-                <div class="px-4 flex flex-col gap-0.5 min-w-[60px]">
+                <div class="px-4 flex flex-col gap-0.5 min-w-14">
                     <span class="text-[9px] text-slate-400 uppercase tracking-wider">Módulo</span>
                     <span class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-400 pb-0.5">
                         {{ section.ordering }} / {{ total }}
                     </span>
                 </div>
-                <div class="px-4 flex flex-col gap-0.5 min-w-[110px]">
+                <div class="px-4 flex flex-col gap-0.5 min-w-28">
                     <span class="text-[9px] text-slate-400 uppercase tracking-wider">Dimensões do Módulo</span>
                     <span class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-400 pb-0.5">
                         {{ dimensionsLabel }} mm
                     </span>
                 </div>
-                <div class="pl-4 flex flex-col gap-0.5 min-w-[90px]">
+                <div class="pl-4 flex flex-col gap-0.5 min-w-20">
                     <span class="text-[9px] text-slate-400 uppercase tracking-wider">Nível de Execução</span>
                     <span class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-400 pb-0.5">
                         {{ gondola.planogram?.type || '—' }}
@@ -270,7 +270,7 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
                             Observações
                         </span>
                     </div>
-                    <div class="border border-slate-200 rounded p-2 flex-1 min-h-[80px]">
+                    <div class="border border-slate-200 rounded p-2 flex-1 min-h-16">
                         <p class="text-[10px] text-slate-500 leading-relaxed">
                             {{ gondola.planogram?.description || '' }}
                         </p>
@@ -285,14 +285,14 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
                 <ClipboardListIcon class="w-4 h-4 text-primary shrink-0" />
                 <div>
                     <p class="text-[9px] text-slate-400 uppercase tracking-wider">Responsável</p>
-                    <p class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-300 pb-0.5 min-w-[100px]">
+                    <p class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-300 pb-0.5 min-w-24">
                         {{ responsavel || '—' }}
                     </p>
                 </div>
             </div>
             <div class="flex-1 border-r border-slate-200 px-4">
                 <p class="text-[9px] text-slate-400 uppercase tracking-wider">Aprovado Por</p>
-                <p class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-300 pb-0.5 min-w-[100px]">—</p>
+                <p class="text-xs font-medium text-slate-700 border-b border-dashed border-slate-300 pb-0.5 min-w-24">—</p>
             </div>
             <div class="flex-1 border-r border-slate-200 px-4">
                 <p class="text-[9px] text-slate-400 uppercase tracking-wider">Data de Aprovação</p>

@@ -7,13 +7,13 @@ import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor'
 import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis'
 import { useT } from '@/composables/useT'
 import type { AbcAnalysis, Gondola, Section, StockAnalysis } from '@/types/planogram'
-import Indicador from '../Indicador.vue'
 import PdfModulePage from './PdfModulePage.vue'
 import PdfModuleSelector from './PdfModuleSelector.vue'
 import PdfGondolaCanvas from './partials/PdfGondolaCanvas.vue'
 import PdfPageFooter from './partials/PdfPageFooter.vue'
 import PdfPageHeader from './partials/PdfPageHeader.vue'
 import PdfPreviewToolbar from './partials/PdfPreviewToolbar.vue'
+import PdfFlowIndicator from './partials/PdfFlowIndicator.vue'
 
 interface GondolaPdf {
     id: string
@@ -180,20 +180,19 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right')
             :local-scale="localScale" :scale-min="SCALE_MIN" :scale-max="SCALE_MAX" :layout-direction="layoutDirection"
             :is-generating="pdfGenerator.isGenerating.value" :is-downloading="isDownloading" :analysis="analysis"
             @increase-scale="increaseScale" @decrease-scale="decreaseScale" @toggle-layout="toggleLayout"
-            @download-pdf="handleDownloadPdf" />
+            @download-pdf="handleDownloadPdf">
+
+            <!-- Linha 2: indicador de direção do fluxo -->
+            <PdfFlowIndicator :is-left-to-right="isLeftToRight" />
+        </PdfPreviewToolbar>
 
 
         <!-- MODO ROW: página de visualização completa -->
-        <div v-if="layoutDirection === 'row'" class="flex-1 flex flex-col relative mt-16 ">
-
+        <div v-if="layoutDirection === 'row'" class="flex-1 flex flex-col mt-28">
             <!-- Página capturada para PDF single-page -->
             <div data-pdf-page class="bg-white dark:bg-slate-900 flex-1 flex flex-col shadow-sm">
                 <PdfPageHeader :gondola="(gondola as any)" :tenant-name="tenantName" :responsavel="responsavel"
-                    :flow-label="flowLabel" />
-                <!-- Indicador de direção — apenas no modo row -->
-                <div class="h-10 relative z-10">
-                    <Indicador :isLeftToRight="isLeftToRight" />
-                </div>
+                    :flow-label="flowLabel" :is-left-to-right="isLeftToRight" />
                 <PdfGondolaCanvas :sections="sections" :local-scale="localScale"
                     :alignment="gondola.alignment ?? 'justify'" />
                 <PdfPageFooter :observacoes="observacoes" />

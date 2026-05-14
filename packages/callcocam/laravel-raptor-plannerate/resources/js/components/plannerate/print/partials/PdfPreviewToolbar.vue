@@ -10,6 +10,10 @@ import DropdownPerformance from '../../DropdownPerformance.vue'
 interface GondolaInfo {
     id: string
     name?: string
+    planogram?: {
+        name?: string
+        [key: string]: unknown
+    }
     location?: string
     side?: string
     flow?: string
@@ -146,5 +150,6 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`)
                 </Button>
             </div>
         </div>
+        <slot/>
     </div>
 </template>
