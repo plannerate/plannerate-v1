@@ -104,18 +104,20 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    env_file:
+      - ./.env
     command: >
-      redis-server
+      sh -lc 'exec redis-server
       --appendonly yes
-      ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}
+      $${REDIS_PASSWORD:+--requirepass "$${REDIS_PASSWORD}"}
       --maxmemory 1gb
-      --maxmemory-policy allkeys-lru
+      --maxmemory-policy allkeys-lru'
     volumes:
       - stg_redis_data:/data
     networks:
       - stg-network
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli ${REDIS_PASSWORD:+-a $REDIS_PASSWORD} ping | grep -q PONG"]
+      test: ["CMD-SHELL", "redis-cli $${REDIS_PASSWORD:+-a \"$${REDIS_PASSWORD}\"} ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
