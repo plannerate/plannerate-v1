@@ -2,10 +2,10 @@
     <!-- Dropdown Performance -->
     <DropdownMenu>
         <DropdownMenuTrigger as-child>
-            <Button variant="destructive" size="sm" class="gap-2 rounded-lg">
-                <Gauge class="size-4 text-destructive-foreground" />
+            <Button variant="outline" size="sm" class="gap-1.5 rounded-lg">
+                <Gauge class="size-4 text-amber-500" />
                 {{ t('plannerate.dropdown.performance.title') }}
-                <ChevronDown class="size-3" />
+                <ChevronDown class="size-3 text-muted-foreground" />
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" class=" w-64" style="z-index: 9999;">

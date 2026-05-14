@@ -6,15 +6,14 @@ import {
     Download,
     FileTextIcon,
     Loader2,
-    Minus,
     PackageIcon,
-    Plus,
     Rows,
     StoreIcon,
     UserIcon,
+    ZoomIn,
+    ZoomOut,
 } from 'lucide-vue-next'
 import { computed } from 'vue'
-import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { useT } from '@/composables/useT'
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue'
@@ -68,7 +67,8 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`)
 </script>
 
 <template>
-    <div class="fixed top-0 left-0 right-0 z-[500] bg-white/95 shadow-sm backdrop-blur dark:bg-slate-900/95 border-b-2 border-primary">
+    <div
+        class="fixed top-0 left-0 right-0 z-[500] bg-white/95 shadow-sm backdrop-blur dark:bg-slate-900/95 border-b-2 border-primary">
         <!-- Linha 1: logo + metadados + ações -->
         <div class="flex items-center justify-between gap-4 px-4 py-2">
             <!-- Logo -->
@@ -80,7 +80,8 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`)
             <!-- Separador + título -->
             <div class="w-px h-8 bg-slate-200 dark:bg-slate-700 shrink-0"></div>
             <div class="shrink-0">
-                <p v-if="tenantName" class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none">
+                <p v-if="tenantName"
+                    class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none">
                     {{ tenantName }}
                 </p>
                 <h1 class="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide leading-none">
@@ -96,35 +97,40 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`)
                         <StoreIcon class="w-2.5 h-2.5 text-primary shrink-0" />
                         <span class="text-[8px] text-slate-400 uppercase tracking-wider">Loja</span>
                     </div>
-                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{ gondola.location || '—' }}</span>
+                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{ gondola.location ||
+                        '—' }}</span>
                 </div>
                 <div class="flex flex-col gap-0.5 shrink-0">
                     <div class="flex items-center gap-0.5">
                         <FileTextIcon class="w-2.5 h-2.5 text-primary shrink-0" />
                         <span class="text-[8px] text-slate-400 uppercase tracking-wider">Setor</span>
                     </div>
-                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{ gondola.side || '—' }}</span>
+                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{ gondola.side || '—'
+                    }}</span>
                 </div>
                 <div class="flex flex-col gap-0.5 shrink-0">
                     <div class="flex items-center gap-0.5">
                         <PackageIcon class="w-2.5 h-2.5 text-primary shrink-0" />
                         <span class="text-[8px] text-slate-400 uppercase tracking-wider">Categoria</span>
                     </div>
-                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{ gondola.planogram?.category?.name || '—' }}</span>
+                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{
+                        gondola.planogram?.category?.name || '—' }}</span>
                 </div>
                 <div class="flex flex-col gap-0.5 shrink-0">
                     <div class="flex items-center gap-0.5">
                         <CalendarDaysIcon class="w-2.5 h-2.5 text-primary shrink-0" />
                         <span class="text-[8px] text-slate-400 uppercase tracking-wider">Publicação</span>
                     </div>
-                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{ gondola.planogram?.start_date || '—' }}</span>
+                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{
+                        gondola.planogram?.start_date || '—' }}</span>
                 </div>
                 <div class="flex flex-col gap-0.5 shrink-0">
                     <div class="flex items-center gap-0.5">
                         <UserIcon class="w-2.5 h-2.5 text-primary shrink-0" />
                         <span class="text-[8px] text-slate-400 uppercase tracking-wider">Responsável</span>
                     </div>
-                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{ responsavel || '—' }}</span>
+                    <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{ responsavel || '—'
+                    }}</span>
                 </div>
                 <div class="flex flex-col gap-0.5 shrink-0">
                     <div class="flex items-center gap-0.5">
@@ -133,65 +139,54 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`)
                     </div>
                     <span class="text-[10px] font-semibold text-slate-700 dark:text-slate-200">{{ flowLabel }}</span>
                 </div>
-                <div class="flex flex-col items-center justify-center bg-primary text-primary-foreground rounded px-2 py-1 shrink-0">
+                <div
+                    class="flex flex-col items-center justify-center bg-primary text-primary-foreground rounded px-2 py-1 shrink-0">
                     <span class="text-[7px] uppercase tracking-wider leading-none opacity-80">Versão</span>
                     <span class="text-xs font-black leading-none">V1.0</span>
                 </div>
             </div>
 
             <!-- Ações -->
-            <div class="flex items-center gap-2 shrink-0">
+            <div class="flex items-center gap-1.5 shrink-0">
                 <!-- Zoom -->
-                <div class="flex items-center gap-1 rounded-md border bg-background p-1">
-                    <ButtonWithTooltip
-                        variant="ghost"
-                        size="icon"
-                        class="size-7"
-                        :disabled="localScale <= scaleMin"
-                        :tooltip="t('plannerate.toolbar.zoom_out')"
-                        @click="emit('decrease-scale')"
-                    >
-                        <Minus class="size-4" />
+                <div class="flex items-center gap-0.5 rounded-md border bg-background px-0.5 py-0.5">
+                    <ButtonWithTooltip variant="ghost" size="icon" class="size-7" :disabled="localScale <= scaleMin"
+                        :tooltip="t('plannerate.toolbar.zoom_out')" @click="emit('decrease-scale')">
+                        <ZoomOut class="size-4" />
                     </ButtonWithTooltip>
-                    <Input :model-value="scaleDisplay" class="h-7 w-14 text-center text-xs" readonly />
-                    <ButtonWithTooltip
-                        variant="ghost"
-                        size="icon"
-                        class="size-7"
-                        :disabled="localScale >= scaleMax"
-                        :tooltip="t('plannerate.toolbar.zoom_in')"
-                        @click="emit('increase-scale')"
-                    >
-                        <Plus class="size-4" />
+                    <span class="w-10 text-center text-xs font-medium tabular-nums select-none">{{ scaleDisplay
+                    }}</span>
+                    <ButtonWithTooltip variant="ghost" size="icon" class="size-7" :disabled="localScale >= scaleMax"
+                        :tooltip="t('plannerate.toolbar.zoom_in')" @click="emit('increase-scale')">
+                        <ZoomIn class="size-4" />
                     </ButtonWithTooltip>
                 </div>
 
-                <Separator orientation="vertical" class="h-8" />
+                <Separator orientation="vertical" class="h-7" />
 
                 <DropdownPerformance :gondola="(gondola as any)" :analysis="analysis" />
 
-                <Separator orientation="vertical" class="h-8" />
+                <Separator orientation="vertical" class="h-7" />
 
-                <ButtonWithTooltip
-                    variant="outline"
-                    size="sm"
+                <ButtonWithTooltip variant="outline"  size="sm"
                     :tooltip="layoutDirection === 'column' ? t('plannerate.print.preview.switch_to_row') : t('plannerate.print.preview.switch_to_column')"
-                    @click="emit('toggle-layout')"
-                >
-                    <Rows v-if="layoutDirection === 'column'" class="mr-2 h-4 w-4" />
-                    <Columns v-else class="mr-2 h-4 w-4" />
-                    {{ layoutDirection === 'column' ? t('plannerate.print.preview.in_row') : t('plannerate.print.preview.in_column') }}
+                    @click="emit('toggle-layout')">
+                    <div v-if="layoutDirection === 'column'" class="flex  justify-center items-center space-x-1">
+                        <Rows class="size-4" />
+                        <span>Linhas</span>
+                    </div>
+                    <div v-else class="flex  justify-center items-center space-x-1">
+                        <Columns class="size-4" />
+                        <span>Colunas</span>
+                    </div>
                 </ButtonWithTooltip>
 
-                <ButtonWithTooltip
-                    size="sm"
-                    :disabled="isGenerating || isDownloading"
-                    :tooltip="t('plannerate.print.preview.download_pdf')"
-                    @click="emit('download-pdf')"
-                >
-                    <Loader2 v-if="isDownloading" class="mr-2 h-4 w-4 animate-spin" />
-                    <Download v-else class="mr-2 h-4 w-4" />
-                    {{ isDownloading ? t('plannerate.print.preview.downloading') : t('plannerate.print.preview.download_pdf') }}
+                <ButtonWithTooltip variant="outline" size="sm" :disabled="isGenerating || isDownloading"
+                    :tooltip="t('plannerate.print.preview.download_pdf')" @click="emit('download-pdf')">
+                    <Loader2 v-if="isDownloading" class="mr-1.5 h-4 w-4 animate-spin" />
+                    <Download v-else class="mr-1.5 h-4 w-4" />
+                    {{ isDownloading ? t('plannerate.print.preview.downloading') :
+                        t('plannerate.print.preview.download_pdf') }}
                 </ButtonWithTooltip>
             </div>
         </div>
