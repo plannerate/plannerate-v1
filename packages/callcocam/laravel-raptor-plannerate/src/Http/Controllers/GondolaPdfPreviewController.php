@@ -1,7 +1,7 @@
 <?php
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
- 
+
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\GondolaAnalysis;
 use Callcocam\LaravelRaptorPlannerate\Services\Printing\GondolaPrintService;
 use Inertia\Inertia;
@@ -31,6 +31,7 @@ class GondolaPdfPreviewController extends Controller
                 'abc' => $abcAnalysis?->toAbcFormattedArray(),
                 'stock' => $stockAnalysis?->toStockFormattedArray(),
             ],
+            'responsavel' => auth()->user()?->name,
         ]);
     }
 }

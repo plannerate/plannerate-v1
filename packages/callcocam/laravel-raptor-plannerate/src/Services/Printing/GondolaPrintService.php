@@ -5,6 +5,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Services\Printing;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Services\QRCode\QRCodeService;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -184,6 +185,8 @@ class GondolaPrintService
             'sections',
             'sections.shelves',
             'sections.shelves.segments.layer.product',
+            'planogram',
+            'planogram.category',
         ])->findOrFail($gondolaId);
 
         // Processar imagens de produtos para base64
@@ -200,7 +203,20 @@ class GondolaPrintService
                 'scale_factor' => $gondola->scale_factor,
                 'alignment' => $gondola->alignment ?? 'default',
                 'planogram_id' => $gondola->planogram_id,
-                'planogram' => $gondola->planogram,
+                'planogram' => $gondola->planogram ? [
+                    'id' => $gondola->planogram->id,
+                    'name' => $gondola->planogram->name,
+                    'type' => $gondola->planogram->type,
+                    'start_date' => $gondola->planogram->start_date
+                        ? (is_string($gondola->planogram->start_date)
+                            ? Carbon::parse($gondola->planogram->start_date)->format('d/m/Y')
+                            : $gondola->planogram->start_date->format('d/m/Y'))
+                        : null,
+                    'description' => $gondola->planogram->description,
+                    'category' => $gondola->planogram->category
+                        ? ['name' => $gondola->planogram->category->name]
+                        : null,
+                ] : null,
             ],
             'sections' => $gondola->sections->map(function ($section) {
                 return [
