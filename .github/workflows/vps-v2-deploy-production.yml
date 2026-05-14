@@ -108,6 +108,16 @@ jobs:
             echo "  ghcr_repo=${GHCR_REPO}"
 
             export IMAGE_TAG GHCR_REPO
+            if grep -q '^IMAGE_TAG=' .env; then
+              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env
+            else
+              printf '\nIMAGE_TAG=%s\n' "${IMAGE_TAG}" >> .env
+            fi
+            if grep -q '^GHCR_REPO=' .env; then
+              sed -i "s#^GHCR_REPO=.*#GHCR_REPO=${GHCR_REPO}#" .env
+            else
+              printf 'GHCR_REPO=%s\n' "${GHCR_REPO}" >> .env
+            fi
             docker compose -p "plannerate-${APP_SLUG}" pull
             docker compose -p "plannerate-${APP_SLUG}" up -d --force-recreate --remove-orphans
             docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '

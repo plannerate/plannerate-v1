@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:?IMAGE_TAG is required}
     restart: always
     env_file:
       - ./.env
@@ -37,7 +37,7 @@ services:
         condition: service_healthy
 
   horizon:
-    image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:?IMAGE_TAG is required}
     restart: always
     env_file:
       - ./.env
@@ -54,7 +54,7 @@ services:
         condition: service_healthy
 
   scheduler:
-    image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:?IMAGE_TAG is required}
     restart: always
     env_file:
       - ./.env
@@ -71,7 +71,7 @@ services:
         condition: service_healthy
 
   reverb:
-    image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GHCR_REPO}:${IMAGE_TAG:?IMAGE_TAG is required}
     restart: unless-stopped
     env_file:
       - ./.env

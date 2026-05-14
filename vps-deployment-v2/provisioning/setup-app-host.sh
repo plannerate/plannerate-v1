@@ -314,7 +314,7 @@ VITE_REVERB_HOST=${REVERB_DOMAIN}
 VITE_REVERB_PORT=443
 VITE_REVERB_SCHEME=https
 VITE_REVERB_APP_KEY=${REVERB_APP_KEY}
-IMAGE_TAG=latest
+IMAGE_TAG=branch-${APP_SLUG}-latest
 "
 
     log_info "Gerando .env do Traefik em /opt/traefik/.env (credenciais do dashboard e ACME)"

@@ -137,6 +137,11 @@ jobs:
             echo "  image_tag=${IMAGE_TAG}"
 
             export IMAGE_TAG
+            if grep -q '^IMAGE_TAG=' .env; then
+              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env
+            else
+              printf '\nIMAGE_TAG=%s\n' "${IMAGE_TAG}" >> .env
+            fi
             docker compose -p "plannerate-${APP_SLUG}" pull
             docker compose -p "plannerate-${APP_SLUG}" up -d --force-recreate --remove-orphans
             docker compose -p "plannerate-${APP_SLUG}" exec -T app sh -lc '
