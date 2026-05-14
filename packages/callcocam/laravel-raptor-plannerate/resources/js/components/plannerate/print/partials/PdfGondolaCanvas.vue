@@ -18,10 +18,15 @@ const footHeight = computed(() => {
 </script>
 
 <template>
-    <div class="flex-1 px-6 pb-6 overflow-x-auto bg-slate-50 dark:bg-slate-800/50">
+    <div class="flex-1 overflow-auto bg-slate-50 dark:bg-slate-800/50">
         <div
-            class="  px-6 pb-0 w-max min-w-full"
-            :style="{ paddingTop: `${Math.ceil(localScale * 50)}px` }"
+            class="w-max min-w-full"
+            :style="{
+                paddingTop: `${Math.ceil(localScale * 60)}px`,
+                paddingBottom: `${Math.ceil(localScale * 40)}px`,
+                paddingLeft: `${Math.ceil(localScale * 40)}px`,
+                paddingRight: `${Math.ceil(localScale * 40)}px`,
+            }"
         >
             <!-- Seções da gôndola -->
             <div class="flex flex-row items-end gap-0 w-max">

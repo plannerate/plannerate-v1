@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowUpIcon, CalendarDaysIcon, ClipboardListIcon, ShoppingCartIcon } from 'lucide-vue-next'
+import { ArrowUpIcon, CalendarDaysIcon, ClipboardListIcon } from 'lucide-vue-next'
 import { computed } from 'vue'
 import type { Section } from '@/types/planogram'
 import Indicador from '../Indicador.vue'
@@ -64,10 +64,11 @@ const flowEndLabel = computed(() => isLeftToRight.value ? 'Fim do Fluxo' : 'Iní
             <div class="flex items-start justify-between gap-6">
                 <!-- Logo + título -->
                 <div class="flex items-center gap-3">
-                    <div class="w-14 h-14 bg-primary rounded-xl flex items-center justify-center shrink-0">
-                        <ShoppingCartIcon class="w-7 h-7 text-primary-foreground" />
+                    <div class="shrink-0">
+                        <img src="/img/marca-claro.png" alt="Logo" class="h-12 w-auto block dark:hidden" />
+                        <img src="/img/marcadark.png" alt="Logo" class="h-12 w-auto hidden dark:block" />
                     </div>
-                    <div>
+                    <div class="border-l border-slate-200 pl-3">
                         <p v-if="tenantName" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-0.5">
                             {{ tenantName }}
                         </p>
