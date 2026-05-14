@@ -176,23 +176,32 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right')
     <div
         class="min-h-screen bg-slate-100 dark:bg-[#010912] text-slate-900 dark:text-slate-100 transition-colors flex flex-col">
         <!-- Toolbar fixo -->
-        <PdfPreviewToolbar :gondola="(gondola as any)" :sections-count="sections.length" :flow-label="flowLabel"
-            :local-scale="localScale" :scale-min="SCALE_MIN" :scale-max="SCALE_MAX" :layout-direction="layoutDirection"
-            :is-generating="pdfGenerator.isGenerating.value" :is-downloading="isDownloading" :analysis="analysis"
-            @increase-scale="increaseScale" @decrease-scale="decreaseScale" @toggle-layout="toggleLayout"
-            @download-pdf="handleDownloadPdf">
-
-            <!-- Linha 2: indicador de direção do fluxo -->
-            <PdfFlowIndicator :is-left-to-right="isLeftToRight" />
+        <PdfPreviewToolbar
+            :gondola="(gondola as any)"
+            :sections-count="sections.length"
+            :flow-label="flowLabel"
+            :local-scale="localScale"
+            :scale-min="SCALE_MIN"
+            :scale-max="SCALE_MAX"
+            :layout-direction="layoutDirection"
+            :is-generating="pdfGenerator.isGenerating.value"
+            :is-downloading="isDownloading"
+            :tenant-name="tenantName"
+            :responsavel="responsavel"
+            :analysis="analysis"
+            @increase-scale="increaseScale"
+            @decrease-scale="decreaseScale"
+            @toggle-layout="toggleLayout"
+            @download-pdf="handleDownloadPdf"
+        >
+            <PdfFlowIndicator v-if="layoutDirection === 'row'" :is-left-to-right="isLeftToRight" />
         </PdfPreviewToolbar>
-
 
         <!-- MODO ROW: página de visualização completa -->
         <div v-if="layoutDirection === 'row'" class="flex-1 flex flex-col mt-28">
             <!-- Página capturada para PDF single-page -->
-            <div data-pdf-page class="bg-white dark:bg-slate-900 flex-1 flex flex-col shadow-sm">
-                <PdfPageHeader :gondola="(gondola as any)" :tenant-name="tenantName" :responsavel="responsavel"
-                    :flow-label="flowLabel" :is-left-to-right="isLeftToRight" />
+            <div data-pdf-page class="  flex-1 flex flex-col shadow-sm">
+                 
                 <PdfGondolaCanvas :sections="sections" :local-scale="localScale"
                     :alignment="gondola.alignment ?? 'justify'" />
                 <PdfPageFooter :observacoes="observacoes" />
