@@ -1104,6 +1104,33 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'title' => 'Limite de usuarios',
             ],
         ],
+        'system-logs' => [
+            'navigation' => 'Logs do sistema',
+            'title' => 'Logs do sistema',
+            'description' => 'Visualize os logs de atividades e eventos do sistema.',
+            'filters' => [
+                'search' => 'Buscar por usuario, acao ou descricao...',
+                'submit' => 'Filtrar',
+                'clear' => 'Limpar',
+                'event_type' => 'Tipo de evento',
+                'all_event_types' => 'Todos os tipos',
+                'date_range' => 'Intervalo de datas',
+            ],
+            'table' => [
+                'timestamp' => 'Data e hora',
+                'user' => 'Usuario',
+                'action' => 'Acao',
+                'description' => 'Descricao',
+            ],
+            'messages' => [
+                'no_logs' => 'Nenhum log encontrado para os filtros aplicados.',
+            ],
+        ],
+        'editor' => [
+            'planograms' => [
+                'navigation' => 'Planogramas Clientes', 
+            ],
+        ]
     ],
 
     'kanban' => [
@@ -1378,5 +1405,5 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'recovery_codes_hint_prefix' => 'Cada codigo de recuperacao pode ser usado uma unica vez para acessar sua conta e sera removido apos o uso. Se precisar de mais, clique em',
         'recovery_codes_hint_highlight' => 'Gerar novos codigos',
         'recovery_codes_hint_suffix' => 'acima.',
-    ],
+    ]
 ];

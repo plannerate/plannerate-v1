@@ -33,8 +33,7 @@ use Callcocam\LaravelRaptorPlannerate\Models\Editor\User;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\GondolaPayloadService;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\GondolaService;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB; 
 use Inertia\Inertia;
 
 class GondolaController extends Controller

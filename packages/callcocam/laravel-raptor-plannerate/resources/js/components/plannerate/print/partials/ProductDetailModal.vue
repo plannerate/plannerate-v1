@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TrendingDown, TrendingUp, Loader2, Package, Tag, Ruler, BarChart3, ShoppingCart, MessageSquare, Send, StickyNote } from 'lucide-vue-next'
+import { TrendingDown,  Loader2, Package, Tag, Ruler, BarChart3, ShoppingCart, MessageSquare, Send, StickyNote } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { Badge } from '@/components/ui/badge'

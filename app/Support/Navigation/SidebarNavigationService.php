@@ -251,15 +251,15 @@ class SidebarNavigationService
                     })
                     ->item('tenant.editor.planograms', function ($item) use ($subdomain): void {
                         $item
-                            ->label('Planogramas do Cliente')
+                            ->label(__('app.tenant.editor.planograms.navigation'))
                             ->href(route('tenant.editor.planograms.index', ['subdomain' => $subdomain], false))
                             ->icon('eye')
                             ->authorize(PermissionName::TENANT_EDITOR_PLANOGRAMS_VIEW_ANY)
-                            ->setOrder(60);
+                            ->setOrder(5);
                     })
                     ->item('tenant.system-logs', function ($item) use ($subdomain): void {
                         $item
-                            ->label('Logs do sistema')
+                            ->label(__('app.tenant.system-logs.navigation'))
                             ->href(route('tenant.system-logs.index', ['subdomain' => $subdomain], false))
                             ->icon('file-text')
                             ->authorize('viewAny', Product::class)
