@@ -33,7 +33,7 @@ class UploadProductImageRequest extends FormRequest
     {
         return [
             'file' => ['required', 'file', 'image', 'max:10240'],
-            'product_id' => ['nullable', 'ulid'],
+            'product_id' => ['nullable', 'string'],
         ];
     }
 }
