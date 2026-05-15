@@ -76,7 +76,7 @@ const countFormatted = computed<string>(() => {
             <div class="flex items-start justify-between gap-6">
                 <div class="flex-1">
                     <p class="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                        Limite do Plano ({{ tenant.plan_user_limit ?? '∞' }})
+                        Limite do Plano administradores ({{ tenant.plan_user_limit ?? '∞' }})
                     </p>
                     <div class="flex items-end gap-4">
                         <p class="text-6xl font-bold leading-none tabular-nums text-foreground">

@@ -127,8 +127,8 @@ class TenantUserAccessController extends Controller
             ],
             'status_options' => [
                 ['value' => 'all', 'label' => __('app.landlord.tenant_access.statuses.all')],
-                ['value' => 'active', 'label' => __('app.landlord.common.active')],
-                ['value' => 'inactive', 'label' => __('app.landlord.common.inactive')],
+                ['value' => 'published', 'label' => __('app.landlord.common.active')],
+                ['value' => 'draft', 'label' => __('app.landlord.common.inactive')],
                 ['value' => 'trashed', 'label' => __('app.landlord.tenant_access.statuses.deleted')],
             ],
         ]);
