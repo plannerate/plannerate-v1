@@ -68,6 +68,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
     'messages' => [
         'profile_updated' => 'Perfil atualizado com sucesso.',
         'password_updated' => 'Senha atualizada com sucesso.',
+        'other_sessions_terminated' => 'Outras sessões encerradas com sucesso.',
         'generic_error' => 'Algo deu errado.',
     ],
 
@@ -1332,6 +1333,10 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'resend_verification' => 'Clique aqui para reenviar o e-mail de verificacao.',
         'verification_link_sent' => 'Um novo link de verificacao foi enviado para o seu endereco de e-mail.',
         'save_password' => 'Salvar senha',
+        'other_browser_sessions' => 'Outras sessões do navegador',
+        'other_browser_sessions_description' => 'Gerencie e encerre suas sessões ativas em outros navegadores e dispositivos.',
+        'other_browser_sessions_info' => 'Se necessário, você pode encerrar todas as suas outras sessões de navegador em todos os seus dispositivos. Se você acredita que sua conta foi comprometida, você também deve atualizar sua senha.',
+        'logout_other_browser_sessions' => 'Encerrar outras sessões',
     ],
 
     'danger_zone' => [

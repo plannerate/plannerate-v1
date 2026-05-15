@@ -143,6 +143,18 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Single Session
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, logging in will automatically terminate all other active
+    | sessions for the user, preventing concurrent logins across devices.
+    |
+    */
+
+    'single_session' => env('FORTIFY_SINGLE_SESSION', false),
+
     'features' => [
         // Features::registration(),
         Features::resetPasswords(),

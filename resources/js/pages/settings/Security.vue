@@ -2,7 +2,7 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
 import { ShieldCheck } from 'lucide-vue-next';
 import { onUnmounted, ref } from 'vue';
-import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
+import SecurityController, { destroyOtherSessions } from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
@@ -174,5 +174,46 @@ onUnmounted(() => clearTwoFactorAuthData());
             :requiresConfirmation="requiresConfirmation"
             :twoFactorEnabled="twoFactorEnabled"
         />
+    </div>
+
+    <div class="space-y-6">
+        <Heading
+            variant="small"
+            :title="t('app.settings_messages.other_browser_sessions')"
+            :description="t('app.settings_messages.other_browser_sessions_description')"
+        />
+
+        <p class="text-sm text-muted-foreground">
+            {{ t('app.settings_messages.other_browser_sessions_info') }}
+        </p>
+
+        <Form
+            v-bind="destroyOtherSessions.form()"
+            :options="{ preserveScroll: true }"
+            reset-on-success
+            :reset-on-error="['password']"
+            class="space-y-4"
+            v-slot="{ errors, processing }"
+        >
+            <div class="grid gap-2">
+                <Label for="other-sessions-password">{{ t('app.auth.current_password') }}</Label>
+                <PasswordInput
+                    id="other-sessions-password"
+                    name="password"
+                    class="mt-1 block w-full"
+                    autocomplete="current-password"
+                    :placeholder="t('app.auth.current_password')"
+                />
+                <InputError :message="errors.password" />
+            </div>
+
+            <Button
+                variant="destructive"
+                type="submit"
+                :disabled="processing"
+            >
+                {{ t('app.settings_messages.logout_other_browser_sessions') }}
+            </Button>
+        </Form>
     </div>
 </template>

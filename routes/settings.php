@@ -21,5 +21,9 @@ Route::middleware(['auth', SetPermissionTeamContext::class, 'verified'])->group(
         ->middleware('throttle:6,1')
         ->name('user-password.update');
 
+    Route::delete('settings/other-browser-sessions', [SecurityController::class, 'destroyOtherSessions'])
+        ->middleware(['auth.session', 'throttle:6,1'])
+        ->name('other-browser-sessions.destroy');
+
     Route::inertia('settings/appearance', 'settings/Appearance')->name('appearance.edit');
 });

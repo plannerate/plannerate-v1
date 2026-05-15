@@ -5,11 +5,12 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\Modules\RequireActiveTenantModule;
 use App\Http\Middleware\RedirectClientRole;
 use App\Http\Middleware\SetPermissionTeamContext;
+use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
@@ -52,6 +53,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            AuthenticateSession::class,
         ]);
 
         $middleware->alias([
