@@ -50,6 +50,9 @@ class SidebarNavigationService
             : $this->landlordMenu();
     }
 
+    // Ícones usam nomes Lucide em kebab-case (ex: 'layout-grid', 'shield-check').
+    // Ao adicionar um ícone novo, registre-o também em:
+    // resources/js/components/NavMenuEntry.vue → import + iconMap
     private function landlordMenu(): Menu
     {
         return Menu::make('landlord')
