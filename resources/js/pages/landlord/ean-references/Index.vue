@@ -158,7 +158,7 @@ function formatDimensions(reference: EanReferenceRow): string {
                         </td>
                     </tr>
                     <tr v-for="eanReference in eanReferencesRows" :key="eanReference.id"
-                        class="border-t border-sidebar-border/60 dark:border-sidebar-border">
+                        class="border-t border-sidebar-border/60 transition-colors odd:bg-transparent even:bg-muted/30 hover:bg-muted/50 dark:border-sidebar-border">
                         <td class="px-4 py-3">
                             <ColumnImage :src="eanReference.image_front_url"
                                 :alt="eanReference.reference_description || eanReference.ean" />

@@ -228,7 +228,7 @@ function openSsoSheet(tenant: TenantRow): void {
                     <tr
                         v-for="tenant in tenantsRows"
                         :key="tenant.id"
-                        class="border-t border-sidebar-border/60 dark:border-sidebar-border"
+                        class="border-t border-sidebar-border/60 transition-colors odd:bg-transparent even:bg-muted/30 hover:bg-muted/50 dark:border-sidebar-border"
                     >
                         <td class="px-4 py-3">
                             <div class="font-medium">{{ tenant.name }}</div>

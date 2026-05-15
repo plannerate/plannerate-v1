@@ -242,7 +242,7 @@ const pageMeta = useCrudPageMeta({
                     <tr
                         v-for="sale in salesData"
                         :key="sale.id"
-                        class="border-t border-sidebar-border/60 transition-colors odd:bg-muted/10 even:bg-background hover:bg-muted/20 dark:border-sidebar-border"
+                        class="border-t border-sidebar-border/60 transition-colors odd:bg-transparent even:bg-muted/30 hover:bg-muted/50 dark:border-sidebar-border"
                     >
                         <td class="px-4 py-3">
                             <div class="space-y-1">

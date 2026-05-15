@@ -223,7 +223,7 @@ const pageMeta = useCrudPageMeta({
                         <tr
                             v-for="(entry, index) in entries"
                             :key="`${entry.timestamp}-${index}`"
-                            class="border-t border-sidebar-border/60 align-top transition-colors hover:bg-muted/20 dark:border-sidebar-border"
+                            class="border-t border-sidebar-border/60 align-top transition-colors odd:bg-transparent even:bg-muted/30 hover:bg-muted/50 dark:border-sidebar-border"
                         >
                             <td class="whitespace-nowrap px-4 py-3">{{ entry.timestamp || '-' }}</td>
                             <td class="px-4 py-3">

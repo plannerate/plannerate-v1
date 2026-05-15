@@ -125,7 +125,7 @@ const pageMeta = useCrudPageMeta({
                         <tr
                             v-for="user in usersRows"
                             :key="user.id"
-                            class="border-t border-sidebar-border/60 dark:border-sidebar-border"
+                            class="border-t border-sidebar-border/60 transition-colors odd:bg-transparent even:bg-muted/30 hover:bg-muted/50 dark:border-sidebar-border"
                         >
                             <td class="px-4 py-3 font-medium">{{ user.name }}</td>
                             <td class="px-4 py-3">{{ user.email }}</td>

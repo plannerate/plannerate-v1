@@ -216,7 +216,7 @@ const pageMeta = useCrudPageMeta({
                         </td>
                     </tr>
                     <tr v-for="product in productsRows" :key="product.id"
-                        class="border-t border-sidebar-border/60 dark:border-sidebar-border">
+                        class="border-t border-sidebar-border/60 transition-colors odd:bg-transparent even:bg-muted/30 hover:bg-muted/50 dark:border-sidebar-border">
                         <td class="px-4 py-3">
                             <ColumnImage :src="product.image_url" :alt="product.name ?? 'Produto'" />
                         </td>

@@ -125,7 +125,7 @@ const pageMeta = useCrudPageMeta({
                     <tr
                         v-for="gondola in gondolasRows"
                         :key="gondola.id"
-                        class="border-t border-sidebar-border/60 transition-colors hover:bg-muted/20 dark:border-sidebar-border"
+                        class="border-t border-sidebar-border/60 transition-colors odd:bg-transparent even:bg-muted/30 hover:bg-muted/50 dark:border-sidebar-border"
                     >
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-2">
