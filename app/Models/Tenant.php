@@ -53,7 +53,8 @@ class Tenant extends ModelsTenant
     }
 
     /**
-     * Resolve the effective user limit for this tenant's plan.
+     * Resolve the effective tenant-admin user limit for this tenant's plan.
+     * The limit applies only to users with the "tenant-admin" role.
      * Priority:
      * 1) Active plan item with key "user_limit"
      * 2) plans.user_limit fallback

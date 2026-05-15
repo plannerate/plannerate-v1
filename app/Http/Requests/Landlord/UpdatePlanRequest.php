@@ -34,7 +34,7 @@ class UpdatePlanRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', Rule::unique('landlord.plans', 'slug')->ignore($plan)],
             'description' => ['nullable', 'string'],
-            'price_cents' => ['required', 'integer', 'min:0'],
+            'price_cents' => ['nullable'],
             'user_limit' => ['nullable', 'integer', 'min:1'],
             'is_active' => ['sometimes', 'boolean'],
             'items' => ['sometimes', 'array'],
