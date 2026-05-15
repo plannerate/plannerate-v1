@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { BookOpen, CalendarRange, LayoutTemplate, Store } from 'lucide-vue-next';
-import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaController';
 import ClientPlanogramController from '@/actions/App/Http/Controllers/Tenant/Editor/ClientPlanogramController';
 import ListTablePage from '@/components/ListPage.vue';
 import type ListPage from '@/components/ListPage.vue';
@@ -171,7 +170,7 @@ const indexPath = ClientPlanogramController.index.url(props.subdomain).replace(/
                             <td class="px-4 py-3 text-right">
                                 <Button variant="outline" size="sm" as-child>
                                     <WayfinderLink
-                                        :href="GondolaController.index.url({ subdomain: props.subdomain, planogram: planogram.id })"
+                                        :href="ClientPlanogramController.gondolas.url({ subdomain: props.subdomain, planogram: planogram.id })"
                                         class="inline-flex items-center gap-1.5"
                                     >
                                         <BookOpen class="size-3.5" />

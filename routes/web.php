@@ -185,6 +185,21 @@ Route::middleware(['web', NeedsTenant::class])
 
 // ── TENANT (rotas que exigem tenant ativo) ────────────────────
 Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
+    ->middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
+    ->name('tenant.')
+    ->group(function (): void {
+
+        Route::get('editor/planograms', [ClientPlanogramController::class, 'index'])
+            ->name('editor.planograms.index');
+
+        Route::get('editor/planograms/{planogram}/gondolas', [ClientPlanogramController::class, 'gondolas'])
+            ->name('editor.planograms.gondolas');
+
+        Route::get('editor/planograms/{record}/gondolas/editor', [EditorPlanogramController::class, 'edit'])
+            ->name('planograms.gondolas.editor');
+    });
+
+Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
     ->middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class, 'tenant.client.redirect'])
     ->name('tenant.')
     ->group(function (): void {
@@ -251,12 +266,6 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::resource('planograms/{planogram}/gondolas', GondolaController::class)
             ->except(['show'])
             ->names('gondolas');
-
-        Route::get('editor/planograms/{record}/gondolas', [EditorPlanogramController::class, 'edit'])
-            ->name('planograms.gondolas.editor');
-
-        Route::get('editor/planograms', [ClientPlanogramController::class, 'index'])
-            ->name('editor.planograms.index');
 
         Route::post('products/image/upload', [ProductImageController::class, 'upload'])
             ->name('products.image.upload');

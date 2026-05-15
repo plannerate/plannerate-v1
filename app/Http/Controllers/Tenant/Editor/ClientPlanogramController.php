@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant\Editor;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
+use App\Models\Gondola;
 use App\Models\Planogram;
 use App\Models\Store;
 use App\Support\Authorization\PermissionName;
@@ -21,7 +22,7 @@ class ClientPlanogramController extends Controller
 
     public function index(Request $request): Response
     {
-          $this->authorize('viewAny', Planogram::class);
+        Gate::authorize(PermissionName::TENANT_EDITOR_PLANOGRAMS_VIEW_ANY);
 
         $search = $this->requestString($request, 'search');
         $storeId = $this->requestString($request, 'store_id');
@@ -62,6 +63,32 @@ class ClientPlanogramController extends Controller
         ]);
     }
 
+    public function gondolas(Request $request, string $subdomain, Planogram $planogram): Response
+    {
+        unset($subdomain);
+        Gate::authorize(PermissionName::TENANT_EDITOR_PLANOGRAMS_VIEW_ANY); 
+
+        $search = $this->requestString($request, 'search');
+        $status = $this->requestEnum($request, 'status', ['draft', 'published']);
+
+        return $this->renderDeferredIndex('tenant/editor/planograms/Gondolas', 'gondolas', fn (): LengthAwarePaginator => $this->gondolasPaginator(
+            $planogram,
+            $search,
+            $status,
+            $this->resolvePerPage($request, 10),
+        ), [
+            'subdomain' => $this->tenantSubdomain(),
+            'planogram' => [
+                'id' => $planogram->id,
+                'name' => $planogram->name,
+            ],
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+            ],
+        ]);
+    }
+
     private function planogramsPaginator(
         string $search,
         string $storeId,
@@ -92,6 +119,37 @@ class ClientPlanogramController extends Controller
                 'start_date' => $planogram->start_date?->toDateString(),
                 'end_date' => $planogram->end_date?->toDateString(),
                 'description' => $planogram->description,
+            ]);
+    }
+
+    private function gondolasPaginator(
+        Planogram $planogram,
+        string $search,
+        string $status,
+        int $perPage,
+    ): LengthAwarePaginator {
+        return Gondola::query()
+            ->where('planogram_id', $planogram->id)
+            ->when($search !== '', fn ($query) => $query->where(function ($where) use ($search): void {
+                $where
+                    ->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('location', 'like', '%'.$search.'%');
+            }))
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->latest()
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(fn (Gondola $gondola): array => [
+                'id' => $gondola->id,
+                'name' => $gondola->name,
+                'slug' => $gondola->slug,
+                'num_modulos' => $gondola->num_modulos,
+                'location' => $gondola->location,
+                'side' => $gondola->side,
+                'flow' => $gondola->flow,
+                'alignment' => $gondola->alignment,
+                'scale_factor' => $gondola->scale_factor,
+                'status' => $gondola->status,
             ]);
     }
 

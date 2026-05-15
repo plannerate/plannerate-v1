@@ -488,14 +488,14 @@ class GondolaController extends Controller
         return array_values(array_unique(array_merge($hierarchyIds, $descendantIds)));
     }
 
-    public function getRouteGondolasAttribute()
-    {
-        if (! Route::has('tenant.planograms.gondolas.editor')) {
-            return null;
-        }
+    // public function getRouteGondolasAttribute()
+    // {
+    //     if (! Route::has('tenant.planograms.gondolas.editor')) {
+    //         return null;
+    //     }
 
-        return route('tenant.planograms.gondolas.editor', ['planogram' => $this->id]);
-    }
+    //     return route('tenant.planograms.gondolas.editor', ['planogram' => $this->id]);
+    // }
 
     /**
      * @return array<int, array{value: string, label: string, description: string}>

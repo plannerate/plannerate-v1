@@ -18,6 +18,7 @@ use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\UsefulLink;
 use App\Models\User;
+use App\Support\Authorization\PermissionName;
 use App\Support\Navigation\Menu\Menu;
 use App\Support\Navigation\Menu\MenuPayloadAdapter;
 use Illuminate\Http\Request;
@@ -221,6 +222,14 @@ class SidebarNavigationService
                             ->icon('layout-template')
                             ->authorize('viewAny', Planogram::class)
                             ->setOrder(50);
+                    })
+                    ->item('tenant.editor.planograms', function ($item) use ($subdomain): void {
+                        $item
+                            ->label('Planogramas do Cliente')
+                            ->href(route('tenant.editor.planograms.index', ['subdomain' => $subdomain], false))
+                            ->icon('eye')
+                            ->authorize(PermissionName::TENANT_EDITOR_PLANOGRAMS_VIEW_ANY)
+                            ->setOrder(60);
                     });
             })
             ->group('tenant.analytics', function ($group) use ($subdomain): void {
