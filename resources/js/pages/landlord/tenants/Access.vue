@@ -158,10 +158,10 @@ const pageMeta = useCrudPageMeta({
                     <UserX class="size-8 text-muted-foreground" />
                 </div>
                 <p class="font-semibold text-muted-foreground">
-                    Nenhum usuário encontrado
+                    {{ t('app.landlord.tenant_access.empty') }}
                 </p>
                 <p class="mt-1 text-sm text-muted-foreground/70">
-                    Tente ajustar os filtros ou adicione um novo usuário.
+                    {{ t('app.landlord.tenant_access.empty_hint') }}
                 </p>
             </div>
 
@@ -191,17 +191,12 @@ const pageMeta = useCrudPageMeta({
                         {{ t('app.landlord.tenant_access.create_user') }}
                     </p>
                     <p v-if="props.tenant.plan_user_limit" class="mt-1 text-xs">
-                        Sua conta permite mais
-                        {{
-                            props.tenant.plan_user_limit -
-                            props.tenant.users_count
-                        }}
-                        usuário(s)
+                        {{ t('app.landlord.tenant_access.slots_remaining', { count: String(props.tenant.plan_user_limit - props.tenant.users_count) }) }}
                     </p>
                 </button>
             </div>
 
-            <ListPagination :meta="props.users" label="usuário" />
+            <ListPagination :meta="props.users" :label="t('app.landlord.tenant_access.label')" />
         </div>
 
         <AccessUserSheet
