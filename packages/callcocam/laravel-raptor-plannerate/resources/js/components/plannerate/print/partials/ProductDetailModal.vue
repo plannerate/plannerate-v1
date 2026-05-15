@@ -1,19 +1,30 @@
 <script setup lang="ts">
-import { TrendingDown, TrendingUp, Loader2, Package, Tag, Ruler, BarChart3, ShoppingCart } from 'lucide-vue-next'
-import { computed, watch } from 'vue'
+import { TrendingDown, TrendingUp, Loader2, Package, Tag, Ruler, BarChart3, ShoppingCart, MessageSquare, Send, StickyNote } from 'lucide-vue-next'
+import { computed, ref, watch } from 'vue'
+import { toast } from 'vue-sonner'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
 import { useAbcClassification } from '@/composables/plannerate/useAbcClassification'
 import { useProductSales } from '@/composables/plannerate/useProductSales'
 import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis'
 import { useT } from '@/composables/useT'
 import type { Product } from '@/types/planogram'
 
+interface SegmentNoteItem {
+  id: string
+  content: string
+  author: string
+  created_at: string
+}
+
 interface Props {
   open: boolean
   product?: Product | null
+  segmentId?: string | null
   segmentQuantity?: number
   layerQuantity?: number
   shelfDepth?: number
@@ -86,13 +97,58 @@ function formatDate(date: string | null): string {
   return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(date))
 }
 
+// --- Notas ---
+const notes = ref<SegmentNoteItem[]>([])
+const notesLoading = ref(false)
+const noteContent = ref('')
+const noteSending = ref(false)
+
+async function loadNotes() {
+  if (!props.segmentId) return
+  notesLoading.value = true
+  try {
+    const res = await fetch(`/api/editor/segments/${props.segmentId}/notes`)
+    if (res.ok) {
+      const json = await res.json()
+      notes.value = json.data ?? []
+    }
+  } finally {
+    notesLoading.value = false
+  }
+}
+
+async function submitNote() {
+  if (!props.segmentId || !noteContent.value.trim()) return
+  noteSending.value = true
+  try {
+    const res = await fetch(`/api/editor/segments/${props.segmentId}/notes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      body: JSON.stringify({ content: noteContent.value.trim() }),
+    })
+    if (res.ok) {
+      const json = await res.json()
+      notes.value.unshift(json.data)
+      noteContent.value = ''
+      toast.success('Nota adicionada com sucesso.')
+    } else {
+      toast.error('Não foi possível salvar a nota.')
+    }
+  } finally {
+    noteSending.value = false
+  }
+}
+
 watch(
   () => [props.open, props.product?.id],
   ([open, productId]) => {
     if (open && productId) {
       loadSales(productId as string)
+      loadNotes()
     } else if (!open) {
       clearSales()
+      notes.value = []
+      noteContent.value = ''
     }
   },
   { immediate: true },
@@ -293,8 +349,13 @@ function handleClose() {
         <Separator />
 
         <!-- Tabs de análise -->
-        <Tabs default-value="stock" class="w-full">
-          <TabsList class="w-full grid grid-cols-2 h-8">
+        <Tabs default-value="notes" class="w-full">
+          <TabsList class="w-full grid grid-cols-3 h-8">
+            <TabsTrigger value="notes" class="text-xs gap-1">
+              <MessageSquare class="h-3 w-3" />
+              Notas
+              <span v-if="notes.length" class="ml-1 rounded-full bg-primary/20 px-1.5 text-[9px] font-bold text-primary leading-none py-0.5">{{ notes.length }}</span>
+            </TabsTrigger>
             <TabsTrigger value="stock" class="text-xs gap-1">
               <BarChart3 class="h-3 w-3" />
               {{ t('plannerate.print.product_detail.stock_analysis') }}
@@ -304,6 +365,62 @@ function handleClose() {
               Vendas
             </TabsTrigger>
           </TabsList>
+
+          <!-- Aba: Notas -->
+          <TabsContent value="notes" class="mt-3 space-y-3">
+
+            <!-- Formulário nova nota -->
+            <div v-if="segmentId" class="space-y-2">
+              <Textarea
+                v-model="noteContent"
+                placeholder="Adicione uma orientação ou observação sobre este segmento..."
+                class="resize-none text-sm min-h-[72px]"
+                :disabled="noteSending"
+                @keydown.ctrl.enter="submitNote"
+              />
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] text-muted-foreground">Ctrl+Enter para enviar</span>
+                <Button
+                  size="sm"
+                  class="h-7 gap-1.5 text-xs"
+                  :disabled="!noteContent.trim() || noteSending"
+                  @click="submitNote"
+                >
+                  <Send v-if="!noteSending" class="h-3 w-3" />
+                  <Loader2 v-else class="h-3 w-3 animate-spin" />
+                  Enviar
+                </Button>
+              </div>
+            </div>
+
+            <Separator v-if="segmentId && (notes.length > 0 || notesLoading)" />
+
+            <!-- Lista de notas -->
+            <div v-if="notesLoading" class="flex justify-center py-6">
+              <Loader2 class="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+
+            <div v-else-if="notes.length === 0" class="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <StickyNote class="h-8 w-8 mb-2 opacity-40" />
+              <p class="text-sm">Nenhuma nota para este segmento</p>
+              <p class="text-xs">Adicione orientações ou observações acima</p>
+            </div>
+
+            <div v-else class="space-y-2">
+              <div
+                v-for="note in notes"
+                :key="note.id"
+                class="rounded-lg border bg-muted/30 p-3 space-y-1"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-foreground">{{ note.author }}</span>
+                  <span class="text-[10px] text-muted-foreground">{{ note.created_at }}</span>
+                </div>
+                <p class="text-sm text-foreground leading-snug whitespace-pre-wrap">{{ note.content }}</p>
+              </div>
+            </div>
+
+          </TabsContent>
 
           <!-- Aba: Análise de Estoque -->
           <TabsContent value="stock" class="mt-3">

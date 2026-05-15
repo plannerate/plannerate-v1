@@ -222,14 +222,6 @@ class SidebarNavigationService
                             ->icon('layout-template')
                             ->authorize('viewAny', Planogram::class)
                             ->setOrder(50);
-                    })
-                    ->item('tenant.editor.planograms', function ($item) use ($subdomain): void {
-                        $item
-                            ->label('Planogramas do Cliente')
-                            ->href(route('tenant.editor.planograms.index', ['subdomain' => $subdomain], false))
-                            ->icon('eye')
-                            ->authorize(PermissionName::TENANT_EDITOR_PLANOGRAMS_VIEW_ANY)
-                            ->setOrder(60);
                     });
             })
             ->group('tenant.analytics', function ($group) use ($subdomain): void {
@@ -256,6 +248,14 @@ class SidebarNavigationService
                             ->icon('users')
                             ->authorize('viewAny', User::class)
                             ->setOrder(10);
+                    })
+                    ->item('tenant.editor.planograms', function ($item) use ($subdomain): void {
+                        $item
+                            ->label('Planogramas do Cliente')
+                            ->href(route('tenant.editor.planograms.index', ['subdomain' => $subdomain], false))
+                            ->icon('eye')
+                            ->authorize(PermissionName::TENANT_EDITOR_PLANOGRAMS_VIEW_ANY)
+                            ->setOrder(60);
                     })
                     ->item('tenant.system-logs', function ($item) use ($subdomain): void {
                         $item

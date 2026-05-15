@@ -37,7 +37,6 @@ export interface Product {
     volume?: number;
     brand?: string;
     category?: string;
-    price?: number;
     status?: string;
     /** Indica se o produto tem dimensões (altura, largura e profundidade) preenchidas. */
     has_dimensions?: boolean;

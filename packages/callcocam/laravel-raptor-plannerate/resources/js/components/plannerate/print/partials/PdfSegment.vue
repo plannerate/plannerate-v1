@@ -63,9 +63,10 @@ function handleClick() {
   </div>
 
   <!-- Modal de detalhes -->
-  <ProductDetailModal 
-    v-model:open="showModal" 
-    :product="segment.layer?.product" 
+  <ProductDetailModal
+    v-model:open="showModal"
+    :product="segment.layer?.product"
+    :segment-id="segment.id"
     :segment-quantity="segment.quantity"
     :layer-quantity="segment.layer?.quantity"
     :shelf-depth="shelfDepth"

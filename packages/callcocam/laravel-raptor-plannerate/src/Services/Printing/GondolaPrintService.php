@@ -262,7 +262,6 @@ class GondolaPrintService
                                             'height' => $product->height ?? 15,
                                             'depth' => $product->depth ?? 0,
                                             'weight' => $product->weight,
-                                            'price' => $product->price,
                                             'image_url' => $product->image_url,
                                             'image_url_encoded' => $product->image_url_encoded ?? null,
                                         ] : null,

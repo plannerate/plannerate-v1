@@ -17,6 +17,7 @@ use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\ProductSalesContro
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\SaveChangesController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\SectionController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\SegmentController;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\SegmentNoteController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\ShelfController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController;
 use Illuminate\Support\Facades\Route;
@@ -106,6 +107,12 @@ Route::prefix('api')->name('api.')
         // Editor API Routes - Segments
         Route::put('editor/segments/{id}', [SegmentController::class, 'update'])
             ->name('editor.segments.update');
+
+        // Editor API Routes - Segment Notes
+        Route::get('editor/segments/{segment}/notes', [SegmentNoteController::class, 'index'])
+            ->name('editor.segments.notes.index');
+        Route::post('editor/segments/{segment}/notes', [SegmentNoteController::class, 'store'])
+            ->name('editor.segments.notes.store');
 
         // Editor API Routes - Layers
         Route::put('editor/layers/{id}', [LayerController::class, 'update'])

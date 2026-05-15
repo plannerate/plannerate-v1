@@ -1,30 +1,33 @@
 <?php
 
-/**
- * Created by Claudio Campos.
- * User: callcocam, contato@sigasmart.com.br
- * https://www.sigasmart.com.br
- */
-
 namespace Callcocam\LaravelRaptorPlannerate\Models\Editor;
 
 use App\Models\Traits\BelongsToTenant;
+use App\Models\User;
 use Callcocam\LaravelRaptorPlannerate\Models\Traits\UsesPlannerateTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Segment extends Model
+class SegmentNote extends Model
 {
     use BelongsToTenant, HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
 
-    public function layer()
+    protected $fillable = [
+        'tenant_id',
+        'gondola_id',
+        'segment_id',
+        'user_id',
+        'content',
+    ];
+
+    public function segment()
     {
-        return $this->hasOne(Layer::class);
+        return $this->belongsTo(Segment::class);
     }
 
-    public function shelf()
+    public function user()
     {
-        return $this->belongsTo(Shelf::class);
+        return $this->belongsTo(User::class);
     }
 }
