@@ -324,8 +324,8 @@ function handleClose() {
               </div>
             </div>
 
-            <!-- Peso / Volume / Preço se disponíveis -->
-            <div v-if="product.weight || product.volume || product.price" class="flex items-end gap-3 rounded border bg-muted/20 px-3 py-2 mt-2">
+            <!-- Peso / Volume se disponíveis -->
+            <div v-if="product.weight || product.volume" class="flex items-end gap-3 rounded border bg-muted/20 px-3 py-2 mt-2">
               <div v-if="product.weight" class="flex flex-col items-start">
                 <span class="text-[9px] text-muted-foreground leading-none mb-0.5">Peso</span>
                 <span class="text-xl font-bold leading-none tabular-nums">
@@ -337,10 +337,6 @@ function handleClose() {
                 <span class="text-xl font-bold leading-none tabular-nums">
                   {{ product.volume }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">L</sup>
                 </span>
-              </div>
-              <div v-if="product.price" class="flex flex-col items-start">
-                <span class="text-[9px] text-muted-foreground leading-none mb-0.5">Preço</span>
-                <span class="text-xl font-bold leading-none text-green-600">{{ formatCurrency(product.price) }}</span>
               </div>
             </div>
           </div>
