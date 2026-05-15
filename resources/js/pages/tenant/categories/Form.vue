@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { Tag } from 'lucide-vue-next';
 import { computed } from 'vue';
 import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryController'; 
 
@@ -76,7 +77,12 @@ const statusOptions = computed(() => [
             <FormCard
                 :processing="processing"
                 :cancel-href="categoriesIndexPath"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
             >
+                <template #icon>
+                    <Tag class="size-5" />
+                </template>
                 <div class="grid gap-4 md:grid-cols-2">
                     <FormTextField
                         id="name"

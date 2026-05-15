@@ -63,6 +63,8 @@ const pageMeta = useCrudPageMeta({
             <FormCard
                 :processing="processing"
                 :cancel-href="usersIndexPath"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
             >
                 <template #icon>
                     <UserCog class="size-5" />

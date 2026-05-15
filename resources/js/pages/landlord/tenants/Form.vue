@@ -168,6 +168,8 @@ const formProps = computed(() => {
             <FormCard
                 :processing="processing"
                 :cancel-href="tenantsIndexPath"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
             >
                 <template #icon>
                     <Building2 class="size-5" />

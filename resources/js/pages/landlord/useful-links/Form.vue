@@ -59,6 +59,8 @@ const pageMeta = useCrudPageMeta({
                 <FormCard
                     :processing="processing"
                     :cancel-href="usefulLinksIndexPath"
+                    :title="pageMeta.title"
+                    :description="pageMeta.description"
                 >
                     <template #icon>
                         <Link class="size-5" />

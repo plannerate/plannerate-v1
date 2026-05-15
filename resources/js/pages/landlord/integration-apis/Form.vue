@@ -421,7 +421,12 @@ function newPathId(): string {
                     ? { ...IntegrationApiController.update.form(props.integrationApi!.id), action: tenantWayfinderPath(IntegrationApiController.update.form(props.integrationApi!.id).action) }
                     : { ...IntegrationApiController.store.form(), action: tenantWayfinderPath(IntegrationApiController.store.form().action) }"
                 v-slot="{ errors, processing }">
-                <FormCard :processing="processing" :cancel-href="integrationApisIndexPath">
+                <FormCard
+                    :processing="processing"
+                    :cancel-href="integrationApisIndexPath"
+                    :title="pageMeta.title"
+                    :description="pageMeta.description"
+                >
                     <template #icon>
                         <Plug class="size-5" />
                     </template>

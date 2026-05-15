@@ -77,6 +77,8 @@ const pageMeta = useCrudPageMeta({
                 <FormCard
                     :processing="processing"
                     :cancel-href="eanReferencesIndexPath"
+                    :title="pageMeta.title"
+                    :description="pageMeta.description"
                 >
                     <template #icon>
                         <Barcode class="size-5" />

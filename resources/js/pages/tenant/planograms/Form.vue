@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { LayoutGrid } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import FormKanbanSettings from '@/components/form/FormKanbanSettings.vue';
@@ -113,7 +114,12 @@ const pageMeta = useCrudPageMeta({
                 <FormCard
                     :processing="processing"
                     :cancel-href="planogramsIndexPath"
+                    :title="pageMeta.title"
+                    :description="pageMeta.description"
                 >
+                    <template #icon>
+                        <LayoutGrid class="size-5" />
+                    </template>
                     <FormTabsBar v-model="activeTab" :tabs="tabs" />
 
                     <!-- Tab: Identificação -->

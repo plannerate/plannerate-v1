@@ -67,6 +67,8 @@ const pageMeta = useCrudPageMeta({
                 :processing="processing"
                 :disabled="isProtected"
                 :cancel-href="permissionsIndexPath"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
             >
                 <template #icon>
                     <ShieldCheck class="size-5" />

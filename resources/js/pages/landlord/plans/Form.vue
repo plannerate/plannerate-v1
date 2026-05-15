@@ -92,6 +92,8 @@ const pageMeta = useCrudPageMeta({
             <FormCard
                 :processing="processing"
                 :cancel-href="plansIndexPath"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
             >
                 <template #icon>
                     <Layers class="size-5" />

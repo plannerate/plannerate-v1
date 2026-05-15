@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, usePage } from '@inertiajs/vue3';
+import { Package } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import FormDecimalField from '@/components/form/FormDecimalField.vue';
@@ -348,7 +349,12 @@ const pageMeta = useCrudPageMeta({
             <FormCard
                 :processing="processing"
                 :cancel-href="productsIndexPath"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
             >
+                <template #icon>
+                    <Package class="size-5" />
+                </template>
 
                 <FormTabsBar v-model="activeTab" :tabs="tabs" @update:model-value="setTab($event as TabKey)" />
 

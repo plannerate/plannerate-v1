@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { ShoppingCart } from 'lucide-vue-next';
 import { computed } from 'vue';
 import SaleController from '@/actions/App/Http/Controllers/Tenant/SaleController';
 import FormDecimalField from '@/components/form/FormDecimalField.vue';
@@ -89,7 +90,12 @@ const pageMeta = useCrudPageMeta({
                 <FormCard
                     :processing="processing"
                     :cancel-href="salesIndexPath"
+                    :title="pageMeta.title"
+                    :description="pageMeta.description"
                 >
+                    <template #icon>
+                        <ShoppingCart class="size-5" />
+                    </template>
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
                         <FormSelectField
                             id="store_id"

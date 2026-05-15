@@ -170,6 +170,8 @@ const pageMeta = useCrudPageMeta(
                 <FormCard
                     :processing="processing"
                     :cancel-href="storesIndexPath"
+                    :title="pageMeta.title"
+                    :description="pageMeta.description"
                 >
                     <template #icon>
                         <StoreIcon class="size-5" />

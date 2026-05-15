@@ -89,6 +89,8 @@ const pageMeta = useCrudPageMeta({
             <FormCard
                 :processing="processing"
                 :cancel-href="gondolasIndexPath"
+                :title="pageMeta.title"
+                :description="pageMeta.description"
             >
                 <template #icon>
                     <PanelTop class="size-5" />
