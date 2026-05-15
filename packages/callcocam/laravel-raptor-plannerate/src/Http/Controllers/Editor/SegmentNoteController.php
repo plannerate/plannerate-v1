@@ -87,7 +87,7 @@ class SegmentNoteController extends Controller
 
         User::whereIn('id', $recipientIds)
             ->get()
-            ->each(fn ($user) => $user->notify($notification));
+            ->each(fn ($user) => $user->notifyNow($notification));
     }
 
     private function resolveRecipientIds(string $gondolaId, ?string $excludeUserId): Collection

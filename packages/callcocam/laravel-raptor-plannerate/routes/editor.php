@@ -34,6 +34,12 @@ Route::prefix('api')->name('api.')
             ->name('editor.gondolas.analysis.target-stock');
         Route::delete('editor/gondolas/{gondola}/analysis', [GondolaAnalysisController::class, 'clearAnalysisApi'])
             ->name('editor.gondolas.analysis.clear');
+
+        // Editor API Routes - Segment Notes
+        Route::get('editor/segments/{segment}/notes', [SegmentNoteController::class, 'index'])
+            ->name('editor.segments.notes.index');
+        Route::post('editor/segments/{segment}/notes', [SegmentNoteController::class, 'store'])
+            ->name('editor.segments.notes.store');
     });
 
 Route::prefix('api')->name('api.')
@@ -107,12 +113,6 @@ Route::prefix('api')->name('api.')
         // Editor API Routes - Segments
         Route::put('editor/segments/{id}', [SegmentController::class, 'update'])
             ->name('editor.segments.update');
-
-        // Editor API Routes - Segment Notes
-        Route::get('editor/segments/{segment}/notes', [SegmentNoteController::class, 'index'])
-            ->name('editor.segments.notes.index');
-        Route::post('editor/segments/{segment}/notes', [SegmentNoteController::class, 'store'])
-            ->name('editor.segments.notes.store');
 
         // Editor API Routes - Layers
         Route::put('editor/layers/{id}', [LayerController::class, 'update'])
