@@ -20,6 +20,7 @@ use App\Http\Controllers\Landlord\WorkflowTemplateController as LandlordWorkflow
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\ClusterController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboardController;
+use App\Http\Controllers\Tenant\Editor\ClientPlanogramController;
 use App\Http\Controllers\Tenant\Editor\EditorPlanogramController;
 use App\Http\Controllers\Tenant\GondolaController;
 use App\Http\Controllers\Tenant\NotificationController;
@@ -82,6 +83,9 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::resource('users', UserController::class)
         ->except(['show'])
         ->names('landlord.users');
+
+    Route::post('permissions/sync', [PermissionController::class, 'sync'])
+        ->name('landlord.permissions.sync');
 
     Route::resource('permissions', PermissionController::class)
         ->except(['show'])
@@ -181,7 +185,7 @@ Route::middleware(['web', NeedsTenant::class])
 
 // ── TENANT (rotas que exigem tenant ativo) ────────────────────
 Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
-    ->middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
+    ->middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class, 'tenant.client.redirect'])
     ->name('tenant.')
     ->group(function (): void {
         Route::get('/', [TenantDashboardController::class, 'index'])->name('dashboard');
@@ -250,6 +254,9 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
 
         Route::get('editor/planograms/{record}/gondolas', [EditorPlanogramController::class, 'edit'])
             ->name('planograms.gondolas.editor');
+
+        Route::get('editor/planograms', [ClientPlanogramController::class, 'index'])
+            ->name('editor.planograms.index');
 
         Route::post('products/image/upload', [ProductImageController::class, 'upload'])
             ->name('products.image.upload');

@@ -7,12 +7,16 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Landlord\StorePermissionRequest;
 use App\Http\Requests\Landlord\UpdatePermissionRequest;
 use App\Models\Permission;
+use App\Models\Role;
+use App\Support\Authorization\PermissionName;
 use App\Support\Authorization\RbacType;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\Permission\PermissionRegistrar;
 
 class PermissionController extends Controller
 {
@@ -37,6 +41,12 @@ class PermissionController extends Controller
         $search = $this->requestString($request, 'search');
         $type = $this->requestEnum($request, 'type', RbacType::all());
 
+        $existing = Permission::query()->where('guard_name', 'web')->pluck('name')->all();
+        $missingCount = count(array_filter(
+            PermissionName::all(),
+            fn (string $name): bool => ! in_array($name, $existing, true),
+        ));
+
         return $this->renderDeferredIndex('landlord/permissions/Index', 'permissions', fn (): LengthAwarePaginator => $this->permissionsPaginator(
             $search,
             $type,
@@ -49,6 +59,7 @@ class PermissionController extends Controller
             'filter_options' => [
                 'types' => $this->typesForSelect(),
             ],
+            'missing_count' => $missingCount,
         ]);
     }
 
@@ -146,6 +157,70 @@ class PermissionController extends Controller
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('app.landlord.permissions.messages.updated'),
+        ]);
+
+        return to_route('landlord.permissions.index');
+    }
+
+    /**
+     * Sync permissions from PermissionName constants to the database.
+     */
+    public function sync(): RedirectResponse
+    {
+        $this->authorize('create', Permission::class);
+
+        $existing = Permission::query()->where('guard_name', 'web')->pluck('name')->all();
+
+        $missing = array_filter(
+            PermissionName::all(),
+            fn (string $name): bool => ! in_array($name, $existing, true),
+        );
+
+        if (empty($missing)) {
+            Inertia::flash('toast', [
+                'type' => 'info',
+                'message' => 'Todas as permissões já estão registradas.',
+            ]);
+
+            return to_route('landlord.permissions.index');
+        }
+
+        $currentTeamId = getPermissionsTeamId();
+        setPermissionsTeamId(null);
+
+        /** @var Collection<int, Permission> $created */
+        $created = collect();
+
+        foreach ($missing as $name) {
+            $created->push(Permission::query()->create([
+                'name' => $name,
+                'type' => PermissionName::typeFor($name) ?? RbacType::TENANT,
+                'guard_name' => 'web',
+            ]));
+        }
+
+        $superAdmin = Role::query()->where('system_name', 'super-admin')->first();
+        $landlordAdmin = Role::query()->where('system_name', 'landlord-admin')->first();
+        $tenantAdmin = Role::query()->where('system_name', 'tenant-admin')->first();
+
+        foreach ($created as $permission) {
+            $superAdmin?->givePermissionTo($permission);
+
+            if ($permission->type === RbacType::LANDLORD) {
+                $landlordAdmin?->givePermissionTo($permission);
+            } elseif ($permission->type === RbacType::TENANT) {
+                $tenantAdmin?->givePermissionTo($permission);
+            }
+        }
+
+        setPermissionsTeamId($currentTeamId);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $count = $created->count();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => "{$count} nova(s) permissão(ões) cadastrada(s) e atribuída(s) com sucesso.",
         ]);
 
         return to_route('landlord.permissions.index');

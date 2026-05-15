@@ -56,9 +56,7 @@ class LandlordRbacSeeder extends Seeder
         ]);
 
         $superAdminRole->syncPermissions(PermissionName::all());
-        $landlordAdminRole->syncPermissions(PermissionName::all());
-        $tenantAdminRole->syncPermissions([
-            PermissionName::TENANT_DASHBOARD_VIEW,
+        $landlordAdminRole->syncPermissions([
             PermissionName::LANDLORD_USERS_VIEW_ANY,
             PermissionName::LANDLORD_USERS_VIEW,
             PermissionName::LANDLORD_USERS_CREATE,
@@ -99,6 +97,12 @@ class LandlordRbacSeeder extends Seeder
             PermissionName::LANDLORD_USEFUL_LINKS_CREATE,
             PermissionName::LANDLORD_USEFUL_LINKS_UPDATE,
             PermissionName::LANDLORD_USEFUL_LINKS_DELETE,
+            PermissionName::LANDLORD_KANBAN_TEMPLATES_VIEW_ANY,
+            PermissionName::LANDLORD_KANBAN_TEMPLATES_CREATE,
+            PermissionName::LANDLORD_KANBAN_TEMPLATES_UPDATE,
+            PermissionName::LANDLORD_KANBAN_TEMPLATES_DELETE,
+        ]);
+        $tenantAdminRole->syncPermissions([
             PermissionName::TENANT_DASHBOARD_VIEW,
             PermissionName::TENANT_EAN_REFERENCES_VIEW_ANY,
             PermissionName::TENANT_EAN_REFERENCES_VIEW,
@@ -135,6 +139,11 @@ class LandlordRbacSeeder extends Seeder
             PermissionName::TENANT_PROVIDERS_CREATE,
             PermissionName::TENANT_PROVIDERS_UPDATE,
             PermissionName::TENANT_PROVIDERS_DELETE,
+            PermissionName::TENANT_USERS_VIEW_ANY,
+            PermissionName::TENANT_USERS_VIEW,
+            PermissionName::TENANT_USERS_CREATE,
+            PermissionName::TENANT_USERS_UPDATE,
+            PermissionName::TENANT_USERS_DELETE,
             PermissionName::TENANT_PLANOGRAMS_VIEW_ANY,
             PermissionName::TENANT_PLANOGRAMS_VIEW,
             PermissionName::TENANT_PLANOGRAMS_CREATE,
@@ -145,20 +154,14 @@ class LandlordRbacSeeder extends Seeder
             PermissionName::TENANT_GONDOLAS_CREATE,
             PermissionName::TENANT_GONDOLAS_UPDATE,
             PermissionName::TENANT_GONDOLAS_DELETE,
-            PermissionName::LANDLORD_KANBAN_TEMPLATES_VIEW_ANY,
-            PermissionName::LANDLORD_KANBAN_TEMPLATES_CREATE,
-            PermissionName::LANDLORD_KANBAN_TEMPLATES_UPDATE,
-            PermissionName::LANDLORD_KANBAN_TEMPLATES_DELETE,
+            PermissionName::TENANT_GONDOLAS_AUTOGENERATE,
+            PermissionName::TENANT_GONDOLAS_AUTOGENERATE_IA,
+            PermissionName::TENANT_EDITOR_PLANOGRAMS_VIEW_ANY,
             PermissionName::TENANT_KANBAN_VIEW_ANY,
             PermissionName::TENANT_KANBAN_EXECUTIONS_START,
             PermissionName::TENANT_KANBAN_EXECUTIONS_MOVE,
             PermissionName::TENANT_KANBAN_EXECUTIONS_MANAGE,
             PermissionName::TENANT_KANBAN_EXECUTIONS_RESTORE,
-            PermissionName::TENANT_USERS_VIEW_ANY,
-            PermissionName::TENANT_USERS_VIEW,
-            PermissionName::TENANT_USERS_CREATE,
-            PermissionName::TENANT_USERS_UPDATE,
-            PermissionName::TENANT_USERS_DELETE,
         ]);
 
         $adminUser = User::firstOrCreate(

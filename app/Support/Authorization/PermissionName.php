@@ -198,6 +198,8 @@ final class PermissionName
 
     public const LANDLORD_KANBAN_TEMPLATES_DELETE = 'landlord.kanban.templates.delete';
 
+    public const TENANT_EDITOR_PLANOGRAMS_VIEW_ANY = 'tenant.editor-planograms.viewAny';
+
     public const TENANT_KANBAN_VIEW_ANY = 'tenant.kanban.viewAny';
 
     public const TENANT_KANBAN_EXECUTIONS_START = 'tenant.kanban.executions.start';
@@ -307,6 +309,7 @@ final class PermissionName
             self::TENANT_GONDOLAS_DELETE,
             self::TENANT_GONDOLAS_AUTOGENERATE,
             self::TENANT_GONDOLAS_AUTOGENERATE_IA,
+            self::TENANT_EDITOR_PLANOGRAMS_VIEW_ANY,
             self::LANDLORD_KANBAN_TEMPLATES_VIEW_ANY,
             self::LANDLORD_KANBAN_TEMPLATES_CREATE,
             self::LANDLORD_KANBAN_TEMPLATES_UPDATE,

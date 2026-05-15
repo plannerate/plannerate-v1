@@ -104,11 +104,11 @@ const pageMeta = useCrudPageMeta({
             <Form
                 v-bind="
                     isEdit
-                        ? PlanogramController.update.form({
+                        ? PlanogramController.update?.form({
                               subdomain: props.subdomain,
                               planogram: props.planogram!.id,
                           })
-                        : PlanogramController.store.form(props.subdomain)
+                        : PlanogramController.store?.form(props.subdomain)
                 "
                 v-slot="{ errors, processing }"
             >

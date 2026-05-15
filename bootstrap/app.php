@@ -3,6 +3,7 @@
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\Modules\RequireActiveTenantModule;
+use App\Http\Middleware\RedirectClientRole;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -55,6 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'tenant.module.active' => RequireActiveTenantModule::class,
+            'tenant.client.redirect' => RedirectClientRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
