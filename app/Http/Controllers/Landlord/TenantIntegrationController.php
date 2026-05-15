@@ -7,12 +7,13 @@ use App\Http\Requests\Landlord\UpdateTenantIntegrationRequest;
 use App\Models\IntegrationApi;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
-use Illuminate\Http\JsonResponse;
+use App\Services\Integrations\IntegrationHttpClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class TenantIntegrationController extends Controller
 {
@@ -20,15 +21,20 @@ class TenantIntegrationController extends Controller
     {
         $this->authorize('update', $tenant);
 
-        $integration = $tenant->integration;
+        $integration = $tenant->integration?->load('api');
         $config = is_array($integration?->config) ? $integration->config : [];
-        $processing = is_array($config['processing'] ?? null) ? $config['processing'] : [];
         $auth = is_array($config['auth'] ?? null) ? $config['auth'] : [];
         $connection = is_array($config['connection'] ?? null) ? $config['connection'] : [];
         $credentials = is_array($auth['credentials'] ?? null) ? $auth['credentials'] : [];
         $type = (string) ($integration?->integration_type ?? '');
-
         $authType = (string) ($auth['type'] ?? 'basic');
+
+        $api = $integration?->api;
+        $apiPaths = collect(data_get($api?->requests, 'paths', []))
+            ->map(fn (mixed $pathConfig, string $pathKey) => [
+                'key' => $pathKey,
+                'path' => (string) data_get($pathConfig, 'fallback_path', '/'.$pathKey),
+            ])->values()->all();
 
         $integrationData = $integration ? [
             'id' => $integration->id,
@@ -56,6 +62,9 @@ class TenantIntegrationController extends Controller
             'auth_token_headers' => $this->formatKeyValueRowsForFrontend($auth['token_request']['headers'] ?? []),
             'auth_token_params' => $this->formatKeyValueRowsForFrontend($auth['token_request']['params'] ?? []),
             'auth_token_body' => $this->formatKeyValueRowsForFrontend($auth['token_request']['body'] ?? []),
+            // API paths para seleção de teste
+            'api_paths' => $apiPaths,
+            'api_method' => strtolower((string) data_get($api?->requests, 'method', 'post')),
         ] : null;
 
         return Inertia::render('landlord/tenants/Integration', [
@@ -155,9 +164,60 @@ class TenantIntegrationController extends Controller
         return to_route('landlord.tenants.integration.edit', $tenant);
     }
 
-    public function testConnection(Request $request, Tenant $tenant): RedirectResponse|JsonResponse
+    public function testConnection(Request $request, Tenant $tenant): RedirectResponse
     {
         $this->authorize('update', $tenant);
+
+        $integration = $tenant->integration;
+
+        if (! $integration instanceof TenantIntegration) {
+            Inertia::flash('tenant_integration_test', [
+                'ok' => false,
+                'message' => __('app.landlord.tenant_integrations.messages.missing_configuration'),
+                'meta' => [],
+            ]);
+
+            return to_route('landlord.tenants.integration.edit', $tenant);
+        }
+
+        $config = is_array($integration->config) ? $integration->config : [];
+        $baseUrl = rtrim((string) data_get($config, 'connection.base_url', ''), '/');
+        $testPath = '/'.ltrim((string) $request->input('test_path', '/'), '/');
+        $url = $baseUrl.$testPath;
+        $method = strtolower((string) $request->input('test_method', 'post'));
+
+        $savedBody = [];
+        foreach (data_get($config, 'connection.body', []) as $param) {
+            if ($param['enabled'] ?? false) {
+                $savedBody[(string) $param['key']] = $param['value'];
+            }
+        }
+        $body = array_merge($savedBody, $this->testBody($request));
+
+        try {
+            $client = new IntegrationHttpClient($config);
+            $response = $client->call($method, $url, $body);
+
+            Inertia::flash('tenant_integration_test', [
+                'ok' => $response->successful(),
+                'message' => sprintf('HTTP %d', $response->status()),
+                'meta' => [
+                    'status' => $response->status(),
+                    'url' => $url,
+                    'method' => strtoupper($method),
+                ],
+                'data' => $response->json() ?? $response->body(),
+            ]);
+        } catch (Throwable $e) {
+            Inertia::flash('tenant_integration_test', [
+                'ok' => false,
+                'message' => $e->getMessage(),
+                'meta' => [
+                    'url' => $url,
+                    'method' => strtoupper($method),
+                ],
+            ]);
+        }
 
         return to_route('landlord.tenants.integration.edit', $tenant);
     }
