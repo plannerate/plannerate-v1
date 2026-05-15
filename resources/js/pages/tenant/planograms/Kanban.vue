@@ -68,6 +68,8 @@ const {
     completeDetailExecution,
     abandonExecution,
     abandonDetailExecution,
+    requestAbandonment,
+    requestDetailAbandonment,
     openExecutionDetails,
     onDragStart,
     onDragOver,
@@ -165,6 +167,8 @@ async function runDetailAction(action: KanbanExecutionAction): Promise<void> {
         await completeDetailExecution();
     } else if (action === 'abandon') {
         await abandonDetailExecution();
+    } else if (action === 'request_abandonment') {
+        await requestDetailAbandonment();
     }
 }
 
@@ -179,6 +183,8 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
         await completeExecution(execution);
     } else if (action === 'abandon') {
         await abandonExecution(execution);
+    } else if (action === 'request_abandonment') {
+        await requestAbandonment(execution);
     }
 }
 </script>
@@ -257,6 +263,7 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
                     @resume="requestCardAction('resume', $event)"
                     @complete="requestCardAction('complete', $event)"
                     @abandon="requestCardAction('abandon', $event)"
+                    @request-abandonment="requestCardAction('request_abandonment', $event)"
                 />
             </div>
         </div>
@@ -278,6 +285,7 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
             @resume="requestDetailAction('resume')"
             @complete="requestDetailAction('complete')"
             @abandon="requestDetailAction('abandon')"
+            @request-abandonment="requestDetailAction('request_abandonment')"
         />
 
         <KanbanActionConfirmDialog

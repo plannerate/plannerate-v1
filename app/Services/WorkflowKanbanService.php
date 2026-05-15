@@ -6,11 +6,13 @@ use App\Enums\WorkflowExecutionStatus;
 use App\Enums\WorkflowHistoryAction;
 use App\Models\Gondola;
 use App\Models\Planogram;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Models\WorkflowGondolaExecution;
 use App\Models\WorkflowHistory;
 use App\Models\WorkflowPlanogramStep;
 use App\Models\WorkflowTemplate;
+use App\Notifications\AppNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -27,6 +29,7 @@ class WorkflowKanbanService
         ?string $storeId = null,
         ?string $executionStatus = null,
         ?string $gondolaSearch = null,
+        ?string $currentResponsibleId = null,
     ): array {
         $templates = WorkflowTemplate::query()
             ->where('status', 'published')
@@ -63,6 +66,10 @@ class WorkflowKanbanService
                 'step:id,name,workflow_template_id',
             ])
             ->when($executionStatus, fn ($query) => $query->where('status', $executionStatus))
+            ->when(
+                $currentResponsibleId,
+                fn ($query) => $query->forResponsible($currentResponsibleId)
+            )
             ->when(
                 $gondolaSearch,
                 fn ($query) => $query->whereHas(
@@ -116,6 +123,7 @@ class WorkflowKanbanService
                     'can_resume' => $user?->can('resume', $exec) ?? false,
                     'can_complete' => $user?->can('complete', $exec) ?? false,
                     'can_abandon' => $user?->can('abandon', $exec) ?? false,
+                    'can_request_abandonment' => $user?->can('requestAbandonment', $exec) ?? false,
                     'can_move' => $user?->can('move', $exec) ?? false,
                 ])->values()->all(),
             ];
@@ -271,6 +279,42 @@ class WorkflowKanbanService
         });
     }
 
+    public function requestAbandonment(
+        WorkflowGondolaExecution $execution,
+        User $actor,
+        ?string $notes = null,
+        ?string $actionUrl = null
+    ): void {
+        $execution->loadMissing([
+            'gondola:id,name,planogram_id',
+            'startedBy:id,name',
+            'step:id,name',
+        ]);
+
+        $startedBy = $execution->startedBy;
+
+        abort_if($startedBy === null, 422, 'A execução não possui usuário executor para notificar.');
+
+        $gondolaName = $execution->gondola?->name ?? 'gôndola sem nome';
+        $stepName = $execution->step?->name ?? 'etapa atual';
+        $planogramContext = $execution->gondola?->planogram_id !== null
+            ? " do planograma {$execution->gondola->planogram_id}"
+            : '';
+        $message = "{$actor->name} solicitou que você abandone a execução da {$gondolaName}{$planogramContext} na etapa {$stepName}.";
+
+        if ($notes !== null && $notes !== '') {
+            $message .= " Observação: {$notes}";
+        }
+
+        $startedBy->notify(new AppNotification(
+            title: 'Solicitação de abandono',
+            message: $message,
+            type: 'warning',
+            actionUrl: $actionUrl,
+            tenantId: (string) (Tenant::current()?->getKey() ?? ''),
+        ));
+    }
+
     /**
      * Assign a responsible user to the execution.
      */
@@ -381,6 +425,7 @@ class WorkflowKanbanService
                     'can_resume' => $user?->can('resume', $exec) ?? false,
                     'can_complete' => $user?->can('complete', $exec) ?? false,
                     'can_abandon' => $user?->can('abandon', $exec) ?? false,
+                    'can_request_abandonment' => $user?->can('requestAbandonment', $exec) ?? false,
                     'can_move' => $user?->can('move', $exec) ?? false,
                 ])->values()->all(),
             ];

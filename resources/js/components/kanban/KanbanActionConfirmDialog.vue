@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AlertTriangle, CheckCircle2, Pause, Play, RotateCcw, XCircle } from 'lucide-vue-next';
+import { AlertTriangle, BellRing, CheckCircle2, Pause, Play, RotateCcw, XCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
 import type { KanbanExecutionAction } from '@/components/kanban/types';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,7 @@ const notesModel = computed({
                         <Pause v-else-if="action === 'pause'" class="size-5 text-primary" />
                         <RotateCcw v-else-if="action === 'resume'" class="size-5 text-primary" />
                         <CheckCircle2 v-else-if="action === 'complete'" class="size-5 text-primary" />
+                        <BellRing v-else-if="action === 'request_abandonment'" class="size-5 text-primary" />
                         <AlertTriangle v-else class="size-5 text-primary" />
                     </div>
                     <div>

@@ -10,9 +10,11 @@ use App\Models\User;
 use App\Models\WorkflowGondolaExecution;
 use App\Models\WorkflowPlanogramStep;
 use App\Models\WorkflowTemplate;
+use App\Notifications\AppNotification;
 use App\Support\Modules\ModuleSlug;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -653,6 +655,45 @@ test('execution policy guards allowed users statuses and last step completion', 
         'execution' => $activeFirstStep->id,
     ]))->assertForbidden();
 
+    $this->actingAs($blockedUser)
+        ->get(route('tenant.kanban.executions.details', [
+            'subdomain' => $context['subdomain'],
+            'execution' => $activeFirstStep->id,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('execution.can_pause', false)
+        ->assertJsonPath('execution.can_request_abandonment', true);
+
+    $this->patchJson(route('tenant.kanban.executions.pause', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $activeFirstStep->id,
+    ]), [
+        'notes' => 'Tentativa de pausa por outro usuário.',
+    ])->assertForbidden();
+
+    Notification::fake();
+
+    $this->patchJson(route('tenant.kanban.executions.request-abandonment', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $activeFirstStep->id,
+    ]), [
+        'notes' => 'Preciso assumir esta gôndola.',
+    ])->assertOk();
+
+    Notification::assertSentTo(
+        $executor,
+        AppNotification::class,
+        fn (AppNotification $notification): bool => Str::contains($notification->message, (string) $planogram->id)
+            && Str::contains($notification->actionUrl ?? '', 'planogram_id='.$planogram->id)
+    );
+
+    $this->actingAs($executor);
+
+    $this->patchJson(route('tenant.kanban.executions.request-abandonment', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $activeFirstStep->id,
+    ]))->assertForbidden();
+
     $this->patchJson(route('tenant.kanban.executions.pause', [
         'subdomain' => $context['subdomain'],
         'execution' => $activeFirstStep->id,
@@ -675,6 +716,23 @@ test('execution policy guards allowed users statuses and last step completion', 
         'execution_started_by' => $executor->id,
         'started_at' => now(),
     ]);
+
+    $this->actingAs($blockedUser)
+        ->get(route('tenant.kanban.executions.details', [
+            'subdomain' => $context['subdomain'],
+            'execution' => $activeToAbandon->id,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('execution.can_abandon', false);
+
+    $this->patchJson(route('tenant.kanban.executions.abandon', [
+        'subdomain' => $context['subdomain'],
+        'execution' => $activeToAbandon->id,
+    ]), [
+        'notes' => 'Tentativa de abandono por outro usuário.',
+    ])->assertForbidden();
+
+    $this->actingAs($executor);
 
     $this->patchJson(route('tenant.kanban.executions.abandon', [
         'subdomain' => $context['subdomain'],

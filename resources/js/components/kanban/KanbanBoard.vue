@@ -26,6 +26,7 @@ const emit = defineEmits<{
     resume: [execution: Execution];
     complete: [execution: Execution];
     abandon: [execution: Execution];
+    requestAbandonment: [execution: Execution];
 }>();
 </script>
 
@@ -55,6 +56,7 @@ const emit = defineEmits<{
                 @resume="emit('resume', $event)"
                 @complete="emit('complete', $event)"
                 @abandon="emit('abandon', $event)"
+                @request-abandonment="emit('requestAbandonment', $event)"
             />
         </div>
     </div>

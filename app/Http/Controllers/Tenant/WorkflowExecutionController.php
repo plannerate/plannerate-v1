@@ -168,6 +168,29 @@ class WorkflowExecutionController extends Controller
         return response()->json(['execution' => $execution->toArray()]);
     }
 
+    public function requestAbandonment(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    {
+        $this->authorize('requestAbandonment', $execution);
+
+        $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
+
+        $planogramId = $execution->gondola()->value('planogram_id');
+        $routeParameters = ['subdomain' => $subdomain];
+
+        if ($planogramId !== null) {
+            $routeParameters['planogram_id'] = $planogramId;
+        }
+
+        $this->kanbanService->requestAbandonment(
+            $execution,
+            $request->user(),
+            $request->string('notes') ?: null,
+            route('tenant.kanban.index', $routeParameters)
+        );
+
+        return response()->json(['message' => 'Solicitação de abandono enviada.']);
+    }
+
     public function resume(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
     {
         unset($subdomain);
@@ -265,6 +288,7 @@ class WorkflowExecutionController extends Controller
                 'can_resume' => $request->user()?->can('resume', $execution) ?? false,
                 'can_complete' => $request->user()?->can('complete', $execution) ?? false,
                 'can_abandon' => $request->user()?->can('abandon', $execution) ?? false,
+                'can_request_abandonment' => $request->user()?->can('requestAbandonment', $execution) ?? false,
                 'can_move' => $request->user()?->can('move', $execution) ?? false,
             ],
             'allowed_users' => $execution->step?->availableUsers

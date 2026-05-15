@@ -3,7 +3,7 @@ export type AssignedUser = {
     name: string | null;
 };
 
-export type KanbanExecutionAction = 'start' | 'pause' | 'resume' | 'complete' | 'abandon';
+export type KanbanExecutionAction = 'start' | 'pause' | 'resume' | 'complete' | 'abandon' | 'request_abandonment';
 
 export type Execution = {
     id: string;
@@ -22,6 +22,7 @@ export type Execution = {
     can_resume: boolean;
     can_complete: boolean;
     can_abandon: boolean;
+    can_request_abandonment: boolean;
     can_move: boolean;
 };
 
@@ -57,6 +58,7 @@ export type ExecutionDetails = {
         can_resume: boolean;
         can_complete: boolean;
         can_abandon: boolean;
+        can_request_abandonment: boolean;
         can_move: boolean;
     };
     allowed_users: AssignedUser[];

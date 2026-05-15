@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CalendarClock, CheckCircle2, ExternalLink, GripVertical, Pause, Play, User, XCircle } from 'lucide-vue-next';
+import { BellRing, CalendarClock, CheckCircle2, ExternalLink, GripVertical, Pause, Play, User, XCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
 import type { Execution } from '@/components/kanban/types';
@@ -28,20 +28,22 @@ const emit = defineEmits<{
     resume: [execution: Execution];
     complete: [execution: Execution];
     abandon: [execution: Execution];
+    requestAbandonment: [execution: Execution];
 }>();
 
 const { t } = useT();
 
 const canStart = computed(() => props.execution.can_start);
-const canPause = computed(() => props.execution.can_pause);
 const canResume = computed(() => props.execution.can_resume);
 const canComplete = computed(() => props.execution.can_complete);
-const canAbandon = computed(() => props.execution.can_abandon);
 const canMove = computed(() => props.execution.can_move && props.execution.status === 'active');
 const isActive = computed(() => props.execution.status === 'active');
 const wasStartedByCurrentUser = computed(
     () => isActive.value && props.execution.started_by?.id === props.currentUserId,
 );
+const canPause = computed(() => props.execution.can_pause && wasStartedByCurrentUser.value);
+const canAbandon = computed(() => props.execution.can_abandon && wasStartedByCurrentUser.value);
+const canRequestAbandonment = computed(() => props.execution.can_request_abandonment && !wasStartedByCurrentUser.value);
 const executionLinkHref = computed(() => {
     if (!isActive.value || !props.execution.started_by?.id || !props.currentUserId) {
         return null;
@@ -185,6 +187,18 @@ const executionLinkLabel = computed(() => (
             >
                 <XCircle class="mr-1 size-3.5" />
                 {{ t('app.kanban.actions.abandon') }}
+            </Button>
+
+            <Button
+                v-if="canRequestAbandonment"
+                size="sm"
+                variant="outline"
+                class="h-7 border-amber-500/40 bg-amber-500/10 px-2 text-xs text-amber-700 hover:bg-amber-500/15 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
+                :disabled="isBusy"
+                @click="emit('requestAbandonment', execution)"
+            >
+                <BellRing class="mr-1 size-3.5" />
+                {{ t('app.kanban.actions.request_abandonment') }}
             </Button>
         </div>
     </article>

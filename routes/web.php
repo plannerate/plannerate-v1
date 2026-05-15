@@ -296,6 +296,8 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
                 ->name('kanban.executions.complete');
             Route::patch('kanban/executions/{execution}/abandon', [WorkflowExecutionController::class, 'abandon'])
                 ->name('kanban.executions.abandon');
+            Route::post('kanban/executions/{execution}/request-abandonment', [WorkflowExecutionController::class, 'requestAbandonment'])
+                ->name('kanban.executions.request-abandonment');
             Route::patch('kanban/executions/{execution}/assign', [WorkflowExecutionController::class, 'assign'])
                 ->name('kanban.executions.assign');
             Route::get('kanban/executions/{execution}/history', [WorkflowExecutionController::class, 'history'])

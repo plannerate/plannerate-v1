@@ -675,6 +675,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'search' => 'Buscar por nome, slug, ean...',
             'filter' => 'Filtrar',
             'clear_filters' => 'Limpar filtros',
+            'active' => 'Ativo',
+            'inactive' => 'Inativo',
         ],
         'categories' => [
             'navigation' => 'Categorias',
@@ -1153,6 +1155,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'resume' => 'Retomar',
             'complete' => 'Concluir',
             'abandon' => 'Abandonar',
+            'request_abandonment' => 'Solicitar abandono',
             'cancel' => 'Cancelar',
             'confirm' => 'Confirmar',
             'close' => 'Fechar',
@@ -1167,6 +1170,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'messages' => [
             'details_failed' => 'Nao foi possivel carregar os detalhes da execucao.',
             'action_failed' => 'Nao foi possivel executar esta acao. Tente novamente.',
+            'abandonment_request_sent' => 'Solicitacao de abandono enviada ao executor.',
+            'abandonment_request_failed' => 'Nao foi possivel enviar a solicitacao de abandono.',
         ],
         'confirm' => [
             'fallback_title' => 'Confirmar acao?',
@@ -1191,6 +1196,10 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'abandon' => [
                 'title' => 'Abandonar execucao?',
                 'description' => 'A execucao sera marcada como abandonada. Use as notas para registrar o motivo.',
+            ],
+            'request_abandonment' => [
+                'title' => 'Solicitar abandono?',
+                'description' => 'Uma notificacao sera enviada para quem iniciou esta execucao solicitando o abandono. Use as notas para explicar o motivo.',
             ],
         ],
         'detail' => [

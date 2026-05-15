@@ -29,6 +29,7 @@ const emit = defineEmits<{
     resume: [execution: Execution];
     complete: [execution: Execution];
     abandon: [execution: Execution];
+    requestAbandonment: [execution: Execution];
 }>();
 
 const columnSearch = ref('');
@@ -102,6 +103,7 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
                     @resume="emit('resume', $event)"
                     @complete="emit('complete', $event)"
                     @abandon="emit('abandon', $event)"
+                    @request-abandonment="emit('requestAbandonment', $event)"
                 />
             </template>
 

@@ -7,6 +7,16 @@ import {
     X,
     XCircle,
 } from 'lucide-vue-next';
+import { ref } from 'vue';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import type { AppNotification, NotificationData } from '@/types/auth';
 
 defineProps<{
@@ -17,6 +27,8 @@ defineProps<{
 defineEmits<{
     destroy: [id: string];
 }>();
+
+const isModalOpen = ref(false);
 
 function relativeTime(iso: string): string {
     const diff = Date.now() - new Date(iso).getTime();
@@ -49,6 +61,17 @@ function relativeTime(iso: string): string {
     return new Date(iso).toLocaleDateString('pt-BR', {
         day: 'numeric',
         month: 'short',
+        year: 'numeric',
+    });
+}
+
+function fullDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
     });
 }
 
@@ -75,6 +98,22 @@ const typeIconColor = (type: NotificationData['notification_type']) =>
         warning: 'text-yellow-600 dark:text-yellow-400',
         error: 'text-destructive',
     })[type] ?? 'text-blue-600';
+
+const typeBadgeVariant = (type: NotificationData['notification_type']) =>
+    ({
+        info: 'secondary',
+        success: 'default',
+        warning: 'outline',
+        error: 'destructive',
+    } as const)[type] ?? 'secondary';
+
+const typeLabel = (type: NotificationData['notification_type']) =>
+    ({
+        info: 'Informação',
+        success: 'Sucesso',
+        warning: 'Atenção',
+        error: 'Erro',
+    })[type] ?? 'Informação';
 </script>
 
 <template>
@@ -83,6 +122,7 @@ const typeIconColor = (type: NotificationData['notification_type']) =>
             'group/item flex cursor-pointer items-start gap-3 px-4 py-3 transition-colors hover:bg-accent/50',
             !notification.read_at && 'bg-primary/[0.03] dark:bg-primary/[0.06]',
         ]"
+        @click="isModalOpen = true"
     >
         <div
             :class="[
@@ -120,15 +160,6 @@ const typeIconColor = (type: NotificationData['notification_type']) =>
             <p class="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
                 {{ notification.data.message }}
             </p>
-            <a
-                v-if="notification.data.download_url"
-                :href="downloadUrl"
-                class="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                @click.stop
-            >
-                <Download class="size-3" />
-                Baixar
-            </a>
             <p class="mt-1 text-[10px] text-muted-foreground/60">
                 {{ relativeTime(notification.created_at) }}
             </p>
@@ -143,4 +174,101 @@ const typeIconColor = (type: NotificationData['notification_type']) =>
             <X class="size-3.5" />
         </button>
     </div>
+
+    <Dialog v-model:open="isModalOpen">
+        <DialogContent class="max-w-md">
+            <DialogHeader>
+                <div class="flex items-center gap-3">
+                    <div
+                        :class="[
+                            'flex size-9 shrink-0 items-center justify-center rounded-lg',
+                            typeIconBg(notification.data.notification_type),
+                        ]"
+                    >
+                        <component
+                            :is="typeIcon(notification.data.notification_type)"
+                            :class="[
+                                'size-4',
+                                typeIconColor(
+                                    notification.data.notification_type,
+                                ),
+                            ]"
+                        />
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <DialogTitle class="text-base leading-tight">
+                            {{ notification.data.title }}
+                        </DialogTitle>
+                        <div class="mt-1 flex items-center gap-2">
+                            <Badge
+                                :variant="
+                                    typeBadgeVariant(
+                                        notification.data.notification_type,
+                                    )
+                                "
+                                class="text-[10px]"
+                            >
+                                {{
+                                    typeLabel(
+                                        notification.data.notification_type,
+                                    )
+                                }}
+                            </Badge>
+                            <span
+                                v-if="!notification.read_at"
+                                class="inline-flex items-center gap-1 text-[10px] font-medium text-primary"
+                            >
+                                <span class="size-1.5 rounded-full bg-primary" />
+                                Não lida
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </DialogHeader>
+
+            <DialogDescription as="div" class="mt-1 space-y-4">
+                <div class="rounded-lg border border-border/60 bg-muted/40 p-4">
+                    <p class="text-sm leading-relaxed text-foreground">
+                        {{ notification.data.message }}
+                    </p>
+                </div>
+
+                <p class="text-xs text-muted-foreground">
+                    {{ fullDate(notification.created_at) }}
+                </p>
+
+                <div
+                    v-if="
+                        notification.data.download_url ||
+                        notification.data.action_url
+                    "
+                    class="flex flex-wrap gap-2"
+                >
+                    <Button
+                        v-if="notification.data.download_url"
+                        as="a"
+                        :href="downloadUrl"
+                        variant="outline"
+                        size="sm"
+                        class="gap-1.5"
+                        @click="isModalOpen = false"
+                    >
+                        <Download class="size-3.5" />
+                        Baixar arquivo
+                    </Button>
+
+                    <Button
+                        v-if="notification.data.action_url"
+                        as="a"
+                        :href="notification.data.action_url"
+                        size="sm"
+                        class="gap-1.5"
+                        @click="isModalOpen = false"
+                    >
+                        Ver detalhes
+                    </Button>
+                </div>
+            </DialogDescription>
+        </DialogContent>
+    </Dialog>
 </template>

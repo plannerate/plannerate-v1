@@ -43,7 +43,8 @@ class WorkflowExecutionPolicy
     public function pause(User $user, WorkflowGondolaExecution $execution): bool
     {
         return $this->canManageExecution($user)
-            && $execution->status === WorkflowExecutionStatus::Active;
+            && $execution->status === WorkflowExecutionStatus::Active
+            && $this->wasStartedByUser($user, $execution);
     }
 
     public function resume(User $user, WorkflowGondolaExecution $execution): bool
@@ -62,7 +63,16 @@ class WorkflowExecutionPolicy
     public function abandon(User $user, WorkflowGondolaExecution $execution): bool
     {
         return $this->canManageExecution($user)
-            && $execution->status === WorkflowExecutionStatus::Active;
+            && $execution->status === WorkflowExecutionStatus::Active
+            && $this->wasStartedByUser($user, $execution);
+    }
+
+    public function requestAbandonment(User $user, WorkflowGondolaExecution $execution): bool
+    {
+        return $this->canManageExecution($user)
+            && $execution->status === WorkflowExecutionStatus::Active
+            && $execution->execution_started_by !== null
+            && ! $this->wasStartedByUser($user, $execution);
     }
 
     public function manage(User $user, WorkflowGondolaExecution $execution): bool
@@ -78,6 +88,11 @@ class WorkflowExecutionPolicy
     private function canManageExecution(User $user): bool
     {
         return $this->allowByContext($user, PermissionName::TENANT_KANBAN_EXECUTIONS_MANAGE);
+    }
+
+    private function wasStartedByUser(User $user, WorkflowGondolaExecution $execution): bool
+    {
+        return (string) $execution->execution_started_by === (string) $user->id;
     }
 
     private function userCanExecuteCurrentStep(User $user, WorkflowGondolaExecution $execution): bool

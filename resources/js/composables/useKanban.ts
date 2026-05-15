@@ -204,6 +204,42 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
         }
     }
 
+    async function submitAbandonmentRequest(execution: Pick<Execution, 'id'>): Promise<void> {
+        busyExecutionId.value = execution.id;
+        actionHttp.notes = actionNotes.value.trim() || null;
+
+        try {
+            await actionHttp.submit({
+                method: 'post',
+                url: `/kanban/executions/${execution.id}/request-abandonment`,
+            });
+
+            actionNotes.value = '';
+            toast.success(t('app.kanban.messages.abandonment_request_sent'));
+
+            if (detailOpen.value) {
+                await loadExecutionDetails(execution.id);
+            }
+        } catch {
+            toast.error(t('app.kanban.messages.abandonment_request_failed'));
+        } finally {
+            actionHttp.notes = null;
+            busyExecutionId.value = null;
+        }
+    }
+
+    async function requestAbandonment(execution: Execution): Promise<void> {
+        await submitAbandonmentRequest(execution);
+    }
+
+    async function requestDetailAbandonment(): Promise<void> {
+        const execution = detailPayload.value?.execution;
+
+        if (execution) {
+            await submitAbandonmentRequest(execution);
+        }
+    }
+
     async function loadExecutionDetails(executionId: string): Promise<void> {
         detailLoading.value = true;
         detailError.value = null;
@@ -311,6 +347,8 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
         completeDetailExecution,
         abandonExecution,
         abandonDetailExecution,
+        requestAbandonment,
+        requestDetailAbandonment,
         openExecutionDetails,
         onDragStart,
         onDragOver,
