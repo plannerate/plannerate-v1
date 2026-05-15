@@ -21,98 +21,107 @@ use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\ShelfController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('api')->name('api.')->group(function () {
-    Route::get('products/details/{ean}', [ProductDetailsController::class, 'show'])->name('products.details');
-    // ========== Product Image API (rota fixa antes das com {product} para não confundir com segmento) ==========
-    Route::post('products/update-image', [ProductImageController::class, 'update'])
-        ->name('products.update-image');
+Route::prefix('api')->name('api.')
+    ->group(function () {
+        // Grupo sem middleware 'tenant.client.redirect' para permitir acesso de clientes (sem redirecionamento) às APIs necessárias para visualização de planogramas publicados, como detalhes de produtos e imagens, mesmo que não tenham acesso ao editor.
 
-    Route::post('products/{product}/upload-image', [ProductImageController::class, 'uploadImage'])
-        ->name('products.upload-image')
-        ->withTrashed();
 
-    Route::delete('products/{product}/delete-image', [ProductImageController::class, 'deleteImage'])
-        ->name('products.delete-image')
-        ->withTrashed();
+        // Performance Analysis API - ABC e Estoque Alvo
+        Route::post('editor/gondolas/{gondola}/analysis/abc', [GondolaAnalysisController::class, 'calculateAbcApi'])
+            ->name('editor.gondolas.analysis.abc');
+        Route::post('editor/gondolas/{gondola}/analysis/target-stock', [GondolaAnalysisController::class, 'calculateTargetStockApi'])
+            ->name('editor.gondolas.analysis.target-stock');
+        Route::delete('editor/gondolas/{gondola}/analysis', [GondolaAnalysisController::class, 'clearAnalysisApi'])
+            ->name('editor.gondolas.analysis.clear');
+    });
 
-    // Editor API Routes - Gondolas
-    Route::post('editor/planograms/{planogram}/gondolas', [GondolaController::class, 'store'])
-        ->name('editor.gondolas.store');
+Route::prefix('api')->name('api.')
+    ->middleware(['tenant.client.redirect'])
+    ->group(function () {
+        // Groupo com middleware 'tenant.client.redirect' para proteger as APIs de edição, garantindo que usuários com papel de cliente sejam redirecionados para as rotas públicas do editor, enquanto outros usuários autenticados (ex.: editores) possam acessar normalmente as APIs de edição e gerenciamento de planogramas.
+        Route::get('products/details/{ean}', [ProductDetailsController::class, 'show'])->name('products.details');
+        // ========== Product Image API (rota fixa antes das com {product} para não confundir com segmento) ==========
+        Route::post('products/update-image', [ProductImageController::class, 'update'])
+            ->name('products.update-image');
 
-    Route::put('editor/gondolas/{gondola}', [GondolaController::class, 'update'])
-        ->name('editor.gondolas.update');
+        Route::post('products/{product}/upload-image', [ProductImageController::class, 'uploadImage'])
+            ->name('products.upload-image')
+            ->withTrashed();
 
-    Route::delete('editor/gondolas/{gondola}', [GondolaController::class, 'destroy'])
-        ->name('editor.gondolas.destroy');
+        Route::delete('products/{product}/delete-image', [ProductImageController::class, 'deleteImage'])
+            ->name('products.delete-image')
+            ->withTrashed();
 
-    Route::get('editor/gondolas/{gondola}/sections', [GondolaController::class, 'sections'])
-        ->name('editor.gondolas.sections');
+        // Editor API Routes - Gondolas
+        Route::post('editor/planograms/{planogram}/gondolas', [GondolaController::class, 'store'])
+            ->name('editor.gondolas.store');
 
-    Route::get('plannograma/{planogram}/editor/gondolas/{gondola}/products', [GondolaController::class, 'products'])
-        ->name('editor.gondolas.products');
+        Route::put('editor/gondolas/{gondola}', [GondolaController::class, 'update'])
+            ->name('editor.gondolas.update');
 
-    Route::post('editor/gondolas/{gondola}/update-images', [GondolaController::class, 'updateImages'])
-        ->name('editor.gondolas.update-images');
+        Route::delete('editor/gondolas/{gondola}', [GondolaController::class, 'destroy'])
+            ->name('editor.gondolas.destroy');
 
-    Route::get('editor/categories', [CategoryController::class, 'index'])
-        ->name('editor.categories.index');
+        Route::get('editor/gondolas/{gondola}/sections', [GondolaController::class, 'sections'])
+            ->name('editor.gondolas.sections');
 
-    Route::get('editor/{categoryId}/categories', [CategoryController::class, 'index'])
-        ->name('editor.categories.show');
+        Route::get('plannograma/{planogram}/editor/gondolas/{gondola}/products', [GondolaController::class, 'products'])
+            ->name('editor.gondolas.products');
 
-    // Editor API Routes - Sections
-    Route::get('editor/sections/{section}', [SectionController::class, 'show'])
-        ->name('editor.sections.show');
-    Route::post('editor/gondolas/{gondola}/sections', [SectionController::class, 'store'])
-        ->name('editor.sections.store');
-    Route::put('editor/sections/{id}', [SectionController::class, 'update'])
-        ->name('editor.sections.update');
-    Route::delete('editor/sections/{section}', [SectionController::class, 'destroy'])
-        ->name('editor.sections.destroy');
-    Route::post('editor/sections/{section}/transfer', [SectionController::class, 'transfer'])
-        ->name('editor.sections.transfer');
+        Route::post('editor/gondolas/{gondola}/update-images', [GondolaController::class, 'updateImages'])
+            ->name('editor.gondolas.update-images');
 
-    // Editor API Routes - Planograms & Gondolas
-    Route::get('editor/planograms', [PlanogramApiController::class, 'index'])
-        ->name('editor.planograms.index');
-    Route::get('editor/planograms/{planogram}/gondolas', [PlanogramApiController::class, 'gondolas'])
-        ->name('editor.planograms.gondolas');
+        Route::get('editor/categories', [CategoryController::class, 'index'])
+            ->name('editor.categories.index');
 
-    // Editor API Routes - Shelves
-    Route::post('editor/sections/{section}/shelves', [ShelfController::class, 'store'])
-        ->name('editor.shelves.store');
-    Route::put('editor/shelves/{id}', [ShelfController::class, 'update'])
-        ->name('editor.shelves.update');
-    Route::delete('editor/shelves/{shelf}', [ShelfController::class, 'destroy'])
-        ->name('editor.shelves.destroy');
+        Route::get('editor/{categoryId}/categories', [CategoryController::class, 'index'])
+            ->name('editor.categories.show');
 
-    // Editor API Routes - Segments
-    Route::put('editor/segments/{id}', [SegmentController::class, 'update'])
-        ->name('editor.segments.update');
+        // Editor API Routes - Sections
+        Route::get('editor/sections/{section}', [SectionController::class, 'show'])
+            ->name('editor.sections.show');
+        Route::post('editor/gondolas/{gondola}/sections', [SectionController::class, 'store'])
+            ->name('editor.sections.store');
+        Route::put('editor/sections/{id}', [SectionController::class, 'update'])
+            ->name('editor.sections.update');
+        Route::delete('editor/sections/{section}', [SectionController::class, 'destroy'])
+            ->name('editor.sections.destroy');
+        Route::post('editor/sections/{section}/transfer', [SectionController::class, 'transfer'])
+            ->name('editor.sections.transfer');
 
-    // Editor API Routes - Layers
-    Route::put('editor/layers/{id}', [LayerController::class, 'update'])
-        ->name('editor.layers.update');
-    Route::delete('editor/layers/{layer}', [LayerController::class, 'destroy'])
-        ->name('editor.layers.destroy');
+        // Editor API Routes - Planograms & Gondolas
+        Route::get('editor/planograms', [PlanogramApiController::class, 'index'])
+            ->name('editor.planograms.index');
+        Route::get('editor/planograms/{planogram}/gondolas', [PlanogramApiController::class, 'gondolas'])
+            ->name('editor.planograms.gondolas');
 
-    // Gondola Save Changes (Delta/Diff)
-    Route::post('editor/gondolas/{gondola}/save-changes', SaveChangesController::class)
-        ->name('editor.gondolas.save-changes');
+        // Editor API Routes - Shelves
+        Route::post('editor/sections/{section}/shelves', [ShelfController::class, 'store'])
+            ->name('editor.shelves.store');
+        Route::put('editor/shelves/{id}', [ShelfController::class, 'update'])
+            ->name('editor.shelves.update');
+        Route::delete('editor/shelves/{shelf}', [ShelfController::class, 'destroy'])
+            ->name('editor.shelves.destroy');
 
-    // Product Dimensions API
-    Route::post('plannograma/{planogram}/products/{product}/dimensions', [ProductDimensionController::class, 'update'])
-        ->name('editor.products.dimensions.update');
+        // Editor API Routes - Segments
+        Route::put('editor/segments/{id}', [SegmentController::class, 'update'])
+            ->name('editor.segments.update');
 
-    // Product Sales Summary API
-    Route::get('plannerate/products/{product}/sales/summary', [ProductSalesController::class, 'summary'])
-        ->name('plannerate.products.sales.summary');
+        // Editor API Routes - Layers
+        Route::put('editor/layers/{id}', [LayerController::class, 'update'])
+            ->name('editor.layers.update');
+        Route::delete('editor/layers/{layer}', [LayerController::class, 'destroy'])
+            ->name('editor.layers.destroy');
 
-    // Performance Analysis API - ABC e Estoque Alvo
-    Route::post('editor/gondolas/{gondola}/analysis/abc', [GondolaAnalysisController::class, 'calculateAbcApi'])
-        ->name('editor.gondolas.analysis.abc');
-    Route::post('editor/gondolas/{gondola}/analysis/target-stock', [GondolaAnalysisController::class, 'calculateTargetStockApi'])
-        ->name('editor.gondolas.analysis.target-stock');
-    Route::delete('editor/gondolas/{gondola}/analysis', [GondolaAnalysisController::class, 'clearAnalysisApi'])
-        ->name('editor.gondolas.analysis.clear');
-});
+        // Gondola Save Changes (Delta/Diff)
+        Route::post('editor/gondolas/{gondola}/save-changes', SaveChangesController::class)
+            ->name('editor.gondolas.save-changes');
+
+        // Product Dimensions API
+        Route::post('plannograma/{planogram}/products/{product}/dimensions', [ProductDimensionController::class, 'update'])
+            ->name('editor.products.dimensions.update');
+
+        // Product Sales Summary API
+        Route::get('plannerate/products/{product}/sales/summary', [ProductSalesController::class, 'summary'])
+            ->name('plannerate.products.sales.summary');
+    });

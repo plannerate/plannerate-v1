@@ -17,6 +17,7 @@ type RolePayload = {
     id: string;
     type: string;
     name: string;
+    system_name: string | null;
     permissions: string[];
     is_protected: boolean;
 };
@@ -42,9 +43,14 @@ const isEdit = computed(() => props.role !== null);
 const isProtected = computed(() => props.role?.is_protected ?? false);
 const rolesIndexPath = RoleController.index.url().replace(/^\/\/[^/]+/, '');
 const selectedType = ref(props.role?.type ?? props.types[0]?.value ?? 'landlord');
+const permissionSearch = ref('');
 
 const filteredPermissions = computed(() =>
-    props.permissions.filter((p) => p.type === selectedType.value),
+    props.permissions.filter((p) => {
+        if (p.type !== selectedType.value) return false;
+        if (!permissionSearch.value) return true;
+        return p.name.toLowerCase().includes(permissionSearch.value.toLowerCase());
+    }),
 );
 
 const pageMeta = useCrudPageMeta({
@@ -124,9 +130,22 @@ const pageMeta = useCrudPageMeta({
                     <InputError :message="errors.name" />
                 </div>
 
+                <!-- System Name -->
+                <div class="grid gap-2">
+                    <Label for="system_name">{{ t('app.landlord.roles.fields.system_name') }}</Label>
+                    <Input id="system_name" name="system_name" :default-value="props.role?.system_name ?? ''" :disabled="isProtected" />
+                    <InputError :message="errors.system_name" />
+                </div>
+
                 <!-- Permissions -->
                 <div class="space-y-3">
                     <Label>{{ t('app.landlord.roles.fields.permissions') }}</Label>
+                    <Input
+                        v-model="permissionSearch"
+                        type="search"
+                        placeholder="Filtrar permissões..."
+                        class="h-9"
+                    />
                     <div class="grid gap-2 md:grid-cols-2">
                         <label
                             v-for="permission in filteredPermissions"

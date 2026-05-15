@@ -44,6 +44,17 @@ class UpdateRoleRequest extends FormRequest
                         ->where('type', $type)
                         ->whereNull('tenant_id')),
             ],
+            'system_name' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('landlord.roles', 'system_name')
+                    ->ignore($role?->id)
+                    ->where(static fn ($query) => $query
+                        ->where('guard_name', 'web')
+                        ->where('type', $type)
+                        ->whereNull('tenant_id')),
+            ],
             'permissions' => ['nullable', 'array'],
             'permissions.*' => [
                 'string',

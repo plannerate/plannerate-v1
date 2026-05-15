@@ -126,6 +126,7 @@ class RoleController extends Controller
                 'id' => $role->id,
                 'name' => $role->name,
                 'type' => $role->type,
+                'system_name' => $role->system_name,
                 'permissions' => $role->permissions->pluck('name')->values()->all(),
                 'is_protected' => in_array((string) $role->system_name, self::PROTECTED_ROLES, true),
             ],
@@ -157,6 +158,7 @@ class RoleController extends Controller
         $role->update([
             'type' => $validated['type'],
             'name' => $validated['name'],
+            'system_name' => $validated['system_name'],
         ]);
 
         $role->syncPermissions($validated['permissions'] ?? []);

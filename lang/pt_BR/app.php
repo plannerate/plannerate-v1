@@ -436,6 +436,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             ],
             'fields' => [
                 'name' => 'Nome',
+                'system_name' => 'Nome do sistema',
                 'type' => 'Tipo',
                 'permissions' => 'Permissoes',
                 'permissions_count' => 'Permissoes',

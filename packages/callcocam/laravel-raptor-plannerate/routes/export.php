@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('export/gondola')
     ->name('export.gondola.')
-    ->middleware(['auth'])
+    ->middleware(['auth', 'tenant.client.redirect'])
     ->group(function () {
         Route::get('{gondola}/view', [GondolaPdfPreviewController::class, 'show'])->name('view');
 

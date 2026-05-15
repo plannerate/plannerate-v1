@@ -4,7 +4,7 @@ use Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaTenantController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'tenant'])->group(function () {
+Route::middleware(['auth', 'tenant', 'tenant.client.redirect'])->group(function () {
     Route::prefix('tenant/gondola')->name('tenant.gondola.')->group(function () {
         Route::get('{gondola}', [GondolaTenantController::class, 'show'])->name('show');
         Route::get('{gondola}/section/{section}', [GondolaTenantController::class, 'showSection'])->name('section.show');
