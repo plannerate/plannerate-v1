@@ -12,22 +12,22 @@ class UserPolicy
 
     public function viewAny(User $user): bool
     {
-        return $this->allowByContext($user, PermissionName::LANDLORD_USERS_VIEW_ANY);
+        return $this->allowByContext($user, [PermissionName::LANDLORD_USERS_VIEW_ANY, PermissionName::TENANT_USERS_VIEW_ANY]);
     }
 
     public function view(User $user, User $model): bool
     {
-        return $this->allowByContext($user, PermissionName::LANDLORD_USERS_VIEW);
+        return $this->allowByContext($user, [PermissionName::LANDLORD_USERS_VIEW, PermissionName::TENANT_USERS_VIEW]);
     }
 
     public function create(User $user): bool
     {
-        return $this->allowByContext($user, PermissionName::LANDLORD_USERS_CREATE);
+        return $this->allowByContext($user, [PermissionName::LANDLORD_USERS_CREATE, PermissionName::TENANT_USERS_CREATE]);
     }
 
     public function update(User $user, User $model): bool
     {
-        return $this->allowByContext($user, PermissionName::LANDLORD_USERS_UPDATE);
+        return $this->allowByContext($user, [PermissionName::LANDLORD_USERS_UPDATE, PermissionName::TENANT_USERS_UPDATE]);
     }
 
     public function delete(User $user, User $model): bool
@@ -36,6 +36,6 @@ class UserPolicy
             return false;
         }
 
-        return $this->allowByContext($user, PermissionName::LANDLORD_USERS_DELETE);
+        return $this->allowByContext($user, [PermissionName::LANDLORD_USERS_DELETE, PermissionName::TENANT_USERS_DELETE]);
     }
 }
