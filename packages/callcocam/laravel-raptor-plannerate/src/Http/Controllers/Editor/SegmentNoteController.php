@@ -36,8 +36,6 @@ class SegmentNoteController extends Controller
 
     public function store(Request $request, string $subdomain, string $segment): JsonResponse
     {
-        unset($subdomain);
-
         $validated = $request->validate([
             'content' => 'required|string|max:1000',
         ]);
@@ -54,7 +52,7 @@ class SegmentNoteController extends Controller
             'content' => $validated['content'],
         ]);
 
-        $this->notifyResponsibleUsers($gondolaId, $tenantId, $note, $request->user()?->name ?? 'Alguém');
+        $this->notifyResponsibleUsers($gondolaId, $tenantId, $subdomain, $note, $request->user()?->name ?? 'Alguém');
 
         return response()->json([
             'data' => [
@@ -66,22 +64,29 @@ class SegmentNoteController extends Controller
         ], 201);
     }
 
-    private function notifyResponsibleUsers(?string $gondolaId, ?string $tenantId, SegmentNote $note, string $authorName): void
+    private function notifyResponsibleUsers(?string $gondolaId, ?string $tenantId, string $subdomain, SegmentNote $note, string $authorName): void
     {
         if (! $gondolaId) {
             return;
         }
 
-        $recipientIds = $this->resolveRecipientIds($gondolaId, $note->user_id);
+        $planogramId = Gondola::where('id', $gondolaId)->value('planogram_id');
+        $recipientIds = $this->resolveRecipientIds($gondolaId, $planogramId, $note->user_id);
 
         if ($recipientIds->isEmpty()) {
             return;
+        }
+
+        $routeParameters = ['subdomain' => $subdomain];
+        if ($planogramId !== null) {
+            $routeParameters['planogram_id'] = $planogramId;
         }
 
         $notification = new AppNotification(
             title: 'Nova nota em segmento',
             message: sprintf('%s adicionou: "%s"', $authorName, mb_strimwidth($note->content, 0, 80, '…')),
             type: 'segment_note',
+            actionUrl: route('tenant.kanban.index', $routeParameters),
             tenantId: $tenantId,
         );
 
@@ -90,9 +95,8 @@ class SegmentNoteController extends Controller
             ->each(fn ($user) => $user->notifyNow($notification));
     }
 
-    private function resolveRecipientIds(string $gondolaId, ?string $excludeUserId): Collection
+    private function resolveRecipientIds(string $gondolaId, ?string $planogramId, ?string $excludeUserId): Collection
     {
-        // Tenta responsáveis ativos da gôndola primeiro
         $responsibleIds = WorkflowGondolaExecution::where('gondola_id', $gondolaId)
             ->whereNotNull('current_responsible_id')
             ->pluck('current_responsible_id')
@@ -103,9 +107,6 @@ class SegmentNoteController extends Controller
         if ($responsibleIds->isNotEmpty()) {
             return $responsibleIds;
         }
-
-        // Fallback: todos os availableUsers dos steps do planograma desta gôndola
-        $planogramId = Gondola::where('id', $gondolaId)->value('planogram_id');
 
         if (! $planogramId) {
             return collect();
