@@ -22,7 +22,6 @@ type TenantPayload = {
     slug: string;
     plan_user_limit: number | null;
     users_count: number;
-    can_create_users: boolean;
     limit_message: string | null;
 };
 
@@ -38,6 +37,7 @@ type UserAccessRow = {
 type RoleOption = {
     id: string;
     name: string;
+    is_admin: boolean;
 };
 
 type FilterOption = {
@@ -59,6 +59,9 @@ const props = defineProps<{
 
 const { t } = useT();
 const tenantsIndexPath = TenantController.index.url().replace(/^\/\/[^/]+/, '');
+const adminLimitReached = computed(
+    () => props.tenant.plan_user_limit !== null && props.tenant.users_count >= props.tenant.plan_user_limit,
+);
 const isDrawerOpen = ref(false);
 const drawerMode = ref<'create' | 'edit'>('create');
 const selectedUserId = ref<string | null>(null);
@@ -116,7 +119,6 @@ const pageMeta = useCrudPageMeta({
                     variant="gradient"
                     size="pill-sm"
                     class="shrink-0"
-                    :disabled="!props.tenant.can_create_users"
                     @click="openCreateDrawer"
                 >
                     <Plus class="size-4" />
@@ -171,12 +173,12 @@ const pageMeta = useCrudPageMeta({
                     :user="user"
                     :tenant-id="props.tenant.id"
                     :roles="props.roles"
+                    :admin-limit-reached="adminLimitReached"
                     @edit="openEditDrawer"
                 />
 
                 <!-- Add user placeholder card -->
                 <button
-                    v-if="props.tenant.can_create_users"
                     class="group flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-10 text-muted-foreground/50 transition-all hover:border-muted-foreground/40 hover:text-muted-foreground"
                     @click="openCreateDrawer"
                 >

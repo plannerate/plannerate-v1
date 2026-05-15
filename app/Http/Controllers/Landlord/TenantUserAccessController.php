@@ -47,7 +47,9 @@ class TenantUserAccessController extends Controller
          *     activeCount: int
          * } $tenantUserData
          */
-        $tenantUserData = $this->runInTenantContext($tenant, function () use ($search, $statusFilter, $perPage, $trashFilter): array {
+        $activeCount = $this->countTenantAdminUsers($tenant);
+
+        $tenantUserData = $this->runInTenantContext($tenant, function () use ($search, $statusFilter, $perPage, $trashFilter, $activeCount): array {
             $query = User::query()
                 ->when($search !== '', function ($query) use ($search): void {
                     $query->where(function ($where) use ($search): void {
@@ -80,7 +82,7 @@ class TenantUserAccessController extends Controller
 
             return [
                 'users' => $users,
-                'activeCount' => User::query()->count(),
+                'activeCount' => $activeCount,
             ];
         });
 
@@ -89,10 +91,11 @@ class TenantUserAccessController extends Controller
             ->where('guard_name', 'web')
             ->where('type', RbacType::TENANT)
             ->orderBy('name')
-            ->get(['id', 'name'])
+            ->get(['id', 'name', 'system_name'])
             ->map(fn (Role $role): array => [
                 'id' => $role->id,
                 'name' => $role->name,
+                'is_admin' => $role->system_name === 'tenant-admin',
             ])
             ->all();
 
@@ -103,17 +106,8 @@ class TenantUserAccessController extends Controller
         ]);
 
         $planUserLimit = $tenant->plan_user_limit;
-        $hasPlanLimit = $planUserLimit !== null;
-        $hasReachedLimit = $hasPlanLimit && $tenantUserData['activeCount'] >= $planUserLimit;
-        $canCreateUsers = $hasPlanLimit && ! $hasReachedLimit;
-
-        $limitMessage = null;
-
-        if ($tenant->plan === null || ! $hasPlanLimit) {
-            $limitMessage = __('app.landlord.tenant_access.messages.no_plan_limit');
-        } elseif ($hasReachedLimit) {
-            $limitMessage = __('app.landlord.tenant_access.messages.limit_reached');
-        }
+        $adminCount = $tenantUserData['activeCount'];
+        $adminLimitReached = $planUserLimit !== null && $tenant->plan !== null && $adminCount >= $planUserLimit;
 
         return Inertia::render('landlord/tenants/Access', [
             'tenant' => [
@@ -121,9 +115,8 @@ class TenantUserAccessController extends Controller
                 'name' => $tenant->name,
                 'slug' => $tenant->slug,
                 'plan_user_limit' => $planUserLimit,
-                'users_count' => $tenantUserData['activeCount'],
-                'can_create_users' => $canCreateUsers,
-                'limit_message' => $limitMessage,
+                'users_count' => $adminCount,
+                'limit_message' => $adminLimitReached ? __('app.landlord.tenant_access.messages.limit_reached') : null,
             ],
             'users' => $users,
             'roles' => $roles,
@@ -148,8 +141,17 @@ class TenantUserAccessController extends Controller
     {
         $this->authorize('update', $tenant);
 
-        $this->ensureUserCreationAllowed($tenant);
         $validated = $this->validateStorePayload($request, $tenant);
+
+        $roleNames = is_array($validated['role_names'] ?? null) ? $validated['role_names'] : [];
+        $isAssigningAdmin = Role::query()
+            ->whereIn('name', $roleNames)
+            ->where('system_name', 'tenant-admin')
+            ->exists();
+
+        if ($isAssigningAdmin) {
+            $this->ensureUserCreationAllowed($tenant);
+        }
 
         $this->runInTenantContext($tenant, function () use ($validated, $tenant): void {
             $tenantUser = User::query()->create([
@@ -176,6 +178,27 @@ class TenantUserAccessController extends Controller
         $this->authorize('update', $tenant);
 
         $validated = $this->validateUpdatePayload($request, $tenant, $userId);
+
+        $roleNames = is_array($validated['role_names'] ?? null) ? $validated['role_names'] : [];
+        $isAddingAdmin = Role::query()
+            ->whereIn('name', $roleNames)
+            ->where('system_name', 'tenant-admin')
+            ->exists();
+
+        if ($isAddingAdmin) {
+            $hadAdminBefore = DB::connection('landlord')
+                ->table('model_has_roles')
+                ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                ->where('roles.system_name', 'tenant-admin')
+                ->where('model_has_roles.model_type', User::class)
+                ->where('model_has_roles.model_id', $userId)
+                ->where('model_has_roles.tenant_id', $tenant->id)
+                ->exists();
+
+            if (! $hadAdminBefore) {
+                $this->ensureUserCreationAllowed($tenant);
+            }
+        }
 
         $this->runInTenantContext($tenant, function () use ($validated, $tenant, $userId): void {
             $tenantUser = User::query()->findOrFail($userId);
@@ -372,7 +395,7 @@ class TenantUserAccessController extends Controller
             ]);
         }
 
-        $usersCount = $this->runInTenantContext($tenant, fn (): int => User::query()->count());
+        $usersCount = $this->countTenantAdminUsers($tenant);
 
         if ($usersCount >= $limit) {
             throw ValidationException::withMessages([
@@ -480,5 +503,16 @@ class TenantUserAccessController extends Controller
     private function resolveTenantConnectionName(): string
     {
         return (string) (config('multitenancy.tenant_database_connection_name') ?: 'tenant');
+    }
+
+    private function countTenantAdminUsers(Tenant $tenant): int
+    {
+        return Role::query()
+            ->join('model_has_roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->where('roles.system_name', 'tenant-admin')
+            ->where('model_has_roles.model_type', User::class)
+            ->where('model_has_roles.tenant_id', $tenant->id)
+            ->distinct()
+            ->count('model_has_roles.model_id');
     }
 }

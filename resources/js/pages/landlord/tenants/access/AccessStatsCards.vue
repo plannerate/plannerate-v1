@@ -8,7 +8,6 @@ type TenantPayload = {
     slug: string;
     plan_user_limit: number | null;
     users_count: number;
-    can_create_users: boolean;
     limit_message: string | null;
 };
 

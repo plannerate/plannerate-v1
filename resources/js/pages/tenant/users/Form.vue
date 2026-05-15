@@ -5,6 +5,7 @@ import { computed } from 'vue';
 import TenantUserController from '@/actions/App/Http/Controllers/Tenant/UserController';
 import FormCard from '@/components/FormCard.vue';
 import InputError from '@/components/InputError.vue';
+import RolesCheckboxList from '@/components/RolesCheckboxList.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
@@ -22,6 +23,7 @@ type UserPayload = {
 type RoleOption = {
     id: string;
     name: string;
+    is_admin: boolean;
 };
 
 const props = defineProps<{
@@ -31,13 +33,22 @@ const props = defineProps<{
     tenant: {
         plan_user_limit: number | null;
         users_count: number;
-        can_create_users: boolean;
         limit_message: string | null;
     };
 }>();
 
 const { t } = useT();
 const isEdit = computed(() => props.user !== null);
+const adminLimitReached = computed(
+    () => props.tenant.plan_user_limit !== null && props.tenant.users_count >= props.tenant.plan_user_limit,
+);
+const rolesForField = computed(() =>
+    props.roles.map((role) => ({
+        value: role.id,
+        label: role.name,
+        isAdmin: role.is_admin,
+    })),
+);
 const usersIndexPath = TenantUserController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
 const pageMeta = useCrudPageMeta({
     headTitle: isEdit.value ? t('app.tenant.users.actions.edit') : t('app.tenant.users.actions.new'),
@@ -130,23 +141,13 @@ const updateFormAttrs = computed(() => {
 
                     <div class="space-y-3">
                         <Label>{{ t('app.tenant.users.fields.roles') }}</Label>
-                        <div class="grid gap-2 md:grid-cols-2">
-                            <label
-                                v-for="role in props.roles"
-                                :key="role.id"
-                                class="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/40 has-checked:border-primary/50 has-checked:bg-primary/5"
-                            >
-                                <input
-                                    type="checkbox"
-                                    name="role_ids[]"
-                                    :value="role.id"
-                                    :checked="props.user?.role_ids.includes(role.id) ?? false"
-                                    class="accent-primary"
-                                />
-                                <span>{{ role.name }}</span>
-                            </label>
-                        </div>
-                        <InputError :message="errors.role_ids" />
+                        <RolesCheckboxList
+                            name-attr="role_ids[]"
+                            :roles="rolesForField"
+                            :selected-values="props.user?.role_ids"
+                            :admin-limit-reached="adminLimitReached"
+                            :error="errors.role_ids"
+                        />
                     </div>
 
                     <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 transition-colors hover:bg-muted/50 has-checked:border-primary/50 has-checked:bg-primary/5">

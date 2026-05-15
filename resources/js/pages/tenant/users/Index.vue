@@ -33,8 +33,11 @@ const props = defineProps<{
     tenant: {
         plan_user_limit: number | null;
         users_count: number;
-        can_create_users: boolean;
         limit_message: string | null;
+    };
+
+    can: {
+        create: boolean;
     };
 }>();
 
@@ -60,13 +63,11 @@ const pageMeta = useCrudPageMeta({
 
 <template>
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton
-                    v-if="props.tenant.can_create_users"
-                    :href="TenantUserController.create.url(props.subdomain)"
-                >
+                <NewActionButton v-if="props.can.create" :href="TenantUserController.create.url(props.subdomain)">
                     {{ t('app.tenant.users.actions.new') }}
                 </NewActionButton>
             </div>
@@ -80,23 +81,13 @@ const pageMeta = useCrudPageMeta({
                 </AlertDescription>
             </Alert>
 
-            <ListPage
-                :meta="usersMeta"
-                label="usuário"
-                :action="usersIndexPath"
-                :clear-href="usersIndexPath"
-                :search-value="props.filters.search"
-                :search-placeholder="t('app.tenant.common.search')"
-                :filter-label="t('app.tenant.common.filter')"
-                :clear-label="t('app.tenant.common.clear_filters')"
-                :trashed-value="props.filters.trashed"
-            >
+            <ListPage :meta="usersMeta" label="usuário" :action="usersIndexPath" :clear-href="usersIndexPath"
+                :search-value="props.filters.search" :search-placeholder="t('app.tenant.common.search')"
+                :filter-label="t('app.tenant.common.filter')" :clear-label="t('app.tenant.common.clear_filters')"
+                :trashed-value="props.filters.trashed">
                 <template #filters>
-                    <select
-                        name="is_active"
-                        :value="props.filters.is_active"
-                        class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                    >
+                    <select name="is_active" :value="props.filters.is_active"
+                        class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
                         <option value="">{{ t('app.tenant.common.all') }}</option>
                         <option value="1">{{ t('app.tenant.common.active') }}</option>
                         <option value="0">{{ t('app.tenant.common.inactive') }}</option>
@@ -122,28 +113,25 @@ const pageMeta = useCrudPageMeta({
                                 {{ t('app.tenant.common.empty') }}
                             </td>
                         </tr>
-                        <tr
-                            v-for="user in usersRows"
-                            :key="user.id"
-                            class="border-t border-sidebar-border/60 transition-colors odd:bg-transparent even:bg-muted/30 hover:bg-muted/50 dark:border-sidebar-border"
-                        >
+                        <tr v-for="user in usersRows" :key="user.id"
+                            class="border-t border-sidebar-border/60 transition-colors odd:bg-transparent even:bg-muted/30 hover:bg-muted/50 dark:border-sidebar-border">
                             <td class="px-4 py-3 font-medium">{{ user.name }}</td>
                             <td class="px-4 py-3">{{ user.email }}</td>
                             <td class="px-4 py-3">{{ user.roles.length > 0 ? user.roles.join(', ') : '-' }}</td>
-                            <td class="px-4 py-3">{{ user.is_active ? t('app.tenant.common.active') : t('app.tenant.common.inactive') }}</td>
+                            <td class="px-4 py-3">{{ user.is_active ? t('app.tenant.common.active') :
+                                t('app.tenant.common.inactive') }}</td>
                             <td class="px-4 py-3 text-right">
                                 <div class="inline-flex items-center gap-2">
                                     <Button variant="outline" size="sm" as-child>
-                                        <WayfinderLink :href="TenantUserController.edit.url({ subdomain: props.subdomain, user: user.id })">
+                                        <WayfinderLink
+                                            :href="TenantUserController.edit.url({ subdomain: props.subdomain, user: user.id })">
                                             {{ t('app.tenant.common.edit') }}
                                         </WayfinderLink>
                                     </Button>
                                     <Button variant="destructive" size="sm" as-child>
                                         <WayfinderLink
                                             :href="TenantUserController.destroy.url({ subdomain: props.subdomain, user: user.id })"
-                                            method="delete"
-                                            as="button"
-                                        >
+                                            method="delete" as="button">
                                             {{ t('app.tenant.common.delete') }}
                                         </WayfinderLink>
                                     </Button>

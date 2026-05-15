@@ -20,12 +20,14 @@ type UserAccessRow = {
 type RoleOption = {
     id: string;
     name: string;
+    is_admin: boolean;
 };
 
 const props = defineProps<{
     user: UserAccessRow;
     tenantId: string;
     roles: RoleOption[];
+    adminLimitReached: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -131,14 +133,18 @@ function getUserInitials(name: string): string {
                     <label
                         v-for="role in roles"
                         :key="role.id"
-                        class="flex cursor-pointer items-center gap-1.5 rounded-full border border-input px-3 py-1 text-sm transition-colors hover:bg-accent has-checked:border-primary/60 has-checked:bg-primary/5 has-checked:text-primary"
-                        :class="user.deleted_at ? 'pointer-events-none opacity-60' : ''"
+                        class="flex cursor-pointer items-center gap-1.5 rounded-full border border-input px-3 py-1 text-sm transition-colors has-checked:border-primary/60 has-checked:bg-primary/5 has-checked:text-primary"
+                        :class="[
+                            user.deleted_at || (role.is_admin && adminLimitReached && !localRoleNames.includes(role.name))
+                                ? 'pointer-events-none opacity-60'
+                                : 'hover:bg-accent',
+                        ]"
                     >
                         <input
                             type="checkbox"
                             :value="role.name"
                             :checked="localRoleNames.includes(role.name)"
-                            :disabled="!!user.deleted_at"
+                            :disabled="!!user.deleted_at || (role.is_admin && adminLimitReached && !localRoleNames.includes(role.name))"
                             class="accent-primary"
                             @change="onRoleChange(role.name, ($event.target as HTMLInputElement).checked)"
                         />

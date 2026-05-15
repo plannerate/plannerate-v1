@@ -50,13 +50,15 @@ class UserController extends Controller
             'filter_options' => [
                 'roles' => $this->rolesForSelect(),
             ],
+            'can' => [
+                'create' => $this->authorize('create', User::class),
+            ],
         ]);
     }
 
     public function create(): Response
     {
         $this->authorize('create', User::class);
-        $this->ensureUserCreationAllowed();
 
         return Inertia::render('tenant/users/Form', [
             'subdomain' => $this->tenantSubdomain(),
@@ -69,10 +71,13 @@ class UserController extends Controller
     public function store(StoreUserRequest $request): RedirectResponse
     {
         $this->authorize('create', User::class);
-        $this->ensureUserCreationAllowed();
 
         $validated = $request->validated();
         $roleIds = is_array($validated['role_ids'] ?? null) ? $validated['role_ids'] : [];
+
+        if ($this->roleIdsIncludeTenantAdmin($roleIds)) {
+            $this->ensureUserCreationAllowed();
+        }
 
         $user = User::query()->create([
             ...Arr::except($validated, ['role_ids']),
@@ -122,6 +127,16 @@ class UserController extends Controller
         $validated = $request->validated();
         $roleIds = is_array($validated['role_ids'] ?? null) ? $validated['role_ids'] : [];
         $password = $validated['password'] ?? null;
+
+        $user->loadMissing(['roles' => fn ($query) => $query
+            ->whereNull('roles.tenant_id')
+            ->where('roles.guard_name', 'web')
+            ->where('roles.type', RbacType::TENANT)]);
+        $currentRoleIds = $user->roles->pluck('id')->values()->all();
+
+        if ($this->roleIdsIncludeTenantAdmin($roleIds) && ! $this->roleIdsIncludeTenantAdmin($currentRoleIds)) {
+            $this->ensureUserCreationAllowed();
+        }
 
         $user->update([
             ...Arr::except($validated, ['password', 'role_ids']),
@@ -187,7 +202,7 @@ class UserController extends Controller
     }
 
     /**
-     * @return array<int, array{id: string, name: string}>
+     * @return array<int, array{id: string, name: string, is_admin: bool}>
      */
     private function rolesForSelect(): array
     {
@@ -196,10 +211,11 @@ class UserController extends Controller
             ->where('guard_name', 'web')
             ->where('type', RbacType::TENANT)
             ->orderBy('name')
-            ->get(['id', 'name'])
+            ->get(['id', 'name', 'system_name'])
             ->map(fn (Role $role): array => [
                 'id' => $role->id,
                 'name' => $role->name,
+                'is_admin' => $role->system_name === 'tenant-admin',
             ])
             ->all();
     }
@@ -223,6 +239,21 @@ class UserController extends Controller
     }
 
     /**
+     * @param  list<string>  $roleIds
+     */
+    private function roleIdsIncludeTenantAdmin(array $roleIds): bool
+    {
+        if ($roleIds === []) {
+            return false;
+        }
+
+        return Role::query()
+            ->whereIn('id', $roleIds)
+            ->where('system_name', 'tenant-admin')
+            ->exists();
+    }
+
+    /**
      * @throws ValidationException
      */
     private function ensureUserCreationAllowed(): void
@@ -236,7 +267,7 @@ class UserController extends Controller
             ]);
         }
 
-        if (User::query()->count() >= $limit) {
+        if ($this->countTenantAdminUsers() >= $limit) {
             throw ValidationException::withMessages([
                 'limit' => __('app.landlord.tenant_access.messages.limit_reached'),
             ]);
@@ -244,29 +275,30 @@ class UserController extends Controller
     }
 
     /**
-     * @return array{plan_user_limit:int|null,users_count:int,can_create_users:bool,limit_message:string|null}
+     * @return array{plan_user_limit:int|null,users_count:int,limit_message:string|null}
      */
     private function tenantLimitPayload(): array
     {
         $tenant = Tenant::current();
-        $usersCount = User::query()->count();
+        $usersCount = $this->countTenantAdminUsers();
         $planUserLimit = $tenant?->plan_user_limit;
-        $hasPlanLimit = $planUserLimit !== null;
-        $hasReachedLimit = $hasPlanLimit && $usersCount >= $planUserLimit;
-        $canCreateUsers = $hasPlanLimit && ! $hasReachedLimit;
-        $limitMessage = null;
-
-        if (! $tenant || $tenant->plan === null || ! $hasPlanLimit) {
-            $limitMessage = __('app.landlord.tenant_access.messages.no_plan_limit');
-        } elseif ($hasReachedLimit) {
-            $limitMessage = __('app.landlord.tenant_access.messages.limit_reached');
-        }
+        $adminLimitReached = $planUserLimit !== null && $tenant?->plan !== null && $usersCount >= $planUserLimit;
 
         return [
             'plan_user_limit' => $planUserLimit,
             'users_count' => $usersCount,
-            'can_create_users' => $canCreateUsers,
-            'limit_message' => $limitMessage,
+            'limit_message' => $adminLimitReached ? __('app.landlord.tenant_access.messages.limit_reached') : null,
         ];
+    }
+
+    private function countTenantAdminUsers(): int
+    {
+        return Role::query()
+            ->join('model_has_roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->where('roles.system_name', 'tenant-admin')
+            ->where('model_has_roles.model_type', User::class)
+            ->where('model_has_roles.tenant_id', $this->tenantId())
+            ->distinct()
+            ->count('model_has_roles.model_id');
     }
 }

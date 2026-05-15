@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
 import { UserPlus } from 'lucide-vue-next';
+import { computed } from 'vue';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import InputError from '@/components/InputError.vue';
+import RolesCheckboxList from '@/components/RolesCheckboxList.vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +20,6 @@ type TenantPayload = {
     slug: string;
     plan_user_limit: number | null;
     users_count: number;
-    can_create_users: boolean;
     limit_message: string | null;
 };
 
@@ -34,9 +35,10 @@ type UserAccessRow = {
 type RoleOption = {
     id: string;
     name: string;
+    is_admin: boolean;
 };
 
-defineProps<{
+const props = defineProps<{
     open: boolean;
     mode: 'create' | 'edit';
     user: UserAccessRow | null;
@@ -49,6 +51,18 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useT();
+
+const adminLimitReached = computed(
+    () => props.tenant.plan_user_limit !== null && props.tenant.users_count >= props.tenant.plan_user_limit,
+);
+
+const rolesForField = computed(() =>
+    props.roles.map((role) => ({
+        value: role.name,
+        label: role.name,
+        isAdmin: role.is_admin,
+    })),
+);
 
 function getUserInitials(name: string): string {
     const tokens = name
@@ -139,17 +153,12 @@ function getUserInitials(name: string): string {
                                     <Separator />
                                 </div>
 
-                                <div class="grid gap-2">
-                                    <label
-                                        v-for="role in roles"
-                                        :key="role.id"
-                                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-input px-3 py-2.5 text-sm transition-colors hover:bg-accent has-checked:border-primary/60 has-checked:bg-primary/5"
-                                    >
-                                        <input type="checkbox" name="role_names[]" :value="role.name" class="accent-primary" />
-                                        <span class="font-medium">{{ role.name }}</span>
-                                    </label>
-                                </div>
-                                <InputError :message="errors.role_names" />
+                                <RolesCheckboxList
+                                    name-attr="role_names[]"
+                                    :roles="rolesForField"
+                                    :admin-limit-reached="adminLimitReached"
+                                    :error="errors.role_names"
+                                />
                             </div>
 
                             <div class="space-y-4">
@@ -170,7 +179,7 @@ function getUserInitials(name: string): string {
 
                         <div class="sticky bottom-0 z-10 -mx-6 mt-6 border-t border-sidebar-border/70 bg-background/95 px-6 py-4 backdrop-blur dark:border-sidebar-border">
                             <div class="flex items-center gap-3">
-                                <Button variant="gradient" :disabled="processing || !tenant.can_create_users">
+                                <Button variant="gradient" :disabled="processing">
                                     {{ t('app.actions.save') }}
                                 </Button>
                                 <Button type="button" variant="outline" @click="emit('update:open', false)">
@@ -232,23 +241,13 @@ function getUserInitials(name: string): string {
                                     <Separator />
                                 </div>
 
-                                <div class="grid gap-2">
-                                    <label
-                                        v-for="role in roles"
-                                        :key="role.id"
-                                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-input px-3 py-2.5 text-sm transition-colors hover:bg-accent has-checked:border-primary/60 has-checked:bg-primary/5"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            name="role_names[]"
-                                            :value="role.name"
-                                            :checked="user.role_names.includes(role.name)"
-                                            class="accent-primary"
-                                        />
-                                        <span class="font-medium">{{ role.name }}</span>
-                                    </label>
-                                </div>
-                                <InputError :message="errors.role_names" />
+                                <RolesCheckboxList
+                                    name-attr="role_names[]"
+                                    :roles="rolesForField"
+                                    :selected-values="user.role_names"
+                                    :admin-limit-reached="adminLimitReached"
+                                    :error="errors.role_names"
+                                />
                             </div>
 
                             <div class="space-y-4">
