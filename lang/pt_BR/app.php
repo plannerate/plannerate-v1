@@ -514,7 +514,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'deleted' => 'Usuario removido com sucesso.',
                 'restored' => 'Usuario restaurado com sucesso.',
                 'no_plan_limit' => 'Nao e possivel cadastrar usuarios sem limite definido no plano.',
-                'limit_reached' => 'Limite de usuarios do plano atingido para este tenant.',
+                'limit_reached' => 'Você atingiu o limite de usuários administradores do seu plano.',
             ],
         ],
         'tenant_integrations' => [
