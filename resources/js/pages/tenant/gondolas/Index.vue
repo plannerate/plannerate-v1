@@ -5,6 +5,7 @@ import GondolaController from '@/actions/App/Http/Controllers/Tenant/GondolaCont
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import PlanLimitAlert from '@/components/PlanLimitAlert.vue';
 import { ColumnActions, ColumnHeader, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,12 @@ const props = defineProps<{
         status: string;
         trashed: 'without' | 'only' | 'with';
     };
+    can: {
+        create: boolean;
+        limit_reached: boolean;
+        limit_message: string | null;
+        upgrade_url: string | null;
+    };
 }>();
 
 const { t } = useT();
@@ -73,6 +80,7 @@ const pageMeta = useCrudPageMeta({
                     <WayfinderLink :href="planogramsIndexPath">{{ t('app.actions.back') }}</WayfinderLink>
                 </Button>
                 <NewActionButton
+                    v-if="can.create"
                     :href="GondolaController.create.url({
                         subdomain: props.subdomain,
                         planogram: props.planogram.id,
@@ -82,6 +90,8 @@ const pageMeta = useCrudPageMeta({
                 </NewActionButton>
             </div>
         </template>
+
+        <PlanLimitAlert v-if="can.limit_reached" :message="can.limit_message!" :upgrade-url="can.upgrade_url" />
 
         <ListPage
             :meta="gondolasMeta"

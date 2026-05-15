@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithPlanLimits;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
@@ -24,6 +25,7 @@ use Inertia\Response;
 class PlanogramController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithPlanLimits;
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
 
@@ -60,6 +62,7 @@ class PlanogramController extends Controller
                 'stores' => $this->storesForSelect(),
             ],
             'can_create_gondola' => $request->user()?->can('create', Gondola::class) ?? false,
+            'can' => $this->resolveCanCreate(Planogram::class, 'planogram_limit', Planogram::count()),
         ]);
     }
 

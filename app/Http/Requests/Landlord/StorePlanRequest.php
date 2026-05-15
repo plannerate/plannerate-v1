@@ -37,6 +37,8 @@ class StorePlanRequest extends FormRequest
             'items.*.value' => ['nullable', 'string', 'max:500'],
             'items.*.type' => ['required', 'in:integer,boolean,string'],
             'items.*.is_active' => ['sometimes', 'boolean'],
+            'items.*.limit_message' => ['nullable', 'string', 'max:500'],
+            'items.*.upgrade_url' => ['nullable', 'url', 'max:2048'],
         ];
     }
 }

@@ -12,6 +12,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -44,6 +45,9 @@ class EanReferenceController extends Controller
             'filters' => [
                 'search' => $search,
                 'has_image' => $hasImageParam,
+            ],
+            'can' => [
+                'create' => Gate::allows('create', EanReference::class),
             ],
         ]);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithPlanLimits;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
@@ -20,6 +21,7 @@ use Inertia\Response;
 class GondolaController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithPlanLimits;
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
 
@@ -49,6 +51,7 @@ class GondolaController extends Controller
                 'status' => $status,
                 'trashed' => $trashed,
             ],
+            'can' => $this->resolveCanCreate(Gondola::class, 'gondola_limit', Gondola::count()),
         ]);
     }
 

@@ -4,6 +4,7 @@ import { ChevronDown, SlidersHorizontal, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import ListPage from '@/components/ListPage.vue';
+import PlanLimitAlert from '@/components/PlanLimitAlert.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import {
     ColumnActions,
@@ -56,6 +57,12 @@ const props = defineProps<{
     };
     filter_options: {
         categories: Array<{ id: string; name: string }>;
+    };
+    can: {
+        create: boolean;
+        limit_reached: boolean;
+        limit_message: string | null;
+        upgrade_url: string | null;
     };
 }>();
 
@@ -125,11 +132,13 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton :href="ProductController.create.url(props.subdomain)">
+                <NewActionButton v-if="can.create" :href="ProductController.create.url(props.subdomain)">
                     {{ t('app.tenant.products.actions.new') }}
                 </NewActionButton>
             </div>
         </template>
+
+        <PlanLimitAlert v-if="can.limit_reached" :message="can.limit_message!" :upgrade-url="can.upgrade_url" />
 
         <ListPage :meta="productsMeta" label="produto" :action="productsIndexPath" :clear-href="productsIndexPath"
             :search-value="props.filters.search" :search-placeholder="t('app.tenant.common.search')"

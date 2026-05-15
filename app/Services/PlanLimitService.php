@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Plan;
+use App\Models\PlanItem;
 use App\Models\Tenant;
 
 class PlanLimitService
@@ -33,20 +34,59 @@ class PlanLimitService
     {
         $limit = $this->getLimit($key);
 
-        if ($limit === null) {
-            return true;
-        }
-
-        if (! is_int($limit)) {
+        if ($limit === null || ! is_int($limit)) {
             return true;
         }
 
         return $currentCount < $limit;
     }
 
+    /**
+     * Return true when a numeric limit IS configured and the count has reached or exceeded it.
+     */
+    public function isLimitReached(string $key, int $currentCount): bool
+    {
+        $limit = $this->getLimit($key);
+
+        if ($limit === null || ! is_int($limit)) {
+            return false;
+        }
+
+        return $currentCount >= $limit;
+    }
+
+    /**
+     * Return the custom message stored on the plan item, or null if not configured.
+     */
+    public function getLimitMessage(string $key): ?string
+    {
+        return $this->resolvePlanItem($key)?->limit_message;
+    }
+
+    /**
+     * Return the upgrade URL stored on the plan item, or null if not configured.
+     */
+    public function getUpgradeUrl(string $key): ?string
+    {
+        return $this->resolvePlanItem($key)?->upgrade_url;
+    }
+
     protected function currentTenant(): ?Tenant
     {
         return Tenant::current();
+    }
+
+    private function resolvePlanItem(string $key): ?PlanItem
+    {
+        $plan = $this->resolvePlan();
+
+        if (! $plan instanceof Plan) {
+            return null;
+        }
+
+        $plan->loadMissing('items');
+
+        return $plan->items->firstWhere('key', $key);
     }
 
     private function resolvePlan(): ?Plan

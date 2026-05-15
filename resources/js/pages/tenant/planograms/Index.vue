@@ -7,6 +7,7 @@ import PlanogramController from '@/actions/App/Http/Controllers/Tenant/Planogram
 import WorkflowKanbanController from '@/actions/App/Http/Controllers/Tenant/WorkflowKanbanController';
 import KankanNavigationLinks from '@/components/KankanNavigationLinks.vue';
 import ListTablePage from '@/components/ListPage.vue';
+import PlanLimitAlert from '@/components/PlanLimitAlert.vue';
 import type ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import GondolaCreateStepper from '@/components/plannerate/form/GondolaCreateStepper.vue';
@@ -53,6 +54,12 @@ const props = defineProps<{
         stores: Array<{ id: string; name: string }>;
     };
     can_create_gondola: boolean;
+    can: {
+        create: boolean;
+        limit_reached: boolean;
+        limit_message: string | null;
+        upgrade_url: string | null;
+    };
 }>();
 
 const { t } = useT();
@@ -124,11 +131,13 @@ const pageMeta = useCrudPageMeta({
                         Layers órfãs
                     </WayfinderLink>
                 </Button>
-                <NewActionButton :href="PlanogramController.create.url(props.subdomain)">
+                <NewActionButton v-if="can.create" :href="PlanogramController.create.url(props.subdomain)">
                     {{ t('app.tenant.planograms.actions.new') }}
                 </NewActionButton>
             </div>
         </template>
+
+        <PlanLimitAlert v-if="can.limit_reached" :message="can.limit_message!" :upgrade-url="can.upgrade_url" />
 
         <ListTablePage
             ref="listPageRef"

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithPlanLimits;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
@@ -23,6 +24,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class CategoryController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithPlanLimits;
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
 
@@ -119,6 +121,7 @@ class CategoryController extends Controller
             'filter_options' => [
                 'level_names' => $this->levelNamesForSelect(),
             ],
+            'can' => $this->resolveCanCreate(Category::class, 'category_limit', Category::count()),
         ]);
     }
 

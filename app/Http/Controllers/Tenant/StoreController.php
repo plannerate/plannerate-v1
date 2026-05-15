@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithPlanLimits;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithAddress;
@@ -24,6 +25,7 @@ class StoreController extends Controller
 {
     use InteractsWithAddress;
     use InteractsWithDeferredIndex;
+    use InteractsWithPlanLimits;
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
 
@@ -47,6 +49,7 @@ class StoreController extends Controller
                 'status' => $status,
                 'trashed' => $trashed,
             ],
+            'can' => $this->resolveCanCreate(Store::class, 'store_limit', Store::count()),
         ]);
     }
 

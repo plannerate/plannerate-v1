@@ -18,6 +18,8 @@ class PlanItem extends Model
         'key',
         'label',
         'value',
+        'limit_message',
+        'upgrade_url',
         'type',
         'sort_order',
         'is_active',

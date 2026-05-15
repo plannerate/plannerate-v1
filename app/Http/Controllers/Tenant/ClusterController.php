@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithPlanLimits;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
@@ -19,6 +20,7 @@ use Inertia\Response;
 class ClusterController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithPlanLimits;
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
 
@@ -48,6 +50,7 @@ class ClusterController extends Controller
             'filter_options' => [
                 'stores' => $this->storesForSelect(),
             ],
+            'can' => $this->resolveCanCreate(Cluster::class, 'cluster_limit', Cluster::count()),
         ]);
     }
 

@@ -10,6 +10,7 @@ import {
 import { computed, ref } from 'vue';
 import SaleController from '@/actions/App/Http/Controllers/Tenant/SaleController';
 import MonthRangeFilter from '@/components/filters/MonthRangeFilter.vue';
+import PlanLimitAlert from '@/components/PlanLimitAlert.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { ColumnActions, ColumnLabel } from '@/components/table/columns';
@@ -44,6 +45,12 @@ const props = defineProps<{
     };
     filter_options: {
         stores: Array<{ id: string; name: string }>;
+    };
+    can: {
+        create: boolean;
+        limit_reached: boolean;
+        limit_message: string | null;
+        upgrade_url: string | null;
     };
 }>();
 
@@ -138,11 +145,13 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton :href="salesCreatePath">
+                <NewActionButton v-if="can.create" :href="salesCreatePath">
                     {{ t('app.tenant.sales.actions.new') }}
                 </NewActionButton>
             </div>
         </template>
+
+        <PlanLimitAlert v-if="can.limit_reached" :message="can.limit_message!" :upgrade-url="can.upgrade_url" />
 
         <ListPage
             ref="listPageRef"

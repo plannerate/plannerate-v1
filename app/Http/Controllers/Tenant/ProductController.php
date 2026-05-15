@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithPlanLimits;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
@@ -21,6 +22,7 @@ use Inertia\Response;
 class ProductController extends Controller
 {
     use InteractsWithDeferredIndex;
+    use InteractsWithPlanLimits;
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
 
@@ -75,6 +77,7 @@ class ProductController extends Controller
             'filter_options' => [
                 'categories' => $this->categoriesForSelect(),
             ],
+            'can' => $this->resolveCanCreate(Product::class, 'product_limit', Product::count()),
         ]);
     }
 

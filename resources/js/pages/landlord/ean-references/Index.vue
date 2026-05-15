@@ -42,6 +42,9 @@ const props = defineProps<{
         search: string;
         has_image: string;
     };
+    can: {
+        create: boolean;
+    };
 }>();
 
 const { t } = useT();
@@ -112,7 +115,7 @@ function formatDimensions(reference: EanReferenceRow): string {
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton :href="EanReferenceController.create.url()">
+                <NewActionButton v-if="can.create" :href="EanReferenceController.create.url()">
                     {{ t('app.landlord.ean_references.actions.new') }}
                 </NewActionButton>
             </div>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithPlanLimits;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithAddress;
@@ -21,6 +22,7 @@ class ProviderController extends Controller
 {
     use InteractsWithAddress;
     use InteractsWithDeferredIndex;
+    use InteractsWithPlanLimits;
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
 
@@ -44,6 +46,7 @@ class ProviderController extends Controller
                 'is_default' => $isDefault,
                 'trashed' => $trashed,
             ],
+            'can' => $this->resolveCanCreate(Provider::class, 'provider_limit', Provider::count()),
         ]);
     }
 

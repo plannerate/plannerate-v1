@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/vue3';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import PlanLimitAlert from '@/components/PlanLimitAlert.vue';
 import { ColumnActions, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
@@ -29,6 +30,12 @@ const props = defineProps<{
         status: string;
         trashed: 'without' | 'only' | 'with';
     };
+    can: {
+        create: boolean;
+        limit_reached: boolean;
+        limit_message: string | null;
+        upgrade_url: string | null;
+    };
 }>();
 
 const { t } = useT();
@@ -50,11 +57,13 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton :href="StoreController.create.url(props.subdomain)">
+                <NewActionButton v-if="can.create" :href="StoreController.create.url(props.subdomain)">
                     {{ t('app.tenant.stores.actions.new') }}
                 </NewActionButton>
             </div>
         </template>
+
+        <PlanLimitAlert v-if="can.limit_reached" :message="can.limit_message!" :upgrade-url="can.upgrade_url" />
 
         <ListPage
             :meta="storesMeta"

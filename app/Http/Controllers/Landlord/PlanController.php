@@ -132,6 +132,8 @@ class PlanController extends Controller
                     'type' => $item->type,
                     'sort_order' => $item->sort_order,
                     'is_active' => $item->is_active,
+                    'limit_message' => $item->limit_message,
+                    'upgrade_url' => $item->upgrade_url,
                 ])->values()->all(),
             ],
         ]);
@@ -181,6 +183,8 @@ class PlanController extends Controller
                     'type' => $data['type'] ?? 'string',
                     'sort_order' => $index,
                     'is_active' => isset($data['is_active']) ? (bool) $data['is_active'] : true,
+                    'limit_message' => $data['limit_message'] !== '' ? ($data['limit_message'] ?? null) : null,
+                    'upgrade_url' => $data['upgrade_url'] !== '' ? ($data['upgrade_url'] ?? null) : null,
                 ],
             );
         }

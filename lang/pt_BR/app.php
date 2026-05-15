@@ -679,6 +679,10 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'clear_filters' => 'Limpar filtros',
             'active' => 'Ativo',
             'inactive' => 'Inativo',
+            'plan_limit' => [
+                'title' => 'Limite do plano atingido',
+                'upgrade' => 'Fazer upgrade',
+            ],
         ],
         'categories' => [
             'navigation' => 'Categorias',
@@ -1129,9 +1133,9 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         ],
         'editor' => [
             'planograms' => [
-                'navigation' => 'Planogramas Clientes', 
+                'navigation' => 'Planogramas Clientes',
             ],
-        ]
+        ],
     ],
 
     'kanban' => [
@@ -1410,5 +1414,5 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'recovery_codes_hint_prefix' => 'Cada codigo de recuperacao pode ser usado uma unica vez para acessar sua conta e sera removido apos o uso. Se precisar de mais, clique em',
         'recovery_codes_hint_highlight' => 'Gerar novos codigos',
         'recovery_codes_hint_suffix' => 'acima.',
-    ]
+    ],
 ];

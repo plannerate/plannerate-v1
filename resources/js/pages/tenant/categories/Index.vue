@@ -2,6 +2,7 @@
 import { Head } from '@inertiajs/vue3';
 import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryController';
 import ImportFileButton from '@/components/imports/ImportFileButton.vue';
+import PlanLimitAlert from '@/components/PlanLimitAlert.vue';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { ColumnActions, ColumnHeader, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
@@ -37,6 +38,12 @@ const props = defineProps<{
     };
     filter_options: {
         level_names: string[];
+    };
+    can: {
+        create: boolean;
+        limit_reached: boolean;
+        limit_message: string | null;
+        upgrade_url: string | null;
     };
 }>();
 
@@ -91,11 +98,13 @@ const pageMeta = useCrudPageMeta({
                     :truncate-label="t('app.tenant.categories.import.truncate_label')"
                     :truncate-warning="t('app.tenant.categories.import.truncate_warning')"
                 />
-                <NewActionButton :href="CategoryController.create.url(props.subdomain)">
+                <NewActionButton v-if="can.create" :href="CategoryController.create.url(props.subdomain)">
                     {{ t('app.tenant.categories.actions.new') }}
                 </NewActionButton>
             </div>
         </template>
+
+        <PlanLimitAlert v-if="can.limit_reached" :message="can.limit_message!" :upgrade-url="can.upgrade_url" />
 
         <ListPage
             :title="pageMeta.title"
