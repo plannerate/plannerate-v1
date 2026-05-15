@@ -129,6 +129,7 @@ class ProductController extends Controller
                 'image_url' => $product->image_url,
                 'slug' => $product->slug,
                 'ean' => $product->ean,
+                'codigo_erp' => $product->codigo_erp,
                 'status' => $product->status,
                 'category' => $product->category?->name,
                 'stores' => $product->stores

@@ -18,7 +18,7 @@ use Inertia\Response;
 
 class PlannerateController extends Controller
 {
-    public function show(Request $request, $record): Response
+    public function show(Request $request, string $record): Response
     {
         $record = Planogram::findOrFail($record);
 

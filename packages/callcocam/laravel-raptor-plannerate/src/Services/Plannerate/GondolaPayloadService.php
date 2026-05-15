@@ -105,7 +105,7 @@ class GondolaPayloadService
                                         'product' => $segment->layer->relationLoaded('product') && $segment->layer->product ? [
                                             'id' => $segment->layer->product->id,
                                             'name' => $segment->layer->product->name,
-                                            'code' => $segment->layer->product->code,
+                                            'codigo_erp' => $segment->layer->product->codigo_erp,
                                             'ean' => $segment->layer->product->ean,
                                             'barcode' => $segment->layer->product->barcode,
                                             'image' => $segment->layer->product->image,
@@ -117,6 +117,10 @@ class GondolaPayloadService
                                             'brand' => $segment->layer->product->brand,
                                             'price' => $segment->layer->product->price,
                                             'status' => $segment->layer->product->status,
+                                            'category' => $segment->layer->product->category?->name,
+                                            'category_full_path' => $segment->layer->product->relationLoaded('category') && $segment->layer->product->category
+                                                ? $segment->layer->product->category->name
+                                                : null,
                                             'has_dimensions' => ($segment->layer->product->width > 0 && $segment->layer->product->height > 0 && $segment->layer->product->depth > 0),
                                         ] : null,
                                     ] : null,

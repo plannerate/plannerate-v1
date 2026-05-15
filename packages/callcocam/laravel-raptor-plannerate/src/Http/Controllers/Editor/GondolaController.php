@@ -61,7 +61,8 @@ class GondolaController extends Controller
             'planogram.gondolas:id,planogram_id,name,slug',
             'planogram.category',
             'sections.gondola:id,scale_factor',
-            'sections.shelves.segments.layer.product:id,name,ean,codigo_erp,url,width,height,depth,weight,brand,status',
+            'sections.shelves.segments.layer.product:id,name,ean,codigo_erp,url,width,height,depth,weight,brand,price,status,category_id',
+            'sections.shelves.segments.layer.product.category:id,name,category_id',
         ]);
 
         // Desabilita appends automáticos nos produtos para evitar N+1 queries (ex: category_full_path)
@@ -380,6 +381,7 @@ class GondolaController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'ean' => $product->ean,
+                'codigo_erp' => $product->codigo_erp,
                 'image_url' => $product->getImageUrlAttribute(),
                 'category_full_path' => $product->category->full_path ?? null,
                 // Dimensões agora estão diretamente no produto (tabela dimensions foi removida)
@@ -390,6 +392,7 @@ class GondolaController extends Controller
                 'unit' => $product->unit ?? 'cm',
                 'category_id' => $product->category_id,
                 'category_name' => $product->category?->name,
+                'brand' => $product->brand,
                 'status' => $product->status,
                 'has_dimensions' => ($product->width > 0 && $product->height > 0 && $product->depth > 0),
                 // 'sales' => $product->sales,

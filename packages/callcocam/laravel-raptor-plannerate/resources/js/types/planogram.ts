@@ -18,6 +18,7 @@ export interface Product {
     id: string;
     name?: string;
     code?: string;
+    codigo_erp?: string;
     ean?: string;
     barcode?: string;
     image?: string;

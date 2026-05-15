@@ -28,6 +28,7 @@ type ProductRow = {
     image_url: string | null;
     slug: string | null;
     ean: string | null;
+    codigo_erp: string | null;
     status: 'draft' | 'published' | 'synced' | 'error';
     category: string | null;
     stores: string[];
@@ -224,7 +225,12 @@ const pageMeta = useCrudPageMeta({
                             <ColumnLabel :label="product.name ?? '-'"
                                 :description="[product.slug, formatStockAndLastPurchase(product), formatProductDimensions(product)].filter(Boolean).join(' • ') || null" />
                         </td>
-                        <td class="px-4 py-3">{{ product.ean ?? '-' }}</td>
+                        <td class="px-4 py-3">
+                            {{ product.ean ?? '-' }}
+                            <br />
+                            {{ product.codigo_erp ?? '-' }}
+
+                        </td>
                         <td class="px-4 py-3">{{ product.category ?? '-' }}</td>
                         <td class="px-4 py-3">
                             <div

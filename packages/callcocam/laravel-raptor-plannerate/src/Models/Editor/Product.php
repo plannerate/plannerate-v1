@@ -19,7 +19,7 @@ class Product extends Model
 {
     use BelongsToTenant, HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
 
-    protected $fillable = ['url'];
+    protected $guarded = ['id'];
 
     protected $appends = ['image_url', 'formatted_height', 'formatted_width', 'formatted_depth', 'category_full_path'];
 
