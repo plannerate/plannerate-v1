@@ -8,6 +8,7 @@ import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormStatusField from '@/components/form/FormStatusField.vue';
 import FormTabsBar from '@/components/form/FormTabsBar.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
+import FormMonthYearRangePicker from '@/components/form/FormMonthYearRangePicker.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import FormCard from '@/components/FormCard.vue';
 import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
@@ -158,7 +159,7 @@ const pageMeta = useCrudPageMeta({
                             :label="t('app.tenant.planograms.fields.cluster')"
                             :default-value="props.planogram?.cluster_id ?? ''"
                             :error="errors.cluster_id"
-                            class="md:col-span-6"
+                            class="md:col-span-4"
                         >
                             <option value="">
                                 {{ t('app.tenant.common.all') }}
@@ -178,7 +179,7 @@ const pageMeta = useCrudPageMeta({
                             :label="t('app.tenant.planograms.fields.store')"
                             :default-value="props.planogram?.store_id ?? ''"
                             :error="errors.store_id"
-                            class="md:col-span-6"
+                            class="md:col-span-4"
                         >
                             <option value="">
                                 {{ t('app.tenant.common.all') }}
@@ -192,25 +193,14 @@ const pageMeta = useCrudPageMeta({
                             </option>
                         </FormSelectField>
 
-                        <FormTextField
-                            id="start_date"
-                            name="start_date"
-                            type="date"
-                            :label="
-                                t('app.tenant.planograms.fields.start_date')
-                            "
-                            :default-value="props.planogram?.start_date ?? ''"
-                            :error="errors.start_date"
-                            class="md:col-span-4"
-                        />
-
-                        <FormTextField
-                            id="end_date"
-                            name="end_date"
-                            type="date"
-                            :label="t('app.tenant.planograms.fields.end_date')"
-                            :default-value="props.planogram?.end_date ?? ''"
-                            :error="errors.end_date"
+                        <FormMonthYearRangePicker
+                            start-name="start_date"
+                            end-name="end_date"
+                            :label="t('app.tenant.planograms.fields.start_date') + ' / ' + t('app.tenant.planograms.fields.end_date')"
+                            :start-value="props.planogram?.start_date ?? null"
+                            :end-value="props.planogram?.end_date ?? null"
+                            :start-error="errors.start_date"
+                            :end-error="errors.end_date"
                             class="md:col-span-4"
                         />
                         <FormStatusField

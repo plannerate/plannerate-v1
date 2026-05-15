@@ -283,7 +283,13 @@ const statusBadgeClass = (status: string): string => {
                                     </span>
                                 </td>
                                 <td class="px-3 py-3">{{ tenant.client_since_human ?? '-' }}</td>
-                                <td class="px-3 py-3">{{ tenant.host ?? '-' }}</td>
+                                <td class="px-3 py-3">
+                                    <a v-if="tenant.host" :href="`http://${tenant.host}`" target="_blank" rel="noopener noreferrer" class="text-blue-600 flex items-center gap-1 text-sm font-medium transition hover:underline">
+                                       <span>{{ tenant.host }}</span>
+                                       <ExternalLink class="size-3.5 inline-block" />
+                                    </a>
+                                    <span v-else class="text-muted-foreground">-</span>
+                                </td>
                                 <td class="px-3 py-3">
                                     <div class="flex items-center justify-end gap-2">
                                         <Link
