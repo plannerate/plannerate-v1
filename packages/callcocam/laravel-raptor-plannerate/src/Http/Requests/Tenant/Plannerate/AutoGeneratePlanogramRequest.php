@@ -9,6 +9,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Request de Validação para Geração Automática de Planogramas
@@ -42,7 +43,7 @@ class AutoGeneratePlanogramRequest extends FormRequest
             'include_products_without_sales' => ['required', 'boolean'],
             'table_type' => ['required', 'string', 'in:sales,monthly_summaries'],
             'use_ai' => ['nullable', 'boolean'],
-            'category_id' => ['nullable', 'string', 'exists:categories,id'],
+            'category_id' => ['nullable', 'string', Rule::exists('tenant.categories', 'id')],
         ];
     }
 

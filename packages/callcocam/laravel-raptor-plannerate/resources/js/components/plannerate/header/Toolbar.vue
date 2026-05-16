@@ -224,7 +224,15 @@ const sections = computed(() => editor.currentGondola.value?.sections ?? []);
  * Feature flag: Geração Automática habilitada?
  */
 const autoGenerateEnabled = computed(
-    () => (page.props.features as any)?.auto_generate ?? false,
+    () => { 
+        if ((page.props.features as any)?.auto_generate) {
+            return true;
+        }
+        if (permissions.value?.can_autogenate_gondola || permissions.value?.can_autogenate_gondola_ia) {
+            return true;
+        }
+        return false;
+    }
 );
 
 const aiModelOptions = computed(
@@ -308,8 +316,8 @@ const mapImageUrl = computed(() => {
     const store = storeData.value;
 
     if (!store?.map_image_path) {
-return null;
-}
+        return null;
+    }
 
     // Retorna a URL pública do storage
     return `/storage/${store.map_image_path}`;
@@ -419,8 +427,8 @@ function gondolaHref(gondola: Gondola): string {
  */
 const handleMapRegionSelect = (regionId: string | null) => {
     if (!currentGondola.value) {
-return;
-}
+        return;
+    }
 
     // Busca a região para obter o tipo
     const region = mapRegions.value.find((r: any) => r.id === regionId);
@@ -444,18 +452,13 @@ return;
            Tabs clicáveis para trocar de gôndola dentro do planograma
            ================================================================== -->
             <div class="flex items-center gap-2 overflow-x-auto pb-1">
-                <Link
-                    v-for="gondola in gondolas"
-                    :key="gondola.id"
-                    :href="gondolaHref(gondola)"
-                    :class="[
-                        'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all',
-                        'hover:bg-accent hover:text-accent-foreground',
-                        gondola.id === currentGondolaId
-                            ? 'bg-background text-foreground shadow-sm'
-                            : 'text-muted-foreground',
-                    ]"
-                >
+                <Link v-for="gondola in gondolas" :key="gondola.id" :href="gondolaHref(gondola)" :class="[
+                    'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all',
+                    'hover:bg-accent hover:text-accent-foreground',
+                    gondola.id === currentGondolaId
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground',
+                ]">
                     {{ gondola.name }}
                 </Link>
             </div>
@@ -469,53 +472,26 @@ return;
              CONTROLES DE ZOOM/ESCALA
              Diminuir, Input (readonly), Aumentar
              ============================================================ -->
-                <div
-                    class="flex items-center gap-1 rounded-md border bg-background p-1"
-                >
-                    <ButtonWithTooltip
-                        variant="ghost"
-                        size="icon"
-                        class="size-7"
-                        :tooltip="t('plannerate.toolbar.zoom_out')"
-                        @click="editor.decreaseScale()"
-                    >
+                <div class="flex items-center gap-1 rounded-md border bg-background p-1">
+                    <ButtonWithTooltip variant="ghost" size="icon" class="size-7"
+                        :tooltip="t('plannerate.toolbar.zoom_out')" @click="editor.decreaseScale()">
                         <Minus class="size-4" />
                     </ButtonWithTooltip>
 
-                    <Input
-                        :model-value="scaleDisplay"
-                        class="h-7 w-14 text-center text-xs"
-                        readonly
-                    />
+                    <Input :model-value="scaleDisplay" class="h-7 w-14 text-center text-xs" readonly />
 
-                    <ButtonWithTooltip
-                        variant="ghost"
-                        size="icon"
-                        class="size-7"
-                        :tooltip="t('plannerate.toolbar.zoom_in')"
-                        @click="editor.increaseScale()"
-                    >
+                    <ButtonWithTooltip variant="ghost" size="icon" class="size-7"
+                        :tooltip="t('plannerate.toolbar.zoom_in')" @click="editor.increaseScale()">
                         <Plus class="size-4" />
                     </ButtonWithTooltip>
                 </div>
 
-                <div
-                    class="flex items-center gap-1 rounded-md border bg-background px-2 py-1"
-                >
+                <div class="flex items-center gap-1 rounded-md border bg-background px-2 py-1">
                     <Search class="size-3.5 text-muted-foreground" />
-                    <Input
-                        v-model="eanSearchModel"
-                        :placeholder="t('plannerate.toolbar.search_ean_placeholder')"
-                        class="h-7 w-40 border-0 px-1 text-xs shadow-none focus-visible:ring-0"
-                    />
-                    <ButtonWithTooltip
-                        v-if="eanSearchModel"
-                        variant="ghost"
-                        size="icon"
-                        class="size-6"
-                        :tooltip="t('plannerate.toolbar.clear_ean_search')"
-                        @click="eanSearchModel = ''"
-                    >
+                    <Input v-model="eanSearchModel" :placeholder="t('plannerate.toolbar.search_ean_placeholder')"
+                        class="h-7 w-40 border-0 px-1 text-xs shadow-none focus-visible:ring-0" />
+                    <ButtonWithTooltip v-if="eanSearchModel" variant="ghost" size="icon" class="size-6"
+                        :tooltip="t('plannerate.toolbar.clear_ean_search')" @click="eanSearchModel = ''">
                         <X class="size-3.5" />
                     </ButtonWithTooltip>
                 </div>
@@ -526,52 +502,32 @@ return;
              FERRAMENTAS DE ALINHAMENTO E GRADE
              Grade, Alinhar Esquerda/Direita/Centro, Justificar
              ============================================================ -->
-                <ButtonWithTooltip
-                    :variant="editor.showGrid.value ? 'default' : 'outline'"
-                    size="sm"
-                    :tooltip="t('plannerate.toolbar.toggle_grid')"
-                    @click="editor.toggleGrid()"
-                >
+                <ButtonWithTooltip :variant="editor.showGrid.value ? 'default' : 'outline'" size="sm"
+                    :tooltip="t('plannerate.toolbar.toggle_grid')" @click="editor.toggleGrid()">
                     <Grid3x3 class="mr-2 size-4" />
                     {{ t('plannerate.toolbar.grid') }}
                 </ButtonWithTooltip>
 
-                <ButtonWithTooltip
-                    :variant="alignment === 'left' ? 'default' : 'outline'"
-                    size="sm"
-                    :tooltip="t('plannerate.toolbar.align_left_tooltip')"
-                    @click="editor.alignLeft()"
-                >
+                <ButtonWithTooltip :variant="alignment === 'left' ? 'default' : 'outline'" size="sm"
+                    :tooltip="t('plannerate.toolbar.align_left_tooltip')" @click="editor.alignLeft()">
                     <AlignLeft class="size-4" />
                     <span class="sr-only">{{ t('plannerate.toolbar.align_left_sr') }}</span>
                 </ButtonWithTooltip>
 
-                <ButtonWithTooltip
-                    :variant="alignment === 'center' ? 'default' : 'outline'"
-                    size="sm"
-                    :tooltip="t('plannerate.toolbar.align_center_tooltip')"
-                    @click="editor.alignCenter()"
-                >
+                <ButtonWithTooltip :variant="alignment === 'center' ? 'default' : 'outline'" size="sm"
+                    :tooltip="t('plannerate.toolbar.align_center_tooltip')" @click="editor.alignCenter()">
                     <AlignCenter class="size-4" />
                     <span class="sr-only">{{ t('plannerate.toolbar.align_center_sr') }}</span>
                 </ButtonWithTooltip>
 
-                <ButtonWithTooltip
-                    :variant="alignment === 'right' ? 'default' : 'outline'"
-                    size="sm"
-                    :tooltip="t('plannerate.toolbar.align_right_tooltip')"
-                    @click="editor.alignRight()"
-                >
+                <ButtonWithTooltip :variant="alignment === 'right' ? 'default' : 'outline'" size="sm"
+                    :tooltip="t('plannerate.toolbar.align_right_tooltip')" @click="editor.alignRight()">
                     <AlignRight class="size-4" />
                     <span class="sr-only">{{ t('plannerate.toolbar.align_right_sr') }}</span>
                 </ButtonWithTooltip>
 
-                <ButtonWithTooltip
-                    :variant="alignment === 'justify' ? 'default' : 'outline'"
-                    size="sm"
-                    :tooltip="t('plannerate.toolbar.align_justify_tooltip')"
-                    @click="editor.alignJustify()"
-                >
+                <ButtonWithTooltip :variant="alignment === 'justify' ? 'default' : 'outline'" size="sm"
+                    :tooltip="t('plannerate.toolbar.align_justify_tooltip')" @click="editor.alignJustify()">
                     <AlignHorizontalDistributeCenter class="size-4" />
                     <span class="sr-only">{{ t('plannerate.toolbar.align_justify_sr') }}</span>
                 </ButtonWithTooltip>
@@ -582,61 +538,38 @@ return;
              AÇÕES DE EDIÇÃO
              Inverter, Adicionar Módulo, Remover Gôndola
              ============================================================ -->
-                <ButtonWithTooltip
-                    variant="outline"
-                    size="sm"
-                    :tooltip="t('plannerate.toolbar.invert_tooltip')"
-                    @click="editor.toggleFlow()"
-                >
+                <ButtonWithTooltip variant="outline" size="sm" :tooltip="t('plannerate.toolbar.invert_tooltip')"
+                    @click="editor.toggleFlow()">
                     <FlipHorizontal class="mr-2 size-4" />
                     {{ t('plannerate.toolbar.invert') }}
                 </ButtonWithTooltip>
 
-                <ButtonWithTooltip
-                    variant="outline"
-                    size="sm"
-                    :tooltip="t('plannerate.toolbar.add_module_tooltip')"
-                    @click="editor.addModule()"
-                >
+                <ButtonWithTooltip variant="outline" size="sm" :tooltip="t('plannerate.toolbar.add_module_tooltip')"
+                    @click="editor.addModule()">
                     <Plus class="mr-2 size-4" />
                     <span class="max-w-24 truncate">{{ t('plannerate.toolbar.add_module') }}</span>
                 </ButtonWithTooltip>
 
-                <ButtonWithTooltip
-                    variant="outline"
-                    size="sm"
+                <ButtonWithTooltip variant="outline" size="sm"
                     :tooltip="t('plannerate.toolbar.transfer_section_tooltip')"
-                    @click="showTransferSectionDialog = true"
-                >
+                    @click="showTransferSectionDialog = true">
                     <ArrowRightLeft class="mr-2 size-4" />
                     <span class="max-w-24 truncate">{{ t('plannerate.toolbar.transfer_section') }}</span>
                 </ButtonWithTooltip>
 
                 <!-- Vincular ao Mapa (apenas se houver loja) -->
-                <ButtonWithTooltip
-                    v-if="hasStore"
-                    :variant="currentMapRegionId ? 'default' : 'outline'"
-                    size="sm"
-                    :tooltip="t('plannerate.toolbar.map_link_tooltip')"
-                    @click="showMapRegionSelector = true"
-                >
+                <ButtonWithTooltip v-if="hasStore" :variant="currentMapRegionId ? 'default' : 'outline'" size="sm"
+                    :tooltip="t('plannerate.toolbar.map_link_tooltip')" @click="showMapRegionSelector = true">
                     <MapPin class="mr-2 size-4" />
                     <span class="max-w-24 truncate">{{
                         currentMapRegionId ? t('plannerate.toolbar.map_remove') : t('plannerate.toolbar.map_store')
-                    }}</span>
+                        }}</span>
                 </ButtonWithTooltip>
 
-                <ButtonWithTooltip
-                    v-if="permissions.can_remove_gondola"
-                    variant="destructive"
-                    size="sm"
-                    :tooltip="
-                        currentMapRegionId
-                            ? t('plannerate.toolbar.remove_gondola_tooltip')
-                            : t('plannerate.toolbar.remove_gondola_none_selected')
-                    "
-                    @click="editor.removeGondola()"
-                >
+                <ButtonWithTooltip v-if="permissions.can_remove_gondola" variant="destructive" size="sm" :tooltip="currentMapRegionId
+                    ? t('plannerate.toolbar.remove_gondola_tooltip')
+                    : t('plannerate.toolbar.remove_gondola_none_selected')
+                    " @click="editor.removeGondola()">
                     <Trash2 class="mr-2 size-4" />
                     <span class="max-w-24 truncate">{{ t('plannerate.toolbar.remove_gondola') }}</span>
                 </ButtonWithTooltip>
@@ -647,33 +580,18 @@ return;
              HISTÓRICO (UNDO/REDO)
              Integrado com usePlanogramHistory composable
              ============================================================ -->
-                <ButtonWithTooltip
-                    variant="outline"
-                    size="icon"
-                    :disabled="!isMounted || !canUndo"
-                    :tooltip="t('plannerate.toolbar.undo')"
-                    @click="editor.undo()"
-                >
+                <ButtonWithTooltip variant="outline" size="icon" :disabled="!isMounted || !canUndo"
+                    :tooltip="t('plannerate.toolbar.undo')" @click="editor.undo()">
                     <Undo2 class="size-4" />
                 </ButtonWithTooltip>
 
-                <ButtonWithTooltip
-                    variant="outline"
-                    size="icon"
-                    :disabled="!isMounted || !canRedo"
-                    :tooltip="t('plannerate.toolbar.redo')"
-                    @click="editor.redo()"
-                >
+                <ButtonWithTooltip variant="outline" size="icon" :disabled="!isMounted || !canRedo"
+                    :tooltip="t('plannerate.toolbar.redo')" @click="editor.redo()">
                     <Redo2 class="size-4" />
                 </ButtonWithTooltip>
 
-                <ButtonWithTooltip
-                    variant="outline"
-                    size="icon"
-                    :disabled="!isMounted || (!canUndo && !canRedo)"
-                    :tooltip="t('plannerate.toolbar.clear_history')"
-                    @click="editor.clearHistory()"
-                >
+                <ButtonWithTooltip variant="outline" size="icon" :disabled="!isMounted || (!canUndo && !canRedo)"
+                    :tooltip="t('plannerate.toolbar.clear_history')" @click="editor.clearHistory()">
                     <Trash2 class="size-4" />
                 </ButtonWithTooltip>
 
@@ -685,96 +603,59 @@ return;
              ============================================================ -->
 
                 <!-- Toggle Auto-save -->
-                <div
-                    class="flex items-center gap-2 rounded-md border bg-background px-3 py-1.5"
-                >
-                    <Switch
-                        :id="'auto-save-toggle'"
-                        v-model="autoSaveEnabled"
-                        @update:model-value="changes.toggleAutoSave()"
-                    />
-                    <Label
-                        :for="'auto-save-toggle'"
-                        class="cursor-pointer text-xs font-medium"
-                    >
+                <div class="flex items-center gap-2 rounded-md border bg-background px-3 py-1.5">
+                    <Switch :id="'auto-save-toggle'" v-model="autoSaveEnabled"
+                        @update:model-value="changes.toggleAutoSave()" />
+                    <Label :for="'auto-save-toggle'" class="cursor-pointer text-xs font-medium">
                         {{ t('plannerate.toolbar.auto_save') }}
                     </Label>
                 </div>
 
-                <ButtonWithTooltip
-                    variant="default"
-                    size="sm"
-                    :disabled="!isMounted || !hasChanges || isSaving"
-                    :tooltip="
-                        hasChanges
-                            ? t(
-                                  changeCount === 1
-                                      ? 'plannerate.toolbar.save_tooltip_single'
-                                      : 'plannerate.toolbar.save_tooltip_plural',
-                                  { count: String(changeCount) },
-                              )
-                            : t('plannerate.toolbar.save_none')
-                    "
-                    @click="editor.save()"
-                >
-                    <Save
-                        class="mr-2 size-4"
-                        :class="{ 'animate-pulse': isSaving }"
-                    />
+                <ButtonWithTooltip variant="default" size="sm" :disabled="!isMounted || !hasChanges || isSaving"
+                    :tooltip="hasChanges
+                        ? t(
+                            changeCount === 1
+                                ? 'plannerate.toolbar.save_tooltip_single'
+                                : 'plannerate.toolbar.save_tooltip_plural',
+                            { count: String(changeCount) },
+                        )
+                        : t('plannerate.toolbar.save_none')
+                        " @click="editor.save()">
+                    <Save class="mr-2 size-4" :class="{ 'animate-pulse': isSaving }" />
                     <span v-if="isSaving">{{ t('plannerate.toolbar.saving') }}</span>
-                    <span v-else-if="hasChanges">{{ t('plannerate.toolbar.save', { count: String(changeCount) }) }}</span>
+                    <span v-else-if="hasChanges">{{ t('plannerate.toolbar.save', { count: String(changeCount) })
+                        }}</span>
                     <span v-else>{{ t('plannerate.toolbar.saved') }}</span>
                 </ButtonWithTooltip>
 
                 <!-- Indicadores de Análises -->
 
                 <!-- Dropdown Performance -->
-                <DropdownPerformance
-                    :analysis="analysis"
-                    :gondola="currentGondola as Gondola"
-                />
+                <DropdownPerformance :analysis="analysis" :gondola="currentGondola as Gondola" />
 
-                <Performance
-                    :open="showPerformanceModal"
-                    :gondola-id="currentGondolaId"
-                    :planogram="
-                        currentGondola?.planogram
-                            ? (currentGondola.planogram as any)
-                            : null
-                    "
-                    @update:open="
+                <Performance :open="showPerformanceModal" :gondola-id="currentGondolaId" :planogram="currentGondola?.planogram
+                    ? (currentGondola.planogram as any)
+                    : null
+                    " @update:open="
                         (value: boolean) => (showPerformanceModal = value)
-                    "
-                />
+                    " />
 
                 <!-- Geração Automática (Feature Flag) -->
-                <ButtonWithTooltip
-                    v-if="autoGenerateEnabled && (permissions.can_autogenate_gondola || permissions.can_autogenate_gondola_ia)"
-                    variant="default"
-                    size="sm"
-                    :tooltip="t('plannerate.toolbar.auto_generate_tooltip')"
-                    @click="showAutoGenerateModal = true"
-                >
+                <ButtonWithTooltip v-if="autoGenerateEnabled" variant="default" size="sm"
+                    :tooltip="t('plannerate.toolbar.auto_generate_tooltip')" @click="showAutoGenerateModal = true">
                     <Sparkles class="mr-2 size-4" />
                     <span class="max-w-24 truncate">
-                        {{ t('plannerate.toolbar.auto_generate') }}</span
-                    >
+                        {{ t('plannerate.toolbar.auto_generate') }}</span>
                 </ButtonWithTooltip>
                 <AutoGenerateModal
-                    v-if="autoGenerateEnabled && (permissions.can_autogenate_gondola || permissions.can_autogenate_gondola_ia) "
+                    v-if="autoGenerateEnabled && permissions.can_autogenate_gondola"
                     :open="showAutoGenerateModal"
-                    :category-id="
-                        (currentGondola?.planogram as any).category_id
-                    "
                     :gondola-id="currentGondola?.id || ''"
+                    :category-id="(currentGondola?.planogram as any)?.category_id"
                     :start-date="(currentGondola?.planogram as any)?.start_date"
                     :end-date="(currentGondola?.planogram as any)?.end_date"
-                    :ai-model-options="aiModelOptions"
                     :strategy-options="strategyOptions"
-                    :permissions="permissions"
-                    @update:open="
-                        (value: boolean) => (showAutoGenerateModal = value)
-                    "
+                    @update:open="(value: boolean) => (showAutoGenerateModal = value)"
                 />
 
                 <!-- Dropdown Ações -->
@@ -785,44 +666,26 @@ return;
         <!-- ============================================================
          MODAL DE CONFIRMAÇÃO DE REMOÇÃO DE GÔNDOLA
          ============================================================ -->
-        <ConfirmDeleteGondolaDialog
-            v-model:open="showDeleteConfirmation"
-            :gondola-name="currentGondolaName"
-            @confirm="editor.confirmRemoveGondola()"
-        />
+        <ConfirmDeleteGondolaDialog v-model:open="showDeleteConfirmation" :gondola-name="currentGondolaName"
+            @confirm="editor.confirmRemoveGondola()" />
 
         <!-- ============================================================
          SHEET DE ADICIONAR MÓDULO
          ============================================================ -->
-        <AddModuleSheet
-            v-model:open="showAddModuleDrawer"
-            :gondola-id="gondolaId"
-            :gondola-height="gondolaHeight"
-            :sections="sections"
-            @success="editor.handleModuleAdded($event)"
-        />
+        <AddModuleSheet v-model:open="showAddModuleDrawer" :gondola-id="gondolaId" :gondola-height="gondolaHeight"
+            :sections="sections" @success="editor.handleModuleAdded($event)" />
 
         <!-- ============================================================
          MODAL DE TRANSFERÊNCIA DE SEÇÃO
          ============================================================ -->
-        <TransferSectionDialog
-            v-model:open="showTransferSectionDialog"
-            :section="selectedSection"
-        />
+        <TransferSectionDialog v-model:open="showTransferSectionDialog" :section="selectedSection" />
 
         <!-- ============================================================
          MODAL DE SELEÇÃO DE REGIÃO DO MAPA
          ============================================================ -->
-        <MapRegionSelectorModal
-            v-model:open="showMapRegionSelector"
-            :store-id="storeData?.id"
-            :store-name="storeData?.name"
-            :map-image-url="mapImageUrl"
-            :map-regions="mapRegions"
-            :current-region-id="currentMapRegionId"
-            :gondola-id="currentGondola?.id"
-            :gondola-name="currentGondola?.name"
-            @select="handleMapRegionSelect"
-        />
+        <MapRegionSelectorModal v-model:open="showMapRegionSelector" :store-id="storeData?.id"
+            :store-name="storeData?.name" :map-image-url="mapImageUrl" :map-regions="mapRegions"
+            :current-region-id="currentMapRegionId" :gondola-id="currentGondola?.id"
+            :gondola-name="currentGondola?.name" @select="handleMapRegionSelect" />
     </div>
 </template>

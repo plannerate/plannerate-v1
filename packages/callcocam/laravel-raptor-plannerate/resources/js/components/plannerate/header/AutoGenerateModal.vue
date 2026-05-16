@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { Loader2, Sparkles } from 'lucide-vue-next';
+import { Info, Loader2, Sparkles } from 'lucide-vue-next';
 import { computed, watch } from 'vue';
 import AdvancedOptionsSection from '@/components/plannerate/header/partials/AdvancedOptionsSection.vue';
-import AiSettingsSection from '@/components/plannerate/header/partials/AiSettingsSection.vue';
 import FacingsSettingsSection from '@/components/plannerate/header/partials/FacingsSettingsSection.vue';
-import GenerationModeSettings from '@/components/plannerate/header/partials/GenerationModeSettings.vue';
 import SalesDataSection from '@/components/plannerate/header/partials/SalesDataSection.vue';
 import StrategySelectionSection from '@/components/plannerate/header/partials/StrategySelectionSection.vue';
 import CategorySelect from '@/components/plannerate/sidebar/products/CategorySelect.vue';
-import { Button } from '@/components/ui/button'; 
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -18,154 +16,86 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
 
-// Props
+interface StrategyOption {
+    value: string;
+    label: string;
+    description: string;
+}
+
 const props = defineProps<{
     open: boolean;
     gondolaId: string;
     startDate?: string;
     endDate?: string;
     categoryId?: string | null;
-    aiModelOptions: OptionItem[];
-    strategyOptions: OptionItem[];
-    permissions: { 
-        can_autogenate_gondola: boolean;
-        can_autogenate_gondola_ia: boolean;
-    };
+    strategyOptions: StrategyOption[];
 }>();
 
-// Emits
 const emit = defineEmits<{
     'update:open': [value: boolean];
 }>();
+
 const { t } = useT();
 
-// Types
-interface OptionItem {
-    value: string;
-    label: string;
-    description: string;
-}
-
-interface AutoGenerateConfig {
-    strategy: 'abc' | 'sales' | 'margin' | 'mix';
-    use_existing_analysis: boolean;
-    start_date?: string;
-    end_date?: string;
-    min_facings: number;
-    max_facings: number;
-    group_by_subcategory: boolean;
-    include_products_without_sales: boolean;
-    table_type: 'sales' | 'monthly_summaries';
-    // Por section: gera módulo a módulo (regras ou Laravel AI)
-    generate_by_sections: boolean;
-    // IA specific fields (ia-generate usa Prism; generate-by-sections com use_ai usa Laravel AI)
-    use_ai: boolean;
-    model?: string;
-    apply_visual_grouping?: boolean;
-    intelligent_ordering?: boolean;
-    load_balancing?: boolean;
-    additional_instructions?: string;
-    // Categoria selecionada
-    category_id?: string | null;
-}
-
-// Formulário Inertia
-const form = useForm<AutoGenerateConfig>({
-    strategy: 'abc',
-    use_existing_analysis: false, // Forçar recálculo por padrão
-    start_date: props.startDate,
-    end_date: props.endDate,
+const form = useForm({
+    strategy: 'abc' as 'abc' | 'sales' | 'margin' | 'mix',
+    use_existing_analysis: false,
+    start_date: props.startDate ?? '',
+    end_date: props.endDate ?? '',
     min_facings: 1,
     max_facings: 10,
     group_by_subcategory: true,
-    include_products_without_sales: false, // Incluir produtos sem vendas
-    table_type: 'monthly_summaries',
-    generate_by_sections: true, // Gerar por section por padrão
-    use_ai: false,
-    model: 'gpt-4o-mini',
-    apply_visual_grouping: true,
-    intelligent_ordering: true,
-    load_balancing: true,
-    additional_instructions: '',
-    category_id: props.categoryId || null,
+    include_products_without_sales: false,
+    table_type: 'monthly_summaries' as 'sales' | 'monthly_summaries',
+    category_id: props.categoryId ?? null,
 });
 
-// Watch props para atualizar datas e categoria
 watch(
-    () => [props.startDate, props.endDate, props.categoryId],
+    () => [props.startDate, props.endDate, props.categoryId] as const,
     ([newStart, newEnd, newCategoryId]) => {
-        if (newStart) {
-form.start_date = newStart;
-}
-
-        if (newEnd) {
-form.end_date = newEnd;
-}
-
-        form.category_id = newCategoryId || null;
+        if (newStart) form.start_date = newStart;
+        if (newEnd) form.end_date = newEnd;
+        form.category_id = newCategoryId ?? null;
     },
 );
 
-// Computed
 const isFormValid = computed(() => {
     if (!form.use_existing_analysis) {
-        return (
-            form.start_date && form.end_date && form.start_date <= form.end_date && (form.generate_by_sections || form.use_ai)
-        );
+        return !!(form.start_date && form.end_date && form.start_date <= form.end_date);
     }
-
     return true;
 });
 
-// Métodos
 function handleClose() {
     emit('update:open', false);
     form.reset();
 }
 
 function handleGenerate() {
-    if (!isFormValid.value) {
-return;
-}
+    if (!isFormValid.value) return;
 
-    const endpoint = form.generate_by_sections
-        ? 'generate-by-sections'
-        : form.use_ai
-          ? 'ia-generate'
-          : 'auto-generate';
-
-    form.post(
-        `/api/gondolas/${props.gondolaId}/${endpoint}`,
-        {
-            preserveScroll: true,
-            preserveState: false,
-            onSuccess: () => {
-                // Fechar modal
-                emit('update:open', false);
-
-                // Resetar formulário
-                form.reset(); 
-            },
-            onError: (errors) => {
-                alert(
-                    t('plannerate.header.auto_generate.error_prefix') +
-                        (Object.values(errors)[0] || t('plannerate.header.auto_generate.unknown_error')),
-                );
-            },
+    form.post(`/api/gondolas/${props.gondolaId}/auto-generate`, {
+        preserveScroll: true,
+        preserveState: false,
+        onSuccess: () => {
+            emit('update:open', false);
+            form.reset();
         },
-    );
+        onError: (errors) => {
+            alert(
+                t('plannerate.header.auto_generate.error_prefix') +
+                    (Object.values(errors)[0] || t('plannerate.header.auto_generate.unknown_error')),
+            );
+        },
+    });
 }
-
 </script>
 
 <template>
     <Dialog :open="open" @update:open="handleClose">
-        <DialogContent
-            class="flex max-h-[90vh] max-w-full flex-col md:max-w-2xl"
-        >
+        <DialogContent class="flex max-h-[90vh] max-w-full flex-col md:max-w-2xl">
             <DialogHeader>
                 <DialogTitle class="flex items-center gap-2">
                     <Sparkles class="size-5 text-primary" />
@@ -176,22 +106,32 @@ return;
                 </DialogDescription>
             </DialogHeader>
 
-            <div
-                class="flex-1 space-y-6 overflow-x-hidden overflow-y-auto py-4"
-            >
-                <GenerationModeSettings :form="form" :permissions="permissions" />
+            <div class="flex-1 space-y-6 overflow-x-hidden overflow-y-auto py-4">
+                <!-- Pontuação de posicionamento -->
+                <div class="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
+                    <Info class="mt-0.5 size-4 shrink-0 text-blue-600 dark:text-blue-400" />
+                    <div class="space-y-1 text-sm">
+                        <p class="font-medium text-blue-900 dark:text-blue-100">Pontuação de posicionamento</p>
+                        <p class="text-blue-700 dark:text-blue-300">
+                            Os produtos são posicionados por um score composto:
+                            <span class="font-medium">Giro 40%</span> ·
+                            <span class="font-medium">Margem 30%</span> ·
+                            <span class="font-medium">Estratégico 20%</span> ·
+                            <span class="font-medium">DOH 10%</span>
+                        </p>
+                        <p class="text-xs text-blue-600 dark:text-blue-400">Os pesos podem ser ajustados nas configurações do tenant.</p>
+                    </div>
+                </div>
 
-                <AiSettingsSection :form="form" :ai-model-options="props.aiModelOptions" v-if="permissions.can_autogenate_gondola_ia" />
+                <StrategySelectionSection
+                    :form="form"
+                    :strategy-options="strategyOptions"
+                    title="Critério de Seleção de Produtos"
+                />
 
                 <div class="border-t" />
 
-                <!-- Seleção de Categoria -->
                 <div class="space-y-4 rounded-lg border border-purple-200 p-4">
-                    <Label
-                        class="text-base font-semibold text-blue-900 dark:text-blue-100"
-                    >
-                        {{ t('plannerate.header.auto_generate.category_optional') }}
-                    </Label>
                     <CategorySelect
                         v-model="form.category_id"
                         :disabled="false"
@@ -203,9 +143,6 @@ return;
                 </div>
 
                 <div class="border-t" />
-                <StrategySelectionSection :form="form" :strategy-options="props.strategyOptions" />
-
-                <div class="border-t pt-4" />
                 <SalesDataSection :form="form" />
 
                 <div class="border-t pt-4" />
@@ -216,11 +153,7 @@ return;
             </div>
 
             <DialogFooter>
-                <Button
-                    variant="outline"
-                    @click="handleClose"
-                    :disabled="form.processing"
-                >
+                <Button variant="outline" :disabled="form.processing" @click="handleClose">
                     {{ t('plannerate.common.cancel') }}
                 </Button>
                 <Button
@@ -228,9 +161,9 @@ return;
                     class="gap-2"
                     :disabled="!isFormValid || form.processing"
                     @click="handleGenerate"
-                > 
-                        <Loader2 class="animate-spin" />  
-                        <Sparkles /> 
+                >
+                    <Loader2 v-if="form.processing" class="animate-spin" />
+                    <Sparkles v-else />
                     {{ form.processing ? t('plannerate.header.auto_generate.generating') : t('plannerate.header.auto_generate.generate') }}
                 </Button>
             </DialogFooter>

@@ -18,6 +18,7 @@ interface StrategyFormState {
 defineProps<{
     form: StrategyFormState;
     strategyOptions: StrategyOption[];
+    title?: string;
 }>();
 
 const { t } = useT();
@@ -25,7 +26,7 @@ const { t } = useT();
 
 <template>
     <div class="space-y-3">
-        <Label class="text-base font-semibold">{{ t('plannerate.header.strategy.title') }}</Label>
+        <Label class="text-base font-semibold">{{ title ?? t('plannerate.header.strategy.title') }}</Label>
         <RadioGroup v-model="form.strategy">
             <div
                 v-for="option in strategyOptions"

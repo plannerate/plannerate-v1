@@ -1,56 +1,53 @@
 <template>
     <div class="category-selector relative">
-        <div v-if="isLoading" 
+        <div v-if="isLoading"
             class="absolute inset-0 bg-white/50 dark:bg-black/50 z-10 flex items-center justify-center rounded-md">
             <div class="flex items-center justify-center space-x-2">
-                <div class="w-4 h-4 border-2 border-t-2 border-gray-200 rounded-full animate-spin dark:border-gray-600 border-t-primary"></div>
-                <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('plannerate.sidebar.products.loading') }}</span>
+                <div
+                    class="w-4 h-4 border-2 border-t-2 border-gray-200 rounded-full animate-spin dark:border-gray-600 border-t-primary">
+                </div>
+                <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('plannerate.sidebar.products.loading')
+                    }}</span>
             </div>
         </div>
-        
+
         <div v-if="breadcrumbPath"
             class="text-xs p-2 mb-3 bg-gray-50 dark:bg-white/10 rounded border border-dashed border-gray-300 dark:border-gray-700">
-            <span class="font-medium text-gray-600 dark:text-gray-400">{{ t('plannerate.sidebar.products.selection') }}</span>
+            <span class="font-medium text-gray-600 dark:text-gray-400">{{ t('plannerate.sidebar.products.selection')
+                }}</span>
             <span class="ml-1 font-semibold text-gray-800 dark:text-gray-200">{{ breadcrumbPath }}</span>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-            <div v-for="(level, index) in levels" 
-                :key="level.key" 
-                class="flex flex-col gap-1">
+            <div v-for="(level, index) in levels" :key="level.key" class="flex flex-col gap-1">
                 <div class="flex items-center justify-between gap-2">
                     <Label :for="`category-${level.key}`" class="text-xs font-medium text-gray-700 dark:text-gray-300">
                         {{ t(`plannerate.sidebar.products.levels.${level.key}`) }}
                         <span v-if="required && index === 0" class="text-red-500">*</span>
                     </Label>
-                    <button
-                        v-if="selections[level.key]"
-                        type="button"
+                    <button v-if="selections[level.key]" type="button"
                         class="text-[11px] text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
-                        :disabled="disabled || levelLoading[level.key]"
-                        @click="clearSelection(index)">
+                        :disabled="disabled || levelLoading[level.key]" @click="clearSelection(index)">
                         {{ t('plannerate.sidebar.products.clear') }}
                     </button>
                 </div>
-                <Select 
-                    :modelValue="selections[level.key]"
-                    @update:modelValue="(val: any ) => handleSelection(index, val)"
-                    :disabled="disabled || levelLoading[level.key] || (index > 0 && !selections[levels[index - 1].key])" 
+                <Select :modelValue="selections[level.key]"
+                    @update:modelValue="(val: any) => handleSelection(index, val)"
+                    :disabled="disabled || levelLoading[level.key] || (index > 0 && !selections[levels[index - 1].key])"
                     class="z-[1200]">
-                    <SelectTrigger class="h-8 text-xs border border-gray-300 dark:border-gray-600 rounded px-2 w-full dark:bg-input/30">
-                        <SelectValue :placeholder="t('plannerate.sidebar.products.select_level', { level: t(`plannerate.sidebar.products.levels.${level.key}`).toLowerCase() })" />
+                    <SelectTrigger
+                        class="h-8 text-xs border border-gray-300 dark:border-gray-600 rounded px-2 w-full dark:bg-input/30">
+                        <SelectValue
+                            :placeholder="t('plannerate.sidebar.products.select_level', { level: t(`plannerate.sidebar.products.levels.${level.key}`).toLowerCase() })" />
                     </SelectTrigger>
                     <SelectContent class="z-[1200]">
-                        <SelectItem 
-                            v-for="option in levelOptions[level.key]" 
-                            :key="option.id"
-                            :value="option.id">
+                        <SelectItem v-for="option in levelOptions[level.key]" :key="option.id" :value="option.id">
                             {{ option.name }}
                         </SelectItem>
                     </SelectContent>
                 </Select>
-                <span v-if="levelErrors[level.key]" 
-                    class="text-xs text-red-500 dark:text-red-400">{{ levelErrors[level.key] }}</span>
+                <span v-if="levelErrors[level.key]" class="text-xs text-red-500 dark:text-red-400">{{
+                    levelErrors[level.key] }}</span>
             </div>
         </div>
     </div>
@@ -132,10 +129,10 @@ const hierarchyCache = ref<Map<string, any[]>>(new Map())
 const subdomain = computed(() => window.location.hostname.split('.')[0] || '')
 
 const categoryIndexRoute =
-    CategoryController.index['//{subdomain}.plannerate-v1.test/api/editor/categories']
+    CategoryController.index['//{subdomain}.plannerate.localhost/api/editor/categories']
 
 const categoryChildrenRoute =
-    CategoryController.index['//{subdomain}.plannerate-v1.test/api/editor/{categoryId}/categories']
+    CategoryController.index['//{subdomain}.plannerate.localhost/api/editor/{categoryId}/categories']
 
 function getCategoriesUrl(categoryId: string | null = null): string {
     if (categoryId && categoryChildrenRoute) {
@@ -143,18 +140,11 @@ function getCategoriesUrl(categoryId: string | null = null): string {
             subdomain: subdomain.value,
             categoryId,
         }))
-    }
-
-    if (categoryIndexRoute) {
-        return wayfinderPath(categoryIndexRoute.url(subdomain.value))
-    }
-
-    return categoryId
-        ? `/api/editor/${categoryId}/categories`
-        : '/api/editor/categories'
+    } 
+    return wayfinderPath(categoryIndexRoute.url(subdomain.value))
 }
 
-async function fetchCategories(url: string): Promise<Response> {
+async function fetchCategories(url: string): Promise<Response> { 
     return fetch(url, {
         credentials: 'same-origin',
         headers: {
@@ -164,7 +154,7 @@ async function fetchCategories(url: string): Promise<Response> {
     })
 }
 
-const isLoading = computed(() => 
+const isLoading = computed(() =>
     Object.values(levelLoading.value).some(loading => loading)
 )
 
@@ -174,8 +164,8 @@ const breadcrumbPath = computed(() => {
             const selectedId = selections.value[level.key]
 
             if (!selectedId) {
-return null
-}
+                return null
+            }
 
             const option = levelOptions.value[level.key]?.find(opt => opt.id === selectedId)
 
@@ -208,8 +198,8 @@ function getDeepestSelection(): string | null {
         const selected = selections.value[levels[i].key]
 
         if (selected) {
-return selected
-}
+            return selected
+        }
     }
 
     return null
@@ -225,13 +215,13 @@ function resetSelections() {
 async function handleSelection(levelIndex: number, value: string | null): Promise<void> {
     const currentLevel = levels[levelIndex]
     selections.value[currentLevel.key] = value
-    
+
     for (let i = levelIndex + 1; i < levels.length; i++) {
         const childLevel = levels[i]
         selections.value[childLevel.key] = null
         levelOptions.value[childLevel.key] = []
     }
-    
+
     if (value && levelIndex < levels.length - 1) {
         await loadOptions(levelIndex + 1)
     }
@@ -239,8 +229,8 @@ async function handleSelection(levelIndex: number, value: string | null): Promis
 
 async function loadOptions(levelIndex: number): Promise<Category[]> {
     if (levelIndex < 0 || levelIndex >= levels.length) {
-return []
-}
+        return []
+    }
 
     const currentLevel = levels[levelIndex]
     levelLoading.value[currentLevel.key] = true
@@ -248,20 +238,20 @@ return []
 
     try {
         let url: string
-        
+
         if (levelIndex === 0) {
             url = getCategoriesUrl()
         } else {
             const parentLevel = levels[levelIndex - 1]
             const parentId = selections.value[parentLevel.key]
-            
+
             if (!parentId) {
                 levelOptions.value[currentLevel.key] = []
                 levelLoading.value[currentLevel.key] = false
 
                 return []
             }
-            
+
             url = getCategoriesUrl(parentId)
         }
 
@@ -279,7 +269,7 @@ return []
         }
 
         const response = await fetchCategories(url)
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`)
         }
@@ -305,7 +295,6 @@ return []
             return []
         }
     } catch (error) {
-        console.error(`Erro ao carregar opções para ${currentLevel.label}:`, error)
         levelOptions.value[currentLevel.key] = []
         levelErrors.value[currentLevel.key] = t('plannerate.sidebar.products.errors.load_options')
 
@@ -343,7 +332,7 @@ async function loadCascadeForValue(categoryId: string): Promise<void> {
 
         if (Array.isArray(hierarchy) && hierarchy.length > 0) {
             const cascade = hierarchy.map((cat: any) => cat.id)
-            
+
             for (let i = 0; i < cascade.length && i < levels.length; i++) {
                 selections.value[levels[i].key] = cascade[i]
 

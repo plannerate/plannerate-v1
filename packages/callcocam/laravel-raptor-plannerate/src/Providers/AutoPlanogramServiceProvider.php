@@ -8,7 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Providers;
 
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Tenant\Plannerate\AutoPlanogramController;
+use App\Http\Controllers\AutoPlanogramController;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AutoGenerate\AutoPlanogramService;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AutoGenerate\LayoutOptimizationService;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AutoGenerate\MerchandisingRulesService;

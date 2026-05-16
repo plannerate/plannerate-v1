@@ -3,7 +3,7 @@
 namespace App\Services\AutoPlanogram\Validation\Rules;
 
 use App\Enums\AdjacencyRuleType;
-use App\Models\AdjacencyRule;
+use App\Models\AdjacencyRule as AdjacencyRuleModel;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\Validation\ValidationResult;
@@ -76,7 +76,7 @@ final class AdjacencyRule implements ValidationRuleInterface
         foreach ($currentProducts as $currentProductId) {
             foreach ($nextProducts as $nextProductId) {
                 // Check for MUST_AVOID rules
-                $avoided = AdjacencyRule::where('tenant_id', $tenantId)
+                $avoided = AdjacencyRuleModel::where('tenant_id', $tenantId)
                     ->where('type', AdjacencyRuleType::MustAvoid)
                     ->where(function ($q) use ($currentProductId, $nextProductId) {
                         $q->where(function ($subQ) use ($currentProductId, $nextProductId) {
