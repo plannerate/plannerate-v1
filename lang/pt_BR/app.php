@@ -73,6 +73,10 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
     'adjacency_matrix_description' => 'Gerencie as regras de proximidade entre categorias do nivel :level.',
     'adjacency_matrix_modal_description' => 'Defina como categorias do mesmo nivel devem se aproximar ou se evitar no planograma.',
 
+    'shelf_level_preferences_settings' => 'Preferencias de nivel de prateleira',
+    'shelf_level_preferences_description' => 'Defina em qual nivel de prateleira cada categoria deve ser posicionada no planograma.',
+    'shelf_level_preferences_modal_description' => 'Associe uma categoria (nivel 4) a um nivel preferido de prateleira.',
+
     'messages' => [
         'profile_updated' => 'Perfil atualizado com sucesso.',
         'password_updated' => 'Senha atualizada com sucesso.',
@@ -84,6 +88,13 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'adjacency_rule_deleted' => 'Regra de adjacencia removida com sucesso.',
         'adjacency_source_target_must_differ' => 'Origem e destino nao podem ser iguais.',
         'no_adjacency_rules' => 'Nenhuma regra cadastrada ainda.',
+        'shelf_level_preference_created' => 'Preferencia de nivel criada com sucesso.',
+        'shelf_level_preference_updated' => 'Preferencia de nivel atualizada com sucesso.',
+        'shelf_level_preference_deleted' => 'Preferencia de nivel removida com sucesso.',
+        'no_shelf_level_preferences' => 'Nenhuma preferencia de nivel cadastrada ainda.',
+        'planogram_generated' => ':count segmento gerado com sucesso.|:count segmentos gerados com sucesso.',
+        'planogram_not_found' => 'Planograma nao encontrado para esta gondola.',
+        'no_products_found' => 'Nenhum produto encontrado para a categoria configurada.',
     ],
 
     'labels' => [
@@ -103,6 +114,14 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'actions' => 'Acoes',
         'search_category' => 'Buscar categoria',
         'select_category' => 'Selecione uma categoria',
+        'category' => 'Categoria',
+        'preferred_level' => 'Nivel preferido',
+        'tenant_default' => 'Padrao do tenant',
+        'tenant_default_hint' => 'Deixe sem selecao para configurar o padrao do tenant.',
+        'select_level' => 'Selecione um nivel',
+        'name' => 'Nome',
+        'remember_me' => 'Lembrar de mim',
+        'email_address' => 'Endereco de e-mail',
     ],
 
     'addresses' => [
@@ -1357,16 +1376,13 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'deploy_now' => 'Implantar agora',
     ],
 
-    'labels' => [
-        'name' => 'Nome',
-        'remember_me' => 'Lembrar de mim',
-        'email_address' => 'Endereco de e-mail',
-    ],
-
     'settings_nav' => [
         'profile' => 'Perfil',
         'security' => 'Seguranca',
         'appearance' => 'Aparencia',
+        'scoring_weights' => 'Pesos do Scoring',
+        'adjacency_matrix' => 'Matriz de Adjacencia',
+        'shelf_level_preferences' => 'Nivel de Prateleira',
     ],
 
     'settings_messages' => [

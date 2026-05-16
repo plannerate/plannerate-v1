@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, router, setLayoutProps, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import AdjacencyMatrixController from '@/actions/App/Http/Controllers/Settings/AdjacencyMatrixController';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
@@ -47,11 +48,6 @@ type Rule = {
     reason: string | null;
 };
 
-type CategoryOption = {
-    id: string;
-    label: string;
-};
-
 type RuleTypeOption = {
     value: string;
     label: string;
@@ -62,7 +58,6 @@ type RuleTypeOption = {
 type Props = {
     subdomain: string;
     adjacencyHierarchyLevel: number;
-    categories: CategoryOption[];
     rules: Rule[];
     ruleTypes: RuleTypeOption[];
 };
@@ -81,8 +76,6 @@ setLayoutProps({
 
 const isDialogOpen = ref(false);
 const editingRuleId = ref<string | null>(null);
-const sourceFilter = ref('');
-const targetFilter = ref('');
 
 const form = useForm({
     source_category_id: '',
@@ -92,18 +85,6 @@ const form = useForm({
     reason: '',
 });
 
-const filteredSourceCategories = computed(() =>
-    props.categories.filter((category) =>
-        category.label.toLowerCase().includes(sourceFilter.value.toLowerCase()),
-    ),
-);
-
-const filteredTargetCategories = computed(() =>
-    props.categories.filter((category) =>
-        category.label.toLowerCase().includes(targetFilter.value.toLowerCase()),
-    ),
-);
-
 function openCreateDialog() {
     editingRuleId.value = null;
     form.reset();
@@ -111,8 +92,6 @@ function openCreateDialog() {
     form.rule_type = props.ruleTypes[0]?.value ?? 'prefer_near';
     form.weight = props.ruleTypes[0]?.default_weight ?? 10;
     form.reason = '';
-    sourceFilter.value = '';
-    targetFilter.value = '';
     isDialogOpen.value = true;
 }
 
@@ -124,8 +103,6 @@ function openEditDialog(rule: Rule) {
     form.weight = rule.weight;
     form.reason = rule.reason ?? '';
     form.clearErrors();
-    sourceFilter.value = rule.source_label;
-    targetFilter.value = rule.target_label;
     isDialogOpen.value = true;
 }
 
@@ -246,7 +223,7 @@ function badgeVariant(color: string): 'default' | 'secondary' | 'destructive' | 
     </div>
 
     <Dialog :open="isDialogOpen" @update:open="isDialogOpen = $event">
-        <DialogContent class="sm:max-w-3xl">
+        <DialogContent class="sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>
                     {{ editingRuleId ? t('app.actions.edit') : t('app.actions.new') }}
@@ -257,38 +234,28 @@ function badgeVariant(color: string): 'default' | 'secondary' | 'destructive' | 
             </DialogHeader>
 
             <form class="space-y-4" @submit.prevent="submit">
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div class="space-y-2">
-                        <Label for="source-filter">{{ t('app.labels.source_category') }}</Label>
-                        <Input id="source-filter" v-model="sourceFilter" :placeholder="t('app.labels.search_category')" />
-                        <Select v-model="form.source_category_id">
-                            <SelectTrigger>
-                                <SelectValue :placeholder="t('app.labels.select_category')" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem v-for="category in filteredSourceCategories" :key="category.id" :value="category.id">
-                                    {{ category.label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <InputError :message="form.errors.source_category_id" />
-                    </div>
+                <div class="space-y-2">
+                    <Label>{{ t('app.labels.source_category') }}</Label>
+                    <CategoryCascadeSelect
+                        :model-value="form.source_category_id || null"
+                        :cascade-levels="props.adjacencyHierarchyLevel"
+                        :cols="2"
+                        :error="form.errors.source_category_id"
+                        input-name="source_category_id"
+                        @update:model-value="(v) => (form.source_category_id = v ?? '')"
+                    />
+                </div>
 
-                    <div class="space-y-2">
-                        <Label for="target-filter">{{ t('app.labels.target_category') }}</Label>
-                        <Input id="target-filter" v-model="targetFilter" :placeholder="t('app.labels.search_category')" />
-                        <Select v-model="form.target_category_id">
-                            <SelectTrigger>
-                                <SelectValue :placeholder="t('app.labels.select_category')" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem v-for="category in filteredTargetCategories" :key="category.id" :value="category.id">
-                                    {{ category.label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <InputError :message="form.errors.target_category_id" />
-                    </div>
+                <div class="space-y-2">
+                    <Label>{{ t('app.labels.target_category') }}</Label>
+                    <CategoryCascadeSelect
+                        :model-value="form.target_category_id || null"
+                        :cascade-levels="props.adjacencyHierarchyLevel"
+                        :cols="2"
+                        :error="form.errors.target_category_id"
+                        input-name="target_category_id"
+                        @update:model-value="(v) => (form.target_category_id = v ?? '')"
+                    />
                 </div>
 
                 <div class="grid gap-4 md:grid-cols-2">

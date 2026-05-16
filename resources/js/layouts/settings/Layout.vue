@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import AdjacencyMatrixController from '@/actions/App/Http/Controllers/Settings/AdjacencyMatrixController';
+import ScoringWeightsController from '@/actions/App/Http/Controllers/Settings/ScoringWeightsController';
+import ShelfLevelPreferencesController from '@/actions/App/Http/Controllers/Settings/ShelfLevelPreferencesController';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -13,21 +16,44 @@ import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
 
 const { t } = useT();
+const page = usePage();
+const subdomain = computed(() => (page.props.tenant as any)?.slug as string | undefined);
 
-const sidebarNavItems = computed<NavItem[]>(() => [
-    {
-        title: t('app.settings_nav.profile'),
-        href: editProfile(),
-    },
-    {
-        title: t('app.settings_nav.security'),
-        href: editSecurity(),
-    },
-    {
-        title: t('app.settings_nav.appearance'),
-        href: editAppearance(),
-    },
-]);
+const sidebarNavItems = computed<NavItem[]>(() => {
+    const items: NavItem[] = [
+        {
+            title: t('app.settings_nav.profile'),
+            href: editProfile(),
+        },
+        {
+            title: t('app.settings_nav.security'),
+            href: editSecurity(),
+        },
+        {
+            title: t('app.settings_nav.appearance'),
+            href: editAppearance(),
+        },
+    ];
+
+    if (subdomain.value) {
+        items.push(
+            {
+                title: t('app.settings_nav.scoring_weights'),
+                href: ScoringWeightsController.edit.url(subdomain.value),
+            },
+            {
+                title: t('app.settings_nav.adjacency_matrix'),
+                href: AdjacencyMatrixController.edit.url(subdomain.value),
+            },
+            {
+                title: t('app.settings_nav.shelf_level_preferences'),
+                href: ShelfLevelPreferencesController.edit.url(subdomain.value),
+            },
+        );
+    }
+
+    return items;
+});
 
 const { isCurrentOrParentUrl } = useCurrentUrl();
 </script>

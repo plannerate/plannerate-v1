@@ -6,7 +6,6 @@ use App\Enums\AdjacencyRuleType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\AdjacencyRuleRequest;
 use App\Models\AdjacencyRule;
-use App\Models\Category;
 use App\Models\ScoringWeights;
 use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
 use App\Support\Tenancy\InteractsWithTenantContext;
@@ -45,16 +44,6 @@ class AdjacencyMatrixController extends Controller
                     'reason' => $rule->reason,
                 ])
                 ->values(),
-            'categories' => Category::query()
-                ->where('hierarchy_position', $adjacencyLevel)
-                ->where('is_placeholder', false)
-                ->orderBy('full_path')
-                ->get(['id', 'name', 'full_path'])
-                ->map(fn (Category $category): array => [
-                    'id' => $category->id,
-                    'label' => $category->full_path ?: $category->name,
-                ])
-                ->values(),
             'ruleTypes' => collect(AdjacencyRuleType::cases())
                 ->map(fn (AdjacencyRuleType $type): array => [
                     'value' => $type->value,
@@ -74,7 +63,7 @@ class AdjacencyMatrixController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.adjacency_rule_created')]);
 
-        return to_route('adjacency-matrix.edit', $this->tenantRouteParameters());
+        return to_route('tenant.adjacency-matrix.edit', $this->tenantRouteParameters());
     }
 
     public function update(AdjacencyRuleRequest $request, string $subdomain, AdjacencyRule $adjacencyRule): RedirectResponse
@@ -85,7 +74,7 @@ class AdjacencyMatrixController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.adjacency_rule_updated')]);
 
-        return to_route('adjacency-matrix.edit', $this->tenantRouteParameters());
+        return to_route('tenant.adjacency-matrix.edit', $this->tenantRouteParameters());
     }
 
     public function destroy(string $subdomain, AdjacencyRule $adjacencyRule): RedirectResponse
@@ -96,6 +85,6 @@ class AdjacencyMatrixController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.adjacency_rule_deleted')]);
 
-        return to_route('adjacency-matrix.edit', $this->tenantRouteParameters());
+        return to_route('tenant.adjacency-matrix.edit', $this->tenantRouteParameters());
     }
 }

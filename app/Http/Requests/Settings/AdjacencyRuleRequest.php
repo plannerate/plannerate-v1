@@ -3,11 +3,14 @@
 namespace App\Http\Requests\Settings;
 
 use App\Models\AdjacencyRule;
+use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class AdjacencyRuleRequest extends FormRequest
 {
+    use InteractsWithTenantContext;
+
     public function authorize(): bool
     {
         return true;
@@ -18,22 +21,26 @@ class AdjacencyRuleRequest extends FormRequest
         /** @var AdjacencyRule|null $adjacencyRule */
         $adjacencyRule = $this->route('adjacencyRule');
 
+        $categoriesTable = $this->tenantTable('categories');
+        $adjacencyTable = $this->tenantTable('adjacency_rules');
+        $tenantId = $this->tenantId();
+
         return [
             'source_category_id' => [
                 'required',
                 'string',
                 'size:26',
                 'different:target_category_id',
-                Rule::exists('categories', 'id'),
+                Rule::exists($categoriesTable, 'id'),
             ],
             'target_category_id' => [
                 'required',
                 'string',
                 'size:26',
-                Rule::exists('categories', 'id'),
-                Rule::unique('adjacency_rules')
+                Rule::exists($categoriesTable, 'id'),
+                Rule::unique($adjacencyTable)
                     ->where(fn ($query) => $query
-                        ->where('tenant_id', app('currentTenant')?->getKey())
+                        ->where('tenant_id', $tenantId)
                         ->where('source_category_id', $this->string('source_category_id')->toString())
                     )
                     ->ignore($adjacencyRule),

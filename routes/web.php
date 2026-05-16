@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\TenantSocialiteController;
+use App\Http\Controllers\AutoPlanogramController;
 use App\Http\Controllers\Landlord\DashboardController as LandlordDashboardController;
 use App\Http\Controllers\Landlord\EanReferenceController as LandlordEanReferenceController;
 use App\Http\Controllers\Landlord\IntegrationApiController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Landlord\UserController;
 use App\Http\Controllers\Landlord\WorkflowTemplateController as LandlordWorkflowTemplateController;
 use App\Http\Controllers\Settings\AdjacencyMatrixController;
 use App\Http\Controllers\Settings\ScoringWeightsController;
+use App\Http\Controllers\Settings\ShelfLevelPreferencesController;
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\ClusterController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboardController;
@@ -199,6 +201,11 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
 
         Route::get('editor/planograms/{record}/gondolas/editor', [EditorPlanogramController::class, 'edit'])
             ->name('planograms.gondolas.editor');
+
+        Route::prefix('api')->name('api.')->group(function (): void {
+            Route::post('gondolas/{gondola}/auto-generate', [AutoPlanogramController::class, 'generate'])
+                ->name('gondolas.auto-generate');
+        });
     });
 
 Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
@@ -307,6 +314,15 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('adjacency-matrix.update');
         Route::delete('settings/adjacency-matrix/{adjacencyRule}', [AdjacencyMatrixController::class, 'destroy'])
             ->name('adjacency-matrix.destroy');
+
+        Route::get('settings/shelf-level-preferences', [ShelfLevelPreferencesController::class, 'edit'])
+            ->name('shelf-level-preferences.edit');
+        Route::post('settings/shelf-level-preferences', [ShelfLevelPreferencesController::class, 'store'])
+            ->name('shelf-level-preferences.store');
+        Route::put('settings/shelf-level-preferences/{preference}', [ShelfLevelPreferencesController::class, 'update'])
+            ->name('shelf-level-preferences.update');
+        Route::delete('settings/shelf-level-preferences/{preference}', [ShelfLevelPreferencesController::class, 'destroy'])
+            ->name('shelf-level-preferences.destroy');
 
         Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
             // ── KANBAN ────────────────────────────────────────────────

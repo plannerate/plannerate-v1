@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import PlanogramValidationReport from '@/components/PlanogramValidationReport.vue';
 import Planogram from '@/components/plannerate/Planogram.vue';
 // @ts-expect-error - BackendBreadcrumb type definition may not be available
 import SimpleLayout from '@/layouts/SimpleLayout.vue';
@@ -62,6 +65,9 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Separar props para ResourceLayout (sem record)
 const { record, products, analysis } = props;
+
+const page = usePage();
+const validationReport = computed(() => (page.props.flash as any)?.validation_report ?? null);
 </script>
 
 <template>
@@ -74,6 +80,11 @@ const { record, products, analysis } = props;
             :saveChangesRoute="saveChangesRoute"
             :backRoute="backRoute"
             :permissions="permissions"
+        />
+        <PlanogramValidationReport
+            v-if="validationReport"
+            :report="validationReport"
+            class="mx-4 mb-4"
         />
     </SimpleLayout>
 </template>
