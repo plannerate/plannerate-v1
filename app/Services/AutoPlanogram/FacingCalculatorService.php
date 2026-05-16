@@ -102,6 +102,13 @@ final class FacingCalculatorService
     }
 
     /**
+     * Escalonamento proporcional de facings por espaço disponível.
+     * Desativado: testes mostraram que piora o resultado quando o mix
+     * é maior que a gôndola (cenário mais comum). Preservado para
+     * uso futuro em cenários de gôndola com folga.
+     *
+     * @see AutoPlanogramService::generate() — removido do fluxo principal em 2026-05
+     *
      * @param  Collection<int, ScoredProduct>  $scoredProducts
      * @return Collection<int, ScoredProduct>
      */

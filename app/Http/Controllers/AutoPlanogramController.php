@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlacementFailureReason;
 use App\Models\ScoringWeights;
 use App\Services\AutoPlanogram\AutoPlanogramService;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
@@ -68,6 +69,13 @@ class AutoPlanogramController extends Controller
             $output = $this->service->generate($input);
 
             $report = $output->validationReport;
+            $totalProducts = $input->products->count();
+            $rejectedSpace = $output->rejectedProducts
+                ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
+                ->count();
+            $rejectedHeight = $output->rejectedProducts
+                ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::HeightExceedsShelf)
+                ->count();
 
             Inertia::flash('toast', [
                 'type' => $report->errorCount > 0 ? 'warning' : 'success',
@@ -79,6 +87,22 @@ class AutoPlanogramController extends Controller
             ]);
 
             Inertia::flash('validation_report', $report->toArray());
+
+            Inertia::flash('capacity_report', [
+                'total_produtos' => $totalProducts,
+                'posicionados' => $output->totalAllocated(),
+                'rejeitados_espaco' => $rejectedSpace,
+                'rejeitados_altura' => $rejectedHeight,
+                'mix_excede_gondola' => $rejectedSpace > 0,
+                'taxa_cobertura' => round($output->totalAllocated() / max($totalProducts, 1), 3),
+                'produtos_rejeitados_espaco' => $output->rejectedProducts
+                    ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
+                    ->map(fn ($r) => [
+                        'id' => $r['product']->id,
+                        'name' => $r['product']->name,
+                        'category' => $r['product']->category?->name,
+                    ])->values(),
+            ]);
 
             Log::info('AutoPlanogramController: geração concluída', [
                 'gondola_id' => $gondola,
