@@ -8,7 +8,7 @@ use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\AutoGenerateC
 /**
  * Configurações para o processo de geração do planograma.
  *
- * @phpstan-type MetaArray array{strategy: string, use_existing_analysis: bool, start_date: ?string, end_date: ?string, min_facings: int, max_facings: int, group_by_subcategory: bool, include_products_without_sales: bool, table_type: string, category_id: ?string}
+ * @phpstan-type MetaArray array{strategy: string, use_existing_analysis: bool, start_date: ?string, end_date: ?string, min_facings: int, max_facings: int, group_by_subcategory: bool, include_products_without_sales: bool, table_type: string, category_id: ?string, tenant_id: ?string, store_id: ?string, block_hierarchy_level: int, adjacency_hierarchy_level: int, target_occupancy_rate: float}
  */
 final readonly class PlacementSettings
 {
@@ -57,6 +57,9 @@ final readonly class PlacementSettings
 
         /** Nível hierárquico usado para aplicar adjacência */
         public ?int $adjacencyHierarchyLevel = null,
+
+        /** Meta de ocupação da gôndola para escala de facing */
+        public float $targetOccupancyRate = 0.90,
     ) {}
 
     public function withExtras(?string $tenantId, ?ScoringWeightsValue $weights): self
@@ -77,6 +80,7 @@ final readonly class PlacementSettings
             weights: $weights ?? $this->weights,
             blockHierarchyLevel: $this->blockHierarchyLevel,
             adjacencyHierarchyLevel: $this->adjacencyHierarchyLevel,
+            targetOccupancyRate: $this->targetOccupancyRate,
         );
     }
 
@@ -93,6 +97,7 @@ final readonly class PlacementSettings
             includeProductsWithoutSales: $dto->includeProductsWithoutSales,
             tableType: $dto->tableType,
             categoryId: $dto->categoryId,
+            targetOccupancyRate: 0.90,
         );
     }
 
@@ -132,6 +137,7 @@ final readonly class PlacementSettings
             'store_id' => $this->storeId,
             'block_hierarchy_level' => $this->resolvedBlockHierarchyLevel(),
             'adjacency_hierarchy_level' => $this->resolvedAdjacencyHierarchyLevel(),
+            'target_occupancy_rate' => $this->targetOccupancyRate,
         ];
     }
 

@@ -28,6 +28,7 @@ final class AutoPlanogramService
 {
     public function __construct(
         private readonly ProductScorerInterface $scorer,
+        private readonly FacingCalculatorService $facingCalculator,
         private readonly BlockGrouperInterface $grouper,
         private readonly AdjacencyResolverInterface $adjacency,
         private readonly PlacementEngineInterface $placement,
@@ -48,13 +49,22 @@ final class AutoPlanogramService
 
         Log::info('AutoPlanogramService: produtos pontuados', ['count' => $scored->count()]);
 
-        $blocks = $this->grouper->group($scored, $input->settings);
+        $withIdealFacings = $this->facingCalculator->calculateIdealFacings($scored, $input->settings);
+        $availableWidth = $this->placement->totalAvailableWidth($input->sections) * $input->settings->targetOccupancyRate;
+        $withScaledFacings = $this->facingCalculator->scaleFacings(
+            $withIdealFacings,
+            $availableWidth,
+            $input->settings->minFacings,
+        );
+
+        $blocks = $this->grouper->group($withScaledFacings, $input->settings);
         $ordered = $this->adjacency->resolve($blocks, $input->settings);
-        $placed = $this->placement->place($ordered, $input->sections, $input->settings);
+        $placementResult = $this->placement->place($ordered, $input->sections, $input->settings);
+        $placed = $placementResult->placedSegments;
 
         Log::info('AutoPlanogramService: segmentos posicionados', ['count' => $placed->count()]);
 
-        $report = $this->validator->validate($placed, $input);
+        $report = $this->validator->validate($placed, $input, $placementResult);
 
         DB::transaction(function () use ($input, $placed) {
             $this->writer->write($input->gondolaId, $input->sections, $placed);
@@ -66,6 +76,6 @@ final class AutoPlanogramService
             'validation_passed' => $report->passed,
         ]);
 
-        return new PlanogramOutput($input->gondolaId, $placed, $report);
+        return new PlanogramOutput($input->gondolaId, $placed, $placementResult->rejectedProducts, $report);
     }
 }

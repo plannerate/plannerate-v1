@@ -76,8 +76,9 @@ function blockSection(int $shelvesCount, float $width = 40): Section
         $shelf = new Shelf;
         $shelf->id = (string) Str::ulid();
         $shelf->shelf_width = $width;
-        $shelf->shelf_height = 30;
+        $shelf->shelf_height = 4;
         $shelf->shelf_depth = 30;
+        $shelf->shelf_position = 30 + ($index * 34);
         $shelf->ordering = $index;
         $shelves->push($shelf);
     }
@@ -106,7 +107,9 @@ function placeBlocks(Collection $scoredProducts, Collection $sections): Collecti
     $blocks = (new HierarchicalBlockGrouper)->group($scoredProducts, $settings);
     $ordered = (new RuleBasedResolver)->resolve($blocks, $settings);
 
-    return (new GreedyShelfPlacer(new MerchandisingRulesService))->place($ordered, $sections, $settings);
+    return (new GreedyShelfPlacer(new MerchandisingRulesService))
+        ->place($ordered, $sections, $settings)
+        ->placedSegments;
 }
 
 test('bloco nunca e quebrado entre sections quando cabe em uma section', function (): void {
@@ -156,4 +159,23 @@ test('bloco maior que a section pode ser quebrado entre sections', function (): 
         ->unique();
 
     expect($sectionsForBlock->count())->toBeGreaterThan(1);
+});
+
+test('agrupamento hierarquico reduz singletons quando produtos compartilham categorias', function (): void {
+    $segmentA = blockCategoryChain((string) Str::ulid(), 'Farinhas');
+    $segmentB = blockCategoryChain((string) Str::ulid(), 'Massas');
+
+    $scored = collect([
+        blockProduct('A1', 10, $segmentA, 100),
+        blockProduct('A2', 10, $segmentA, 90),
+        blockProduct('A3', 10, $segmentA, 80),
+        blockProduct('B1', 10, $segmentB, 70),
+        blockProduct('B2', 10, $segmentB, 60),
+    ]);
+
+    $blocks = (new HierarchicalBlockGrouper)->group($scored, blockSettings());
+    $singletons = $blocks->filter(fn ($block): bool => str_starts_with($block->groupingKey, 'singleton:'))->count();
+
+    expect($blocks)->toHaveCount(2)
+        ->and($singletons / $blocks->count())->toBeLessThan(0.30);
 });

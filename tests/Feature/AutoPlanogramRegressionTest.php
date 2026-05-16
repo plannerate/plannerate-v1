@@ -7,6 +7,7 @@ use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use App\Services\AutoPlanogram\Placement\PlanogramWriterInterface;
 use App\Services\AutoPlanogram\Scoring\ProductScorerInterface;
+use App\Services\AutoPlanogram\Validation\PlanogramValidator;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
@@ -46,15 +47,16 @@ function fakeProduct(int $index, string $tenantId = 'tenant-test'): Product
 /**
  * Cria uma shelf sintética sem persistir no banco.
  */
-function fakeShelf(string $sectionId, int $index): Shelf
+function fakeShelf(string $sectionId, int $index, int $widthCm = 100): Shelf
 {
     $shelf = new Shelf;
     $shelf->id = (string) Str::ulid();
     $shelf->section_id = $sectionId;
-    $shelf->shelf_width = 100;
-    $shelf->shelf_height = 30;
+    $shelf->shelf_width = $widthCm;
+    $shelf->shelf_height = 4;
     $shelf->shelf_depth = 40;
     $shelf->ordering = $index;
+    $shelf->shelf_position = 30 + ($index * 34);
 
     return $shelf;
 }
@@ -73,7 +75,7 @@ function fakeSection(string $gondolaId, int $numShelves, int $widthCm = 100): Se
 
     $shelves = collect();
     for ($i = 0; $i < $numShelves; $i++) {
-        $shelves->push(fakeShelf($section->id, $i));
+        $shelves->push(fakeShelf($section->id, $i, $widthCm));
     }
 
     // Injeta relação carregada sem query
@@ -168,6 +170,7 @@ function runPipelineWithMockedWriter(Collection $sections, Collection $products)
 
     app()->bind(ProductScorerInterface::class, fn () => fakeScorer($products));
     app()->instance(PlanogramWriterInterface::class, $mockWriter);
+    app()->instance(PlanogramValidator::class, new PlanogramValidator);
 
     app(AutoPlanogramService::class)->generate(buildTestInput($sections, $products));
 

@@ -28,6 +28,30 @@ final readonly class ProductBlock
     ) {}
 
     /**
+     * @param  Collection<int, ScoredProduct>  $children
+     */
+    public function withChildren(Collection $children): self
+    {
+        return new self(
+            children: $children->values(),
+            aggregateScore: $this->aggregateScore,
+            groupingKey: $this->groupingKey,
+            totalWidthEstimate: $children->sum(function (ScoredProduct $product): float {
+                $facing = (float) ($product->metadata['facing_final']
+                    ?? $product->metadata['estimated_facing']
+                    ?? $product->metadata['facing_ideal']
+                    ?? 1);
+                $width = (float) ($product->product->width ?? 10);
+
+                return $width * $facing;
+            }),
+            blockHierarchyLevel: $this->blockHierarchyLevel,
+            adjacencyCategoryId: $this->adjacencyCategoryId,
+            isPlaceholder: $this->isPlaceholder,
+        );
+    }
+
+    /**
      * @return BlockArray
      */
     public function toArray(): array

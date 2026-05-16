@@ -165,7 +165,7 @@ class ProductSelectionService
         // Buscar produtos dessas categorias usando a conexão tenant
         $products = Product::on($this->plannerateTenantConnectionName())
             ->whereIn('category_id', $categoryIds)
-            ->with(['category'])
+            ->with(['category.parent.parent.parent.parent.parent.parent'])
             ->get();
 
         Log::info('🛒 Produtos encontrados', [

@@ -3,6 +3,7 @@
 namespace App\Services\AutoPlanogram\Validation;
 
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
+use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use Illuminate\Support\Collection;
 
@@ -14,7 +15,7 @@ interface ValidationRuleInterface
      * @param  Collection<int, PlacedSegment>  $placedSegments
      * @return array<int, ValidationResult>
      */
-    public function evaluate(Collection $placedSegments, PlanogramInput $input): array;
+    public function evaluate(Collection $placedSegments, PlanogramInput $input, PlacementResult $result): array;
 
     /**
      * Get the rule name for identification.

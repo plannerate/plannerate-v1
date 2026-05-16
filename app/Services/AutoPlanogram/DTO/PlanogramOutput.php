@@ -2,6 +2,7 @@
 
 namespace App\Services\AutoPlanogram\DTO;
 
+use App\Enums\PlacementFailureReason;
 use Illuminate\Support\Collection;
 
 /**
@@ -19,6 +20,8 @@ final readonly class PlanogramOutput
          * @var Collection<int, PlacedSegment>
          */
         public Collection $placedSegments,
+        /** @var Collection<int, array{product: mixed, reason: PlacementFailureReason}> */
+        public Collection $rejectedProducts,
         public ValidationReport $validationReport,
     ) {}
 
@@ -35,7 +38,7 @@ final readonly class PlanogramOutput
         return [
             'gondola_id' => $this->gondolaId,
             'total_allocated' => $this->totalAllocated(),
-            'total_unallocated' => 0,
+            'total_unallocated' => $this->rejectedProducts->count(),
             'validation' => $this->validationReport->toArray(),
         ];
     }

@@ -3,6 +3,7 @@
 namespace App\Services\AutoPlanogram\Validation\Rules;
 
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
+use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\Validation\ValidationResult;
 use App\Services\AutoPlanogram\Validation\ValidationRuleInterface;
@@ -27,7 +28,7 @@ final class FacingMinimumRule implements ValidationRuleInterface
      * @param  Collection<int, PlacedSegment>  $placedSegments
      * @return array<int, ValidationResult>
      */
-    public function evaluate(Collection $placedSegments, PlanogramInput $input): array
+    public function evaluate(Collection $placedSegments, PlanogramInput $input, PlacementResult $result): array
     {
         $results = [];
 

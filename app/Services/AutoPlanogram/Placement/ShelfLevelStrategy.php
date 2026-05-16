@@ -32,7 +32,7 @@ final class ShelfLevelStrategy
      */
     private function loadPreferences(): void
     {
-        $rows = DB::table('shelf_level_preferences')
+        $rows = DB::connection('tenant')->table('shelf_level_preferences')
             ->where('tenant_id', $this->tenantId)
             ->whereNull('deleted_at')
             ->get();

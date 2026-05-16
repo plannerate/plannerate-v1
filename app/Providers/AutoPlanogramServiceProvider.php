@@ -19,6 +19,7 @@ use App\Services\AutoPlanogram\Validation\Rules\EmptyShelfRule;
 use App\Services\AutoPlanogram\Validation\Rules\FacingMinimumRule;
 use App\Services\AutoPlanogram\Validation\Rules\SectionCapacityRule;
 use App\Services\AutoPlanogram\Validation\Rules\ShelfLevelRule;
+use App\Services\AutoPlanogram\Validation\Rules\UnplacedProductsRule;
 use Illuminate\Support\ServiceProvider;
 
 class AutoPlanogramServiceProvider extends ServiceProvider
@@ -39,6 +40,7 @@ class AutoPlanogramServiceProvider extends ServiceProvider
                 new FacingMinimumRule,
                 new SectionCapacityRule,
                 new EmptyShelfRule,
+                new UnplacedProductsRule,
             ]);
 
             return $validator;

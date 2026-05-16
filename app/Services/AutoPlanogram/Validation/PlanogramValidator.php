@@ -3,6 +3,7 @@
 namespace App\Services\AutoPlanogram\Validation;
 
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
+use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\DTO\ValidationReport;
 use Illuminate\Support\Collection;
@@ -39,12 +40,12 @@ final class PlanogramValidator
      *
      * @param  Collection<int, PlacedSegment>  $placedSegments
      */
-    public function validate(Collection $placedSegments, PlanogramInput $input): ValidationReport
+    public function validate(Collection $placedSegments, PlanogramInput $input, PlacementResult $result): ValidationReport
     {
         $results = [];
 
         foreach ($this->rules as $rule) {
-            $ruleResults = $rule->evaluate($placedSegments, $input);
+            $ruleResults = $rule->evaluate($placedSegments, $input, $result);
             $results = array_merge($results, $ruleResults);
         }
 

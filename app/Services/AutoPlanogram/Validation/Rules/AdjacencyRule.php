@@ -5,6 +5,7 @@ namespace App\Services\AutoPlanogram\Validation\Rules;
 use App\Enums\AdjacencyRuleType;
 use App\Models\AdjacencyRule as AdjacencyRuleModel;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
+use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\Validation\ValidationResult;
 use App\Services\AutoPlanogram\Validation\ValidationRuleInterface;
@@ -24,7 +25,7 @@ final class AdjacencyRule implements ValidationRuleInterface
      * @param  Collection<int, PlacedSegment>  $placedSegments
      * @return array<int, ValidationResult>
      */
-    public function evaluate(Collection $placedSegments, PlanogramInput $input): array
+    public function evaluate(Collection $placedSegments, PlanogramInput $input, PlacementResult $result): array
     {
         $results = [];
 
@@ -77,14 +78,14 @@ final class AdjacencyRule implements ValidationRuleInterface
             foreach ($nextProducts as $nextProductId) {
                 // Check for MUST_AVOID rules
                 $avoided = AdjacencyRuleModel::where('tenant_id', $tenantId)
-                    ->where('type', AdjacencyRuleType::MustAvoid)
+                    ->where('rule_type', AdjacencyRuleType::MustAvoid)
                     ->where(function ($q) use ($currentProductId, $nextProductId) {
                         $q->where(function ($subQ) use ($currentProductId, $nextProductId) {
-                            $subQ->where('from_category_id', $currentProductId)
-                                ->where('to_category_id', $nextProductId);
+                            $subQ->where('source_category_id', $currentProductId)
+                                ->where('target_category_id', $nextProductId);
                         })->orWhere(function ($subQ) use ($currentProductId, $nextProductId) {
-                            $subQ->where('from_category_id', $nextProductId)
-                                ->where('to_category_id', $currentProductId);
+                            $subQ->where('source_category_id', $nextProductId)
+                                ->where('target_category_id', $currentProductId);
                         });
                     })
                     ->exists();

@@ -23,7 +23,7 @@ class AutoPlanogramController extends Controller
         private readonly ProductSelectionService $productSelection,
     ) {}
 
-    public function generate(string $gondola, AutoGeneratePlanogramRequest $request): RedirectResponse
+    public function generate(AutoGeneratePlanogramRequest $request, string $subdomain, string $gondola): RedirectResponse
     {
         try {
             $config = AutoGenerateConfigDTO::fromArray($request->validated());

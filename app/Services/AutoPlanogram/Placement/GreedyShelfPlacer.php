@@ -2,17 +2,18 @@
 
 namespace App\Services\AutoPlanogram\Placement;
 
+use App\Enums\PlacementFailureReason;
 use App\Enums\ShelfLevel;
 use App\Services\AutoPlanogram\DTO\OrderedBlock;
 use App\Services\AutoPlanogram\DTO\PlacedLayer;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
+use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
-use App\Services\AutoPlanogram\Placement\ShelfLevelStrategy;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\RankedProductDTO;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\ShelfLayoutDTO;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
-use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AutoGenerate\MerchandisingRulesService;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -27,29 +28,34 @@ use Illuminate\Support\Facades\Log;
  */
 final class GreedyShelfPlacer implements PlacementEngineInterface
 {
-    public function __construct(
-        private readonly MerchandisingRulesService $merchandisingRules,
-    ) {}
+    /** @param  Collection<int, Section>  $sections */
+    public function totalAvailableWidth(Collection $sections): float
+    {
+        return (float) $sections->sum(function (Section $section): float {
+            return (float) $section->shelves->sum(function (Shelf $shelf) use ($section): float {
+                return $this->getShelfAvailableWidth($section, $shelf);
+            });
+        });
+    }
 
     /**
      * @param  Collection<int, OrderedBlock>  $orderedBlocks
      * @param  Collection<int, Section>  $sections
-     * @return Collection<int, PlacedSegment>
      */
-    public function place(Collection $orderedBlocks, Collection $sections, PlacementSettings $settings): Collection
+    public function place(Collection $orderedBlocks, Collection $sections, PlacementSettings $settings): PlacementResult
     {
-        $configDto = $settings->toConfigDto();
         $strategy = $settings->tenantId ? new ShelfLevelStrategy($settings->tenantId) : null;
+        $totalInput = $orderedBlocks->sum(fn (OrderedBlock $orderedBlock): int => $orderedBlock->block->children->count());
+        $brokenBlocks = 0;
+        $rejected = collect();
 
         $sectionLayouts = $this->buildSectionShelfStructure($sections);
 
-        if ($sectionLayouts === []) {
-            return collect();
-        }
-
-        $rankedBlocks = $orderedBlocks
+        $filtered = $this->prefilterByHeight($orderedBlocks, $sections);
+        $rankedBlocks = $filtered['placeable']
             ->sortBy('sequenceOrder')
             ->values();
+        $rejected = $rejected->merge($filtered['rejected']);
 
         /** @var Collection<int, Collection<int, RankedProductDTO>> $productsByBlock */
         $productsByBlock = $rankedBlocks
@@ -61,19 +67,17 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
         $rankedProducts = $productsByBlock->flatten(1)->values();
 
         if ($rankedProducts->isEmpty()) {
-            return collect();
-        }
+            $placedSegments = collect();
 
-        $maxSales = $rankedProducts->max('salesTotal') ?: 1;
-        foreach ($rankedProducts as $product) {
-            $product->setFacings($this->merchandisingRules->calculateFacings($product, $configDto, $maxSales));
-        }
+            $this->logPlacementSummary($totalInput, $placedSegments, $rejected, $brokenBlocks);
 
-        $currentSectionIndex = 0;
-        $currentShelfIndex = 0;
+            return new PlacementResult($placedSegments, $rejected);
+        }
 
         foreach ($productsByBlock as $blockIndex => $blockProducts) {
             $orderedBlock = $rankedBlocks[$blockIndex];
+            $currentSectionIndex = 0;
+            $currentShelfIndex = 0;
 
             if ($strategy) {
                 $preferredLevel = $strategy->decidePreferredLevel($orderedBlock->block);
@@ -84,15 +88,15 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
                 continue;
             }
 
-            Log::warning('GreedyShelfPlacer: bloco maior que a section ou sem encaixe inteiro, quebrando por produto', [
-                'grouping_key' => $orderedBlock->block->groupingKey,
-                'products_count' => $blockProducts->count(),
-            ]);
-
-            $this->placeBrokenBlock($sectionLayouts, $blockProducts->all(), $currentSectionIndex, $currentShelfIndex, $orderedBlock);
+            $split = $this->placeBlockWithSplit($sectionLayouts, $blockProducts->all(), $currentSectionIndex, $currentShelfIndex);
+            $rejected = $rejected->merge($split['rejected']);
+            $brokenBlocks += $split['sections_used'] > 1 ? 1 : 0;
         }
 
-        return $this->convertToPlacedSegments($this->flattenShelves($sectionLayouts), $sections);
+        $placedSegments = $this->convertToPlacedSegments($this->flattenShelves($sectionLayouts), $sections);
+        $this->logPlacementSummary($totalInput, $placedSegments, $rejected, $brokenBlocks);
+
+        return new PlacementResult($placedSegments, $rejected);
     }
 
     /** @param  Collection<int, Section>  $sections */
@@ -102,19 +106,22 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
         $index = 0;
 
         foreach ($sections as $section) {
-            $availableWidth = (float) ($section->width ?? 100);
-            $sectionShelves = $section->shelves;
+            // Sort ascending by shelf_position: smallest position = topmost shelf
+            $clearances = $this->shelfClearances($section);
+            $sectionShelves = $section->shelves->sortBy('shelf_position')->values();
             $numShelves = $sectionShelves->count();
             $shelves = [];
 
             foreach ($sectionShelves as $shelfIndex => $shelf) {
+                $shelfPos = (float) ($shelf->shelf_position ?? 0);
+
                 $shelves[] = new ShelfLayoutDTO(
                     id: $shelf->id,
                     shelfIndex: $index,
-                    height: (float) ($shelf->shelf_height ?? 30),
-                    availableWidth: $availableWidth,
+                    height: $clearances[$shelf->id] ?? 0.0,
+                    availableWidth: $this->getShelfAvailableWidth($section, $shelf),
                     depth: (float) ($shelf->shelf_depth ?? 40),
-                    shelfPosition: (int) ($shelf->shelf_position ?? $shelfIndex),
+                    shelfPosition: (int) $shelfPos,
                 );
                 $index++;
             }
@@ -127,6 +134,83 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
         }
 
         return $sectionLayouts;
+    }
+
+    /**
+     * @return array<string, float>
+     */
+    private function shelfClearances(Section $section): array
+    {
+        $shelves = $section->shelves->sortBy('shelf_position')->values();
+        $clearances = [];
+
+        foreach ($shelves as $index => $shelf) {
+            if ($index === 0) {
+                $clearance = (float) ($shelf->shelf_position ?? 0);
+
+                if ($clearance <= 0 && $shelves->has($index + 1)) {
+                    $below = $shelves[$index + 1];
+                    $clearance = (float) ($below->shelf_position ?? 0)
+                        - ((float) ($shelf->shelf_position ?? 0) + (float) ($shelf->shelf_height ?? 0));
+                }
+            } else {
+                $above = $shelves[$index - 1];
+                $clearance = (float) ($shelf->shelf_position ?? 0)
+                    - ((float) ($above->shelf_position ?? 0) + (float) ($above->shelf_height ?? 0));
+            }
+
+            $clearances[$shelf->id] = max(0.0, $clearance);
+        }
+
+        return $clearances;
+    }
+
+    private function getShelfAvailableWidth(Section $section, Shelf $shelf): float
+    {
+        $sectionWidth = (float) ($section->width ?? 100.0);
+        $cremalheiraWidth = (float) ($section->cremalheira_width ?? 0.0);
+
+        return max(0.0, $sectionWidth - $cremalheiraWidth);
+    }
+
+    /**
+     * @param  Collection<int, OrderedBlock>  $orderedBlocks
+     * @param  Collection<int, Section>  $sections
+     * @return array{placeable: Collection<int, OrderedBlock>, rejected: Collection<int, array{product: mixed, reason: PlacementFailureReason}>}
+     */
+    private function prefilterByHeight(Collection $orderedBlocks, Collection $sections): array
+    {
+        $maxClearance = (float) ($sections
+            ->flatMap(fn (Section $section): array => array_values($this->shelfClearances($section)))
+            ->max() ?? 0.0);
+
+        $rejected = collect();
+
+        $placeable = $orderedBlocks
+            ->map(function (OrderedBlock $orderedBlock) use ($maxClearance, $rejected): OrderedBlock {
+                $children = $orderedBlock->block->children
+                    ->filter(function (ScoredProduct $scoredProduct) use ($maxClearance, $rejected): bool {
+                        $height = (float) ($scoredProduct->product->height ?? 0);
+
+                        if ($height > $maxClearance) {
+                            $rejected->push([
+                                'product' => $scoredProduct->product,
+                                'reason' => PlacementFailureReason::HeightExceedsShelf,
+                            ]);
+
+                            return false;
+                        }
+
+                        return true;
+                    })
+                    ->values();
+
+                return $orderedBlock->withChildren($children);
+            })
+            ->filter(fn (OrderedBlock $orderedBlock): bool => $orderedBlock->block->children->isNotEmpty())
+            ->values();
+
+        return ['placeable' => $placeable, 'rejected' => $rejected];
     }
 
     /**
@@ -153,16 +237,23 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
 
     private function toRankedProductDto(ScoredProduct $sp): RankedProductDTO
     {
-        return new RankedProductDTO(
+        $rankedProduct = new RankedProductDTO(
             product: $sp->product,
             abcClass: $sp->metadata['abc_class'] ?? null,
             score: $sp->score,
-            salesTotal: (float) ($sp->metadata['sales_total'] ?? 0),
-            margin: (float) ($sp->metadata['margin'] ?? 0),
+            salesTotal: (float) ($sp->metadata['sales_total'] ?? $sp->metadata['raw_quantity'] ?? 0),
+            margin: (float) ($sp->metadata['margin'] ?? $sp->metadata['raw_margem'] ?? 0),
             subcategoryId: $sp->product->category_id ?? null,
             targetStock: isset($sp->metadata['target_stock']) ? (float) $sp->metadata['target_stock'] : null,
             safetyStock: isset($sp->metadata['safety_stock']) ? (float) $sp->metadata['safety_stock'] : null,
         );
+
+        $rankedProduct->setFacings((int) ($sp->metadata['facing_final']
+            ?? $sp->metadata['estimated_facing']
+            ?? $sp->metadata['facing_ideal']
+            ?? 1));
+
+        return $rankedProduct;
     }
 
     private function tryAllocate(array $shelves, RankedProductDTO $product, int $index): bool
@@ -245,52 +336,80 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
     /**
      * @param  array<int, array{section_id: string, shelves: array<int, ShelfLayoutDTO>}>  $sectionLayouts
      * @param  array<int, RankedProductDTO>  $products
+     * @return array{rejected: Collection<int, array{product: mixed, reason: PlacementFailureReason}>, sections_used: int}
      */
-    private function placeBrokenBlock(
+    private function placeBlockWithSplit(
         array &$sectionLayouts,
         array $products,
         int &$currentSectionIndex,
         int &$currentShelfIndex,
-        OrderedBlock $orderedBlock,
-    ): void {
+    ): array {
+        $cursor = 0;
+        $sectionsUsed = 0;
+        $rejected = collect();
+
+        while ($cursor < count($products) && $currentSectionIndex < count($sectionLayouts)) {
+            $startShelfIndex = $currentShelfIndex;
+            $fit = $this->fitContiguousRun(
+                $sectionLayouts[$currentSectionIndex]['shelves'],
+                array_slice($products, $cursor),
+                $startShelfIndex,
+            );
+
+            if ($fit['count'] > 0) {
+                $cursor += $fit['count'];
+                $currentShelfIndex = $fit['last_shelf_index'];
+                $sectionsUsed++;
+            }
+
+            $currentSectionIndex++;
+            $currentShelfIndex = 0;
+        }
+
+        foreach (array_slice($products, $cursor) as $product) {
+            $rejected->push([
+                'product' => $product->product,
+                'reason' => PlacementFailureReason::NoHorizontalSpace,
+            ]);
+        }
+
+        return ['rejected' => $rejected, 'sections_used' => $sectionsUsed];
+    }
+
+    /**
+     * @param  array<int, ShelfLayoutDTO>  $shelves
+     * @param  array<int, RankedProductDTO>  $products
+     * @return array{count: int, last_shelf_index: int}
+     */
+    private function fitContiguousRun(array &$shelves, array $products, int $startShelfIndex): array
+    {
+        $placedCount = 0;
+        $currentShelfIndex = max(0, $startShelfIndex);
+        $lastShelfIndex = $currentShelfIndex;
+
         foreach ($products as $product) {
             $placed = false;
 
-            while ($currentSectionIndex < count($sectionLayouts)) {
-                $sectionShelves = &$sectionLayouts[$currentSectionIndex]['shelves'];
-
-                for ($shelfIndex = $currentShelfIndex; $shelfIndex < count($sectionShelves); $shelfIndex++) {
-                    if (! $this->tryAllocate($sectionShelves, $product, $shelfIndex)) {
-                        continue;
-                    }
-
-                    $currentShelfIndex = $shelfIndex;
-                    $placed = true;
-
-                    break;
+            for ($shelfIndex = $currentShelfIndex; $shelfIndex < count($shelves); $shelfIndex++) {
+                if (! $this->tryAllocate($shelves, $product, $shelfIndex)) {
+                    continue;
                 }
 
-                unset($sectionShelves);
+                $lastShelfIndex = $shelfIndex;
+                $currentShelfIndex = $shelfIndex;
+                $placed = true;
 
-                if ($placed) {
-                    break;
-                }
-
-                $currentSectionIndex++;
-                $currentShelfIndex = 0;
+                break;
             }
 
-            if ($placed) {
-                continue;
+            if (! $placed) {
+                break;
             }
 
-            Log::warning('GreedyShelfPlacer: produto do bloco nao pode ser posicionado', [
-                'grouping_key' => $orderedBlock->block->groupingKey,
-                'product_id' => $product->product->id,
-            ]);
-
-            return;
+            $placedCount++;
         }
+
+        return ['count' => $placedCount, 'last_shelf_index' => $lastShelfIndex];
     }
 
     /**
@@ -306,6 +425,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
                 height: $shelf->height,
                 availableWidth: $shelf->availableWidth,
                 depth: $shelf->depth,
+                shelfPosition: $shelf->shelfPosition,
             );
 
             $clone->products = $shelf->products;
@@ -394,5 +514,17 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
         }
 
         return $placedSegments;
+    }
+
+    private function logPlacementSummary(int $totalInput, Collection $placedSegments, Collection $rejected, int $brokenBlocks): void
+    {
+        Log::info('GreedyShelfPlacer: resumo do placement', [
+            'produtos_entrada' => $totalInput,
+            'segmentos_posicionados' => $placedSegments->count(),
+            'rejeitados_altura' => $rejected->where('reason', PlacementFailureReason::HeightExceedsShelf)->count(),
+            'rejeitados_espaco' => $rejected->where('reason', PlacementFailureReason::NoHorizontalSpace)->count(),
+            'blocos_quebrados' => $brokenBlocks,
+            'taxa_ocupacao' => $totalInput > 0 ? round($placedSegments->count() / $totalInput, 3) : 0,
+        ]);
     }
 }
