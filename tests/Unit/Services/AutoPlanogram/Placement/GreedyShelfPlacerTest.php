@@ -6,6 +6,7 @@ use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\ProductBlock;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
+use App\Services\AutoPlanogram\ProductWidthResolver;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
@@ -81,7 +82,7 @@ function makeSection(
 
 function makePlacer(): GreedyShelfPlacer
 {
-    return new GreedyShelfPlacer;
+    return new GreedyShelfPlacer(new ProductWidthResolver);
 }
 
 function makeSettings(): PlacementSettings

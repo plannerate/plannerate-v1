@@ -3,6 +3,7 @@
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use App\Services\AutoPlanogram\Grouping\HierarchicalBlockGrouper;
+use App\Services\AutoPlanogram\ProductWidthResolver;
 use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Category;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
@@ -73,7 +74,7 @@ test('produto categorizado ate nivel 7 com teto 6 agrupa no nivel 6', function (
     $level6 = makeCategoryNode(6, $level5);
     $level7 = makeCategoryNode(7, $level6);
 
-    $blocks = (new HierarchicalBlockGrouper)->group(
+    $blocks = (new HierarchicalBlockGrouper(new ProductWidthResolver))->group(
         collect([makeScored(makeGroupedProduct($level7, 1))]),
         hierarchySettings(),
     );
@@ -89,7 +90,7 @@ test('produto categorizado ate nivel 6 com teto 6 agrupa no nivel 6', function (
     $level5 = makeCategoryNode(5, $level4);
     $level6 = makeCategoryNode(6, $level5);
 
-    $blocks = (new HierarchicalBlockGrouper)->group(
+    $blocks = (new HierarchicalBlockGrouper(new ProductWidthResolver))->group(
         collect([makeScored(makeGroupedProduct($level6, 1))]),
         hierarchySettings(),
     );
@@ -103,7 +104,7 @@ test('produto categorizado ate nivel 6 com teto 6 agrupa no nivel 6', function (
 test('produto categorizado ate nivel 4 com teto 6 agrupa na folha nivel 4', function (): void {
     $level4 = makeCategoryNode(4);
 
-    $blocks = (new HierarchicalBlockGrouper)->group(
+    $blocks = (new HierarchicalBlockGrouper(new ProductWidthResolver))->group(
         collect([makeScored(makeGroupedProduct($level4, 1))]),
         hierarchySettings(),
     );
@@ -117,7 +118,7 @@ test('produto categorizado ate nivel 4 com teto 6 agrupa na folha nivel 4', func
 test('produto categorizado ate nivel 3 com teto 6 agrupa na folha nivel 3', function (): void {
     $level3 = makeCategoryNode(3);
 
-    $blocks = (new HierarchicalBlockGrouper)->group(
+    $blocks = (new HierarchicalBlockGrouper(new ProductWidthResolver))->group(
         collect([makeScored(makeGroupedProduct($level3, 1))]),
         hierarchySettings(),
     );
@@ -138,7 +139,7 @@ test('produtos no mesmo ramo mas com profundidades efetivas diferentes viram blo
         makeScored(makeGroupedProduct($level4, 2), 9),
     ]);
 
-    $blocks = (new HierarchicalBlockGrouper)->group($products, hierarchySettings());
+    $blocks = (new HierarchicalBlockGrouper(new ProductWidthResolver))->group($products, hierarchySettings());
 
     expect($blocks)->toHaveCount(2)
         ->and($blocks->pluck('groupingKey')->all())->toContain(
@@ -155,7 +156,7 @@ test('dois produtos na mesma categoria nivel 4 viram um bloco', function (): voi
         makeScored(makeGroupedProduct($level4, 2), 9),
     ]);
 
-    $blocks = (new HierarchicalBlockGrouper)->group($products, hierarchySettings());
+    $blocks = (new HierarchicalBlockGrouper(new ProductWidthResolver))->group($products, hierarchySettings());
 
     expect($blocks)->toHaveCount(1)
         ->and($blocks->first()->groupingKey)->toBe(sprintf('block:lvl4:%s', $level4->id))
@@ -170,7 +171,7 @@ test('4 produtos do mesmo segmento nivel 6 viram um bloco', function (): void {
     $products = collect(range(1, 4))
         ->map(fn (int $index) => makeScored(makeGroupedProduct($segment, $index), 10 - $index));
 
-    $blocks = (new HierarchicalBlockGrouper)->group($products, hierarchySettings());
+    $blocks = (new HierarchicalBlockGrouper(new ProductWidthResolver))->group($products, hierarchySettings());
 
     expect($blocks)->toHaveCount(1)
         ->and($blocks->first()->groupingKey)->toBe(sprintf('block:lvl6:%s', $segment->id))
@@ -189,7 +190,7 @@ test('2 segmentos diferentes na mesma categoria viram 2 blocos', function (): vo
         makeScored(makeGroupedProduct($segmentB, 3), 7),
     ]);
 
-    $blocks = (new HierarchicalBlockGrouper)->group($products, hierarchySettings());
+    $blocks = (new HierarchicalBlockGrouper(new ProductWidthResolver))->group($products, hierarchySettings());
 
     expect($blocks)->toHaveCount(2)
         ->and($blocks->pluck('groupingKey')->all())->toContain(
@@ -203,7 +204,7 @@ test('categoria mais rasa que o nivel alvo usa folha em vez de singleton', funct
     $level5 = makeCategoryNode(5, $level4);
     $product = makeGroupedProduct($level5, 1);
 
-    $blocks = (new HierarchicalBlockGrouper)->group(collect([makeScored($product)]), hierarchySettings());
+    $blocks = (new HierarchicalBlockGrouper(new ProductWidthResolver))->group(collect([makeScored($product)]), hierarchySettings());
 
     expect($blocks)->toHaveCount(1)
         ->and($blocks->first()->groupingKey)->toBe(sprintf('block:lvl5:%s', $level5->id))
@@ -216,7 +217,7 @@ test('categoria placeholder no nivel alvo agrupa no ancestral nao placeholder', 
     $placeholderSegment = makeCategoryNode(6, $level5, true);
     $product = makeGroupedProduct($placeholderSegment, 1);
 
-    $blocks = (new HierarchicalBlockGrouper)->group(collect([makeScored($product)]), hierarchySettings());
+    $blocks = (new HierarchicalBlockGrouper(new ProductWidthResolver))->group(collect([makeScored($product)]), hierarchySettings());
 
     expect($blocks)->toHaveCount(1)
         ->and($blocks->first()->groupingKey)->toBe(sprintf('block:lvl5:%s', $level5->id))
@@ -226,7 +227,7 @@ test('categoria placeholder no nivel alvo agrupa no ancestral nao placeholder', 
 test('produto sem categoria vira bloco singleton', function (): void {
     $product = makeProductWithoutCategory(1);
 
-    $blocks = (new HierarchicalBlockGrouper)->group(collect([makeScored($product)]), hierarchySettings());
+    $blocks = (new HierarchicalBlockGrouper(new ProductWidthResolver))->group(collect([makeScored($product)]), hierarchySettings());
 
     expect($blocks)->toHaveCount(1)
         ->and($blocks->first()->groupingKey)->toBe('singleton:'.$product->id)
