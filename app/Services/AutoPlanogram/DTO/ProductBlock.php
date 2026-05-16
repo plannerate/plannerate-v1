@@ -2,6 +2,7 @@
 
 namespace App\Services\AutoPlanogram\DTO;
 
+use App\Services\AutoPlanogram\ProductWidthResolver;
 use Illuminate\Support\Collection;
 
 /**
@@ -30,20 +31,21 @@ final readonly class ProductBlock
     /**
      * @param  Collection<int, ScoredProduct>  $children
      */
-    public function withChildren(Collection $children): self
+    public function withChildren(Collection $children, ?ProductWidthResolver $widthResolver = null): self
     {
+        $resolver = $widthResolver ?? app(ProductWidthResolver::class);
+
         return new self(
             children: $children->values(),
             aggregateScore: $this->aggregateScore,
             groupingKey: $this->groupingKey,
-            totalWidthEstimate: $children->sum(function (ScoredProduct $product): float {
+            totalWidthEstimate: $children->sum(function (ScoredProduct $product) use ($resolver): float {
                 $facing = (float) ($product->metadata['facing_final']
                     ?? $product->metadata['estimated_facing']
                     ?? $product->metadata['facing_ideal']
                     ?? 1);
-                $width = (float) ($product->product->width ?? 10);
 
-                return $width * $facing;
+                return $resolver->resolve($product->product) * $facing;
             }),
             blockHierarchyLevel: $this->blockHierarchyLevel,
             adjacencyCategoryId: $this->adjacencyCategoryId,

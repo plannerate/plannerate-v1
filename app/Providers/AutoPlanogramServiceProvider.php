@@ -10,6 +10,7 @@ use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
 use App\Services\AutoPlanogram\Placement\PlacementEngineInterface;
 use App\Services\AutoPlanogram\Placement\PlanogramWriter;
 use App\Services\AutoPlanogram\Placement\PlanogramWriterInterface;
+use App\Services\AutoPlanogram\ProductWidthResolver;
 use App\Services\AutoPlanogram\Scoring\CompositeScorer;
 use App\Services\AutoPlanogram\Scoring\ProductScorerInterface;
 use App\Services\AutoPlanogram\Validation\PlanogramValidator;
@@ -26,6 +27,11 @@ class AutoPlanogramServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(ProductWidthResolver::class, fn () => new ProductWidthResolver(
+            defaultWidth: 10.0,
+            maxPlausible: 60.0,
+        ));
+
         $this->app->bind(ProductScorerInterface::class, CompositeScorer::class);
         $this->app->bind(BlockGrouperInterface::class, HierarchicalBlockGrouper::class);
         $this->app->bind(AdjacencyResolverInterface::class, RuleBasedResolver::class);

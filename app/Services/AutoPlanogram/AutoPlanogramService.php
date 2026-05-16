@@ -45,6 +45,16 @@ final class AutoPlanogramService
             'strategy' => $input->settings->strategy,
         ]);
 
+        $widths = $input->products->map(fn ($p) => (float) ($p->width ?? 0));
+        Log::info('AutoPlanogramService: qualidade de dados de width', [
+            'total_produtos' => $widths->count(),
+            'sem_width' => $input->products->whereNull('width')->count(),
+            'width_zero' => $widths->filter(fn ($w) => $w <= 0)->count(),
+            'width_suspeito' => $widths->filter(fn ($w) => $w > 60)->count(),
+            'width_valido' => $widths->filter(fn ($w) => $w > 0 && $w <= 60)->count(),
+            'largura_media_cm' => round($widths->filter(fn ($w) => $w > 0 && $w <= 60)->avg() ?? 0, 2),
+        ]);
+
         $scored = $this->scorer->score($input->products, $input->settings);
 
         Log::info('AutoPlanogramService: produtos pontuados', ['count' => $scored->count()]);

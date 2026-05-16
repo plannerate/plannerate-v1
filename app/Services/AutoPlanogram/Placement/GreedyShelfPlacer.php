@@ -10,6 +10,7 @@ use App\Services\AutoPlanogram\DTO\PlacedSegment;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
+use App\Services\AutoPlanogram\ProductWidthResolver;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\RankedProductDTO;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\ShelfLayoutDTO;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
@@ -28,6 +29,10 @@ use Illuminate\Support\Facades\Log;
  */
 final class GreedyShelfPlacer implements PlacementEngineInterface
 {
+    public function __construct(
+        private readonly ProductWidthResolver $widthResolver,
+    ) {}
+
     /** @param  Collection<int, Section>  $sections */
     public function totalAvailableWidth(Collection $sections): float
     {
@@ -205,7 +210,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
                     })
                     ->values();
 
-                return $orderedBlock->withChildren($children);
+                return $orderedBlock->withChildren($children, $this->widthResolver);
             })
             ->filter(fn (OrderedBlock $orderedBlock): bool => $orderedBlock->block->children->isNotEmpty())
             ->values();
@@ -489,7 +494,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
             $positionX = 0;
 
             foreach ($shelfLayout->products as $rankedProduct) {
-                $productWidth = (int) round(($rankedProduct->product->width ?? 10) * $rankedProduct->facings);
+                $productWidth = (int) round($this->widthResolver->resolve($rankedProduct->product) * $rankedProduct->facings);
 
                 $layer = new PlacedLayer(
                     productId: $rankedProduct->product->id,

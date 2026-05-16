@@ -5,6 +5,7 @@ namespace App\Services\AutoPlanogram\Grouping;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\ProductBlock;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
+use App\Services\AutoPlanogram\ProductWidthResolver;
 use Illuminate\Support\Collection;
 
 /**
@@ -14,6 +15,10 @@ use Illuminate\Support\Collection;
  */
 final class NoOpBlockGrouper implements BlockGrouperInterface
 {
+    public function __construct(
+        private readonly ProductWidthResolver $widthResolver,
+    ) {}
+
     /**
      * @param  Collection<int, ScoredProduct>  $scoredProducts
      * @return Collection<int, ProductBlock>
@@ -26,7 +31,7 @@ final class NoOpBlockGrouper implements BlockGrouperInterface
             children: collect([$product]),
             aggregateScore: $product->score,
             groupingKey: $product->metadata['abc_class'] ?? 'none',
-            totalWidthEstimate: (float) (($product->product->width ?? 10)),
+            totalWidthEstimate: $this->widthResolver->resolve($product->product),
             blockHierarchyLevel: 0,
         ))->values();
     }

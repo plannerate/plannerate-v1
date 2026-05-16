@@ -2,6 +2,7 @@
 
 namespace App\Services\AutoPlanogram\DTO;
 
+use App\Services\AutoPlanogram\ProductWidthResolver;
 use Illuminate\Support\Collection;
 
 /**
@@ -18,10 +19,10 @@ final readonly class OrderedBlock
     /**
      * @param  Collection<int, ScoredProduct>  $children
      */
-    public function withChildren(Collection $children): self
+    public function withChildren(Collection $children, ?ProductWidthResolver $widthResolver = null): self
     {
         return new self(
-            block: $this->block->withChildren($children),
+            block: $this->block->withChildren($children, $widthResolver),
             sequenceOrder: $this->sequenceOrder,
         );
     }

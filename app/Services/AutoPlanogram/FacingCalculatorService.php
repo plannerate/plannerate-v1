@@ -20,6 +20,10 @@ use Illuminate\Support\Facades\Log;
  */
 final class FacingCalculatorService
 {
+    public function __construct(
+        private readonly ProductWidthResolver $widthResolver,
+    ) {}
+
     /**
      * Calcula quantos facings um produto deve ter.
      *
@@ -103,7 +107,7 @@ final class FacingCalculatorService
      */
     public function scaleFacings(Collection $scoredProducts, float $availableWidth, int $minFacings = 1): Collection
     {
-        $demandedWidth = $this->totalDemandedWidth($scoredProducts);
+        [$demandedWidth, $demandedWidthBruta, $invalidCount] = $this->totalDemandedWidth($scoredProducts);
 
         if ($demandedWidth <= 0.0 || $availableWidth <= 0.0) {
             return $scoredProducts;
@@ -115,9 +119,11 @@ final class FacingCalculatorService
 
         Log::info('FacingCalculatorService: escalonamento', [
             'espaco_disponivel_cm' => round($availableWidth, 1),
-            'largura_demandada_cm' => round($demandedWidth, 1),
+            'largura_demandada_bruta' => round($demandedWidthBruta, 1),
+            'largura_demandada_limpa' => round($demandedWidth, 1),
             'fator_escala' => round($scaleFactor, 4),
             'precisa_escalar' => $scaleFactor < 1.0,
+            'produtos_com_width_invalido' => $invalidCount,
         ]);
 
         if ($scaleFactor >= 1.0) {
@@ -159,16 +165,31 @@ final class FacingCalculatorService
     }
 
     /**
+     * Retorna [largura_limpa, largura_bruta, count_invalidos].
+     *
      * @param  Collection<int, ScoredProduct>  $scoredProducts
+     * @return array{float, float, int}
      */
-    private function totalDemandedWidth(Collection $scoredProducts): float
+    private function totalDemandedWidth(Collection $scoredProducts): array
     {
-        return (float) $scoredProducts->sum(function (ScoredProduct $scoredProduct): float {
-            $facing = (int) ($scoredProduct->metadata['facing_ideal'] ?? 1);
-            $width = (float) ($scoredProduct->product->width ?? 10.0);
+        $clean = 0.0;
+        $bruta = 0.0;
+        $invalidCount = 0;
 
-            return $facing * $width;
-        });
+        foreach ($scoredProducts as $scoredProduct) {
+            $facing = (int) ($scoredProduct->metadata['facing_ideal'] ?? 1);
+            $rawWidth = (float) ($scoredProduct->product->width ?? 0.0);
+            $cleanWidth = $this->widthResolver->resolve($scoredProduct->product);
+
+            $bruta += $facing * $rawWidth;
+            $clean += $facing * $cleanWidth;
+
+            if ($rawWidth !== $cleanWidth) {
+                $invalidCount++;
+            }
+        }
+
+        return [$clean, $bruta, $invalidCount];
     }
 
     private function toRankedProductDto(ScoredProduct $scoredProduct): RankedProductDTO

@@ -5,6 +5,7 @@ namespace App\Services\AutoPlanogram\Grouping;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\ProductBlock;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
+use App\Services\AutoPlanogram\ProductWidthResolver;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Category;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Illuminate\Support\Collection;
@@ -12,6 +13,10 @@ use Illuminate\Support\Facades\Log;
 
 final class HierarchicalBlockGrouper implements BlockGrouperInterface
 {
+    public function __construct(
+        private readonly ProductWidthResolver $widthResolver,
+    ) {}
+
     /**
      * @param  Collection<int, ScoredProduct>  $scoredProducts
      * @return Collection<int, ProductBlock>
@@ -128,7 +133,7 @@ final class HierarchicalBlockGrouper implements BlockGrouperInterface
     {
         return $children->sum(function (ScoredProduct $product): float {
             $facing = $this->facingFromMetadata($product);
-            $width = (float) ($product->product->width ?? 10);
+            $width = $this->widthResolver->resolve($product->product);
 
             return $width * $facing;
         });
