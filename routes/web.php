@@ -17,6 +17,8 @@ use App\Http\Controllers\Landlord\TenantUserAccessController;
 use App\Http\Controllers\Landlord\UsefulLinkController;
 use App\Http\Controllers\Landlord\UserController;
 use App\Http\Controllers\Landlord\WorkflowTemplateController as LandlordWorkflowTemplateController;
+use App\Http\Controllers\Settings\AdjacencyMatrixController;
+use App\Http\Controllers\Settings\ScoringWeightsController;
 use App\Http\Controllers\Tenant\CategoryController;
 use App\Http\Controllers\Tenant\ClusterController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboardController;
@@ -291,6 +293,20 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('notifications.download');
         Route::delete('notifications/{id}', [NotificationController::class, 'destroy'])
             ->name('notifications.destroy');
+
+        Route::get('settings/scoring-weights', [ScoringWeightsController::class, 'edit'])
+            ->name('scoring-weights.edit');
+        Route::put('settings/scoring-weights', [ScoringWeightsController::class, 'update'])
+            ->name('scoring-weights.update');
+
+        Route::get('settings/adjacency-matrix', [AdjacencyMatrixController::class, 'edit'])
+            ->name('adjacency-matrix.edit');
+        Route::post('settings/adjacency-matrix', [AdjacencyMatrixController::class, 'store'])
+            ->name('adjacency-matrix.store');
+        Route::put('settings/adjacency-matrix/{adjacencyRule}', [AdjacencyMatrixController::class, 'update'])
+            ->name('adjacency-matrix.update');
+        Route::delete('settings/adjacency-matrix/{adjacencyRule}', [AdjacencyMatrixController::class, 'destroy'])
+            ->name('adjacency-matrix.destroy');
 
         Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
             // ── KANBAN ────────────────────────────────────────────────

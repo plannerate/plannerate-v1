@@ -14,9 +14,9 @@ use Tests\TestCase;
 |
 */
 
-pest()->extend(TestCase::class)
+pest()->extend(TestCase::class)->in("Unit", "Feature")
     ->use(RefreshDatabase::class)
-    ->in('Feature');
+    ;
 
 /*
 |--------------------------------------------------------------------------

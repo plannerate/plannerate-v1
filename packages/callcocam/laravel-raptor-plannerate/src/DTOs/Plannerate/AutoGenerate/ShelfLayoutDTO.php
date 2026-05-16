@@ -40,6 +40,9 @@ class ShelfLayoutDTO
 
         /** Profundidade da prateleira em CM */
         public readonly float $depth = 40.0,
+
+        /** Posição física da prateleira (0=topo, N=chão — schema Plannerate) */
+        public readonly int $shelfPosition = 0,
     ) {}
 
     /**
