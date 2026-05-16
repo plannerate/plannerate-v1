@@ -293,3 +293,113 @@ test('command previews product updates for a tenant without mutating data', func
     expect($product?->category_id)->toBeNull()
         ->and($product?->brand)->toBeNull();
 });
+
+test('service nullifies category_id when ean category cannot be resolved in tenant', function () {
+    $tenantId = (string) str()->ulid();
+    $existingCategoryId = (string) str()->ulid();
+    $now = now();
+
+    DB::table('categories')->insert([
+        'id' => $existingCategoryId,
+        'tenant_id' => $tenantId,
+        'name' => 'Categoria Existente',
+        'slug' => 'categoria-existente',
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    DB::table('ean_references')->insert([
+        'id' => (string) str()->ulid(),
+        'ean' => '7891000000058',
+        'category_name' => 'Categoria Inexistente',
+        'category_slug' => 'categoria-inexistente',
+        'brand' => 'Marca sem categoria',
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    DB::table('products')->insert([
+        'id' => (string) str()->ulid(),
+        'tenant_id' => $tenantId,
+        'name' => 'Produto com categoria órfã',
+        'slug' => 'produto-com-categoria-orfa',
+        'ean' => '7891000000058',
+        'codigo_erp' => '1005',
+        'category_id' => $existingCategoryId,
+        'brand' => null,
+        'status' => 'synced',
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    $summary = app(SyncProductsFromEanReferencesService::class)->sync(
+        tenantConnectionName: (string) config('database.default'),
+        tenantId: $tenantId,
+        preview: false,
+    );
+
+    $product = DB::table('products')
+        ->where('tenant_id', $tenantId)
+        ->where('codigo_erp', '1005')
+        ->first();
+
+    expect($summary)->toMatchArray([
+        'matched' => 1,
+        'updated' => 1,
+        'remaining' => 0,
+    ])
+        ->and($product?->category_id)->toBeNull()
+        ->and($product?->brand)->toBe('Marca sem categoria');
+});
+
+test('command preview does not nullify category_id when category cannot be resolved', function () {
+    $tenant = Tenant::withoutEvents(fn (): Tenant => Tenant::query()->create([
+        'name' => 'Tenant EAN Preview Null',
+        'slug' => 'tenant-ean-preview-null-'.fake()->numberBetween(100, 999),
+        'database' => 'tenant_ean_preview_null',
+        'status' => 'active',
+    ]));
+    $existingCategoryId = (string) str()->ulid();
+    $now = now();
+
+    DB::table('categories')->insert([
+        'id' => $existingCategoryId,
+        'tenant_id' => (string) $tenant->id,
+        'name' => 'Categoria Preview Null',
+        'slug' => 'categoria-preview-null',
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    DB::table('ean_references')->insert([
+        'id' => (string) str()->ulid(),
+        'ean' => '7891000000065',
+        'category_name' => 'Não Existe',
+        'category_slug' => 'nao-existe',
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    DB::table('products')->insert([
+        'id' => (string) str()->ulid(),
+        'tenant_id' => (string) $tenant->id,
+        'name' => 'Produto Preview Null',
+        'slug' => 'produto-preview-null',
+        'ean' => '7891000000065',
+        'codigo_erp' => '1006',
+        'category_id' => $existingCategoryId,
+        'status' => 'synced',
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    $this->artisan(sprintf('sync:products-from-ean-references --tenant=%s --preview', $tenant->id))
+        ->assertSuccessful();
+
+    $product = DB::table('products')
+        ->where('tenant_id', (string) $tenant->id)
+        ->where('codigo_erp', '1006')
+        ->first();
+
+    expect($product?->category_id)->toBe($existingCategoryId);
+});

@@ -171,6 +171,10 @@ class SyncProductsFromEanReferencesService
         $updates = [];
 
         $categoryId = $this->resolveTenantCategoryId($reference);
+        if ($categoryId === null && $product->category_id !== null && $product->category_id !== '') {
+            $updates['category_id'] = null;
+        }
+
         if (($product->category_id === null || $product->category_id === '') && $categoryId !== null) {
             $updates['category_id'] = $categoryId;
         }
