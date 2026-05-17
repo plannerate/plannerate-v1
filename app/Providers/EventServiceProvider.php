@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Events\Tenant\ProductImageProcessed;
 use App\Events\Tenant\TenantIsolationCheckEvent;
 use App\Listeners\Landlord\CreateTenantIsolationCheckNotification;
 use App\Listeners\Tenant\CreateTenantIsolationTenantNotification;
+use App\Listeners\Tenant\SaveEanReferenceOnProductImageProcessed;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
@@ -18,6 +20,9 @@ class EventServiceProvider extends ServiceProvider
         TenantIsolationCheckEvent::class => [
             CreateTenantIsolationTenantNotification::class,
             CreateTenantIsolationCheckNotification::class,
+        ],
+        ProductImageProcessed::class => [
+            SaveEanReferenceOnProductImageProcessed::class,
         ],
     ];
 }

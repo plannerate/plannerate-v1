@@ -2,6 +2,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Jobs;
 
+use App\Events\Tenant\ProductImageProcessed;
 use App\Models\Tenant;
 use Callcocam\LaravelRaptorPlannerate\Concerns\BelongsToConnection;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
@@ -59,6 +60,14 @@ class DOProcessProductImageJob implements ShouldQueue
 
             $product->url = $this->processImageFromStorage("repositorioimagens/frente/{$product->ean}.png", $product);
             $product->save();
+
+            event(new ProductImageProcessed(
+                tenantId: $this->resolveTenantId(),
+                productId: $this->productId,
+                ean: (string) ($product->ean ?? ''),
+                imagePath: is_string($product->url) ? $product->url : null,
+                database: $this->database,
+            ));
         } catch (\Exception $e) {
             Log::error('DOProcessProductImageJob: Erro ao processar', [
                 'product_id' => $this->productId,
@@ -67,6 +76,21 @@ class DOProcessProductImageJob implements ShouldQueue
             ]);
             throw $e;
         }
+    }
+
+    protected function resolveTenantId(): string
+    {
+        if ($this->tenantId !== null && $this->tenantId !== '') {
+            return $this->tenantId;
+        }
+
+        if ($this->database !== null && $this->database !== '') {
+            $id = Tenant::query()->where('database', $this->database)->value('id');
+
+            return is_string($id) ? $id : '';
+        }
+
+        return '';
     }
 
     /**

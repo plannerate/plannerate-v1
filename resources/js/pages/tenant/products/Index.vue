@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
-import { ChevronDown, SlidersHorizontal, X } from 'lucide-vue-next';
+import { Head, router } from '@inertiajs/vue3';
+import { ChevronDown, ImageDown, SlidersHorizontal, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import ListPage from '@/components/ListPage.vue';
@@ -112,6 +112,30 @@ const formatSyncDate = (product: ProductRow): string | null => {
     return product.sync_at ? `${t('app.tenant.products.form.labels.sync_date')} ${new Date(product.sync_at).toLocaleDateString('pt-BR')}` : null;
 };
 
+const isUpdatingImages = ref(false);
+
+const pageEans = computed(() =>
+    productsRows.value
+        .map((p) => p.ean)
+        .filter((ean): ean is string => ean !== null && ean.trim() !== ''),
+);
+
+function updateImages(): void {
+    if (pageEans.value.length === 0 || isUpdatingImages.value) {
+        return;
+    }
+
+    isUpdatingImages.value = true;
+    router.visit(
+        ProductController.updateImages.url(props.subdomain),
+        {
+            method: 'post',
+            data: { eans: pageEans.value },
+            onFinish: () => { isUpdatingImages.value = false; },
+        },
+    );
+}
+
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.products.title'),
     title: t('app.tenant.products.title'),
@@ -132,6 +156,15 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
+                <button
+                    type="button"
+                    :disabled="isUpdatingImages || pageEans.length === 0 || productsLoading"
+                    class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                    @click="updateImages"
+                >
+                    <ImageDown class="size-3.5 shrink-0" :class="{ 'animate-pulse': isUpdatingImages }" />
+                    {{ isUpdatingImages ? 'Enviando...' : 'Atualizar imagens' }}
+                </button>
                 <NewActionButton v-if="can.create" :href="ProductController.create.url(props.subdomain)">
                     {{ t('app.tenant.products.actions.new') }}
                 </NewActionButton>

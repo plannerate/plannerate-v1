@@ -8,6 +8,7 @@ import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
 import LandlordIntegrationDiagnosticsListener from '@/components/broadcast/LandlordIntegrationDiagnosticsListener.vue';
 import TenantCategoriesImportListener from '@/components/broadcast/TenantCategoriesImportListener.vue';
 import TenantIntegrationProcessListener from '@/components/broadcast/TenantIntegrationProcessListener.vue';
+import TenantProductImageListener from '@/components/broadcast/TenantProductImageListener.vue';
 import { Toaster } from '@/components/ui/sonner';import type { BreadcrumbItem, LayoutPageHeader } from '@/types';
 
 type Props = {
@@ -39,6 +40,7 @@ const hasEchoPrivateTenantChannel = computed(() => {
     <AppShell variant="sidebar">
         <TenantCategoriesImportListener v-if="hasEchoPrivateChannelUser" />
         <TenantIntegrationProcessListener v-if="hasEchoPrivateTenantChannel" />
+        <TenantProductImageListener v-if="hasEchoPrivateTenantChannel" />
         <LandlordIntegrationDiagnosticsListener v-if="!hasEchoPrivateTenantChannel" />
         <AppSidebar />
         <AppContent variant="sidebar" class="overflow-x-hidden">

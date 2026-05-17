@@ -234,6 +234,8 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->names('products');
         Route::post('products/sync-single', [ProductController::class, 'syncSingle'])
             ->name('products.sync-single');
+        Route::post('products/update-images', [ProductController::class, 'updateImages'])
+            ->name('products.update-images');
         Route::get('system-logs', [SystemLogController::class, 'index'])
             ->name('system-logs.index');
         Route::delete('system-logs', [SystemLogController::class, 'clear'])
