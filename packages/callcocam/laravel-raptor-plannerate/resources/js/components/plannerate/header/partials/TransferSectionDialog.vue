@@ -977,15 +977,15 @@ function formatTime(timestamp: number): string {
     if (seconds < 10) {
         return t('plannerate.sidebar.transfer_section.time.now');
     } else if (seconds < 60) {
-        return t('plannerate.sidebar.transfer_section.time.seconds_ago', { count: seconds });
+        return t('plannerate.sidebar.transfer_section.time.seconds_ago', { count: seconds.toString() });
     } else if (minutes < 60) {
-        return t('plannerate.sidebar.transfer_section.time.minutes_ago', { count: minutes });
+        return t('plannerate.sidebar.transfer_section.time.minutes_ago', { count: minutes.toString() });
     } else if (hours < 24) {
-        return t('plannerate.sidebar.transfer_section.time.hours_ago', { count: hours });
+        return t('plannerate.sidebar.transfer_section.time.hours_ago', { count: hours.toString() });
     } else if (days === 1) {
         return t('plannerate.sidebar.transfer_section.time.yesterday');
     } else if (days < 7) {
-        return t('plannerate.sidebar.transfer_section.time.days_ago', { count: days });
+        return t('plannerate.sidebar.transfer_section.time.days_ago', { count: days.toString() });
     } else {
         return date.toLocaleString('pt-BR', {
             day: '2-digit',

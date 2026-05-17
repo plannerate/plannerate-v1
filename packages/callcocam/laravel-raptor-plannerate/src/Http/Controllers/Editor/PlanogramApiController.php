@@ -45,7 +45,7 @@ class PlanogramApiController extends Controller
     /**
      * Lista todas as gôndolas de um planograma
      */
-    public function gondolas(Request $request, string $planogramId): JsonResponse
+    public function gondolas(Request $request, string $subdomain, string $planogramId): JsonResponse
     {
         $tenantId = Tenant::current()?->getKey();
 
