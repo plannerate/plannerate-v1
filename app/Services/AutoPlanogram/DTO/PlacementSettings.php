@@ -60,6 +60,12 @@ final readonly class PlacementSettings
 
         /** Meta de ocupação da gôndola para escala de facing */
         public float $targetOccupancyRate = 0.90,
+
+        /** Top % de score que recebe bloco vertical (0.20 = top 20%) */
+        public float $verticalBlockThreshold = 0.20,
+
+        /** Mínimo de prateleiras para aplicar bloco vertical */
+        public int $verticalBlockMinShelves = 2,
     ) {}
 
     public function withExtras(?string $tenantId, ?ScoringWeightsValue $weights): self
@@ -81,6 +87,8 @@ final readonly class PlacementSettings
             blockHierarchyLevel: $this->blockHierarchyLevel,
             adjacencyHierarchyLevel: $this->adjacencyHierarchyLevel,
             targetOccupancyRate: $this->targetOccupancyRate,
+            verticalBlockThreshold: $weights?->verticalBlockThreshold ?? $this->verticalBlockThreshold,
+            verticalBlockMinShelves: $weights?->verticalBlockMinShelves ?? $this->verticalBlockMinShelves,
         );
     }
 
@@ -138,6 +146,8 @@ final readonly class PlacementSettings
             'block_hierarchy_level' => $this->resolvedBlockHierarchyLevel(),
             'adjacency_hierarchy_level' => $this->resolvedAdjacencyHierarchyLevel(),
             'target_occupancy_rate' => $this->targetOccupancyRate,
+            'vertical_block_threshold' => $this->verticalBlockThreshold,
+            'vertical_block_min_shelves' => $this->verticalBlockMinShelves,
         ];
     }
 

@@ -7,7 +7,7 @@ use Illuminate\Support\Collection;
 /**
  * Segmento posicionado em uma prateleira, pronto para persistência.
  *
- * @phpstan-type SegmentArray array{section_id: string, shelf_id: string, ordering: int, position: int, width: int, distributed_width: int, layers_count: int}
+ * @phpstan-type SegmentArray array{section_id: string, shelf_id: string, ordering: int, position: int, width: int, distributed_width: int, layers_count: int, is_vertical_block: bool}
  */
 final readonly class PlacedSegment
 {
@@ -24,6 +24,7 @@ final readonly class PlacedSegment
         public int $distributedWidth,
         /** @var Collection<int, PlacedLayer> */
         public Collection $layers,
+        public bool $isVerticalBlock = false,
     ) {}
 
     /**
@@ -39,6 +40,7 @@ final readonly class PlacedSegment
             'width' => $this->width,
             'distributed_width' => $this->distributedWidth,
             'layers_count' => $this->layers->count(),
+            'is_vertical_block' => $this->isVerticalBlock,
         ];
     }
 }

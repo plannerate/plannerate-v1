@@ -14,6 +14,8 @@ final readonly class ScoringWeightsValue
         public int $salesWindowMonths,
         public int $blockHierarchyLevel = 6,
         public int $adjacencyHierarchyLevel = 4,
+        public float $verticalBlockThreshold = 0.20,
+        public int $verticalBlockMinShelves = 2,
     ) {}
 
     public static function fromModel(ScoringWeights $model): self
@@ -26,11 +28,13 @@ final readonly class ScoringWeightsValue
             salesWindowMonths: $model->sales_window_months,
             blockHierarchyLevel: (int) ($model->block_hierarchy_level ?? 6),
             adjacencyHierarchyLevel: (int) ($model->adjacency_hierarchy_level ?? 4),
+            verticalBlockThreshold: (float) ($model->vertical_block_threshold ?? 0.20),
+            verticalBlockMinShelves: (int) ($model->vertical_block_min_shelves ?? 2),
         );
     }
 
     public static function default(): self
     {
-        return new self(0.40, 0.30, 0.20, 0.10, 4, 6, 4);
+        return new self(0.40, 0.30, 0.20, 0.10, 4, 6, 4, 0.20, 2);
     }
 }

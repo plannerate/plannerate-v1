@@ -46,15 +46,16 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
     /**
      * @param  Collection<int, OrderedBlock>  $orderedBlocks
      * @param  Collection<int, Section>  $sections
+     * @param  array<string, float>  $reservedWidthPerShelf
      */
-    public function place(Collection $orderedBlocks, Collection $sections, PlacementSettings $settings): PlacementResult
+    public function place(Collection $orderedBlocks, Collection $sections, PlacementSettings $settings, array $reservedWidthPerShelf = []): PlacementResult
     {
         $strategy = $settings->tenantId ? new ShelfLevelStrategy($settings->tenantId) : null;
         $totalInput = $orderedBlocks->sum(fn (OrderedBlock $orderedBlock): int => $orderedBlock->block->children->count());
         $brokenBlocks = 0;
         $rejected = collect();
 
-        $sectionLayouts = $this->buildSectionShelfStructure($sections);
+        $sectionLayouts = $this->buildSectionShelfStructure($sections, $reservedWidthPerShelf);
 
         $filtered = $this->prefilterByHeight($orderedBlocks, $sections);
         $rankedBlocks = $filtered['placeable']
@@ -98,14 +99,17 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
             $brokenBlocks += $split['sections_used'] > 1 ? 1 : 0;
         }
 
-        $placedSegments = $this->convertToPlacedSegments($this->flattenShelves($sectionLayouts), $sections);
+        $placedSegments = $this->convertToPlacedSegments($this->flattenShelves($sectionLayouts), $sections, $reservedWidthPerShelf);
         $this->logPlacementSummary($totalInput, $placedSegments, $rejected, $brokenBlocks);
 
         return new PlacementResult($placedSegments, $rejected);
     }
 
-    /** @param  Collection<int, Section>  $sections */
-    private function buildSectionShelfStructure(Collection $sections): array
+    /**
+     * @param  Collection<int, Section>  $sections
+     * @param  array<string, float>  $reservedWidthPerShelf
+     */
+    private function buildSectionShelfStructure(Collection $sections, array $reservedWidthPerShelf = []): array
     {
         $sectionLayouts = [];
         $index = 0;
@@ -119,12 +123,13 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
 
             foreach ($sectionShelves as $shelfIndex => $shelf) {
                 $shelfPos = (float) ($shelf->shelf_position ?? 0);
+                $reserved = $reservedWidthPerShelf[$shelf->id] ?? 0.0;
 
                 $shelves[] = new ShelfLayoutDTO(
                     id: $shelf->id,
                     shelfIndex: $index,
                     height: $clearances[$shelf->id] ?? 0.0,
-                    availableWidth: $this->getShelfAvailableWidth($section, $shelf),
+                    availableWidth: max(0.0, $this->getShelfAvailableWidth($section, $shelf) - $reserved),
                     depth: (float) ($shelf->shelf_depth ?? 40),
                     shelfPosition: (int) $shelfPos,
                 );
@@ -470,9 +475,10 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
      *
      * @param  ShelfLayoutDTO[]  $shelves
      * @param  Collection<int, Section>  $sections
+     * @param  array<string, float>  $reservedWidthPerShelf  Starting X offset per shelf (from vertical placer)
      * @return Collection<int, PlacedSegment>
      */
-    private function convertToPlacedSegments(array $shelves, Collection $sections): Collection
+    private function convertToPlacedSegments(array $shelves, Collection $sections, array $reservedWidthPerShelf = []): Collection
     {
         // Monta mapa shelfId → sectionId para look-up rápido
         $shelfToSection = [];
@@ -491,7 +497,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
 
             $sectionId = $shelfToSection[$shelfLayout->id] ?? '';
             $ordering = 0;
-            $positionX = 0;
+            $positionX = (int) round($reservedWidthPerShelf[$shelfLayout->id] ?? 0.0);
 
             foreach ($shelfLayout->products as $rankedProduct) {
                 $productWidth = (int) round($this->widthResolver->resolve($rankedProduct->product) * $rankedProduct->facings);

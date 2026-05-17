@@ -20,6 +20,7 @@ interface PlacementEngineInterface
      *
      * @param  Collection<int, OrderedBlock>  $orderedBlocks
      * @param  Collection<int, Section>  $sections
+     * @param  array<string, float>  $reservedWidthPerShelf  Largura já reservada por shelf (ex.: pelo VerticalBlockPlacer)
      */
-    public function place(Collection $orderedBlocks, Collection $sections, PlacementSettings $settings): PlacementResult;
+    public function place(Collection $orderedBlocks, Collection $sections, PlacementSettings $settings, array $reservedWidthPerShelf = []): PlacementResult;
 }

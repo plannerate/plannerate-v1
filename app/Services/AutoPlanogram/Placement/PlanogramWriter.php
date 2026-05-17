@@ -62,6 +62,7 @@ final class PlanogramWriter implements PlanogramWriterInterface
             $segment->position = $placed->position;
             $segment->width = $placed->width;
             $segment->distributed_width = $placed->distributedWidth;
+            $segment->is_vertical_block = $placed->isVerticalBlock;
             $segment->save();
 
             foreach ($placed->layers as $layer) {

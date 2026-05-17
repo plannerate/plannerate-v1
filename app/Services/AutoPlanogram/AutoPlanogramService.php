@@ -7,11 +7,14 @@ use App\Services\AutoPlanogram\Adjacency\AdjacencyResolverInterface;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\DTO\PlanogramOutput;
+use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use App\Services\AutoPlanogram\Grouping\BlockGrouperInterface;
 use App\Services\AutoPlanogram\Placement\PlacementEngineInterface;
 use App\Services\AutoPlanogram\Placement\PlanogramWriterInterface;
+use App\Services\AutoPlanogram\Placement\VerticalBlockPlacer;
 use App\Services\AutoPlanogram\Scoring\ProductScorerInterface;
 use App\Services\AutoPlanogram\Validation\PlanogramValidator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -20,11 +23,13 @@ use Illuminate\Support\Facades\Log;
  *
  * Pipeline:
  * 1. Score — pontua produtos por importância
- * 2. Group — agrupa em blocos coesos
- * 3. Adjacency — ordena blocos respeitando regras de adjacência
- * 4. Placement — distribui blocos pelas prateleiras
- * 5. Validation — verifica integridade do resultado
- * 6. Write — persiste no banco em transação
+ * 2. FacingCalculator — calcula facings ideais
+ * 3. VerticalBlockPlacer — reserva colunas verticais para top N% de score
+ * 4. Group — agrupa o restante em blocos coesos
+ * 5. Adjacency — ordena blocos respeitando regras de adjacência
+ * 6. GreedyShelfPlacer — distribui blocos pelo espaço restante
+ * 7. Validation — verifica integridade do resultado
+ * 8. Write — persiste no banco em transação
  */
 final class AutoPlanogramService
 {
@@ -34,6 +39,7 @@ final class AutoPlanogramService
         private readonly BlockGrouperInterface $grouper,
         private readonly AdjacencyResolverInterface $adjacency,
         private readonly PlacementEngineInterface $placement,
+        private readonly VerticalBlockPlacer $verticalPlacer,
         private readonly PlanogramValidator $validator,
         private readonly PlanogramWriterInterface $writer,
     ) {}
@@ -55,28 +61,141 @@ final class AutoPlanogramService
 
         $withFacings = $this->facingCalculator->calculateIdealFacings($scored, $input->settings);
 
+        // Marcar top N% por score como candidatos a bloco vertical
+        $verticalCandidates = $this->identifyVerticalBlockCandidates(
+            $withFacings,
+            $input->settings->verticalBlockThreshold,
+        );
+        $withFacings = $this->markVerticalCandidates($withFacings, $verticalCandidates);
+
         $blocks = $this->grouper->group($withFacings, $input->settings);
         $ordered = $this->adjacency->resolve($blocks, $input->settings);
-        $placementResult = $this->placement->place($ordered, $input->sections, $input->settings);
-        $placed = $placementResult->placedSegments;
 
-        Log::info('AutoPlanogramService: segmentos posicionados', ['count' => $placed->count()]);
+        // Bloco vertical primeiro — reserva posições X nas shelves
+        $verticalResult = $this->verticalPlacer->place(
+            $ordered,
+            $input->sections,
+            $input->settings,
+            $input->settings->verticalBlockMinShelves,
+        );
 
-        $report = $this->validator->validate($placed, $input, $placementResult);
+        // GreedyShelfPlacer processa o restante, respeitando o espaço reservado
+        $greedyResult = $this->placement->place(
+            $verticalResult->remainingBlocks,
+            $input->sections,
+            $input->settings,
+            $verticalResult->reservedWidthPerShelf,
+        );
 
-        $this->logCapacityAnalysis($input, $placementResult);
+        // Mesclar e renumerar orderings por shelf
+        $allSegments = $verticalResult->verticalSegments->merge($greedyResult->placedSegments);
+        $allSegments = $this->renumberOrderings($allSegments);
+        $allRejected = $greedyResult->rejectedProducts;
 
-        DB::transaction(function () use ($input, $placed) {
-            $this->writer->write($input->gondolaId, $input->sections, $placed);
+        $fullResult = new PlacementResult($allSegments, $allRejected);
+
+        Log::info('AutoPlanogramService: segmentos posicionados', [
+            'verticais' => $verticalResult->verticalSegments->count(),
+            'greedy' => $greedyResult->placedSegments->count(),
+            'total' => $allSegments->count(),
+        ]);
+
+        $report = $this->validator->validate($allSegments, $input, $fullResult);
+
+        $this->logCapacityAnalysis($input, $fullResult);
+
+        DB::transaction(function () use ($input, $allSegments) {
+            $this->writer->write($input->gondolaId, $input->sections, $allSegments);
         });
 
         Log::info('AutoPlanogramService: geração concluída', [
             'gondola_id' => $input->gondolaId,
-            'segments_placed' => $placed->count(),
+            'segments_placed' => $allSegments->count(),
             'validation_passed' => $report->passed,
         ]);
 
-        return new PlanogramOutput($input->gondolaId, $placed, $placementResult->rejectedProducts, $report);
+        return new PlanogramOutput($input->gondolaId, $allSegments, $allRejected, $report);
+    }
+
+    /**
+     * Retorna um set de product_id dos top N% de score.
+     *
+     * @param  Collection<int, ScoredProduct>  $scoredProducts
+     * @return Collection<string, true> product_id => true (para lookup O(1))
+     */
+    private function identifyVerticalBlockCandidates(Collection $scoredProducts, float $threshold): Collection
+    {
+        $total = $scoredProducts->count();
+
+        if ($total === 0 || $threshold <= 0.0) {
+            return collect();
+        }
+
+        $topN = (int) ceil($total * $threshold);
+
+        $candidates = $scoredProducts
+            ->sortByDesc('score')
+            ->take($topN)
+            ->pluck('product.id')
+            ->flip();
+
+        Log::info('AutoPlanogramService: candidatos a bloco vertical', [
+            'total_produtos' => $total,
+            'threshold' => $threshold,
+            'candidatos' => $candidates->count(),
+        ]);
+
+        return $candidates;
+    }
+
+    /**
+     * @param  Collection<int, ScoredProduct>  $scoredProducts
+     * @param  Collection<string, true>  $candidates
+     * @return Collection<int, ScoredProduct>
+     */
+    private function markVerticalCandidates(Collection $scoredProducts, Collection $candidates): Collection
+    {
+        return $scoredProducts->map(function (ScoredProduct $sp) use ($candidates): ScoredProduct {
+            return new ScoredProduct(
+                productId: $sp->productId,
+                ean: $sp->ean,
+                score: $sp->score,
+                product: $sp->product,
+                metadata: array_merge($sp->metadata, [
+                    'is_vertical_block' => $candidates->has($sp->product->id),
+                ]),
+            );
+        })->values();
+    }
+
+    /**
+     * Renumera orderings dentro de cada shelf, ordenando por position.
+     *
+     * @param  Collection<int, PlacedSegment>  $segments
+     * @return Collection<int, PlacedSegment>
+     */
+    private function renumberOrderings(Collection $segments): Collection
+    {
+        return $segments
+            ->groupBy('shelfId')
+            ->flatMap(function (Collection $shelfSegments): Collection {
+                return $shelfSegments
+                    ->sortBy('position')
+                    ->values()
+                    ->map(function (DTO\PlacedSegment $seg, int $i): DTO\PlacedSegment {
+                        return new DTO\PlacedSegment(
+                            sectionId: $seg->sectionId,
+                            shelfId: $seg->shelfId,
+                            ordering: $i,
+                            position: $seg->position,
+                            width: $seg->width,
+                            distributedWidth: $seg->distributedWidth,
+                            layers: $seg->layers,
+                            isVerticalBlock: $seg->isVerticalBlock,
+                        );
+                    });
+            })
+            ->values();
     }
 
     private function logWidthQuality(PlanogramInput $input): void

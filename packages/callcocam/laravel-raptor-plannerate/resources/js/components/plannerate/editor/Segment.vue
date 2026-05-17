@@ -15,6 +15,7 @@
             'scale-105 bg-primary/10 shadow-lg ring-4 ring-primary animate-pulse':
                 isDropTarget,
             'w-full': props.fillSectionWidth,
+            'border-l-2 border-amber-400': props.segment.is_vertical_block,
         }"
         draggable="true"
         @click="handleSegmentClick"
@@ -27,6 +28,17 @@
         :data-layer-id="layer?.id"
         data-segment="true"
     >
+        <!-- Indicador visual de bloco vertical -->
+        <div
+            v-if="props.segment.is_vertical_block"
+            class="pointer-events-none absolute right-0.5 top-0.5 z-10"
+            title="Bloco vertical"
+        >
+            <svg class="size-2.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 2a1 1 0 011 1v14a1 1 0 11-2 0V3a1 1 0 011-1zM6 6a1 1 0 011 1v6a1 1 0 11-2 0V7a1 1 0 011-1zm8 0a1 1 0 011 1v6a1 1 0 11-2 0V7a1 1 0 011-1z" />
+            </svg>
+        </div>
+
         <!-- Indicador visual de performance A, B, C -->
         <AbcBadge :classification="abcClassification" />
         
