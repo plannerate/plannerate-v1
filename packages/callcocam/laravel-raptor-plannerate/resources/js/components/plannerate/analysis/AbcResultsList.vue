@@ -122,6 +122,22 @@ const formatPercent = (value: number) => {
     return `${value.toFixed(2)}%`;
 };
 
+const getRowClass = (classificacao: 'A' | 'B' | 'C') => {
+    if (classificacao === 'C') {
+        return 'bg-red-50/70 dark:bg-red-950/25';
+    }
+
+    return getClassRowClass(classificacao);
+};
+
+const getBadgeClass = (classificacao: 'A' | 'B' | 'C') => {
+    if (classificacao === 'C') {
+        return 'border-red-300 bg-red-100 text-red-700 dark:border-red-800 dark:bg-red-900/40 dark:text-red-200';
+    }
+
+    return '';
+};
+
 const displayedResults = computed(() => {
     return filteredResults.value.filter(
         (item) => !removedProductIds.value.has(item.product_id),
@@ -257,7 +273,7 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                             />
                         </div>
                     </div>
-                    <div class="flex gap-1.5">
+                    <div class="flex flex-wrap gap-1">
                         <Button
                             type="button"
                             size="sm"
@@ -265,7 +281,7 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                                 filterByClass === 'all' ? 'default' : 'outline'
                             "
                             @click="filterByClass = 'all'"
-                            class="h-8 text-xs"
+                            class="h-7 px-2.5 text-[11px]"
                         >
                             {{ t('plannerate.analysis.results.all') }} ({{ stats.total }})
                         </Button>
@@ -276,7 +292,7 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                                 filterByClass === 'A' ? 'default' : 'outline'
                             "
                             @click="filterByClass = 'A'"
-                            class="h-8 text-xs"
+                            class="h-7 px-2.5 text-[11px]"
                         >
                             A ({{ stats.classA }})
                         </Button>
@@ -287,7 +303,7 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                                 filterByClass === 'B' ? 'default' : 'outline'
                             "
                             @click="filterByClass = 'B'"
-                            class="h-8 text-xs"
+                            class="h-7 px-2.5 text-[11px]"
                         >
                             B ({{ stats.classB }})
                         </Button>
@@ -298,20 +314,20 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                                 filterByClass === 'C' ? 'default' : 'outline'
                             "
                             @click="filterByClass = 'C'"
-                            class="h-8 text-xs"
+                            class="h-7 px-2.5 text-[11px]"
                         >
                             C ({{ stats.classC }})
                         </Button>
-                        <Button 
+                        <Button
                             type="button"
                             size="sm"
                             :variant="
                                 filterByClass === 'retirarMix'
-                                    ? 'destructive'
+                                    ? 'default'
                                     : 'outline'
                             "
                             @click="filterByClass = 'retirarMix'"
-                            class="h-8 text-xs"
+                            class="h-7 px-2.5 text-[11px]"
                         >
                             {{ t('plannerate.analysis.results.remove_from_mix') }} ({{ stats.retirarMix }})
                         </Button>
@@ -405,7 +421,7 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                                     v-for="item in displayedResults"
                                     :key="item.product_id"
                                     :class="[
-                                        getClassRowClass(item.classificacao),
+                                        getRowClass(item.classificacao),
                                         selectedProductId === item.product_id
                                             ? 'bg-primary/5 ring-1 ring-primary/40 dark:bg-primary/10'
                                             : '',
@@ -462,7 +478,10 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                                                     item.classificacao,
                                                 )
                                             "
-                                            class="text-[10px] font-semibold"
+                                            :class="[
+                                                'text-[10px] font-semibold',
+                                                getBadgeClass(item.classificacao),
+                                            ]"
                                         >
                                             {{ item.classificacao }}
                                         </Badge>

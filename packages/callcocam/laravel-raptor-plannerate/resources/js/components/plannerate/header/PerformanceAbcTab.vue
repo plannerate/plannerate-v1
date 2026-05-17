@@ -161,6 +161,19 @@ interface Emits {
     (e: 'calculate', params: any): void;
 }
 
+interface AbcFormData {
+    table_type: 'sales' | 'monthly_summaries';
+    date_from: string;
+    date_to: string;
+    start_month: string;
+    end_month: string;
+    peso_qtde: number;
+    peso_valor: number;
+    peso_margem: number;
+    corte_a: number;
+    corte_b: number;
+}
+
 const props = withDefaults(defineProps<Props>(), {
     gondolaId: null,
     planogram: null,
@@ -192,6 +205,49 @@ const results = ref(props.results);
 const hasCalculated = ref(false);
 const showParametersModal = ref(false);
 
+const getStorageKey = (gondolaId: string): string => `plannerate:performance:abc:params:${gondolaId}`;
+
+const buildDefaultForm = (): AbcFormData => ({
+    table_type: 'sales',
+    date_from: props.planogram?.start_date || '',
+    date_to: props.planogram?.end_date || '',
+    start_month: props.planogram?.start_month || dateToMonth(props.planogram?.start_date),
+    end_month: props.planogram?.end_month || dateToMonth(props.planogram?.end_date),
+    peso_qtde: 0.3,
+    peso_valor: 0.3,
+    peso_margem: 0.4,
+    corte_a: 0.8,
+    corte_b: 0.85,
+});
+
+const loadStoredForm = (): Partial<AbcFormData> => {
+    if (!isBrowser || !props.gondolaId) {
+        return {};
+    }
+
+    const raw = window.localStorage.getItem(getStorageKey(props.gondolaId));
+
+    if (!raw) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(raw) as Partial<AbcFormData>;
+    } catch {
+        window.localStorage.removeItem(getStorageKey(props.gondolaId));
+
+        return {};
+    }
+};
+
+const saveStoredForm = (data: AbcFormData): void => {
+    if (!isBrowser || !props.gondolaId) {
+        return;
+    }
+
+    window.localStorage.setItem(getStorageKey(props.gondolaId), JSON.stringify(data));
+};
+
 function openParametersModal(event: MouseEvent): void {
     (event.currentTarget as HTMLElement).blur();
     showParametersModal.value = true;
@@ -201,7 +257,7 @@ function openParametersModal(event: MouseEvent): void {
 const { setClassifications } = useAbcClassification();
 
 // Função para converter data para formato de mês (YYYY-MM) - fallback caso não venha do backend
-const dateToMonth = (dateString: string | null | undefined): string => {
+function dateToMonth(dateString: string | null | undefined): string {
     if (!dateString) {
 return '';
 }
@@ -220,33 +276,45 @@ return '';
     } catch {
         return '';
     }
-};
+}
 
-const form = ref({
-    table_type: 'sales' as 'sales' | 'monthly_summaries',
-    date_from: props.planogram?.start_date || '',
-    date_to: props.planogram?.end_date || '',
-    // Usa start_month/end_month do backend se disponível (já vem no formato YYYY-MM)
-    // Caso contrário, converte de start_date/end_date
-    start_month: props.planogram?.start_month || dateToMonth(props.planogram?.start_date),
-    end_month: props.planogram?.end_month || dateToMonth(props.planogram?.end_date),
-    peso_qtde: 0.3,
-    peso_valor: 0.3,
-    peso_margem: 0.4,
-    corte_a: 0.8,
-    corte_b: 0.85,
+const form = ref<AbcFormData>({
+    ...buildDefaultForm(),
+    ...loadStoredForm(),
 });
 
 // Atualiza form quando planograma mudar
 watch(() => props.planogram, (newPlanogram: Planogram | null) => {
     if (newPlanogram) {
-        form.value.date_from = newPlanogram.start_date || '';
-        form.value.date_to = newPlanogram.end_date || '';
-        // Usa start_month/end_month do backend se disponível, senão converte da data
-        form.value.start_month = newPlanogram.start_month || dateToMonth(newPlanogram.start_date);
-        form.value.end_month = newPlanogram.end_month || dateToMonth(newPlanogram.end_date);
+        if (newPlanogram.start_date) {
+            form.value.date_from = newPlanogram.start_date;
+        }
+
+        if (newPlanogram.end_date) {
+            form.value.date_to = newPlanogram.end_date;
+        }
+
+        if (newPlanogram.start_month) {
+            form.value.start_month = newPlanogram.start_month;
+        } else if (newPlanogram.start_date) {
+            form.value.start_month = dateToMonth(newPlanogram.start_date);
+        }
+
+        if (newPlanogram.end_month) {
+            form.value.end_month = newPlanogram.end_month;
+        } else if (newPlanogram.end_date) {
+            form.value.end_month = dateToMonth(newPlanogram.end_date);
+        }
     }
 }, { deep: true });
+
+watch(() => props.gondolaId, () => {
+    const defaults = buildDefaultForm();
+    form.value = {
+        ...defaults,
+        ...loadStoredForm(),
+    };
+});
 
 const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) {
@@ -296,6 +364,7 @@ const handleParamsSubmit = (data: typeof form.value): void => {
     }
 
     form.value = { ...data };
+    saveStoredForm(form.value);
 
     loading.value = true;
     hasCalculated.value = true;

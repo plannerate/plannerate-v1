@@ -170,6 +170,20 @@ interface Emits {
     (e: 'calculate', params: any): void;
 }
 
+interface TargetStockFormData {
+    table_type: 'sales' | 'monthly_summaries';
+    date_from: string;
+    date_to: string;
+    start_month: string;
+    end_month: string;
+    nivel_servico_a: number;
+    nivel_servico_b: number;
+    nivel_servico_c: number;
+    cobertura_dias_a: number;
+    cobertura_dias_b: number;
+    cobertura_dias_c: number;
+}
+
 const props = withDefaults(defineProps<Props>(), {
     gondolaId: null,
     planogram: null,
@@ -201,16 +215,10 @@ const results = ref(props.results);
 const hasCalculated = ref(false);
 const showParametersModal = ref(false);
 
-function openParametersModal(event: MouseEvent): void {
-    (event.currentTarget as HTMLElement).blur();
-    showParametersModal.value = true;
-}
+const getStorageKey = (gondolaId: string): string => `plannerate:performance:target-stock:params:${gondolaId}`;
 
-// Composable para gerenciar dados de target stock
-const { setTargetStockDataBatch } = useTargetStockAnalysis();
-
-const form = ref({
-    table_type: 'sales' as 'sales' | 'monthly_summaries',
+const buildDefaultForm = (): TargetStockFormData => ({
+    table_type: 'sales',
     date_from: props.planogram?.start_date || '',
     date_to: props.planogram?.end_date || '',
     start_month: props.planogram?.start_month || '',
@@ -223,19 +231,79 @@ const form = ref({
     cobertura_dias_c: 7,
 });
 
+const loadStoredForm = (): Partial<TargetStockFormData> => {
+    if (!isBrowser || !props.gondolaId) {
+        return {};
+    }
+
+    const raw = window.localStorage.getItem(getStorageKey(props.gondolaId));
+
+    if (!raw) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(raw) as Partial<TargetStockFormData>;
+    } catch {
+        window.localStorage.removeItem(getStorageKey(props.gondolaId));
+
+        return {};
+    }
+};
+
+const saveStoredForm = (data: TargetStockFormData): void => {
+    if (!isBrowser || !props.gondolaId) {
+        return;
+    }
+
+    window.localStorage.setItem(getStorageKey(props.gondolaId), JSON.stringify(data));
+};
+
+function openParametersModal(event: MouseEvent): void {
+    (event.currentTarget as HTMLElement).blur();
+    showParametersModal.value = true;
+}
+
+// Composable para gerenciar dados de target stock
+const { setTargetStockDataBatch } = useTargetStockAnalysis();
+
+const form = ref<TargetStockFormData>({
+    ...buildDefaultForm(),
+    ...loadStoredForm(),
+});
+
 // Watch para atualizar form quando planogram mudar
 watch(
     () => props.planogram,
     (newPlanogram: Planogram | null) => {
         if (newPlanogram) {
-            form.value.date_from = newPlanogram.start_date || '';
-            form.value.date_to = newPlanogram.end_date || '';
-            form.value.start_month = newPlanogram.start_month || '';
-            form.value.end_month = newPlanogram.end_month || '';
+            if (newPlanogram.start_date) {
+                form.value.date_from = newPlanogram.start_date;
+            }
+
+            if (newPlanogram.end_date) {
+                form.value.date_to = newPlanogram.end_date;
+            }
+
+            if (newPlanogram.start_month) {
+                form.value.start_month = newPlanogram.start_month;
+            }
+
+            if (newPlanogram.end_month) {
+                form.value.end_month = newPlanogram.end_month;
+            }
         }
     },
     { deep: true },
 );
+
+watch(() => props.gondolaId, () => {
+    const defaults = buildDefaultForm();
+    form.value = {
+        ...defaults,
+        ...loadStoredForm(),
+    };
+});
 
 const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) {
@@ -285,6 +353,7 @@ const handleParamsSubmit = (data: typeof form.value): void => {
     }
 
     form.value = { ...data };
+    saveStoredForm(form.value);
 
     loading.value = true;
     hasCalculated.value = true;
