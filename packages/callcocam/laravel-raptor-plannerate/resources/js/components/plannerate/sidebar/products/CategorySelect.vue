@@ -55,7 +55,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import CategoryController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/CategoryController'
+import editorCategories from '@/routes/api/editor/categories'
 import { Label } from '@/components/ui/label'
 import {
     Select,
@@ -128,20 +128,14 @@ const hierarchyCache = ref<Map<string, any[]>>(new Map())
 
 const subdomain = computed(() => window.location.hostname.split('.')[0] || '')
 
-const categoryIndexRoute =
-    CategoryController.index['//{subdomain}.plannerate.localhost/api/editor/categories']
-
-const categoryChildrenRoute =
-    CategoryController.index['//{subdomain}.plannerate.localhost/api/editor/{categoryId}/categories']
-
 function getCategoriesUrl(categoryId: string | null = null): string {
-    if (categoryId && categoryChildrenRoute) {
-        return wayfinderPath(categoryChildrenRoute.url({
+    if (categoryId) {
+        return wayfinderPath(editorCategories.show.url({
             subdomain: subdomain.value,
             categoryId,
         }))
-    } 
-    return wayfinderPath(categoryIndexRoute.url(subdomain.value))
+    }
+    return wayfinderPath(editorCategories.index.url(subdomain.value))
 }
 
 async function fetchCategories(url: string): Promise<Response> { 
