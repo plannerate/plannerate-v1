@@ -2,6 +2,7 @@
 
 namespace App\Services\AutoPlanogram\Placement;
 
+use App\Enums\ShelfLevel;
 use App\Services\AutoPlanogram\DTO\OrderedBlock;
 use App\Services\AutoPlanogram\DTO\PlacedLayer;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
@@ -114,10 +115,20 @@ final class VerticalBlockPlacer
 
         foreach ($sections as $section) {
             $shelves = $section->shelves->sortBy('shelf_position')->values();
+            $numShelves = $shelves->count();
             $sectionUsableWidth = max(0.0, (float) ($section->width ?? 100.0) - (float) ($section->cremalheira_width ?? 0.0));
-            $eligibleShelves = collect();
+
+            // Eligible = EYE ou HAND com clearance suficiente e espaço horizontal
+            // Bloco vertical pertence ao meio da gôndola — não ao topo (HIGH) nem ao chão (LOW)
+            $eligibleShelves = collect(); // array{shelf: Shelf, level: ShelfLevel}[]
 
             foreach ($shelves as $i => $shelf) {
+                $level = ShelfLevel::fromShelfPosition($i, $numShelves);
+
+                if (! in_array($level, [ShelfLevel::Eye, ShelfLevel::Hand])) {
+                    continue;
+                }
+
                 $clearance = $this->clearance($shelf, $shelves, $i);
 
                 if ($productHeight > 0 && $productHeight > $clearance) {
@@ -131,7 +142,7 @@ final class VerticalBlockPlacer
                     continue;
                 }
 
-                $eligibleShelves->push($shelf);
+                $eligibleShelves->push(['shelf' => $shelf, 'level' => $level]);
             }
 
             if ($eligibleShelves->count() < $minShelves) {
@@ -144,7 +155,7 @@ final class VerticalBlockPlacer
             $segments = collect();
             $reserved = [];
 
-            foreach ($eligibleShelves as $shelf) {
+            foreach ($eligibleShelves as ['shelf' => $shelf, 'level' => $level]) {
                 $segments->push(new PlacedSegment(
                     sectionId: $section->id,
                     shelfId: $shelf->id,
@@ -159,6 +170,7 @@ final class VerticalBlockPlacer
                         height: 1,
                     )]),
                     isVerticalBlock: true,
+                    shelfLevel: $level,
                 ));
                 $reserved[$shelf->id] = $occupiedWidth;
             }

@@ -80,27 +80,61 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
             return new PlacementResult($placedSegments, $rejected);
         }
 
+        // Distribui blocos do mesmo nível entre sections (módulos) em round-robin.
+        // Evita que todos os blocos HIGH se acumulem no módulo 1.
+        /** @var array<string, int> $levelSectionPointer */
+        $levelSectionPointer = [];
+
         foreach ($productsByBlock as $blockIndex => $blockProducts) {
             $orderedBlock = $rankedBlocks[$blockIndex];
             $currentSectionIndex = 0;
             $currentShelfIndex = 0;
+            $hiddenShelves = null;
+            $preferredLevel = null;
 
             if ($strategy) {
                 $preferredLevel = $strategy->decidePreferredLevel($orderedBlock->block);
+                Log::debug('GreedyShelfPlacer: block→level', ['score' => round($orderedBlock->block->aggregateScore, 3), 'level' => $preferredLevel->value]);
+                // Esconde shelves fora do fallback — produto não transborda para nível inadequado
+                $hiddenShelves = $this->hideShelvesByLevel($sectionLayouts, $preferredLevel->fallbackOrder());
                 $this->reorderShelvesByLevel($sectionLayouts, $preferredLevel);
+                // Avança a section de início para distribuir entre módulos
+                $currentSectionIndex = $levelSectionPointer[$preferredLevel->value] ?? 0;
             }
 
             if ($this->placeWholeBlock($sectionLayouts, $blockProducts->all(), $currentSectionIndex, $currentShelfIndex)) {
+                if ($preferredLevel !== null) {
+                    $levelSectionPointer[$preferredLevel->value] = ($currentSectionIndex + 1) % count($sectionLayouts);
+                }
+
+                if ($hiddenShelves !== null) {
+                    $this->restoreHiddenShelves($sectionLayouts, $hiddenShelves);
+                }
+
                 continue;
             }
 
             $split = $this->placeBlockWithSplit($sectionLayouts, $blockProducts->all(), $currentSectionIndex, $currentShelfIndex);
             $rejected = $rejected->merge($split['rejected']);
             $brokenBlocks += $split['sections_used'] > 1 ? 1 : 0;
+
+            if ($preferredLevel !== null) {
+                $levelSectionPointer[$preferredLevel->value] = ($currentSectionIndex + 1) % count($sectionLayouts);
+            }
+
+            if ($hiddenShelves !== null) {
+                $this->restoreHiddenShelves($sectionLayouts, $hiddenShelves);
+            }
         }
 
-        $placedSegments = $this->convertToPlacedSegments($this->flattenShelves($sectionLayouts), $sections, $reservedWidthPerShelf);
+        $shelfLevelMap = [];
+        foreach ($sectionLayouts as $layout) {
+            $shelfLevelMap += $layout['shelf_levels'];
+        }
+
+        $placedSegments = $this->convertToPlacedSegments($this->flattenShelves($sectionLayouts), $sections, $reservedWidthPerShelf, $shelfLevelMap);
         $this->logPlacementSummary($totalInput, $placedSegments, $rejected, $brokenBlocks);
+        $this->logLevelDistribution($placedSegments);
 
         return new PlacementResult($placedSegments, $rejected);
     }
@@ -120,6 +154,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
             $sectionShelves = $section->shelves->sortBy('shelf_position')->values();
             $numShelves = $sectionShelves->count();
             $shelves = [];
+            $shelfLevels = []; // shelfId => ShelfLevel (computed from sorted index)
 
             foreach ($sectionShelves as $shelfIndex => $shelf) {
                 $shelfPos = (float) ($shelf->shelf_position ?? 0);
@@ -133,6 +168,9 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
                     depth: (float) ($shelf->shelf_depth ?? 40),
                     shelfPosition: (int) $shelfPos,
                 );
+
+                // Level é derivado do índice ordenado (0=topo), não da posição física
+                $shelfLevels[$shelf->id] = ShelfLevel::fromShelfPosition($shelfIndex, $numShelves);
                 $index++;
             }
 
@@ -140,6 +178,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
                 'section_id' => $section->id,
                 'shelves' => $shelves,
                 'num_shelves' => $numShelves,
+                'shelf_levels' => $shelfLevels,
             ];
         }
 
@@ -224,25 +263,87 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
     }
 
     /**
-     * Reordena as shelves de cada section para priorizar o nível preferido,
-     * mantendo o comportamento de fallback para shelves disponíveis.
+     * Reordena as shelves visíveis de cada section pela ordem de fallback do nível preferido.
+     * Shelves fora do fallbackOrder ficam no final (rank PHP_INT_MAX).
      *
-     * @param  array<int, array{section_id: string, shelves: array<int, ShelfLayoutDTO>, num_shelves: int}>  $sectionLayouts
+     * @param  array<int, array{section_id: string, shelves: array<int, ShelfLayoutDTO>, num_shelves: int, shelf_levels: array<string, ShelfLevel>}>  $sectionLayouts
      */
     private function reorderShelvesByLevel(array &$sectionLayouts, ShelfLevel $preferred): void
     {
-        foreach ($sectionLayouts as &$layout) {
-            $numShelves = $layout['num_shelves'];
-            usort($layout['shelves'], function (ShelfLayoutDTO $a, ShelfLayoutDTO $b) use ($preferred, $numShelves): int {
-                $levelA = ShelfLevel::fromShelfPosition($a->shelfPosition, $numShelves);
-                $levelB = ShelfLevel::fromShelfPosition($b->shelfPosition, $numShelves);
-                $matchA = $levelA === $preferred ? 0 : 1;
-                $matchB = $levelB === $preferred ? 0 : 1;
+        $fallbackOrder = $preferred->fallbackOrder();
 
-                return $matchA <=> $matchB;
+        foreach ($sectionLayouts as &$layout) {
+            $shelfLevels = $layout['shelf_levels'];
+
+            usort($layout['shelves'], function (ShelfLayoutDTO $a, ShelfLayoutDTO $b) use ($fallbackOrder, $shelfLevels): int {
+                $levelA = $shelfLevels[$a->id] ?? ShelfLevel::Low;
+                $levelB = $shelfLevels[$b->id] ?? ShelfLevel::Low;
+                $rankA = array_search($levelA, $fallbackOrder, true);
+                $rankB = array_search($levelB, $fallbackOrder, true);
+
+                if ($rankA === false) {
+                    $rankA = PHP_INT_MAX;
+                }
+
+                if ($rankB === false) {
+                    $rankB = PHP_INT_MAX;
+                }
+
+                return $rankA <=> $rankB;
             });
         }
         unset($layout);
+    }
+
+    /**
+     * Remove temporariamente shelves cujo nível não está em $acceptableLevels.
+     * Retorna as shelves removidas (por índice de section) para restauração posterior.
+     *
+     * @param  array<int, ShelfLevel>  $acceptableLevels
+     * @return array<int, array<int, ShelfLayoutDTO>>
+     */
+    private function hideShelvesByLevel(array &$sectionLayouts, array $acceptableLevels): array
+    {
+        $hidden = [];
+
+        foreach ($sectionLayouts as $i => &$layout) {
+            $shelfLevels = $layout['shelf_levels'];
+            $visible = [];
+            $hiddenHere = [];
+
+            foreach ($layout['shelves'] as $shelf) {
+                $level = $shelfLevels[$shelf->id] ?? ShelfLevel::Low;
+
+                if (in_array($level, $acceptableLevels, true)) {
+                    $visible[] = $shelf;
+                } else {
+                    $hiddenHere[] = $shelf;
+                }
+            }
+
+            $layout['shelves'] = $visible;
+            $hidden[$i] = $hiddenHere;
+        }
+        unset($layout);
+
+        return $hidden;
+    }
+
+    /**
+     * Restaura shelves anteriormente escondidas por hideShelvesByLevel.
+     * As shelves são reinseridas em ordem de shelfPosition (topo primeiro).
+     *
+     * @param  array<int, array<int, ShelfLayoutDTO>>  $hiddenShelves
+     */
+    private function restoreHiddenShelves(array &$sectionLayouts, array $hiddenShelves): void
+    {
+        foreach ($hiddenShelves as $i => $shelves) {
+            foreach ($shelves as $shelf) {
+                $sectionLayouts[$i]['shelves'][] = $shelf;
+            }
+
+            usort($sectionLayouts[$i]['shelves'], fn (ShelfLayoutDTO $a, ShelfLayoutDTO $b): int => $a->shelfPosition <=> $b->shelfPosition);
+        }
     }
 
     private function toRankedProductDto(ScoredProduct $sp): RankedProductDTO
@@ -476,9 +577,10 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
      * @param  ShelfLayoutDTO[]  $shelves
      * @param  Collection<int, Section>  $sections
      * @param  array<string, float>  $reservedWidthPerShelf  Starting X offset per shelf (from vertical placer)
+     * @param  array<string, ShelfLevel>  $shelfLevelMap  shelfId => ShelfLevel for logging
      * @return Collection<int, PlacedSegment>
      */
-    private function convertToPlacedSegments(array $shelves, Collection $sections, array $reservedWidthPerShelf = []): Collection
+    private function convertToPlacedSegments(array $shelves, Collection $sections, array $reservedWidthPerShelf = [], array $shelfLevelMap = []): Collection
     {
         // Monta mapa shelfId → sectionId para look-up rápido
         $shelfToSection = [];
@@ -498,6 +600,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
             $sectionId = $shelfToSection[$shelfLayout->id] ?? '';
             $ordering = 0;
             $positionX = (int) round($reservedWidthPerShelf[$shelfLayout->id] ?? 0.0);
+            $shelfLevel = $shelfLevelMap[$shelfLayout->id] ?? null;
 
             foreach ($shelfLayout->products as $rankedProduct) {
                 $productWidth = (int) round($this->widthResolver->resolve($rankedProduct->product) * $rankedProduct->facings);
@@ -506,7 +609,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
                     productId: $rankedProduct->product->id,
                     ean: (string) ($rankedProduct->product->ean ?? $rankedProduct->product->codigo_erp ?? ''),
                     quantity: $rankedProduct->facings,
-                    height: 1, // empilhamento padrão nesta fase
+                    height: 1,
                 );
 
                 $placedSegments->push(new PlacedSegment(
@@ -517,6 +620,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
                     width: $productWidth,
                     distributedWidth: $productWidth,
                     layers: collect([$layer]),
+                    shelfLevel: $shelfLevel,
                 ));
 
                 $ordering++;
@@ -536,6 +640,17 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
             'rejeitados_espaco' => $rejected->where('reason', PlacementFailureReason::NoHorizontalSpace)->count(),
             'blocos_quebrados' => $brokenBlocks,
             'taxa_ocupacao' => $totalInput > 0 ? round($placedSegments->count() / $totalInput, 3) : 0,
+        ]);
+    }
+
+    /** @param  Collection<int, PlacedSegment>  $placedSegments */
+    private function logLevelDistribution(Collection $placedSegments): void
+    {
+        Log::info('GreedyShelfPlacer: distribuição por nível', [
+            'eye' => $placedSegments->filter(fn (PlacedSegment $s) => $s->shelfLevel === ShelfLevel::Eye)->count(),
+            'hand' => $placedSegments->filter(fn (PlacedSegment $s) => $s->shelfLevel === ShelfLevel::Hand)->count(),
+            'low' => $placedSegments->filter(fn (PlacedSegment $s) => $s->shelfLevel === ShelfLevel::Low)->count(),
+            'high' => $placedSegments->filter(fn (PlacedSegment $s) => $s->shelfLevel === ShelfLevel::High)->count(),
         ]);
     }
 }

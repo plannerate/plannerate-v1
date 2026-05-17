@@ -423,11 +423,6 @@ class AbcAnalysisService
             ->whereIn('sales.codigo_erp', $codigosErp)
             ->groupBy('products.id', 'products.category_id');
 
-        Log::info('ABC Analysis - getSalesQueryByCodigoErp SQL', [
-            'sql' => $query->toSql(),
-            'bindings' => $query->getBindings(),
-        ]);
-
         // Aplica filtros adicionais
 
         if (isset($filters['store_id'])) {
@@ -466,7 +461,7 @@ class AbcAnalysisService
                 DB::raw('SUM(monthly_sales_summaries.margem_contribuicao) as margem'),
             ])
             ->whereIn('monthly_sales_summaries.codigo_erp', $codigosErp)
-            ->groupBy('products.id', 'products.category_id'); 
+            ->groupBy('products.id', 'products.category_id');
 
         // Aplica filtros adicionais
 

@@ -51,6 +51,23 @@ enum ShelfLevel: string
      * - shelf_position 3 → HAND
      * - shelf_position 4 → LOW (chão)
      */
+    /**
+     * Ordem de preferência de fallback para cada nível ABC.
+     * Primeiro = ideal, último = último recurso.
+     * Produto NUNCA vai para nível fora desta lista.
+     *
+     * @return array<int, self>
+     */
+    public function fallbackOrder(): array
+    {
+        return match ($this) {
+            self::Eye => [self::Eye, self::Hand],
+            self::Hand => [self::Hand, self::Eye, self::Low],
+            self::Low => [self::Low, self::Hand],
+            self::High => [self::High, self::Eye],
+        };
+    }
+
     public static function fromShelfPosition(int $shelfPosition, int $numShelves): self
     {
         if ($numShelves <= 1) {

@@ -54,78 +54,53 @@ final class ShelfLevelStrategy
      * Decide the preferred shelf level for a product block.
      *
      * Priority:
-     * 1. Explicit preference for adjacency category (level 4)
-     * 2. Heuristic based on block characteristics
+     * 1. Explicit preference for adjacency category
+     * 2. ABC classification based on aggregateScore
      */
     public function decidePreferredLevel(ProductBlock $block): ShelfLevel
     {
-        // 1. Check explicit preference for adjacency category
         if ($block->adjacencyCategoryId && isset($this->preferences[$block->adjacencyCategoryId])) {
             return $this->preferences[$block->adjacencyCategoryId];
         }
 
-        // 2. Check explicit default tenant preference
-        if (empty($block->adjacencyCategoryId)) {
-            return $this->tenantDefault;
-        }
-
-        // 3. Apply heuristic
-        return $this->heuristicLevel($block);
+        return $this->levelFromAbcClass($block);
     }
 
     /**
-     * Apply heuristic to determine shelf level based on product characteristics.
+     * Deriva o nível preferido a partir da classificação ABC do bloco.
      *
-     * Scoring logic:
-     * - Strategic products → HIGH (institutional visibility)
-     * - High margin → EYE (premium positioning)
-     * - High sales velocity → HAND (accessibility)
-     * - Otherwise → LOW (volume/economy)
+     * Thresholds baseados no aggregateScore normalizado 0-1.
+     * Sem produtos estratégicos o score máximo observado é ~0.58 (max teórico 0.80),
+     * então os limiares são calibrados para o range real dos dados:
+     * - A+ (≥0.50) → HIGH (top tier, prateleira de destaque)
+     * - A  (≥0.40) → EYE (campeões de margem/venda)
+     * - B  (≥0.35) → HAND (bom giro)
+     * - C  (<0.35) → LOW (volume, econômicos)
+     * - Estratégico → HIGH (independente de score)
      */
-    private function heuristicLevel(ProductBlock $block): ShelfLevel
+    private function levelFromAbcClass(ProductBlock $block): ShelfLevel
     {
-        if ($block->children->isEmpty()) {
-            return $this->tenantDefault;
-        }
+        $hasStrategic = $block->children->some(
+            fn ($sp) => ((float) ($sp->metadata['strategic'] ?? 0)) >= 1.0
+        );
 
-        $avgMargin = $block->children->avg(function ($sp) {
-            return (float) ($sp->metadata['margem_norm'] ?? 0);
-        });
-
-        $avgGiro = $block->children->avg(function ($sp) {
-            return (float) ($sp->metadata['giro_norm'] ?? 0);
-        });
-
-        $avgStrategic = $block->children->avg(function ($sp) {
-            return (float) ($sp->metadata['strategic'] ?? 0);
-        });
-
-        // Strategic products go to HIGH (institutional visibility)
-        if ($avgStrategic >= 0.5) {
+        if ($hasStrategic) {
             return ShelfLevel::High;
         }
 
-        // High margin → EYE (premium/profitable)
-        if ($avgMargin >= 0.7) {
-            return ShelfLevel::Eye;
-        }
-
-        // High sales velocity → HAND (accessibility)
-        if ($avgGiro >= 0.7) {
-            return ShelfLevel::Hand;
-        }
-
-        // Default: LOW (volume/economy)
-        return ShelfLevel::Low;
+        return match (true) {
+            $block->aggregateScore >= 0.50 => ShelfLevel::High,
+            $block->aggregateScore >= 0.40 => ShelfLevel::Eye,
+            $block->aggregateScore >= 0.35 => ShelfLevel::Hand,
+            default => ShelfLevel::Low,
+        };
     }
 
     /**
-     * Pick the best shelf from available options considering preferred level.
+     * Pick the best shelf from available options using hierarchical fallback.
      *
-     * Selection strategy:
-     * 1. Try to match exact shelf level
-     * 2. Fall back to closest priority score
-     * 3. Return null if no shelves available
+     * Percorre a ordem de fallback do nível preferido — produto NUNCA vai para
+     * um nível fora desta lista (sem fallback para nível inadequado).
      */
     public function pickShelf(
         ShelfLevel $preferred,
@@ -136,7 +111,6 @@ final class ShelfLevelStrategy
             return null;
         }
 
-        // Annotate each shelf with its ShelfLevel
         $annotated = $availableShelves->map(function (Shelf $shelf) use ($numShelvesTotal) {
             return [
                 'shelf' => $shelf,
@@ -147,22 +121,14 @@ final class ShelfLevelStrategy
             ];
         });
 
-        // 1st attempt: exact match
-        $exact = $annotated->firstWhere('level', $preferred);
-        if ($exact) {
-            return $exact['shelf'];
+        foreach ($preferred->fallbackOrder() as $targetLevel) {
+            $match = $annotated->firstWhere('level', $targetLevel);
+            if ($match) {
+                return $match['shelf'];
+            }
         }
 
-        // Fallback: sort by priority score proximity
-        $sorted = $annotated->sortBy(function ($annotation) use ($preferred) {
-            return abs(
-                $annotation['level']->priorityScore() - $preferred->priorityScore()
-            );
-        });
-
-        $first = $sorted->first();
-
-        return $first ? $first['shelf'] : null;
+        return null;
     }
 
     /**
