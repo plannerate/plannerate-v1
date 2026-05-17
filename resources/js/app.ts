@@ -1,52 +1,16 @@
 import { createInertiaApp } from '@inertiajs/vue3';
-import { configureEcho } from '@laravel/echo-vue';
-import Pusher from 'pusher-js';
 import { initializeTheme } from '@/composables/useAppearance';
+import { initializeEcho } from '@/echo';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
-declare global {
-    interface Window {
-        Pusher: typeof Pusher;
-        __plannerateEchoConfigured?: boolean;
-    }
-}
-
 function metaContent(name: string): string | null {
-    if (typeof document === 'undefined') {
-return null;
-}
-
+    if (typeof document === 'undefined') return null;
     return document.querySelector(`meta[name="${name}"]`)?.getAttribute('content') ?? null;
 }
 
-if (typeof window !== 'undefined') {
-    window.Pusher = Pusher;
-    window.__plannerateEchoConfigured = false;
-
-    const reverbAppKey = (metaContent('plannerate-reverb-key') ?? import.meta.env.VITE_REVERB_APP_KEY ?? '') as string;
-    const reverbHost = (metaContent('plannerate-reverb-host') ?? import.meta.env.VITE_REVERB_HOST ?? window.location.hostname) as string;
-    const reverbPort = Number(metaContent('plannerate-reverb-port') ?? import.meta.env.VITE_REVERB_PORT ?? 8080);
-    const reverbScheme = (metaContent('plannerate-reverb-scheme') ?? import.meta.env.VITE_REVERB_SCHEME ?? window.location.protocol.replace(':', '')) as string;
-
-    if (reverbAppKey.trim() !== '') {
-        const forceTLS = reverbScheme === 'https';
-
-        configureEcho({
-            broadcaster: 'reverb',
-            key: reverbAppKey,
-            wsHost: reverbHost,
-            wsPort: reverbPort,
-            wssPort: reverbPort,
-            forceTLS,
-            enabledTransports: [forceTLS ? 'wss' : 'ws'],
-        });
-        window.__plannerateEchoConfigured = true;
-    } else {
-        console.warn('Echo/Reverb disabled: no runtime or Vite Reverb app key was provided.');
-    }
-}
+initializeEcho();
 
 const appName =
     metaContent('plannerate-tenant-name')?.trim() ||
