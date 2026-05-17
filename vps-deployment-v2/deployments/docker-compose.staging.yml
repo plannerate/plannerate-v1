@@ -107,10 +107,10 @@ services:
     env_file:
       - ./.env
     command: >
-      sh -lc 'exec redis-server
+      sh -c 'exec redis-server
       --appendonly yes
       $${REDIS_PASSWORD:+--requirepass "$${REDIS_PASSWORD}"}
-      --maxmemory 1gb
+      --maxmemory 512mb
       --maxmemory-policy allkeys-lru'
     volumes:
       - stg_redis_data:/data
@@ -120,8 +120,8 @@ services:
       test: ["CMD-SHELL", "redis-cli $${REDIS_PASSWORD:+-a \"$${REDIS_PASSWORD}\"} ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 10s
+      retries: 10
+      start_period: 20s
 
 networks:
   stg-network:
