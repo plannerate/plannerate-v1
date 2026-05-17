@@ -44,15 +44,16 @@ interface Props {
 
 const props = defineProps<Props>();
 const { t } = useT();
-const { getImage, listenForProductImages } = useProductImageStore();
+const { getImage, listenForProductImages, listenForBatchComplete } = useProductImageStore();
 
 const product = computed<Product | undefined>(() => props.layer?.product);
 
 const page = usePage();
 const tenantId = (page.props.tenant as { id?: string } | null)?.id ?? null;
-if (tenantId) {
-    listenForProductImages(tenantId);
-}
+const userId = (page.props.auth as { user?: { id: string } } | null)?.user?.id ?? null;
+
+if (tenantId) listenForProductImages(tenantId);
+if (userId) listenForBatchComplete(userId);
 
 const displayImageUrl = computed<string | null>(() => {
     const fromStore = getImage(product.value?.ean, product.value?.id);

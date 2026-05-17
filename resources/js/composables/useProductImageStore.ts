@@ -1,9 +1,14 @@
 import { effectScope, reactive, watchEffect } from 'vue';
+import { router } from '@inertiajs/vue3';
 import { echo, echoIsConfigured } from '@laravel/echo-vue';
 
 const _store = reactive<Record<string, string>>({});
-let _listenerSetup = false;
-let _isListening = false;
+
+let _individualListenerSetup = false;
+let _isIndividualListening = false;
+let _batchListenerSetup = false;
+let _isBatchListening = false;
+
 const _scope = effectScope(true);
 
 export function useProductImageStore() {
@@ -18,14 +23,15 @@ export function useProductImageStore() {
         return null;
     }
 
+    // Escuta eventos individuais (cobre os que chegam antes da race condition fechar).
     function listenForProductImages(tenantId: string): void {
-        if (_listenerSetup || !tenantId) return;
-        _listenerSetup = true;
+        if (_individualListenerSetup || !tenantId) return;
+        _individualListenerSetup = true;
 
         _scope.run(() => {
             watchEffect(() => {
-                if (!echoIsConfigured() || _isListening) return;
-                _isListening = true;
+                if (!echoIsConfigured() || _isIndividualListening) return;
+                _isIndividualListening = true;
                 echo()
                     .private(`tenant.${tenantId}`)
                     .listen(
@@ -40,5 +46,24 @@ export function useProductImageStore() {
         });
     }
 
-    return { setImage, getImage, listenForProductImages };
+    // Escuta o evento de conclusão do batch. Quando todos os produtos são processados,
+    // faz reload parcial do Inertia para atualizar todos os image_url de uma vez.
+    function listenForBatchComplete(userId: string): void {
+        if (_batchListenerSetup || !userId) return;
+        _batchListenerSetup = true;
+
+        _scope.run(() => {
+            watchEffect(() => {
+                if (!echoIsConfigured() || _isBatchListening) return;
+                _isBatchListening = true;
+                echo()
+                    .private(`App.Models.User.${userId}`)
+                    .listen('.plannerate.gondola.product-images.updated', () => {
+                        router.reload({ only: ['recordData'] });
+                    });
+            });
+        });
+    }
+
+    return { setImage, getImage, listenForProductImages, listenForBatchComplete };
 }
