@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Calendar, Filter } from 'lucide-vue-next';
-import { Input } from '@/components/ui/input';
+import { computed } from 'vue';
+import MonthRangeFilter from '@/components/filters/MonthRangeFilter.vue';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
 
@@ -20,7 +20,7 @@ interface Emits {
     (e: 'update:endMonth', value: string): void;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
     tableType: 'sales',
     dateFrom: '',
     dateTo: '',
@@ -30,6 +30,61 @@ withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 const { t } = useT();
+
+function toMonth(value?: string): string {
+    if (!value) {
+        return '';
+    }
+
+    return value.slice(0, 7);
+}
+
+function monthStart(month: string): string {
+    return month ? `${month}-01` : '';
+}
+
+function monthEnd(month: string): string {
+    if (!month) {
+        return '';
+    }
+
+    const [year, monthValue] = month.split('-').map(Number);
+    const lastDay = String(new Date(year, monthValue, 0).getDate()).padStart(2, '0');
+
+    return `${month}-${lastDay}`;
+}
+
+const periodLabel = computed(() =>
+    props.tableType === 'monthly_summaries'
+        ? t('plannerate.analysis.period.monthly_period')
+        : t('plannerate.analysis.period.sales_period')
+);
+
+const startPickerValue = computed(() => {
+    if (props.startMonth) {
+        return monthStart(props.startMonth);
+    }
+
+    return props.dateFrom || '';
+});
+
+const endPickerValue = computed(() => {
+    if (props.endMonth) {
+        return monthEnd(props.endMonth);
+    }
+
+    return props.dateTo || '';
+});
+
+function updateStart(value: string): void {
+    emit('update:dateFrom', value);
+    emit('update:startMonth', toMonth(value));
+}
+
+function updateEnd(value: string): void {
+    emit('update:dateTo', value);
+    emit('update:endMonth', toMonth(value));
+}
 </script>
 
 <template>
@@ -61,80 +116,17 @@ const { t } = useT();
             </div>
         </div>
 
-        <!-- Filtros de Período - Sales -->
-        <div v-if="tableType === 'sales'" class="space-y-2">
-            <div class="space-y-1.5">
-                <Label class="flex items-center gap-1.5 text-xs">
-                    <Filter class="size-3.5" />
-                    {{ t('plannerate.analysis.period.sales_period') }}
-                </Label>
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="space-y-1.5">
-                        <Label class="text-[10px] text-muted-foreground flex items-center gap-1">
-                            <Calendar class="size-3" />
-                            {{ t('plannerate.analysis.period.start_date') }}
-                        </Label>
-                        <Input
-                            :model-value="dateFrom"
-                            type="date"
-                            :placeholder="t('plannerate.analysis.period.date_placeholder')"
-                            class="h-8 text-xs"
-                            @update:model-value="emit('update:dateFrom', $event)"
-                        />
-                    </div>
-                    <div class="space-y-1.5">
-                        <Label class="text-[10px] text-muted-foreground flex items-center gap-1">
-                            <Calendar class="size-3" />
-                            {{ t('plannerate.analysis.period.end_date') }}
-                        </Label>
-                        <Input
-                            :model-value="dateTo"
-                            type="date"
-                            :placeholder="t('plannerate.analysis.period.date_placeholder')"
-                            class="h-8 text-xs"
-                            @update:model-value="emit('update:dateTo', $event)"
-                        />
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Filtros de Período - Monthly Summaries -->
-        <div v-if="tableType === 'monthly_summaries'" class="space-y-2">
-            <div class="space-y-1.5">
-                <Label class="flex items-center gap-1.5 text-xs">
-                    <Filter class="size-3.5" />
-                    {{ t('plannerate.analysis.period.monthly_period') }}
-                </Label>
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="space-y-1.5">
-                        <Label class="text-[10px] text-muted-foreground flex items-center gap-1">
-                            <Calendar class="size-3" />
-                            {{ t('plannerate.analysis.period.start_month') }}
-                        </Label>
-                        <Input
-                            :model-value="startMonth"
-                            type="month"
-                            :placeholder="t('plannerate.analysis.period.month_placeholder')"
-                            class="h-8 text-xs"
-                            @update:model-value="emit('update:startMonth', $event)"
-                        />
-                    </div>
-                    <div class="space-y-1.5">
-                        <Label class="text-[10px] text-muted-foreground flex items-center gap-1">
-                            <Calendar class="size-3" />
-                            {{ t('plannerate.analysis.period.end_month') }}
-                        </Label>
-                        <Input
-                            :model-value="endMonth"
-                            type="month"
-                            :placeholder="t('plannerate.analysis.period.month_placeholder')"
-                            class="h-8 text-xs"
-                            @update:model-value="emit('update:endMonth', $event)"
-                        />
-                    </div>
-                </div>
-            </div>
+        <div class="space-y-2">
+            <MonthRangeFilter
+                :label="periodLabel"
+                start-name="period_start"
+                end-name="period_end"
+                :start-value="startPickerValue"
+                :end-value="endPickerValue"
+                :placeholder="t('plannerate.analysis.period.month_placeholder')"
+                @update:start-value="updateStart"
+                @update:end-value="updateEnd"
+            />
         </div>
     </div>
 </template>

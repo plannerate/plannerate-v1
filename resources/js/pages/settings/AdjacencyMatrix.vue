@@ -92,6 +92,8 @@ function openCreateDialog() {
     form.rule_type = props.ruleTypes[0]?.value ?? 'prefer_near';
     form.weight = props.ruleTypes[0]?.default_weight ?? 10;
     form.reason = '';
+    form.source_category_id = '';
+    form.target_category_id = '';
     isDialogOpen.value = true;
 }
 

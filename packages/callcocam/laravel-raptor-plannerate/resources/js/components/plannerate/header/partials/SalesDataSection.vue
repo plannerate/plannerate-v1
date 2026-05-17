@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /* eslint-disable vue/no-mutating-props */
 
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
+import MonthRangeFilter from '@/components/filters/MonthRangeFilter.vue';
 import { useT } from '@/composables/useT';
 
 interface SalesDataFormState {
@@ -54,15 +54,15 @@ const { t } = useT();
                 </RadioGroup>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-2">
-                    <Label for="start-date">{{ t('plannerate.header.sales_data.start_date') }}</Label>
-                    <Input id="start-date" v-model="form.start_date" type="date" />
-                </div>
-                <div class="space-y-2">
-                    <Label for="end-date">{{ t('plannerate.header.sales_data.end_date') }}</Label>
-                    <Input id="end-date" v-model="form.end_date" type="date" />
-                </div>
+            <div class="space-y-2">
+                <MonthRangeFilter
+                    v-model:start-value="form.start_date"
+                    v-model:end-value="form.end_date"
+                    label="Período"
+                    start-name="start_date"
+                    end-name="end_date"
+                    placeholder="Selecionar mês/ano"
+                />
             </div>
         </div>
     </div>

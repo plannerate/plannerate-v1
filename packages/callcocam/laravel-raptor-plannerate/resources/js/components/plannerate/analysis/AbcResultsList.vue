@@ -341,14 +341,14 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                                         sort-key="ean"
                                         :sortConfig="sortConfig"
                                         @sort="handleSort"
-                                        class="sticky-col-1 min-w-[7.5rem]"
+                                        class="sticky-col-1 min-w-30"
                                     />
                                     <TableHeadAnalysis
                                         :label="t('plannerate.analysis.results.product')"
                                         sort-key="product_name"
                                         :sortConfig="sortConfig"
                                         @sort="handleSort"
-                                        class="sticky-col-2 min-w-[13rem]"
+                                        class="sticky-col-2 min-w-52"
                                     />
                                     <TableHeadAnalysis
                                         :label="t('plannerate.analysis.results.weighted_average')"

@@ -127,7 +127,7 @@ return [
             'end' => 'Final',
             'start_month' => 'Mes inicial',
             'end_month' => 'Mes final',
-            'configure' => 'Configurar',
+            'configure' => 'Ajustar parametros',
             'configure_and_calculate' => 'Configurar e Calcular',
             'no_results' => 'Nenhum resultado encontrado',
             'not_defined' => 'Nao definido',

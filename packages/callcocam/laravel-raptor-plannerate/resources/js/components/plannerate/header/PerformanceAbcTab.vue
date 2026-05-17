@@ -87,11 +87,11 @@
                     <Button
                         type="button"
                         size="sm"
-                        class="ml-auto h-7 px-2.5 gap-2"
+                        class="ml-auto h-9 gap-2 border border-primary/40 bg-primary/10 px-3 font-semibold text-primary shadow-sm transition-colors hover:bg-primary/20 focus-visible:ring-2 focus-visible:ring-primary/40"
                         @click="openParametersModal"
                     > 
                             <Settings /> 
-                        <span class="text-[11px]">{{ t('plannerate.performance.common.configure') }}</span>
+                        <span >{{ t('plannerate.performance.common.configure') }}</span>
                     </Button>
                 </div>
             </template>

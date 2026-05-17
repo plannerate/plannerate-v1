@@ -5,7 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-const emit = defineEmits<{ complete: [] }>();
+const emit = defineEmits<{
+    complete: [];
+    'update:startValue': [value: string];
+    'update:endValue': [value: string];
+}>();
 
 const props = withDefaults(
     defineProps<{
@@ -124,6 +128,8 @@ function selectStart(month: number): void {
         endYear.value = startNavYear.value;
         endMonth.value = month;
     }
+    emit('update:startValue', startInputValue.value);
+    emit('update:endValue', endInputValue.value);
     if (endMonth.value !== null) {
         triggerComplete();
     }
@@ -141,6 +147,8 @@ function selectEnd(month: number): void {
         endMonth.value = month;
     }
     if (startMonth.value !== null) {
+        emit('update:startValue', startInputValue.value);
+        emit('update:endValue', endInputValue.value);
         triggerComplete();
     }
 }
@@ -196,7 +204,7 @@ function monthCellClass(year: number, month: number, side: 'start' | 'end'): str
                 </Button>
             </PopoverTrigger>
 
-            <PopoverContent align="start" class="w-auto p-0 shadow-lg">
+            <PopoverContent align="start" class="z-700 w-auto p-0 shadow-lg">
                 <div class="flex divide-x divide-border">
                     <!-- Start picker -->
                     <div class="flex flex-col gap-3 p-4">
