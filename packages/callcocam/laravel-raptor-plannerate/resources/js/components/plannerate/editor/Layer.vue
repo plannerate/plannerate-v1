@@ -7,9 +7,9 @@
             class="z-20 cursor-pointer transition-all"
         >
             <img
-                v-if="product?.image_url"
-                :src="product.image_url"
-                :alt="product.name"
+                v-if="displayImageUrl"
+                :src="displayImageUrl"
+                :alt="product?.name"
                 :style="style"
                 class="z-20 object-cover"
                 v-on:error="getDefaultImage"
@@ -27,8 +27,10 @@
     </div>
 </template>
 <script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useT } from '@/composables/useT';
+import { useProductImageStore } from '@/composables/useProductImageStore';
 import type { Layer, Product, Segment } from '../../../types/planogram';
 
 interface Props {
@@ -42,8 +44,20 @@ interface Props {
 
 const props = defineProps<Props>();
 const { t } = useT();
+const { getImage, listenForProductImages } = useProductImageStore();
 
 const product = computed<Product | undefined>(() => props.layer?.product);
+
+const page = usePage();
+const tenantId = (page.props.tenant as { id?: string } | null)?.id ?? null;
+if (tenantId) {
+    listenForProductImages(tenantId);
+}
+
+const displayImageUrl = computed<string | null>(() => {
+    const fromStore = getImage(product.value?.ean, product.value?.id);
+    return fromStore ?? product.value?.image_url ?? null;
+});
 
 const getQuantity = computed<number>(() => {
     const quantity = Number(props.layer?.quantity ?? 1);
@@ -93,12 +107,9 @@ const productHeight = computed(
 );
 
 const style = computed(() => {
-    //  Verifica se a imagem do produto está disponível
-    // Se ele tem no caminho a palavra 'fallback', então não é uma imagem real
-    if (
-        !product.value?.image_url ||
-        product.value.image_url.includes('fallback')
-    ) { 
+    const imageUrl = displayImageUrl.value;
+
+    if (!imageUrl || imageUrl.includes('fallback')) {
         return {
             width: `${productWidth.value || 20}px`,
             height: `${productHeight.value || 20}px`,
