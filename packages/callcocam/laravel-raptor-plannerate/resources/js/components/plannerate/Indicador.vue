@@ -1,49 +1,59 @@
 <template>
     <div
-        class="absolute top-2 right-0 left-0 z-40 flex items-center justify-between px-4"
+        class="flex items-center justify-between border-b border-border/50   px-4 py-2"
     >
         <!-- Lado Esquerdo -->
         <div
-            class="flex items-center gap-1.5 rounded px-2 py-1 text-xs transition-all"
+            class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition-all duration-300"
             :class="
                 isLeftToRight
-                    ? 'bg-primary/5 font-medium text-primary'
-                    : 'text-muted-foreground/60'
+                    ? 'bg-primary text-primary-foreground shadow-primary/30'
+                    : 'bg-background/80 text-muted-foreground/50 ring-1 ring-border/40 backdrop-blur-sm'
             "
         >
             <Star
-                :class="
-                    isLeftToRight ? 'text-primary' : 'text-muted-foreground/40'
-                "
-                class="size-3.5"
+                class="size-3.5 shrink-0 transition-all duration-300"
+                :class="isLeftToRight ? 'text-primary-foreground' : 'text-muted-foreground/30'"
                 :fill="isLeftToRight ? 'currentColor' : 'none'"
             />
-            <span>{{
+            <span class="tracking-wide uppercase">{{
                 isLeftToRight ? t('plannerate.indicator.start_flow') : t('plannerate.indicator.end')
             }}</span>
-            <ArrowRight v-if="isLeftToRight" class="size-3 opacity-50" />
+            <ArrowRight v-if="isLeftToRight" class="size-3.5 animate-pulse" />
         </div>
 
-        <!-- Botões Centrais -->
+        <!-- Linha de Fluxo Central -->
+        <div class="mx-3 flex flex-1 items-center gap-1">
+            <div class="h-px flex-1 bg-linear-to-r from-border/60 to-border/20" />
+            <div
+                class="flex size-5 shrink-0 items-center justify-center rounded-full ring-1 transition-all duration-300"
+                :class="
+                    isLeftToRight
+                        ? 'bg-primary/10 ring-primary/30 text-primary'
+                        : 'bg-muted/60 ring-border/30 text-muted-foreground/40'
+                "
+            >
+                <component :is="isLeftToRight ? ArrowRight : ArrowLeft" class="size-3" />
+            </div>
+            <div class="h-px flex-1 bg-linear-to-r from-border/20 to-border/60" />
+        </div>
 
         <!-- Lado Direito -->
         <div
-            class="flex items-center gap-1.5 rounded px-2 py-1 text-xs transition-all"
+            class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition-all duration-300"
             :class="
                 !isLeftToRight
-                    ? 'bg-primary/5 font-medium text-primary'
-                    : 'text-muted-foreground/60'
+                    ? 'bg-primary text-primary-foreground shadow-primary/30'
+                    : 'bg-background/80 text-muted-foreground/50 ring-1 ring-border/40 backdrop-blur-sm'
             "
         >
-            <ArrowLeft v-if="!isLeftToRight" class="size-3 opacity-50" />
-            <span>{{
+            <ArrowLeft v-if="!isLeftToRight" class="size-3.5 animate-pulse" />
+            <span class="tracking-wide uppercase">{{
                 !isLeftToRight ? t('plannerate.indicator.start_flow') : t('plannerate.indicator.end')
             }}</span>
             <Star
-                :class="
-                    !isLeftToRight ? 'text-primary' : 'text-muted-foreground/40'
-                "
-                class="size-3.5"
+                class="size-3.5 shrink-0 transition-all duration-300"
+                :class="!isLeftToRight ? 'text-primary-foreground' : 'text-muted-foreground/30'"
                 :fill="!isLeftToRight ? 'currentColor' : 'none'"
             />
         </div>

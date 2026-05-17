@@ -28,7 +28,7 @@ const footHeight = computed(() => {
                 paddingRight: `${Math.ceil(localScale * 40)}px`,
             }"
         >
-            <!-- Seções da gôndola -->
+            <!-- Modulos da gôndola -->
             <div class="flex flex-row items-end gap-0 w-max">
                 <PdfSection
                     v-for="(section, index) in sections"

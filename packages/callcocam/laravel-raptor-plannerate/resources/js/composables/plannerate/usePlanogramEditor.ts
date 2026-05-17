@@ -1574,7 +1574,7 @@ return false;
             const targetSection = findSectionById(targetSectionId);
             
             if (!currentSection || !targetSection) {
-                console.error('❌ Seções não encontradas');
+                console.error('❌ Modulos não encontradas');
 
                 return;
             }

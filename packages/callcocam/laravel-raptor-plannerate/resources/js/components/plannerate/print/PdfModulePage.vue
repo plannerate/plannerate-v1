@@ -312,7 +312,7 @@ function scrollToModule(anchorId: string): void {
                         class="text-xs font-bold tracking-wide text-slate-700 uppercase"
                     >
                         {{ t('plannerate.print.labels.module') }} #{{
-                            section.ordering + 1
+                            section.ordering 
                         }}
                         — {{ t('plannerate.print.module_page.front') }}
                     </p>

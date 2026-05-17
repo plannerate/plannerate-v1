@@ -14,7 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Service para operações de negócio relacionadas a Sections (Seções/Módulos)
+ * Service para operações de negócio relacionadas a Sections (Modulos/Módulos)
  */
 class SectionService
 {
@@ -206,7 +206,7 @@ class SectionService
         if (! empty($updates)) {
             $this->repository->updateBatch($updates);
 
-            Log::info('✅ Seções reordenadas', [
+            Log::info('✅ Modulos reordenadas', [
                 'gondola_id' => $gondolaId,
                 'total_sections' => count($sections),
                 'updated' => count($updates),
@@ -215,7 +215,7 @@ class SectionService
             return count($updates);
         }
 
-        Log::info('ℹ️ Seções já estão ordenadas corretamente', ['gondola_id' => $gondolaId]);
+        Log::info('ℹ️ Modulos já estão ordenadas corretamente', ['gondola_id' => $gondolaId]);
 
         return 0;
     }

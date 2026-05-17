@@ -11,8 +11,11 @@ import {
     AlignLeft,
     AlignRight,
     ArrowRightLeft,
+    Check,
+    ChevronDown,
     FlipHorizontal,
     Grid3x3,
+    LayoutGrid,
     MapPin,
     Minus,
     Plus,
@@ -28,6 +31,15 @@ import { computed, onMounted, ref, watch } from 'vue';
 import AddModuleSheet from '@/components/plannerate/form/AddModuleSheet.vue';
 import TransferSectionDialog from './partials/TransferSectionDialog.vue';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -216,7 +228,7 @@ const gondolaHeight = computed(
 );
 
 /**
- * Seções da gôndola atual
+ * Modulos da gôndola atual
  */
 const sections = computed(() => editor.currentGondola.value?.sections ?? []);
 
@@ -224,7 +236,7 @@ const sections = computed(() => editor.currentGondola.value?.sections ?? []);
  * Feature flag: Geração Automática habilitada?
  */
 const autoGenerateEnabled = computed(
-    () => { 
+    () => {
         if ((page.props.features as any)?.auto_generate) {
             return true;
         }
@@ -448,26 +460,48 @@ const handleMapRegionSelect = (regionId: string | null) => {
     <div class="border-b bg-muted/50">
         <div class="space-y-4 p-4">
             <!-- ==================================================================
-           NAVEGAÇÃO ENTRE GÔNDOLAS
-           Tabs clicáveis para trocar de gôndola dentro do planograma
-           ================================================================== -->
-            <div class="flex items-center gap-2 overflow-x-auto pb-1">
-                <Link v-for="gondola in gondolas" :key="gondola.id" :href="gondolaHref(gondola)" :class="[
-                    'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all',
-                    'hover:bg-accent hover:text-accent-foreground',
-                    gondola.id === currentGondolaId
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground',
-                ]">
-                    {{ gondola.name }}
-                </Link>
-            </div>
-
-            <!-- ==================================================================
            CONTROLES E FERRAMENTAS
            Organizados em grupos: Zoom, Alinhamento, Ações, Histórico, Salvar
            ================================================================== -->
             <div class="flex flex-wrap items-center gap-2" data-toolbar>
+                <!-- ==================================================================
+           NAVEGAÇÃO ENTRE GÔNDOLAS
+           Dropdown para selecionar a gôndola ativa
+           ================================================================== -->
+                <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                        <Button variant="outline" class="h-9 min-w-48 justify-between gap-2 px-3 font-medium">
+                            <div class="flex items-center gap-2">
+                                <LayoutGrid class="size-4 shrink-0 text-muted-foreground" />
+                                <span class="truncate">{{ editor.currentGondola.value?.name ??
+                                    t('plannerate.toolbar.select_gondola') }}</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <span
+                                    class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary leading-none">
+                                    {{ gondolas.length }}
+                                </span>
+                                <ChevronDown class="size-3.5 text-muted-foreground" />
+                            </div>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" class="z-9999 w-64">
+                        <DropdownMenuLabel class="flex items-center gap-2 text-xs text-muted-foreground">
+                            <LayoutGrid class="size-3.5" />
+                            {{ t('plannerate.toolbar.gondolas') }}
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem v-for="gondola in gondolas" :key="gondola.id" as-child>
+                            <Link :href="gondolaHref(gondola)"
+                                class="flex w-full cursor-pointer items-center justify-between gap-2"
+                                :class="gondola.id === currentGondolaId ? 'font-semibold text-primary' : ''">
+                                <span class="truncate">{{ gondola.name }}</span>
+                                <Check v-if="gondola.id === currentGondolaId" class="size-4 shrink-0 text-primary" />
+                            </Link>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
                 <!-- ============================================================
              CONTROLES DE ZOOM/ESCALA
              Diminuir, Input (readonly), Aumentar
@@ -563,7 +597,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     <MapPin class="mr-2 size-4" />
                     <span class="max-w-24 truncate">{{
                         currentMapRegionId ? t('plannerate.toolbar.map_remove') : t('plannerate.toolbar.map_store')
-                        }}</span>
+                    }}</span>
                 </ButtonWithTooltip>
 
                 <ButtonWithTooltip v-if="permissions.can_remove_gondola" variant="destructive" size="sm" :tooltip="currentMapRegionId
@@ -624,7 +658,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     <Save class="mr-2 size-4" :class="{ 'animate-pulse': isSaving }" />
                     <span v-if="isSaving">{{ t('plannerate.toolbar.saving') }}</span>
                     <span v-else-if="hasChanges">{{ t('plannerate.toolbar.save', { count: String(changeCount) })
-                        }}</span>
+                    }}</span>
                     <span v-else>{{ t('plannerate.toolbar.saved') }}</span>
                 </ButtonWithTooltip>
 
@@ -647,16 +681,12 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     <span class="max-w-24 truncate">
                         {{ t('plannerate.toolbar.auto_generate') }}</span>
                 </ButtonWithTooltip>
-                <AutoGenerateModal
-                    v-if="autoGenerateEnabled && permissions.can_autogenate_gondola"
-                    :open="showAutoGenerateModal"
-                    :gondola-id="currentGondola?.id || ''"
+                <AutoGenerateModal v-if="autoGenerateEnabled && permissions.can_autogenate_gondola"
+                    :open="showAutoGenerateModal" :gondola-id="currentGondola?.id || ''"
                     :category-id="(currentGondola?.planogram as any)?.category_id"
                     :start-date="(currentGondola?.planogram as any)?.start_date"
-                    :end-date="(currentGondola?.planogram as any)?.end_date"
-                    :strategy-options="strategyOptions"
-                    @update:open="(value: boolean) => (showAutoGenerateModal = value)"
-                />
+                    :end-date="(currentGondola?.planogram as any)?.end_date" :strategy-options="strategyOptions"
+                    @update:open="(value: boolean) => (showAutoGenerateModal = value)" />
 
                 <!-- Dropdown Ações -->
                 <DropdownActions />

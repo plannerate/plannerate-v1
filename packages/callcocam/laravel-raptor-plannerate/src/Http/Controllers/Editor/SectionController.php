@@ -118,7 +118,7 @@ class SectionController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, string $subdomain, string $id)
     {
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
@@ -147,7 +147,7 @@ class SectionController extends Controller
     /**
      * Retorna informações de uma seção
      */
-    public function show(string $id)
+    public function show(string $subdomain, string $id)
     {
         try {
             $section = Section::findOrFail($id);
@@ -170,7 +170,7 @@ class SectionController extends Controller
         }
     }
 
-    public function destroy(string $id)
+    public function destroy(string $subdomain, string $id)
     {
         try {
             $section = Section::findOrFail($id);
@@ -192,7 +192,7 @@ class SectionController extends Controller
     /**
      * Transfere uma seção para outra gôndola
      */
-    public function transfer(Request $request, string $sectionId)
+    public function transfer(Request $request, string $subdomain, string $sectionId)
     {
         $tenantConnectionName = config('multitenancy.tenant_database_connection_name');
         $gondolasTable = is_string($tenantConnectionName) && $tenantConnectionName !== ''

@@ -12,7 +12,7 @@ use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Repository para operações de acesso a dados de Sections (Seções/Módulos)
+ * Repository para operações de acesso a dados de Sections (Modulos/Módulos)
  */
 class SectionRepository
 {

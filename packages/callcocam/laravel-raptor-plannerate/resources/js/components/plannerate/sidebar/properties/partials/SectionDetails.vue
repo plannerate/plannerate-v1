@@ -6,7 +6,7 @@
                 {{ t('plannerate.sidebar.section_details.section') }}
             </h3>
             <p class="text-sm text-muted-foreground">
-                {{ section.name }}
+                {{ section.name.toString().replace('Sessão', 'Módulo') }}
             </p>
         </div>
 
@@ -17,7 +17,7 @@
                 <Label for="section-name">{{ t('plannerate.print.product_detail.name') }}</Label>
                 <Input
                     id="section-name"
-                    :model-value="section.name"
+                    :model-value="section.name.toString().replace('Sessão', 'Módulo')"
                     @update:model-value="handleUpdate('name', $event)"
                 />
             </div>

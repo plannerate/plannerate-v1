@@ -135,6 +135,9 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
         ref="target"
         v-if="containerHeight"
     >
+        <!-- Indicador de Direção da Gôndola - fixo no topo do canvas -->
+        <Indicador :isLeftToRight="isLeftToRight" />
+
         <div
             class="relative isolate overflow-auto border border-dashed border-border bg-background p-8 dark:bg-background"
             :style="{ height: containerHeight + 'px' }"
@@ -148,9 +151,6 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
                         'repeating-linear-gradient(0deg, transparent, transparent 49px, color-mix(in srgb, currentColor 15%, transparent) 49px, color-mix(in srgb, currentColor 15%, transparent) 50px), repeating-linear-gradient(90deg, transparent, transparent 49px, color-mix(in srgb, currentColor 15%, transparent) 49px, color-mix(in srgb, currentColor 15%, transparent) 50px)',
                 }"
             />
-
-            <!-- Indicador de Direção da Gôndola - Discreto -->
-            <Indicador :isLeftToRight="isLeftToRight" />
 
             <!-- Sections do Planograma -->
             <div

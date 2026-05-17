@@ -135,6 +135,7 @@ function cancelUpdateGondolaImages() {
                     variant="outline"
                     size="sm"
                     class="gap-2"
+                    disabled
                     @click="emit('importData')"
                 >
                     <Upload />
