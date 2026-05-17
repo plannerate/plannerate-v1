@@ -20,6 +20,75 @@ function echoLog(level: 'info' | 'warn' | 'error', ...args: unknown[]): void {
     else console.log(prefix, ...args);
 }
 
+type PusherErrorEvent = {
+    type?: string;
+    error?: { data?: { code?: number; message?: string } };
+};
+
+function bindConnectionEvents(pusher: Pusher): void {
+    pusher.connection.bind('initialized', () =>
+        echoLog('info', 'Connection: initialized'),
+    );
+
+    pusher.connection.bind('connecting', () => {
+        echoLog('info', 'Connection: connecting...');
+        echoLog('info', 'Transport being tried:', pusher.connection.state);
+    });
+
+    pusher.connection.bind('connected', () =>
+        echoLog('info', 'Connection: CONNECTED ✓', { socketId: pusher.connection.socket_id }),
+    );
+
+    pusher.connection.bind('unavailable', () =>
+        echoLog('warn', 'Connection: unavailable — server unreachable, will retry automatically'),
+    );
+
+    pusher.connection.bind('failed', () => {
+        echoLog('error', 'Connection: FAILED permanently.');
+        echoLog('error', 'Possible causes: SSL/TLS error, REVERB_HOST mismatch, port blocked, or WebSockets not supported.');
+    });
+
+    pusher.connection.bind('disconnected', () =>
+        echoLog('warn', 'Connection: disconnected'),
+    );
+
+    pusher.connection.bind('state_change', ({ previous, current }: { previous: string; current: string }) =>
+        echoLog('info', `State change: ${previous} → ${current}`),
+    );
+
+    pusher.connection.bind('error', (err: PusherErrorEvent) => {
+        const code = err?.error?.data?.code;
+        const message = err?.error?.data?.message;
+        const type = err?.type;
+
+        echoLog('error', '─── Connection error ───');
+        echoLog('error', 'Type:', type);
+        echoLog('error', 'Code:', code, wsCloseCodeLabel(code));
+        echoLog('error', 'Message:', message);
+        echoLog('error', 'Raw:', err);
+    });
+
+    pusher.bind_global((eventName: string, data: unknown) => {
+        if (!['pusher:pong', 'pusher:ping'].includes(eventName)) {
+            echoLog('info', `Global event: ${eventName}`, data);
+        }
+    });
+}
+
+function wsCloseCodeLabel(code?: number): string {
+    if (code === undefined) return '';
+    const labels: Record<number, string> = {
+        1000: '(Normal closure)',
+        1001: '(Going away)',
+        1006: '(Abnormal closure — SSL/TLS failure or server unreachable)',
+        1015: '(TLS handshake failure)',
+        4001: '(Reverb: app does not exist — wrong APP_KEY)',
+        4004: '(Reverb: app disabled)',
+        4009: '(Reverb: connection unauthorized)',
+        4100: '(Reverb: over capacity)',
+    };
+    return labels[code] ?? `(unknown close code ${code})`;
+}
 
 export function initializeEcho(): void {
     if (typeof window === 'undefined') return;
@@ -60,10 +129,9 @@ export function initializeEcho(): void {
 
     const forceTLS = scheme === 'https';
     const wsProtocol = forceTLS ? 'wss' : 'ws';
-    const wsUrl = `${wsProtocol}://${host}:${port}/app/${key}`;
 
     echoLog('info', 'forceTLS:', forceTLS);
-    echoLog('info', 'WebSocket URL will be:', wsUrl);
+    echoLog('info', 'WebSocket URL will be:', `${wsProtocol}://${host}:${port}/app/${key}`);
 
     const echoConfig = {
         broadcaster: 'reverb' as const,
@@ -80,36 +148,20 @@ export function initializeEcho(): void {
     configureEcho(echoConfig);
     window.__plannerateEchoConfigured = true;
 
-    echoLog('info', 'configureEcho done — binding connection events...');
-
     const connector = echo().connector as { pusher: Pusher };
     const pusher = connector.pusher;
 
-    echoLog('info', 'Pusher instance created. Initial connection state:', pusher.connection.state);
+    // Bind ALL handlers before checking state so the retry is fully instrumented
+    bindConnectionEvents(pusher);
 
-    pusher.connection.bind('initialized', () => echoLog('info', 'Connection: initialized'));
-    pusher.connection.bind('connecting', () => echoLog('info', 'Connection: connecting...'));
-    pusher.connection.bind('connected', () => echoLog('info', 'Connection: CONNECTED ✓', { socketId: pusher.connection.socket_id }));
-    pusher.connection.bind('unavailable', () => echoLog('warn', 'Connection: unavailable (will retry)'));
-    pusher.connection.bind('failed', () => echoLog('error', 'Connection: FAILED — browser may not support WebSockets, or host/port is wrong.'));
-    pusher.connection.bind('disconnected', () => echoLog('warn', 'Connection: disconnected'));
+    const initialState = pusher.connection.state;
+    echoLog('info', 'Initial connection state after configureEcho:', initialState);
 
-    pusher.connection.bind('state_change', ({ previous, current }: { previous: string; current: string }) => {
-        echoLog('info', `State change: ${previous} → ${current}`);
-    });
-
-    pusher.connection.bind('error', (err: { type?: string; error?: { data?: { code?: number; message?: string } } }) => {
-        echoLog('error', 'Connection error event:', err);
-        echoLog('error', 'Error type:', err?.type);
-        echoLog('error', 'Error code:', err?.error?.data?.code);
-        echoLog('error', 'Error message:', err?.error?.data?.message);
-    });
-
-    pusher.bind_global((eventName: string, data: unknown) => {
-        if (!['pusher:pong', 'pusher:ping'].includes(eventName)) {
-            echoLog('info', `Global event: ${eventName}`, data);
-        }
-    });
+    if (initialState === 'failed') {
+        echoLog('error', 'Connection failed immediately — the first attempt fired before handlers were ready.');
+        echoLog('warn', 'Retrying now with handlers active to capture the real error...');
+        pusher.connection.connect();
+    }
 
     echoLog('info', '─── Echo initialization complete ───');
 }
