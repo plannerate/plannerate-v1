@@ -137,10 +137,11 @@ export function initializeEcho(): void {
         broadcaster: 'reverb' as const,
         key,
         wsHost: host,
-        wsPort: forceTLS ? undefined : port,
-        wssPort: forceTLS ? port : undefined,
+        wsPort: port,
+        wssPort: port,
         forceTLS,
-        enabledTransports: [wsProtocol] as ('ws' | 'wss')[],
+        // Sem enabledTransports — deixar o Pusher usar a estratégia completa
+        // para que ele TENTE a conexão e exponha o erro real no log
     };
 
     echoLog('info', 'Calling configureEcho with:', echoConfig);
@@ -151,16 +152,17 @@ export function initializeEcho(): void {
     const connector = echo().connector as { pusher: Pusher };
     const pusher = connector.pusher;
 
-    // Bind ALL handlers before checking state so the retry is fully instrumented
+    // Bind ALL handlers before checking state so any retry is fully instrumented
     bindConnectionEvents(pusher);
 
     const initialState = pusher.connection.state;
     echoLog('info', 'Initial connection state after configureEcho:', initialState);
 
     if (initialState === 'failed') {
-        echoLog('error', 'Connection failed immediately — the first attempt fired before handlers were ready.');
-        echoLog('warn', 'Retrying now with handlers active to capture the real error...');
-        pusher.connection.connect();
+        echoLog('error', 'Still failed immediately — enabledTransports removed, retrying to expose the real error...');
+        // disconnect() reseta o state machine antes de connect()
+        pusher.disconnect();
+        pusher.connect();
     }
 
     echoLog('info', '─── Echo initialization complete ───');
