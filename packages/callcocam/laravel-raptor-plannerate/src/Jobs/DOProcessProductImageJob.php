@@ -8,6 +8,7 @@ use Callcocam\LaravelRaptorPlannerate\Concerns\BelongsToConnection;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -106,7 +107,7 @@ class DOProcessProductImageJob implements ShouldQueue
         $this->tenantConnection = $connectionName;
     }
 
-    public function processImageFromStorage($storagePath, $product)
+    public function processImageFromStorage(?string $storagePath, Model $product)
     {
         // Fator para converter as dimensões do produto (ex: cm) em pixels para exibição.
         // Aumentado para um resultado visual maior. Ajuste se necessário.
@@ -121,7 +122,7 @@ class DOProcessProductImageJob implements ShouldQueue
 
             $imageFile = Storage::disk('do')->get($storagePath);
 
-            $url = Storage::disk('do')->url($storagePath);
+            Storage::disk('do')->url($storagePath);
             if (! $imageFile) {
                 // Log::warning("Imagem não encontrada para EAN {$product->ean} no caminho {$url}");
 
@@ -154,12 +155,11 @@ class DOProcessProductImageJob implements ShouldQueue
 
             Storage::disk('public')->put($newPath, (string) $encodedImage);
 
-            $url = Storage::disk('public')->url($newPath);
-            // Log::info("Imagem processada para EAN {$product->ean}, salva em {$url}");
+            Storage::disk('public')->url($newPath);
 
             return $newPath;
         } catch (\Exception $e) {
-            Log::error("Falha ao processar imagem para EAN {$product->ean}: ".$e->getMessage());
+            Log::error("Falha ao processar imagem para EAN {$product->ean}: " . $e->getMessage());
 
             return null;
         }
