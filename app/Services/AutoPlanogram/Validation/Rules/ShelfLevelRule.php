@@ -31,6 +31,11 @@ final class ShelfLevelRule implements ValidationRuleInterface
      */
     public function evaluate(Collection $placedSegments, PlanogramInput $input, PlacementResult $result): array
     {
+        // No modo template o especialista define shelf_order intencionalmente — pular validação
+        if ($input->settings->usesTemplate()) {
+            return [];
+        }
+
         $results = [];
 
         // Load shelf preferences for tenant

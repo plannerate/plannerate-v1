@@ -113,9 +113,11 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             'num_modules_template' => $subtemplate->num_modules,
             'num_modules_gondola' => $sections->count(),
             'slots_processados' => $slots->count(),
+            'slots_com_produto' => $slots->count() - $groupingsSemProduto - $rejected->whereNull('product')->count(),
+            'slots_sem_matching' => $groupingsSemProduto,
+            'slots_sem_prateleira' => $rejected->whereNull('product')->count(),
             'segmentos_criados' => $placed->count(),
-            'rejeitados' => $rejected->count(),
-            'groupings_sem_produto' => $groupingsSemProduto,
+            'rejeitados_sem_espaco' => $rejected->whereNotNull('product')->where('reason', PlacementFailureReason::NoHorizontalSpace)->count(),
         ]);
 
         return new PlacementResult($placed, $rejected);

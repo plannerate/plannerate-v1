@@ -20,13 +20,19 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Orquestrador do pipeline de geração automática de planogramas.
+ * Orquestrador do pipeline de geração de planogramas.
  *
- * Pipeline:
+ * Modo template (quando settings->templateId !== null):
+ * 1. Score (scoreOrNeutral) — ordena pool por relevância; neutro se sem dados de venda
+ * 2. TemplatePlacementEngine — distribui produtos pelos slots do subtemplate
+ * 3. Validation — verifica integridade do resultado
+ * 4. Write — persiste no banco em transação
+ *
+ * Modo automático (fallback, sem template):
  * 1. Score — pontua produtos por importância
  * 2. FacingCalculator — calcula facings ideais
  * 3. VerticalBlockPlacer — reserva colunas verticais para top N% de score
- * 4. Group — agrupa o restante em blocos coesos
+ * 4. Group — agrupa o restante em blocos coesos por categoria
  * 5. Adjacency — ordena blocos respeitando regras de adjacência
  * 6. GreedyShelfPlacer — distribui blocos pelo espaço restante
  * 7. Validation — verifica integridade do resultado
