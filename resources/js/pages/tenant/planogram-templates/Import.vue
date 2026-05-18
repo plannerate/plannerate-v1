@@ -35,21 +35,19 @@ function submit(): void {
 
 const breadcrumbs = [
     { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
-    { title: 'Templates de Planograma', href: indexPath },
-    { title: 'Importar Template', href: '#' },
+    { title: t('app.tenant.planogram_templates.navigation'), href: indexPath },
+    { title: t('app.tenant.planogram_templates.import.title'), href: '#' },
 ];
 </script>
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <Head title="Importar Template de Planograma" />
+        <Head :title="t('app.tenant.planogram_templates.import.title')" />
 
         <div class="mx-auto max-w-2xl py-8">
             <div class="mb-6">
-                <h1 class="text-2xl font-semibold tracking-tight">Importar Template de Planograma</h1>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Faça o upload de um arquivo Excel (.xlsx) com as abas <strong>Templates</strong> e <strong>Produtos</strong>.
-                </p>
+                <h1 class="text-2xl font-semibold tracking-tight">{{ t('app.tenant.planogram_templates.import.title') }}</h1>
+                <p class="mt-1 text-sm text-muted-foreground" v-html="t('app.tenant.planogram_templates.import.description')" />
             </div>
 
             <div class="rounded-xl border border-border bg-card p-6">
@@ -64,11 +62,11 @@ const breadcrumbs = [
                             <FileSpreadsheet class="size-10 text-muted-foreground" :class="{ 'text-primary': fileName }" />
                             <div v-if="fileName">
                                 <p class="font-medium text-foreground">{{ fileName }}</p>
-                                <p class="text-sm text-muted-foreground">Clique para trocar o arquivo</p>
+                                <p class="text-sm text-muted-foreground">{{ t('app.tenant.planogram_templates.import.file_change') }}</p>
                             </div>
                             <div v-else>
-                                <p class="font-medium text-foreground">Clique para selecionar o arquivo</p>
-                                <p class="text-sm text-muted-foreground">Suporte: .xlsx, .xls — máx. 10 MB</p>
+                                <p class="font-medium text-foreground">{{ t('app.tenant.planogram_templates.import.file_select') }}</p>
+                                <p class="text-sm text-muted-foreground">{{ t('app.tenant.planogram_templates.import.file_support') }}</p>
                             </div>
                             <input
                                 id="file-upload"
@@ -85,10 +83,10 @@ const breadcrumbs = [
 
                     <!-- Structure info -->
                     <div class="rounded-lg bg-muted/40 p-4 text-sm">
-                        <p class="mb-2 font-medium text-foreground">Estrutura esperada do Excel:</p>
+                        <p class="mb-2 font-medium text-foreground">{{ t('app.tenant.planogram_templates.import.excel_structure') }}</p>
                         <ul class="space-y-1 text-muted-foreground">
-                            <li>• <strong>Aba Templates:</strong> Código, Departamento, Subtemplate, Módulos, Prateleira, Categoria, Subcategoria, Agrupamento, Frentes, Ordenação, etc.</li>
-                            <li>• <strong>Aba Produtos:</strong> EAN, Descrição, Departamento, Categoria, Subcategoria, Agrupamento, Marca, Embalagem</li>
+                            <li>• <strong>{{ t('app.tenant.planogram_templates.import.sheet_templates_label') }}</strong> {{ t('app.tenant.planogram_templates.import.sheet_templates_desc') }}</li>
+                            <li>• <strong>{{ t('app.tenant.planogram_templates.import.sheet_products_label') }}</strong> {{ t('app.tenant.planogram_templates.import.sheet_products_desc') }}</li>
                         </ul>
                     </div>
 
@@ -99,14 +97,14 @@ const breadcrumbs = [
                             :as="'a'"
                             :href="indexPath"
                         >
-                            Cancelar
+                            {{ t('app.tenant.planogram_templates.actions.cancel') }}
                         </Button>
                         <Button
                             type="submit"
                             :disabled="!form.file || form.processing"
                         >
                             <Upload class="size-4" />
-                            {{ form.processing ? 'Importando...' : 'Importar Template' }}
+                            {{ form.processing ? t('app.tenant.planogram_templates.import.importing') : t('app.tenant.planogram_templates.actions.import') }}
                         </Button>
                     </div>
                 </form>

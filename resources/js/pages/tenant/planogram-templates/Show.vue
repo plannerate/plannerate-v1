@@ -37,12 +37,12 @@ const indexPath = PlanogramTemplateController.index.url(props.subdomain).replace
 
 const breadcrumbs = [
     { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
-    { title: 'Templates de Planograma', href: indexPath },
+    { title: t('app.tenant.planogram_templates.navigation'), href: indexPath },
     { title: props.template.code, href: '#' },
 ];
 
 function confirmDelete(): void {
-    if (confirm(`Deseja excluir o template "${props.template.name}"? Esta ação não pode ser desfeita.`)) {
+    if (confirm(t('app.tenant.planogram_templates.show.confirm_delete', { name: props.template.name }))) {
         router.delete(PlanogramTemplateController.destroy.url({ subdomain: props.subdomain, planogramTemplate: props.template.id }));
     }
 }
@@ -59,17 +59,17 @@ function confirmDelete(): void {
                     <div class="flex items-center gap-3">
                         <h1 class="text-2xl font-semibold tracking-tight">{{ template.name }}</h1>
                         <Badge :variant="template.is_active ? 'default' : 'secondary'">
-                            {{ template.is_active ? 'Ativo' : 'Inativo' }}
+                            {{ template.is_active ? t('app.tenant.planogram_templates.status.active') : t('app.tenant.planogram_templates.status.inactive') }}
                         </Badge>
                     </div>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Código: <strong>{{ template.code }}</strong> · Departamento: <strong>{{ template.department }}</strong>
+                        {{ t('app.tenant.planogram_templates.show.code_prefix') }} <strong>{{ template.code }}</strong> · {{ t('app.tenant.planogram_templates.show.department_prefix') }} <strong>{{ template.department }}</strong>
                     </p>
                     <p v-if="template.description" class="mt-2 text-sm text-muted-foreground">{{ template.description }}</p>
                 </div>
                 <Button variant="destructive" size="sm" @click="confirmDelete">
                     <Trash2 class="size-4" />
-                    Excluir
+                    {{ t('app.tenant.planogram_templates.actions.delete') }}
                 </Button>
             </div>
 
@@ -78,10 +78,10 @@ function confirmDelete(): void {
                 <div class="border-b border-border px-6 py-4">
                     <h2 class="flex items-center gap-2 text-base font-semibold">
                         <Layers class="size-4 text-muted-foreground" />
-                        Subtemplates ({{ template.subtemplates_count }})
+                        {{ t('app.tenant.planogram_templates.show.subtemplates_title') }} ({{ template.subtemplates_count }})
                     </h2>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Cada subtemplate define o layout para um número específico de módulos (gondola width).
+                        {{ t('app.tenant.planogram_templates.show.subtemplates_description') }}
                     </p>
                 </div>
                 <div class="divide-y divide-border">
@@ -93,13 +93,13 @@ function confirmDelete(): void {
                         <div>
                             <p class="font-medium">{{ sub.code }}</p>
                             <p class="text-sm text-muted-foreground">
-                                {{ sub.num_modules }} módulo{{ sub.num_modules !== 1 ? 's' : '' }}
+                                {{ sub.num_modules }} {{ sub.num_modules !== 1 ? t('app.tenant.planogram_templates.show.modules_plural') : t('app.tenant.planogram_templates.show.modules_singular') }}
                             </p>
                         </div>
-                        <Badge variant="outline">{{ sub.slots_count }} slot{{ sub.slots_count !== 1 ? 's' : '' }}</Badge>
+                        <Badge variant="outline">{{ sub.slots_count }} {{ sub.slots_count !== 1 ? t('app.tenant.planogram_templates.show.slots_plural') : t('app.tenant.planogram_templates.show.slots_singular') }}</Badge>
                     </div>
                     <div v-if="template.subtemplates.length === 0" class="px-6 py-8 text-center text-sm text-muted-foreground">
-                        Nenhum subtemplate encontrado.
+                        {{ t('app.tenant.planogram_templates.show.empty_subtemplates') }}
                     </div>
                 </div>
             </div>

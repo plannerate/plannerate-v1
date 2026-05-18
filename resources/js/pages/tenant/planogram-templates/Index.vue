@@ -36,12 +36,12 @@ const { t } = useT();
 const indexPath = PlanogramTemplateController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
 const { meta: templatesMeta, rows: templatesRows, loading: templatesLoading } = useDeferredPaginator(() => props.templates, 10);
 const pageMeta = useCrudPageMeta({
-    headTitle: 'Templates de Planograma',
-    title: 'Templates de Planograma',
-    description: 'Importe e gerencie templates de planograma para geração automática com layout predefinido',
+    headTitle: t('app.tenant.planogram_templates.title'),
+    title: t('app.tenant.planogram_templates.title'),
+    description: t('app.tenant.planogram_templates.description'),
     breadcrumbs: [
         { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
-        { title: 'Templates de Planograma', href: indexPath },
+        { title: t('app.tenant.planogram_templates.navigation'), href: indexPath },
     ],
 });
 
@@ -56,7 +56,7 @@ function handleDelete(id: string): void {
         <template #header-actions>
             <NewActionButton :href="PlanogramTemplateController.create.url(props.subdomain)">
                 <Upload class="size-4" />
-                Importar Template
+                {{ t('app.tenant.planogram_templates.actions.import') }}
             </NewActionButton>
         </template>
 
@@ -66,20 +66,20 @@ function handleDelete(id: string): void {
             :action="indexPath"
             :clear-href="indexPath"
             :search-value="props.filters.search"
-            search-placeholder="Buscar por código, nome ou departamento..."
-            filter-label="Filtros"
-            clear-label="Limpar filtros"
+            :search-placeholder="t('app.tenant.planogram_templates.search_placeholder')"
+            :filter-label="t('app.tenant.planogram_templates.filter_label')"
+            :clear-label="t('app.tenant.planogram_templates.clear_label')"
         >
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">Código / Nome</th>
-                        <th class="px-4 py-3 font-medium">Departamento</th>
-                        <th class="px-4 py-3 font-medium">Subtemplates</th>
-                        <th class="px-4 py-3 font-medium">Produtos</th>
-                        <th class="px-4 py-3 font-medium">Status</th>
-                        <th class="px-4 py-3 font-medium">Criado em</th>
-                        <th class="px-4 py-3 font-medium text-right">Ações</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.code_name') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.department') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.subtemplates') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.products') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.status') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.created_at') }}</th>
+                        <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.planogram_templates.fields.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -88,9 +88,9 @@ function handleDelete(id: string): void {
                     </template>
                     <tr v-else-if="templatesRows.length === 0">
                         <td class="px-4 py-8 text-center text-muted-foreground" colspan="7">
-                            Nenhum template importado ainda.
+                            {{ t('app.tenant.planogram_templates.empty') }}
                             <a :href="PlanogramTemplateController.create.url(props.subdomain)" class="ml-1 text-primary underline">
-                                Importar template →
+                                {{ t('app.tenant.planogram_templates.empty_action') }}
                             </a>
                         </td>
                     </tr>
@@ -106,7 +106,11 @@ function handleDelete(id: string): void {
                         <td class="px-4 py-3">{{ template.subtemplates_count }}</td>
                         <td class="px-4 py-3">{{ template.template_products_count }}</td>
                         <td class="px-4 py-3">
-                            <ColumnStatusBadge :active="template.is_active" active-label="Ativo" inactive-label="Inativo" />
+                            <ColumnStatusBadge
+                                :active="template.is_active"
+                                :active-label="t('app.tenant.planogram_templates.status.active')"
+                                :inactive-label="t('app.tenant.planogram_templates.status.inactive')"
+                            />
                         </td>
                         <td class="px-4 py-3">
                             <ColumnDate :date="template.created_at" />
