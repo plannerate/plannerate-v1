@@ -44,8 +44,7 @@ export function initializeEcho(): void {
     window.Pusher = Pusher;
     window.__plannerateEchoConfigured = false;
 
-    // Only enable Pusher debug logs in development
-    Pusher.logToConsole = import.meta.env.DEV;
+    Pusher.logToConsole = false;
 
     const key = metaContent('plannerate-reverb-key') ?? import.meta.env.VITE_REVERB_APP_KEY ?? '';
     const host = metaContent('plannerate-reverb-host') ?? import.meta.env.VITE_REVERB_HOST ?? window.location.hostname;
