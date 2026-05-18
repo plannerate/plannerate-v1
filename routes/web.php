@@ -33,6 +33,7 @@ use App\Http\Controllers\Tenant\NotificationController;
 use App\Http\Controllers\Tenant\PlanogramController;
 use App\Http\Controllers\Tenant\PlanogramTemplateController;
 use App\Http\Controllers\Tenant\ProductController;
+use App\Http\Controllers\Tenant\ProductDimensionController;
 use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\ProviderController;
 use App\Http\Controllers\Tenant\ReverbTestController;
@@ -106,6 +107,14 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->name('landlord.planogram-templates.index');
     Route::get('planogram-templates/create', [GlobalPlanogramTemplateController::class, 'create'])
         ->name('landlord.planogram-templates.create');
+    Route::post('planogram-templates', [GlobalPlanogramTemplateController::class, 'store'])
+        ->name('landlord.planogram-templates.store');
+    Route::get('planogram-templates/{globalPlanogramTemplate}/edit', [GlobalPlanogramTemplateController::class, 'edit'])
+        ->name('landlord.planogram-templates.edit');
+    Route::put('planogram-templates/{globalPlanogramTemplate}', [GlobalPlanogramTemplateController::class, 'update'])
+        ->name('landlord.planogram-templates.update');
+    Route::get('planogram-templates/import', [GlobalPlanogramTemplateController::class, 'importPage'])
+        ->name('landlord.planogram-templates.import-page');
     Route::post('planogram-templates/import', [GlobalPlanogramTemplateController::class, 'import'])
         ->name('landlord.planogram-templates.import');
     Route::post('planogram-templates/{globalPlanogramTemplate}/share', [GlobalPlanogramTemplateController::class, 'share'])
@@ -253,6 +262,11 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('products.sync-single');
         Route::post('products/update-images', [ProductController::class, 'updateImages'])
             ->name('products.update-images');
+
+        Route::get('dimensions', [ProductDimensionController::class, 'index'])
+            ->name('dimensions.index');
+        Route::patch('dimensions/{product}', [ProductDimensionController::class, 'update'])
+            ->name('dimensions.update');
         Route::get('system-logs', [SystemLogController::class, 'index'])
             ->name('system-logs.index');
         Route::delete('system-logs', [SystemLogController::class, 'clear'])
@@ -278,6 +292,14 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('planogram-templates.index');
         Route::get('planogram-templates/create', [PlanogramTemplateController::class, 'create'])
             ->name('planogram-templates.create');
+        Route::post('planogram-templates', [PlanogramTemplateController::class, 'store'])
+            ->name('planogram-templates.store');
+        Route::get('planogram-templates/{planogramTemplate}/edit', [PlanogramTemplateController::class, 'edit'])
+            ->name('planogram-templates.edit');
+        Route::put('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'update'])
+            ->name('planogram-templates.update');
+        Route::get('planogram-templates/import', [PlanogramTemplateController::class, 'importPage'])
+            ->name('planogram-templates.import-page');
         Route::post('planogram-templates/import', [PlanogramTemplateController::class, 'import'])
             ->name('planogram-templates.import');
         Route::get('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'show'])

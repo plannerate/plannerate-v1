@@ -42,6 +42,42 @@ class PlanogramTemplateController extends Controller
         unset($subdomain);
         $this->authorize('create', PlanogramTemplate::class);
 
+        return Inertia::render('tenant/planogram-templates/Form', [
+            'subdomain' => $this->tenantSubdomain(),
+        ]);
+    }
+
+    public function store(Request $request, string $subdomain): RedirectResponse
+    {
+        unset($subdomain);
+        $this->authorize('create', PlanogramTemplate::class);
+
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:50'],
+            'name' => ['required', 'string', 'max:255'],
+            'department' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
+        ]);
+
+        $validated['tenant_id'] = $this->tenantId();
+        $validated['created_by'] = $request->user()?->getKey();
+
+        PlanogramTemplate::create($validated);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.planogram_templates.messages.created'),
+        ]);
+
+        return to_route('tenant.planogram-templates.index', $this->tenantRouteParameters());
+    }
+
+    public function importPage(string $subdomain): Response
+    {
+        unset($subdomain);
+        $this->authorize('create', PlanogramTemplate::class);
+
         return Inertia::render('tenant/planogram-templates/Import', [
             'subdomain' => $this->tenantSubdomain(),
         ]);
@@ -85,6 +121,47 @@ class PlanogramTemplateController extends Controller
                 ]),
             ]);
         }
+
+        return to_route('tenant.planogram-templates.index', $this->tenantRouteParameters());
+    }
+
+    public function edit(string $subdomain, PlanogramTemplate $planogramTemplate): Response
+    {
+        unset($subdomain);
+        $this->authorize('update', $planogramTemplate);
+
+        return Inertia::render('tenant/planogram-templates/Form', [
+            'subdomain' => $this->tenantSubdomain(),
+            'template' => [
+                'id' => $planogramTemplate->id,
+                'code' => $planogramTemplate->code,
+                'name' => $planogramTemplate->name,
+                'department' => $planogramTemplate->department,
+                'description' => $planogramTemplate->description,
+                'is_active' => $planogramTemplate->is_active,
+            ],
+        ]);
+    }
+
+    public function update(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): RedirectResponse
+    {
+        unset($subdomain);
+        $this->authorize('update', $planogramTemplate);
+
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:50'],
+            'name' => ['required', 'string', 'max:255'],
+            'department' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
+        ]);
+
+        $planogramTemplate->update($validated);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.planogram_templates.messages.updated'),
+        ]);
 
         return to_route('tenant.planogram-templates.index', $this->tenantRouteParameters());
     }

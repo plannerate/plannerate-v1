@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { Upload } from 'lucide-vue-next';
+import { Plus, Upload } from 'lucide-vue-next';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
-import { ColumnActions, ColumnDate, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
+import { ColumnActions, ColumnDate, ColumnLabel } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
@@ -54,10 +56,16 @@ function handleDelete(id: string): void {
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
-            <NewActionButton :href="PlanogramTemplateController.create.url(props.subdomain)">
-                <Upload class="size-4" />
-                {{ t('app.tenant.planogram_templates.actions.import') }}
-            </NewActionButton>
+            <div class="flex items-center gap-2">
+                <NewActionButton :href="PlanogramTemplateController.create.url(props.subdomain)">
+                    <Plus class="size-4" />
+                    {{ t('app.tenant.planogram_templates.actions.create') }}
+                </NewActionButton>
+                <Button variant="outline" :as="'a'" :href="PlanogramTemplateController.importPage.url(props.subdomain)">
+                    <Upload class="size-4" />
+                    {{ t('app.tenant.planogram_templates.actions.import') }}
+                </Button>
+            </div>
         </template>
 
         <ListPage
@@ -106,18 +114,16 @@ function handleDelete(id: string): void {
                         <td class="px-4 py-3">{{ template.subtemplates_count }}</td>
                         <td class="px-4 py-3">{{ template.template_products_count }}</td>
                         <td class="px-4 py-3">
-                            <ColumnStatusBadge
-                                :active="template.is_active"
-                                :active-label="t('app.tenant.planogram_templates.status.active')"
-                                :inactive-label="t('app.tenant.planogram_templates.status.inactive')"
-                            />
+                            <Badge :variant="template.is_active ? 'default' : 'secondary'">
+                                {{ template.is_active ? t('app.tenant.planogram_templates.status.active') : t('app.tenant.planogram_templates.status.inactive') }}
+                            </Badge>
                         </td>
                         <td class="px-4 py-3">
                             <ColumnDate :date="template.created_at" />
                         </td>
                         <td class="px-4 py-3 ">
                             <ColumnActions
-                                :show-href="PlanogramTemplateController.show.url({ subdomain: props.subdomain, planogramTemplate: template.id })"
+                                :edit-href="PlanogramTemplateController.edit.url({ subdomain: props.subdomain, planogramTemplate: template.id })"
                                 :delete-href="PlanogramTemplateController.destroy.url({ subdomain: props.subdomain, planogramTemplate: template.id })"
                                 :delete-label="template.name"
                                 :require-confirm-word="true"

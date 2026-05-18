@@ -39,6 +39,77 @@ class GlobalPlanogramTemplateController extends Controller
     {
         $this->authorize('create', GlobalPlanogramTemplate::class);
 
+        return Inertia::render('landlord/planogram-templates/Form');
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $this->authorize('create', GlobalPlanogramTemplate::class);
+
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:50'],
+            'name' => ['required', 'string', 'max:255'],
+            'department' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
+        ]);
+
+        /** @var User $user */
+        $user = $request->user();
+        $validated['created_by'] = $user->getKey();
+
+        GlobalPlanogramTemplate::create($validated);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.planogram_templates.messages.created'),
+        ]);
+
+        return to_route('landlord.planogram-templates.index');
+    }
+
+    public function edit(GlobalPlanogramTemplate $globalPlanogramTemplate): Response
+    {
+        $this->authorize('update', $globalPlanogramTemplate);
+
+        return Inertia::render('landlord/planogram-templates/Form', [
+            'template' => [
+                'id' => $globalPlanogramTemplate->id,
+                'code' => $globalPlanogramTemplate->code,
+                'name' => $globalPlanogramTemplate->name,
+                'department' => $globalPlanogramTemplate->department,
+                'description' => $globalPlanogramTemplate->description,
+                'is_active' => $globalPlanogramTemplate->is_active,
+            ],
+        ]);
+    }
+
+    public function update(Request $request, GlobalPlanogramTemplate $globalPlanogramTemplate): RedirectResponse
+    {
+        $this->authorize('update', $globalPlanogramTemplate);
+
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:50'],
+            'name' => ['required', 'string', 'max:255'],
+            'department' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
+        ]);
+
+        $globalPlanogramTemplate->update($validated);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.landlord.planogram_templates.messages.updated'),
+        ]);
+
+        return to_route('landlord.planogram-templates.index');
+    }
+
+    public function importPage(): Response
+    {
+        $this->authorize('create', GlobalPlanogramTemplate::class);
+
         return Inertia::render('landlord/planogram-templates/Import');
     }
 
