@@ -46,9 +46,9 @@ const pageMeta = useCrudPageMeta({
 });
 
 const wizardSteps: WizardStep[] = [
-    { step: 1, label: 'Dados básicos', description: 'Código, nome e departamento' },
-    { step: 2, label: 'Slots', description: 'Grade de gôndola' },
-    { step: 3, label: 'Produtos', description: 'Mix do template' },
+    { step: 1, label: t('planogram-templates.wizard.step1_label'), description: t('planogram-templates.wizard.step1_description') },
+    { step: 2, label: t('planogram-templates.wizard.step2_label'), description: t('planogram-templates.wizard.step2_description') },
+    { step: 3, label: t('planogram-templates.wizard.step3_label'), description: t('planogram-templates.wizard.step3_description') },
 ];
 </script>
 
@@ -86,7 +86,7 @@ const wizardSteps: WizardStep[] = [
                             type="button"
                         >
                             <Layers class="size-4" />
-                            Configurar Slots →
+                            {{ t('planogram-templates.wizard.configure_slots_button') }}
                         </Button>
                     </template>
                 </FormCard>

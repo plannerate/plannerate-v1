@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, Link } from '@inertiajs/vue3';
 import { Layers, PlusSquare, Upload } from 'lucide-vue-next';
 import { computed } from 'vue';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
 import FormCard from '@/components/FormCard.vue';
-import WizardProgress from '@/components/planogram-templates/WizardProgress.vue';
 import PlanogramTemplateFormFields from '@/components/planogram-templates/PlanogramTemplateFormFields.vue';
 import type { WizardStep } from '@/components/planogram-templates/types';
+import WizardProgress from '@/components/planogram-templates/WizardProgress.vue';
 import { Button } from '@/components/ui/button';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useT } from '@/composables/useT';
@@ -26,30 +26,68 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
-const isEdit = computed(() => props.template !== null && props.template !== undefined);
-const indexPath = PlanogramTemplateController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
-const importPath = PlanogramTemplateController.importPage.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const isEdit = computed(
+    () => props.template !== null && props.template !== undefined,
+);
+const indexPath = PlanogramTemplateController.index
+    .url(props.subdomain)
+    .replace(/^\/\/[^/]+/, '');
+const importPath = PlanogramTemplateController.importPage
+    .url(props.subdomain)
+    .replace(/^\/\/[^/]+/, '');
 const slotsPath = computed(() =>
     isEdit.value
-        ? PlanogramTemplateController.show.url({ subdomain: props.subdomain, planogramTemplate: props.template!.id }).replace(/^\/\/[^/]+/, '') + '/slots'
+        ? PlanogramTemplateController.show
+              .url({
+                  subdomain: props.subdomain,
+                  planogramTemplate: props.template!.id,
+              })
+              .replace(/^\/\/[^/]+/, '') + '/slots'
         : null,
 );
 
 const pageMeta = useCrudPageMeta({
-    headTitle: isEdit.value ? t('app.tenant.planogram_templates.actions.edit') : t('app.tenant.planogram_templates.actions.create'),
-    title: isEdit.value ? t('app.tenant.planogram_templates.actions.edit') : t('app.tenant.planogram_templates.actions.create'),
+    headTitle: isEdit.value
+        ? t('app.tenant.planogram_templates.actions.edit')
+        : t('app.tenant.planogram_templates.actions.create'),
+    title: isEdit.value
+        ? t('app.tenant.planogram_templates.actions.edit')
+        : t('app.tenant.planogram_templates.actions.create'),
     description: t('app.tenant.planogram_templates.create.description'),
     breadcrumbs: [
-        { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
-        { title: t('app.tenant.planogram_templates.navigation'), href: indexPath },
-        { title: isEdit.value ? t('app.tenant.common.edit') : t('app.tenant.common.create'), href: '#' },
+        {
+            title: t('app.navigation.dashboard'),
+            href: dashboard.url().replace(/^\/\/[^/]+/, ''),
+        },
+        {
+            title: t('app.tenant.planogram_templates.navigation'),
+            href: indexPath,
+        },
+        {
+            title: isEdit.value
+                ? t('app.tenant.common.edit')
+                : t('app.tenant.common.create'),
+            href: '#',
+        },
     ],
 });
 
 const wizardSteps: WizardStep[] = [
-    { step: 1, label: 'Dados básicos', description: 'Código, nome e departamento' },
-    { step: 2, label: 'Slots', description: 'Grade de gôndola' },
-    { step: 3, label: 'Produtos', description: 'Mix do template' },
+    {
+        step: 1,
+        label: t('planogram-templates.wizard.step1_label'),
+        description: t('planogram-templates.wizard.step1_description'),
+    },
+    {
+        step: 2,
+        label: t('planogram-templates.wizard.step2_label'),
+        description: t('planogram-templates.wizard.step2_description'),
+    },
+    {
+        step: 3,
+        label: t('planogram-templates.wizard.step3_label'),
+        description: t('planogram-templates.wizard.step3_description'),
+    },
 ];
 </script>
 
@@ -62,32 +100,60 @@ const wizardSteps: WizardStep[] = [
             </div>
 
             <Form
-                v-bind="isEdit
-                    ? PlanogramTemplateController.update.form({ subdomain: props.subdomain, planogramTemplate: props.template!.id })
-                    : PlanogramTemplateController.store.form(props.subdomain)"
+                v-bind="
+                    isEdit
+                        ? PlanogramTemplateController.update.form({
+                              subdomain: props.subdomain,
+                              planogramTemplate: props.template!.id,
+                          })
+                        : PlanogramTemplateController.store.form(
+                              props.subdomain,
+                          )
+                "
                 v-slot="{ errors, processing }"
             >
-                <FormCard :processing="processing" :cancel-href="indexPath" :title="pageMeta.title" :description="pageMeta.description" :max-width="'max-w-3xl'">
+                <FormCard
+                    :processing="processing"
+                    :cancel-href="indexPath"
+                    :title="pageMeta.title"
+                    :description="pageMeta.description"
+                    :max-width="'max-w-3xl'"
+                >
                     <template #icon>
                         <PlusSquare class="size-5" />
                     </template>
 
-                    <PlanogramTemplateFormFields :template="props.template ?? null" :errors="errors" translation-scope="app.tenant.planogram_templates" />
+                    <PlanogramTemplateFormFields
+                        :template="props.template ?? null"
+                        :errors="errors"
+                        translation-scope="app.tenant.planogram_templates"
+                    />
 
                     <template #header-extra>
-                        <Button variant="outline" :as="'a'" :href="importPath" type="button">
-                            <Upload class="size-4" />
-                            {{ t('app.tenant.planogram_templates.actions.import') }}
+                        <Button variant="outline" type="button" as-child>
+                            <Link :href="importPath">
+                                <Upload class="size-4" />
+                                {{
+                                    t(
+                                        'app.tenant.planogram_templates.actions.import',
+                                    )
+                                }}
+                            </Link>
                         </Button>
                         <Button
                             v-if="isEdit && slotsPath"
                             variant="outline"
-                            :as="'a'"
-                            :href="slotsPath"
                             type="button"
+                            as-child
                         >
-                            <Layers class="size-4" />
-                            Configurar Slots →
+                            <Link :href="slotsPath">
+                                <Layers class="size-4" />
+                                {{
+                                    t(
+                                        'planogram-templates.wizard.configure_slots_button',
+                                    )
+                                }}
+                            </Link>
                         </Button>
                     </template>
                 </FormCard>

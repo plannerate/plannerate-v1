@@ -65,13 +65,9 @@ const groupingSearchUrl = computed(() =>
 
 // ── Wizard ─────────────────────────────────────────────────────────────────────
 const wizardSteps: WizardStep[] = [
-    {
-        step: 1,
-        label: 'Dados básicos',
-        description: 'Código, nome e departamento',
-    },
-    { step: 2, label: 'Slots', description: 'Grade de gôndola' },
-    { step: 3, label: 'Produtos', description: 'Mix do template' },
+    { step: 1, label: t('planogram-templates.wizard.step1_label'), description: t('planogram-templates.wizard.step1_description') },
+    { step: 2, label: t('planogram-templates.wizard.step2_label'), description: t('planogram-templates.wizard.step2_description') },
+    { step: 3, label: t('planogram-templates.wizard.step3_label'), description: t('planogram-templates.wizard.step3_description') },
 ];
 
 function navigateWizard(step: 1 | 2 | 3): void {
@@ -384,7 +380,7 @@ const breadcrumbs = [
             <div class="flex justify-between pt-2">
                 <Button variant="outline" :as="'a'" :href="editPath">
                     <ChevronLeft class="size-4" />
-                    Voltar — Dados básicos
+                    {{ t('planogram-templates.wizard.back_to_basics_button') }}
                 </Button>
                 <Button :as="'a'" :href="productsPath">
                     Próximo — Produtos

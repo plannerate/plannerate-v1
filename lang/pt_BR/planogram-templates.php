@@ -34,6 +34,22 @@ return [
         'inactive' => 'Inativo',
     ],
 
+    // Wizard steps
+    'wizard' => [
+        'step1_label' => 'Dados básicos',
+        'step1_description' => 'Código, nome e departamento',
+        'step2_label' => 'Slots',
+        'step2_description' => 'Grade de gôndola',
+        'step3_label' => 'Produtos',
+        'step3_description' => 'Mix do template',
+        'configure_slots_button' => 'Configurar Slots →',
+        'back_to_basics_button' => 'Voltar — Dados básicos',
+        'back_to_slots_button' => 'Voltar — Slots',
+        'finish_button' => 'Finalizar e sair',
+        'next_slots_button' => 'Avançar — Slots →',
+        'next_products_button' => 'Avançar — Produtos →',
+    ],
+
     // Grid labels (GondolaGrid.vue)
     'grid' => [
         'module_label' => 'Módulo #',

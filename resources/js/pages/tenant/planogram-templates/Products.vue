@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ChevronLeft } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
@@ -61,13 +61,9 @@ const slotsPath = computed(() => `${baseUrl.value}/slots`);
 
 // ── Wizard ─────────────────────────────────────────────────────────────────────
 const wizardSteps: WizardStep[] = [
-    {
-        step: 1,
-        label: 'Dados básicos',
-        description: 'Código, nome e departamento',
-    },
-    { step: 2, label: 'Slots', description: 'Grade de gôndola' },
-    { step: 3, label: 'Produtos', description: 'Mix do template' },
+    { step: 1, label: t('planogram-templates.wizard.step1_label'), description: t('planogram-templates.wizard.step1_description') },
+    { step: 2, label: t('planogram-templates.wizard.step2_label'), description: t('planogram-templates.wizard.step2_description') },
+    { step: 3, label: t('planogram-templates.wizard.step3_label'), description: t('planogram-templates.wizard.step3_description') },
 ];
 
 function navigateWizard(step: 1 | 2 | 3): void {
@@ -223,12 +219,14 @@ const breadcrumbs = [
 
             <!-- Navigation -->
             <div class="flex justify-between pt-1">
-                <Button variant="outline" size="sm" :as="'a'" :href="slotsPath">
-                    <ChevronLeft class="size-4" />
-                    Voltar — Slots
+                <Button variant="outline" size="sm" as-child>
+                    <Link :href="slotsPath">
+                        <ChevronLeft class="size-4" />
+                        Voltar — Slots
+                    </Link>
                 </Button>
-                <Button variant="outline" size="sm" :as="'a'" :href="indexPath">
-                    Finalizar e sair
+                <Button variant="outline" size="sm" as-child>
+                    <Link :href="indexPath"> Finalizar e sair </Link>
                 </Button>
             </div>
         </div>
