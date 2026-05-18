@@ -16,6 +16,7 @@ use App\Models\Product;
 use App\Models\Provider;
 use App\Models\Role;
 use App\Models\Sale;
+use App\Models\SimilarGroup;
 use App\Models\Store;
 use App\Models\Tenant;
 use App\Models\UsefulLink;
@@ -203,6 +204,14 @@ class SidebarNavigationService
                             ->icon('ruler')
                             ->authorize('viewAny', Product::class)
                             ->setOrder(30);
+                    })
+                    ->item('tenant.similar-groups', function ($item) use ($subdomain): void {
+                        $item
+                            ->label('Grupo de Similares')
+                            ->href(route('tenant.similar-groups.index', ['subdomain' => $subdomain], false))
+                            ->icon('layers')
+                            ->authorize('viewAny', SimilarGroup::class)
+                            ->setOrder(35);
                     })
                     ->item('tenant.providers', function ($item) use ($subdomain): void {
                         $item

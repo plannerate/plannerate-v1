@@ -38,6 +38,7 @@ use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\ProviderController;
 use App\Http\Controllers\Tenant\ReverbTestController;
 use App\Http\Controllers\Tenant\SaleController;
+use App\Http\Controllers\Tenant\SimilarGroupController;
 use App\Http\Controllers\Tenant\StoreController;
 use App\Http\Controllers\Tenant\SystemLogController;
 use App\Http\Controllers\Tenant\UserController as TenantUserController;
@@ -267,6 +268,10 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('dimensions.index');
         Route::patch('dimensions/{product}', [ProductDimensionController::class, 'update'])
             ->name('dimensions.update');
+
+        Route::resource('similar-groups', SimilarGroupController::class)
+            ->except(['show'])
+            ->names('similar-groups');
         Route::get('system-logs', [SystemLogController::class, 'index'])
             ->name('system-logs.index');
         Route::delete('system-logs', [SystemLogController::class, 'clear'])

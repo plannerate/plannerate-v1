@@ -542,95 +542,95 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'import_warnings' => ':count produto(s) não encontrado(s) no catálogo global.',
             'deleted' => 'Template removido com sucesso.',
         ],
-    ],
-    'useful_links' => [
-        'navigation' => 'Links uteis',
-        'title' => 'Links uteis',
-        'description' => 'Gerencie links que podem ser exibidos no dashboard dos tenants.',
-        'actions' => [
-            'new' => 'Novo link',
-            'edit' => 'Editar link',
+        'useful_links' => [
+            'navigation' => 'Links uteis',
+            'title' => 'Links uteis',
+            'description' => 'Gerencie links que podem ser exibidos no dashboard dos tenants.',
+            'actions' => [
+                'new' => 'Novo link',
+                'edit' => 'Editar link',
+            ],
+            'fields' => [
+                'name' => 'Nome',
+                'url' => 'Link',
+                'logo' => 'Logo',
+                'description' => 'Descricao',
+                'show_on_tenant_dashboard' => 'Mostrar para tenants',
+            ],
+            'messages' => [
+                'created' => 'Link util criado com sucesso.',
+                'updated' => 'Link util atualizado com sucesso.',
+                'deleted' => 'Link util removido com sucesso.',
+            ],
         ],
-        'fields' => [
-            'name' => 'Nome',
-            'url' => 'Link',
-            'logo' => 'Logo',
-            'description' => 'Descricao',
-            'show_on_tenant_dashboard' => 'Mostrar para tenants',
+        'roles' => [
+            'navigation' => 'Perfis de acesso',
+            'title' => 'Perfis de acesso',
+            'description' => 'Gerencie os perfis globais e suas permissoes.',
+            'types' => [
+                'landlord' => 'Landlord',
+                'tenant' => 'Tenant',
+            ],
+            'actions' => [
+                'new' => 'Novo perfil',
+                'edit' => 'Editar perfil',
+            ],
+            'fields' => [
+                'name' => 'Nome',
+                'system_name' => 'Nome do sistema',
+                'type' => 'Tipo',
+                'permissions' => 'Permissoes',
+                'permissions_count' => 'Permissoes',
+            ],
+            'messages' => [
+                'created' => 'Perfil criado com sucesso.',
+                'updated' => 'Perfil atualizado com sucesso.',
+                'deleted' => 'Perfil removido com sucesso.',
+                'in_use' => 'Nao e possivel excluir um perfil com usuarios vinculados.',
+                'protected' => 'Este perfil e protegido e nao pode ser alterado.',
+            ],
         ],
-        'messages' => [
-            'created' => 'Link util criado com sucesso.',
-            'updated' => 'Link util atualizado com sucesso.',
-            'deleted' => 'Link util removido com sucesso.',
+        'users' => [
+            'navigation' => 'Usuarios',
+            'title' => 'Usuarios',
+            'description' => 'Gerencie os usuarios globais do landlord e seus perfis de acesso.',
+            'actions' => [
+                'new' => 'Novo usuario',
+                'edit' => 'Editar usuario',
+            ],
+            'fields' => [
+                'name' => 'Nome',
+                'email' => 'E-mail',
+                'password' => 'Senha',
+                'password_confirmation' => 'Confirmacao de senha',
+                'password_hint' => 'Preencha apenas para alterar a senha.',
+                'roles' => 'Perfis de acesso',
+                'is_active' => 'Ativo',
+            ],
+            'messages' => [
+                'created' => 'Usuario criado com sucesso.',
+                'updated' => 'Usuario atualizado com sucesso.',
+                'deleted' => 'Usuario removido com sucesso.',
+            ],
         ],
-    ],
-    'roles' => [
-        'navigation' => 'Perfis de acesso',
-        'title' => 'Perfis de acesso',
-        'description' => 'Gerencie os perfis globais e suas permissoes.',
-        'types' => [
-            'landlord' => 'Landlord',
-            'tenant' => 'Tenant',
-        ],
-        'actions' => [
-            'new' => 'Novo perfil',
-            'edit' => 'Editar perfil',
-        ],
-        'fields' => [
-            'name' => 'Nome',
-            'system_name' => 'Nome do sistema',
-            'type' => 'Tipo',
-            'permissions' => 'Permissoes',
-            'permissions_count' => 'Permissoes',
-        ],
-        'messages' => [
-            'created' => 'Perfil criado com sucesso.',
-            'updated' => 'Perfil atualizado com sucesso.',
-            'deleted' => 'Perfil removido com sucesso.',
-            'in_use' => 'Nao e possivel excluir um perfil com usuarios vinculados.',
-            'protected' => 'Este perfil e protegido e nao pode ser alterado.',
-        ],
-    ],
-    'users' => [
-        'navigation' => 'Usuarios',
-        'title' => 'Usuarios',
-        'description' => 'Gerencie os usuarios globais do landlord e seus perfis de acesso.',
-        'actions' => [
-            'new' => 'Novo usuario',
-            'edit' => 'Editar usuario',
-        ],
-        'fields' => [
-            'name' => 'Nome',
-            'email' => 'E-mail',
-            'password' => 'Senha',
-            'password_confirmation' => 'Confirmacao de senha',
-            'password_hint' => 'Preencha apenas para alterar a senha.',
-            'roles' => 'Perfis de acesso',
-            'is_active' => 'Ativo',
-        ],
-        'messages' => [
-            'created' => 'Usuario criado com sucesso.',
-            'updated' => 'Usuario atualizado com sucesso.',
-            'deleted' => 'Usuario removido com sucesso.',
-        ],
-    ],
-    'permissions' => [
-        'navigation' => 'Permissoes',
-        'title' => 'Permissoes',
-        'description' => 'Gerencie o catalogo global de permissoes.',
-        'actions' => [
-            'new' => 'Nova permissao',
-            'edit' => 'Editar permissao',
-        ],
-        'fields' => [
-            'name' => 'Nome',
-            'type' => 'Tipo',
-        ],
-        'messages' => [
-            'created' => 'Permissao criada com sucesso.',
-            'updated' => 'Permissao atualizada com sucesso.',
-            'deleted' => 'Permissao removida com sucesso.',
-            'protected' => 'Esta permissao e protegida e nao pode ser alterada.',
+        'permissions' => [
+            'navigation' => 'Permissoes',
+            'title' => 'Permissoes',
+            'description' => 'Gerencie o catalogo global de permissoes.',
+            'actions' => [
+                'new' => 'Nova permissao',
+                'edit' => 'Editar permissao',
+            ],
+            'fields' => [
+                'name' => 'Nome',
+                'type' => 'Tipo',
+            ],
+            'messages' => [
+                'created' => 'Permissao criada com sucesso.',
+                'updated' => 'Permissao atualizada com sucesso.',
+                'deleted' => 'Permissao removida com sucesso.',
+                'protected' => 'Esta permissao e protegida e nao pode ser alterada.',
+            ],
         ],
     ],
     'tenant_access' => [

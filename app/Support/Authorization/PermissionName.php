@@ -198,6 +198,20 @@ final class PermissionName
 
     public const LANDLORD_KANBAN_TEMPLATES_DELETE = 'landlord.kanban.templates.delete';
 
+    public const TENANT_DIMENSIONS_VIEW_ANY = 'tenant.dimensions.viewAny';
+
+    public const TENANT_DIMENSIONS_UPDATE = 'tenant.dimensions.update';
+
+    public const TENANT_SIMILAR_GROUPS_VIEW_ANY = 'tenant.similar-groups.viewAny';
+
+    public const TENANT_SIMILAR_GROUPS_VIEW = 'tenant.similar-groups.view';
+
+    public const TENANT_SIMILAR_GROUPS_CREATE = 'tenant.similar-groups.create';
+
+    public const TENANT_SIMILAR_GROUPS_UPDATE = 'tenant.similar-groups.update';
+
+    public const TENANT_SIMILAR_GROUPS_DELETE = 'tenant.similar-groups.delete';
+
     public const TENANT_EDITOR_PLANOGRAMS_VIEW_ANY = 'tenant.editor-planograms.viewAny';
 
     public const TENANT_KANBAN_VIEW_ANY = 'tenant.kanban.viewAny';
@@ -309,6 +323,13 @@ final class PermissionName
             self::TENANT_GONDOLAS_DELETE,
             self::TENANT_GONDOLAS_AUTOGENERATE,
             self::TENANT_GONDOLAS_AUTOGENERATE_IA,
+            self::TENANT_DIMENSIONS_VIEW_ANY,
+            self::TENANT_DIMENSIONS_UPDATE,
+            self::TENANT_SIMILAR_GROUPS_VIEW_ANY,
+            self::TENANT_SIMILAR_GROUPS_VIEW,
+            self::TENANT_SIMILAR_GROUPS_CREATE,
+            self::TENANT_SIMILAR_GROUPS_UPDATE,
+            self::TENANT_SIMILAR_GROUPS_DELETE,
             self::TENANT_EDITOR_PLANOGRAMS_VIEW_ANY,
             self::LANDLORD_KANBAN_TEMPLATES_VIEW_ANY,
             self::LANDLORD_KANBAN_TEMPLATES_CREATE,
