@@ -71,37 +71,23 @@ describe('ShelfLevelStrategy: classificação ABC por aggregateScore', function 
         DB::shouldReceive('get')->andReturn(collect());
     });
 
-    it('score >= 0.50 → HIGH (top tier)', function () {
+    it('score >= 0.70 → EYE (produto A, top ~20%)', function () {
         $strategy = new ShelfLevelStrategy('tenant-1');
-        $block = strategyBlock(aggregateScore: 0.60);
+        $block = strategyBlock(aggregateScore: 0.80);
 
-        expect($strategy->decidePreferredLevel($block))->toBe(ShelfLevel::High);
+        expect($strategy->decidePreferredLevel($block))->toBe(ShelfLevel::Eye);
     });
 
-    it('score exato 0.50 → HIGH (limiar A+)', function () {
+    it('score exato 0.70 → EYE (limiar A)', function () {
+        $strategy = new ShelfLevelStrategy('tenant-1');
+        $block = strategyBlock(aggregateScore: 0.70);
+
+        expect($strategy->decidePreferredLevel($block))->toBe(ShelfLevel::Eye);
+    });
+
+    it('score >= 0.35 e < 0.70 → HAND (produto B, ~30%)', function () {
         $strategy = new ShelfLevelStrategy('tenant-1');
         $block = strategyBlock(aggregateScore: 0.50);
-
-        expect($strategy->decidePreferredLevel($block))->toBe(ShelfLevel::High);
-    });
-
-    it('score >= 0.40 e < 0.50 → EYE (produto A)', function () {
-        $strategy = new ShelfLevelStrategy('tenant-1');
-        $block = strategyBlock(aggregateScore: 0.45);
-
-        expect($strategy->decidePreferredLevel($block))->toBe(ShelfLevel::Eye);
-    });
-
-    it('score exato 0.40 → EYE (limiar A)', function () {
-        $strategy = new ShelfLevelStrategy('tenant-1');
-        $block = strategyBlock(aggregateScore: 0.40);
-
-        expect($strategy->decidePreferredLevel($block))->toBe(ShelfLevel::Eye);
-    });
-
-    it('score >= 0.35 e < 0.40 → HAND (produto B)', function () {
-        $strategy = new ShelfLevelStrategy('tenant-1');
-        $block = strategyBlock(aggregateScore: 0.37);
 
         expect($strategy->decidePreferredLevel($block))->toBe(ShelfLevel::Hand);
     });
@@ -113,11 +99,18 @@ describe('ShelfLevelStrategy: classificação ABC por aggregateScore', function 
         expect($strategy->decidePreferredLevel($block))->toBe(ShelfLevel::Hand);
     });
 
-    it('score < 0.35 → LOW (produto C)', function () {
+    it('score < 0.35 → LOW (produto C, ~50%)', function () {
         $strategy = new ShelfLevelStrategy('tenant-1');
         $block = strategyBlock(aggregateScore: 0.20);
 
         expect($strategy->decidePreferredLevel($block))->toBe(ShelfLevel::Low);
+    });
+
+    it('score sem flag estratégico, mesmo alto (0.60), não vai para HIGH', function () {
+        $strategy = new ShelfLevelStrategy('tenant-1');
+        $block = strategyBlock(aggregateScore: 0.60);
+
+        expect($strategy->decidePreferredLevel($block))->toBe(ShelfLevel::Hand);
     });
 
     it('produto estratégico (strategic >= 1.0) → HIGH independente do score', function () {

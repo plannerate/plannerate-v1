@@ -38,6 +38,10 @@ const sidebarNavItems = computed<NavItem[]>(() => {
     if (subdomain.value) {
         items.push(
             {
+                title: t('app.settings_nav.planogram_settings'),
+                href: ScoringWeightsController.edit.url(subdomain.value).replace('/settings/scoring-weights', '/settings/planogram'),
+            },
+            {
                 title: t('app.settings_nav.scoring_weights'),
                 href: ScoringWeightsController.edit.url(subdomain.value),
             },

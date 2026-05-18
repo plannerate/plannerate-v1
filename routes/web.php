@@ -19,6 +19,7 @@ use App\Http\Controllers\Landlord\UsefulLinkController;
 use App\Http\Controllers\Landlord\UserController;
 use App\Http\Controllers\Landlord\WorkflowTemplateController as LandlordWorkflowTemplateController;
 use App\Http\Controllers\Settings\AdjacencyMatrixController;
+use App\Http\Controllers\Settings\PlanogramSettingsController;
 use App\Http\Controllers\Settings\ScoringWeightsController;
 use App\Http\Controllers\Settings\ShelfLevelPreferencesController;
 use App\Http\Controllers\Tenant\CategoryController;
@@ -316,6 +317,11 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('adjacency-matrix.update');
         Route::delete('settings/adjacency-matrix/{adjacencyRule}', [AdjacencyMatrixController::class, 'destroy'])
             ->name('adjacency-matrix.destroy');
+
+        Route::get('settings/planogram', [PlanogramSettingsController::class, 'edit'])
+            ->name('planogram-settings.edit');
+        Route::put('settings/planogram', [PlanogramSettingsController::class, 'update'])
+            ->name('planogram-settings.update');
 
         Route::get('settings/shelf-level-preferences', [ShelfLevelPreferencesController::class, 'edit'])
             ->name('shelf-level-preferences.edit');

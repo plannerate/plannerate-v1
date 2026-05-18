@@ -7,6 +7,7 @@ use App\Services\AutoPlanogram\DTO\ProductBlock;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Strategy for determining and applying shelf level preferences.
@@ -69,14 +70,12 @@ final class ShelfLevelStrategy
     /**
      * Deriva o nível preferido a partir da classificação ABC do bloco.
      *
-     * Thresholds baseados no aggregateScore normalizado 0-1.
-     * Sem produtos estratégicos o score máximo observado é ~0.58 (max teórico 0.80),
-     * então os limiares são calibrados para o range real dos dados:
-     * - A+ (≥0.50) → HIGH (top tier, prateleira de destaque)
-     * - A  (≥0.40) → EYE (campeões de margem/venda)
-     * - B  (≥0.35) → HAND (bom giro)
-     * - C  (<0.35) → LOW (volume, econômicos)
-     * - Estratégico → HIGH (independente de score)
+     * Thresholds calibrados para distribuição ~20% EYE, ~30% HAND, ~50% LOW.
+     * Somente produtos estratégicos vão para HIGH — score alto sozinho não basta.
+     * - Estratégico (strategic >= 1.0) → HIGH
+     * - A  (≥0.70) → EYE (top ~20%)
+     * - B  (≥0.35) → HAND (próximos ~30%)
+     * - C  (<0.35) → LOW (restante ~50%)
      */
     private function levelFromAbcClass(ProductBlock $block): ShelfLevel
     {
@@ -85,15 +84,24 @@ final class ShelfLevelStrategy
         );
 
         if ($hasStrategic) {
-            return ShelfLevel::High;
+            $level = ShelfLevel::High;
+        } else {
+            $level = match (true) {
+                $block->aggregateScore >= 0.70 => ShelfLevel::Eye,
+                $block->aggregateScore >= 0.35 => ShelfLevel::Hand,
+                default => ShelfLevel::Low,
+            };
         }
 
-        return match (true) {
-            $block->aggregateScore >= 0.50 => ShelfLevel::High,
-            $block->aggregateScore >= 0.40 => ShelfLevel::Eye,
-            $block->aggregateScore >= 0.35 => ShelfLevel::Hand,
-            default => ShelfLevel::Low,
-        };
+        Log::debug('ShelfLevelStrategy: nível decidido', [
+            'block_key' => $block->groupingKey,
+            'avg_score' => round($block->aggregateScore, 3),
+            'has_strategic' => $hasStrategic,
+            'nivel_decided' => $level->value,
+            'fallback_order' => array_map(fn ($l) => $l->value, $level->fallbackOrder()),
+        ]);
+
+        return $level;
     }
 
     /**

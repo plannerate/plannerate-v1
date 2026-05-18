@@ -12,7 +12,7 @@ final readonly class ScoringWeightsValue
         public float $estrategico,
         public float $doh,
         public int $salesWindowMonths,
-        public int $blockHierarchyLevel = 6,
+        public int $blockHierarchyLevel = 5,
         public int $adjacencyHierarchyLevel = 4,
         public float $verticalBlockThreshold = 0.20,
         public int $verticalBlockMinShelves = 2,
@@ -26,7 +26,7 @@ final readonly class ScoringWeightsValue
             estrategico: (float) $model->w_estrategico,
             doh: (float) $model->w_doh,
             salesWindowMonths: $model->sales_window_months,
-            blockHierarchyLevel: (int) ($model->block_hierarchy_level ?? 6),
+            blockHierarchyLevel: (int) ($model->block_hierarchy_level ?? 5),
             adjacencyHierarchyLevel: (int) ($model->adjacency_hierarchy_level ?? 4),
             verticalBlockThreshold: (float) ($model->vertical_block_threshold ?? 0.20),
             verticalBlockMinShelves: (int) ($model->vertical_block_min_shelves ?? 2),
@@ -35,6 +35,6 @@ final readonly class ScoringWeightsValue
 
     public static function default(): self
     {
-        return new self(0.40, 0.30, 0.20, 0.10, 4, 6, 4, 0.20, 2);
+        return new self(0.40, 0.30, 0.20, 0.10, 4, 5, 4, 0.20, 2);
     }
 }

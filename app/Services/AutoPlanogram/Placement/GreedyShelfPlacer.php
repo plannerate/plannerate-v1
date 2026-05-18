@@ -386,7 +386,18 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
             return false;
         }
 
-        return $shelf->addProduct($product);
+        $allocated = $shelf->addProduct($product);
+
+        // DEBUG REMOVER
+        Log::debug('GreedyShelfPlacer: decisão de shelf por produto', [
+            'product' => $product->product->name,
+            'score' => round($product->score, 3),
+            'shelf_id' => $shelf->id,
+            'shelf_pos' => $shelf->shelfPosition,
+            'alocado' => $allocated,
+        ]);
+
+        return $allocated;
     }
 
     /** @param  array<int, array{section_id: string, shelves: array<int, ShelfLayoutDTO>}>  $sectionLayouts */

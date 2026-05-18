@@ -73,6 +73,9 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
     'adjacency_matrix_description' => 'Gerencie as regras de proximidade entre categorias do nivel :level.',
     'adjacency_matrix_modal_description' => 'Defina como categorias do mesmo nivel devem se aproximar ou se evitar no planograma.',
 
+    'planogram_settings' => 'Auto-Planograma',
+    'planogram_settings_description' => 'Configure hierarquia, blocos verticais, scoring e preferencias de prateleira para o auto-planograma.',
+
     'shelf_level_preferences_settings' => 'Preferencias de nivel de prateleira',
     'shelf_level_preferences_description' => 'Defina em qual nivel de prateleira cada categoria deve ser posicionada no planograma.',
     'shelf_level_preferences_modal_description' => 'Associe uma categoria (nivel 4) a um nivel preferido de prateleira.',
@@ -82,6 +85,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'password_updated' => 'Senha atualizada com sucesso.',
         'other_sessions_terminated' => 'Outras sessões encerradas com sucesso.',
         'generic_error' => 'Algo deu errado.',
+        'planogram_settings_updated' => 'Configurações do auto-planograma atualizadas com sucesso.',
         'scoring_weights_updated' => 'Pesos do scoring atualizados com sucesso.',
         'adjacency_rule_created' => 'Regra de adjacencia criada com sucesso.',
         'adjacency_rule_updated' => 'Regra de adjacencia atualizada com sucesso.',
@@ -1380,6 +1384,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'profile' => 'Perfil',
         'security' => 'Seguranca',
         'appearance' => 'Aparencia',
+        'planogram_settings' => 'Auto-Planograma',
         'scoring_weights' => 'Pesos do Scoring',
         'adjacency_matrix' => 'Matriz de Adjacencia',
         'shelf_level_preferences' => 'Nivel de Prateleira',

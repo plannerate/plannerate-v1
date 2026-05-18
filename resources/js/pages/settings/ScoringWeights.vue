@@ -60,7 +60,7 @@ function resetToDefault() {
     form.w_estrategico = 0.20;
     form.w_doh = 0.10;
     form.sales_window_months = 4;
-    form.block_hierarchy_level = 6;
+    form.block_hierarchy_level = 5;
     form.adjacency_hierarchy_level = 4;
 }
 
