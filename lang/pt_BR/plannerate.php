@@ -3,7 +3,7 @@
 return [
     'dropdown' => [
         'actions' => [
-            'title' => 'Acoes',
+            'title' => 'Ações',
             'share_qr' => 'Compartilhar / QR Code',
             'preview_pdf' => 'Visualizar PDF',
             'download_pdf' => 'Baixar PDF',
@@ -368,7 +368,7 @@ return [
             'hole_height' => 'Altura Furo (cm)',
             'hole_spacing' => 'Espacamento (cm)',
             'hole_width' => 'Largura Furo (cm)',
-            'actions' => 'Acoes',
+            'actions' => 'Ações',
             'move_left_tooltip' => 'Mover para esquerda (Ctrl+ <-)',
             'move_right_tooltip' => 'Mover para direita (Ctrl+ ->)',
             'move' => 'Mover',

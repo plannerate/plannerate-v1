@@ -26,7 +26,14 @@ return [
 
     'toggle_sidebar' => 'Alternar barra lateral',
     'loading' => 'Carregando...',
-
+    'statuses' => [
+        'published' => 'Publicado',
+        'draft' => 'Rascunho',
+        'syncing' => 'Sincronizando',
+        'synced' => 'Sincronizado',
+        'importer' => 'Importado',
+        'unknown' => 'Desconhecido',
+    ],
     'auth_layout' => [
         'badge' => 'PLANOGRAMAS GERADOS COM PRECISÃO',
         'headline_line_1' => 'Organize. Integre.',
@@ -115,7 +122,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'rule_type' => 'Tipo',
         'weight' => 'Peso',
         'reason' => 'Motivo',
-        'actions' => 'Acoes',
+        'actions' => 'Ações',
         'search_category' => 'Buscar categoria',
         'select_category' => 'Selecione uma categoria',
         'category' => 'Categoria',
@@ -188,7 +195,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
 
     'landlord' => [
         'common' => [
-            'actions' => 'Acoes',
+            'actions' => 'Ações',
             'empty' => 'Nenhum registro encontrado.',
             'all' => 'Todos',
             'yes' => 'Sim',
@@ -722,7 +729,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
 
     'tenant' => [
         'common' => [
-            'actions' => 'Acoes',
+            'actions' => 'Ações',
             'empty' => 'Nenhum registro encontrado.',
             'all' => 'Todos',
             'status' => 'Status',
