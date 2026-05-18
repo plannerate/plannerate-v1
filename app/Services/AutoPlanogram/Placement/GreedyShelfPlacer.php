@@ -388,23 +388,18 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
 
         $allocated = $shelf->addProduct($product);
 
-        // DEBUG REMOVER
-        Log::debug('GreedyShelfPlacer: decisão de shelf por produto', [
-            'product' => $product->product->name,
-            'score' => round($product->score, 3),
-            'shelf_id' => $shelf->id,
-            'shelf_pos' => $shelf->shelfPosition,
-            'alocado' => $allocated,
-        ]);
-
         return $allocated;
     }
 
     /** @param  array<int, array{section_id: string, shelves: array<int, ShelfLayoutDTO>}>  $sectionLayouts */
     private function placeWholeBlock(array &$sectionLayouts, array $products, int &$currentSectionIndex, int &$currentShelfIndex): bool
     {
-        for ($sectionIndex = $currentSectionIndex; $sectionIndex < count($sectionLayouts); $sectionIndex++) {
-            $startShelfIndex = $sectionIndex === $currentSectionIndex ? $currentShelfIndex : 0;
+        $totalSections = count($sectionLayouts);
+        $startSectionIndex = $currentSectionIndex;
+
+        for ($attempt = 0; $attempt < $totalSections; $attempt++) {
+            $sectionIndex = ($startSectionIndex + $attempt) % $totalSections;
+            $startShelfIndex = ($attempt === 0) ? $currentShelfIndex : 0;
             $lastShelfIndex = $this->tryPlaceProductsInSection($sectionLayouts[$sectionIndex]['shelves'], $products, $startShelfIndex);
 
             if ($lastShelfIndex !== null) {
@@ -469,24 +464,28 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
         $cursor = 0;
         $sectionsUsed = 0;
         $rejected = collect();
+        $totalSections = count($sectionLayouts);
+        $startSectionIndex = $currentSectionIndex;
+        $lastUsedSectionIndex = $startSectionIndex;
 
-        while ($cursor < count($products) && $currentSectionIndex < count($sectionLayouts)) {
-            $startShelfIndex = $currentShelfIndex;
+        for ($attempt = 0; $attempt < $totalSections && $cursor < count($products); $attempt++) {
+            $sectionIndex = ($startSectionIndex + $attempt) % $totalSections;
+            $startShelfIndex = ($attempt === 0) ? $currentShelfIndex : 0;
             $fit = $this->fitContiguousRun(
-                $sectionLayouts[$currentSectionIndex]['shelves'],
+                $sectionLayouts[$sectionIndex]['shelves'],
                 array_slice($products, $cursor),
                 $startShelfIndex,
             );
 
             if ($fit['count'] > 0) {
                 $cursor += $fit['count'];
+                $lastUsedSectionIndex = $sectionIndex;
                 $currentShelfIndex = $fit['last_shelf_index'];
                 $sectionsUsed++;
             }
-
-            $currentSectionIndex++;
-            $currentShelfIndex = 0;
         }
+
+        $currentSectionIndex = $lastUsedSectionIndex;
 
         foreach (array_slice($products, $cursor) as $product) {
             $rejected->push([
