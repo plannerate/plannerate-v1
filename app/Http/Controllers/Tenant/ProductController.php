@@ -150,6 +150,7 @@ class ProductController extends Controller
                     $where
                         ->where('name', 'like', '%'.$search.'%')
                         ->orWhere('slug', 'like', '%'.$search.'%')
+                        ->orWhere('sortiment_attribute', 'like', '%'.$search.'%')
                         ->orWhere('ean', 'like', '%'.$search.'%');
                 });
             })
