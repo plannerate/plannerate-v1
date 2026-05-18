@@ -15,6 +15,7 @@ use App\Services\AutoPlanogram\DTO\PlacedSegment;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\ProductWidthResolver;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Illuminate\Support\Collection;
@@ -152,18 +153,27 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /** @param Collection<int, mixed> $settings->products */
     private function findCandidates(PlanogramTemplateSlot $slot, PlacementSettings $settings): Collection
     {
-        $templateProducts = PlanogramTemplateProduct::withoutGlobalScopes()
+        $templateProductIds = PlanogramTemplateProduct::withoutGlobalScopes()
             ->where('tenant_id', $settings->tenantId)
             ->where('template_id', $slot->subtemplate->template_id)
             ->where('grouping_normalized', $slot->grouping_normalized)
             ->whereNotNull('product_id')
             ->pluck('product_id');
 
-        if ($templateProducts->isEmpty()) {
+        if ($templateProductIds->isEmpty()) {
             return collect();
         }
 
-        return $settings->products->whereIn('id', $templateProducts->all())->values();
+        // Use pre-loaded pool first (already ranked/scored by sales)
+        $fromPool = $settings->products->whereIn('id', $templateProductIds->all())->values();
+        if ($fromPool->isNotEmpty()) {
+            return $fromPool;
+        }
+
+        // Fallback: load directly from tenant DB (product not in category filter or has no sales)
+        return Product::withoutGlobalScopes()
+            ->whereIn('id', $templateProductIds->all())
+            ->get();
     }
 
     private function orderCandidates(Collection $products, PlanogramTemplateSlot $slot): Collection
@@ -327,7 +337,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
     private function recordSubtemplateUsed(string $planogramId, string $subtemplateId): void
     {
-        DB::table('planograms')
+        DB::connection('tenant')->table('planograms')
             ->where('id', $planogramId)
             ->update(['subtemplate_id' => $subtemplateId]);
     }

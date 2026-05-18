@@ -86,6 +86,34 @@ final readonly class PlacementSettings
         return $this->templateId !== null;
     }
 
+    public function withTemplate(string $templateId, int $numModules, ?string $planogramId, Collection $products): self
+    {
+        return new self(
+            strategy: $this->strategy,
+            useExistingAnalysis: $this->useExistingAnalysis,
+            startDate: $this->startDate,
+            endDate: $this->endDate,
+            minFacings: $this->minFacings,
+            maxFacings: $this->maxFacings,
+            groupBySubcategory: $this->groupBySubcategory,
+            includeProductsWithoutSales: $this->includeProductsWithoutSales,
+            tableType: $this->tableType,
+            categoryId: $this->categoryId,
+            tenantId: $this->tenantId,
+            storeId: $this->storeId,
+            weights: $this->weights,
+            blockHierarchyLevel: $this->blockHierarchyLevel,
+            adjacencyHierarchyLevel: $this->adjacencyHierarchyLevel,
+            targetOccupancyRate: $this->targetOccupancyRate,
+            verticalBlockThreshold: $this->verticalBlockThreshold,
+            verticalBlockMinShelves: $this->verticalBlockMinShelves,
+            templateId: $templateId,
+            numModules: $numModules,
+            planogramId: $planogramId,
+            products: $products,
+        );
+    }
+
     public function withExtras(?string $tenantId, ?ScoringWeightsValue $weights): self
     {
         return new self(

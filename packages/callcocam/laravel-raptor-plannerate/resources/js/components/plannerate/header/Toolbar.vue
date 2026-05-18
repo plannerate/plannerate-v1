@@ -255,6 +255,10 @@ const strategyOptions = computed(
     () => (page.props as any)?.strategyOptions ?? [],
 );
 
+const planogramTemplates = computed(
+    () => (page.props as any)?.planogramTemplates ?? [],
+);
+
 /**
  * Análises da gôndola (ABC e Stock)
  */
@@ -685,7 +689,9 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     :open="showAutoGenerateModal" :gondola-id="currentGondola?.id || ''"
                     :category-id="(currentGondola?.planogram as any)?.category_id"
                     :start-date="(currentGondola?.planogram as any)?.start_date"
-                    :end-date="(currentGondola?.planogram as any)?.end_date" :strategy-options="strategyOptions"
+                    :end-date="(currentGondola?.planogram as any)?.end_date"
+                    :strategy-options="strategyOptions"
+                    :planogram-templates="planogramTemplates"
                     @update:open="(value: boolean) => (showAutoGenerateModal = value)" />
 
                 <!-- Dropdown Ações -->

@@ -44,6 +44,7 @@ class AutoGeneratePlanogramRequest extends FormRequest
             'table_type' => ['required', 'string', 'in:sales,monthly_summaries'],
             'use_ai' => ['nullable', 'boolean'],
             'category_id' => ['nullable', 'string', Rule::exists('tenant.categories', 'id')],
+            'template_id' => ['nullable', 'string'],
         ];
     }
 

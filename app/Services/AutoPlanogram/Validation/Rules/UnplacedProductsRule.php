@@ -28,6 +28,10 @@ final class UnplacedProductsRule implements ValidationRuleInterface
         foreach ($result->rejectedProducts as $rejection) {
             $product = $rejection['product'];
             $reason = $rejection['reason'];
+
+            if ($product === null) {
+                continue;
+            }
             $severity = $reason->isPhysical()
                 ? ValidationSeverity::Warning
                 : ValidationSeverity::Error;

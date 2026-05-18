@@ -9,6 +9,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
 use App\Enums\WorkflowExecutionStatus;
+use App\Models\PlanogramTemplate;
 use App\Models\Tenant;
 use App\Models\WorkflowGondolaExecution;
 use App\Models\WorkflowPlanogramStep;
@@ -33,7 +34,7 @@ use Callcocam\LaravelRaptorPlannerate\Models\Editor\User;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\GondolaPayloadService;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\GondolaService;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class GondolaController extends Controller
@@ -86,6 +87,7 @@ class GondolaController extends Controller
             'availableUsers' => $availableUsers,
             'aiModelOptions' => $this->getAiModelOptions(),
             'strategyOptions' => $this->getStrategyOptions(),
+            'planogramTemplates' => $this->getPlanogramTemplates(),
             'backRoute' => $this->getBackRoute($gondola),
             'saveChangesRoute' => $this->getSaveChangesRoute($subdomain, $gondola),
             'analysis' => [
@@ -521,6 +523,31 @@ class GondolaController extends Controller
                 'description' => '~$0.30 - Anthropic qualidade',
             ],
         ];
+    }
+
+    /**
+     * @return array<int, array{value: string, label: string, num_modules: int}>
+     */
+    protected function getPlanogramTemplates(): array
+    {
+        $tenantId = Tenant::current()?->getKey();
+
+        if ($tenantId === null) {
+            return [];
+        }
+
+        return PlanogramTemplate::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'code', 'department'])
+            ->map(fn (PlanogramTemplate $t) => [
+                'value' => $t->id,
+                'label' => $t->name,
+                'description' => $t->department,
+            ])
+            ->values()
+            ->toArray();
     }
 
     /**

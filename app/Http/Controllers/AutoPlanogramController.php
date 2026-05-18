@@ -57,6 +57,16 @@ class AutoPlanogramController extends Controller
                 weights: $weights,
             );
 
+            $templateId = $request->input('template_id');
+            if ($templateId) {
+                $settings = $settings->withTemplate(
+                    templateId: $templateId,
+                    numModules: $gondolaModel->sections->count(),
+                    planogramId: $planogram->id,
+                    products: $products,
+                );
+            }
+
             $input = new PlanogramInput(
                 planogramId: $planogram->id,
                 gondolaId: $gondola,
