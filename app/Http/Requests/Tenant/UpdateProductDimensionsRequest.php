@@ -25,14 +25,12 @@ class UpdateProductDimensionsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'dimensions_ean' => ['nullable', 'string', 'max:13'],
             'width' => ['nullable', 'numeric', 'min:0'],
             'height' => ['nullable', 'numeric', 'min:0'],
             'depth' => ['nullable', 'numeric', 'min:0'],
             'weight' => ['nullable', 'numeric', 'min:0'],
             'unit' => ['nullable', 'string', 'max:20'],
-            'dimensions_status' => ['required', Rule::in(['draft', 'published'])],
-            'dimensions_description' => ['nullable', 'string', 'max:255'],
+            'dimension_status' => ['required', Rule::in(['draft', 'published'])],
         ];
     }
 

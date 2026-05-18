@@ -8,8 +8,9 @@ use App\Http\Requests\Tenant\UpdateProductDimensionsRequest;
 use App\Models\Product;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Inertia\Response;
 
 class ProductDimensionController extends Controller
@@ -22,15 +23,15 @@ class ProductDimensionController extends Controller
         $this->authorize('viewAny', Product::class);
 
         $search = $this->requestString($request, 'search');
-        $dimensionsStatus = $this->requestEnum($request, 'dimensions_status', ['draft', 'published']);
+        $dimensionStatus = $this->requestEnum($request, 'dimension_status', ['draft', 'published']);
         $requestedSort = trim((string) $request->query('sort', ''));
-        $sort = in_array($requestedSort, ['name', 'ean', 'codigo_erp', 'dimensions_status', 'width', 'height', 'depth'], true) ? $requestedSort : null;
+        $sort = in_array($requestedSort, ['name', 'ean', 'codigo_erp', 'dimension_status', 'width', 'height', 'depth'], true) ? $requestedSort : null;
         $requestedDirection = strtolower((string) $request->query('direction', 'asc'));
         $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'asc';
 
         return $this->renderDeferredIndex('tenant/dimensions/Index', 'products', fn (): LengthAwarePaginator => $this->productsPaginator(
             $search,
-            $dimensionsStatus,
+            $dimensionStatus,
             $sort,
             $direction,
             $this->resolvePerPage($request, 20),
@@ -38,12 +39,12 @@ class ProductDimensionController extends Controller
             'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
-                'dimensions_status' => $dimensionsStatus,
+                'dimension_status' => $dimensionStatus,
             ],
         ]);
     }
 
-    public function update(UpdateProductDimensionsRequest $request, string $subdomain, string $product): JsonResponse
+    public function update(UpdateProductDimensionsRequest $request, string $subdomain, string $product): RedirectResponse
     {
         unset($subdomain);
         $product = Product::query()->whereKey($product)->firstOrFail();
@@ -51,22 +52,17 @@ class ProductDimensionController extends Controller
 
         $product->update($request->validated());
 
-        return response()->json([
-            'id' => $product->id,
-            'dimensions_ean' => $product->dimensions_ean,
-            'width' => $product->width,
-            'height' => $product->height,
-            'depth' => $product->depth,
-            'weight' => $product->weight,
-            'unit' => $product->unit,
-            'dimensions_status' => $product->dimensions_status,
-            'dimensions_description' => $product->dimensions_description,
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Dimensões atualizadas com sucesso.',
         ]);
+
+        return to_route('tenant.dimensions.index', $this->tenantRouteParameters());
     }
 
     private function productsPaginator(
         string $search,
-        string $dimensionsStatus,
+        string $dimensionStatus,
         ?string $sort,
         string $direction,
         int $perPage,
@@ -80,7 +76,7 @@ class ProductDimensionController extends Controller
                         ->orWhere('codigo_erp', 'like', '%'.$search.'%');
                 });
             })
-            ->when($dimensionsStatus !== '', fn ($query) => $query->where('dimensions_status', $dimensionsStatus))
+            ->when($dimensionStatus !== '', fn ($query) => $query->where('dimension_status', $dimensionStatus))
             ->when(
                 $sort !== null,
                 fn ($query) => $query->orderBy($sort, $direction),
@@ -93,14 +89,12 @@ class ProductDimensionController extends Controller
                 'name' => $product->name,
                 'ean' => $product->ean,
                 'codigo_erp' => $product->codigo_erp,
-                'dimensions_ean' => $product->dimensions_ean,
                 'width' => $product->width,
                 'height' => $product->height,
                 'depth' => $product->depth,
                 'weight' => $product->weight,
                 'unit' => $product->unit,
-                'dimensions_status' => $product->dimensions_status,
-                'dimensions_description' => $product->dimensions_description,
+                'dimension_status' => $product->dimension_status,
             ]);
     }
 }

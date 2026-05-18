@@ -18,25 +18,21 @@ type DimensionRow = {
     name: string | null;
     ean: string | null;
     codigo_erp: string | null;
-    dimensions_ean: string | null;
     width: string | number | null;
     height: string | number | null;
     depth: string | number | null;
     weight: string | number | null;
     unit: string | null;
-    dimensions_status: 'draft' | 'published' | null;
-    dimensions_description: string | null;
+    dimension_status: 'draft' | 'published' | null;
 };
 
 type EditingRow = {
-    dimensions_ean: string;
     width: string;
     height: string;
     depth: string;
     weight: string;
     unit: string;
-    dimensions_status: 'draft' | 'published';
-    dimensions_description: string;
+    dimension_status: 'draft' | 'published';
 };
 
 const props = defineProps<{
@@ -44,7 +40,7 @@ const props = defineProps<{
     products?: Paginator<DimensionRow>;
     filters: {
         search: string;
-        dimensions_status: string;
+        dimension_status: string;
     };
 }>();
 
@@ -61,14 +57,12 @@ const savingId = ref<string | null>(null);
 function startEdit(row: DimensionRow): void {
     editingId.value = row.id;
     editingData.value = {
-        dimensions_ean: row.dimensions_ean ?? '',
         width: row.width !== null ? String(row.width) : '',
         height: row.height !== null ? String(row.height) : '',
         depth: row.depth !== null ? String(row.depth) : '',
         weight: row.weight !== null ? String(row.weight) : '',
         unit: row.unit ?? 'cm',
-        dimensions_status: row.dimensions_status ?? 'draft',
-        dimensions_description: row.dimensions_description ?? '',
+        dimension_status: row.dimension_status ?? 'draft',
     };
 }
 
@@ -121,14 +115,13 @@ const pageMeta = useCrudPageMeta({
 
 <template>
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
-
         <Head :title="pageMeta.headTitle" />
 
         <ListPage :meta="meta" label="produto" :action="indexPath" :clear-href="indexPath"
             :search-value="props.filters.search" :search-placeholder="t('app.tenant.common.search')"
             :filter-label="t('app.tenant.common.filter')" :clear-label="t('app.tenant.common.clear_filters')">
             <template #filters>
-                <select name="dimensions_status" :value="filters.dimensions_status"
+                <select name="dimension_status" :value="filters.dimension_status"
                     class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
                     <option value="">Todos</option>
                     <option value="draft">Rascunho</option>
@@ -146,17 +139,16 @@ const pageMeta = useCrudPageMeta({
                         <ColumnHeader field="depth">Profundidade</ColumnHeader>
                         <th class="px-4 py-3 font-medium">Peso</th>
                         <th class="px-4 py-3 font-medium">Unidade</th>
-                        <ColumnHeader field="dimensions_status">Status</ColumnHeader>
-                        <th class="px-4 py-3 font-medium">Descrição</th>
+                        <ColumnHeader field="dimension_status">Status</ColumnHeader>
                         <th class="w-20 px-4 py-3 text-center font-medium">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     <template v-if="loading">
-                        <TableLoadingSkeleton :columns="12" :rows="8" />
+                        <TableLoadingSkeleton :columns="9" :rows="8" />
                     </template>
                     <tr v-else-if="rows.length === 0">
-                        <td class="px-4 py-6 text-muted-foreground" colspan="12">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="9">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
@@ -193,31 +185,22 @@ const pageMeta = useCrudPageMeta({
                                     placeholder="cm" maxlength="20" @keydown="handleKeydown($event, row.id)" />
                             </td>
                             <td class="px-2 py-1">
-                                <select v-model="editingData.dimensions_status"
+                                <select v-model="editingData.dimension_status"
                                     class="h-8 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20">
                                     <option value="draft">Rascunho</option>
                                     <option value="published">Publicado</option>
                                 </select>
                             </td>
-                            <td class="px-2 py-1">
-                                <input v-model="editingData.dimensions_description"
-                                    class="h-8 w-36 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                                    placeholder="Descrição" maxlength="255" @keydown="handleKeydown($event, row.id)" />
-                            </td>
                         </template>
 
                         <template v-else>
-                            <td class="px-4 py-2 text-muted-foreground">{{ row.dimensions_ean ?? '-' }}</td>
                             <td class="px-4 py-2">{{ row.width ?? '-' }}</td>
                             <td class="px-4 py-2">{{ row.height ?? '-' }}</td>
                             <td class="px-4 py-2">{{ row.depth ?? '-' }}</td>
                             <td class="px-4 py-2">{{ row.weight ?? '-' }}</td>
                             <td class="px-4 py-2">{{ row.unit ?? '-' }}</td>
                             <td class="px-4 py-2">
-                                <ColumnStatusBadge :status="row.dimensions_status ?? 'draft'" />
-                            </td>
-                            <td class="max-w-36 px-4 py-2 text-muted-foreground">
-                                <span class="line-clamp-1">{{ row.dimensions_description ?? '-' }}</span>
+                                <ColumnStatusBadge :status="row.dimension_status ?? 'draft'" />
                             </td>
                         </template>
 
