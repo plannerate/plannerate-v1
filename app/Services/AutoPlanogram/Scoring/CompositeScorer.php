@@ -8,6 +8,7 @@ use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class CompositeScorer implements ProductScorerInterface
 {
@@ -39,66 +40,74 @@ class CompositeScorer implements ProductScorerInterface
 
         $strategicIds = $this->loadStrategicIds($tenantId ?? '');
 
-        // Normalização min-max por categoria pai no nível 4 (Categoria)
-        $byCategory = $products->groupBy(
-            fn ($p) => $this->resolveCategoryAtLevel($p, 4)
-        );
+        // Normalização global: compara todos os produtos entre si.
+        // Giro usa log-transform porque vendas seguem distribuição power-law
+        // (sem log, um outlier como 27 000 unidades esmaga todos os outros).
+        $allQuantities = $products->map(fn ($p) => (float) ($metrics[$p->id]['quantity'] ?? 0));
+        $allMargens = $products->map(fn ($p) => (float) ($metrics[$p->id]['margem'] ?? 0.0));
 
-        return $byCategory
-            ->flatMap(fn ($group) => $this->scoreGroup($group, $metrics, $strategicIds, $weights))
+        $qMax = (float) $allQuantities->max();
+        $mMin = (float) $allMargens->min();
+        $mMax = (float) $allMargens->max();
+
+        Log::debug('CompositeScorer: bounds globais', [
+            'produtos' => $products->count(),
+            'q_max' => round($qMax, 2),
+            'm_min' => round($mMin, 2),
+            'm_max' => round($mMax, 2),
+        ]);
+
+        $scored = $products
+            ->map(fn ($p) => $this->scoreProduct($p, $metrics, $strategicIds, $weights, $qMax, $mMin, $mMax))
             ->sortByDesc('score')
             ->values();
+
+        $this->logScoreDistribution($scored);
+
+        return $scored;
     }
 
-    /** @param  Collection<int, Product>  $group */
-    private function scoreGroup(
-        Collection $group,
+    private function scoreProduct(
+        Product $p,
         array $metrics,
         array $strategicIds,
         ScoringWeightsValue $weights,
-    ): Collection {
-        $quantities = $group->map(fn ($p) => $metrics[$p->id]['quantity'] ?? 0);
-        $margens = $group->map(fn ($p) => $metrics[$p->id]['margem'] ?? 0.0);
+        float $qMax,
+        float $mMin,
+        float $mMax,
+    ): ScoredProduct {
+        $m = $metrics[$p->id] ?? ['quantity' => 0, 'margem' => 0.0, 'doh' => null];
 
-        $qMin = $quantities->min();
-        $qMax = $quantities->max();
-        $mMin = $margens->min();
-        $mMax = $margens->max();
+        $giroNorm = $qMax > 0 ? log((float) $m['quantity'] + 1) / log($qMax + 1) : 0.0;
+        $margemNorm = $this->minMax((float) $m['margem'], $mMin, $mMax);
+        $dohNorm = $m['doh'] === null ? 0.5 : $this->normalizeDoh((float) $m['doh']);
+        $strategic = in_array($p->id, $strategicIds, true) ? 1.0 : 0.0;
 
-        return $group->map(function ($p) use ($metrics, $strategicIds, $weights, $qMin, $qMax, $mMin, $mMax): ScoredProduct {
-            $m = $metrics[$p->id] ?? ['quantity' => 0, 'margem' => 0.0, 'doh' => null];
+        $score = ($giroNorm * $weights->giro)
+               + ($margemNorm * $weights->margem)
+               + ($strategic * $weights->estrategico)
+               + ((1 - $dohNorm) * $weights->doh);
 
-            $giroNorm = $this->minMax((float) $m['quantity'], (float) $qMin, (float) $qMax);
-            $margemNorm = $this->minMax((float) $m['margem'], (float) $mMin, (float) $mMax);
-            $dohNorm = $m['doh'] === null ? 0.5 : $this->normalizeDoh((float) $m['doh']);
-            $strategic = in_array($p->id, $strategicIds, true) ? 1.0 : 0.0;
-
-            $score = ($giroNorm * $weights->giro)
-                   + ($margemNorm * $weights->margem)
-                   + ($strategic * $weights->estrategico)
-                   + ((1 - $dohNorm) * $weights->doh);
-
-            return new ScoredProduct(
-                productId: $p->id,
-                ean: (string) ($p->ean ?? $p->codigo_erp ?? ''),
-                score: $score,
-                product: $p,
-                metadata: [
-                    'giro_norm' => $giroNorm,
-                    'margem_norm' => $margemNorm,
-                    'doh_norm' => $dohNorm,
-                    'strategic' => $strategic,
-                    'raw_quantity' => $m['quantity'],
-                    'raw_margem' => $m['margem'],
-                ],
-            );
-        });
+        return new ScoredProduct(
+            productId: $p->id,
+            ean: (string) ($p->ean ?? $p->codigo_erp ?? ''),
+            score: $score,
+            product: $p,
+            metadata: [
+                'giro_norm' => $giroNorm,
+                'margem_norm' => $margemNorm,
+                'doh_norm' => $dohNorm,
+                'strategic' => $strategic,
+                'raw_quantity' => $m['quantity'],
+                'raw_margem' => $m['margem'],
+            ],
+        );
     }
 
     private function minMax(float $v, float $min, float $max): float
     {
         if ($max <= $min) {
-            return 0.5;
+            return 0.0;
         }
 
         return ($v - $min) / ($max - $min);
@@ -109,19 +118,19 @@ class CompositeScorer implements ProductScorerInterface
         return min(1.0, $doh / 60.0);
     }
 
-    private function resolveCategoryAtLevel(Product $product, int $targetLevel): ?string
+    /** @param  Collection<int, ScoredProduct>  $scored */
+    private function logScoreDistribution(Collection $scored): void
     {
-        if (! $product->category) {
-            return null;
-        }
+        $scores = $scored->pluck('score');
 
-        $cat = $product->category;
-
-        while ($cat && $cat->hierarchy_position > $targetLevel) {
-            $cat = $cat->relationLoaded('parent') ? $cat->parent : $cat->parent()->first();
-        }
-
-        return $cat?->hierarchy_position === $targetLevel ? $cat->id : null;
+        Log::debug('CompositeScorer: distribuição de scores', [
+            'eye_gte_070' => $scores->filter(fn ($s) => $s >= 0.70)->count(),
+            'hand_035_070' => $scores->filter(fn ($s) => $s >= 0.35 && $s < 0.70)->count(),
+            'low_lt_035' => $scores->filter(fn ($s) => $s < 0.35)->count(),
+            'score_max' => round((float) $scores->max(), 3),
+            'score_min' => round((float) $scores->min(), 3),
+            'score_avg' => round((float) $scores->avg(), 3),
+        ]);
     }
 
     protected function loadStrategicIds(string $tenantId): array

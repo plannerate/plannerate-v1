@@ -73,6 +73,7 @@ class Product extends Model
         'unit',
         'dimensions_status',
         'dimensions_description',
+        'current_stock',
     ];
 
     protected $appends = [

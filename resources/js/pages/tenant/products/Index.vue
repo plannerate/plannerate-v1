@@ -271,6 +271,8 @@ const pageMeta = useCrudPageMeta({
                             {{ product.ean ?? '-' }}
                             <br />
                             {{ product.codigo_erp ?? '-' }}
+                            <br />
+                            {{ formatStockAndLastPurchase(product) || '-' }}
 
                         </td>
                         <td class="px-4 py-3">{{ product.category ?? '-' }}</td>
