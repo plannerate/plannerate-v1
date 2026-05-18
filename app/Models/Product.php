@@ -65,6 +65,7 @@ class Product extends Model
         'auxiliary_description',
         'additional_information',
         'sortiment_attribute',
+        'sortiment_attribute_levels',
         'dimensions_ean',
         'width',
         'height',

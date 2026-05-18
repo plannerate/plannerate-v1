@@ -59,9 +59,11 @@ class CategoryController extends Controller
         }
 
         return response()->json(
-            $query->get(['id', 'name'])->map(fn (Category $category): array => [
+            $query->get(['id', 'name', 'level_name', 'nivel'])->map(fn (Category $category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
+                'level_name' => $category->level_name,
+                'nivel' => $category->nivel,
             ])->values()->all()
         );
     }
@@ -84,6 +86,8 @@ class CategoryController extends Controller
         $path = $category->getFullHierarchy()->map(fn (Category $node): array => [
             'id' => $node->id,
             'name' => $node->name,
+            'level_name' => $node->level_name,
+            'nivel' => $node->nivel,
         ])->values()->all();
 
         return response()->json(['path' => $path]);

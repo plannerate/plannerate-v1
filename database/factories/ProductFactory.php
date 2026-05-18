@@ -58,6 +58,7 @@ class ProductFactory extends Factory
             'auxiliary_description' => fake()->optional()->sentence(),
             'additional_information' => fake()->optional()->sentence(),
             'sortiment_attribute' => fake()->optional()->word(),
+            'sortiment_attribute_levels' => fake()->optional()->randomElement(['departamento,categoria,subcategoria']),
             'dimensions_ean' => fake()->optional()->ean13(),
             'width' => fake()->optional()->randomFloat(2, 1, 100),
             'height' => fake()->optional()->randomFloat(2, 1, 100),

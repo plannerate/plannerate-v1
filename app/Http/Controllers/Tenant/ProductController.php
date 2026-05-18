@@ -396,6 +396,7 @@ class ProductController extends Controller
             'auxiliary_description' => $product->auxiliary_description,
             'additional_information' => $product->additional_information,
             'sortiment_attribute' => $product->sortiment_attribute,
+            'sortiment_attribute_levels' => $product->sortiment_attribute_levels,
             'dimensions_ean' => $product->dimensions_ean,
             'width' => $product->width,
             'height' => $product->height,

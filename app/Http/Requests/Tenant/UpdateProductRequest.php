@@ -66,6 +66,7 @@ class UpdateProductRequest extends FormRequest
             'auxiliary_description' => ['nullable', 'string', 'max:255'],
             'additional_information' => ['nullable', 'string', 'max:255'],
             'sortiment_attribute' => ['nullable', 'string', 'max:255'],
+            'sortiment_attribute_levels' => ['nullable', 'string', 'max:255'],
             'dimensions_ean' => ['nullable', 'string', 'max:13'],
             'width' => ['nullable', 'numeric', 'min:0'],
             'height' => ['nullable', 'numeric', 'min:0'],

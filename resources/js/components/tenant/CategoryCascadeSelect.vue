@@ -7,7 +7,28 @@ import InputError from '@/components/InputError.vue';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
 
-type Option = { id: string; name: string };
+type Option = {
+    id: string;
+    name: string;
+    level_name: string | null;
+    nivel: number | null;
+};
+
+const DEFAULT_SORTIMENT_ATTRIBUTE_LEVELS = [
+    'departamento',
+    'categoria',
+    'subcategoria',
+];
+const HIERARCHY_LEVEL_LABELS = [
+    'Segmento varejista',
+    'Departamento',
+    'Subdepartamento',
+    'Categoria',
+    'Subcategoria',
+    'Segmento',
+    'Subsegmento',
+    'Atributo',
+];
 
 const props = withDefaults(
     defineProps<{
@@ -18,6 +39,9 @@ const props = withDefaults(
         cascadeLevels?: number;
         levelLabels?: string[];
         cols?: number;
+        enableSortimentAttributeHelper?: boolean;
+        sortimentAttributeLevelsValue?: string | null;
+        sortimentAttributeLevelsInputName?: string;
     }>(),
     {
         error: '',
@@ -25,11 +49,15 @@ const props = withDefaults(
         disabled: false,
         cascadeLevels: 7,
         cols: 3,
+        enableSortimentAttributeHelper: false,
+        sortimentAttributeLevelsValue: '',
+        sortimentAttributeLevelsInputName: 'sortiment_attribute_levels',
     },
 );
 
 const emit = defineEmits<{
     'update:modelValue': [value: string | null];
+    'update-sortiment-attribute': [value: string];
 }>();
 
 const { t } = useT();
@@ -37,8 +65,12 @@ const { t } = useT();
 const childrenHttp = useHttp<Record<string, string>, Option[]>();
 const pathHttp = useHttp<Record<string, string>, { path?: Option[] }>();
 
-const selections = ref<string[]>(Array.from({ length: props.cascadeLevels }, () => ''));
-const options = ref<Option[][]>(Array.from({ length: props.cascadeLevels }, () => []));
+const selections = ref<string[]>(
+    Array.from({ length: props.cascadeLevels }, () => ''),
+);
+const options = ref<Option[][]>(
+    Array.from({ length: props.cascadeLevels }, () => []),
+);
 const loadError = ref(false);
 
 const selectClass =
@@ -70,7 +102,9 @@ async function loadPath(categoryId: string): Promise<Option[]> {
 
     await pathHttp.get(url.toString());
 
-    return Array.isArray(pathHttp.response?.path) ? pathHttp.response!.path! : [];
+    return Array.isArray(pathHttp.response?.path)
+        ? pathHttp.response!.path!
+        : [];
 }
 
 const leafCategoryId = computed((): string | null => {
@@ -85,6 +119,68 @@ const leafCategoryId = computed((): string | null => {
     return null;
 });
 
+const selectedCategoryNodes = computed((): Option[] => {
+    const nodes: Option[] = [];
+
+    for (let i = 0; i < props.cascadeLevels; i++) {
+        const selectedId = selections.value[i];
+
+        if (selectedId === '') {
+            break;
+        }
+
+        const selectedOption = options.value[i]?.find(
+            (opt) => opt.id === selectedId,
+        );
+
+        if (!selectedOption) {
+            break;
+        }
+
+        nodes.push(selectedOption);
+    }
+
+    return nodes;
+});
+
+const selectedCategoryNames = computed((): string[] => {
+    return selectedCategoryNodes.value.map((node) => node.name);
+});
+
+const selectedCategoryPath = computed((): string =>
+    selectedCategoryNames.value.join(' > '),
+);
+
+const sortimentAttributeLevelKeys = ref<string[]>(
+    parseSortimentAttributeLevels(props.sortimentAttributeLevelsValue),
+);
+
+const sortimentAttributeLevelsInputValue = computed((): string => {
+    return sortimentAttributeLevelKeys.value.join(',');
+});
+
+const selectedSortimentAttribute = computed((): string => {
+    return selectedCategoryNodes.value
+        .filter((node, index) =>
+            sortimentAttributeLevelKeys.value.includes(levelKey(node, index)),
+        )
+        .map((node) => node.name)
+        .join(' | ');
+});
+
+function parseSortimentAttributeLevels(
+    value: string | null | undefined,
+): string[] {
+    const levels = String(value ?? '')
+        .split(',')
+        .map((level) => normalizeLevelKey(level))
+        .filter((level) => level !== '');
+
+    return levels.length > 0
+        ? [...new Set(levels)]
+        : DEFAULT_SORTIMENT_ATTRIBUTE_LEVELS;
+}
+
 function isLevelDisabled(level: number): boolean {
     if (props.disabled) {
         return true;
@@ -95,6 +191,50 @@ function isLevelDisabled(level: number): boolean {
     }
 
     return selections.value[level - 1] === '';
+}
+
+function normalizeLevelKey(value: string): string {
+    return value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+}
+
+function displayLevelName(node: Option, index: number): string {
+    return (
+        node.level_name || HIERARCHY_LEVEL_LABELS[index] || levelLabel(index)
+    );
+}
+
+function levelKey(node: Option, index: number): string {
+    return normalizeLevelKey(displayLevelName(node, index));
+}
+
+function isSortimentLevelSelected(node: Option, index: number): boolean {
+    return sortimentAttributeLevelKeys.value.includes(levelKey(node, index));
+}
+
+function toggleSortimentLevel(node: Option, index: number): void {
+    const key = levelKey(node, index);
+
+    if (key === '') {
+        return;
+    }
+
+    if (sortimentAttributeLevelKeys.value.includes(key)) {
+        sortimentAttributeLevelKeys.value =
+            sortimentAttributeLevelKeys.value.filter((level) => level !== key);
+    } else {
+        sortimentAttributeLevelKeys.value = [
+            ...sortimentAttributeLevelKeys.value,
+            key,
+        ];
+    }
+
+    emit('update-sortiment-attribute', selectedSortimentAttribute.value);
 }
 
 async function hydrateFromModel(): Promise<void> {
@@ -139,6 +279,10 @@ async function onLevelChange(level: number, value: string): Promise<void> {
             loadError.value = true;
         }
     }
+
+    if (props.enableSortimentAttributeHelper) {
+        emit('update-sortiment-attribute', selectedSortimentAttribute.value);
+    }
 }
 
 async function clearFrom(level: number): Promise<void> {
@@ -158,10 +302,16 @@ async function clearFrom(level: number): Promise<void> {
         }
     } else if (selections.value[level - 1] !== '') {
         try {
-            options.value[level] = await loadChildren(selections.value[level - 1]);
+            options.value[level] = await loadChildren(
+                selections.value[level - 1],
+            );
         } catch {
             loadError.value = true;
         }
+    }
+
+    if (props.enableSortimentAttributeHelper) {
+        emit('update-sortiment-attribute', selectedSortimentAttribute.value);
     }
 }
 
@@ -175,7 +325,7 @@ onMounted(async () => {
 });
 
 // Emite sempre que o leaf muda internamente (seleção ou limpeza)
-watch(leafCategoryId, (value) => { 
+watch(leafCategoryId, (value) => {
     emit('update:modelValue', value);
 });
 
@@ -194,33 +344,71 @@ watch(
         }
     },
 );
+
+watch(
+    () => props.sortimentAttributeLevelsValue,
+    (value) => {
+        sortimentAttributeLevelKeys.value =
+            parseSortimentAttributeLevels(value);
+    },
+);
 </script>
 
 <template>
     <div class="space-y-3">
         <input type="hidden" :name="inputName" :value="leafCategoryId ?? ''" />
+        <input
+            v-if="enableSortimentAttributeHelper"
+            type="hidden"
+            :name="sortimentAttributeLevelsInputName"
+            :value="sortimentAttributeLevelsInputValue"
+        />
 
-        <p v-if="loadError" class="text-xs text-destructive">{{ t('app.tenant.categories.cascade.load_error') }}</p>
+        <p v-if="loadError" class="text-xs text-destructive">
+            {{ t('app.tenant.categories.cascade.load_error') }}
+        </p>
 
-        <div class="grid gap-3" :style="{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }">
-            <div v-for="level in cascadeLevels" :key="`cascade-${level - 1}`" class="flex flex-col gap-y-1">
-                <Label :for="`category_cascade_${level - 1}`" class="text-xs font-medium">{{ levelLabel(level - 1) }}</Label>
+        <div
+            class="grid gap-3"
+            :style="{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }"
+        >
+            <div
+                v-for="level in cascadeLevels"
+                :key="`cascade-${level - 1}`"
+                class="flex flex-col gap-y-1"
+            >
+                <Label
+                    :for="`category_cascade_${level - 1}`"
+                    class="text-xs font-medium"
+                    >{{ levelLabel(level - 1) }}</Label
+                >
                 <div class="relative flex items-stretch gap-1">
                     <select
                         :id="`category_cascade_${level - 1}`"
                         :class="selectClass"
                         :disabled="isLevelDisabled(level - 1)"
                         :value="selections[level - 1]"
-                        @change="onLevelChange(level - 1, ($event.target as HTMLSelectElement).value)"
+                        @change="
+                            onLevelChange(
+                                level - 1,
+                                ($event.target as HTMLSelectElement).value,
+                            )
+                        "
                     >
-                        <option value="">{{ t('app.tenant.categories.cascade.placeholder') }}</option>
-                        <option v-for="opt in options[level - 1]" :key="opt.id" :value="opt.id">
+                        <option value="">
+                            {{ t('app.tenant.categories.cascade.placeholder') }}
+                        </option>
+                        <option
+                            v-for="opt in options[level - 1]"
+                            :key="opt.id"
+                            :value="opt.id"
+                        >
                             {{ opt.name }}
                         </option>
                     </select>
                     <button
                         type="button"
-                        class="absolute right-0 top-1/2 size-9 shrink-0 -translate-y-1/2"
+                        class="absolute top-1/2 right-0 size-9 shrink-0 -translate-y-1/2"
                         :disabled="disabled || selections[level - 1] === ''"
                         :aria-label="t('app.tenant.categories.cascade.clear')"
                         @click="clearFrom(level - 1)"
@@ -232,5 +420,34 @@ watch(
         </div>
 
         <InputError :message="error" />
+
+        <div
+            v-if="enableSortimentAttributeHelper && selectedCategoryPath"
+            class="flex flex-wrap gap-1.5"
+        >
+            <button
+                v-for="(node, index) in selectedCategoryNodes"
+                :key="node.id"
+                type="button"
+                class="inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-1 text-left text-xs transition disabled:cursor-not-allowed disabled:opacity-50"
+                :class="
+                    isSortimentLevelSelected(node, index)
+                        ? 'border-primary/40 bg-primary/10 text-primary hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive'
+                        : 'border-border bg-background text-muted-foreground hover:bg-muted/70 hover:text-foreground'
+                "
+                :disabled="disabled"
+                :aria-pressed="isSortimentLevelSelected(node, index)"
+                :aria-label="`${isSortimentLevelSelected(node, index) ? 'Remover' : 'Adicionar'} ${displayLevelName(node, index)} do sortimento`"
+                @click="toggleSortimentLevel(node, index)"
+            >
+                <X
+                    v-if="isSortimentLevelSelected(node, index)"
+                    class="size-3 shrink-0"
+                />
+                <span class="truncate"
+                    >{{ displayLevelName(node, index) }}: {{ node.name }}</span
+                >
+            </button>
+        </div>
     </div>
 </template>

@@ -54,6 +54,7 @@ type ProductPayload = {
     auxiliary_description: string | null;
     additional_information: string | null;
     sortiment_attribute: string | null;
+    sortiment_attribute_levels: string | null;
     dimensions_ean: string | null;
     width: string | number | null;
     height: string | number | null;
@@ -115,6 +116,7 @@ const width = ref(toInputValue(props.product?.width));
 const height = ref(toInputValue(props.product?.height));
 const depth = ref(toInputValue(props.product?.depth));
 const weight = ref(toInputValue(props.product?.weight));
+const sortimentAttribute = ref(props.product?.sortiment_attribute ?? '');
 const selectedStoreIds = ref<string[]>(props.product?.store_ids ?? []);
 
 function toInputValue(value: string | number | null | undefined): string {
@@ -149,6 +151,7 @@ const fieldTabMap: Record<string, TabKey> = {
 
     category_id: 'market',
     sortiment_attribute: 'market',
+    sortiment_attribute_levels: 'market',
 
     width: 'dimensions',
     height: 'dimensions',
@@ -304,6 +307,10 @@ function onImageError(message: string): void {
     imageError.value = message;
 }
 
+function onUpdateSortimentAttribute(value: string): void {
+    sortimentAttribute.value = value;
+}
+
 const pageMeta = useCrudPageMeta({
     headTitle: isEdit.value
         ? t('app.tenant.products.actions.edit')
@@ -341,454 +348,581 @@ const pageMeta = useCrudPageMeta({
     <Head :title="pageMeta.headTitle" />
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <div class="px-6 py-6">
-        <Form
-            v-bind="isEdit ? updateFormAttrs : storeFormAttrs"
-            v-slot="{ errors, processing }"
-            @submit="onSubmit"
-        >
-            <FormCard
-                :processing="processing"
-                :cancel-href="productsIndexPath"
-                :title="pageMeta.title"
-                :description="pageMeta.description"
+            <Form
+                v-bind="isEdit ? updateFormAttrs : storeFormAttrs"
+                v-slot="{ errors, processing }"
+                @submit="onSubmit"
             >
-                <template #icon>
-                    <Package class="size-5" />
-                </template>
-
-                <FormTabsBar v-model="activeTab" :tabs="tabs" @update:model-value="setTab($event as TabKey)" />
-
-                <div
-                    v-show="activeTab === 'identification'"
-                    class="grid grid-cols-1 gap-6 lg:grid-cols-12"
+                <FormCard
+                    :processing="processing"
+                    :cancel-href="productsIndexPath"
+                    :title="pageMeta.title"
+                    :description="pageMeta.description"
                 >
-                    <div class="space-y-4 lg:col-span-8">
-                        <ProductIdentitySyncFieldset
-                            :subdomain="props.subdomain"
-                            v-model:ean="ean"
-                            v-model:codigo-erp="codigoErp"
-                            :store-ids="selectedStoreIds"
-                            :ean-label="t('app.tenant.products.form.ean')"
-                            :codigo-erp-label="t('app.tenant.products.fields.codigo_erp')"
-                            :ean-error="resolveError('ean', errors)"
-                            :codigo-erp-error="resolveError('codigo_erp', errors)"
-                        />
+                    <template #icon>
+                        <Package class="size-5" />
+                    </template>
 
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
-                            <FormTextField
-                                id="name"
-                                v-model="productName"
-                                name="name"
-                                :label="t('app.tenant.products.fields.name')"
-                                :required="true"
-                                :placeholder="t('app.tenant.products.fields.name')"
-                                :error="resolveError('name', errors)"
-                                class="md:col-span-12"
-                            />
-                            <FormSelectField
-                                id="status"
-                                v-model="productStatus"
-                                name="status"
-                                :label="t('app.tenant.products.form.status_product')"
-                                :required="true"
-                                :error="resolveError('status', errors)"
-                                class="md:col-span-6"
-                            >
-                                <option value="draft">
-                                    {{ t('app.tenant.products.status_options.draft') }}
-                                </option>
-                                <option value="published">
-                                    {{ t('app.tenant.products.status_options.published') }}
-                                </option>
-                                <option value="synced">
-                                    {{ t('app.tenant.products.status_options.synced') }}
-                                </option>
-                                <option value="error">
-                                    {{ t('app.tenant.products.status_options.error') }}
-                                </option>
-                            </FormSelectField>
-                        </div>
-
-                        <div
-                            class="rounded-lg border border-border/80 p-3"
-                        >
-                            <p class="mb-3 text-sm font-semibold">
-                                Lojas do produto
-                            </p>
-                            <div
-                                v-if="props.stores.length > 0"
-                                class="grid grid-cols-1 gap-2 md:grid-cols-2"
-                            >
-                                <label
-                                    v-for="store in props.stores"
-                                    :key="store.id"
-                                    class="flex items-start gap-2 rounded-md border border-border/60 px-2 py-2 text-sm"
-                                >
-                                    <input
-                                        v-model="selectedStoreIds"
-                                        type="checkbox"
-                                        name="store_ids[]"
-                                        :value="store.id"
-                                        class="mt-0.5 accent-primary"
-                                    />
-                                    <span>
-                                        {{ store.name }}{{ store.document ? ` - ${store.document}` : '' }}
-                                    </span>
-                                </label>
-                            </div>
-                            <p v-else class="text-xs text-muted-foreground">
-                                Nenhuma loja disponível para associação.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="space-y-4 lg:col-span-4">
-                        <ImageUploadField
-                            :subdomain="subdomain"
-                            name="url"
-                            :label="
-                                t('app.tenant.products.form.sections.image')
-                            "
-                            :ean="ean"
-                            :initial-url="props.product?.image_url ?? ''"
-                            :initial-path="props.product?.url ?? ''"
-                            :ai-enabled="true"
-                            @uploaded="onImageUploaded"
-                            @ai-processed="onImageProcessed"
-                            @repository-processed="onImageProcessed"
-                            @error="onImageError"
-                        />
-                        <InputError
-                            :message="imageError || resolveError('url', errors)"
-                        />
-                    </div>
-                </div>
-
-                <div
-                    v-show="activeTab === 'market'"
-                    class="grid grid-cols-1 gap-4 md:grid-cols-12"
-                >
-                    <fieldset
-                        class="rounded-lg border border-border/80 p-3 md:col-span-12"
-                    >
-                        <legend
-                            class="px-1 text-xs font-semibold text-foreground"
-                        >
-                            {{
-                                t('app.tenant.products.form.sections.category')
-                            }}
-                        </legend>
-                        <div class="mt-2">
-                            <CategoryCascadeSelect
-                                :model-value="
-                                    props.product?.category_id ?? null
-                                "
-                                :error="resolveError('category_id', errors)"
-                            />
-                        </div>
-                    </fieldset>
-                    <FormTextField
-                        id="sortiment_attribute"
-                        name="sortiment_attribute"
-                        :label="t('app.tenant.products.fields.sortiment_attribute')"
-                        :default-value="props.product?.sortiment_attribute ?? ''"
-                        :error="resolveError('sortiment_attribute', errors)"
-                        class="md:col-span-6"
-                    />
-                </div>
-
-                <div
-                    v-show="activeTab === 'dimensions'"
-                    class="grid grid-cols-1 gap-4 md:grid-cols-12"
-                >
-                    <FormDecimalField
-                        id="height"
-                        v-model="height"
-                        name="height"
-                        :label="`${t('app.tenant.products.fields.height')} (cm)`"
-                        :hint="t('app.tenant.products.form.hints.height')"
-                        :error="resolveError('height', errors)"
-                        :decimals="3"
-                        class="md:col-span-2"
-                    />
-                    <FormDecimalField
-                        id="width"
-                        v-model="width"
-                        name="width"
-                        :label="`${t('app.tenant.products.fields.width')} (cm)`"
-                        :hint="t('app.tenant.products.form.hints.width')"
-                        :error="resolveError('width', errors)"
-                        :decimals="3"
-                        class="md:col-span-2"
-                    />
-                    <FormDecimalField
-                        id="depth"
-                        v-model="depth"
-                        name="depth"
-                        :label="`${t('app.tenant.products.fields.depth')} (cm)`"
-                        :hint="t('app.tenant.products.form.hints.depth')"
-                        :error="resolveError('depth', errors)"
-                        :decimals="3"
-                        class="md:col-span-2"
-                    />
-                    <FormDecimalField
-                        id="weight"
-                        v-model="weight"
-                        name="weight"
-                        :label="t('app.tenant.products.fields.weight')"
-                        :hint="t('app.tenant.products.form.hints.weight')"
-                        :error="resolveError('weight', errors)"
-                        :decimals="3"
-                        class="md:col-span-2"
-                    />
-                    <FormTextField
-                        id="unit"
-                        name="unit"
-                        :label="t('app.tenant.products.fields.unit')"
-                        :default-value="props.product?.unit ?? 'cm'"
-                        :error="resolveError('unit', errors)"
-                        class="md:col-span-4"
-                    />
-                    <FormSelectField
-                        id="dimensions_status"
-                        v-model="dimensionsStatus"
-                        name="dimensions_status"
-                        :label="t('app.tenant.products.fields.dimensions_status')"
-                        :required="true"
-                        :error="resolveError('dimensions_status', errors)"
-                        class="md:col-span-6"
-                    >
-                        <option value="draft">
-                            {{ t('app.tenant.products.dimensions_status_options.draft') }}
-                        </option>
-                        <option value="published">
-                            {{ t('app.tenant.products.dimensions_status_options.published') }}
-                        </option>
-                    </FormSelectField>
-                    <FormTextField
-                        id="dimensions_description"
-                        name="dimensions_description"
-                        :label="t('app.tenant.products.fields.dimensions_description')"
-                        :default-value="props.product?.dimensions_description ?? ''"
-                        :error="resolveError('dimensions_description', errors)"
-                        class="md:col-span-12"
-                    />
-                </div>
-
-                <div
-                    v-show="activeTab === 'additional'"
-                    class="grid grid-cols-1 gap-4 md:grid-cols-12"
-                >
-                    <FormTextField
-                        id="type"
-                        name="type"
-                        :label="t('app.tenant.products.fields.type')"
-                        :default-value="props.product?.type ?? ''"
-                        :error="resolveError('type', errors)"
-                        class="md:col-span-3"
-                    />
-                    <FormTextField
-                        id="reference"
-                        name="reference"
-                        :label="t('app.tenant.products.fields.reference')"
-                        :default-value="props.product?.reference ?? ''"
-                        :error="resolveError('reference', errors)"
-                        class="md:col-span-3"
-                    />
-                    <FormTextField
-                        id="color"
-                        name="color"
-                        :label="t('app.tenant.products.fields.color')"
-                        :default-value="props.product?.color ?? ''"
-                        :error="resolveError('color', errors)"
-                        class="md:col-span-3"
-                    />
-                    <FormTextField
-                        id="flavor"
-                        name="flavor"
-                        :label="t('app.tenant.products.fields.flavor')"
-                        :default-value="props.product?.flavor ?? ''"
-                        :error="resolveError('flavor', errors)"
-                        class="md:col-span-3"
-                    />
-                    <FormTextField
-                        id="fragrance"
-                        name="fragrance"
-                        :label="t('app.tenant.products.fields.fragrance')"
-                        :default-value="props.product?.fragrance ?? ''"
-                        :error="resolveError('fragrance', errors)"
-                        class="md:col-span-3"
-                    />
-                    <FormTextField
-                        id="brand"
-                        name="brand"
-                        :label="t('app.tenant.products.fields.brand')"
-                        :default-value="props.product?.brand ?? ''"
-                        :error="resolveError('brand', errors)"
-                        class="md:col-span-3"
-                    />
-                    <FormTextField
-                        id="subbrand"
-                        name="subbrand"
-                        :label="t('app.tenant.products.fields.subbrand')"
-                        :default-value="props.product?.subbrand ?? ''"
-                        :error="resolveError('subbrand', errors)"
-                        class="md:col-span-3"
-                    />
-                    <FormSelectField
-                        id="packaging_type"
-                        name="packaging_type"
-                        :label="t('app.tenant.products.fields.packaging_type')"
-                        :default-value="props.product?.packaging_type ?? ''"
-                        :error="resolveError('packaging_type', errors)"
-                        class="md:col-span-3"
-                    >
-                        <option value="">—</option>
-                        <option value="BJ">BJ – Bisnaga</option>
-                        <option value="BL">BL – Blíster</option>
-                        <option value="BM">BM – Bandeja</option>
-                        <option value="BT">BT – Balde</option>
-                        <option value="CX">CX – Caixa</option>
-                        <option value="FD">FD – Fardo</option>
-                        <option value="FR">FR – Frasco</option>
-                        <option value="GR">GR – Granel</option>
-                        <option value="LA">LA – Lata</option>
-                        <option value="PC">PC – Pacote</option>
-                        <option value="PT">PT – Pote</option>
-                        <option value="SC">SC – Sachê</option>
-                        <option value="TB">TB – Tubo</option>
-                        <option value="UN">UN – Unitário</option>
-                        <option value="VD">VD – Vidro</option>
-                    </FormSelectField>
-                    <FormTextField
-                        id="packaging_content"
-                        name="packaging_content"
-                        :label="t('app.tenant.products.fields.packaging_content')"
-                        :default-value="props.product?.packaging_content ?? ''"
-                        :error="resolveError('packaging_content', errors)"
-                        class="md:col-span-3"
-                    />
-                    <FormSelectField
-                        id="measurement_unit"
-                        name="measurement_unit"
-                        :label="t('app.tenant.products.fields.measurement_unit')"
-                        :default-value="props.product?.measurement_unit ?? ''"
-                        :error="resolveError('measurement_unit', errors)"
-                        class="md:col-span-3"
-                    >
-                        <option value="">—</option>
-                        <option value="UN">UN – Unidade</option>
-                        <option value="KG">KG – Quilograma</option>
-                        <option value="G">G – Grama</option>
-                        <option value="MG">MG – Miligrama</option>
-                        <option value="L">L – Litro</option>
-                        <option value="ML">ML – Mililitro</option>
-                        <option value="MT">MT – Metro</option>
-                        <option value="CM">CM – Centímetro</option>
-                    </FormSelectField>
-
-                    <FormTextareaField
-                        id="description"
-                        name="description"
-                        :label="t('app.tenant.products.fields.description')"
-                        :default-value="props.product?.description ?? ''"
-                        :rows="4"
-                        :error="resolveError('description', errors)"
-                        class="md:col-span-12"
-                    />
-                    <FormTextareaField
-                        id="auxiliary_description"
-                        name="auxiliary_description"
-                        :label="t('app.tenant.products.fields.auxiliary_description')"
-                        :placeholder="t('app.tenant.products.fields.auxiliary_description')"
-                        :default-value="props.product?.auxiliary_description ?? ''"
-                        :error="resolveError('auxiliary_description', errors)"
-                        class="md:col-span-6"
-                    />
-                    <FormTextareaField
-                        id="additional_information"
-                        name="additional_information"
-                        :label="t('app.tenant.products.fields.additional_information')"
-                        :placeholder="t('app.tenant.products.fields.additional_information')"
-                        :default-value="props.product?.additional_information ?? ''"
-                        :error="resolveError('additional_information', errors)"
-                        class="md:col-span-6"
+                    <FormTabsBar
+                        v-model="activeTab"
+                        :tabs="tabs"
+                        @update:model-value="setTab($event as TabKey)"
                     />
 
                     <div
-                        class="rounded-lg border border-border/80 p-3 md:col-span-12"
+                        v-show="activeTab === 'identification'"
+                        class="grid grid-cols-1 gap-6 lg:grid-cols-12"
                     >
-                        <p class="mb-3 text-sm font-semibold">
-                            {{ t('app.tenant.products.form.logistics') }}
-                        </p>
-                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                            <label class="flex items-center gap-2 text-sm">
-                                <input
-                                    type="hidden"
-                                    name="stackable"
-                                    value="0"
-                                />
-                                <input
-                                    type="checkbox"
-                                    name="stackable"
-                                    value="1"
-                                    :checked="props.product?.stackable ?? false"
-                                    class="accent-primary"
-                                />
-                                {{ t('app.tenant.products.fields.stackable') }}
-                            </label>
-                            <label class="flex items-center gap-2 text-sm">
-                                <input
-                                    type="hidden"
-                                    name="perishable"
-                                    value="0"
-                                />
-                                <input
-                                    type="checkbox"
-                                    name="perishable"
-                                    value="1"
-                                    :checked="
-                                        props.product?.perishable ?? false
+                        <div class="space-y-4 lg:col-span-8">
+                            <ProductIdentitySyncFieldset
+                                :subdomain="props.subdomain"
+                                v-model:ean="ean"
+                                v-model:codigo-erp="codigoErp"
+                                :store-ids="selectedStoreIds"
+                                :ean-label="t('app.tenant.products.form.ean')"
+                                :codigo-erp-label="
+                                    t('app.tenant.products.fields.codigo_erp')
+                                "
+                                :ean-error="resolveError('ean', errors)"
+                                :codigo-erp-error="
+                                    resolveError('codigo_erp', errors)
+                                "
+                            />
+
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                                <FormTextField
+                                    id="name"
+                                    v-model="productName"
+                                    name="name"
+                                    :label="
+                                        t('app.tenant.products.fields.name')
                                     "
-                                    class="accent-primary"
+                                    :required="true"
+                                    :placeholder="
+                                        t('app.tenant.products.fields.name')
+                                    "
+                                    :error="resolveError('name', errors)"
+                                    class="md:col-span-12"
                                 />
-                                {{ t('app.tenant.products.fields.perishable') }}
-                            </label>
-                            <label class="flex items-center gap-2 text-sm">
-                                <input
-                                    type="hidden"
-                                    name="flammable"
-                                    value="0"
-                                />
-                                <input
-                                    type="checkbox"
-                                    name="flammable"
-                                    value="1"
-                                    :checked="props.product?.flammable ?? false"
-                                    class="accent-primary"
-                                />
-                                {{ t('app.tenant.products.fields.flammable') }}
-                            </label>
-                            <label class="flex items-center gap-2 text-sm">
-                                <input
-                                    type="hidden"
-                                    name="hangable"
-                                    value="0"
-                                />
-                                <input
-                                    type="checkbox"
-                                    name="hangable"
-                                    value="1"
-                                    :checked="props.product?.hangable ?? false"
-                                    class="accent-primary"
-                                />
-                                {{ t('app.tenant.products.fields.hangable') }}
-                            </label>
+                                <FormSelectField
+                                    id="status"
+                                    v-model="productStatus"
+                                    name="status"
+                                    :label="
+                                        t(
+                                            'app.tenant.products.form.status_product',
+                                        )
+                                    "
+                                    :required="true"
+                                    :error="resolveError('status', errors)"
+                                    class="md:col-span-6"
+                                >
+                                    <option value="draft">
+                                        {{
+                                            t(
+                                                'app.tenant.products.status_options.draft',
+                                            )
+                                        }}
+                                    </option>
+                                    <option value="published">
+                                        {{
+                                            t(
+                                                'app.tenant.products.status_options.published',
+                                            )
+                                        }}
+                                    </option>
+                                    <option value="synced">
+                                        {{
+                                            t(
+                                                'app.tenant.products.status_options.synced',
+                                            )
+                                        }}
+                                    </option>
+                                    <option value="error">
+                                        {{
+                                            t(
+                                                'app.tenant.products.status_options.error',
+                                            )
+                                        }}
+                                    </option>
+                                </FormSelectField>
+                            </div>
+
+                            <div class="rounded-lg border border-border/80 p-3">
+                                <p class="mb-3 text-sm font-semibold">
+                                    Lojas do produto
+                                </p>
+                                <div
+                                    v-if="props.stores.length > 0"
+                                    class="grid grid-cols-1 gap-2 md:grid-cols-2"
+                                >
+                                    <label
+                                        v-for="store in props.stores"
+                                        :key="store.id"
+                                        class="flex items-start gap-2 rounded-md border border-border/60 px-2 py-2 text-sm"
+                                    >
+                                        <input
+                                            v-model="selectedStoreIds"
+                                            type="checkbox"
+                                            name="store_ids[]"
+                                            :value="store.id"
+                                            class="mt-0.5 accent-primary"
+                                        />
+                                        <span>
+                                            {{ store.name
+                                            }}{{
+                                                store.document
+                                                    ? ` - ${store.document}`
+                                                    : ''
+                                            }}
+                                        </span>
+                                    </label>
+                                </div>
+                                <p v-else class="text-xs text-muted-foreground">
+                                    Nenhuma loja disponível para associação.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 lg:col-span-4">
+                            <ImageUploadField
+                                :subdomain="subdomain"
+                                name="url"
+                                :label="
+                                    t('app.tenant.products.form.sections.image')
+                                "
+                                :ean="ean"
+                                :initial-url="props.product?.image_url ?? ''"
+                                :initial-path="props.product?.url ?? ''"
+                                :ai-enabled="true"
+                                @uploaded="onImageUploaded"
+                                @ai-processed="onImageProcessed"
+                                @repository-processed="onImageProcessed"
+                                @error="onImageError"
+                            />
+                            <InputError
+                                :message="
+                                    imageError || resolveError('url', errors)
+                                "
+                            />
                         </div>
                     </div>
-                </div>
-            </FormCard>
-        </Form>
+
+                    <div
+                        v-show="activeTab === 'market'"
+                        class="grid grid-cols-1 gap-4 md:grid-cols-12"
+                    >
+                        <fieldset
+                            class="rounded-lg border border-border/80 p-3 md:col-span-12"
+                        >
+                            <legend
+                                class="px-1 text-xs font-semibold text-foreground"
+                            >
+                                {{
+                                    t(
+                                        'app.tenant.products.form.sections.category',
+                                    )
+                                }}
+                            </legend>
+                            <div class="mt-2">
+                                <CategoryCascadeSelect
+                                    :model-value="
+                                        props.product?.category_id ?? null
+                                    "
+                                    :error="resolveError('category_id', errors)"
+                                    :enable-sortiment-attribute-helper="true"
+                                    :sortiment-attribute-levels-value="
+                                        props.product
+                                            ?.sortiment_attribute_levels ?? null
+                                    "
+                                    @update-sortiment-attribute="
+                                        onUpdateSortimentAttribute
+                                    "
+                                />
+                            </div>
+                        </fieldset>
+                        <FormTextField
+                            id="sortiment_attribute"
+                            v-model="sortimentAttribute"
+                            name="sortiment_attribute"
+                            :label="
+                                t(
+                                    'app.tenant.products.fields.sortiment_attribute',
+                                )
+                            "
+                            :error="resolveError('sortiment_attribute', errors)"
+                            class="md:col-span-12"
+                        />
+                    </div>
+
+                    <div
+                        v-show="activeTab === 'dimensions'"
+                        class="grid grid-cols-1 gap-4 md:grid-cols-12"
+                    >
+                        <FormDecimalField
+                            id="height"
+                            v-model="height"
+                            name="height"
+                            :label="`${t('app.tenant.products.fields.height')} (cm)`"
+                            :hint="t('app.tenant.products.form.hints.height')"
+                            :error="resolveError('height', errors)"
+                            :decimals="3"
+                            class="md:col-span-2"
+                        />
+                        <FormDecimalField
+                            id="width"
+                            v-model="width"
+                            name="width"
+                            :label="`${t('app.tenant.products.fields.width')} (cm)`"
+                            :hint="t('app.tenant.products.form.hints.width')"
+                            :error="resolveError('width', errors)"
+                            :decimals="3"
+                            class="md:col-span-2"
+                        />
+                        <FormDecimalField
+                            id="depth"
+                            v-model="depth"
+                            name="depth"
+                            :label="`${t('app.tenant.products.fields.depth')} (cm)`"
+                            :hint="t('app.tenant.products.form.hints.depth')"
+                            :error="resolveError('depth', errors)"
+                            :decimals="3"
+                            class="md:col-span-2"
+                        />
+                        <FormDecimalField
+                            id="weight"
+                            v-model="weight"
+                            name="weight"
+                            :label="t('app.tenant.products.fields.weight')"
+                            :hint="t('app.tenant.products.form.hints.weight')"
+                            :error="resolveError('weight', errors)"
+                            :decimals="3"
+                            class="md:col-span-2"
+                        />
+                        <FormTextField
+                            id="unit"
+                            name="unit"
+                            :label="t('app.tenant.products.fields.unit')"
+                            :default-value="props.product?.unit ?? 'cm'"
+                            :error="resolveError('unit', errors)"
+                            class="md:col-span-4"
+                        />
+                        <FormSelectField
+                            id="dimensions_status"
+                            v-model="dimensionsStatus"
+                            name="dimensions_status"
+                            :label="
+                                t(
+                                    'app.tenant.products.fields.dimensions_status',
+                                )
+                            "
+                            :required="true"
+                            :error="resolveError('dimensions_status', errors)"
+                            class="md:col-span-6"
+                        >
+                            <option value="draft">
+                                {{
+                                    t(
+                                        'app.tenant.products.dimensions_status_options.draft',
+                                    )
+                                }}
+                            </option>
+                            <option value="published">
+                                {{
+                                    t(
+                                        'app.tenant.products.dimensions_status_options.published',
+                                    )
+                                }}
+                            </option>
+                        </FormSelectField>
+                        <FormTextField
+                            id="dimensions_description"
+                            name="dimensions_description"
+                            :label="
+                                t(
+                                    'app.tenant.products.fields.dimensions_description',
+                                )
+                            "
+                            :default-value="
+                                props.product?.dimensions_description ?? ''
+                            "
+                            :error="
+                                resolveError('dimensions_description', errors)
+                            "
+                            class="md:col-span-12"
+                        />
+                    </div>
+
+                    <div
+                        v-show="activeTab === 'additional'"
+                        class="grid grid-cols-1 gap-4 md:grid-cols-12"
+                    >
+                        <FormTextField
+                            id="type"
+                            name="type"
+                            :label="t('app.tenant.products.fields.type')"
+                            :default-value="props.product?.type ?? ''"
+                            :error="resolveError('type', errors)"
+                            class="md:col-span-3"
+                        />
+                        <FormTextField
+                            id="reference"
+                            name="reference"
+                            :label="t('app.tenant.products.fields.reference')"
+                            :default-value="props.product?.reference ?? ''"
+                            :error="resolveError('reference', errors)"
+                            class="md:col-span-3"
+                        />
+                        <FormTextField
+                            id="color"
+                            name="color"
+                            :label="t('app.tenant.products.fields.color')"
+                            :default-value="props.product?.color ?? ''"
+                            :error="resolveError('color', errors)"
+                            class="md:col-span-3"
+                        />
+                        <FormTextField
+                            id="flavor"
+                            name="flavor"
+                            :label="t('app.tenant.products.fields.flavor')"
+                            :default-value="props.product?.flavor ?? ''"
+                            :error="resolveError('flavor', errors)"
+                            class="md:col-span-3"
+                        />
+                        <FormTextField
+                            id="fragrance"
+                            name="fragrance"
+                            :label="t('app.tenant.products.fields.fragrance')"
+                            :default-value="props.product?.fragrance ?? ''"
+                            :error="resolveError('fragrance', errors)"
+                            class="md:col-span-3"
+                        />
+                        <FormTextField
+                            id="brand"
+                            name="brand"
+                            :label="t('app.tenant.products.fields.brand')"
+                            :default-value="props.product?.brand ?? ''"
+                            :error="resolveError('brand', errors)"
+                            class="md:col-span-3"
+                        />
+                        <FormTextField
+                            id="subbrand"
+                            name="subbrand"
+                            :label="t('app.tenant.products.fields.subbrand')"
+                            :default-value="props.product?.subbrand ?? ''"
+                            :error="resolveError('subbrand', errors)"
+                            class="md:col-span-3"
+                        />
+                        <FormSelectField
+                            id="packaging_type"
+                            name="packaging_type"
+                            :label="
+                                t('app.tenant.products.fields.packaging_type')
+                            "
+                            :default-value="props.product?.packaging_type ?? ''"
+                            :error="resolveError('packaging_type', errors)"
+                            class="md:col-span-3"
+                        >
+                            <option value="">—</option>
+                            <option value="BJ">BJ – Bisnaga</option>
+                            <option value="BL">BL – Blíster</option>
+                            <option value="BM">BM – Bandeja</option>
+                            <option value="BT">BT – Balde</option>
+                            <option value="CX">CX – Caixa</option>
+                            <option value="FD">FD – Fardo</option>
+                            <option value="FR">FR – Frasco</option>
+                            <option value="GR">GR – Granel</option>
+                            <option value="LA">LA – Lata</option>
+                            <option value="PC">PC – Pacote</option>
+                            <option value="PT">PT – Pote</option>
+                            <option value="SC">SC – Sachê</option>
+                            <option value="TB">TB – Tubo</option>
+                            <option value="UN">UN – Unitário</option>
+                            <option value="VD">VD – Vidro</option>
+                        </FormSelectField>
+                        <FormTextField
+                            id="packaging_content"
+                            name="packaging_content"
+                            :label="
+                                t(
+                                    'app.tenant.products.fields.packaging_content',
+                                )
+                            "
+                            :default-value="
+                                props.product?.packaging_content ?? ''
+                            "
+                            :error="resolveError('packaging_content', errors)"
+                            class="md:col-span-3"
+                        />
+                        <FormSelectField
+                            id="measurement_unit"
+                            name="measurement_unit"
+                            :label="
+                                t('app.tenant.products.fields.measurement_unit')
+                            "
+                            :default-value="
+                                props.product?.measurement_unit ?? ''
+                            "
+                            :error="resolveError('measurement_unit', errors)"
+                            class="md:col-span-3"
+                        >
+                            <option value="">—</option>
+                            <option value="UN">UN – Unidade</option>
+                            <option value="KG">KG – Quilograma</option>
+                            <option value="G">G – Grama</option>
+                            <option value="MG">MG – Miligrama</option>
+                            <option value="L">L – Litro</option>
+                            <option value="ML">ML – Mililitro</option>
+                            <option value="MT">MT – Metro</option>
+                            <option value="CM">CM – Centímetro</option>
+                        </FormSelectField>
+
+                        <FormTextareaField
+                            id="description"
+                            name="description"
+                            :label="t('app.tenant.products.fields.description')"
+                            :default-value="props.product?.description ?? ''"
+                            :rows="4"
+                            :error="resolveError('description', errors)"
+                            class="md:col-span-12"
+                        />
+                        <FormTextareaField
+                            id="auxiliary_description"
+                            name="auxiliary_description"
+                            :label="
+                                t(
+                                    'app.tenant.products.fields.auxiliary_description',
+                                )
+                            "
+                            :placeholder="
+                                t(
+                                    'app.tenant.products.fields.auxiliary_description',
+                                )
+                            "
+                            :default-value="
+                                props.product?.auxiliary_description ?? ''
+                            "
+                            :error="
+                                resolveError('auxiliary_description', errors)
+                            "
+                            class="md:col-span-6"
+                        />
+                        <FormTextareaField
+                            id="additional_information"
+                            name="additional_information"
+                            :label="
+                                t(
+                                    'app.tenant.products.fields.additional_information',
+                                )
+                            "
+                            :placeholder="
+                                t(
+                                    'app.tenant.products.fields.additional_information',
+                                )
+                            "
+                            :default-value="
+                                props.product?.additional_information ?? ''
+                            "
+                            :error="
+                                resolveError('additional_information', errors)
+                            "
+                            class="md:col-span-6"
+                        />
+
+                        <div
+                            class="rounded-lg border border-border/80 p-3 md:col-span-12"
+                        >
+                            <p class="mb-3 text-sm font-semibold">
+                                {{ t('app.tenant.products.form.logistics') }}
+                            </p>
+                            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="hidden"
+                                        name="stackable"
+                                        value="0"
+                                    />
+                                    <input
+                                        type="checkbox"
+                                        name="stackable"
+                                        value="1"
+                                        :checked="
+                                            props.product?.stackable ?? false
+                                        "
+                                        class="accent-primary"
+                                    />
+                                    {{
+                                        t(
+                                            'app.tenant.products.fields.stackable',
+                                        )
+                                    }}
+                                </label>
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="hidden"
+                                        name="perishable"
+                                        value="0"
+                                    />
+                                    <input
+                                        type="checkbox"
+                                        name="perishable"
+                                        value="1"
+                                        :checked="
+                                            props.product?.perishable ?? false
+                                        "
+                                        class="accent-primary"
+                                    />
+                                    {{
+                                        t(
+                                            'app.tenant.products.fields.perishable',
+                                        )
+                                    }}
+                                </label>
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="hidden"
+                                        name="flammable"
+                                        value="0"
+                                    />
+                                    <input
+                                        type="checkbox"
+                                        name="flammable"
+                                        value="1"
+                                        :checked="
+                                            props.product?.flammable ?? false
+                                        "
+                                        class="accent-primary"
+                                    />
+                                    {{
+                                        t(
+                                            'app.tenant.products.fields.flammable',
+                                        )
+                                    }}
+                                </label>
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="hidden"
+                                        name="hangable"
+                                        value="0"
+                                    />
+                                    <input
+                                        type="checkbox"
+                                        name="hangable"
+                                        value="1"
+                                        :checked="
+                                            props.product?.hangable ?? false
+                                        "
+                                        class="accent-primary"
+                                    />
+                                    {{
+                                        t('app.tenant.products.fields.hangable')
+                                    }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </FormCard>
+            </Form>
         </div>
     </AppLayout>
 </template>
