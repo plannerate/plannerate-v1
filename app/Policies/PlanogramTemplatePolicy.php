@@ -26,6 +26,11 @@ class PlanogramTemplatePolicy
         return $this->allowByContext($user, PermissionName::TENANT_PLANOGRAMS_CREATE);
     }
 
+    public function update(User $user, PlanogramTemplate $planogramTemplate): bool
+    {
+        return $this->allowByContext($user, PermissionName::TENANT_PLANOGRAMS_CREATE);
+    }
+
     public function delete(User $user, PlanogramTemplate $planogramTemplate): bool
     {
         return $this->allowByContext($user, PermissionName::TENANT_PLANOGRAMS_DELETE);

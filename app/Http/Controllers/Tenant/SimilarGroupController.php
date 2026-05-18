@@ -10,8 +10,10 @@ use App\Http\Requests\Tenant\SimilarGroupStoreRequest;
 use App\Http\Requests\Tenant\SimilarGroupUpdateRequest;
 use App\Models\Product;
 use App\Models\SimilarGroup;
+use App\Services\EanReferenceSimilarSyncService;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,6 +27,8 @@ class SimilarGroupController extends Controller
     use InteractsWithPlanLimits;
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
+
+    public function __construct(private readonly EanReferenceSimilarSyncService $eanReferenceSimilarSyncService) {}
 
     public function index(Request $request): Response
     {
@@ -117,6 +121,7 @@ class SimilarGroupController extends Controller
         ]);
         $this->syncProducts($similarGroup, $productIds);
         $this->applyDimensionsToProducts($validated, $productIds);
+        $this->syncEanReferenceSimilares($similarGroup, $products->pluck('ean')->all());
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -158,10 +163,14 @@ class SimilarGroupController extends Controller
         $validated = $request->validated();
         $productIds = $this->validatedProductIds($validated);
         $products = $this->productsByIds($productIds);
+        $similarGroup->loadMissing('products');
+        $previousGrouperCode = (string) $similarGroup->grouper_code;
+        $previousEans = $similarGroup->products->pluck('ean')->all();
 
         $similarGroup->update($this->groupAttributes($validated, $products));
         $this->syncProducts($similarGroup, $productIds);
         $this->applyDimensionsToProducts($validated, $productIds);
+        $this->syncEanReferenceSimilares($similarGroup, $products->pluck('ean')->all(), $previousGrouperCode, $previousEans);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -176,6 +185,7 @@ class SimilarGroupController extends Controller
         unset($subdomain);
         $this->authorize('delete', $similarGroup);
 
+        $this->eanReferenceSimilarSyncService->remove($similarGroup);
         $similarGroup->delete();
 
         Inertia::flash('toast', [
@@ -246,7 +256,7 @@ class SimilarGroupController extends Controller
 
     /**
      * @param  list<string>  $productIds
-     * @return \Illuminate\Database\Eloquent\Collection<int, Product>
+     * @return Collection<int, Product>
      */
     private function productsByIds(array $productIds)
     {
@@ -257,7 +267,7 @@ class SimilarGroupController extends Controller
 
     /**
      * @param  array<string, mixed>  $validated
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Product>  $products
+     * @param  Collection<int, Product>  $products
      * @return array<string, mixed>
      */
     private function groupAttributes(array $validated, $products): array
@@ -278,7 +288,7 @@ class SimilarGroupController extends Controller
 
     /**
      * @param  array<string, mixed>  $validated
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Product>  $products
+     * @param  Collection<int, Product>  $products
      */
     private function baseDimensionsProductEan(array $validated, $products): ?string
     {
@@ -304,6 +314,20 @@ class SimilarGroupController extends Controller
         }
 
         $similarGroup->products()->sync($pivotValues);
+    }
+
+    /**
+     * @param  list<string|null>  $currentEans
+     * @param  list<string|null>  $previousEans
+     */
+    private function syncEanReferenceSimilares(SimilarGroup $similarGroup, array $currentEans, ?string $previousGrouperCode = null, array $previousEans = []): void
+    {
+        $this->eanReferenceSimilarSyncService->sync(
+            $similarGroup,
+            $currentEans,
+            $previousGrouperCode,
+            $previousEans,
+        );
     }
 
     /**
@@ -384,7 +408,7 @@ class SimilarGroupController extends Controller
     }
 
     /**
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Product>  $products
+     * @param  Collection<int, Product>  $products
      */
     private function sharedProductValue($products, string $field): mixed
     {

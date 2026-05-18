@@ -25,6 +25,11 @@ class GlobalPlanogramTemplatePolicy
         return $this->isLandlordContext();
     }
 
+    public function update(User $user, GlobalPlanogramTemplate $template): bool
+    {
+        return $this->isLandlordContext();
+    }
+
     public function delete(User $user, GlobalPlanogramTemplate $template): bool
     {
         return $this->isLandlordContext();

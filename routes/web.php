@@ -5,6 +5,8 @@ use App\Http\Controllers\AutoPlanogramController;
 use App\Http\Controllers\Landlord\DashboardController as LandlordDashboardController;
 use App\Http\Controllers\Landlord\EanReferenceController as LandlordEanReferenceController;
 use App\Http\Controllers\Landlord\GlobalPlanogramTemplateController;
+use App\Http\Controllers\Landlord\GlobalTemplateProductController;
+use App\Http\Controllers\Landlord\GlobalTemplateSlotController;
 use App\Http\Controllers\Landlord\IntegrationApiController;
 use App\Http\Controllers\Landlord\ModuleController;
 use App\Http\Controllers\Landlord\NotificationController as LandlordNotificationController;
@@ -41,6 +43,8 @@ use App\Http\Controllers\Tenant\SaleController;
 use App\Http\Controllers\Tenant\SimilarGroupController;
 use App\Http\Controllers\Tenant\StoreController;
 use App\Http\Controllers\Tenant\SystemLogController;
+use App\Http\Controllers\Tenant\TemplateProductController;
+use App\Http\Controllers\Tenant\TemplateSlotController;
 use App\Http\Controllers\Tenant\UserController as TenantUserController;
 use App\Http\Controllers\Tenant\WorkflowExecutionController;
 use App\Http\Controllers\Tenant\WorkflowKanbanController;
@@ -124,6 +128,34 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->name('landlord.planogram-templates.show');
     Route::delete('planogram-templates/{globalPlanogramTemplate}', [GlobalPlanogramTemplateController::class, 'destroy'])
         ->name('landlord.planogram-templates.destroy');
+
+    // Wizard etapa 2 — Slots (global template)
+    Route::get('planogram-templates/{globalPlanogramTemplate}/slots', [GlobalTemplateSlotController::class, 'index'])
+        ->name('landlord.planogram-templates.slots.index');
+    Route::post('planogram-templates/{globalPlanogramTemplate}/subtemplates', [GlobalTemplateSlotController::class, 'createSubtemplate'])
+        ->name('landlord.planogram-templates.subtemplates.store');
+    Route::post('planogram-templates/{globalPlanogramTemplate}/subtemplates/{globalPlanogramSubtemplate}/slots', [GlobalTemplateSlotController::class, 'storeSlot'])
+        ->name('landlord.planogram-templates.slots.store');
+    Route::post('planogram-templates/{globalPlanogramTemplate}/slots/reorder', [GlobalTemplateSlotController::class, 'reorder'])
+        ->name('landlord.planogram-templates.slots.reorder');
+    Route::put('planogram-templates/{globalPlanogramTemplate}/slots/{globalPlanogramTemplateSlot}', [GlobalTemplateSlotController::class, 'updateSlot'])
+        ->name('landlord.planogram-templates.slots.update');
+    Route::delete('planogram-templates/{globalPlanogramTemplate}/slots/{globalPlanogramTemplateSlot}', [GlobalTemplateSlotController::class, 'destroySlot'])
+        ->name('landlord.planogram-templates.slots.destroy');
+
+    // Wizard etapa 3 — Produtos (global template)
+    Route::get('planogram-templates/{globalPlanogramTemplate}/products/template', [GlobalTemplateProductController::class, 'downloadTemplate'])
+        ->name('landlord.planogram-templates.products.template');
+    Route::post('planogram-templates/{globalPlanogramTemplate}/products/bulk', [GlobalTemplateProductController::class, 'bulkImport'])
+        ->name('landlord.planogram-templates.products.bulk');
+    Route::get('planogram-templates/{globalPlanogramTemplate}/products', [GlobalTemplateProductController::class, 'index'])
+        ->name('landlord.planogram-templates.products.index');
+    Route::post('planogram-templates/{globalPlanogramTemplate}/products', [GlobalTemplateProductController::class, 'store'])
+        ->name('landlord.planogram-templates.products.store');
+    Route::put('planogram-templates/{globalPlanogramTemplate}/products/{globalPlanogramTemplateProduct}', [GlobalTemplateProductController::class, 'update'])
+        ->name('landlord.planogram-templates.products.update');
+    Route::delete('planogram-templates/{globalPlanogramTemplate}/products/{globalPlanogramTemplateProduct}', [GlobalTemplateProductController::class, 'destroy'])
+        ->name('landlord.planogram-templates.products.destroy');
 
     Route::resource('useful-links', UsefulLinkController::class)
         ->except(['show'])
@@ -313,6 +345,34 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('planogram-templates.show');
         Route::delete('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'destroy'])
             ->name('planogram-templates.destroy');
+
+        // Wizard etapa 2 — Slots (tenant)
+        Route::get('planogram-templates/{planogramTemplate}/slots', [TemplateSlotController::class, 'index'])
+            ->name('planogram-templates.slots.index');
+        Route::post('planogram-templates/{planogramTemplate}/subtemplates', [TemplateSlotController::class, 'createSubtemplate'])
+            ->name('planogram-templates.subtemplates.store');
+        Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots', [TemplateSlotController::class, 'storeSlot'])
+            ->name('planogram-templates.slots.store');
+        Route::post('planogram-templates/{planogramTemplate}/slots/reorder', [TemplateSlotController::class, 'reorder'])
+            ->name('planogram-templates.slots.reorder');
+        Route::put('planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}', [TemplateSlotController::class, 'updateSlot'])
+            ->name('planogram-templates.slots.update');
+        Route::delete('planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}', [TemplateSlotController::class, 'destroySlot'])
+            ->name('planogram-templates.slots.destroy');
+
+        // Wizard etapa 3 — Products (tenant)
+        Route::get('planogram-templates/{planogramTemplate}/products/template', [TemplateProductController::class, 'downloadTemplate'])
+            ->name('planogram-templates.products.download-template');
+        Route::post('planogram-templates/{planogramTemplate}/products/bulk', [TemplateProductController::class, 'bulkImport'])
+            ->name('planogram-templates.products.bulk-import');
+        Route::get('planogram-templates/{planogramTemplate}/products', [TemplateProductController::class, 'index'])
+            ->name('planogram-templates.products.index');
+        Route::post('planogram-templates/{planogramTemplate}/products', [TemplateProductController::class, 'store'])
+            ->name('planogram-templates.products.store');
+        Route::put('planogram-templates/{planogramTemplate}/products/{planogramTemplateProduct}', [TemplateProductController::class, 'update'])
+            ->name('planogram-templates.products.update');
+        Route::delete('planogram-templates/{planogramTemplate}/products/{planogramTemplateProduct}', [TemplateProductController::class, 'destroy'])
+            ->name('planogram-templates.products.destroy');
 
         Route::resource('users', TenantUserController::class)
             ->except(['show'])
