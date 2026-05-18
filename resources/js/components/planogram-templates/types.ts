@@ -50,6 +50,12 @@ export type ProductSearchResult = {
     name: string;
     brand: string;
     description?: string;
+    sortiment_attribute?: string | null;
+};
+
+export type GroupingOption = {
+    id: string;
+    name: string;
 };
 
 export type WizardStepStatus = 'complete' | 'active' | 'pending';

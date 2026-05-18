@@ -28,14 +28,17 @@ class TemplateProductController extends Controller
 
         $planogramTemplate->load(['subtemplates.slots', 'templateProducts']);
 
-        $searchQuery = $this->requestString($request, 'search');
+        $selectedGroupingId = $this->requestString($request, 'groupingId');
+        $selectedGroupingName = $this->service->resolveGroupingNameById($planogramTemplate, $selectedGroupingId);
 
         return Inertia::render('tenant/planogram-templates/Products', [
             'subdomain' => $this->tenantSubdomain(),
             'template' => $this->service->templateData($planogramTemplate),
             'products' => $this->service->productsData($planogramTemplate),
             'availableGroupings' => $this->service->availableGroupings($planogramTemplate),
-            'searchResults' => $searchQuery !== '' ? $this->searchProducts($searchQuery) : null,
+            'groupingOptions' => $this->service->groupingOptions($planogramTemplate),
+            'selectedGroupingId' => $selectedGroupingName !== null ? $selectedGroupingId : null,
+            'searchResults' => $selectedGroupingName !== null ? $this->searchProductsByGrouping($selectedGroupingName) : null,
         ]);
     }
 
@@ -48,18 +51,26 @@ class TemplateProductController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.ean' => ['required', 'string', 'max:50'],
             'items.*.grouping' => ['required', 'string', 'max:255'],
+            'items.*.sortiment_attribute' => ['nullable', 'string', 'max:255'],
         ]);
 
         $this->service->storeProducts(
             $planogramTemplate,
             $validated['items'],
-            function (string $ean) use ($planogramTemplate): array {
+            function (string $ean, array $item) use ($planogramTemplate): array {
                 $product = Product::where('ean', $ean)->first();
+                $sortimentAttribute = (string) ($product?->sortiment_attribute ?? $item['sortiment_attribute'] ?? '');
+                [$category, $subcategory] = $this->extractCategoryAndSubcategory(
+                    $sortimentAttribute,
+                    (string) $planogramTemplate->department,
+                );
 
                 return [
                     'product_id' => $product?->id,
                     'description' => $product?->name ?? '',
                     'department' => $planogramTemplate->department,
+                    'category' => $category,
+                    'subcategory' => $subcategory,
                     'brand' => $product?->brand ?? '',
                 ];
             },
@@ -137,21 +148,38 @@ class TemplateProductController extends Controller
     }
 
     /** @return list<array<string, mixed>> */
-    private function searchProducts(string $query): array
+    private function searchProductsByGrouping(string $grouping): array
     {
-        return Product::where(function ($q) use ($query): void {
-            $q->where('ean', 'like', '%' . $query . '%')
-                ->orWhere('name', 'like', '%' . $query . '%')
-                ->orWhere('brand', 'like', '%' . $query . '%');
-        })
-            ->limit(30)
+        return Product::query()
+            ->where('sortiment_attribute', $grouping)
+            ->limit(200)
             ->get()
-            ->map(fn(Product $p): array => [
+            ->map(fn (Product $p): array => [
                 'id' => $p->id,
                 'ean' => (string) $p->ean,
                 'name' => (string) $p->name,
                 'brand' => (string) ($p->brand ?? ''),
+                'sortiment_attribute' => $p->sortiment_attribute,
             ])
             ->all();
+    }
+
+    /** @return array{0:string,1:string} */
+    private function extractCategoryAndSubcategory(string $sortimentAttribute, string $fallback): array
+    {
+        $segments = array_values(array_filter(
+            array_map('trim', preg_split('/\s*\|\s*/', $sortimentAttribute) ?: []),
+            fn (string $segment): bool => $segment !== '',
+        ));
+
+        if ($segments === []) {
+            return [$fallback, $fallback];
+        }
+
+        if (count($segments) === 1) {
+            return [$segments[0], $segments[0]];
+        }
+
+        return [$segments[count($segments) - 2], $segments[count($segments) - 1]];
     }
 }

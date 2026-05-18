@@ -7,6 +7,7 @@ import ProductSearchPanel from '@/components/planogram-templates/ProductSearchPa
 import TemplateProductTable from '@/components/planogram-templates/TemplateProductTable.vue';
 import WizardProgress from '@/components/planogram-templates/WizardProgress.vue';
 import type {
+    GroupingOption,
     PlanogramTemplateProduct,
     ProductSearchResult,
     WizardStep,
@@ -28,6 +29,8 @@ const props = defineProps<{
     template: TemplateBasic;
     products: PlanogramTemplateProduct[];
     availableGroupings: string[];
+    groupingOptions: GroupingOption[];
+    selectedGroupingId?: string | null;
     searchResults?: ProductSearchResult[];
 }>();
 
@@ -60,12 +63,11 @@ function navigateWizard(step: 1 | 2 | 3): void {
 // ── Search ─────────────────────────────────────────────────────────────────────
 const searching = ref(false);
 
-function doSearch(query: string): void {
-    if (!query) return;
+function doSearch(groupingId: string | null): void {
     searching.value = true;
     router.get(
         `${baseUrl.value}/products`,
-        { search: query },
+        { groupingId: groupingId ?? undefined },
         {
             preserveState: true,
             only: ['searchResults'],
@@ -78,7 +80,11 @@ function doSearch(query: string): void {
 function addProducts(items: Array<{ product: ProductSearchResult; grouping: string }>): void {
     router.post(
         `${baseUrl.value}/products`,
-        { items: items.map((i) => ({ ean: i.product.ean, grouping: i.grouping })) },
+        { items: items.map((i) => ({
+            ean: i.product.ean,
+            grouping: i.grouping,
+            sortiment_attribute: i.product.sortiment_attribute ?? null,
+        })) },
         { preserveState: true, only: ['products'] },
     );
 }
@@ -145,7 +151,8 @@ const breadcrumbs = [
                     <ProductSearchPanel
                         :search-results="searchResults ?? []"
                         :searching="searching"
-                        :available-groupings="availableGroupings"
+                        :grouping-options="groupingOptions"
+                        :selected-grouping-id="selectedGroupingId"
                         @search="doSearch"
                         @add-products="addProducts"
                     />

@@ -11,6 +11,11 @@ final class TemplateProductService
         return (string) preg_replace('/\s+/', ' ', strtolower(trim($value)));
     }
 
+    public function groupingId(string $grouping): string
+    {
+        return substr(sha1($this->normalizeGrouping($grouping)), 0, 12);
+    }
+
     /** @return array<string, mixed> */
     public function templateData(Model $template): array
     {
@@ -52,6 +57,33 @@ final class TemplateProductService
             ->unique()
             ->values()
             ->all();
+    }
+
+    /** @return list<array{id: string, name: string}> */
+    public function groupingOptions(Model $template): array
+    {
+        return collect($this->availableGroupings($template))
+            ->map(fn (string $grouping): array => [
+                'id' => $this->groupingId($grouping),
+                'name' => $grouping,
+            ])
+            ->values()
+            ->all();
+    }
+
+    public function resolveGroupingNameById(Model $template, string $groupingId): ?string
+    {
+        if ($groupingId === '') {
+            return null;
+        }
+
+        foreach ($this->availableGroupings($template) as $grouping) {
+            if ($this->groupingId($grouping) === $groupingId) {
+                return $grouping;
+            }
+        }
+
+        return null;
     }
 
     /**

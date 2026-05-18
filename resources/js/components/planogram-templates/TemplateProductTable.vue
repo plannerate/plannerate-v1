@@ -17,6 +17,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useT } from '@/composables/useT';
 import type { PlanogramTemplateProduct } from './types';
 
 const props = defineProps<{
@@ -31,6 +32,8 @@ const emit = defineEmits<{
     'download-template': [];
 }>();
 
+const { t } = useT();
+
 function onImportChange(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) emit('import-xlsx', file);
@@ -43,17 +46,17 @@ function onImportChange(event: Event): void {
         <!-- Toolbar -->
         <div class="flex flex-wrap items-center justify-between gap-2">
             <p class="text-sm text-muted-foreground">
-                {{ products.length }} produto{{ products.length !== 1 ? 's' : '' }} no template
+                {{ products.length }} {{ products.length === 1 ? t('planogram-templates.product_table.count_singular') : t('planogram-templates.product_table.count_plural') }}
             </p>
             <div class="flex gap-2">
                 <Button variant="outline" size="sm" @click="emit('download-template')">
                     <Download class="size-3.5" />
-                    Baixar modelo
+                    {{ t('planogram-templates.product_table.download_button') }}
                 </Button>
                 <label class="cursor-pointer">
                     <Button variant="outline" size="sm" as="span">
                         <Upload class="size-3.5" />
-                        Importar planilha
+                        {{ t('planogram-templates.product_table.import_button') }}
                     </Button>
                     <input
                         type="file"
@@ -66,24 +69,26 @@ function onImportChange(event: Event): void {
         </div>
 
         <!-- Table -->
-        <div class="flex-1 overflow-auto rounded-md border border-border">
+        <div class="flex-1 overflow-auto rounded-md border border-border   max-h-[calc(100vh-8rem)]">
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead class="w-32 font-mono text-xs">EAN</TableHead>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead class="w-28">Marca</TableHead>
-                        <TableHead class="w-44">Agrupamento</TableHead>
-                        <TableHead class="w-20">Embalagem</TableHead>
-                        <TableHead class="w-20">Conteúdo</TableHead>
-                        <TableHead class="w-24">Status</TableHead>
+                        <TableHead class="w-32 font-mono text-xs">{{ t('planogram-templates.product_table.columns.ean') }}</TableHead>
+                        <TableHead>{{ t('planogram-templates.product_table.columns.description') }}</TableHead>
+                        <TableHead class="w-28">{{ t('planogram-templates.product_table.columns.brand') }}</TableHead>
+                        <TableHead class="w-44">{{ t('planogram-templates.product_table.columns.grouping') }}</TableHead>
+                        <TableHead class="w-20">{{ t('planogram-templates.product_table.columns.package_type') }}</TableHead>
+                        <TableHead class="w-20">{{ t('planogram-templates.product_table.columns.package_content') }}</TableHead>
+                        <TableHead class="w-24">{{ t('planogram-templates.product_table.columns.status') }}</TableHead>
                         <TableHead class="w-10" />
                     </TableRow>
                 </TableHeader>
-                <TableBody>
+                <div class="  max-h-[calc(100vh-8rem)] overflow-auto" :style="{
+                    maxHeight: `calc(100vh - 8rem)`,
+                }">
                     <TableRow v-if="products.length === 0">
                         <TableCell colspan="8" class="py-10 text-center text-sm text-muted-foreground">
-                            Nenhum produto adicionado ainda
+                            {{ t('planogram-templates.product_table.empty_message') }}
                         </TableCell>
                     </TableRow>
                     <TableRow v-for="product in products" :key="product.id">
@@ -93,7 +98,7 @@ function onImportChange(event: Event): void {
                         <TableCell>
                             <Select
                                 :model-value="product.grouping"
-                                @update:model-value="emit('update-grouping', product, $event)"
+                                @update:model-value="emit('update-grouping', product, $event as string)"
                             >
                                 <SelectTrigger class="h-7 text-xs">
                                     <SelectValue />
@@ -110,11 +115,11 @@ function onImportChange(event: Event): void {
                                 </SelectContent>
                             </Select>
                         </TableCell>
-                        <TableCell class="text-xs text-muted-foreground">{{ product.package_type ?? '—' }}</TableCell>
-                        <TableCell class="text-xs text-muted-foreground">{{ product.package_content ?? '—' }}</TableCell>
+                        <TableCell class="text-xs text-muted-foreground">{{ product.package_type ?? t('planogram-templates.product_table.empty_value') }}</TableCell>
+                        <TableCell class="text-xs text-muted-foreground">{{ product.package_content ?? t('planogram-templates.product_table.empty_value') }}</TableCell>
                         <TableCell>
                             <Badge :variant="product.product_id ? 'default' : 'secondary'" class="text-[10px]">
-                                {{ product.product_id ? 'No mix' : 'Fora do mix' }}
+                                {{ product.product_id ? t('planogram-templates.product_table.status_in_mix') : t('planogram-templates.product_table.status_out_of_mix') }}
                             </Badge>
                         </TableCell>
                         <TableCell>
@@ -127,7 +132,7 @@ function onImportChange(event: Event): void {
                             </button>
                         </TableCell>
                     </TableRow>
-                </TableBody>
+                </div>
             </Table>
         </div>
     </div>

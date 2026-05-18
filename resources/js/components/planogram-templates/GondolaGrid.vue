@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Plus } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { useT } from '@/composables/useT';
 import SlotCard from './SlotCard.vue';
 import type { PlanogramTemplateSlot } from './types';
 
@@ -17,6 +18,8 @@ const emit = defineEmits<{
     'slot-remove': [module: number, shelf: number];
     'slot-drop': [from: DragPosition, to: DragPosition];
 }>();
+
+const { t } = useT();
 
 /** slot lookup indexed by "module-shelf" for O(1) access */
 const slotMap = computed(() =>
@@ -87,7 +90,7 @@ function isDragOver(module: number, shelf: number): boolean {
                 :key="`hdr-${m}`"
                 class="border-b border-r border-border bg-muted/50 px-3 py-1.5 text-center text-xs font-semibold text-muted-foreground last:border-r-0"
             >
-                Módulo #{{ m }}
+                {{ t('planogram-templates.grid.module_label') }}{{ m }}
             </div>
 
             <!-- Data rows: shelf label + cells -->
@@ -96,7 +99,7 @@ function isDragOver(module: number, shelf: number): boolean {
                 <div
                     class="flex items-center justify-center border-b border-r border-border bg-muted/30 px-1 py-1 text-[11px] font-medium text-muted-foreground last:border-b-0"
                 >
-                    <span class="writing-mode-vertical rotate-0">Prat #{{ shelf }}</span>
+                    <span class="writing-mode-vertical rotate-0">{{ t('planogram-templates.grid.shelf_label') }}{{ shelf }}</span>
                 </div>
 
                 <!-- Cells -->
@@ -129,7 +132,7 @@ function isDragOver(module: number, shelf: number): boolean {
                         @click="emit('cell-click', m, shelf, null)"
                     >
                         <Plus class="size-3.5" />
-                        <span>Adicionar</span>
+                        <span>{{ t('planogram-templates.grid.add_button') }}</span>
                     </button>
                 </div>
             </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Pencil, X } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { useT } from '@/composables/useT';
 import { groupingToColor } from './types';
 import type { PlanogramTemplateSlot } from './types';
 
@@ -13,11 +14,13 @@ const emit = defineEmits<{
     remove: [];
 }>();
 
+const { t } = useT();
+
 const colors = computed(() => groupingToColor(props.slot.grouping));
 
 const priceOrderLabel: Record<string, string> = {
-    asc: '↑ preço',
-    desc: '↓ preço',
+    asc: t('planogram-templates.slot_card.price_order.asc'),
+    desc: t('planogram-templates.slot_card.price_order.desc'),
     none: '',
 };
 
@@ -42,9 +45,9 @@ function onDragStart(event: DragEvent): void {
     >
         <span class="line-clamp-2 font-semibold leading-tight">{{ slot.grouping }}</span>
         <div class="flex flex-wrap gap-1 text-[10px] opacity-75">
-            <span>min {{ slot.min_facings }}f</span>
+            <span>{{ t('planogram-templates.slot_card.min_facings_label') }} {{ slot.min_facings }}{{ t('planogram-templates.slot_card.facings_abbr') }}</span>
             <span v-if="priceOrderLabel[slot.price_order]">· {{ priceOrderLabel[slot.price_order] }}</span>
-            <span v-if="slot.priority > 1">· p{{ slot.priority }}</span>
+            <span v-if="slot.priority > 1">· {{ t('planogram-templates.slot_card.priority_prefix') }}{{ slot.priority }}</span>
         </div>
 
         <!-- action buttons — visible on hover -->

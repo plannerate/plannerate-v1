@@ -101,7 +101,7 @@ return [
     // Product search panel (ProductSearchPanel.vue)
     'product_search' => [
         'search_placeholder' => 'Buscar por EAN, nome ou marca...',
-        'grouping_placeholder' => 'Grouping de destino',
+        'grouping_placeholder' => 'Agrupamento de destino',
         'no_groupings_hint' => 'Configure os slots (etapa 2) primeiro',
         'searching' => 'Buscando...',
         'no_results' => 'Nenhum produto encontrado',
@@ -110,6 +110,7 @@ return [
         'product_singular' => 'produto',
         'product_plural' => 'produtos',
         'selected' => 'selecionados',
+        'grouping_none' => 'Nenhum agrupamento',
     ],
 
     // Product table (TemplateProductTable.vue)
