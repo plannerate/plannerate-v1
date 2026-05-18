@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
-use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplate;
 use App\Models\PlanogramTemplateProduct;
 use App\Models\Product;
+use App\Services\AutoPlanogram\Template\TemplateProductService;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,6 +18,8 @@ class TemplateProductController extends Controller
 {
     use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
+
+    public function __construct(private readonly TemplateProductService $service) {}
 
     public function index(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): Response
     {
@@ -29,14 +32,14 @@ class TemplateProductController extends Controller
 
         return Inertia::render('tenant/planogram-templates/Products', [
             'subdomain' => $this->tenantSubdomain(),
-            'template' => $this->templateData($planogramTemplate),
-            'products' => $this->productsData($planogramTemplate),
-            'availableGroupings' => $this->availableGroupings($planogramTemplate),
+            'template' => $this->service->templateData($planogramTemplate),
+            'products' => $this->service->productsData($planogramTemplate),
+            'availableGroupings' => $this->service->availableGroupings($planogramTemplate),
             'searchResults' => $searchQuery !== '' ? $this->searchProducts($searchQuery) : null,
         ]);
     }
 
-    public function store(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): Response
+    public function store(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): RedirectResponse
     {
         unset($subdomain);
         $this->authorize('update', $planogramTemplate);
@@ -47,41 +50,31 @@ class TemplateProductController extends Controller
             'items.*.grouping' => ['required', 'string', 'max:255'],
         ]);
 
-        foreach ($validated['items'] as $item) {
-            $ean = $item['ean'];
-            $grouping = $item['grouping'];
+        $this->service->storeProducts(
+            $planogramTemplate,
+            $validated['items'],
+            function (string $ean) use ($planogramTemplate): array {
+                $product = Product::where('ean', $ean)->first();
 
-            $alreadyExists = $planogramTemplate->templateProducts()
-                ->where('ean', $ean)
-                ->where('grouping_normalized', $this->normalizeGrouping($grouping))
-                ->exists();
-
-            if ($alreadyExists) {
-                continue;
-            }
-
-            $product = Product::where('ean', $ean)->first();
-
-            $planogramTemplate->templateProducts()->create([
-                'tenant_id' => $this->tenantId(),
-                'ean' => $ean,
-                'product_id' => $product?->id,
-                'description' => $product?->name ?? '',
-                'department' => $planogramTemplate->department,
-                'brand' => $product?->brand ?? '',
-                'grouping' => $grouping,
-                'grouping_normalized' => $this->normalizeGrouping($grouping),
-            ]);
-        }
+                return [
+                    'product_id' => $product?->id,
+                    'description' => $product?->name ?? '',
+                    'department' => $planogramTemplate->department,
+                    'brand' => $product?->brand ?? '',
+                ];
+            },
+            ['tenant_id' => $this->tenantId()],
+        );
 
         $planogramTemplate->load('templateProducts');
 
-        return Inertia::render('tenant/planogram-templates/Products', [
-            'products' => $this->productsData($planogramTemplate),
+        return redirect()->route('tenant.planogram-templates.products.index', [
+            'subdomain' => $this->tenantSubdomain(),
+            'planogramTemplate' => $planogramTemplate->id,
         ]);
     }
 
-    public function update(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramTemplateProduct $planogramTemplateProduct): Response
+    public function update(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramTemplateProduct $planogramTemplateProduct): RedirectResponse
     {
         unset($subdomain);
         $this->authorize('update', $planogramTemplate);
@@ -90,33 +83,32 @@ class TemplateProductController extends Controller
             'grouping' => ['required', 'string', 'max:255'],
         ]);
 
-        $planogramTemplateProduct->update([
-            'grouping' => $validated['grouping'],
-            'grouping_normalized' => $this->normalizeGrouping($validated['grouping']),
-        ]);
+        $this->service->updateProduct($planogramTemplateProduct, $validated['grouping']);
 
         $planogramTemplate->load('templateProducts');
 
-        return Inertia::render('tenant/planogram-templates/Products', [
-            'products' => $this->productsData($planogramTemplate),
+        return redirect()->route('tenant.planogram-templates.products.index', [
+            'subdomain' => $this->tenantSubdomain(),
+            'planogramTemplate' => $planogramTemplate->id,
         ]);
     }
 
-    public function destroy(string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramTemplateProduct $planogramTemplateProduct): Response
+    public function destroy(string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramTemplateProduct $planogramTemplateProduct): RedirectResponse
     {
         unset($subdomain);
         $this->authorize('update', $planogramTemplate);
 
-        $planogramTemplateProduct->delete();
+        $this->service->destroyProduct($planogramTemplateProduct);
 
         $planogramTemplate->load('templateProducts');
 
-        return Inertia::render('tenant/planogram-templates/Products', [
-            'products' => $this->productsData($planogramTemplate),
+        return redirect()->route('tenant.planogram-templates.products.index', [
+            'subdomain' => $this->tenantSubdomain(),
+            'planogramTemplate' => $planogramTemplate->id,
         ]);
     }
 
-    public function bulkImport(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): Response
+    public function bulkImport(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): RedirectResponse
     {
         unset($subdomain);
         $this->authorize('update', $planogramTemplate);
@@ -129,8 +121,9 @@ class TemplateProductController extends Controller
 
         $planogramTemplate->load('templateProducts');
 
-        return Inertia::render('tenant/planogram-templates/Products', [
-            'products' => $this->productsData($planogramTemplate),
+        return redirect()->route('tenant.planogram-templates.products.index', [
+            'subdomain' => $this->tenantSubdomain(),
+            'planogramTemplate' => $planogramTemplate->id,
         ]);
     }
 
@@ -143,72 +136,22 @@ class TemplateProductController extends Controller
         abort(501, 'Download de modelo ainda não implementado.');
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /** @return array<string, mixed> */
-    private function templateData(PlanogramTemplate $planogramTemplate): array
-    {
-        return [
-            'id' => $planogramTemplate->id,
-            'code' => $planogramTemplate->code,
-            'name' => $planogramTemplate->name,
-            'department' => $planogramTemplate->department,
-            'is_active' => $planogramTemplate->is_active,
-        ];
-    }
-
-    /** @return list<array<string, mixed>> */
-    private function productsData(PlanogramTemplate $planogramTemplate): array
-    {
-        return $planogramTemplate->templateProducts
-            ->map(fn (PlanogramTemplateProduct $p): array => [
-                'id' => $p->id,
-                'ean' => $p->ean,
-                'product_id' => $p->product_id,
-                'description' => $p->description,
-                'brand' => $p->brand,
-                'grouping' => $p->grouping,
-                'category' => $p->category,
-                'subcategory' => $p->subcategory,
-                'package_type' => $p->package_type,
-                'package_content' => $p->package_content,
-            ])
-            ->values()
-            ->all();
-    }
-
-    /** @return list<string> */
-    private function availableGroupings(PlanogramTemplate $planogramTemplate): array
-    {
-        return $planogramTemplate->subtemplates
-            ->flatMap(fn (PlanogramSubtemplate $sub) => $sub->slots->pluck('grouping'))
-            ->filter()
-            ->unique()
-            ->values()
-            ->all();
-    }
-
     /** @return list<array<string, mixed>> */
     private function searchProducts(string $query): array
     {
         return Product::where(function ($q) use ($query): void {
-            $q->where('ean', 'like', '%'.$query.'%')
-                ->orWhere('name', 'like', '%'.$query.'%')
-                ->orWhere('brand', 'like', '%'.$query.'%');
+            $q->where('ean', 'like', '%' . $query . '%')
+                ->orWhere('name', 'like', '%' . $query . '%')
+                ->orWhere('brand', 'like', '%' . $query . '%');
         })
             ->limit(30)
             ->get()
-            ->map(fn (Product $p): array => [
+            ->map(fn(Product $p): array => [
                 'id' => $p->id,
                 'ean' => (string) $p->ean,
                 'name' => (string) $p->name,
                 'brand' => (string) ($p->brand ?? ''),
             ])
             ->all();
-    }
-
-    private function normalizeGrouping(string $value): string
-    {
-        return (string) preg_replace('/\s+/', ' ', strtolower(trim($value)));
     }
 }

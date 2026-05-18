@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers\Landlord;
 
-use App\Http\Controllers\Concerns\InteractsWithDeferredIndex;
 use App\Http\Controllers\Controller;
 use App\Models\GlobalPlanogramSubtemplate;
 use App\Models\GlobalPlanogramTemplate;
 use App\Models\GlobalPlanogramTemplateSlot;
+use App\Services\AutoPlanogram\Template\TemplateSlotService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class GlobalTemplateSlotController extends Controller
 {
-    use InteractsWithDeferredIndex;
+    public function __construct(private readonly TemplateSlotService $service) {}
 
     public function index(GlobalPlanogramTemplate $globalPlanogramTemplate): Response
     {
@@ -22,12 +23,12 @@ class GlobalTemplateSlotController extends Controller
         $globalPlanogramTemplate->load(['subtemplates.slots']);
 
         return Inertia::render('landlord/planogram-templates/Slots', [
-            'template' => $this->templateData($globalPlanogramTemplate),
-            'subtemplates' => $this->subtemplatesData($globalPlanogramTemplate),
+            'template' => $this->service->templateData($globalPlanogramTemplate),
+            'subtemplates' => $this->service->subtemplatesData($globalPlanogramTemplate),
         ]);
     }
 
-    public function createSubtemplate(Request $request, GlobalPlanogramTemplate $globalPlanogramTemplate): Response
+    public function createSubtemplate(Request $request, GlobalPlanogramTemplate $globalPlanogramTemplate): RedirectResponse
     {
         $this->authorize('update', $globalPlanogramTemplate);
 
@@ -35,190 +36,70 @@ class GlobalTemplateSlotController extends Controller
             'num_modules' => ['required', 'integer', 'min:1', 'max:6'],
         ]);
 
-        $globalPlanogramTemplate->subtemplates()->firstOrCreate(
-            ['num_modules' => $validated['num_modules']],
-            [
-                'code' => $globalPlanogramTemplate->code.'-'.$validated['num_modules'].'M',
-                'is_active' => true,
-            ],
-        );
+        $this->service->createSubtemplate($globalPlanogramTemplate, $validated['num_modules']);
 
         $globalPlanogramTemplate->load(['subtemplates.slots']);
 
-        return Inertia::render('landlord/planogram-templates/Slots', [
-            'subtemplates' => $this->subtemplatesData($globalPlanogramTemplate),
+        return  redirect()->route('landlord.planogram-templates.slots.index', [
+            'globalPlanogramTemplate' => $globalPlanogramTemplate->id,
         ]);
     }
 
-    public function storeSlot(Request $request, GlobalPlanogramTemplate $globalPlanogramTemplate, GlobalPlanogramSubtemplate $globalPlanogramSubtemplate): Response
+    public function storeSlot(Request $request, GlobalPlanogramTemplate $globalPlanogramTemplate, GlobalPlanogramSubtemplate $globalPlanogramSubtemplate): RedirectResponse
     {
         $this->authorize('update', $globalPlanogramTemplate);
 
-        $validated = $this->validateSlot($request);
+        $validated = $this->service->validateSlot($request);
 
-        $globalPlanogramSubtemplate->slots()
-            ->where('module_number', $validated['module_number'])
-            ->where('shelf_order', $validated['shelf_order'])
-            ->delete();
-
-        $nextOrdering = (int) ($globalPlanogramSubtemplate->slots()->max('ordering')) + 1;
-
-        $globalPlanogramSubtemplate->slots()->create([
-            ...$validated,
-            'grouping_normalized' => $this->normalizeGrouping($validated['grouping']),
-            'ordering' => $nextOrdering,
-        ]);
+        $this->service->storeSlot($globalPlanogramSubtemplate, $validated);
 
         $globalPlanogramTemplate->load(['subtemplates.slots']);
 
-        return Inertia::render('landlord/planogram-templates/Slots', [
-            'subtemplates' => $this->subtemplatesData($globalPlanogramTemplate),
+        return  redirect()->route('landlord.planogram-templates.slots.index', [
+            'globalPlanogramTemplate' => $globalPlanogramTemplate->id,
         ]);
     }
 
-    public function updateSlot(Request $request, GlobalPlanogramTemplate $globalPlanogramTemplate, GlobalPlanogramTemplateSlot $globalPlanogramTemplateSlot): Response
+    public function updateSlot(Request $request, GlobalPlanogramTemplate $globalPlanogramTemplate, GlobalPlanogramTemplateSlot $globalPlanogramTemplateSlot): RedirectResponse
     {
         $this->authorize('update', $globalPlanogramTemplate);
 
-        $validated = $this->validateSlot($request);
+        $validated = $this->service->validateSlot($request);
 
-        $globalPlanogramTemplateSlot->update([
-            ...$validated,
-            'grouping_normalized' => $this->normalizeGrouping($validated['grouping']),
-        ]);
+        $this->service->updateSlot($globalPlanogramTemplateSlot, $validated);
 
         $globalPlanogramTemplate->load(['subtemplates.slots']);
 
-        return Inertia::render('landlord/planogram-templates/Slots', [
-            'subtemplates' => $this->subtemplatesData($globalPlanogramTemplate),
+        return  redirect()->route('landlord.planogram-templates.slots.index', [
+            'globalPlanogramTemplate' => $globalPlanogramTemplate->id,
         ]);
     }
 
-    public function destroySlot(GlobalPlanogramTemplate $globalPlanogramTemplate, GlobalPlanogramTemplateSlot $globalPlanogramTemplateSlot): Response
+    public function destroySlot(GlobalPlanogramTemplate $globalPlanogramTemplate, GlobalPlanogramTemplateSlot $globalPlanogramTemplateSlot): RedirectResponse
     {
         $this->authorize('update', $globalPlanogramTemplate);
 
-        $globalPlanogramTemplateSlot->delete();
+        $this->service->destroySlot($globalPlanogramTemplateSlot);
 
         $globalPlanogramTemplate->load(['subtemplates.slots']);
 
-        return Inertia::render('landlord/planogram-templates/Slots', [
-            'subtemplates' => $this->subtemplatesData($globalPlanogramTemplate),
+        return  redirect()->route('landlord.planogram-templates.slots.index', [
+            'globalPlanogramTemplate' => $globalPlanogramTemplate->id,
         ]);
     }
 
-    public function reorder(Request $request, GlobalPlanogramTemplate $globalPlanogramTemplate): Response
+    public function reorder(Request $request, GlobalPlanogramTemplate $globalPlanogramTemplate): RedirectResponse
     {
         $this->authorize('update', $globalPlanogramTemplate);
 
-        $validated = $request->validate([
-            'subtemplate_id' => ['required', 'string'],
-            'from.module_number' => ['required', 'integer', 'min:1'],
-            'from.shelf_order' => ['required', 'integer', 'min:1'],
-            'to.module_number' => ['required', 'integer', 'min:1'],
-            'to.shelf_order' => ['required', 'integer', 'min:1'],
-        ]);
+        $validated = $this->service->validateReorder($request);
 
-        $subtemplate = $globalPlanogramTemplate->subtemplates()->findOrFail($validated['subtemplate_id']);
-
-        $fromSlot = $subtemplate->slots()
-            ->where('module_number', $validated['from']['module_number'])
-            ->where('shelf_order', $validated['from']['shelf_order'])
-            ->first();
-
-        $toSlot = $subtemplate->slots()
-            ->where('module_number', $validated['to']['module_number'])
-            ->where('shelf_order', $validated['to']['shelf_order'])
-            ->first();
-
-        if ($fromSlot !== null) {
-            $fromSlot->update([
-                'module_number' => $validated['to']['module_number'],
-                'shelf_order' => $validated['to']['shelf_order'],
-            ]);
-        }
-
-        if ($toSlot !== null) {
-            $toSlot->update([
-                'module_number' => $validated['from']['module_number'],
-                'shelf_order' => $validated['from']['shelf_order'],
-            ]);
-        }
+        $this->service->reorderSlots($globalPlanogramTemplate, $validated);
 
         $globalPlanogramTemplate->load(['subtemplates.slots']);
 
-        return Inertia::render('landlord/planogram-templates/Slots', [
-            'subtemplates' => $this->subtemplatesData($globalPlanogramTemplate),
+        return  redirect()->route('landlord.planogram-templates.slots.index', [
+            'globalPlanogramTemplate' => $globalPlanogramTemplate->id,
         ]);
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /** @return array<string, mixed> */
-    private function templateData(GlobalPlanogramTemplate $template): array
-    {
-        return [
-            'id' => $template->id,
-            'code' => $template->code,
-            'name' => $template->name,
-            'department' => $template->department,
-            'is_active' => $template->is_active,
-        ];
-    }
-
-    /** @return list<array<string, mixed>> */
-    private function subtemplatesData(GlobalPlanogramTemplate $template): array
-    {
-        return $template->subtemplates
-            ->map(fn (GlobalPlanogramSubtemplate $sub): array => [
-                'id' => $sub->id,
-                'code' => $sub->code,
-                'num_modules' => $sub->num_modules,
-                'slots' => $sub->slots->map(fn (GlobalPlanogramTemplateSlot $slot): array => [
-                    'id' => $slot->id,
-                    'subtemplate_id' => $slot->subtemplate_id,
-                    'module_number' => $slot->module_number,
-                    'shelf_order' => $slot->shelf_order,
-                    'category' => $slot->category,
-                    'subcategory' => $slot->subcategory,
-                    'grouping' => $slot->grouping,
-                    'min_facings' => $slot->min_facings,
-                    'priority' => $slot->priority,
-                    'price_order' => $slot->price_order->value,
-                    'size_order' => $slot->size_order->value,
-                    'brand_exposure' => $slot->brand_exposure->value,
-                    'flavor_exposure' => $slot->flavor_exposure->value,
-                    'space_fallback' => $slot->space_fallback->value,
-                    'use_target_stock' => $slot->use_target_stock,
-                    'ordering' => $slot->ordering,
-                ])->values()->all(),
-            ])
-            ->values()
-            ->all();
-    }
-
-    /** @return array<string, mixed> */
-    private function validateSlot(Request $request): array
-    {
-        return $request->validate([
-            'module_number' => ['required', 'integer', 'min:1', 'max:6'],
-            'shelf_order' => ['required', 'integer', 'min:1', 'max:10'],
-            'grouping' => ['required', 'string', 'max:255'],
-            'category' => ['nullable', 'string', 'max:255'],
-            'subcategory' => ['nullable', 'string', 'max:255'],
-            'min_facings' => ['required', 'integer', 'min:1', 'max:20'],
-            'priority' => ['required', 'integer', 'min:1', 'max:10'],
-            'price_order' => ['required', 'string', 'in:asc,desc,none'],
-            'size_order' => ['required', 'string', 'in:asc,desc,none'],
-            'brand_exposure' => ['required', 'string', 'in:vertical,horizontal,mixed'],
-            'flavor_exposure' => ['required', 'string', 'in:vertical,horizontal,mixed'],
-            'space_fallback' => ['required', 'string', 'in:reduce_c,reduce_facings,skip'],
-            'use_target_stock' => ['boolean'],
-        ]);
-    }
-
-    private function normalizeGrouping(string $value): string
-    {
-        return (string) preg_replace('/\s+/', ' ', strtolower(trim($value)));
     }
 }
