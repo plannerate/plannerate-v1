@@ -4,6 +4,7 @@ namespace App\Services\AutoPlanogram\Validation\Rules;
 
 use App\Enums\AdjacencyRuleType;
 use App\Models\AdjacencyRule as AdjacencyRuleModel;
+use App\Models\Product;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
@@ -12,7 +13,7 @@ use App\Services\AutoPlanogram\Validation\ValidationRuleInterface;
 use Illuminate\Support\Collection;
 
 /**
- * Validates that adjacency rules (MUST_AVOID, MUST_BE_NEAR) are respected.
+ * Valida que regras de adjacência MustAvoid entre categorias são respeitadas.
  */
 final class AdjacencyRule implements ValidationRuleInterface
 {
@@ -27,32 +28,35 @@ final class AdjacencyRule implements ValidationRuleInterface
      */
     public function evaluate(Collection $placedSegments, PlanogramInput $input, PlacementResult $result): array
     {
-        $results = [];
+        $avoidedPairs = $this->loadAvoidedPairs($input->tenantId);
 
-        // Group segments by shelf
+        if (empty($avoidedPairs)) {
+            return [];
+        }
+
+        $categoryMap = $this->loadCategoryMap($placedSegments);
+
+        $results = [];
         $segmentsByShelf = $placedSegments->groupBy(fn (PlacedSegment $s) => $s->shelfId);
 
         foreach ($segmentsByShelf as $shelfId => $segments) {
-            // Sort by ordering to check adjacency
             $sorted = $segments->sortBy('ordering')->values();
 
-            // Check each adjacent pair
             for ($i = 0; $i < $sorted->count() - 1; $i++) {
-                $current = $sorted[$i];
-                $next = $sorted[$i + 1];
+                $currentCats = $this->segmentCategories($sorted[$i], $categoryMap);
+                $nextCats = $this->segmentCategories($sorted[$i + 1], $categoryMap);
 
-                $currentProducts = $current->layers->pluck('productId')->all();
-                $nextProducts = $next->layers->pluck('productId')->all();
-
-                // Check adjacency rules between these products
-                $violations = $this->checkAdjacencyViolations(
-                    $currentProducts,
-                    $nextProducts,
-                    $input->tenantId
-                );
-
-                foreach ($violations as $violation) {
-                    $results[] = $violation;
+                foreach ($currentCats as $catA) {
+                    foreach ($nextCats as $catB) {
+                        if (isset($avoidedPairs[$this->pairKey($catA, $catB)])) {
+                            $results[] = ValidationResult::error(
+                                $this->name(),
+                                "Categorias adjacentes violam regra de afastamento obrigatório.",
+                                [],
+                                (string) $shelfId,
+                            );
+                        }
+                    }
                 }
             }
         }
@@ -60,46 +64,53 @@ final class AdjacencyRule implements ValidationRuleInterface
         return $results;
     }
 
-    /**
-     * Check for MUST_AVOID violations between two groups of products.
-     *
-     * @param  array<int, string>  $currentProducts
-     * @param  array<int, string>  $nextProducts
-     * @return array<int, ValidationResult>
-     */
-    private function checkAdjacencyViolations(
-        array $currentProducts,
-        array $nextProducts,
-        string $tenantId
-    ): array {
-        $violations = [];
+    /** @return array<string, true> */
+    private function loadAvoidedPairs(string $tenantId): array
+    {
+        $pairs = [];
 
-        foreach ($currentProducts as $currentProductId) {
-            foreach ($nextProducts as $nextProductId) {
-                // Check for MUST_AVOID rules
-                $avoided = AdjacencyRuleModel::where('tenant_id', $tenantId)
-                    ->where('rule_type', AdjacencyRuleType::MustAvoid)
-                    ->where(function ($q) use ($currentProductId, $nextProductId) {
-                        $q->where(function ($subQ) use ($currentProductId, $nextProductId) {
-                            $subQ->where('source_category_id', $currentProductId)
-                                ->where('target_category_id', $nextProductId);
-                        })->orWhere(function ($subQ) use ($currentProductId, $nextProductId) {
-                            $subQ->where('source_category_id', $nextProductId)
-                                ->where('target_category_id', $currentProductId);
-                        });
-                    })
-                    ->exists();
+        AdjacencyRuleModel::withoutTenantScope()
+            ->where('tenant_id', $tenantId)
+            ->where('rule_type', AdjacencyRuleType::MustAvoid)
+            ->get(['source_category_id', 'target_category_id'])
+            ->each(function (AdjacencyRuleModel $rule) use (&$pairs): void {
+                $pairs[$this->pairKey($rule->source_category_id, $rule->target_category_id)] = true;
+            });
 
-                if ($avoided) {
-                    $violations[] = ValidationResult::error(
-                        $this->name(),
-                        "Produtos {$currentProductId} e {$nextProductId} violam regra de adjacência (não podem ficar pertos).",
-                        [$currentProductId, $nextProductId],
-                    );
-                }
-            }
+        return $pairs;
+    }
+
+    /** @return array<string, string|null> product_id => category_id */
+    private function loadCategoryMap(Collection $segments): array
+    {
+        $productIds = $segments
+            ->flatMap(fn (PlacedSegment $s) => $s->layers->pluck('productId'))
+            ->unique()
+            ->all();
+
+        if (empty($productIds)) {
+            return [];
         }
 
-        return $violations;
+        return Product::withoutTenantScope()
+            ->whereIn('id', $productIds)
+            ->pluck('category_id', 'id')
+            ->all();
+    }
+
+    /** @return array<int, string> */
+    private function segmentCategories(PlacedSegment $segment, array $categoryMap): array
+    {
+        return $segment->layers
+            ->map(fn ($layer) => $categoryMap[$layer->productId] ?? null)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function pairKey(string $a, string $b): string
+    {
+        return $a < $b ? "$a:$b" : "$b:$a";
     }
 }

@@ -67,6 +67,45 @@ class CompositeScorer implements ProductScorerInterface
         return $scored;
     }
 
+    public function scoreOrNeutral(Collection $products, PlacementSettings $settings): Collection
+    {
+        if ($products->isEmpty()) {
+            return collect();
+        }
+
+        $scored = $this->score($products, $settings);
+
+        $hasRealScores = $scored->some(fn ($sp) => $sp->score > 0);
+
+        if ($hasRealScores) {
+            return $scored;
+        }
+
+        Log::info('CompositeScorer: sem dados de venda no período, aplicando score neutro', [
+            'total_produtos' => $products->count(),
+            'score_neutro' => 0.5,
+            'motivo' => 'Modo template — layout definido pelo template, score apenas refina ordenação interna',
+            'periodo_inicio' => $settings->startDate ?? 'não informado',
+            'periodo_fim' => $settings->endDate ?? 'não informado',
+        ]);
+
+        return $products->map(fn ($product) => new ScoredProduct(
+            productId: $product->id,
+            ean: (string) ($product->ean ?? $product->codigo_erp ?? ''),
+            score: 0.5,
+            product: $product,
+            metadata: [
+                'score_type' => 'neutral',
+                'giro_norm' => 0.5,
+                'margem_norm' => 0.5,
+                'doh_norm' => 0.5,
+                'strategic' => 0.0,
+                'raw_quantity' => 0,
+                'raw_margem' => 0,
+            ],
+        ))->values();
+    }
+
     private function scoreProduct(
         Product $p,
         array $metrics,
@@ -94,6 +133,7 @@ class CompositeScorer implements ProductScorerInterface
             score: $score,
             product: $p,
             metadata: [
+                'score_type' => 'composite',
                 'giro_norm' => $giroNorm,
                 'margem_norm' => $margemNorm,
                 'doh_norm' => $dohNorm,

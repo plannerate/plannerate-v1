@@ -105,6 +105,8 @@ class AutoPlanogramController extends Controller
                 'rejeitados_altura' => $rejectedHeight,
                 'mix_excede_gondola' => $rejectedSpace > 0,
                 'taxa_cobertura' => round($output->totalAllocated() / max($totalProducts, 1), 3),
+                'score_type' => $output->scoreType,
+                'has_sales_data' => $output->scoreType !== 'neutral',
                 'produtos_rejeitados_espaco' => $output->rejectedProducts
                     ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
                     ->map(fn ($r) => [

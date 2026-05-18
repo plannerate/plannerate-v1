@@ -142,6 +142,34 @@ final readonly class PlacementSettings
         );
     }
 
+    public function withProducts(Collection $products): self
+    {
+        return new self(
+            strategy: $this->strategy,
+            useExistingAnalysis: $this->useExistingAnalysis,
+            startDate: $this->startDate,
+            endDate: $this->endDate,
+            minFacings: $this->minFacings,
+            maxFacings: $this->maxFacings,
+            groupBySubcategory: $this->groupBySubcategory,
+            includeProductsWithoutSales: $this->includeProductsWithoutSales,
+            tableType: $this->tableType,
+            categoryId: $this->categoryId,
+            tenantId: $this->tenantId,
+            storeId: $this->storeId,
+            weights: $this->weights,
+            blockHierarchyLevel: $this->blockHierarchyLevel,
+            adjacencyHierarchyLevel: $this->adjacencyHierarchyLevel,
+            targetOccupancyRate: $this->targetOccupancyRate,
+            verticalBlockThreshold: $this->verticalBlockThreshold,
+            verticalBlockMinShelves: $this->verticalBlockMinShelves,
+            templateId: $this->templateId,
+            numModules: $this->numModules,
+            planogramId: $this->planogramId,
+            products: $products,
+        );
+    }
+
     public static function fromConfigDto(AutoGenerateConfigDTO $dto): self
     {
         return new self(

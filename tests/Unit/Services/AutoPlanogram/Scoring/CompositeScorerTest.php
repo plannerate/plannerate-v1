@@ -149,3 +149,73 @@ test('Cenário 5: pesos zerados resultam em score 0 para todos', function () {
 
     expect($result->first()->score)->toBe(0.0);
 });
+
+// ── scoreOrNeutral ────────────────────────────────────────────────────────────
+
+test('scoreOrNeutral com dados de venda retorna scores normais (não neutro)', function () {
+    $idA = (string) Str::ulid();
+    $idB = (string) Str::ulid();
+
+    $metrics = [
+        $idA => ['quantity' => 100, 'margem' => 500.0, 'doh' => null],
+        $idB => ['quantity' => 10,  'margem' => 50.0,  'doh' => null],
+    ];
+
+    $result = (new CompositeScorer(stubSalesRepo($metrics)))->scoreOrNeutral(
+        collect([scorerProduct($idA), scorerProduct($idB)]),
+        scorerSettings(),
+    );
+
+    expect($result)->toHaveCount(2)
+        ->and($result->first()->score)->toBeGreaterThan(0.0)
+        ->and($result->first()->metadata['score_type'])->toBe('composite');
+});
+
+test('scoreOrNeutral sem dados de venda retorna score 0.5 para todos', function () {
+    $idA = (string) Str::ulid();
+    $idB = (string) Str::ulid();
+
+    $metrics = [
+        $idA => ['quantity' => 0, 'margem' => 0.0, 'doh' => null],
+        $idB => ['quantity' => 0, 'margem' => 0.0, 'doh' => null],
+    ];
+
+    $result = (new CompositeScorer(stubSalesRepo($metrics)))->scoreOrNeutral(
+        collect([scorerProduct($idA), scorerProduct($idB)]),
+        scorerSettings(),
+    );
+
+    expect($result)->toHaveCount(2);
+    $result->each(fn ($sp) => expect($sp->score)->toBe(0.5));
+});
+
+test('scoreOrNeutral sem dados define metadata score_type como neutral', function () {
+    $id = (string) Str::ulid();
+
+    $metrics = [$id => ['quantity' => 0, 'margem' => 0.0, 'doh' => null]];
+
+    $result = (new CompositeScorer(stubSalesRepo($metrics)))->scoreOrNeutral(
+        collect([scorerProduct($id)]),
+        scorerSettings(),
+    );
+
+    expect($result->first()->metadata['score_type'])->toBe('neutral');
+});
+
+test('score sem dados retorna scores zerados (comportamento atual mantido)', function () {
+    $idA = (string) Str::ulid();
+    $idB = (string) Str::ulid();
+
+    $metrics = [
+        $idA => ['quantity' => 0, 'margem' => 0.0, 'doh' => null],
+        $idB => ['quantity' => 0, 'margem' => 0.0, 'doh' => null],
+    ];
+
+    $result = (new CompositeScorer(stubSalesRepo($metrics)))->score(
+        collect([scorerProduct($idA), scorerProduct($idB)]),
+        scorerSettings(),
+    );
+
+    expect($result)->toHaveCount(2);
+    $result->each(fn ($sp) => expect($sp->score)->toBe(0.0));
+});

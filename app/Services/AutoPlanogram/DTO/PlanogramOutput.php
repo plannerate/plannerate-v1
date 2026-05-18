@@ -23,6 +23,8 @@ final readonly class PlanogramOutput
         /** @var Collection<int, array{product: mixed, reason: PlacementFailureReason}> */
         public Collection $rejectedProducts,
         public ValidationReport $validationReport,
+        /** Tipo de score aplicado: 'composite', 'abc' ou 'neutral' (sem dados de venda no modo template) */
+        public string $scoreType = 'composite',
     ) {}
 
     public function totalAllocated(): int

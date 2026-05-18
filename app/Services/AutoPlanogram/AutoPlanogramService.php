@@ -55,15 +55,26 @@ final class AutoPlanogramService
             'strategy' => $input->settings->strategy,
             'mode' => $input->settings->usesTemplate() ? 'template' : 'automatic',
             'template_id' => $input->settings->templateId,
+            'score_mode' => $input->settings->usesTemplate() ? 'optional' : 'required',
         ]);
 
         if ($input->settings->usesTemplate()) {
-            return $this->generateWithTemplate($input);
+            $scored = $this->scorer->scoreOrNeutral($input->products, $input->settings);
+        } else {
+            $this->logWidthQuality($input);
+            $scored = $this->scorer->score($input->products, $input->settings);
         }
 
-        $this->logWidthQuality($input);
+        $scoreType = $scored->first()?->metadata['score_type'] ?? 'composite';
+        Log::info('AutoPlanogramService: scoring concluído', [
+            'count' => $scored->count(),
+            'score_type' => $scoreType,
+            'has_sales' => $scoreType !== 'neutral',
+        ]);
 
-        $scored = $this->scorer->score($input->products, $input->settings);
+        if ($input->settings->usesTemplate()) {
+            return $this->generateWithTemplate($input, $scored, $scoreType);
+        }
 
         Log::info('AutoPlanogramService: produtos pontuados', ['count' => $scored->count()]);
 
@@ -122,12 +133,20 @@ final class AutoPlanogramService
             'validation_passed' => $report->passed,
         ]);
 
-        return new PlanogramOutput($input->gondolaId, $allSegments, $allRejected, $report);
+        return new PlanogramOutput($input->gondolaId, $allSegments, $allRejected, $report, $scoreType);
     }
 
-    private function generateWithTemplate(PlanogramInput $input): PlanogramOutput
+    private function generateWithTemplate(PlanogramInput $input, Collection $scored, string $scoreType): PlanogramOutput
     {
-        $settings = $input->settings->withExtras($input->settings->tenantId, $input->settings->weights);
+        // Re-ordenar pool por score para que produtos mais relevantes ocupem slots primeiro
+        $scoreOrder = $scored->pluck('product.id')->flip();
+        $sortedProducts = $input->settings->products
+            ->sortBy(fn ($p) => $scoreOrder->get($p->id, PHP_INT_MAX))
+            ->values();
+
+        $settings = $input->settings
+            ->withExtras($input->settings->tenantId, $input->settings->weights)
+            ->withProducts($sortedProducts);
 
         $result = $this->templatePlacement->place(
             collect(),
@@ -151,9 +170,10 @@ final class AutoPlanogramService
             'template_id' => $settings->templateId,
             'segments_placed' => $allSegments->count(),
             'validation_passed' => $report->passed,
+            'score_type' => $scoreType,
         ]);
 
-        return new PlanogramOutput($input->gondolaId, $allSegments, $result->rejectedProducts, $report);
+        return new PlanogramOutput($input->gondolaId, $allSegments, $result->rejectedProducts, $report, $scoreType);
     }
 
     /**
