@@ -104,11 +104,35 @@ function saveSlot(): void {
     emit('save', { ...draft });
     emit('update:open', false);
 }
+
+function applyGroupingHierarchy(grouping: string): void {
+    const segments = grouping
+        .split('|')
+        .map((segment) => segment.trim())
+        .filter((segment) => segment !== '');
+
+    if (segments.length === 0) {
+        draft.category = '';
+        draft.subcategory = '';
+
+        return;
+    }
+
+    if (segments.length === 1) {
+        draft.category = segments[0];
+        draft.subcategory = segments[0];
+
+        return;
+    }
+
+    draft.category = segments[segments.length - 2];
+    draft.subcategory = segments[segments.length - 1];
+}
 </script>
 
 <template>
     <Dialog :open="open" @update:open="emit('update:open', $event)">
-        <DialogContent class="max-h-[90vh] max-w-lg overflow-y-auto">
+        <DialogContent class="max-h-[90vh] max-w-2xl overflow-y-auto">
             <DialogHeader>
                 <DialogTitle
                     >{{ t('planogram-templates.slot_editor.title') }} —
@@ -119,7 +143,7 @@ function saveSlot(): void {
                 >
             </DialogHeader>
 
-            <div class="grid gap-4 py-2">
+            <div class="grid gap-5 py-2">
                 <!-- Grouping -->
                 <RemoteAutocompleteField
                     id="slot-grouping"
@@ -132,10 +156,11 @@ function saveSlot(): void {
                     :hint="t('planogram-templates.slot_editor.grouping_hint')"
                     :empty-text="'Nenhum sortiment_attribute encontrado.'"
                     required
+                    @select="applyGroupingHierarchy"
                 />
 
                 <!-- Categoria / Subcategoria -->
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div class="grid gap-1.5">
                         <Label for="slot-category">{{
                             t('planogram-templates.slot_editor.category_label')
@@ -169,7 +194,7 @@ function saveSlot(): void {
                 </div>
 
                 <!-- Min facings / Prioridade -->
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div class="grid gap-1.5">
                         <Label for="slot-min-facings">{{
                             t(
@@ -206,7 +231,7 @@ function saveSlot(): void {
                 </div>
 
                 <!-- Ordem por preço / tamanho -->
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div class="grid gap-1.5">
                         <Label>{{
                             t(
@@ -214,7 +239,9 @@ function saveSlot(): void {
                             )
                         }}</Label>
                         <Select v-model="draft.price_order">
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectTrigger class="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="none">{{
                                     t(
@@ -241,7 +268,9 @@ function saveSlot(): void {
                             )
                         }}</Label>
                         <Select v-model="draft.size_order">
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectTrigger class="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="none">{{
                                     t(
@@ -264,7 +293,7 @@ function saveSlot(): void {
                 </div>
 
                 <!-- Exposição marca / fragrância -->
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div class="grid gap-1.5">
                         <Label>{{
                             t(
@@ -272,7 +301,9 @@ function saveSlot(): void {
                             )
                         }}</Label>
                         <Select v-model="draft.brand_exposure">
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectTrigger class="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="vertical">{{
                                     t(
@@ -299,7 +330,9 @@ function saveSlot(): void {
                             )
                         }}</Label>
                         <Select v-model="draft.flavor_exposure">
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectTrigger class="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="vertical">{{
                                     t(
@@ -322,7 +355,7 @@ function saveSlot(): void {
                 </div>
 
                 <!-- Se faltar espaço / Estoque alvo -->
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
                     <div class="grid w-full gap-1.5">
                         <Label>{{
                             t(
@@ -330,7 +363,9 @@ function saveSlot(): void {
                             )
                         }}</Label>
                         <Select v-model="draft.space_fallback">
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectTrigger class="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="reduce_c">{{
                                     t(
@@ -350,17 +385,26 @@ function saveSlot(): void {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div class="flex items-end gap-3 pb-1">
-                        <Switch
-                            id="slot-target-stock"
-                            :checked="draft.use_target_stock"
-                            @update:checked="draft.use_target_stock = $event"
-                        />
-                        <Label for="slot-target-stock" class="cursor-pointer">{{
-                            t(
-                                'planogram-templates.slot_editor.target_stock_label',
-                            )
-                        }}</Label>
+                    <div class="grid gap-1.5">
+                        <Label class="invisible select-none">.</Label>
+                        <div class="flex h-9 items-center gap-3">
+                            <Switch
+                                id="slot-target-stock"
+                                :checked="draft.use_target_stock"
+                                @update:checked="
+                                    draft.use_target_stock = $event
+                                "
+                            />
+                            <Label
+                                for="slot-target-stock"
+                                class="cursor-pointer"
+                                >{{
+                                    t(
+                                        'planogram-templates.slot_editor.target_stock_label',
+                                    )
+                                }}</Label
+                            >
+                        </div>
                     </div>
                 </div>
             </div>

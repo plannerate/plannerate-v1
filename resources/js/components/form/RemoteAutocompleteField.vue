@@ -123,10 +123,15 @@ function scheduleSearch(search: string): void {
 }
 
 function updateValue(value: string | number): void {
+    if (hasSearch.value && !props.disabled) {
+        open.value = true;
+    }
+
     emit('update:modelValue', String(value));
 }
 
 function selectOption(option: string): void {
+    clearSearch();
     emit('update:modelValue', option);
     emit('select', option);
     open.value = false;
