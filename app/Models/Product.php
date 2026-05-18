@@ -124,6 +124,13 @@ class Product extends Model
             ->withTimestamps();
     }
 
+    public function similarGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(SimilarGroup::class, 'product_similar_group')
+            ->withPivot(['tenant_id'])
+            ->withTimestamps();
+    }
+
     /**
      * @return SlugOptions
      */

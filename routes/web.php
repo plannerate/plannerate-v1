@@ -269,6 +269,8 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::patch('dimensions/{product}', [ProductDimensionController::class, 'update'])
             ->name('dimensions.update');
 
+        Route::get('similar-groups/products/search', [SimilarGroupController::class, 'productSearch'])
+            ->name('similar-groups.products.search');
         Route::resource('similar-groups', SimilarGroupController::class)
             ->except(['show'])
             ->names('similar-groups');

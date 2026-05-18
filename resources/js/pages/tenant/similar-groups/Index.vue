@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { ColumnActions, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import { ColumnActions, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
@@ -16,6 +16,7 @@ type SimilarGroupRow = {
     grouper_code: string;
     name: string;
     product_codes: string[];
+    products_count: number;
     status: 'draft' | 'published';
     created_at: string;
 };
@@ -118,9 +119,10 @@ const pageMeta = useCrudPageMeta({
                             <ColumnLabel :label="group.name" />
                         </td>
                         <td class="px-4 py-3">
-                            <span v-if="group.product_codes.length === 0" class="text-muted-foreground">—</span>
+                            <span v-if="group.products_count === 0 && group.product_codes.length === 0" class="text-muted-foreground">—</span>
                             <span v-else class="text-muted-foreground">
                                 {{ group.product_codes.slice(0, 3).join(', ') }}{{ group.product_codes.length > 3 ? ` +${group.product_codes.length - 3}` : '' }}
+                                <span v-if="group.products_count > 0" class="ml-1 text-xs">({{ group.products_count }})</span>
                             </span>
                         </td>
                         <td class="px-4 py-3">
