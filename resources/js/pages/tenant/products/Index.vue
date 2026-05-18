@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { ChevronDown, ImageDown, SlidersHorizontal, X } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import ListPage from '@/components/ListPage.vue';
-import PlanLimitAlert from '@/components/PlanLimitAlert.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
+import PlanLimitAlert from '@/components/PlanLimitAlert.vue';
 import {
     ColumnActions,
     ColumnImage,
@@ -71,8 +71,16 @@ const { meta: productsMeta, rows: productsRows, loading: productsLoading } = use
 const productsIndexPath = ProductController.index
     .url(props.subdomain)
     .replace(/^\/\/[^/]+/, '');
+const listPageRef = ref<InstanceType<typeof ListPage> | null>(null);
 const categoryId = ref<string | null>(props.filters.category_id ?? null);
 const categoryPopoverOpen = ref(false);
+
+watch(categoryId, (value, prev) => {
+    if (value !== prev) {
+        categoryPopoverOpen.value = false;
+        nextTick(() => listPageRef.value?.submitForm());
+    }
+});
 
 const categoryLabel = computed(() => {
     if (!categoryId.value) {
@@ -131,7 +139,9 @@ function updateImages(): void {
         {
             method: 'post',
             data: { eans: pageEans.value },
-            onFinish: () => { isUpdatingImages.value = false; },
+            onFinish: () => {
+ isUpdatingImages.value = false; 
+},
         },
     );
 }
@@ -170,12 +180,12 @@ const pageMeta = useCrudPageMeta({
 
         <PlanLimitAlert v-if="can.limit_reached" :message="can.limit_message!" :upgrade-url="can.upgrade_url" />
 
-        <ListPage :meta="productsMeta" label="produto" :action="productsIndexPath" :clear-href="productsIndexPath"
+        <ListPage ref="listPageRef" :meta="productsMeta" label="produto" :action="productsIndexPath" :clear-href="productsIndexPath"
             :search-value="props.filters.search" :search-placeholder="t('app.tenant.common.search')"
             :filter-label="t('app.tenant.common.filter')" :clear-label="t('app.tenant.common.clear_filters')"
             :trashed-value="props.filters.trashed">
             <template #filters>
-                <select name="status" :value="filters.status"
+                <select name="status" :value="props.filters.status"
                     class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
                     <option value="">{{ t('app.tenant.common.all') }}</option>
                     <option value="draft">{{ t('app.tenant.products.status_options.draft') }}</option>

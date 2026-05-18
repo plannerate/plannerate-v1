@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithCategoryFilter;
 use App\Http\Controllers\Concerns\InteractsWithPlanLimits;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
@@ -28,6 +29,7 @@ class PlanogramController extends Controller
     use InteractsWithPlanLimits;
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
+    use InteractsWithCategoryFilter;
 
     public function index(Request $request): Response
     {
@@ -77,6 +79,7 @@ class PlanogramController extends Controller
     ): LengthAwarePaginator {
         $query = Planogram::query();
         $this->applyTrashedToQuery($query, $trashed);
+        $categoryIds = $this->categoryAndDescendantIds($categoryId);
 
         return $query
             ->with(['store:id,name', 'cluster:id,name', 'category:id,name'])
@@ -91,7 +94,7 @@ class PlanogramController extends Controller
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($type !== '', fn ($query) => $query->where('type', $type))
             ->when($storeId !== '', fn ($query) => $query->where('store_id', $storeId))
-            ->when($categoryId !== '', fn ($query) => $query->where('category_id', $categoryId))
+            ->when(!empty($categoryIds), fn ($query) => $query->whereIn('category_id', $categoryIds))
             ->latest()
             ->paginate($perPage)
             ->withQueryString()

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithCategoryFilter;
 use App\Http\Controllers\Concerns\InteractsWithPlanLimits;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
@@ -27,6 +28,7 @@ class ProductController extends Controller
     use InteractsWithPlanLimits;
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
+    use InteractsWithCategoryFilter;
 
     public function updateImages(Request $request): RedirectResponse
     {
@@ -137,6 +139,8 @@ class ProductController extends Controller
         int $perPage,
     ): LengthAwarePaginator {
         $query = Product::query();
+        $categoryIds = $this->categoryAndDescendantIds($categoryId);
+
         $this->applyTrashedToQuery($query, $trashed);
 
         return $query
@@ -150,7 +154,7 @@ class ProductController extends Controller
                 });
             })
             ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->when($categoryId !== '', fn ($query) => $query->where('category_id', $categoryId))
+            ->when($categoryIds !== [], fn ($query) => $query->whereIn('category_id', $categoryIds))
             ->when(
                 $sort !== null,
                 function ($query) use ($sort, $direction): void {
@@ -199,6 +203,8 @@ class ProductController extends Controller
                 'last_purchase_date' => $product->last_purchase_date?->toDateTimeString(),
             ]);
     }
+
+   
 
     public function create(): Response
     {

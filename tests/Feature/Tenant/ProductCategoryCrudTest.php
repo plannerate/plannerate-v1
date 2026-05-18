@@ -243,6 +243,76 @@ test('product index trashed filter scopes soft deleted records', function (): vo
             ->where('filters.trashed', 'with'));
 });
 
+test('product index category filter includes descendant categories', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenant('tenant-category-descendants');
+    assignTenantAdminRole($user, $tenant->id);
+
+    $host = 'tenant-category-descendants.'.config('app.landlord_domain');
+
+    $parentCategory = Category::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Categoria Pai',
+        'slug' => 'categoria-pai',
+        'status' => 'published',
+    ]);
+
+    $childCategory = Category::query()->create([
+        'tenant_id' => $tenant->id,
+        'category_id' => $parentCategory->id,
+        'name' => 'Categoria Filha',
+        'slug' => 'categoria-filha',
+        'status' => 'published',
+    ]);
+
+    $otherCategory = Category::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Categoria Outra',
+        'slug' => 'categoria-outra',
+        'status' => 'published',
+    ]);
+
+    Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'category_id' => $parentCategory->id,
+        'name' => 'Produto da Categoria Pai',
+        'slug' => 'produto-categoria-pai',
+        'status' => 'published',
+        'dimensions_status' => 'published',
+    ]);
+
+    Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'category_id' => $childCategory->id,
+        'name' => 'Produto da Categoria Filha',
+        'slug' => 'produto-categoria-filha',
+        'status' => 'published',
+        'dimensions_status' => 'published',
+    ]);
+
+    Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'category_id' => $otherCategory->id,
+        'name' => 'Produto de Outra Categoria',
+        'slug' => 'produto-outra-categoria',
+        'status' => 'published',
+        'dimensions_status' => 'published',
+    ]);
+
+    $this->withServerVariables(['HTTP_HOST' => $host])
+        ->get(route('tenant.products.index', [
+            'subdomain' => 'tenant-category-descendants',
+            'category_id' => $parentCategory->id,
+        ], false))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/products/Index')
+            ->has('products.data', 2)
+            ->where('filters.category_id', $parentCategory->id));
+});
+
 /**
  * @return array<string, mixed>
  */
