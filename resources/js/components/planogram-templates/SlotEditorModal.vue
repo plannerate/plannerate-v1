@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { reactive, watch } from 'vue';
+import { computed, reactive, watch } from 'vue';
+import FormSelectField from '@/components/form/FormSelectField.vue';
+import FormSwitchField from '@/components/form/FormSwitchField.vue';
+import FormTextField from '@/components/form/FormTextField.vue';
 import RemoteAutocompleteField from '@/components/form/RemoteAutocompleteField.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,16 +12,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { useT } from '@/composables/useT';
 import type { PlanogramTemplateSlot } from './types';
 
@@ -96,6 +89,22 @@ watch(
 
 const { t } = useT();
 
+const minFacingsModel = computed({
+    get: () => draft.min_facings,
+    set: (value: string | number) => {
+        const parsed = Number(value);
+        draft.min_facings = Number.isFinite(parsed) ? parsed : 1;
+    },
+});
+
+const priorityModel = computed({
+    get: () => draft.priority,
+    set: (value: string | number) => {
+        const parsed = Number(value);
+        draft.priority = Number.isFinite(parsed) ? parsed : 1;
+    },
+});
+
 function saveSlot(): void {
     if (!draft.grouping.trim()) {
         return;
@@ -161,251 +170,247 @@ function applyGroupingHierarchy(grouping: string): void {
 
                 <!-- Categoria / Subcategoria -->
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div class="grid gap-1.5">
-                        <Label for="slot-category">{{
+                    <FormTextField
+                        id="slot-category"
+                        v-model="draft.category"
+                        name="category"
+                        :label="
                             t('planogram-templates.slot_editor.category_label')
-                        }}</Label>
-                        <Input
-                            id="slot-category"
-                            v-model="draft.category"
-                            :placeholder="
-                                t(
-                                    'planogram-templates.slot_editor.category_example',
-                                )
-                            "
-                        />
-                    </div>
-                    <div class="grid gap-1.5">
-                        <Label for="slot-subcategory">{{
+                        "
+                        :placeholder="
+                            t(
+                                'planogram-templates.slot_editor.category_example',
+                            )
+                        "
+                    />
+                    <FormTextField
+                        id="slot-subcategory"
+                        v-model="draft.subcategory"
+                        name="subcategory"
+                        :label="
                             t(
                                 'planogram-templates.slot_editor.subcategory_label',
                             )
-                        }}</Label>
-                        <Input
-                            id="slot-subcategory"
-                            v-model="draft.subcategory"
-                            :placeholder="
-                                t(
-                                    'planogram-templates.slot_editor.subcategory_example',
-                                )
-                            "
-                        />
-                    </div>
+                        "
+                        :placeholder="
+                            t(
+                                'planogram-templates.slot_editor.subcategory_example',
+                            )
+                        "
+                    />
                 </div>
 
                 <!-- Min facings / Prioridade -->
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div class="grid gap-1.5">
-                        <Label for="slot-min-facings">{{
+                    <FormTextField
+                        id="slot-min-facings"
+                        v-model="minFacingsModel"
+                        name="min_facings"
+                        type="number"
+                        :label="
                             t(
                                 'planogram-templates.slot_editor.min_facings_label',
                             )
-                        }}</Label>
-                        <Input
-                            id="slot-min-facings"
-                            v-model.number="draft.min_facings"
-                            type="number"
-                            :min="1"
-                            :max="20"
-                        />
-                    </div>
-                    <div class="grid gap-1.5">
-                        <Label for="slot-priority">{{
+                        "
+                        :min="1"
+                        :max="20"
+                    />
+                    <FormTextField
+                        id="slot-priority"
+                        v-model="priorityModel"
+                        name="priority"
+                        type="number"
+                        :label="
                             t('planogram-templates.slot_editor.priority_label')
-                        }}</Label>
-                        <Input
-                            id="slot-priority"
-                            v-model.number="draft.priority"
-                            type="number"
-                            :min="1"
-                            :max="10"
-                        />
-                        <p class="text-xs text-muted-foreground">
-                            {{
-                                t(
-                                    'planogram-templates.slot_editor.priority_hint',
-                                )
-                            }}
-                        </p>
-                    </div>
+                        "
+                        :hint="
+                            t('planogram-templates.slot_editor.priority_hint')
+                        "
+                        :min="1"
+                        :max="10"
+                    />
                 </div>
 
                 <!-- Ordem por preço / tamanho -->
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div class="grid gap-1.5">
-                        <Label>{{
+                    <FormSelectField
+                        id="slot-price-order"
+                        v-model="draft.price_order"
+                        name="price_order"
+                        :label="
                             t(
                                 'planogram-templates.slot_editor.price_order_label',
                             )
-                        }}</Label>
-                        <Select v-model="draft.price_order">
-                            <SelectTrigger class="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">{{
-                                    t(
-                                        'planogram-templates.slot_editor.price_order_options.none',
-                                    )
-                                }}</SelectItem>
-                                <SelectItem value="asc">{{
-                                    t(
-                                        'planogram-templates.slot_editor.price_order_options.asc',
-                                    )
-                                }}</SelectItem>
-                                <SelectItem value="desc">{{
-                                    t(
-                                        'planogram-templates.slot_editor.price_order_options.desc',
-                                    )
-                                }}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div class="grid gap-1.5">
-                        <Label>{{
+                        "
+                    >
+                        <option value="none">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.price_order_options.none',
+                                )
+                            }}
+                        </option>
+                        <option value="asc">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.price_order_options.asc',
+                                )
+                            }}
+                        </option>
+                        <option value="desc">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.price_order_options.desc',
+                                )
+                            }}
+                        </option>
+                    </FormSelectField>
+                    <FormSelectField
+                        id="slot-size-order"
+                        v-model="draft.size_order"
+                        name="size_order"
+                        :label="
                             t(
                                 'planogram-templates.slot_editor.size_order_label',
                             )
-                        }}</Label>
-                        <Select v-model="draft.size_order">
-                            <SelectTrigger class="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">{{
-                                    t(
-                                        'planogram-templates.slot_editor.size_order_options.none',
-                                    )
-                                }}</SelectItem>
-                                <SelectItem value="asc">{{
-                                    t(
-                                        'planogram-templates.slot_editor.size_order_options.asc',
-                                    )
-                                }}</SelectItem>
-                                <SelectItem value="desc">{{
-                                    t(
-                                        'planogram-templates.slot_editor.size_order_options.desc',
-                                    )
-                                }}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                        "
+                    >
+                        <option value="none">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.size_order_options.none',
+                                )
+                            }}
+                        </option>
+                        <option value="asc">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.size_order_options.asc',
+                                )
+                            }}
+                        </option>
+                        <option value="desc">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.size_order_options.desc',
+                                )
+                            }}
+                        </option>
+                    </FormSelectField>
                 </div>
 
                 <!-- Exposição marca / fragrância -->
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div class="grid gap-1.5">
-                        <Label>{{
+                    <FormSelectField
+                        id="slot-brand-exposure"
+                        v-model="draft.brand_exposure"
+                        name="brand_exposure"
+                        :label="
                             t(
                                 'planogram-templates.slot_editor.brand_exposure_label',
                             )
-                        }}</Label>
-                        <Select v-model="draft.brand_exposure">
-                            <SelectTrigger class="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="vertical">{{
-                                    t(
-                                        'planogram-templates.slot_editor.exposure_options.vertical',
-                                    )
-                                }}</SelectItem>
-                                <SelectItem value="horizontal">{{
-                                    t(
-                                        'planogram-templates.slot_editor.exposure_options.horizontal',
-                                    )
-                                }}</SelectItem>
-                                <SelectItem value="mixed">{{
-                                    t(
-                                        'planogram-templates.slot_editor.exposure_options.mixed',
-                                    )
-                                }}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div class="grid gap-1.5">
-                        <Label>{{
+                        "
+                    >
+                        <option value="vertical">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.exposure_options.vertical',
+                                )
+                            }}
+                        </option>
+                        <option value="horizontal">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.exposure_options.horizontal',
+                                )
+                            }}
+                        </option>
+                        <option value="mixed">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.exposure_options.mixed',
+                                )
+                            }}
+                        </option>
+                    </FormSelectField>
+                    <FormSelectField
+                        id="slot-flavor-exposure"
+                        v-model="draft.flavor_exposure"
+                        name="flavor_exposure"
+                        :label="
                             t(
                                 'planogram-templates.slot_editor.flavor_exposure_label',
                             )
-                        }}</Label>
-                        <Select v-model="draft.flavor_exposure">
-                            <SelectTrigger class="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="vertical">{{
-                                    t(
-                                        'planogram-templates.slot_editor.exposure_options.vertical',
-                                    )
-                                }}</SelectItem>
-                                <SelectItem value="horizontal">{{
-                                    t(
-                                        'planogram-templates.slot_editor.exposure_options.horizontal',
-                                    )
-                                }}</SelectItem>
-                                <SelectItem value="mixed">{{
-                                    t(
-                                        'planogram-templates.slot_editor.exposure_options.mixed',
-                                    )
-                                }}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                        "
+                    >
+                        <option value="vertical">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.exposure_options.vertical',
+                                )
+                            }}
+                        </option>
+                        <option value="horizontal">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.exposure_options.horizontal',
+                                )
+                            }}
+                        </option>
+                        <option value="mixed">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.exposure_options.mixed',
+                                )
+                            }}
+                        </option>
+                    </FormSelectField>
                 </div>
 
                 <!-- Se faltar espaço / Estoque alvo -->
                 <div class="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
-                    <div class="grid w-full gap-1.5">
-                        <Label>{{
+                    <FormSelectField
+                        id="slot-space-fallback"
+                        v-model="draft.space_fallback"
+                        name="space_fallback"
+                        :label="
                             t(
                                 'planogram-templates.slot_editor.space_fallback_label',
                             )
-                        }}</Label>
-                        <Select v-model="draft.space_fallback">
-                            <SelectTrigger class="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="reduce_c">{{
-                                    t(
-                                        'planogram-templates.slot_editor.space_fallback_options.reduce_c',
-                                    )
-                                }}</SelectItem>
-                                <SelectItem value="reduce_facings">{{
-                                    t(
-                                        'planogram-templates.slot_editor.space_fallback_options.reduce_facings',
-                                    )
-                                }}</SelectItem>
-                                <SelectItem value="skip">{{
-                                    t(
-                                        'planogram-templates.slot_editor.space_fallback_options.skip',
-                                    )
-                                }}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div class="grid gap-1.5">
-                        <Label class="invisible select-none">.</Label>
-                        <div class="flex h-9 items-center gap-3">
-                            <Switch
-                                id="slot-target-stock"
-                                :checked="draft.use_target_stock"
-                                @update:checked="
-                                    draft.use_target_stock = $event
-                                "
-                            />
-                            <Label
-                                for="slot-target-stock"
-                                class="cursor-pointer"
-                                >{{
-                                    t(
-                                        'planogram-templates.slot_editor.target_stock_label',
-                                    )
-                                }}</Label
-                            >
-                        </div>
-                    </div>
+                        "
+                    >
+                        <option value="reduce_c">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.space_fallback_options.reduce_c',
+                                )
+                            }}
+                        </option>
+                        <option value="reduce_facings">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.space_fallback_options.reduce_facings',
+                                )
+                            }}
+                        </option>
+                        <option value="skip">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.space_fallback_options.skip',
+                                )
+                            }}
+                        </option>
+                    </FormSelectField>
+                    <FormSwitchField
+                        id="slot-target-stock"
+                        v-model="draft.use_target_stock"
+                        name="use_target_stock"
+                        :label="
+                            t(
+                                'planogram-templates.slot_editor.target_stock_label',
+                            )
+                        "
+                    />
                 </div>
             </div>
 
