@@ -11,6 +11,7 @@ use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use App\Services\AutoPlanogram\Grouping\BlockGrouperInterface;
 use App\Services\AutoPlanogram\Placement\PlacementEngineInterface;
 use App\Services\AutoPlanogram\Placement\PlanogramWriterInterface;
+use App\Services\AutoPlanogram\Placement\TemplatePlacementEngine;
 use App\Services\AutoPlanogram\Placement\VerticalBlockPlacer;
 use App\Services\AutoPlanogram\Scoring\ProductScorerInterface;
 use App\Services\AutoPlanogram\Validation\PlanogramValidator;
@@ -39,6 +40,7 @@ final class AutoPlanogramService
         private readonly BlockGrouperInterface $grouper,
         private readonly AdjacencyResolverInterface $adjacency,
         private readonly PlacementEngineInterface $placement,
+        private readonly TemplatePlacementEngine $templatePlacement,
         private readonly VerticalBlockPlacer $verticalPlacer,
         private readonly PlanogramValidator $validator,
         private readonly PlanogramWriterInterface $writer,
@@ -51,7 +53,13 @@ final class AutoPlanogramService
             'planogram_id' => $input->planogramId,
             'products_count' => $input->products->count(),
             'strategy' => $input->settings->strategy,
+            'mode' => $input->settings->usesTemplate() ? 'template' : 'automatic',
+            'template_id' => $input->settings->templateId,
         ]);
+
+        if ($input->settings->usesTemplate()) {
+            return $this->generateWithTemplate($input);
+        }
 
         $this->logWidthQuality($input);
 
@@ -115,6 +123,37 @@ final class AutoPlanogramService
         ]);
 
         return new PlanogramOutput($input->gondolaId, $allSegments, $allRejected, $report);
+    }
+
+    private function generateWithTemplate(PlanogramInput $input): PlanogramOutput
+    {
+        $settings = $input->settings->withExtras($input->settings->tenantId, $input->settings->weights);
+
+        $result = $this->templatePlacement->place(
+            collect(),
+            $input->sections,
+            $settings,
+        );
+
+        $allSegments = $this->renumberOrderings($result->placedSegments);
+        $fullResult = new PlacementResult($allSegments, $result->rejectedProducts);
+
+        $report = $this->validator->validate($allSegments, $input, $fullResult);
+
+        $this->logCapacityAnalysis($input, $fullResult);
+
+        DB::transaction(function () use ($input, $allSegments): void {
+            $this->writer->write($input->gondolaId, $input->sections, $allSegments);
+        });
+
+        Log::info('AutoPlanogramService: geração com template concluída', [
+            'gondola_id' => $input->gondolaId,
+            'template_id' => $settings->templateId,
+            'segments_placed' => $allSegments->count(),
+            'validation_passed' => $report->passed,
+        ]);
+
+        return new PlanogramOutput($input->gondolaId, $allSegments, $result->rejectedProducts, $report);
     }
 
     /**

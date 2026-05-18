@@ -30,6 +30,7 @@ use App\Http\Controllers\Tenant\Editor\EditorPlanogramController;
 use App\Http\Controllers\Tenant\GondolaController;
 use App\Http\Controllers\Tenant\NotificationController;
 use App\Http\Controllers\Tenant\PlanogramController;
+use App\Http\Controllers\Tenant\PlanogramTemplateController;
 use App\Http\Controllers\Tenant\ProductController;
 use App\Http\Controllers\Tenant\ProductImageController;
 use App\Http\Controllers\Tenant\ProviderController;
@@ -257,6 +258,17 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::resource('providers', ProviderController::class)
             ->except(['show'])
             ->names('providers');
+
+        Route::get('planogram-templates', [PlanogramTemplateController::class, 'index'])
+            ->name('planogram-templates.index');
+        Route::get('planogram-templates/create', [PlanogramTemplateController::class, 'create'])
+            ->name('planogram-templates.create');
+        Route::post('planogram-templates/import', [PlanogramTemplateController::class, 'import'])
+            ->name('planogram-templates.import');
+        Route::get('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'show'])
+            ->name('planogram-templates.show');
+        Route::delete('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'destroy'])
+            ->name('planogram-templates.destroy');
 
         Route::resource('users', TenantUserController::class)
             ->except(['show'])

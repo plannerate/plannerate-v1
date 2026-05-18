@@ -4,6 +4,7 @@ namespace App\Services\AutoPlanogram\DTO;
 
 use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
 use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\AutoGenerateConfigDTO;
+use Illuminate\Support\Collection;
 
 /**
  * Configurações para o processo de geração do planograma.
@@ -66,7 +67,24 @@ final readonly class PlacementSettings
 
         /** Mínimo de prateleiras para aplicar bloco vertical */
         public int $verticalBlockMinShelves = 2,
+
+        /** ID do template de planograma (null = modo automático) */
+        public ?string $templateId = null,
+
+        /** Número de sections (módulos) da gôndola */
+        public int $numModules = 0,
+
+        /** ID do planograma sendo gerado (para registrar subtemplate_id) */
+        public ?string $planogramId = null,
+
+        /** Produtos do mix carregados para busca no modo template */
+        public Collection $products = new Collection,
     ) {}
+
+    public function usesTemplate(): bool
+    {
+        return $this->templateId !== null;
+    }
 
     public function withExtras(?string $tenantId, ?ScoringWeightsValue $weights): self
     {
@@ -89,6 +107,10 @@ final readonly class PlacementSettings
             targetOccupancyRate: $this->targetOccupancyRate,
             verticalBlockThreshold: $weights?->verticalBlockThreshold ?? $this->verticalBlockThreshold,
             verticalBlockMinShelves: $weights?->verticalBlockMinShelves ?? $this->verticalBlockMinShelves,
+            templateId: $this->templateId,
+            numModules: $this->numModules,
+            planogramId: $this->planogramId,
+            products: $this->products,
         );
     }
 

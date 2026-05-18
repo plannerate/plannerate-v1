@@ -10,6 +10,7 @@ use App\Models\Module;
 use App\Models\Permission;
 use App\Models\Plan;
 use App\Models\Planogram;
+use App\Models\PlanogramTemplate;
 use App\Models\Product;
 use App\Models\Provider;
 use App\Models\Role;
@@ -222,6 +223,14 @@ class SidebarNavigationService
                             ->icon('layout-template')
                             ->authorize('viewAny', Planogram::class)
                             ->setOrder(50);
+                    })
+                    ->item('tenant.planogram-templates', function ($item) use ($subdomain): void {
+                        $item
+                            ->label('Templates de Planograma')
+                            ->href(route('tenant.planogram-templates.index', ['subdomain' => $subdomain], false))
+                            ->icon('file-spreadsheet')
+                            ->authorize('viewAny', PlanogramTemplate::class)
+                            ->setOrder(55);
                     });
             })
             ->group('tenant.analytics', function ($group) use ($subdomain): void {

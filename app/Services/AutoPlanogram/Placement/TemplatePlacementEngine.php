@@ -1,0 +1,334 @@
+<?php
+
+namespace App\Services\AutoPlanogram\Placement;
+
+use App\Enums\BrandExposure;
+use App\Enums\PlacementFailureReason;
+use App\Enums\PriceOrder;
+use App\Enums\SizeOrder;
+use App\Models\PlanogramSubtemplate;
+use App\Models\PlanogramTemplateProduct;
+use App\Models\PlanogramTemplateSlot;
+use App\Services\AutoPlanogram\DTO\OrderedBlock;
+use App\Services\AutoPlanogram\DTO\PlacedLayer;
+use App\Services\AutoPlanogram\DTO\PlacedSegment;
+use App\Services\AutoPlanogram\DTO\PlacementResult;
+use App\Services\AutoPlanogram\DTO\PlacementSettings;
+use App\Services\AutoPlanogram\ProductWidthResolver;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+final class TemplatePlacementEngine implements PlacementEngineInterface
+{
+    public function __construct(
+        private readonly ProductWidthResolver $widthResolver,
+        private readonly GreedyShelfPlacer $greedyPlacer,
+    ) {}
+
+    /** @param Collection<int, Section> $sections */
+    public function totalAvailableWidth(Collection $sections): float
+    {
+        return $this->greedyPlacer->totalAvailableWidth($sections);
+    }
+
+    /**
+     * @param  Collection<int, OrderedBlock>  $orderedBlocks
+     * @param  Collection<int, Section>  $sections
+     * @param  array<string, float>  $reservedWidthPerShelf
+     */
+    public function place(
+        Collection $orderedBlocks,
+        Collection $sections,
+        PlacementSettings $settings,
+        array $reservedWidthPerShelf = [],
+    ): PlacementResult {
+        $subtemplate = $this->resolveSubtemplate($settings);
+
+        if ($subtemplate === null) {
+            Log::warning('TemplatePlacementEngine: sem subtemplate para N módulos — usando greedy', [
+                'num_modules' => $sections->count(),
+                'template_id' => $settings->templateId,
+            ]);
+
+            return $this->greedyPlacer->place($orderedBlocks, $sections, $settings, $reservedWidthPerShelf);
+        }
+
+        $placed = collect();
+        $rejected = collect();
+        $groupingsSemProduto = 0;
+
+        $slots = $subtemplate->slots()
+            ->withoutGlobalScopes()
+            ->orderBy('module_number')
+            ->orderBy('shelf_order')
+            ->orderBy('ordering')
+            ->get();
+
+        foreach ($slots as $slot) {
+            $section = $this->resolveSection($sections, $slot->module_number);
+            $shelf = $section ? $this->resolveShelf($section, $slot->shelf_order) : null;
+
+            if ($section === null || $shelf === null) {
+                $rejected->push([
+                    'product' => null,
+                    'reason' => PlacementFailureReason::NoShelfAtLevel,
+                    'slot_id' => $slot->id,
+                ]);
+
+                continue;
+            }
+
+            $candidates = $this->findCandidates($slot, $settings);
+
+            if ($candidates->isEmpty()) {
+                $groupingsSemProduto++;
+                Log::debug('TemplatePlacementEngine: sem produto para slot', [
+                    'grouping' => $slot->grouping,
+                    'module' => $slot->module_number,
+                    'shelf_order' => $slot->shelf_order,
+                ]);
+
+                continue;
+            }
+
+            $ordered = $this->orderCandidates($candidates, $slot);
+            $available = $this->getShelfAvailableWidth($section, $shelf);
+            $slotResult = $this->distributeInShelf($ordered, $section, $shelf, $slot, $available);
+
+            $placed = $placed->merge($slotResult['placed']);
+            $rejected = $rejected->merge($slotResult['rejected']);
+        }
+
+        if ($settings->planogramId !== null) {
+            $this->recordSubtemplateUsed($settings->planogramId, $subtemplate->getKey());
+        }
+
+        Log::info('TemplatePlacementEngine: resultado', [
+            'template_id' => $settings->templateId,
+            'subtemplate_code' => $subtemplate->code,
+            'num_modules_template' => $subtemplate->num_modules,
+            'num_modules_gondola' => $sections->count(),
+            'slots_processados' => $slots->count(),
+            'segmentos_criados' => $placed->count(),
+            'rejeitados' => $rejected->count(),
+            'groupings_sem_produto' => $groupingsSemProduto,
+        ]);
+
+        return new PlacementResult($placed, $rejected);
+    }
+
+    private function resolveSubtemplate(PlacementSettings $settings): ?PlanogramSubtemplate
+    {
+        return PlanogramSubtemplate::withoutGlobalScopes()
+            ->where('template_id', $settings->templateId)
+            ->where('num_modules', '<=', $settings->numModules)
+            ->where('is_active', true)
+            ->orderByDesc('num_modules')
+            ->first();
+    }
+
+    /** @param Collection<int, Section> $sections */
+    private function resolveSection(Collection $sections, int $moduleNumber): ?Section
+    {
+        return $sections->get($moduleNumber - 1);
+    }
+
+    /**
+     * Converte shelf_order lógico (1=chão) para shelf física (shelf_position: 0=topo).
+     * Fórmula: índice_físico = num_shelves - shelf_order
+     */
+    private function resolveShelf(Section $section, int $shelfOrder): ?Shelf
+    {
+        $shelves = $section->shelves->sortBy('shelf_position')->values();
+        $numShelves = $shelves->count();
+        $index = $numShelves - $shelfOrder;
+
+        return $shelves[$index] ?? null;
+    }
+
+    /** @param Collection<int, mixed> $settings->products */
+    private function findCandidates(PlanogramTemplateSlot $slot, PlacementSettings $settings): Collection
+    {
+        $templateProducts = PlanogramTemplateProduct::withoutGlobalScopes()
+            ->where('tenant_id', $settings->tenantId)
+            ->where('template_id', $slot->subtemplate->template_id)
+            ->where('grouping_normalized', $slot->grouping_normalized)
+            ->whereNotNull('product_id')
+            ->pluck('product_id');
+
+        if ($templateProducts->isEmpty()) {
+            return collect();
+        }
+
+        return $settings->products->whereIn('id', $templateProducts->all())->values();
+    }
+
+    private function orderCandidates(Collection $products, PlanogramTemplateSlot $slot): Collection
+    {
+        $sorted = $products;
+
+        if ($slot->size_order !== SizeOrder::None) {
+            $sorted = $sorted->sortBy(
+                fn ($p) => $this->parseSize((string) ($p->package_content ?? '0')),
+                SORT_NUMERIC,
+                $slot->size_order === SizeOrder::Desc,
+            );
+        }
+
+        if ($slot->price_order !== PriceOrder::None && $products->first()?->price !== null) {
+            $sorted = $sorted->sortBy(
+                fn ($p) => (float) ($p->price ?? 0),
+                SORT_NUMERIC,
+                $slot->price_order === PriceOrder::Desc,
+            );
+        }
+
+        if ($slot->brand_exposure === BrandExposure::Vertical) {
+            $sorted = $sorted->groupBy(fn ($p) => $p->brand ?? 'SEM MARCA')->flatten(1);
+        }
+
+        return $sorted->values();
+    }
+
+    /**
+     * @return array{placed: Collection<int, PlacedSegment>, rejected: Collection<int, array{product: mixed, reason: PlacementFailureReason}>}
+     */
+    private function distributeInShelf(
+        Collection $products,
+        Section $section,
+        Shelf $shelf,
+        PlanogramTemplateSlot $slot,
+        float $available,
+    ): array {
+        $placed = collect();
+        $rejected = collect();
+        $occupied = 0.0;
+        $ordering = 0;
+
+        foreach ($products as $product) {
+            $facing = max($slot->min_facings, 1);
+            $productWidth = $this->widthResolver->resolve($product);
+            $width = (int) round($productWidth * $facing);
+
+            if ($occupied + $width <= $available) {
+                $placed->push(new PlacedSegment(
+                    sectionId: $section->getKey(),
+                    shelfId: $shelf->getKey(),
+                    ordering: $ordering++,
+                    position: (int) round($occupied),
+                    width: $width,
+                    distributedWidth: $width,
+                    layers: collect([
+                        new PlacedLayer(
+                            productId: $product->id,
+                            ean: (string) ($product->ean ?? ''),
+                            quantity: $facing,
+                            height: 1,
+                        ),
+                    ]),
+                ));
+                $occupied += $width;
+            } else {
+                $rejected->push([
+                    'product' => $product,
+                    'reason' => PlacementFailureReason::NoHorizontalSpace,
+                    'slot_id' => $slot->id,
+                ]);
+            }
+        }
+
+        if ($rejected->isNotEmpty()) {
+            $fallback = $this->applyFallback($rejected, $available - $occupied, $slot, $section, $shelf, $ordering);
+            $placed = $placed->merge($fallback['placed']);
+            $rejected = $fallback['remaining'];
+        }
+
+        return ['placed' => $placed, 'rejected' => $rejected];
+    }
+
+    /**
+     * @param  Collection<int, array{product: mixed, reason: PlacementFailureReason}>  $rejected
+     * @return array{placed: Collection<int, PlacedSegment>, remaining: Collection<int, array{product: mixed, reason: PlacementFailureReason}>}
+     */
+    private function applyFallback(
+        Collection $rejected,
+        float $remainingWidth,
+        PlanogramTemplateSlot $slot,
+        Section $section,
+        Shelf $shelf,
+        int $orderingOffset,
+    ): array {
+        $placed = collect();
+        $remaining = $rejected;
+
+        if ($slot->space_fallback->value === 'reduce_facings') {
+            $occupied = 0.0;
+            $ordering = $orderingOffset;
+            $stillRejected = collect();
+
+            foreach ($rejected as $item) {
+                $product = $item['product'];
+                $width = (int) round($this->widthResolver->resolve($product));
+
+                if ($occupied + $width <= $remainingWidth) {
+                    $placed->push(new PlacedSegment(
+                        sectionId: $section->getKey(),
+                        shelfId: $shelf->getKey(),
+                        ordering: $ordering++,
+                        position: (int) round($occupied),
+                        width: $width,
+                        distributedWidth: $width,
+                        layers: collect([
+                            new PlacedLayer(
+                                productId: $product->id,
+                                ean: (string) ($product->ean ?? ''),
+                                quantity: 1,
+                                height: 1,
+                            ),
+                        ]),
+                    ));
+                    $occupied += $width;
+                } else {
+                    $stillRejected->push($item);
+                }
+            }
+
+            $remaining = $stillRejected;
+        }
+
+        // reduce_c and skip: do not attempt re-placement
+        return ['placed' => $placed, 'remaining' => $remaining];
+    }
+
+    private function getShelfAvailableWidth(Section $section, Shelf $shelf): float
+    {
+        $sectionWidth = (float) ($section->width ?? 100.0);
+        $cremalheiraWidth = (float) ($section->cremalheira_width ?? 0.0);
+
+        return max(0.0, $sectionWidth - $cremalheiraWidth);
+    }
+
+    private function parseSize(string $content): float
+    {
+        preg_match('/[\d.]+/', $content, $matches);
+        $value = (float) ($matches[0] ?? 0);
+        $unit = strtolower((string) preg_replace('/[\d. ]+/', '', $content));
+
+        return match ($unit) {
+            'ml' => $value / 1000,
+            'g' => $value / 1000,
+            'l', 'kg' => $value,
+            default => $value,
+        };
+    }
+
+    private function recordSubtemplateUsed(string $planogramId, string $subtemplateId): void
+    {
+        DB::table('planograms')
+            ->where('id', $planogramId)
+            ->update(['subtemplate_id' => $subtemplateId]);
+    }
+}

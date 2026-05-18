@@ -7,6 +7,7 @@ import {
     Cable,
     ChevronRight,
     Eye,
+    FileSpreadsheet,
     FileText,
     FolderKanban,
     FolderTree,
@@ -56,6 +57,7 @@ const iconMap = {
     truck: Truck,
     'layout-template': LayoutTemplate,
     'badge-dollar-sign': BadgeDollarSign,
+    'file-spreadsheet': FileSpreadsheet,
     'file-text': FileText,
 } as const;
 
