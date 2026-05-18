@@ -149,7 +149,7 @@ const pageMeta = useCrudPageMeta({
                         <ColumnHeader field="full_path">{{ t('app.tenant.categories.fields.full_path') }}</ColumnHeader>
                         <ColumnHeader field="status">{{ t('app.tenant.categories.fields.status') }}</ColumnHeader>
                         <ColumnHeader field="level_name">{{ t('app.tenant.categories.fields.level_name') }}</ColumnHeader>
-                        <th class="px-4 py-3 text-right font-medium">{{ t('app.tenant.common.actions') }}</th>
+                        <th class="px-4 py-3  font-medium">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -178,7 +178,7 @@ const pageMeta = useCrudPageMeta({
                                 {{ category.level_name }}
                             </Badge>
                         </td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 ">
                             <ColumnActions
                                 :edit-href="CategoryController.edit.url({ subdomain: props.subdomain, category: category.id })"
                                 :delete-href="CategoryController.destroy.url({ subdomain: props.subdomain, category: category.id })"

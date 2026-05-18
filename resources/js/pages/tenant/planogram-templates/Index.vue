@@ -79,7 +79,7 @@ function handleDelete(id: string): void {
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.products') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.status') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.created_at') }}</th>
-                        <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.planogram_templates.fields.actions') }}</th>
+                        <th class="px-4 py-3 font-medium ">{{ t('app.tenant.planogram_templates.fields.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -115,7 +115,7 @@ function handleDelete(id: string): void {
                         <td class="px-4 py-3">
                             <ColumnDate :date="template.created_at" />
                         </td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 ">
                             <ColumnActions
                                 :show-href="PlanogramTemplateController.show.url({ subdomain: props.subdomain, planogramTemplate: template.id })"
                                 :delete-href="PlanogramTemplateController.destroy.url({ subdomain: props.subdomain, planogramTemplate: template.id })"

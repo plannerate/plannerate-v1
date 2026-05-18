@@ -375,7 +375,7 @@ Replace the status cell (currently lines 171–176):
 Replace the actions cell (currently lines 178–194):
 ```html
 <!-- BEFORE -->
-<td class="px-4 py-3 text-right">
+<td class="px-4 py-3 ">
     <div class="inline-flex items-center gap-2">
         <Button variant="outline" size="sm" as-child>
             <Link :href="GondolaController.index.url({ subdomain: props.subdomain, planogram: planogram.id })">
@@ -392,7 +392,7 @@ Replace the actions cell (currently lines 178–194):
 </td>
 
 <!-- AFTER -->
-<td class="px-4 py-3 text-right">
+<td class="px-4 py-3 ">
     <ColumnActions
         :edit-href="PlanogramController.edit.url({ subdomain: props.subdomain, planogram: planogram.id })"
         :delete-href="PlanogramController.destroy.url({ subdomain: props.subdomain, planogram: planogram.id })"
@@ -502,7 +502,7 @@ const pageMeta = useCrudPageMeta({
     <th class="px-4 py-3 font-medium">EAN</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.products.fields.category') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.products.fields.status') }}</th>
-    <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+    <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
 </tr>
 
 <!-- AFTER -->
@@ -512,7 +512,7 @@ const pageMeta = useCrudPageMeta({
     <th class="px-4 py-3 font-medium">EAN</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.products.fields.category') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.products.fields.status') }}</th>
-    <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+    <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
 </tr>
 ```
 
@@ -543,7 +543,7 @@ const pageMeta = useCrudPageMeta({
 <td class="px-4 py-3">{{ product.ean ?? '-' }}</td>
 <td class="px-4 py-3">{{ product.category ?? '-' }}</td>
 <td class="px-4 py-3">{{ product.status }}</td>
-<td class="px-4 py-3 text-right">
+<td class="px-4 py-3 ">
     <div class="inline-flex items-center gap-2">
         <EditButton :href="ProductController.edit.url({ subdomain: props.subdomain, product: product.id })" />
         <DeleteButton
@@ -564,7 +564,7 @@ const pageMeta = useCrudPageMeta({
 <td class="px-4 py-3">{{ product.ean ?? '-' }}</td>
 <td class="px-4 py-3">{{ product.category ?? '-' }}</td>
 <td class="px-4 py-3">{{ product.status }}</td>
-<td class="px-4 py-3 text-right">
+<td class="px-4 py-3 ">
     <ColumnActions
         :edit-href="ProductController.edit.url({ subdomain: props.subdomain, product: product.id })"
         :delete-href="ProductController.destroy.url({ subdomain: props.subdomain, product: product.id })"
@@ -667,7 +667,7 @@ const pageMeta = useCrudPageMeta({
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.codigo') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.status') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.is_placeholder') }}</th>
-    <th class="px-4 py-3 text-right font-medium">{{ t('app.tenant.common.actions') }}</th>
+    <th class="px-4 py-3  font-medium">{{ t('app.tenant.common.actions') }}</th>
 </tr>
 
 <!-- AFTER -->
@@ -676,7 +676,7 @@ const pageMeta = useCrudPageMeta({
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.codigo') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.status') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.categories.fields.is_placeholder') }}</th>
-    <th class="px-4 py-3 text-right font-medium">{{ t('app.tenant.common.actions') }}</th>
+    <th class="px-4 py-3  font-medium">{{ t('app.tenant.common.actions') }}</th>
 </tr>
 ```
 
@@ -706,7 +706,7 @@ const pageMeta = useCrudPageMeta({
     </Badge>
     <span v-else class="text-muted-foreground">{{ t('app.tenant.common.no') }}</span>
 </td>
-<td class="px-4 py-3 text-right">
+<td class="px-4 py-3 ">
     <div class="inline-flex items-center gap-2">
         <EditButton :href="CategoryController.edit.url({
             subdomain: props.subdomain,
@@ -733,7 +733,7 @@ const pageMeta = useCrudPageMeta({
     </Badge>
     <span v-else class="text-muted-foreground">{{ t('app.tenant.common.no') }}</span>
 </td>
-<td class="px-4 py-3 text-right">
+<td class="px-4 py-3 ">
     <ColumnActions
         :edit-href="CategoryController.edit.url({ subdomain: props.subdomain, category: category.id })"
         :delete-href="CategoryController.destroy.url({ subdomain: props.subdomain, category: category.id })"
@@ -849,7 +849,7 @@ const pageMeta = useCrudPageMeta({
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.flow') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.alignment') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.status') }}</th>
-    <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+    <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
 </tr>
 
 <!-- AFTER -->
@@ -859,7 +859,7 @@ const pageMeta = useCrudPageMeta({
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.flow') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.alignment') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.gondolas.fields.status') }}</th>
-    <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+    <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
 </tr>
 ```
 
@@ -894,7 +894,7 @@ const pageMeta = useCrudPageMeta({
 
 ```html
 <!-- BEFORE (actions cell) -->
-<td class="px-4 py-3 text-right">
+<td class="px-4 py-3 ">
     <div class="inline-flex items-center gap-2">
         <!-- editor.planograms.gondolas -->
         <Button variant="outline" size="sm" as-child>
@@ -928,7 +928,7 @@ const pageMeta = useCrudPageMeta({
 </td>
 
 <!-- AFTER -->
-<td class="px-4 py-3 text-right">
+<td class="px-4 py-3 ">
     <ColumnActions
         :edit-href="GondolaController.edit.url({ subdomain: props.subdomain, planogram: props.planogram.id, gondola: gondola.id })"
         :delete-href="GondolaController.destroy.url({ subdomain: props.subdomain, planogram: props.planogram.id, gondola: gondola.id })"
@@ -1031,7 +1031,7 @@ const pageMeta = useCrudPageMeta({
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.stores.fields.code') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.stores.fields.document') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.stores.fields.status') }}</th>
-    <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+    <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
 </tr>
 
 <!-- AFTER thead -->
@@ -1040,7 +1040,7 @@ const pageMeta = useCrudPageMeta({
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.stores.fields.code') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.stores.fields.document') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.stores.fields.status') }}</th>
-    <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+    <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
 </tr>
 ```
 
@@ -1059,7 +1059,7 @@ const pageMeta = useCrudPageMeta({
 <td class="px-4 py-3">{{ store.code ?? '-' }}</td>
 <td class="px-4 py-3">{{ store.document ?? '-' }}</td>
 <td class="px-4 py-3">{{ store.status }}</td>
-<td class="px-4 py-3 text-right">
+<td class="px-4 py-3 ">
     <div class="inline-flex items-center gap-2">
         <EditButton :href="StoreController.edit.url({ subdomain: props.subdomain, store: store.id })" />
         <DeleteButton
@@ -1077,7 +1077,7 @@ const pageMeta = useCrudPageMeta({
 <td class="px-4 py-3">{{ store.code ?? '-' }}</td>
 <td class="px-4 py-3">{{ store.document ?? '-' }}</td>
 <td class="px-4 py-3">{{ store.status }}</td>
-<td class="px-4 py-3 text-right">
+<td class="px-4 py-3 ">
     <ColumnActions
         :edit-href="StoreController.edit.url({ subdomain: props.subdomain, store: store.id })"
         :delete-href="StoreController.destroy.url({ subdomain: props.subdomain, store: store.id })"
@@ -1168,7 +1168,7 @@ const pageMeta = useCrudPageMeta({
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.providers.fields.cnpj') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.providers.fields.email') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.providers.fields.is_default') }}</th>
-    <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+    <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
 </tr>
 
 <!-- AFTER thead -->
@@ -1177,7 +1177,7 @@ const pageMeta = useCrudPageMeta({
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.providers.fields.cnpj') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.providers.fields.email') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.providers.fields.is_default') }}</th>
-    <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+    <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
 </tr>
 ```
 
@@ -1196,7 +1196,7 @@ const pageMeta = useCrudPageMeta({
 <td class="px-4 py-3">{{ provider.cnpj ?? '-' }}</td>
 <td class="px-4 py-3">{{ provider.email ?? '-' }}</td>
 <td class="px-4 py-3">{{ provider.is_default ? t('app.tenant.common.yes') : t('app.tenant.common.no') }}</td>
-<td class="px-4 py-3 text-right">
+<td class="px-4 py-3 ">
     <div class="inline-flex items-center gap-2">
         <EditButton :href="ProviderController.edit.url({ subdomain: props.subdomain, provider: provider.id })" />
         <DeleteButton
@@ -1214,7 +1214,7 @@ const pageMeta = useCrudPageMeta({
 <td class="px-4 py-3">{{ provider.cnpj ?? '-' }}</td>
 <td class="px-4 py-3">{{ provider.email ?? '-' }}</td>
 <td class="px-4 py-3">{{ provider.is_default ? t('app.tenant.common.yes') : t('app.tenant.common.no') }}</td>
-<td class="px-4 py-3 text-right">
+<td class="px-4 py-3 ">
     <ColumnActions
         :edit-href="ProviderController.edit.url({ subdomain: props.subdomain, provider: provider.id })"
         :delete-href="ProviderController.destroy.url({ subdomain: props.subdomain, provider: provider.id })"
@@ -1309,7 +1309,7 @@ const pageMeta = useCrudPageMeta({
     <th class="px-4 py-3 font-medium">Slug</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.clusters.fields.specification_1') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.clusters.fields.status') }}</th>
-    <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+    <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
 </tr>
 
 <!-- AFTER thead -->
@@ -1318,7 +1318,7 @@ const pageMeta = useCrudPageMeta({
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.clusters.fields.store') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.clusters.fields.specification_1') }}</th>
     <th class="px-4 py-3 font-medium">{{ t('app.tenant.clusters.fields.status') }}</th>
-    <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+    <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
 </tr>
 ```
 
@@ -1337,7 +1337,7 @@ const pageMeta = useCrudPageMeta({
 <td class="px-4 py-3">{{ cluster.slug ?? '-' }}</td>
 <td class="px-4 py-3">{{ cluster.specification_1 ?? '-' }}</td>
 <td class="px-4 py-3">{{ cluster.status }}</td>
-<td class="px-4 py-3 text-right">
+<td class="px-4 py-3 ">
     <div class="inline-flex items-center gap-2">
         <EditButton :href="ClusterController.edit.url({ subdomain: props.subdomain, cluster: cluster.id })" />
         <DeleteButton
@@ -1355,7 +1355,7 @@ const pageMeta = useCrudPageMeta({
 <td class="px-4 py-3">{{ cluster.store ?? '-' }}</td>
 <td class="px-4 py-3">{{ cluster.specification_1 ?? '-' }}</td>
 <td class="px-4 py-3">{{ cluster.status }}</td>
-<td class="px-4 py-3 text-right">
+<td class="px-4 py-3 ">
     <ColumnActions
         :edit-href="ClusterController.edit.url({ subdomain: props.subdomain, cluster: cluster.id })"
         :delete-href="ClusterController.destroy.url({ subdomain: props.subdomain, cluster: cluster.id })"

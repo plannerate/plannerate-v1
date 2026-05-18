@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\TenantSocialiteController;
 use App\Http\Controllers\AutoPlanogramController;
 use App\Http\Controllers\Landlord\DashboardController as LandlordDashboardController;
 use App\Http\Controllers\Landlord\EanReferenceController as LandlordEanReferenceController;
+use App\Http\Controllers\Landlord\GlobalPlanogramTemplateController;
 use App\Http\Controllers\Landlord\IntegrationApiController;
 use App\Http\Controllers\Landlord\ModuleController;
 use App\Http\Controllers\Landlord\NotificationController as LandlordNotificationController;
@@ -100,6 +101,20 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::resource('ean-references', LandlordEanReferenceController::class)
         ->except(['show'])
         ->names('landlord.ean-references');
+
+    Route::get('planogram-templates', [GlobalPlanogramTemplateController::class, 'index'])
+        ->name('landlord.planogram-templates.index');
+    Route::get('planogram-templates/create', [GlobalPlanogramTemplateController::class, 'create'])
+        ->name('landlord.planogram-templates.create');
+    Route::post('planogram-templates/import', [GlobalPlanogramTemplateController::class, 'import'])
+        ->name('landlord.planogram-templates.import');
+    Route::post('planogram-templates/{globalPlanogramTemplate}/share', [GlobalPlanogramTemplateController::class, 'share'])
+        ->name('landlord.planogram-templates.share');
+    Route::get('planogram-templates/{globalPlanogramTemplate}', [GlobalPlanogramTemplateController::class, 'show'])
+        ->name('landlord.planogram-templates.show');
+    Route::delete('planogram-templates/{globalPlanogramTemplate}', [GlobalPlanogramTemplateController::class, 'destroy'])
+        ->name('landlord.planogram-templates.destroy');
+
     Route::resource('useful-links', UsefulLinkController::class)
         ->except(['show'])
         ->names('landlord.useful-links');

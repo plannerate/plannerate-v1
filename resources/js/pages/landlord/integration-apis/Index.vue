@@ -107,7 +107,7 @@ const pageMeta = useCrudPageMeta({
                         <th class="px-4 py-3 font-medium">{{ t('app.landlord.integration_apis.fields.name') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.landlord.integration_apis.fields.slug') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.landlord.integration_apis.fields.is_active') }}</th>
-                        <th class="px-4 py-3 font-medium text-right">{{ t('app.landlord.common.actions') }}</th>
+                        <th class="px-4 py-3 font-medium ">{{ t('app.landlord.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -130,7 +130,7 @@ const pageMeta = useCrudPageMeta({
                         </td>
                         <td class="px-4 py-3">{{ integrationApi.slug }}</td>
                         <td class="px-4 py-3">{{ integrationApi.is_active ? t('app.landlord.common.yes') : t('app.landlord.common.no') }}</td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 ">
                             <div class="inline-flex items-center gap-2">
                                 <Button variant="outline" size="sm" as-child>
                                     <WayfinderLink :href="IntegrationApiController.edit.url(integrationApi.id)">

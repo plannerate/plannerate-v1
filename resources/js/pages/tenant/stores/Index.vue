@@ -91,7 +91,7 @@ const pageMeta = useCrudPageMeta({
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.stores.fields.code') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.stores.fields.document') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.stores.fields.status') }}</th>
-                        <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+                        <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -116,7 +116,7 @@ const pageMeta = useCrudPageMeta({
                         <td class="px-4 py-3">
                             <ColumnStatusBadge :status="store.status" />
                         </td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 ">
                             <ColumnActions
                                 :edit-href="StoreController.edit.url({ subdomain: props.subdomain, store: store.id })"
                                 :delete-href="StoreController.destroy.url({ subdomain: props.subdomain, store: store.id })"

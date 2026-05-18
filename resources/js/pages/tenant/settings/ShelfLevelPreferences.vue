@@ -98,7 +98,7 @@
               <tr>
                 <th scope="col" class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Categoria</th>
                 <th scope="col" class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Nível Preferido</th>
-                <th scope="col" class="px-6 py-3 text-right text-sm font-semibold text-gray-900">Ações</th>
+                <th scope="col" class="px-6 py-3  text-sm font-semibold text-gray-900">Ações</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
@@ -109,7 +109,7 @@
                     {{ getShelfLevelLabel(pref.preferred_level) }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-right text-sm space-x-2">
+                <td class="px-6 py-4  text-sm space-x-2">
                   <button
                     @click="editPreference(pref)"
                     class="text-indigo-600 hover:text-indigo-900"

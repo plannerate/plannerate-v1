@@ -92,7 +92,7 @@ const pageMeta = useCrudPageMeta({
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.providers.fields.cnpj') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.providers.fields.email') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.providers.fields.is_default') }}</th>
-                        <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+                        <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -115,7 +115,7 @@ const pageMeta = useCrudPageMeta({
                         <td class="px-4 py-3">{{ provider.cnpj ?? '-' }}</td>
                         <td class="px-4 py-3">{{ provider.email ?? '-' }}</td>
                         <td class="px-4 py-3">{{ provider.is_default ? t('app.tenant.common.yes') : t('app.tenant.common.no') }}</td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 ">
                             <ColumnActions
                                 :edit-href="ProviderController.edit.url({ subdomain: props.subdomain, provider: provider.id })"
                                 :delete-href="ProviderController.destroy.url({ subdomain: props.subdomain, provider: provider.id })"

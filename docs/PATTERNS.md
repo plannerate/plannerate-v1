@@ -163,7 +163,7 @@ const pageMeta = useCrudPageMeta({
 
         <template #rows="{ item }">
             <td>{{ item.name }}</td>
-            <td class="text-right">
+            <td class="">
                 <EditButton :href="ResourceController.edit.url({ subdomain: props.subdomain, resource: item.id })" />
                 <DeleteButton :href="ResourceController.destroy.url({ subdomain: props.subdomain, resource: item.id })" />
             </td>

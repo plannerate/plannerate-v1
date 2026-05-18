@@ -97,7 +97,7 @@ function formatPrice(cents: number): string {
                     <th class="px-4 py-3 font-medium">{{ t('app.landlord.plans.fields.user_limit') }}</th>
                     <th class="px-4 py-3 font-medium">{{ t('app.landlord.plans.fields.is_active') }}</th>
                     <th class="px-4 py-3 font-medium">{{ t('app.landlord.plans.fields.tenants_count') }}</th>
-                    <th class="px-4 py-3 font-medium text-right">{{ t('app.landlord.common.actions') }}</th>
+                    <th class="px-4 py-3 font-medium ">{{ t('app.landlord.common.actions') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -123,7 +123,7 @@ function formatPrice(cents: number): string {
                     <td class="px-4 py-3">{{ plan.user_limit ?? '-' }}</td>
                     <td class="px-4 py-3">{{ plan.is_active ? t('app.landlord.common.yes') : t('app.landlord.common.no') }}</td>
                     <td class="px-4 py-3">{{ plan.tenants_count }}</td>
-                    <td class="px-4 py-3 text-right">
+                    <td class="px-4 py-3 ">
                         <div class="inline-flex items-center gap-2">
                             <Button variant="outline" size="sm" as-child>
                                 <WayfinderLink :href="PlanController.edit.url(plan.id)">

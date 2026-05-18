@@ -88,7 +88,7 @@ const pageMeta = useCrudPageMeta({
                     <th class="px-4 py-3 font-medium">{{ t('app.landlord.roles.fields.name') }}</th>
                     <th class="px-4 py-3 font-medium">{{ t('app.landlord.roles.fields.type') }}</th>
                     <th class="px-4 py-3 font-medium">{{ t('app.landlord.roles.fields.permissions_count') }}</th>
-                    <th class="px-4 py-3 font-medium text-right">{{ t('app.landlord.common.actions') }}</th>
+                    <th class="px-4 py-3 font-medium ">{{ t('app.landlord.common.actions') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -110,7 +110,7 @@ const pageMeta = useCrudPageMeta({
                     </td>
                     <td class="px-4 py-3">{{ t(`app.landlord.roles.types.${role.type}`) }}</td>
                     <td class="px-4 py-3">{{ role.permissions_count }}</td>
-                    <td class="px-4 py-3 text-right">
+                    <td class="px-4 py-3 ">
                         <div class="inline-flex items-center gap-2">
                             <Button variant="outline" size="sm" as-child>
                                 <WayfinderLink :href="RoleController.edit.url(role.id)">

@@ -106,7 +106,7 @@ function formatDimensions(reference: EanReferenceRow): string {
                         <ColumnHeader field="brand">{{ t('app.tenant.ean_references.fields.brand') }}</ColumnHeader>
                         <ColumnHeader field="packaging_type">{{ t('app.tenant.ean_references.fields.packaging_type') }}</ColumnHeader>
                         <ColumnHeader field="width">Medidas</ColumnHeader>
-                        <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+                        <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -128,7 +128,7 @@ function formatDimensions(reference: EanReferenceRow): string {
                         <td class="px-4 py-3">{{ eanReference.brand || '-' }}</td>
                         <td class="px-4 py-3">{{ eanReference.packaging_type || '-' }}</td>
                         <td class="px-4 py-3">{{ formatDimensions(eanReference) }}</td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 ">
                             <div class="inline-flex items-center gap-2">
                                 <Button variant="outline" size="sm" as-child>
                                     <WayfinderLink :href="tenantWayfinderPath(EanReferenceController.edit.url({ subdomain: props.subdomain, ean_reference: eanReference.id }))">

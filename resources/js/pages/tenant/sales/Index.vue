@@ -234,7 +234,7 @@ const pageMeta = useCrudPageMeta({
                                 }}
                             </span>
                         </ColumnHeader>
-                        <th class="px-4 py-3 text-right font-medium">
+                        <th class="px-4 py-3  font-medium">
                             {{ t('app.tenant.common.actions') }}
                         </th>
                     </tr>
@@ -280,7 +280,7 @@ const pageMeta = useCrudPageMeta({
                         <td class="px-4 py-3 font-medium text-foreground">
                             {{ formatCurrency(sale.total_sale_value) }}
                         </td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 ">
                             <ColumnActions
                                 :edit-href="
                                     SaleController.edit

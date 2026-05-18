@@ -241,7 +241,7 @@ const statusBadgeClass = (status: string): string => {
                                 <th class="px-3 py-2 font-medium">Integração</th>
                                 <th class="px-3 py-2 font-medium">Cliente há</th>
                                 <th class="px-3 py-2 font-medium">Host</th>
-                                <th class="px-3 py-2 text-right font-medium">Ações</th>
+                                <th class="px-3 py-2  font-medium">Ações</th>
                             </tr>
                         </thead>
                         <tbody>

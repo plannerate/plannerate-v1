@@ -125,7 +125,7 @@ const indexPath = ClientPlanogramController.index.url(props.subdomain).replace(/
                             <th class="px-4 py-3 font-medium">Loja</th>
                             <th class="px-4 py-3 font-medium">Tipo</th>
                             <th class="px-4 py-3 font-medium">Vigência</th>
-                            <th class="px-4 py-3 font-medium text-right">Ações</th>
+                            <th class="px-4 py-3 font-medium ">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -167,7 +167,7 @@ const indexPath = ClientPlanogramController.index.url(props.subdomain).replace(/
                                 <ColumnDate :from="planogram.start_date" :to="planogram.end_date" />
                             </td>
 
-                            <td class="px-4 py-3 text-right">
+                            <td class="px-4 py-3 ">
                                 <Button variant="outline" size="sm" as-child>
                                     <WayfinderLink
                                         :href="ClientPlanogramController.gondolas.url({ subdomain: props.subdomain, planogram: planogram.id })"

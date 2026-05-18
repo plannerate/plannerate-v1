@@ -418,28 +418,28 @@ function handleDecreaseFronts(): void {
                                         {{ item.ean }}
                                     </TableCell>
                                     <TableCell class="sticky-col-2 py-2 text-[11px]">{{ item.product_name }}</TableCell>
-                                    <TableCell class="py-2 text-right text-[11px]">
+                                    <TableCell class="py-2  text-[11px]">
                                         {{ formatNumber(item.demanda_media) }}
                                     </TableCell>
-                                    <TableCell class="py-2 text-right text-[11px]">
+                                    <TableCell class="py-2  text-[11px]">
                                         {{ formatNumber(item.desvio_padrao) }}
                                     </TableCell>
-                                    <TableCell class="py-2 text-right text-[11px]">
+                                    <TableCell class="py-2  text-[11px]">
                                         {{ item.cobertura_dias }}
                                     </TableCell>
-                                    <TableCell class="py-2 text-right text-[11px]">
+                                    <TableCell class="py-2  text-[11px]">
                                         {{ formatNumber(item.nivel_servico, 1) }}
                                     </TableCell>
-                                    <TableCell class="py-2 text-right text-[11px]">
+                                    <TableCell class="py-2  text-[11px]">
                                         {{ formatNumber(item.z_score, 3) }}
                                     </TableCell>
-                                    <TableCell class="py-2 text-right text-[11px]">
+                                    <TableCell class="py-2  text-[11px]">
                                         {{ item.estoque_seguranca }}
                                     </TableCell>
-                                    <TableCell class="py-2 text-right text-[11px]">
+                                    <TableCell class="py-2  text-[11px]">
                                         {{ item.estoque_minimo }}
                                     </TableCell>
-                                    <TableCell class="py-2 text-right text-[11px] font-medium">
+                                    <TableCell class="py-2  text-[11px] font-medium">
                                         {{ item.estoque_alvo }}
                                     </TableCell>
                                     <TableCell class="py-2">
@@ -450,7 +450,7 @@ function handleDecreaseFronts(): void {
                                             {{ item.permite_frentes }}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell class="py-2 text-right text-[11px]">
+                                    <TableCell class="py-2  text-[11px]">
                                         {{ item.estoque_atual }}
                                     </TableCell>
                                 </TableRow>

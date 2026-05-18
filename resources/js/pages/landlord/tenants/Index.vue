@@ -211,7 +211,7 @@ function openSsoSheet(tenant: TenantRow): void {
                         <th class="px-4 py-3 font-medium">
                             {{ t('app.landlord.tenants.fields.plan') }}
                         </th>
-                        <th class="px-4 py-3 text-right font-medium">
+                        <th class="px-4 py-3  font-medium">
                             {{ t('app.landlord.common.actions') }}
                         </th>
                     </tr>
@@ -257,7 +257,7 @@ function openSsoSheet(tenant: TenantRow): void {
                         <td class="px-4 py-3">
                             {{ tenant.plan?.name ?? '-' }}
                         </td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 ">
                             <ColumnActions
                                 :edit-href="
                                     tenantWayfinderPath(TenantController.edit.url({

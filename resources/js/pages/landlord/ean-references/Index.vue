@@ -148,7 +148,7 @@ function formatDimensions(reference: EanReferenceRow): string {
                             }}
                         </ColumnHeader>
                         <ColumnHeader field="width">Medidas</ColumnHeader>
-                        <th class="px-4 py-3 font-medium text-right">{{ t('app.landlord.common.actions') }}</th>
+                        <th class="px-4 py-3 font-medium ">{{ t('app.landlord.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -171,7 +171,7 @@ function formatDimensions(reference: EanReferenceRow): string {
                         <td class="px-4 py-3">{{ eanReference.brand || '-' }}</td>
                         <td class="px-4 py-3">{{ eanReference.packaging_type || '-' }}</td>
                         <td class="px-4 py-3">{{ formatDimensions(eanReference) }}</td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 ">
                             <div class="inline-flex items-center gap-2">
                                 <Button type="button" variant="outline" size="sm"
                                     :disabled="fetchingIds.has(eanReference.id)" :title="eanReference.ean"

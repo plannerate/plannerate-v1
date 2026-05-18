@@ -85,7 +85,7 @@ const pageMeta = useCrudPageMeta({
                         <th class="px-4 py-3 font-medium">{{ t('app.landlord.useful_links.fields.name') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.landlord.useful_links.fields.url') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.landlord.useful_links.fields.show_on_tenant_dashboard') }}</th>
-                        <th class="px-4 py-3 font-medium text-right">{{ t('app.landlord.common.actions') }}</th>
+                        <th class="px-4 py-3 font-medium ">{{ t('app.landlord.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -115,7 +115,7 @@ const pageMeta = useCrudPageMeta({
                             </a>
                         </td>
                         <td class="px-4 py-3">{{ usefulLink.show_on_tenant_dashboard ? t('app.landlord.common.yes') : t('app.landlord.common.no') }}</td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 ">
                             <div class="inline-flex items-center gap-2">
                                 <Button variant="outline" size="sm" as-child>
                                     <WayfinderLink :href="UsefulLinkController.edit.url(usefulLink.id)">

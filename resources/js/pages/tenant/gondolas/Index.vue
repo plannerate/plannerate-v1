@@ -120,7 +120,7 @@ const pageMeta = useCrudPageMeta({
                         <ColumnHeader field="flow">{{ t('app.tenant.gondolas.fields.flow') }}</ColumnHeader>
                         <ColumnHeader field="alignment">{{ t('app.tenant.gondolas.fields.alignment') }}</ColumnHeader>
                         <ColumnHeader field="status">{{ t('app.tenant.gondolas.fields.status') }}</ColumnHeader>
-                        <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+                        <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -149,7 +149,7 @@ const pageMeta = useCrudPageMeta({
                         <td class="px-4 py-3">
                             <ColumnStatusBadge :status="gondola.status" />
                         </td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 ">
                             <ColumnActions
                                 :edit-href="GondolaController.edit.url({ subdomain: props.subdomain, planogram: props.planogram.id, gondola: gondola.id })"
                                 :delete-href="GondolaController.destroy.url({ subdomain: props.subdomain, planogram: props.planogram.id, gondola: gondola.id })"

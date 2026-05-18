@@ -101,7 +101,7 @@ const pageMeta = useCrudPageMeta({
                     <th class="px-4 py-3 font-medium">{{ t('app.landlord.users.fields.email') }}</th>
                     <th class="px-4 py-3 font-medium">{{ t('app.landlord.users.fields.roles') }}</th>
                     <th class="px-4 py-3 font-medium">{{ t('app.landlord.users.fields.is_active') }}</th>
-                    <th class="px-4 py-3 font-medium text-right">{{ t('app.landlord.common.actions') }}</th>
+                    <th class="px-4 py-3 font-medium ">{{ t('app.landlord.common.actions') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -122,7 +122,7 @@ const pageMeta = useCrudPageMeta({
                     <td class="px-4 py-3">{{ user.email }}</td>
                     <td class="px-4 py-3">{{ user.roles.length > 0 ? user.roles.join(', ') : '-' }}</td>
                     <td class="px-4 py-3">{{ user.is_active ? t('app.landlord.common.active') : t('app.landlord.common.inactive') }}</td>
-                    <td class="px-4 py-3 text-right">
+                    <td class="px-4 py-3 ">
                         <div class="inline-flex items-center gap-2">
                             <Button variant="outline" size="sm" as-child>
                                 <WayfinderLink :href="UserController.edit.url(user.id)" class="inline-flex items-center gap-1.5">

@@ -225,7 +225,7 @@ const pageMeta = useCrudPageMeta({
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.store') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.period') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.planograms.fields.status') }}</th>
-                        <th class="px-4 py-3 font-medium text-right">{{ t('app.tenant.common.actions') }}</th>
+                        <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -277,7 +277,7 @@ const pageMeta = useCrudPageMeta({
                         </td>
 
                         <!-- Ações -->
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 ">
                             <ColumnActions
                                 :edit-href="PlanogramController.edit.url({ subdomain: props.subdomain, planogram: planogram.id })"
                                 :delete-href="PlanogramController.destroy.url({ subdomain: props.subdomain, planogram: planogram.id })"

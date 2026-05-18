@@ -156,12 +156,9 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <button
-                    type="button"
-                    :disabled="isUpdatingImages || pageEans.length === 0 || productsLoading"
+                <button type="button" :disabled="isUpdatingImages || pageEans.length === 0 || productsLoading"
                     class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                    @click="updateImages"
-                >
+                    @click="updateImages">
                     <ImageDown class="size-3.5 shrink-0" :class="{ 'animate-pulse': isUpdatingImages }" />
                     {{ isUpdatingImages ? 'Enviando...' : 'Atualizar imagens' }}
                 </button>
@@ -226,25 +223,22 @@ const pageMeta = useCrudPageMeta({
                         <th class="w-16 px-4 py-3 font-medium">
                             {{ t('app.tenant.products.fields.image') }}
                         </th>
-                        <ColumnHeader field="name">{{
-                            t('app.tenant.products.fields.name')
-                            }}</ColumnHeader>
+                        <ColumnHeader field="codigo_erp">{{
+                            t('app.tenant.products.fields.codigo_erp')
+                        }}</ColumnHeader>
                         <ColumnHeader field="ean">{{
                             t('app.tenant.products.fields.ean')
                             }}</ColumnHeader>
-                        <ColumnHeader field="category">{{
-                            t('app.tenant.products.fields.category')
+                        <ColumnHeader field="name">{{
+                            t('app.tenant.products.fields.name')
                             }}</ColumnHeader>
-                        <th class="px-4 py-3 font-medium">
-                            {{ t('app.tenant.products.fields.stores') }}
-                        </th>
                         <ColumnHeader field="status">{{
                             t('app.tenant.products.fields.status')
                             }}</ColumnHeader>
                         <ColumnHeader field="created_at">{{
                             t('app.tenant.products.fields.created_at')
                             }}</ColumnHeader>
-                        <th class="text-right">
+                        <th class="text-center font-medium ">
                             {{ t('app.tenant.common.actions') }}
                         </th>
                     </tr>
@@ -264,32 +258,15 @@ const pageMeta = useCrudPageMeta({
                             <ColumnImage :src="product.image_url" :alt="product.name ?? 'Produto'" />
                         </td>
                         <td class="px-4 py-3">
-                            <ColumnLabel :label="product.name ?? '-'"
-                                :description="[product.slug, formatStockAndLastPurchase(product), formatProductDimensions(product)].filter(Boolean).join(' • ') || null" />
+                            <ColumnLabel :label="product.codigo_erp ?? '-'" />
                         </td>
                         <td class="px-4 py-3">
                             {{ product.ean ?? '-' }}
-                            <br />
-                            {{ product.codigo_erp ?? '-' }}
-                            <br />
-                            {{ formatStockAndLastPurchase(product) || '-' }}
 
                         </td>
-                        <td class="px-4 py-3">{{ product.category ?? '-' }}</td>
                         <td class="px-4 py-3">
-                            <div
-                                v-if="product.stores.length > 0"
-                                class="flex flex-wrap gap-1.5"
-                            >
-                                <span
-                                    v-for="store in product.stores"
-                                    :key="`${product.id}-${store}`"
-                                    class="inline-flex items-center rounded-md border border-border bg-muted px-2 py-0.5 text-xs text-foreground"
-                                >
-                                    {{ store }}
-                                </span>
-                            </div>
-                            <span v-else>-</span>
+                            <ColumnLabel :label="product.name ?? '-'"
+                                :description="[ formatStockAndLastPurchase(product), formatProductDimensions(product)].filter(Boolean).join(' • ') || null" />
                         </td>
                         <td class="px-4 py-3">
                             <ColumnStatusBadge :status="product.status" />
@@ -300,7 +277,7 @@ const pageMeta = useCrudPageMeta({
                                 <span class="text-muted-foreground">{{ formatSyncDate(product) }}</span>
                             </div>
                         </td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 ">
                             <ColumnActions :edit-href="ProductController.edit.url({
                                 subdomain: props.subdomain,
                                 product: product.id,
