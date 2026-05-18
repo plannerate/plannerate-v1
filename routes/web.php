@@ -291,6 +291,8 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::resource('products', ProductController::class)
             ->except(['show'])
             ->names('products');
+        Route::get('products/sortiment-attributes', [ProductController::class, 'sortimentAttributes'])
+            ->name('products.sortiment-attributes');
         Route::post('products/sync-single', [ProductController::class, 'syncSingle'])
             ->name('products.sync-single');
         Route::post('products/update-images', [ProductController::class, 'updateImages'])

@@ -16,6 +16,7 @@ use App\Models\Tenant;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Callcocam\LaravelRaptorPlannerate\Jobs\ProcessProductImagesByEansJob;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -24,11 +25,11 @@ use Inertia\Response;
 
 class ProductController extends Controller
 {
+    use InteractsWithCategoryFilter;
     use InteractsWithDeferredIndex;
     use InteractsWithPlanLimits;
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
-    use InteractsWithCategoryFilter;
 
     public function updateImages(Request $request): RedirectResponse
     {
@@ -129,6 +130,35 @@ class ProductController extends Controller
         ]);
     }
 
+    public function sortimentAttributes(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Product::class);
+
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $search = trim((string) ($validated['search'] ?? ''));
+
+        $attributes = Product::query()
+            ->select('sortiment_attribute')
+            ->whereNotNull('sortiment_attribute')
+            ->where('sortiment_attribute', '!=', '')
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where('sortiment_attribute', 'like', '%'.$search.'%');
+            })
+            ->distinct()
+            ->orderBy('sortiment_attribute')
+            ->limit(20)
+            ->pluck('sortiment_attribute')
+            ->filter(fn (mixed $attribute): bool => is_string($attribute) && trim($attribute) !== '')
+            ->values();
+
+        return response()->json([
+            'data' => $attributes,
+        ]);
+    }
+
     private function productsPaginator(
         string $search,
         string $status,
@@ -204,8 +234,6 @@ class ProductController extends Controller
                 'last_purchase_date' => $product->last_purchase_date?->toDateTimeString(),
             ]);
     }
-
-   
 
     public function create(): Response
     {

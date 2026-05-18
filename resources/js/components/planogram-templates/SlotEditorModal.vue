@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, watch } from 'vue';
+import RemoteAutocompleteField from '@/components/form/RemoteAutocompleteField.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -21,13 +22,25 @@ import { Switch } from '@/components/ui/switch';
 import { useT } from '@/composables/useT';
 import type { PlanogramTemplateSlot } from './types';
 
-type SlotDraft = Omit<PlanogramTemplateSlot, 'id' | 'subtemplate_id' | 'grouping_normalized' | 'ordering'>;
+type SlotDraft = Omit<
+    PlanogramTemplateSlot,
+    | 'id'
+    | 'subtemplate_id'
+    | 'grouping_normalized'
+    | 'ordering'
+    | 'category'
+    | 'subcategory'
+> & {
+    category: string;
+    subcategory: string;
+};
 
 const props = defineProps<{
     open: boolean;
     moduleNumber: number;
     shelfOrder: number;
-    slot?: PlanogramTemplateSlot | null;
+    templateSlot?: PlanogramTemplateSlot | null;
+    groupingSearchUrl?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -52,9 +65,18 @@ const draft = reactive<SlotDraft>({
 });
 
 watch(
-    () => [props.open, props.slot, props.moduleNumber, props.shelfOrder] as const,
+    () =>
+        [
+            props.open,
+            props.templateSlot,
+            props.moduleNumber,
+            props.shelfOrder,
+        ] as const,
     ([open, slot, module, shelf]) => {
-        if (!open) return;
+        if (!open) {
+            return;
+        }
+
         draft.module_number = module;
         draft.shelf_order = shelf;
         draft.grouping = slot?.grouping ?? '';
@@ -75,7 +97,10 @@ watch(
 const { t } = useT();
 
 function saveSlot(): void {
-    if (!draft.grouping.trim()) return;
+    if (!draft.grouping.trim()) {
+        return;
+    }
+
     emit('save', { ...draft });
     emit('update:open', false);
 }
@@ -85,37 +110,72 @@ function saveSlot(): void {
     <Dialog :open="open" @update:open="emit('update:open', $event)">
         <DialogContent class="max-h-[90vh] max-w-lg overflow-y-auto">
             <DialogHeader>
-                <DialogTitle>{{ t('planogram-templates.slot_editor.title') }} — {{ t('planogram-templates.slot_editor.module') }}{{ moduleNumber }}, {{ t('planogram-templates.slot_editor.shelf') }}{{ shelfOrder }}</DialogTitle>
+                <DialogTitle
+                    >{{ t('planogram-templates.slot_editor.title') }} —
+                    {{ t('planogram-templates.slot_editor.module')
+                    }}{{ moduleNumber }},
+                    {{ t('planogram-templates.slot_editor.shelf')
+                    }}{{ shelfOrder }}</DialogTitle
+                >
             </DialogHeader>
 
             <div class="grid gap-4 py-2">
                 <!-- Grouping -->
-                <div class="grid gap-1.5">
-                    <Label for="slot-grouping">{{ t('planogram-templates.slot_editor.grouping_label') }} {{ t('planogram-templates.slot_editor.grouping_required') }}</Label>
-                    <Input
-                        id="slot-grouping"
-                        v-model="draft.grouping"
-                        :placeholder="t('planogram-templates.slot_editor.grouping_example')"
-                    />
-                    <p class="text-xs text-muted-foreground">{{ t('planogram-templates.slot_editor.grouping_hint') }}</p>
-                </div>
+                <RemoteAutocompleteField
+                    id="slot-grouping"
+                    v-model="draft.grouping"
+                    :label="t('planogram-templates.slot_editor.grouping_label')"
+                    :search-url="groupingSearchUrl"
+                    :placeholder="
+                        t('planogram-templates.slot_editor.grouping_example')
+                    "
+                    :hint="t('planogram-templates.slot_editor.grouping_hint')"
+                    :empty-text="'Nenhum sortiment_attribute encontrado.'"
+                    required
+                />
 
                 <!-- Categoria / Subcategoria -->
                 <div class="grid grid-cols-2 gap-3">
                     <div class="grid gap-1.5">
-                        <Label for="slot-category">{{ t('planogram-templates.slot_editor.category_label') }}</Label>
-                        <Input id="slot-category" v-model="draft.category" :placeholder="t('planogram-templates.slot_editor.category_example')" />
+                        <Label for="slot-category">{{
+                            t('planogram-templates.slot_editor.category_label')
+                        }}</Label>
+                        <Input
+                            id="slot-category"
+                            v-model="draft.category"
+                            :placeholder="
+                                t(
+                                    'planogram-templates.slot_editor.category_example',
+                                )
+                            "
+                        />
                     </div>
                     <div class="grid gap-1.5">
-                        <Label for="slot-subcategory">{{ t('planogram-templates.slot_editor.subcategory_label') }}</Label>
-                        <Input id="slot-subcategory" v-model="draft.subcategory" :placeholder="t('planogram-templates.slot_editor.subcategory_example')" />
+                        <Label for="slot-subcategory">{{
+                            t(
+                                'planogram-templates.slot_editor.subcategory_label',
+                            )
+                        }}</Label>
+                        <Input
+                            id="slot-subcategory"
+                            v-model="draft.subcategory"
+                            :placeholder="
+                                t(
+                                    'planogram-templates.slot_editor.subcategory_example',
+                                )
+                            "
+                        />
                     </div>
                 </div>
 
                 <!-- Min facings / Prioridade -->
                 <div class="grid grid-cols-2 gap-3">
                     <div class="grid gap-1.5">
-                        <Label for="slot-min-facings">{{ t('planogram-templates.slot_editor.min_facings_label') }}</Label>
+                        <Label for="slot-min-facings">{{
+                            t(
+                                'planogram-templates.slot_editor.min_facings_label',
+                            )
+                        }}</Label>
                         <Input
                             id="slot-min-facings"
                             v-model.number="draft.min_facings"
@@ -125,7 +185,9 @@ function saveSlot(): void {
                         />
                     </div>
                     <div class="grid gap-1.5">
-                        <Label for="slot-priority">{{ t('planogram-templates.slot_editor.priority_label') }}</Label>
+                        <Label for="slot-priority">{{
+                            t('planogram-templates.slot_editor.priority_label')
+                        }}</Label>
                         <Input
                             id="slot-priority"
                             v-model.number="draft.priority"
@@ -133,31 +195,69 @@ function saveSlot(): void {
                             :min="1"
                             :max="10"
                         />
-                        <p class="text-xs text-muted-foreground">{{ t('planogram-templates.slot_editor.priority_hint') }}</p>
+                        <p class="text-xs text-muted-foreground">
+                            {{
+                                t(
+                                    'planogram-templates.slot_editor.priority_hint',
+                                )
+                            }}
+                        </p>
                     </div>
                 </div>
 
                 <!-- Ordem por preço / tamanho -->
                 <div class="grid grid-cols-2 gap-3">
                     <div class="grid gap-1.5">
-                        <Label>{{ t('planogram-templates.slot_editor.price_order_label') }}</Label>
+                        <Label>{{
+                            t(
+                                'planogram-templates.slot_editor.price_order_label',
+                            )
+                        }}</Label>
                         <Select v-model="draft.price_order">
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="none">{{ t('planogram-templates.slot_editor.price_order_options.none') }}</SelectItem>
-                                <SelectItem value="asc">{{ t('planogram-templates.slot_editor.price_order_options.asc') }}</SelectItem>
-                                <SelectItem value="desc">{{ t('planogram-templates.slot_editor.price_order_options.desc') }}</SelectItem>
+                                <SelectItem value="none">{{
+                                    t(
+                                        'planogram-templates.slot_editor.price_order_options.none',
+                                    )
+                                }}</SelectItem>
+                                <SelectItem value="asc">{{
+                                    t(
+                                        'planogram-templates.slot_editor.price_order_options.asc',
+                                    )
+                                }}</SelectItem>
+                                <SelectItem value="desc">{{
+                                    t(
+                                        'planogram-templates.slot_editor.price_order_options.desc',
+                                    )
+                                }}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <div class="grid gap-1.5">
-                        <Label>{{ t('planogram-templates.slot_editor.size_order_label') }}</Label>
+                        <Label>{{
+                            t(
+                                'planogram-templates.slot_editor.size_order_label',
+                            )
+                        }}</Label>
                         <Select v-model="draft.size_order">
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="none">{{ t('planogram-templates.slot_editor.size_order_options.none') }}</SelectItem>
-                                <SelectItem value="asc">{{ t('planogram-templates.slot_editor.size_order_options.asc') }}</SelectItem>
-                                <SelectItem value="desc">{{ t('planogram-templates.slot_editor.size_order_options.desc') }}</SelectItem>
+                                <SelectItem value="none">{{
+                                    t(
+                                        'planogram-templates.slot_editor.size_order_options.none',
+                                    )
+                                }}</SelectItem>
+                                <SelectItem value="asc">{{
+                                    t(
+                                        'planogram-templates.slot_editor.size_order_options.asc',
+                                    )
+                                }}</SelectItem>
+                                <SelectItem value="desc">{{
+                                    t(
+                                        'planogram-templates.slot_editor.size_order_options.desc',
+                                    )
+                                }}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -166,24 +266,56 @@ function saveSlot(): void {
                 <!-- Exposição marca / fragrância -->
                 <div class="grid grid-cols-2 gap-3">
                     <div class="grid gap-1.5">
-                        <Label>{{ t('planogram-templates.slot_editor.brand_exposure_label') }}</Label>
+                        <Label>{{
+                            t(
+                                'planogram-templates.slot_editor.brand_exposure_label',
+                            )
+                        }}</Label>
                         <Select v-model="draft.brand_exposure">
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="vertical">{{ t('planogram-templates.slot_editor.exposure_options.vertical') }}</SelectItem>
-                                <SelectItem value="horizontal">{{ t('planogram-templates.slot_editor.exposure_options.horizontal') }}</SelectItem>
-                                <SelectItem value="mixed">{{ t('planogram-templates.slot_editor.exposure_options.mixed') }}</SelectItem>
+                                <SelectItem value="vertical">{{
+                                    t(
+                                        'planogram-templates.slot_editor.exposure_options.vertical',
+                                    )
+                                }}</SelectItem>
+                                <SelectItem value="horizontal">{{
+                                    t(
+                                        'planogram-templates.slot_editor.exposure_options.horizontal',
+                                    )
+                                }}</SelectItem>
+                                <SelectItem value="mixed">{{
+                                    t(
+                                        'planogram-templates.slot_editor.exposure_options.mixed',
+                                    )
+                                }}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <div class="grid gap-1.5">
-                        <Label>{{ t('planogram-templates.slot_editor.flavor_exposure_label') }}</Label>
+                        <Label>{{
+                            t(
+                                'planogram-templates.slot_editor.flavor_exposure_label',
+                            )
+                        }}</Label>
                         <Select v-model="draft.flavor_exposure">
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="vertical">{{ t('planogram-templates.slot_editor.exposure_options.vertical') }}</SelectItem>
-                                <SelectItem value="horizontal">{{ t('planogram-templates.slot_editor.exposure_options.horizontal') }}</SelectItem>
-                                <SelectItem value="mixed">{{ t('planogram-templates.slot_editor.exposure_options.mixed') }}</SelectItem>
+                                <SelectItem value="vertical">{{
+                                    t(
+                                        'planogram-templates.slot_editor.exposure_options.vertical',
+                                    )
+                                }}</SelectItem>
+                                <SelectItem value="horizontal">{{
+                                    t(
+                                        'planogram-templates.slot_editor.exposure_options.horizontal',
+                                    )
+                                }}</SelectItem>
+                                <SelectItem value="mixed">{{
+                                    t(
+                                        'planogram-templates.slot_editor.exposure_options.mixed',
+                                    )
+                                }}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -191,14 +323,30 @@ function saveSlot(): void {
 
                 <!-- Se faltar espaço / Estoque alvo -->
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="grid gap-1.5 w-full">
-                        <Label>{{ t('planogram-templates.slot_editor.space_fallback_label') }}</Label>
+                    <div class="grid w-full gap-1.5">
+                        <Label>{{
+                            t(
+                                'planogram-templates.slot_editor.space_fallback_label',
+                            )
+                        }}</Label>
                         <Select v-model="draft.space_fallback">
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="reduce_c">{{ t('planogram-templates.slot_editor.space_fallback_options.reduce_c') }}</SelectItem>
-                                <SelectItem value="reduce_facings">{{ t('planogram-templates.slot_editor.space_fallback_options.reduce_facings') }}</SelectItem>
-                                <SelectItem value="skip">{{ t('planogram-templates.slot_editor.space_fallback_options.skip') }}</SelectItem>
+                                <SelectItem value="reduce_c">{{
+                                    t(
+                                        'planogram-templates.slot_editor.space_fallback_options.reduce_c',
+                                    )
+                                }}</SelectItem>
+                                <SelectItem value="reduce_facings">{{
+                                    t(
+                                        'planogram-templates.slot_editor.space_fallback_options.reduce_facings',
+                                    )
+                                }}</SelectItem>
+                                <SelectItem value="skip">{{
+                                    t(
+                                        'planogram-templates.slot_editor.space_fallback_options.skip',
+                                    )
+                                }}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -208,14 +356,22 @@ function saveSlot(): void {
                             :checked="draft.use_target_stock"
                             @update:checked="draft.use_target_stock = $event"
                         />
-                        <Label for="slot-target-stock" class="cursor-pointer">{{ t('planogram-templates.slot_editor.target_stock_label') }}</Label>
+                        <Label for="slot-target-stock" class="cursor-pointer">{{
+                            t(
+                                'planogram-templates.slot_editor.target_stock_label',
+                            )
+                        }}</Label>
                     </div>
                 </div>
             </div>
 
             <DialogFooter>
-                <Button variant="ghost" @click="emit('update:open', false)">{{ t('planogram-templates.slot_editor.cancel_button') }}</Button>
-                <Button :disabled="!draft.grouping.trim()" @click="saveSlot">{{ t('planogram-templates.slot_editor.save_button') }}</Button>
+                <Button variant="ghost" @click="emit('update:open', false)">{{
+                    t('planogram-templates.slot_editor.cancel_button')
+                }}</Button>
+                <Button :disabled="!draft.grouping.trim()" @click="saveSlot">{{
+                    t('planogram-templates.slot_editor.save_button')
+                }}</Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>

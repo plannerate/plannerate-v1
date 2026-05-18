@@ -183,6 +183,56 @@ test('sync single endpoint is mocked while import system is rebuilt', function (
         ->assertSessionHas('toast.type', 'info');
 });
 
+test('tenant admin can search product sortiment attributes', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenant('tenant-sortiment-search');
+    assignTenantAdminRole($user, $tenant->id);
+
+    Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Amaciante Azul',
+        'slug' => 'amaciante-azul',
+        'status' => 'published',
+        'dimensions_status' => 'published',
+        'sortiment_attribute' => 'LIMPEZA | LAVANDERIA | AMACIANTE',
+    ]);
+
+    Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Amaciante Rosa',
+        'slug' => 'amaciante-rosa',
+        'status' => 'published',
+        'dimensions_status' => 'published',
+        'sortiment_attribute' => 'LIMPEZA | LAVANDERIA | AMACIANTE',
+    ]);
+
+    Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Detergente',
+        'slug' => 'detergente',
+        'status' => 'published',
+        'dimensions_status' => 'published',
+        'sortiment_attribute' => 'LIMPEZA | COZINHA | DETERGENTE',
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tenant-sortiment-search.'.config('app.landlord_domain')])
+        ->getJson(route('tenant.products.sortiment-attributes', [
+            'subdomain' => 'tenant-sortiment-search',
+            'search' => 'amaci',
+        ], false));
+
+    $response
+        ->assertOk()
+        ->assertExactJson([
+            'data' => [
+                'LIMPEZA | LAVANDERIA | AMACIANTE',
+            ],
+        ]);
+});
+
 test('product index trashed filter scopes soft deleted records', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);
