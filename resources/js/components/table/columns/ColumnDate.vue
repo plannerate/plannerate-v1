@@ -10,11 +10,18 @@ const props = defineProps<{
 
 function formatDate(value: string | null | undefined): string {
     if (!value) {
-return '-';
-}
+        return '-';
+    }
+
+    const normalized = value.includes('T') ? value : value.replace(' ', 'T');
+    const parsed = new Date(normalized);
+
+    if (Number.isNaN(parsed.getTime())) {
+        return '-';
+    }
 
     return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(
-        new Date(value + 'T00:00:00'),
+        parsed,
     );
 }
 
