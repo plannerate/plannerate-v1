@@ -5,13 +5,13 @@ import { computed, ref } from 'vue';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
 import ProductSearchPanel from '@/components/planogram-templates/ProductSearchPanel.vue';
 import TemplateProductTable from '@/components/planogram-templates/TemplateProductTable.vue';
-import WizardProgress from '@/components/planogram-templates/WizardProgress.vue';
 import type {
     GroupingOption,
     PlanogramTemplateProduct,
     ProductSearchResult,
     WizardStep,
 } from '@/components/planogram-templates/types';
+import WizardProgress from '@/components/planogram-templates/WizardProgress.vue';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -40,27 +40,44 @@ const { t } = useT();
 // ── URL helpers ────────────────────────────────────────────────────────────────
 const baseUrl = computed(() =>
     PlanogramTemplateController.show
-        .url({ subdomain: props.subdomain, planogramTemplate: props.template.id })
+        .url({
+            subdomain: props.subdomain,
+            planogramTemplate: props.template.id,
+        })
         .replace(/^\/\/[^/]+/, ''),
 );
-const indexPath = PlanogramTemplateController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const indexPath = PlanogramTemplateController.index
+    .url(props.subdomain)
+    .replace(/^\/\/[^/]+/, '');
 const editPath = computed(() =>
     PlanogramTemplateController.edit
-        .url({ subdomain: props.subdomain, planogramTemplate: props.template.id })
+        .url({
+            subdomain: props.subdomain,
+            planogramTemplate: props.template.id,
+        })
         .replace(/^\/\/[^/]+/, ''),
 );
 const slotsPath = computed(() => `${baseUrl.value}/slots`);
 
 // ── Wizard ─────────────────────────────────────────────────────────────────────
 const wizardSteps: WizardStep[] = [
-    { step: 1, label: 'Dados básicos', description: 'Código, nome e departamento' },
+    {
+        step: 1,
+        label: 'Dados básicos',
+        description: 'Código, nome e departamento',
+    },
     { step: 2, label: 'Slots', description: 'Grade de gôndola' },
     { step: 3, label: 'Produtos', description: 'Mix do template' },
 ];
 
 function navigateWizard(step: 1 | 2 | 3): void {
-    if (step === 1) router.visit(editPath.value);
-    if (step === 2) router.visit(slotsPath.value);
+    if (step === 1) {
+        router.visit(editPath.value);
+    }
+
+    if (step === 2) {
+        router.visit(slotsPath.value);
+    }
 }
 
 // ── Search ─────────────────────────────────────────────────────────────────────
@@ -74,25 +91,34 @@ function doSearch(groupingId: string | null): void {
         {
             preserveState: true,
             only: ['searchResults'],
-            onFinish: () => { searching.value = false; },
+            onFinish: () => {
+                searching.value = false;
+            },
         },
     );
 }
 
 // ── Product operations ─────────────────────────────────────────────────────────
-function addProducts(items: Array<{ product: ProductSearchResult; grouping: string }>): void {
+function addProducts(
+    items: Array<{ product: ProductSearchResult; grouping: string }>,
+): void {
     router.post(
         `${baseUrl.value}/products`,
-        { items: items.map((i) => ({
-            ean: i.product.ean,
-            grouping: i.grouping,
-            sortiment_attribute: i.product.sortiment_attribute ?? null,
-        })) },
+        {
+            items: items.map((i) => ({
+                ean: i.product.ean,
+                grouping: i.grouping,
+                sortiment_attribute: i.product.sortiment_attribute ?? null,
+            })),
+        },
         { preserveState: true, only: ['products'] },
     );
 }
 
-function updateGrouping(product: PlanogramTemplateProduct, grouping: string): void {
+function updateGrouping(
+    product: PlanogramTemplateProduct,
+    grouping: string,
+): void {
     router.put(
         `${baseUrl.value}/products/${product.id}`,
         { grouping },
@@ -101,7 +127,10 @@ function updateGrouping(product: PlanogramTemplateProduct, grouping: string): vo
 }
 
 function removeProduct(product: PlanogramTemplateProduct): void {
-    if (!confirm('Remover este produto do template?')) return;
+    if (!confirm('Remover este produto do template?')) {
+        return;
+    }
+
     router.delete(`${baseUrl.value}/products/${product.id}`, {
         preserveState: true,
         only: ['products'],
@@ -122,7 +151,10 @@ function downloadTemplate(): void {
 
 // ── Breadcrumbs ────────────────────────────────────────────────────────────────
 const breadcrumbs = [
-    { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
+    {
+        title: t('app.navigation.dashboard'),
+        href: dashboard.url().replace(/^\/\/[^/]+/, ''),
+    },
     { title: t('app.tenant.planogram_templates.navigation'), href: indexPath },
     { title: props.template.code, href: editPath.value },
     { title: 'Produtos', href: '#' },
@@ -132,25 +164,35 @@ const breadcrumbs = [
 <template>
     <Head :title="`Produtos — ${template.code}`" />
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="space-y-6 p-6">
+        <div class="space-y-3 p-4 lg:p-5">
             <!-- Wizard progress -->
-            <div class="mx-auto max-w-3xl">
-                <WizardProgress :current-step="3" :steps="wizardSteps" @navigate="navigateWizard" />
+            <div class="max-w-3xl">
+                <WizardProgress
+                    :current-step="3"
+                    :steps="wizardSteps"
+                    @navigate="navigateWizard"
+                />
             </div>
 
             <!-- Header -->
-            <div>
-                <h1 class="text-xl font-semibold">{{ template.name }}</h1>
-                <p class="text-sm text-muted-foreground">
-                    Etapa 3 — adicione produtos ao mix do template
-                </p>
+            <div class="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <h1 class="text-xl font-semibold">{{ template.name }}</h1>
+                    <p class="text-sm text-muted-foreground">
+                        Etapa 3 — adicione produtos ao mix do template
+                    </p>
+                </div>
             </div>
 
             <!-- Two-panel layout -->
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-[22rem_1fr]">
+            <div
+                class="grid min-h-0 grid-cols-1 items-start gap-4 lg:grid-cols-[21rem_1fr]"
+            >
                 <!-- Left: search -->
-                <div class="rounded-xl border border-border bg-card p-4">
-                    <h2 class="mb-3 text-sm font-semibold">Busca manual</h2>
+                <div
+                    class="min-w-0 rounded-lg border border-border bg-card p-3"
+                >
+                    <h2 class="mb-2 text-sm font-semibold">Busca manual</h2>
                     <ProductSearchPanel
                         :search-results="searchResults ?? []"
                         :searching="searching"
@@ -162,8 +204,12 @@ const breadcrumbs = [
                 </div>
 
                 <!-- Right: products table -->
-                <div class="rounded-xl border border-border bg-card p-4">
-                    <h2 class="mb-3 text-sm font-semibold">Produtos do template</h2>
+                <div
+                    class="min-w-0 rounded-lg border border-border bg-card p-3"
+                >
+                    <h2 class="mb-2 text-sm font-semibold">
+                        Produtos do template
+                    </h2>
                     <TemplateProductTable
                         :products="products"
                         :available-groupings="availableGroupings"
@@ -176,12 +222,12 @@ const breadcrumbs = [
             </div>
 
             <!-- Navigation -->
-            <div class="flex justify-between pt-2">
-                <Button variant="outline" :as="'a'" :href="slotsPath">
+            <div class="flex justify-between pt-1">
+                <Button variant="outline" size="sm" :as="'a'" :href="slotsPath">
                     <ChevronLeft class="size-4" />
                     Voltar — Slots
                 </Button>
-                <Button variant="outline" :as="'a'" :href="indexPath">
+                <Button variant="outline" size="sm" :as="'a'" :href="indexPath">
                     Finalizar e sair
                 </Button>
             </div>
