@@ -76,6 +76,8 @@ const reviewPath = computed(() =>
 const pendingSlotAction = ref<PendingSlotAction | null>(null);
 const confirmDialogOpen = ref(false);
 const confirmDialogBusy = ref(false);
+const cloneInProgress = ref(false);
+const highlightNewModule = ref<number | undefined>(undefined);
 
 const confirmDialogContent = computed(() => {
     if (pendingSlotAction.value?.type === 'remove') {
@@ -140,8 +142,45 @@ const currentSubtemplate = computed(
 const subtemplateExists = (n: number): boolean =>
     props.subtemplates.some((s) => s.num_modules === n);
 
+function largestSubtemplateBelow(targetModules: number): PlanogramSubtemplate | null {
+    return (
+        props.subtemplates
+            .filter((s) => s.num_modules < targetModules)
+            .sort((a, b) => b.num_modules - a.num_modules)[0] ?? null
+    );
+}
+
 function selectModules(n: number): void {
     currentModules.value = n;
+    if (subtemplateExists(n)) {
+        highlightNewModule.value = undefined;
+    }
+}
+
+function createEmptySubtemplate(n: number): void {
+    router.post(
+        `${baseUrl.value}/subtemplates`,
+        { num_modules: n },
+        { preserveState: true, only: ['subtemplates'] },
+    );
+}
+
+function cloneSubtemplate(source: PlanogramSubtemplate, targetModules: number): void {
+    cloneInProgress.value = true;
+    router.post(
+        `${baseUrl.value}/subtemplates/${source.id}/clone`,
+        { target_modules: targetModules },
+        {
+            preserveState: true,
+            only: ['subtemplates'],
+            onSuccess: () => {
+                highlightNewModule.value = source.num_modules + 1;
+            },
+            onFinish: () => {
+                cloneInProgress.value = false;
+            },
+        },
+    );
 }
 
 // ── Shelf count ────────────────────────────────────────────────────────────────
@@ -463,10 +502,44 @@ const breadcrumbs = [
                 />
             </div>
 
+            <!-- New subtemplate options when no subtemplate exists for selected module count -->
+            <div
+                v-if="!subtemplateExists(currentModules)"
+                class="rounded-lg border border-dashed border-border bg-muted/30 p-6"
+            >
+                <p class="mb-4 text-sm text-muted-foreground">
+                    Nenhum subtemplate configurado para
+                    <strong>{{ currentModules }} módulo{{ currentModules > 1 ? 's' : '' }}</strong>.
+                    Como deseja criar?
+                </p>
+                <div class="flex flex-wrap gap-3">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        @click="createEmptySubtemplate(currentModules)"
+                    >
+                        Criar do zero
+                    </Button>
+                    <Button
+                        v-if="largestSubtemplateBelow(currentModules)"
+                        size="sm"
+                        :disabled="cloneInProgress"
+                        @click="cloneSubtemplate(largestSubtemplateBelow(currentModules)!, currentModules)"
+                    >
+                        Copiar de {{ largestSubtemplateBelow(currentModules)!.num_modules }} módulos
+                        <span class="ml-1 opacity-70 text-xs">
+                            ({{ largestSubtemplateBelow(currentModules)!.slots.length }} slots)
+                        </span>
+                    </Button>
+                </div>
+            </div>
+
             <GondolaGrid
+                v-else
                 :slots="currentSubtemplate?.slots ?? []"
                 :num-modules="currentModules"
                 :num-shelves="numShelves"
+                :highlight-new-module="highlightNewModule"
                 @cell-click="openSlotEditor"
                 @slot-remove="removeSlot"
                 @slot-drop="handleSlotDrop"

@@ -312,6 +312,8 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('planogram-templates.slots.review');
         Route::post('planogram-templates/{planogramTemplate}/subtemplates', [TemplateSlotController::class, 'createSubtemplate'])
             ->name('planogram-templates.subtemplates.store');
+        Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/clone', [TemplateSlotController::class, 'cloneSubtemplate'])
+            ->name('planogram-templates.subtemplates.clone');
         Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots', [TemplateSlotController::class, 'storeSlot'])
             ->name('planogram-templates.slots.store');
         Route::post('planogram-templates/{planogramTemplate}/slots/reorder', [TemplateSlotController::class, 'reorder'])

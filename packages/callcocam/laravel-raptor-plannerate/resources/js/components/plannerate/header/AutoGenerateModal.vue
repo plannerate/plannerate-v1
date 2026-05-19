@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { Info, Loader2, Sparkles } from 'lucide-vue-next';
+import { Check, ChevronsUpDown, Info, Loader2, Search, Sparkles } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import AdvancedOptionsSection from '@/components/plannerate/header/partials/AdvancedOptionsSection.vue';
 import FacingsSettingsSection from '@/components/plannerate/header/partials/FacingsSettingsSection.vue';
@@ -16,8 +16,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useT } from '@/composables/useT';
 
 interface StrategyOption {
@@ -29,7 +30,7 @@ interface StrategyOption {
 interface TemplateOption {
     value: string;
     label: string;
-    description: string;
+    description?: string;
 }
 
 const props = defineProps<{
@@ -48,8 +49,6 @@ const emit = defineEmits<{
 
 const { t } = useT();
 
-const mode = ref<'automatic' | 'template'>('automatic');
-
 const form = useForm({
     strategy: 'abc' as 'abc' | 'sales' | 'margin' | 'mix',
     use_existing_analysis: false,
@@ -65,15 +64,61 @@ const form = useForm({
 });
 
 const hasTemplates = computed(() => (props.planogramTemplates?.length ?? 0) > 0);
+const mode = ref<'automatic' | 'template'>(hasTemplates.value ? 'template' : 'automatic');
+const templateComboboxOpen = ref(false);
+const templateSearch = ref('');
+const normalizedTemplates = computed(() =>
+    (props.planogramTemplates ?? [])
+        .filter((template) => !!template?.value)
+        .map((template) => ({
+            value: template.value,
+            label: template.label?.trim() || 'Template sem nome',
+            description: template.description?.trim() || 'Sem departamento informado',
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
+);
+const filteredTemplates = computed(() => {
+    const search = templateSearch.value.trim().toLocaleLowerCase('pt-BR');
+
+    if (!search) {
+        return normalizedTemplates.value;
+    }
+
+    return normalizedTemplates.value.filter((template) => {
+        const haystack = `${template.label} ${template.description}`.toLocaleLowerCase('pt-BR');
+
+        return haystack.includes(search);
+    });
+});
+const selectedTemplate = computed(() => normalizedTemplates.value.find((template) => template.value === form.template_id) ?? null);
 
 watch(
     () => [props.startDate, props.endDate, props.categoryId] as const,
     ([newStart, newEnd, newCategoryId]) => {
-        if (newStart) form.start_date = newStart;
-        if (newEnd) form.end_date = newEnd;
+        if (newStart) {
+            form.start_date = newStart;
+        }
+
+        if (newEnd) {
+            form.end_date = newEnd;
+        }
+
         form.category_id = newCategoryId ?? null;
     },
 );
+
+watch(hasTemplates, (templatesAvailable) => {
+    if (!templatesAvailable) {
+        mode.value = 'automatic';
+        form.template_id = null;
+
+        return;
+    }
+
+    if (!form.template_id && mode.value === 'automatic') {
+        mode.value = 'template';
+    }
+});
 
 watch(mode, (newMode) => {
     if (newMode === 'automatic') {
@@ -85,20 +130,26 @@ const isFormValid = computed(() => {
     if (!form.use_existing_analysis) {
         return !!(form.start_date && form.end_date && form.start_date <= form.end_date);
     }
+
     if (mode.value === 'template') {
         return !!form.template_id;
     }
+
     return true;
 });
 
 function handleClose() {
     emit('update:open', false);
     form.reset();
-    mode.value = 'automatic';
+    templateComboboxOpen.value = false;
+    templateSearch.value = '';
+    mode.value = hasTemplates.value ? 'template' : 'automatic';
 }
 
 function handleGenerate() {
-    if (!isFormValid.value) return;
+    if (!isFormValid.value) {
+        return;
+    }
 
     form.post(`/api/gondolas/${props.gondolaId}/auto-generate`, {
         preserveScroll: true,
@@ -114,6 +165,11 @@ function handleGenerate() {
             );
         },
     });
+}
+
+function selectTemplate(templateId: string): void {
+    form.template_id = templateId;
+    templateComboboxOpen.value = false;
 }
 </script>
 
@@ -136,18 +192,18 @@ function handleGenerate() {
                     <button
                         type="button"
                         class="flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-                        :class="mode === 'automatic' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'"
-                        @click="mode = 'automatic'"
-                    >
-                        Automático
-                    </button>
-                    <button
-                        type="button"
-                        class="flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors"
                         :class="mode === 'template' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'"
                         @click="mode = 'template'"
                     >
                         Por Template
+                    </button>
+                    <button
+                        type="button"
+                        class="flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+                        :class="mode === 'automatic' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'"
+                        @click="mode = 'automatic'"
+                    >
+                        Automático
                     </button>
                 </div>
 
@@ -155,23 +211,58 @@ function handleGenerate() {
                 <template v-if="mode === 'template'">
                     <div class="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950">
                         <Label class="text-sm font-medium text-amber-900 dark:text-amber-100">Template de Planograma</Label>
-                        <Select v-model="form.template_id">
-                            <SelectTrigger class="bg-background">
-                                <SelectValue placeholder="Selecione um template..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="tpl in planogramTemplates"
-                                    :key="tpl.value"
-                                    :value="tpl.value"
+                        <Popover v-model:open="templateComboboxOpen">
+                            <PopoverTrigger as-child>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    role="combobox"
+                                    :aria-expanded="templateComboboxOpen"
+                                    class="w-full justify-between bg-background font-normal"
                                 >
-                                    <div class="flex flex-col">
-                                        <span class="font-medium">{{ tpl.label }}</span>
-                                        <span class="text-xs text-muted-foreground">{{ tpl.description }}</span>
+                                    <span class="truncate">
+                                        {{ selectedTemplate?.label ?? 'Selecione um template para gerar...' }}
+                                    </span>
+                                    <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-60" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent class="w-[var(--reka-popover-trigger-width)] p-2">
+                                <div class="relative">
+                                    <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        v-model="templateSearch"
+                                        class="pl-9"
+                                        placeholder="Buscar template por nome/departamento..."
+                                    />
+                                </div>
+                                <div class="mt-2 max-h-56 overflow-y-auto rounded-md border bg-background">
+                                    <button
+                                        v-for="tpl in filteredTemplates"
+                                        :key="tpl.value"
+                                        type="button"
+                                        class="flex w-full items-start justify-between gap-2 border-b px-3 py-2 text-left last:border-b-0 hover:bg-muted/50"
+                                        :class="form.template_id === tpl.value ? 'bg-muted/70' : ''"
+                                        @click="selectTemplate(tpl.value)"
+                                    >
+                                        <span class="flex min-w-0 flex-col">
+                                            <span class="truncate text-sm font-medium">{{ tpl.label }}</span>
+                                            <span class="truncate text-xs text-muted-foreground">{{ tpl.description }}</span>
+                                        </span>
+                                        <Check v-if="form.template_id === tpl.value" class="mt-0.5 size-4 shrink-0 text-primary" />
+                                    </button>
+                                    <div
+                                        v-if="filteredTemplates.length === 0"
+                                        class="px-3 py-4 text-center text-sm text-muted-foreground"
+                                    >
+                                        Nenhum template encontrado.
                                     </div>
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                        <div v-if="selectedTemplate" class="rounded-md border bg-background/70 p-3 text-xs">
+                            <p class="font-medium text-foreground">{{ selectedTemplate.label }}</p>
+                            <p class="text-muted-foreground">{{ selectedTemplate.description }}</p>
+                        </div>
                         <p class="text-xs text-amber-700 dark:text-amber-300">
                             O subtemplate com o número de módulos mais próximo da gôndola será usado automaticamente.
                         </p>

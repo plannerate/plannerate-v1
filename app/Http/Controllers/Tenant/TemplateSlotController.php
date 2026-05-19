@@ -110,6 +110,27 @@ class TemplateSlotController extends Controller
         ]);
     }
 
+    public function cloneSubtemplate(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
+    {
+        unset($subdomain);
+        $this->authorize('update', $planogramTemplate);
+
+        $validated = $request->validate([
+            'target_modules' => ['required', 'integer', 'min:'.($planogramSubtemplate->num_modules + 1), 'max:20'],
+        ]);
+
+        if ($planogramTemplate->subtemplates()->where('num_modules', $validated['target_modules'])->exists()) {
+            return back()->withErrors(['target_modules' => "Já existe um subtemplate com {$validated['target_modules']} módulos para este template."]);
+        }
+
+        $planogramSubtemplate->cloneWithSlots($validated['target_modules']);
+
+        return redirect()->route('tenant.planogram-templates.slots.index', [
+            'subdomain' => $this->tenantSubdomain(),
+            'planogramTemplate' => $planogramTemplate->id,
+        ]);
+    }
+
     public function storeSlot(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
     {
         unset($subdomain);

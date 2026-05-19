@@ -10,6 +10,8 @@ final class TemplateImportReport
 
     public int $slotsCreated = 0;
 
+    public int $slotsUpdated = 0;
+
     /** @var list<string> */
     public array $errors = [];
 

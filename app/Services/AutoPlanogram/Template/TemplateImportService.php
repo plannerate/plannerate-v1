@@ -6,14 +6,13 @@ use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplate;
 use App\Models\PlanogramTemplateSlot;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 final class TemplateImportService
 {
-    public function __construct(private readonly TemplateSlotService $templateSlotService)
-    {
-    }
+    public function __construct(private readonly TemplateSlotService $templateSlotService) {}
 
     public function import(string $filePath, string $tenantId): TemplateImportReport
     {
@@ -90,40 +89,66 @@ final class TemplateImportService
 
                 $report->subtemplatesCreated++;
 
-                // Delete existing slots for this subtemplate to re-import cleanly
-                PlanogramTemplateSlot::withoutGlobalScopes()
+                $existingSlotCount = PlanogramTemplateSlot::withoutGlobalScopes()
                     ->where('subtemplate_id', $subtemplate->getKey())
-                    ->delete();
+                    ->count();
 
                 $slotOrdering = 1;
+                $slotsCreatedForSub = 0;
+                $slotsUpdatedForSub = 0;
+
                 foreach ($slots as $row) {
                     $grouping = trim((string) ($row['I'] ?? ''));
                     if ($grouping === '') {
                         continue;
                     }
 
-                    PlanogramTemplateSlot::create([
-                        'tenant_id' => $tenantId,
-                        'subtemplate_id' => $subtemplate->getKey(),
-                        'module_number' => (int) ($row['E'] ?? 1),
-                        'shelf_order' => (int) ($row['F'] ?? 1),
-                        'category' => trim((string) ($row['G'] ?? '')),
-                        'subcategory' => trim((string) ($row['H'] ?? '')),
-                        'grouping' => $grouping,
-                        'grouping_normalized' => $this->templateSlotService->normalizeGrouping($grouping),
-                        'min_facings' => max(1, (int) ($row['J'] ?? 1)),
-                        'price_order' => $this->parsePriceOrder((string) ($row['K'] ?? '')),
-                        'size_order' => $this->parseSizeOrder((string) ($row['L'] ?? '')),
-                        'brand_exposure' => $this->parseBrandExposure((string) ($row['M'] ?? '')),
-                        'flavor_exposure' => $this->parseFlavorExposure((string) ($row['N'] ?? '')),
-                        'space_fallback' => $this->parseSpaceFallback((string) ($row['O'] ?? '')),
-                        'use_target_stock' => $this->parseBoolean((string) ($row['P'] ?? '')),
-                        'ordering' => $slotOrdering++,
-                        'priority' => 1,
-                    ]);
+                    $moduleNumber = (int) ($row['E'] ?? 1);
+                    $shelfOrder = (int) ($row['F'] ?? 1);
 
-                    $report->slotsCreated++;
+                    $slot = PlanogramTemplateSlot::withoutGlobalScopes()->updateOrCreate(
+                        [
+                            'subtemplate_id' => $subtemplate->getKey(),
+                            'module_number' => $moduleNumber,
+                            'shelf_order' => $shelfOrder,
+                        ],
+                        [
+                            'tenant_id' => $tenantId,
+                            'category' => trim((string) ($row['G'] ?? '')),
+                            'subcategory' => trim((string) ($row['H'] ?? '')),
+                            'grouping' => $grouping,
+                            'grouping_normalized' => $this->templateSlotService->normalizeGrouping($grouping),
+                            'min_facings' => max(1, (int) ($row['J'] ?? 1)),
+                            'price_order' => $this->parsePriceOrder((string) ($row['K'] ?? '')),
+                            'size_order' => $this->parseSizeOrder((string) ($row['L'] ?? '')),
+                            'brand_exposure' => $this->parseBrandExposure((string) ($row['M'] ?? '')),
+                            'flavor_exposure' => $this->parseFlavorExposure((string) ($row['N'] ?? '')),
+                            'space_fallback' => $this->parseSpaceFallback((string) ($row['O'] ?? '')),
+                            'use_target_stock' => $this->parseBoolean((string) ($row['P'] ?? '')),
+                            'ordering' => $slotOrdering,
+                            'priority' => 1,
+                        ],
+                    );
+
+                    if ($slot->wasRecentlyCreated) {
+                        $slotsCreatedForSub++;
+                        $report->slotsCreated++;
+                    } else {
+                        $slotsUpdatedForSub++;
+                        $report->slotsUpdated++;
+                    }
+
+                    $slotOrdering++;
                 }
+
+                $slotsPreserved = max(0, $existingSlotCount - $slotsUpdatedForSub);
+
+                Log::info('TemplateImportService: slots processados', [
+                    'subtemplate_code' => $subtemplate->code,
+                    'slots_criados' => $slotsCreatedForSub,
+                    'slots_atualizados' => $slotsUpdatedForSub,
+                    'slots_preservados' => $slotsPreserved,
+                ]);
             }
         }
     }

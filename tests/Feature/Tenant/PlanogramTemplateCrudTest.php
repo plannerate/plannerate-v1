@@ -468,6 +468,147 @@ test('slot analysis endpoint returns placement summary and row reasons', functio
         ->assertJsonPath('data.summary.rejected_products', 1);
 });
 
+test('reimport do mesmo Excel faz upsert — não apaga slots existentes', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForTemplates('tpl-reimport');
+    assignTenantAdminRoleForTemplates($user, $tenant->id);
+
+    $xlsxPath = createMinimalTemplateSpreadsheet();
+
+    $uploadFile = fn () => new UploadedFile($xlsxPath, 'templates.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+    $this->withServerVariables(['HTTP_HOST' => 'tpl-reimport.'.config('app.landlord_domain')])
+        ->post(route('tenant.planogram-templates.import', ['subdomain' => 'tpl-reimport'], false), ['file' => $uploadFile()]);
+
+    $subtemplate = PlanogramSubtemplate::withoutGlobalScopes()
+        ->where('tenant_id', $tenant->id)
+        ->firstOrFail();
+
+    $slotIdBefore = $subtemplate->slots()->first()->id;
+
+    $this->withServerVariables(['HTTP_HOST' => 'tpl-reimport.'.config('app.landlord_domain')])
+        ->post(route('tenant.planogram-templates.import', ['subdomain' => 'tpl-reimport'], false), ['file' => $uploadFile()]);
+
+    $slotIdAfter = PlanogramTemplateSlot::withoutGlobalScopes()
+        ->where('subtemplate_id', $subtemplate->id)
+        ->orderBy('ordering')
+        ->first()->id;
+
+    expect($slotIdAfter)->toBe($slotIdBefore);
+    expect(PlanogramTemplateSlot::withoutGlobalScopes()->where('subtemplate_id', $subtemplate->id)->count())->toBe(2);
+});
+
+test('tenant admin pode clonar subtemplate para mais módulos', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForTemplates('tpl-clone');
+    assignTenantAdminRoleForTemplates($user, $tenant->id);
+
+    $template = PlanogramTemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'code' => 'CLONE-01',
+        'name' => 'CLONE-01',
+        'department' => 'TEST',
+        'is_active' => true,
+    ]);
+
+    $subtemplate = PlanogramSubtemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'template_id' => $template->id,
+        'code' => 'CLONE-01-2M',
+        'num_modules' => 2,
+        'is_active' => true,
+    ]);
+
+    PlanogramTemplateSlot::query()->create([
+        'tenant_id' => $tenant->id,
+        'subtemplate_id' => $subtemplate->id,
+        'module_number' => 1,
+        'shelf_order' => 1,
+        'grouping' => 'AMACIANTE',
+        'grouping_normalized' => 'amaciante',
+        'min_facings' => 2,
+        'priority' => 1,
+        'price_order' => 'none',
+        'size_order' => 'none',
+        'brand_exposure' => 'mixed',
+        'flavor_exposure' => 'mixed',
+        'space_fallback' => 'skip',
+        'use_target_stock' => false,
+        'ordering' => 1,
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-clone.'.config('app.landlord_domain')])
+        ->post(
+            route('tenant.planogram-templates.subtemplates.clone', [
+                'subdomain' => 'tpl-clone',
+                'planogramTemplate' => $template->id,
+                'planogramSubtemplate' => $subtemplate->id,
+            ], false),
+            ['target_modules' => 3],
+        );
+
+    $response->assertRedirect(route('tenant.planogram-templates.slots.index', ['subdomain' => 'tpl-clone', 'planogramTemplate' => $template->id], false));
+
+    $clone = PlanogramSubtemplate::withoutGlobalScopes()
+        ->where('tenant_id', $tenant->id)
+        ->where('num_modules', 3)
+        ->firstOrFail();
+
+    expect($clone->code)->toBe('CLONE-01-2M-3M');
+    expect(PlanogramTemplateSlot::withoutGlobalScopes()->where('subtemplate_id', $clone->id)->count())->toBe(1);
+});
+
+test('clonar subtemplate para módulos já existente retorna erro de validação', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForTemplates('tpl-clone-dup');
+    assignTenantAdminRoleForTemplates($user, $tenant->id);
+
+    $template = PlanogramTemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'code' => 'CLONE-DUP',
+        'name' => 'CLONE-DUP',
+        'department' => 'TEST',
+        'is_active' => true,
+    ]);
+
+    $sub2 = PlanogramSubtemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'template_id' => $template->id,
+        'code' => 'DUP-2M',
+        'num_modules' => 2,
+        'is_active' => true,
+    ]);
+
+    PlanogramSubtemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'template_id' => $template->id,
+        'code' => 'DUP-3M',
+        'num_modules' => 3,
+        'is_active' => true,
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-clone-dup.'.config('app.landlord_domain')])
+        ->from(route('tenant.planogram-templates.slots.index', ['subdomain' => 'tpl-clone-dup', 'planogramTemplate' => $template->id], false))
+        ->post(
+            route('tenant.planogram-templates.subtemplates.clone', [
+                'subdomain' => 'tpl-clone-dup',
+                'planogramTemplate' => $template->id,
+                'planogramSubtemplate' => $sub2->id,
+            ], false),
+            ['target_modules' => 3],
+        );
+
+    $response->assertSessionHasErrors(['target_modules']);
+});
+
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function makeTenantForTemplates(string $subdomain): Tenant

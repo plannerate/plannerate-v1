@@ -12,6 +12,7 @@ const props = defineProps<{
     slots: PlanogramTemplateSlot[];
     numModules: number;
     numShelves: number;
+    highlightNewModule?: number;
 }>();
 
 const emit = defineEmits<{
@@ -116,7 +117,8 @@ function isDragOver(module: number, shelf: number): boolean {
                     class="relative min-h-20 border-b border-r border-border p-1 transition-colors last:border-r-0"
                     :class="{
                         'bg-blue-50 ring-2 ring-inset ring-blue-400': isDragOver(m, shelf),
-                        'bg-background': !isDragOver(m, shelf) && !getSlot(m, shelf),
+                        'bg-amber-50/40': !isDragOver(m, shelf) && !getSlot(m, shelf) && props.highlightNewModule !== undefined && m >= props.highlightNewModule,
+                        'bg-background': !isDragOver(m, shelf) && !getSlot(m, shelf) && !(props.highlightNewModule !== undefined && m >= props.highlightNewModule),
                     }"
                     @dragover.prevent="onDragOver(m, shelf)"
                     @dragleave="onDragLeave"
@@ -135,7 +137,10 @@ function isDragOver(module: number, shelf: number): boolean {
                     <button
                         v-else
                         type="button"
-                        class="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1 rounded border border-dashed border-border text-xs text-muted-foreground/50 transition hover:border-muted-foreground/40 hover:bg-muted/30 hover:text-muted-foreground"
+                        class="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1 rounded border border-dashed text-xs transition"
+                        :class="props.highlightNewModule !== undefined && m >= props.highlightNewModule
+                            ? 'border-amber-400 text-amber-500/70 hover:border-amber-500 hover:bg-amber-50/50 hover:text-amber-600'
+                            : 'border-border text-muted-foreground/50 hover:border-muted-foreground/40 hover:bg-muted/30 hover:text-muted-foreground'"
                         @click="emit('cell-click', m, shelf, null)"
                     >
                         <Plus class="size-3.5" />
