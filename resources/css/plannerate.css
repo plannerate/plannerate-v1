@@ -4,9 +4,9 @@
 .btn-gradient,
 .btn-plannerate,
 [data-slot="button"].btn-gradient {
-  background: linear-gradient(135deg, #1e293b, #a8ff3e) !important;
+  background: linear-gradient(135deg, #1f2937, #6fa23a) !important;
   color: white !important;
-  border: 1px solid rgb(148 163 184 / 75%) !important;
+  border: 1px solid rgb(100 116 139 / 75%) !important;
   box-shadow: 0 2px 8px rgb(30 41 59 / 25%);
 }
 .btn-gradient:hover,
@@ -27,12 +27,12 @@
 
 /* Variante outline */
 [data-slot="button"][data-variant="outline"].btn-gradient {
-  background: linear-gradient(135deg, transparent, #78c82d) !important;
-  color: #78c82d !important;
-  border: 1px solid #78c82d !important;
+  background: linear-gradient(135deg, transparent, #6fa23a) !important;
+  color: #5b8531 !important;
+  border: 1px solid #5b8531 !important;
 }
 [data-slot="button"][data-variant="outline"].btn-gradient:hover {
-  background: linear-gradient(135deg, #78c82d, #a8ff3e) !important;
+  background: linear-gradient(135deg, #5b8531, #7bb347) !important;
   color: white !important;
 }
 

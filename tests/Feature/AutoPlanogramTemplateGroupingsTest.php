@@ -6,17 +6,86 @@ use App\Models\Planogram;
 use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplate;
 use App\Models\PlanogramTemplateSlot;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 beforeEach(function (): void {
-    Artisan::call('migrate:fresh', [
-        '--database' => 'tenant',
-        '--path' => 'database/migrations',
-        '--force' => true,
-        '--no-interaction' => true,
-    ]);
+    Schema::connection('tenant')->dropAllTables();
+
+    Schema::connection('tenant')->create('planograms', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26)->nullable();
+        $table->string('template_id')->nullable();
+        $table->string('name')->nullable();
+        $table->string('slug');
+        $table->string('type')->default('planograma');
+        $table->string('status')->default('draft');
+        $table->timestamps();
+        $table->softDeletes();
+    });
+
+    Schema::connection('tenant')->create('gondolas', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26)->nullable();
+        $table->char('planogram_id', 26)->nullable();
+        $table->char('template_id', 26)->nullable();
+        $table->string('name');
+        $table->string('slug')->nullable();
+        $table->unsignedTinyInteger('num_modulos')->default(1);
+        $table->enum('flow', ['left_to_right', 'right_to_left'])->default('left_to_right');
+        $table->enum('alignment', ['left', 'right', 'center', 'justify'])->default('justify');
+        $table->float('scale_factor')->default(1);
+        $table->enum('status', ['draft', 'published'])->default('draft');
+        $table->timestamps();
+        $table->softDeletes();
+    });
+
+    Schema::connection('tenant')->create('sections', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('gondola_id', 26);
+        $table->softDeletes();
+    });
+
+    Schema::connection('tenant')->create('planogram_templates', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26);
+        $table->string('code');
+        $table->string('name');
+        $table->string('department');
+        $table->boolean('is_active')->default(true);
+        $table->timestamps();
+        $table->softDeletes();
+    });
+
+    Schema::connection('tenant')->create('planogram_subtemplates', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26);
+        $table->char('template_id', 26);
+        $table->string('code');
+        $table->unsignedTinyInteger('num_modules');
+        $table->boolean('is_active')->default(true);
+        $table->timestamps();
+        $table->softDeletes();
+    });
+
+    Schema::connection('tenant')->create('planogram_template_slots', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26);
+        $table->char('subtemplate_id', 26);
+        $table->unsignedTinyInteger('module_number');
+        $table->unsignedTinyInteger('shelf_order');
+        $table->string('category');
+        $table->string('subcategory');
+        $table->string('grouping');
+        $table->string('grouping_normalized')->nullable();
+        $table->unsignedTinyInteger('min_facings')->default(1);
+        $table->unsignedTinyInteger('priority')->default(1);
+        $table->unsignedTinyInteger('ordering')->default(1);
+        $table->timestamps();
+        $table->softDeletes();
+    });
 });
 
 function makeAutoPlanogramControllerForTemplateGroupingTest(): AutoPlanogramController

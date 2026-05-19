@@ -8,6 +8,23 @@
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" class="w-56 z-[9999]">
+            <DropdownMenuItem @click="props.onAddModule?.()">
+                <Plus class="mr-2 size-4" />
+                {{ t('plannerate.toolbar.add_module') }}
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="props.onTransferSection?.()">
+                <ArrowRightLeft class="mr-2 size-4" />
+                {{ t('plannerate.toolbar.transfer_section') }}
+            </DropdownMenuItem>
+            <DropdownMenuItem v-if="props.hasStore" @click="props.onOpenMap?.()">
+                <MapPin class="mr-2 size-4" />
+                {{ props.currentMapRegionId ? t('plannerate.toolbar.map_remove') : t('plannerate.toolbar.map_store') }}
+            </DropdownMenuItem>
+            <DropdownMenuItem v-if="props.canRemoveGondola" class="text-destructive" @click="props.onRemoveGondola?.()">
+                <Trash2 class="mr-2 size-4" />
+                {{ t('plannerate.toolbar.remove_gondola') }}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem @click="showShareQRModal = true">
                 <Share2 class="mr-2 size-4" />
                 {{ t('plannerate.dropdown.actions.share_qr') }}
@@ -36,7 +53,7 @@
 
 </template>
 <script setup lang="ts">
-import { ChevronDown, Download, Eye, FileText, MoreVertical, Share2 } from 'lucide-vue-next';
+import { ArrowRightLeft, ChevronDown, Download, Eye, FileText, MapPin, MoreVertical, Plus, Share2, Trash2 } from 'lucide-vue-next';
 
 import { ref } from 'vue';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
@@ -52,6 +69,16 @@ import { currentGondola } from '@/composables/plannerate/editor/useGondolaState'
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { useT } from '@/composables/useT';
 import ShareQRCodeModal from './header/ShareQRCodeModal.vue';
+
+const props = defineProps<{
+    canRemoveGondola?: boolean;
+    hasStore?: boolean;
+    currentMapRegionId?: string | null;
+    onAddModule?: () => void;
+    onTransferSection?: () => void;
+    onOpenMap?: () => void;
+    onRemoveGondola?: () => void;
+}>();
 
 /**
  * Acessa o estado global do editor de planogramas

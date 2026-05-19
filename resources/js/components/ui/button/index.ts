@@ -9,7 +9,7 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "border border-primary bg-background text-primary shadow-xs hover:bg-primary/10 dark:bg-input/30 dark:border-primary dark:hover:bg-primary/20",
+          "border border-primary bg-background text-foreground shadow-xs hover:bg-primary/10 dark:bg-input/30 dark:border-primary dark:text-foreground dark:hover:bg-primary/20",
         gradient:
           "cursor-pointer select-none btn-gradient text-white focus-visible:ring-primary/40",
         destructive:
@@ -19,8 +19,8 @@ export const buttonVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
+          "text-foreground hover:bg-accent hover:text-accent-foreground dark:text-foreground dark:hover:bg-accent/50",
+        link: "text-foreground underline-offset-4 hover:underline",
       },
       size: {
         "default": "h-9 px-4 py-2 has-[>svg]:px-3",

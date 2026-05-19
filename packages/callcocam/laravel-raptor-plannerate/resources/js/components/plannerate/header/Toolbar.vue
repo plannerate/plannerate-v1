@@ -10,13 +10,11 @@ import {
     AlignHorizontalDistributeCenter,
     AlignLeft,
     AlignRight,
-    ArrowRightLeft,
     Check,
     ChevronDown,
     FlipHorizontal,
     Grid3x3,
     LayoutGrid,
-    MapPin,
     Minus,
     Plus,
     Redo2,
@@ -30,9 +28,9 @@ import {
 } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import AddModuleSheet from '@/components/plannerate/form/AddModuleSheet.vue';
-import TransferSectionDialog from './partials/TransferSectionDialog.vue';
-import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
+import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -42,7 +40,6 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 
@@ -70,6 +67,7 @@ import DropdownPerformance from '../DropdownPerformance.vue';
 import AutoGenerateModal from './AutoGenerateModal.vue';
 import ConfirmDeleteGondolaDialog from './ConfirmDeleteGondolaDialog.vue';
 import MapRegionSelectorModal from './MapRegionSelectorModal.vue';
+import TransferSectionDialog from './partials/TransferSectionDialog.vue';
 import Performance from './Performance.vue';
 
 // ============================================================================
@@ -241,15 +239,13 @@ const autoGenerateEnabled = computed(
         if ((page.props.features as any)?.auto_generate) {
             return true;
         }
+
         if (permissions.value?.can_autogenate_gondola || permissions.value?.can_autogenate_gondola_ia) {
             return true;
         }
+
         return false;
     }
-);
-
-const aiModelOptions = computed(
-    () => (page.props as any)?.aiModelOptions ?? [],
 );
 
 const strategyOptions = computed(
@@ -475,7 +471,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
            ================================================================== -->
                 <DropdownMenu>
                     <DropdownMenuTrigger as-child>
-                        <Button variant="outline" class="h-9 min-w-48 justify-between gap-2 px-3 font-medium">
+                        <Button variant="outline" class="h-8 min-w-48 justify-between gap-2 px-3 font-medium">
                             <div class="flex items-center gap-2">
                                 <LayoutGrid class="size-4 shrink-0 text-muted-foreground" />
                                 <span class="truncate">{{ editor.currentGondola.value?.name ??
@@ -511,7 +507,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
              CONTROLES DE ZOOM/ESCALA
              Diminuir, Input (readonly), Aumentar
              ============================================================ -->
-                <div class="flex items-center gap-1 rounded-md border bg-background p-1">
+                <div class="flex h-8 items-center gap-1 rounded-md border bg-background px-1">
                     <ButtonWithTooltip variant="ghost" size="icon" class="size-7"
                         :tooltip="t('plannerate.toolbar.zoom_out')" @click="editor.decreaseScale()">
                         <Minus class="size-4" />
@@ -525,11 +521,11 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     </ButtonWithTooltip>
                 </div>
 
-                <div class="flex items-center gap-1 rounded-md border bg-background px-2 py-1">
+                <div class="flex h-8 items-center gap-1 rounded-md border bg-background px-2">
                     <Search class="size-3.5 text-muted-foreground" />
                     <Input v-model="eanSearchModel" :placeholder="t('plannerate.toolbar.search_ean_placeholder')"
                         class="h-7 w-40 border-0 px-1 text-xs shadow-none focus-visible:ring-0" />
-                    <ButtonWithTooltip v-if="eanSearchModel" variant="ghost" size="icon" class="size-6"
+                    <ButtonWithTooltip v-if="eanSearchModel" variant="ghost" size="icon-sm" class="size-7"
                         :tooltip="t('plannerate.toolbar.clear_ean_search')" @click="eanSearchModel = ''">
                         <X class="size-3.5" />
                     </ButtonWithTooltip>
@@ -541,41 +537,45 @@ const handleMapRegionSelect = (regionId: string | null) => {
              FERRAMENTAS DE ALINHAMENTO E GRADE
              Grade, Alinhar Esquerda/Direita/Centro, Justificar
              ============================================================ -->
-                <ButtonWithTooltip :variant="editor.showGrid.value ? 'default' : 'outline'" size="sm"
-                    :tooltip="t('plannerate.toolbar.toggle_grid')" @click="editor.toggleGrid()">
-                    <Grid3x3 class="mr-2 size-4" />
-                    {{ t('plannerate.toolbar.grid') }}
-                </ButtonWithTooltip>
+                <div class="flex h-8 items-center gap-1 rounded-md bg-muted/60 px-1">
+                    <ButtonWithTooltip :variant="editor.showGrid.value ? 'default' : 'ghost'" size="sm"
+                        :tooltip="t('plannerate.toolbar.toggle_grid')" @click="editor.toggleGrid()">
+                        <Grid3x3 class="mr-2 size-4" />
+                        {{ t('plannerate.toolbar.grid') }}
+                    </ButtonWithTooltip>
 
-                <ButtonWithTooltip :variant="editor.showZoneIndicators.value ? 'default' : 'outline'" size="sm"
-                    tooltip="Zonas de exposição" @click="editor.toggleZoneIndicators()">
-                    <Thermometer class="mr-2 size-4" />
-                    Zonas
-                </ButtonWithTooltip>
+                    <ButtonWithTooltip :variant="editor.showZoneIndicators.value ? 'default' : 'ghost'" size="sm"
+                        tooltip="Zonas de exposição" @click="editor.toggleZoneIndicators()">
+                        <Thermometer class="mr-2 size-4" />
+                        Zonas
+                    </ButtonWithTooltip>
 
-                <ButtonWithTooltip :variant="alignment === 'left' ? 'default' : 'outline'" size="sm"
-                    :tooltip="t('plannerate.toolbar.align_left_tooltip')" @click="editor.alignLeft()">
-                    <AlignLeft class="size-4" />
-                    <span class="sr-only">{{ t('plannerate.toolbar.align_left_sr') }}</span>
-                </ButtonWithTooltip>
+                    <Separator orientation="vertical" class="h-5" />
 
-                <ButtonWithTooltip :variant="alignment === 'center' ? 'default' : 'outline'" size="sm"
-                    :tooltip="t('plannerate.toolbar.align_center_tooltip')" @click="editor.alignCenter()">
-                    <AlignCenter class="size-4" />
-                    <span class="sr-only">{{ t('plannerate.toolbar.align_center_sr') }}</span>
-                </ButtonWithTooltip>
+                    <ButtonWithTooltip :variant="alignment === 'left' ? 'default' : 'ghost'" size="sm"
+                        :tooltip="t('plannerate.toolbar.align_left_tooltip')" @click="editor.alignLeft()">
+                        <AlignLeft class="size-4" />
+                        <span class="sr-only">{{ t('plannerate.toolbar.align_left_sr') }}</span>
+                    </ButtonWithTooltip>
 
-                <ButtonWithTooltip :variant="alignment === 'right' ? 'default' : 'outline'" size="sm"
-                    :tooltip="t('plannerate.toolbar.align_right_tooltip')" @click="editor.alignRight()">
-                    <AlignRight class="size-4" />
-                    <span class="sr-only">{{ t('plannerate.toolbar.align_right_sr') }}</span>
-                </ButtonWithTooltip>
+                    <ButtonWithTooltip :variant="alignment === 'center' ? 'default' : 'ghost'" size="sm"
+                        :tooltip="t('plannerate.toolbar.align_center_tooltip')" @click="editor.alignCenter()">
+                        <AlignCenter class="size-4" />
+                        <span class="sr-only">{{ t('plannerate.toolbar.align_center_sr') }}</span>
+                    </ButtonWithTooltip>
 
-                <ButtonWithTooltip :variant="alignment === 'justify' ? 'default' : 'outline'" size="sm"
-                    :tooltip="t('plannerate.toolbar.align_justify_tooltip')" @click="editor.alignJustify()">
-                    <AlignHorizontalDistributeCenter class="size-4" />
-                    <span class="sr-only">{{ t('plannerate.toolbar.align_justify_sr') }}</span>
-                </ButtonWithTooltip>
+                    <ButtonWithTooltip :variant="alignment === 'right' ? 'default' : 'ghost'" size="sm"
+                        :tooltip="t('plannerate.toolbar.align_right_tooltip')" @click="editor.alignRight()">
+                        <AlignRight class="size-4" />
+                        <span class="sr-only">{{ t('plannerate.toolbar.align_right_sr') }}</span>
+                    </ButtonWithTooltip>
+
+                    <ButtonWithTooltip :variant="alignment === 'justify' ? 'default' : 'ghost'" size="sm"
+                        :tooltip="t('plannerate.toolbar.align_justify_tooltip')" @click="editor.alignJustify()">
+                        <AlignHorizontalDistributeCenter class="size-4" />
+                        <span class="sr-only">{{ t('plannerate.toolbar.align_justify_sr') }}</span>
+                    </ButtonWithTooltip>
+                </div>
 
                 <Separator orientation="vertical" class="h-8" />
 
@@ -583,62 +583,34 @@ const handleMapRegionSelect = (regionId: string | null) => {
              AÇÕES DE EDIÇÃO
              Inverter, Adicionar Módulo, Remover Gôndola
              ============================================================ -->
-                <ButtonWithTooltip variant="outline" size="sm" :tooltip="t('plannerate.toolbar.invert_tooltip')"
-                    @click="editor.toggleFlow()">
-                    <FlipHorizontal class="mr-2 size-4" />
-                    {{ t('plannerate.toolbar.invert') }}
-                </ButtonWithTooltip>
+                <div class="flex h-8 items-center gap-1 rounded-md bg-muted/60 px-1">
+                    <ButtonWithTooltip variant="ghost" size="sm" :tooltip="t('plannerate.toolbar.invert_tooltip')"
+                        @click="editor.toggleFlow()">
+                        <FlipHorizontal class="mr-2 size-4" />
+                        {{ t('plannerate.toolbar.invert') }}
+                    </ButtonWithTooltip>
 
-                <ButtonWithTooltip variant="outline" size="sm" :tooltip="t('plannerate.toolbar.add_module_tooltip')"
-                    @click="editor.addModule()">
-                    <Plus class="mr-2 size-4" />
-                    <span class="max-w-24 truncate">{{ t('plannerate.toolbar.add_module') }}</span>
-                </ButtonWithTooltip>
-
-                <ButtonWithTooltip variant="outline" size="sm"
-                    :tooltip="t('plannerate.toolbar.transfer_section_tooltip')"
-                    @click="showTransferSectionDialog = true">
-                    <ArrowRightLeft class="mr-2 size-4" />
-                    <span class="max-w-24 truncate">{{ t('plannerate.toolbar.transfer_section') }}</span>
-                </ButtonWithTooltip>
-
-                <!-- Vincular ao Mapa (apenas se houver loja) -->
-                <ButtonWithTooltip v-if="hasStore" :variant="currentMapRegionId ? 'default' : 'outline'" size="sm"
-                    :tooltip="t('plannerate.toolbar.map_link_tooltip')" @click="showMapRegionSelector = true">
-                    <MapPin class="mr-2 size-4" />
-                    <span class="max-w-24 truncate">{{
-                        currentMapRegionId ? t('plannerate.toolbar.map_remove') : t('plannerate.toolbar.map_store')
-                    }}</span>
-                </ButtonWithTooltip>
-
-                <ButtonWithTooltip v-if="permissions.can_remove_gondola" variant="destructive" size="sm" :tooltip="currentMapRegionId
-                    ? t('plannerate.toolbar.remove_gondola_tooltip')
-                    : t('plannerate.toolbar.remove_gondola_none_selected')
-                    " @click="editor.removeGondola()">
-                    <Trash2 class="mr-2 size-4" />
-                    <span class="max-w-24 truncate">{{ t('plannerate.toolbar.remove_gondola') }}</span>
-                </ButtonWithTooltip>
-
-                <Separator orientation="vertical" class="h-8" />
+                    <Separator orientation="vertical" class="h-5" />
 
                 <!-- ============================================================
              HISTÓRICO (UNDO/REDO)
              Integrado com usePlanogramHistory composable
              ============================================================ -->
-                <ButtonWithTooltip variant="outline" size="icon" :disabled="!isMounted || !canUndo"
-                    :tooltip="t('plannerate.toolbar.undo')" @click="editor.undo()">
-                    <Undo2 class="size-4" />
-                </ButtonWithTooltip>
+                    <ButtonWithTooltip variant="ghost" size="icon-sm" :disabled="!isMounted || !canUndo"
+                        :tooltip="t('plannerate.toolbar.undo')" @click="editor.undo()">
+                        <Undo2 class="size-4" />
+                    </ButtonWithTooltip>
 
-                <ButtonWithTooltip variant="outline" size="icon" :disabled="!isMounted || !canRedo"
-                    :tooltip="t('plannerate.toolbar.redo')" @click="editor.redo()">
-                    <Redo2 class="size-4" />
-                </ButtonWithTooltip>
+                    <ButtonWithTooltip variant="ghost" size="icon-sm" :disabled="!isMounted || !canRedo"
+                        :tooltip="t('plannerate.toolbar.redo')" @click="editor.redo()">
+                        <Redo2 class="size-4" />
+                    </ButtonWithTooltip>
 
-                <ButtonWithTooltip variant="outline" size="icon" :disabled="!isMounted || (!canUndo && !canRedo)"
-                    :tooltip="t('plannerate.toolbar.clear_history')" @click="editor.clearHistory()">
-                    <Trash2 class="size-4" />
-                </ButtonWithTooltip>
+                    <ButtonWithTooltip variant="ghost" size="icon-sm" :disabled="!isMounted || (!canUndo && !canRedo)"
+                        :tooltip="t('plannerate.toolbar.clear_history')" @click="editor.clearHistory()">
+                        <Trash2 class="size-4" />
+                    </ButtonWithTooltip>
+                </div>
 
                 <Separator orientation="vertical" class="h-8" />
 
@@ -648,30 +620,31 @@ const handleMapRegionSelect = (regionId: string | null) => {
              ============================================================ -->
 
                 <!-- Toggle Auto-save -->
-                <div class="flex items-center gap-2 rounded-md border bg-background px-3 py-1.5">
-                    <Switch :id="'auto-save-toggle'" v-model="autoSaveEnabled"
-                        @update:model-value="changes.toggleAutoSave()" />
-                    <Label :for="'auto-save-toggle'" class="cursor-pointer text-xs font-medium">
-                        {{ t('plannerate.toolbar.auto_save') }}
-                    </Label>
-                </div>
+                <ButtonGroup aria-label="Salvar e salvamento automático"
+                    class="h-8 border-primary/40 bg-primary/5 *:h-full *:rounded-none">
+                    <Button variant="ghost" size="sm" class="h-full rounded-none border-0 hover:bg-primary/10"
+                        :title="hasChanges
+                            ? t(
+                                changeCount === 1
+                                    ? 'plannerate.toolbar.save_tooltip_single'
+                                    : 'plannerate.toolbar.save_tooltip_plural',
+                                { count: String(changeCount) },
+                            )
+                            : t('plannerate.toolbar.save_none')
+                            " :disabled="!isMounted || !hasChanges || isSaving" @click="editor.save()">
+                        <Save class="mr-2 size-4" :class="{ 'animate-pulse': isSaving }" />
+                        <span v-if="isSaving">{{ t('plannerate.toolbar.saving') }}</span>
+                        <span v-else-if="hasChanges">{{ t('plannerate.toolbar.save', { count: String(changeCount) })
+                        }}</span>
+                        <span v-else>{{ t('plannerate.toolbar.saved') }}</span>
+                    </Button>
 
-                <ButtonWithTooltip variant="default" size="sm" :disabled="!isMounted || !hasChanges || isSaving"
-                    :tooltip="hasChanges
-                        ? t(
-                            changeCount === 1
-                                ? 'plannerate.toolbar.save_tooltip_single'
-                                : 'plannerate.toolbar.save_tooltip_plural',
-                            { count: String(changeCount) },
-                        )
-                        : t('plannerate.toolbar.save_none')
-                        " @click="editor.save()">
-                    <Save class="mr-2 size-4" :class="{ 'animate-pulse': isSaving }" />
-                    <span v-if="isSaving">{{ t('plannerate.toolbar.saving') }}</span>
-                    <span v-else-if="hasChanges">{{ t('plannerate.toolbar.save', { count: String(changeCount) })
-                    }}</span>
-                    <span v-else>{{ t('plannerate.toolbar.saved') }}</span>
-                </ButtonWithTooltip>
+                    <div class="flex h-full items-center border-l border-primary/30 px-2 hover:bg-primary/10"
+                        :title="t('plannerate.toolbar.auto_save')">
+                        <Switch :id="'auto-save-toggle'" v-model="autoSaveEnabled"
+                            @update:model-value="changes.toggleAutoSave()" />
+                    </div>
+                </ButtonGroup>
 
                 <!-- Indicadores de Análises -->
 
@@ -702,7 +675,11 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     @update:open="(value: boolean) => (showAutoGenerateModal = value)" />
 
                 <!-- Dropdown Ações -->
-                <DropdownActions />
+                <DropdownActions :can-remove-gondola="permissions.can_remove_gondola" :has-store="hasStore"
+                    :current-map-region-id="currentMapRegionId" :on-add-module="() => editor.addModule()"
+                    :on-transfer-section="() => (showTransferSectionDialog = true)"
+                    :on-open-map="() => (showMapRegionSelector = true)" :on-remove-gondola="() => editor.removeGondola()" />
+
             </div>
         </div>
 
