@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Concerns;
 
-use App\Models\Category; 
+use App\Models\Category;
 
 trait InteractsWithCategoryFilter
 {
@@ -41,5 +41,13 @@ trait InteractsWithCategoryFilter
         }
 
         return $allIds;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function resolveCategoryFilter(string $categoryId): array
+    {
+        return $this->categoryAndDescendantIds($categoryId);
     }
 }

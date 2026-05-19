@@ -854,6 +854,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             ],
             'fields' => [
                 'name' => 'Nome',
+                'category' => 'Categoria',
                 'parent' => 'Categoria pai',
                 'codigo' => 'Codigo',
                 'status' => 'Status',

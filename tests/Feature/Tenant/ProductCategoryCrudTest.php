@@ -363,6 +363,65 @@ test('product index category filter includes descendant categories', function ()
             ->where('filters.category_id', $parentCategory->id));
 });
 
+test('category index filter includes descendant categories recursively', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenant('tenant-category-recursive-filter');
+    assignTenantAdminRole($user, $tenant->id);
+
+    $host = 'tenant-category-recursive-filter.'.config('app.landlord_domain');
+
+    $rootCategory = Category::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Categoria Raiz',
+        'slug' => 'categoria-raiz',
+        'status' => 'published',
+    ]);
+
+    $childCategory = Category::query()->create([
+        'tenant_id' => $tenant->id,
+        'category_id' => $rootCategory->id,
+        'name' => 'Categoria Filha',
+        'slug' => 'categoria-filha',
+        'status' => 'published',
+    ]);
+
+    $grandchildCategory = Category::query()->create([
+        'tenant_id' => $tenant->id,
+        'category_id' => $childCategory->id,
+        'name' => 'Categoria Neta',
+        'slug' => 'categoria-neta',
+        'status' => 'published',
+    ]);
+
+    Category::query()->create([
+        'tenant_id' => $tenant->id,
+        'category_id' => $grandchildCategory->id,
+        'name' => 'Categoria Bisneta',
+        'slug' => 'categoria-bisneta',
+        'status' => 'published',
+    ]);
+
+    Category::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Categoria Isolada',
+        'slug' => 'categoria-isolada',
+        'status' => 'published',
+    ]);
+
+    $this->withServerVariables(['HTTP_HOST' => $host])
+        ->get(route('tenant.categories.index', [
+            'subdomain' => 'tenant-category-recursive-filter',
+            'category_id' => $childCategory->id,
+        ], false))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/categories/Index')
+            ->has('categories.data', 3)
+            ->where('filters.category_id', $childCategory->id));
+});
+
 /**
  * @return array<string, mixed>
  */

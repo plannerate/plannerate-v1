@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import { ChevronDown, SlidersHorizontal, X } from 'lucide-vue-next';
+import { computed, nextTick, ref, watch } from 'vue';
 import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryController';
 import ImportFileButton from '@/components/imports/ImportFileButton.vue';
 import PlanLimitAlert from '@/components/PlanLimitAlert.vue';
@@ -7,8 +9,10 @@ import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { ColumnActions, ColumnHeader, ColumnLabel, ColumnStatusBadge } from '@/components/table/columns';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
@@ -34,6 +38,7 @@ const props = defineProps<{
         search: string;
         status: string;
         level_name: string;
+        category_id: string;
         trashed: 'without' | 'only' | 'with';
     };
     filter_options: {
@@ -49,9 +54,27 @@ const props = defineProps<{
 
 const { t } = useT();
 const { meta: categoriesMeta, rows: categoriesRows, loading: categoriesLoading } = useDeferredPaginator(() => props.categories, 10);
+const listPageRef = ref<InstanceType<typeof ListPage> | null>(null);
 const categoriesIndexPath = CategoryController.index
     .url(props.subdomain)
     .replace(/^\/\/[^/]+/, '');
+const categoryId = ref<string | null>(props.filters.category_id ?? null);
+const categoryPopoverOpen = ref(false);
+
+watch(categoryId, (value, prev) => {
+    if (value !== prev) {
+        categoryPopoverOpen.value = false;
+        nextTick(() => listPageRef.value?.submitForm());
+    }
+});
+
+const categoryLabel = computed(() => {
+    if (!categoryId.value) {
+        return t('app.tenant.categories.fields.category');
+    }
+
+    return `${t('app.tenant.categories.fields.category')} ✓`;
+});
 
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.categories.title'),
@@ -107,6 +130,7 @@ const pageMeta = useCrudPageMeta({
         <PlanLimitAlert v-if="can.limit_reached" :message="can.limit_message!" :upgrade-url="can.upgrade_url" />
 
         <ListPage
+            ref="listPageRef"
             :title="pageMeta.title"
             :description="pageMeta.description"
             :meta="categoriesMeta"
@@ -140,6 +164,49 @@ const pageMeta = useCrudPageMeta({
                         {{ level }}
                     </option>
                 </select>
+                <input type="hidden" name="category_id" :value="categoryId ?? ''" />
+
+                <Popover v-model:open="categoryPopoverOpen">
+                    <PopoverTrigger as-child>
+                        <button
+                            type="button"
+                            class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted"
+                            :class="categoryId ? 'border-primary/60 text-primary' : ''"
+                        >
+                            <SlidersHorizontal class="size-3.5 shrink-0" />
+                            <span>{{ categoryLabel }}</span>
+                            <button
+                                v-if="categoryId"
+                                type="button"
+                                class="ml-1 rounded-sm opacity-60 hover:opacity-100"
+                                @click.stop="categoryId = null"
+                            >
+                                <X class="size-3" />
+                            </button>
+                            <ChevronDown v-else class="size-3.5 shrink-0 opacity-50" />
+                        </button>
+                    </PopoverTrigger>
+                    <PopoverContent class="w-170 p-4" align="start">
+                        <p class="mb-3 text-sm font-medium">{{ t('app.tenant.categories.fields.category') }}</p>
+                        <CategoryCascadeSelect v-model="categoryId" />
+                        <div class="mt-4 flex justify-end gap-2">
+                            <button
+                                type="button"
+                                class="rounded-md px-3 py-1.5 text-sm hover:bg-muted"
+                                @click="categoryId = null; categoryPopoverOpen = false"
+                            >
+                                {{ t('app.tenant.common.clear_filters') }}
+                            </button>
+                            <button
+                                type="submit"
+                                class="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
+                                @click="categoryPopoverOpen = false"
+                            >
+                                {{ t('app.tenant.common.filter') }}
+                            </button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
             </template>
 
             <table class="w-full text-sm">

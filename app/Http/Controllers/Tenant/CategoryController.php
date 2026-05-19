@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithCategoryFilter;
 use App\Http\Controllers\Concerns\InteractsWithPlanLimits;
 use App\Http\Controllers\Concerns\InteractsWithTrashedFilter;
 use App\Http\Controllers\Controller;
@@ -27,6 +28,7 @@ class CategoryController extends Controller
     use InteractsWithPlanLimits;
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
+    use InteractsWithCategoryFilter;
 
     private const MERCADOLOGICO_UI_LEVELS = 7;
 
@@ -59,7 +61,7 @@ class CategoryController extends Controller
         }
 
         return response()->json(
-            $query->get(['id', 'name', 'level_name', 'nivel'])->map(fn (Category $category): array => [
+            $query->get(['id', 'name', 'level_name', 'nivel'])->map(fn(Category $category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
                 'level_name' => $category->level_name,
@@ -83,7 +85,7 @@ class CategoryController extends Controller
             return response()->json(['path' => []]);
         }
 
-        $path = $category->getFullHierarchy()->map(fn (Category $node): array => [
+        $path = $category->getFullHierarchy()->map(fn(Category $node): array => [
             'id' => $node->id,
             'name' => $node->name,
             'level_name' => $node->level_name,
@@ -100,16 +102,18 @@ class CategoryController extends Controller
         $search = $this->requestString($request, 'search');
         $status = $this->requestEnum($request, 'status', ['draft', 'published', 'importer']);
         $levelName = $this->requestString($request, 'level_name');
+        $categoryId = $this->requestString($request, 'category_id');
         $trashed = $this->resolveTrashedFilter($request);
         $requestedSort = trim((string) $request->query('sort', ''));
         $sort = in_array($requestedSort, ['name', 'level_name', 'nivel', 'status', 'created_at'], true) ? $requestedSort : null;
         $requestedDirection = strtolower((string) $request->query('direction', 'asc'));
         $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'asc';
 
-        return $this->renderDeferredIndex('tenant/categories/Index', 'categories', fn (): LengthAwarePaginator => $this->categoriesPaginator(
+        return $this->renderDeferredIndex('tenant/categories/Index', 'categories', fn(): LengthAwarePaginator => $this->categoriesPaginator(
             $search,
             $status,
             $levelName,
+            $categoryId,
             $trashed,
             $sort,
             $direction,
@@ -120,6 +124,7 @@ class CategoryController extends Controller
                 'search' => $search,
                 'status' => $status,
                 'level_name' => $levelName,
+                'category_id' => $categoryId,
                 'trashed' => $trashed,
             ],
             'filter_options' => [
@@ -133,6 +138,7 @@ class CategoryController extends Controller
         string $search,
         string $status,
         string $levelName,
+        string $categoryId,
         string $trashed,
         ?string $sort,
         string $direction,
@@ -140,25 +146,27 @@ class CategoryController extends Controller
     ): LengthAwarePaginator {
         $query = Category::query();
         $this->applyTrashedToQuery($query, $trashed);
+        $categoriesIds = $this->resolveCategoryFilter($categoryId);
 
         return $query
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
-                        ->where('name', 'like', '%'.$search.'%')
-                        ->orWhere('slug', 'like', '%'.$search.'%');
+                        ->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('slug', 'like', '%' . $search . '%');
                 });
             })
-            ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->when($levelName !== '', fn ($query) => $query->where('level_name', $levelName))
+            ->when($status !== '', fn($query) => $query->where('status', $status))
+            ->when($levelName !== '', fn($query) => $query->where('level_name', $levelName))
+            ->when(!empty($categoriesIds), fn($query) => $query->whereIn('id', $categoriesIds))
             ->when(
                 $sort !== null,
-                fn ($query) => $query->orderBy($sort, $direction),
-                fn ($query) => $query->latest(),
+                fn($query) => $query->orderBy($sort, $direction),
+                fn($query) => $query->latest(),
             )
             ->paginate($perPage)
             ->withQueryString()
-            ->through(fn (Category $category): array => [
+            ->through(fn(Category $category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
                 'slug' => $category->slug,
@@ -324,10 +332,10 @@ class CategoryController extends Controller
     private function parentCategoriesForSelect(?string $ignoreId = null): array
     {
         return Category::query()
-            ->when($ignoreId !== null, fn ($query) => $query->where('id', '!=', $ignoreId))
+            ->when($ignoreId !== null, fn($query) => $query->where('id', '!=', $ignoreId))
             ->orderBy('name')
             ->get(['id', 'name'])
-            ->map(fn (Category $category): array => [
+            ->map(fn(Category $category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
             ])
