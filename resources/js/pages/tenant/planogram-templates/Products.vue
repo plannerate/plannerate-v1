@@ -62,6 +62,9 @@ const slotsPath = computed(() => `${baseUrl.value}/slots`);
 const productRemovalDialogOpen = ref(false);
 const productRemovalBusy = ref(false);
 const productPendingRemoval = ref<PlanogramTemplateProduct | null>(null);
+const addedProductEans = computed(() =>
+    props.products.map((product) => product.ean),
+);
 
 // ── Wizard ─────────────────────────────────────────────────────────────────────
 const wizardSteps: WizardStep[] = [
@@ -224,6 +227,7 @@ const breadcrumbs = [
                         :search-results="searchResults ?? []"
                         :searching="searching"
                         :grouping-options="groupingOptions"
+                        :added-product-eans="addedProductEans"
                         :selected-grouping-id="selectedGroupingId"
                         @search="doSearch"
                         @add-products="addProducts"

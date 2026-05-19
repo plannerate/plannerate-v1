@@ -127,6 +127,7 @@ return [
         'product_plural' => 'produtos',
         'selected' => 'selecionados',
         'grouping_none' => 'Nenhum agrupamento',
+        'already_added' => 'Já adicionado',
     ],
 
     // Product table (TemplateProductTable.vue)
