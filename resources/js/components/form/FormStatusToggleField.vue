@@ -57,27 +57,26 @@ const checked = computed({
 </script>
 
 <template>
-    <div :class="cn('flex flex-col gap-y-2', props.class)">
-        <Label :for="id">
-            {{ label }}
-            <span v-if="required" class="text-destructive">*</span>
-        </Label>
-
-        <div
-            class="flex h-9 items-center gap-2 rounded-lg border border-input bg-background px-3"
-        >
-            <Switch :id="id" v-model:checked="checked" :disabled="disabled" />
-            <span class="text-sm text-muted-foreground">
-                {{ checked ? checkedLabel : uncheckedLabel }}
+    <div :class="cn('flex w-full', props.class)">
+        <Label :for="id" class="flex w-full flex-col items-start gap-y-2 text-left">
+            <span class="inline-flex items-center gap-1">
+                <span>{{ label }}</span>
+                <span v-if="required" class="text-destructive">*</span>
             </span>
-        </div>
 
-        <input
-            type="hidden"
-            :name="name"
-            :value="modelValue"
-            :required="required"
-        />
+            <div class="flex h-10 items-center gap-2 rounded-lg border border-input bg-background px-3 w-full">
+                <button
+                    type="button"
+                    class="mr-auto text-left text-sm text-muted-foreground disabled:cursor-not-allowed"
+                    :disabled="disabled"
+                    @click="checked = !checked"
+                >
+                    {{ checked ? checkedLabel : uncheckedLabel }}
+                </button>
+                <Switch :id="id" v-model:model-value="checked" :disabled="disabled" />
+            </div>
+        </Label>
+        <input type="hidden" :name="name" :value="modelValue" :required="required" />
 
         <p v-if="hint" class="text-sm text-muted-foreground">{{ hint }}</p>
         <InputError :message="error" />

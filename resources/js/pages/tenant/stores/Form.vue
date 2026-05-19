@@ -5,7 +5,7 @@ import { computed, ref } from 'vue';
 import StoreController from '@/actions/App/Http/Controllers/Tenant/StoreController';
 import CepLookupField from '@/components/form/CepLookupField.vue';
 import FormMapField from '@/components/form/FormMapField.vue';
-import FormStatusField from '@/components/form/FormStatusField.vue';
+import FormStatusToggleField from '@/components/form/FormStatusToggleField.vue';
 import FormTabsBar from '@/components/form/FormTabsBar.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import FormCard from '@/components/FormCard.vue';
@@ -121,35 +121,33 @@ function onAddressCepResolved(payload: {
     }
 }
 
-const pageMeta = useCrudPageMeta(
-    {
-        headTitle: isEdit.value
-            ? t('app.tenant.stores.actions.edit')
-            : t('app.tenant.stores.actions.new'),
-        title: isEdit.value
-            ? t('app.tenant.stores.actions.edit')
-            : t('app.tenant.stores.actions.new'),
-        description: t('app.tenant.stores.description'),
-        breadcrumbs: [
-            {
-                title: t('app.navigation.dashboard'),
-                href: dashboard.url().replace(/^\/\/[^/]+/, ''),
-            },
-            { title: t('app.tenant.stores.navigation'), href: storesIndexPath },
-            {
-                title: isEdit.value
-                    ? t('app.tenant.stores.actions.edit')
-                    : t('app.tenant.stores.actions.new'),
-                href: isEdit.value
-                    ? StoreController.edit.url({
-                          subdomain: props.subdomain,
-                          store: props.store!.id,
-                      })
-                    : StoreController.create.url(props.subdomain),
-            },
-        ],
-    },
-);
+const pageMeta = useCrudPageMeta({
+    headTitle: isEdit.value
+        ? t('app.tenant.stores.actions.edit')
+        : t('app.tenant.stores.actions.new'),
+    title: isEdit.value
+        ? t('app.tenant.stores.actions.edit')
+        : t('app.tenant.stores.actions.new'),
+    description: t('app.tenant.stores.description'),
+    breadcrumbs: [
+        {
+            title: t('app.navigation.dashboard'),
+            href: dashboard.url().replace(/^\/\/[^/]+/, ''),
+        },
+        { title: t('app.tenant.stores.navigation'), href: storesIndexPath },
+        {
+            title: isEdit.value
+                ? t('app.tenant.stores.actions.edit')
+                : t('app.tenant.stores.actions.new'),
+            href: isEdit.value
+                ? StoreController.edit.url({
+                      subdomain: props.subdomain,
+                      store: props.store!.id,
+                  })
+                : StoreController.create.url(props.subdomain),
+        },
+    ],
+});
 </script>
 
 <template>
@@ -241,7 +239,9 @@ const pageMeta = useCrudPageMeta(
                         />
 
                         <div class="md:col-span-12">
-                            <div class="space-y-4 rounded-xl border border-border/70 bg-muted/20 p-4 md:p-5">
+                            <div
+                                class="space-y-4 rounded-xl border border-border/70 bg-muted/20 p-4 md:p-5"
+                            >
                                 <input
                                     type="hidden"
                                     name="address[id]"
@@ -265,12 +265,17 @@ const pageMeta = useCrudPageMeta(
                                 <input
                                     type="hidden"
                                     name="address[additional_information]"
-                                    :value="props.address?.additional_information ?? ''"
+                                    :value="
+                                        props.address?.additional_information ??
+                                        ''
+                                    "
                                 />
                                 <input
                                     type="hidden"
                                     name="address[is_default]"
-                                    :value="props.address?.is_default ? '1' : '0'"
+                                    :value="
+                                        props.address?.is_default ? '1' : '0'
+                                    "
                                 />
                                 <input
                                     type="hidden"
@@ -278,7 +283,9 @@ const pageMeta = useCrudPageMeta(
                                     :value="props.address?.status ?? 'draft'"
                                 />
 
-                                <div class="grid grid-cols-1 gap-4 md:grid-cols-12">
+                                <div
+                                    class="grid grid-cols-1 gap-4 md:grid-cols-12"
+                                >
                                     <CepLookupField
                                         id="address-zip_code"
                                         v-model="addressZipCode"
@@ -355,17 +362,19 @@ const pageMeta = useCrudPageMeta(
                             </div>
                         </div>
 
-                        <FormStatusField
+                        <FormStatusToggleField
                             id="status"
                             name="status"
                             :label="t('app.tenant.stores.fields.status')"
                             :default-value="props.store?.status ?? 'draft'"
                             :error="errors.status"
                             class="md:col-span-12"
-                            :options="[
-                                { value: 'draft', label: t('app.tenant.stores.status_draft') },
-                                { value: 'published', label: t('app.tenant.stores.status_published') },
-                            ]"
+                            :checked-label="
+                                t('app.tenant.stores.status_published')
+                            "
+                            :unchecked-label="
+                                t('app.tenant.stores.status_draft')
+                            "
                         />
                     </div>
 

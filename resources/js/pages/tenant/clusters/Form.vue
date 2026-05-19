@@ -4,7 +4,7 @@ import { Blocks } from 'lucide-vue-next';
 import { computed } from 'vue';
 import ClusterController from '@/actions/App/Http/Controllers/Tenant/ClusterController';
 import FormSelectField from '@/components/form/FormSelectField.vue';
-import FormStatusField from '@/components/form/FormStatusField.vue';
+import FormStatusToggleField from '@/components/form/FormStatusToggleField.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import FormCard from '@/components/FormCard.vue';
@@ -170,17 +170,19 @@ const pageMeta = useCrudPageMeta({
                             class="md:col-span-4"
                         />
 
-                        <FormStatusField
+                        <FormStatusToggleField
                             id="status"
                             name="status"
                             :label="t('app.tenant.clusters.fields.status')"
                             :default-value="props.cluster?.status ?? 'draft'"
                             :error="errors.status"
                             class="md:col-span-12"
-                            :options="[
-                                { value: 'draft', label: t('app.tenant.clusters.status_draft') },
-                                { value: 'published', label: t('app.tenant.clusters.status_published') },
-                            ]"
+                            :checked-label="
+                                t('app.tenant.clusters.status_published')
+                            "
+                            :unchecked-label="
+                                t('app.tenant.clusters.status_draft')
+                            "
                         />
 
                         <FormTextareaField
@@ -192,7 +194,7 @@ const pageMeta = useCrudPageMeta({
                             class="md:col-span-12"
                             :rows="2"
                         />
-                    </div> 
+                    </div>
                 </FormCard>
             </Form>
         </div>

@@ -4,11 +4,11 @@ import { LayoutGrid } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import FormKanbanSettings from '@/components/form/FormKanbanSettings.vue';
+import FormMonthYearRangePicker from '@/components/form/FormMonthYearRangePicker.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
-import FormStatusField from '@/components/form/FormStatusField.vue';
+import FormStatusToggleField from '@/components/form/FormStatusToggleField.vue';
 import FormTabsBar from '@/components/form/FormTabsBar.vue';
 import FormTextareaField from '@/components/form/FormTextareaField.vue';
-import FormMonthYearRangePicker from '@/components/form/FormMonthYearRangePicker.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import FormCard from '@/components/FormCard.vue';
 import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
@@ -196,30 +196,38 @@ const pageMeta = useCrudPageMeta({
                         <FormMonthYearRangePicker
                             start-name="start_date"
                             end-name="end_date"
-                            :label="t('app.tenant.planograms.fields.start_date') + ' / ' + t('app.tenant.planograms.fields.end_date')"
+                            :label="
+                                t('app.tenant.planograms.fields.start_date') +
+                                ' / ' +
+                                t('app.tenant.planograms.fields.end_date')
+                            "
                             :start-value="props.planogram?.start_date ?? null"
                             :end-value="props.planogram?.end_date ?? null"
                             :start-error="errors.start_date"
                             :end-error="errors.end_date"
                             class="md:col-span-4"
                         />
-                        <FormStatusField
+                        <FormStatusToggleField
                             id="status"
                             name="status"
                             :label="t('app.tenant.planograms.fields.status')"
                             :default-value="props.planogram?.status ?? 'draft'"
                             :error="errors.status"
                             class="md:col-span-12"
-                            :options="[
-                                { value: 'draft', label: t('app.tenant.planograms.status_draft') },
-                                { value: 'published', label: t('app.tenant.planograms.status_published') },
-                            ]"
+                            :checked-label="
+                                t('app.tenant.planograms.status_published')
+                            "
+                            :unchecked-label="
+                                t('app.tenant.planograms.status_draft')
+                            "
                         />
 
                         <FormTextareaField
                             id="description"
                             name="description"
-                            :label="t('app.tenant.planograms.fields.description')"
+                            :label="
+                                t('app.tenant.planograms.fields.description')
+                            "
                             :default-value="props.planogram?.description ?? ''"
                             :error="errors.description"
                             class="md:col-span-12"

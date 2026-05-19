@@ -163,6 +163,35 @@
 }
 
 @layer utilities {
+    .sidebar-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: hsl(0 0% 100% / 0.22) transparent;
+    }
+
+    .sidebar-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    .sidebar-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .sidebar-scrollbar::-webkit-scrollbar-thumb {
+        background-color: hsl(0 0% 100% / 0.18);
+        border: 2px solid transparent;
+        border-radius: 9999px;
+        background-clip: content-box;
+    }
+
+    .sidebar-scrollbar:hover {
+        scrollbar-color: hsl(0 0% 100% / 0.34) transparent;
+    }
+
+    .sidebar-scrollbar:hover::-webkit-scrollbar-thumb {
+        background-color: hsl(0 0% 100% / 0.3);
+    }
+
     .kanban-scrollbar {
         scrollbar-width: thin;
         scrollbar-color: hsl(215 16% 45% / 0.35) transparent;
