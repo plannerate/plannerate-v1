@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { Layers, Trash2 } from 'lucide-vue-next';
+import { ref } from 'vue';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
+import PlanogramConfirmDialog from '@/components/planogram-templates/PlanogramConfirmDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
@@ -33,18 +35,40 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
-const indexPath = PlanogramTemplateController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const indexPath = PlanogramTemplateController.index
+    .url(props.subdomain)
+    .replace(/^\/\/[^/]+/, '');
+const deleteDialogOpen = ref(false);
+const deleteDialogBusy = ref(false);
 
 const breadcrumbs = [
-    { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
+    {
+        title: t('app.navigation.dashboard'),
+        href: dashboard.url().replace(/^\/\/[^/]+/, ''),
+    },
     { title: t('app.tenant.planogram_templates.navigation'), href: indexPath },
     { title: props.template.code, href: '#' },
 ];
 
 function confirmDelete(): void {
-    if (confirm(t('app.tenant.planogram_templates.show.confirm_delete', { name: props.template.name }))) {
-        router.delete(PlanogramTemplateController.destroy.url({ subdomain: props.subdomain, planogramTemplate: props.template.id }));
-    }
+    deleteDialogOpen.value = true;
+}
+
+function deleteTemplate(): void {
+    deleteDialogBusy.value = true;
+
+    router.delete(
+        PlanogramTemplateController.destroy.url({
+            subdomain: props.subdomain,
+            planogramTemplate: props.template.id,
+        }),
+        {
+            onFinish: () => {
+                deleteDialogBusy.value = false;
+                deleteDialogOpen.value = false;
+            },
+        },
+    );
 }
 </script>
 
@@ -57,15 +81,43 @@ function confirmDelete(): void {
             <div class="flex items-start justify-between">
                 <div>
                     <div class="flex items-center gap-3">
-                        <h1 class="text-2xl font-semibold tracking-tight">{{ template.name }}</h1>
-                        <Badge :variant="template.is_active ? 'default' : 'secondary'">
-                            {{ template.is_active ? t('app.tenant.planogram_templates.status.active') : t('app.tenant.planogram_templates.status.inactive') }}
+                        <h1 class="text-2xl font-semibold tracking-tight">
+                            {{ template.name }}
+                        </h1>
+                        <Badge
+                            :variant="
+                                template.is_active ? 'default' : 'secondary'
+                            "
+                        >
+                            {{
+                                template.is_active
+                                    ? t(
+                                          'app.tenant.planogram_templates.status.active',
+                                      )
+                                    : t(
+                                          'app.tenant.planogram_templates.status.inactive',
+                                      )
+                            }}
                         </Badge>
                     </div>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        {{ t('app.tenant.planogram_templates.show.code_prefix') }} <strong>{{ template.code }}</strong> · {{ t('app.tenant.planogram_templates.show.department_prefix') }} <strong>{{ template.department }}</strong>
+                        {{
+                            t('app.tenant.planogram_templates.show.code_prefix')
+                        }}
+                        <strong>{{ template.code }}</strong> ·
+                        {{
+                            t(
+                                'app.tenant.planogram_templates.show.department_prefix',
+                            )
+                        }}
+                        <strong>{{ template.department }}</strong>
                     </p>
-                    <p v-if="template.description" class="mt-2 text-sm text-muted-foreground">{{ template.description }}</p>
+                    <p
+                        v-if="template.description"
+                        class="mt-2 text-sm text-muted-foreground"
+                    >
+                        {{ template.description }}
+                    </p>
                 </div>
                 <Button variant="destructive" size="sm" @click="confirmDelete">
                     <Trash2 class="size-4" />
@@ -78,10 +130,19 @@ function confirmDelete(): void {
                 <div class="border-b border-border px-6 py-4">
                     <h2 class="flex items-center gap-2 text-base font-semibold">
                         <Layers class="size-4 text-muted-foreground" />
-                        {{ t('app.tenant.planogram_templates.show.subtemplates_title') }} ({{ template.subtemplates_count }})
+                        {{
+                            t(
+                                'app.tenant.planogram_templates.show.subtemplates_title',
+                            )
+                        }}
+                        ({{ template.subtemplates_count }})
                     </h2>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        {{ t('app.tenant.planogram_templates.show.subtemplates_description') }}
+                        {{
+                            t(
+                                'app.tenant.planogram_templates.show.subtemplates_description',
+                            )
+                        }}
                     </p>
                 </div>
                 <div class="divide-y divide-border">
@@ -93,16 +154,57 @@ function confirmDelete(): void {
                         <div>
                             <p class="font-medium">{{ sub.code }}</p>
                             <p class="text-sm text-muted-foreground">
-                                {{ sub.num_modules }} {{ sub.num_modules !== 1 ? t('app.tenant.planogram_templates.show.modules_plural') : t('app.tenant.planogram_templates.show.modules_singular') }}
+                                {{ sub.num_modules }}
+                                {{
+                                    sub.num_modules !== 1
+                                        ? t(
+                                              'app.tenant.planogram_templates.show.modules_plural',
+                                          )
+                                        : t(
+                                              'app.tenant.planogram_templates.show.modules_singular',
+                                          )
+                                }}
                             </p>
                         </div>
-                        <Badge variant="outline">{{ sub.slots_count }} {{ sub.slots_count !== 1 ? t('app.tenant.planogram_templates.show.slots_plural') : t('app.tenant.planogram_templates.show.slots_singular') }}</Badge>
+                        <Badge variant="outline"
+                            >{{ sub.slots_count }}
+                            {{
+                                sub.slots_count !== 1
+                                    ? t(
+                                          'app.tenant.planogram_templates.show.slots_plural',
+                                      )
+                                    : t(
+                                          'app.tenant.planogram_templates.show.slots_singular',
+                                      )
+                            }}</Badge
+                        >
                     </div>
-                    <div v-if="template.subtemplates.length === 0" class="px-6 py-8 text-center text-sm text-muted-foreground">
-                        {{ t('app.tenant.planogram_templates.show.empty_subtemplates') }}
+                    <div
+                        v-if="template.subtemplates.length === 0"
+                        class="px-6 py-8 text-center text-sm text-muted-foreground"
+                    >
+                        {{
+                            t(
+                                'app.tenant.planogram_templates.show.empty_subtemplates',
+                            )
+                        }}
                     </div>
                 </div>
             </div>
         </div>
     </AppLayout>
+
+    <PlanogramConfirmDialog
+        v-model:open="deleteDialogOpen"
+        :title="
+            t('app.tenant.planogram_templates.show.confirm_delete', {
+                name: props.template.name,
+            })
+        "
+        description="Esta ação não pode ser desfeita."
+        :confirm-label="t('app.tenant.planogram_templates.actions.delete')"
+        kind="delete"
+        :busy="deleteDialogBusy"
+        @confirm="deleteTemplate"
+    />
 </template>

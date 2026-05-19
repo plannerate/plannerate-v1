@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ChevronLeft } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
+import PlanogramConfirmDialog from '@/components/planogram-templates/PlanogramConfirmDialog.vue';
 import ProductSearchPanel from '@/components/planogram-templates/ProductSearchPanel.vue';
 import TemplateProductTable from '@/components/planogram-templates/TemplateProductTable.vue';
 import type {
@@ -58,12 +59,27 @@ const editPath = computed(() =>
         .replace(/^\/\/[^/]+/, ''),
 );
 const slotsPath = computed(() => `${baseUrl.value}/slots`);
+const productRemovalDialogOpen = ref(false);
+const productRemovalBusy = ref(false);
+const productPendingRemoval = ref<PlanogramTemplateProduct | null>(null);
 
 // ── Wizard ─────────────────────────────────────────────────────────────────────
 const wizardSteps: WizardStep[] = [
-    { step: 1, label: t('planogram-templates.wizard.step1_label'), description: t('planogram-templates.wizard.step1_description') },
-    { step: 2, label: t('planogram-templates.wizard.step2_label'), description: t('planogram-templates.wizard.step2_description') },
-    { step: 3, label: t('planogram-templates.wizard.step3_label'), description: t('planogram-templates.wizard.step3_description') },
+    {
+        step: 1,
+        label: t('planogram-templates.wizard.step1_label'),
+        description: t('planogram-templates.wizard.step1_description'),
+    },
+    {
+        step: 2,
+        label: t('planogram-templates.wizard.step2_label'),
+        description: t('planogram-templates.wizard.step2_description'),
+    },
+    {
+        step: 3,
+        label: t('planogram-templates.wizard.step3_label'),
+        description: t('planogram-templates.wizard.step3_description'),
+    },
 ];
 
 function navigateWizard(step: 1 | 2 | 3): void {
@@ -123,14 +139,29 @@ function updateGrouping(
 }
 
 function removeProduct(product: PlanogramTemplateProduct): void {
-    if (!confirm('Remover este produto do template?')) {
+    productPendingRemoval.value = product;
+    productRemovalDialogOpen.value = true;
+}
+
+function confirmRemoveProduct(): void {
+    if (!productPendingRemoval.value) {
         return;
     }
 
-    router.delete(`${baseUrl.value}/products/${product.id}`, {
-        preserveState: true,
-        only: ['products'],
-    });
+    productRemovalBusy.value = true;
+
+    router.delete(
+        `${baseUrl.value}/products/${productPendingRemoval.value.id}`,
+        {
+            preserveState: true,
+            only: ['products'],
+            onFinish: () => {
+                productRemovalBusy.value = false;
+                productRemovalDialogOpen.value = false;
+                productPendingRemoval.value = null;
+            },
+        },
+    );
 }
 
 function importBulk(file: File): void {
@@ -231,4 +262,14 @@ const breadcrumbs = [
             </div>
         </div>
     </AppLayout>
+
+    <PlanogramConfirmDialog
+        v-model:open="productRemovalDialogOpen"
+        title="Remover produto?"
+        description="Este produto será removido do mix deste template."
+        confirm-label="Remover"
+        kind="delete"
+        :busy="productRemovalBusy"
+        @confirm="confirmRemoveProduct"
+    />
 </template>

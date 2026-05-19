@@ -5,6 +5,7 @@ import { computed, ref, watch } from 'vue';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import GondolaGrid from '@/components/planogram-templates/GondolaGrid.vue';
+import PlanogramConfirmDialog from '@/components/planogram-templates/PlanogramConfirmDialog.vue';
 import SlotEditorModal from '@/components/planogram-templates/SlotEditorModal.vue';
 import type {
     PlanogramSubtemplate,
@@ -27,6 +28,12 @@ type TemplateBasic = {
     department: string;
     is_active: boolean;
 };
+
+type SlotDropPosition = { module_number: number; shelf_order: number };
+
+type PendingSlotAction =
+    | { type: 'remove'; slotId: string }
+    | { type: 'swap'; from: SlotDropPosition; to: SlotDropPosition };
 
 const props = defineProps<{
     subdomain: string;
@@ -63,11 +70,47 @@ const groupingSearchUrl = computed(() =>
         .replace(/^\/\/[^/]+/, ''),
 );
 
+const pendingSlotAction = ref<PendingSlotAction | null>(null);
+const confirmDialogOpen = ref(false);
+const confirmDialogBusy = ref(false);
+
+const confirmDialogContent = computed(() => {
+    if (pendingSlotAction.value?.type === 'remove') {
+        return {
+            title: 'Remover slot?',
+            description:
+                'Este grouping será removido desta posição do template.',
+            confirmLabel: 'Remover',
+            kind: 'delete' as const,
+        };
+    }
+
+    return {
+        title: 'Trocar slots?',
+        description:
+            'A posição de destino já está ocupada. Os dois slots serão trocados.',
+        confirmLabel: 'Trocar',
+        kind: 'move' as const,
+    };
+});
+
 // ── Wizard ─────────────────────────────────────────────────────────────────────
 const wizardSteps: WizardStep[] = [
-    { step: 1, label: t('planogram-templates.wizard.step1_label'), description: t('planogram-templates.wizard.step1_description') },
-    { step: 2, label: t('planogram-templates.wizard.step2_label'), description: t('planogram-templates.wizard.step2_description') },
-    { step: 3, label: t('planogram-templates.wizard.step3_label'), description: t('planogram-templates.wizard.step3_description') },
+    {
+        step: 1,
+        label: t('planogram-templates.wizard.step1_label'),
+        description: t('planogram-templates.wizard.step1_description'),
+    },
+    {
+        step: 2,
+        label: t('planogram-templates.wizard.step2_label'),
+        description: t('planogram-templates.wizard.step2_description'),
+    },
+    {
+        step: 3,
+        label: t('planogram-templates.wizard.step3_label'),
+        description: t('planogram-templates.wizard.step3_description'),
+    },
 ];
 
 function navigateWizard(step: 1 | 2 | 3): void {
@@ -209,14 +252,34 @@ function removeSlot(module: number, shelf: number): void {
         return;
     }
 
-    if (!confirm('Remover este slot?')) {
-        return;
-    }
+    pendingSlotAction.value = { type: 'remove', slotId: slot.id };
+    confirmDialogOpen.value = true;
+}
 
-    router.delete(`${baseUrl.value}/slots/${slot.id}`, {
+function deleteSlot(slotId: string): void {
+    confirmDialogBusy.value = true;
+
+    router.delete(`${baseUrl.value}/slots/${slotId}`, {
         preserveState: true,
         only: ['subtemplates'],
+        onFinish: () => {
+            confirmDialogBusy.value = false;
+            confirmDialogOpen.value = false;
+            pendingSlotAction.value = null;
+        },
     });
+}
+
+function reorderSlots(
+    subtemplateId: string,
+    from: SlotDropPosition,
+    to: SlotDropPosition,
+): void {
+    router.post(
+        `${baseUrl.value}/slots/reorder`,
+        { subtemplate_id: subtemplateId, from, to },
+        { preserveState: true, only: ['subtemplates'] },
+    );
 }
 
 function handleSlotDrop(
@@ -235,14 +298,54 @@ function handleSlotDrop(
             s.shelf_order === to.shelf_order,
     );
 
-    if (targetOccupied && !confirm('Trocar os dois slots?')) {
+    if (targetOccupied) {
+        pendingSlotAction.value = { type: 'swap', from, to };
+        confirmDialogOpen.value = true;
+
         return;
     }
 
+    reorderSlots(subtemplate.id, from, to);
+}
+
+function confirmSlotAction(): void {
+    const action = pendingSlotAction.value;
+    const subtemplate = currentSubtemplate.value;
+
+    if (!action) {
+        return;
+    }
+
+    if (action.type === 'remove') {
+        deleteSlot(action.slotId);
+
+        return;
+    }
+
+    if (!subtemplate) {
+        confirmDialogOpen.value = false;
+        pendingSlotAction.value = null;
+
+        return;
+    }
+
+    confirmDialogBusy.value = true;
     router.post(
         `${baseUrl.value}/slots/reorder`,
-        { subtemplate_id: subtemplate.id, from, to },
-        { preserveState: true, only: ['subtemplates'] },
+        {
+            subtemplate_id: subtemplate.id,
+            from: action.from,
+            to: action.to,
+        },
+        {
+            preserveState: true,
+            only: ['subtemplates'],
+            onFinish: () => {
+                confirmDialogBusy.value = false;
+                confirmDialogOpen.value = false;
+                pendingSlotAction.value = null;
+            },
+        },
     );
 }
 
@@ -398,5 +501,15 @@ const breadcrumbs = [
         :template-slot="editingSlot"
         :grouping-search-url="groupingSearchUrl"
         @save="saveSlot"
+    />
+
+    <PlanogramConfirmDialog
+        v-model:open="confirmDialogOpen"
+        :title="confirmDialogContent.title"
+        :description="confirmDialogContent.description"
+        :confirm-label="confirmDialogContent.confirmLabel"
+        :kind="confirmDialogContent.kind"
+        :busy="confirmDialogBusy"
+        @confirm="confirmSlotAction"
     />
 </template>

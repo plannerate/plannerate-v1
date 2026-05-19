@@ -37,7 +37,26 @@ class AutoPlanogramController extends Controller
                 return back()->with('warning', __('app.messages.planogram_not_found'));
             }
 
-            $rankedProducts = $this->productSelection->selectAndRankProducts($planogram, $config);
+            $templateId = $request->input('template_id');
+
+            // No modo template o especialista define quais produtos entram — venda só refina a ordem.
+            // Forçamos includeProductsWithoutSales=true para que produtos sem histórico cheguem ao placer.
+            $effectiveConfig = $templateId
+                ? new AutoGenerateConfigDTO(
+                    strategy: $config->strategy,
+                    useExistingAnalysis: $config->useExistingAnalysis,
+                    startDate: $config->startDate,
+                    endDate: $config->endDate,
+                    minFacings: $config->minFacings,
+                    maxFacings: $config->maxFacings,
+                    groupBySubcategory: $config->groupBySubcategory,
+                    includeProductsWithoutSales: true,
+                    tableType: $config->tableType,
+                    categoryId: $config->categoryId,
+                )
+                : $config;
+
+            $rankedProducts = $this->productSelection->selectAndRankProducts($planogram, $effectiveConfig);
 
             if ($rankedProducts->isEmpty()) {
                 return back()->with('warning', __('app.messages.no_products_found'));
@@ -57,7 +76,6 @@ class AutoPlanogramController extends Controller
                 weights: $weights,
             );
 
-            $templateId = $request->input('template_id');
             if ($templateId) {
                 $settings = $settings->withTemplate(
                     templateId: $templateId,
