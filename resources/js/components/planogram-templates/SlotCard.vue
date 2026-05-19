@@ -50,21 +50,21 @@ function onDragStart(event: DragEvent): void {
             <span v-if="slot.priority > 1">· {{ t('planogram-templates.slot_card.priority_prefix') }}{{ slot.priority }}</span>
         </div>
 
-        <!-- action buttons — visible on hover -->
-        <div class="absolute right-1 top-1 hidden gap-0.5 group-hover:flex">
+        <!-- action buttons — always visible -->
+        <div class="absolute right-1 top-1 flex gap-1">
             <button
                 type="button"
-                class="rounded p-0.5 transition hover:bg-black/10"
+                class="rounded p-1 transition hover:bg-black/10"
                 @click.stop="emit('edit')"
             >
-                <Pencil class="size-3" />
+                <Pencil class="size-4" />
             </button>
             <button
                 type="button"
-                class="rounded p-0.5 transition hover:bg-black/10"
+                class="rounded p-1 transition hover:bg-black/10"
                 @click.stop="emit('remove')"
             >
-                <X class="size-3" />
+                <X class="size-4" />
             </button>
         </div>
     </div>

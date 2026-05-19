@@ -85,7 +85,7 @@ function isDragOver(module: number, shelf: number): boolean {
         <div
             class="grid min-w-max"
             :style="{
-                gridTemplateColumns: `4rem repeat(${numModules}, minmax(9rem, 1fr))`,
+                gridTemplateColumns: `4rem repeat(${numModules}, minmax(9rem, 42rem))`,
             }"
         >
             <!-- Header row: empty corner + module labels -->
@@ -113,7 +113,7 @@ function isDragOver(module: number, shelf: number): boolean {
                 <div
                     v-for="m in modulesLeftToRight"
                     :key="`cell-${m}-${shelf}`"
-                    class="relative min-h-[4.5rem] border-b border-r border-border p-1 transition-colors last:border-r-0"
+                    class="relative min-h-20 border-b border-r border-border p-1 transition-colors last:border-r-0"
                     :class="{
                         'bg-blue-50 ring-2 ring-inset ring-blue-400': isDragOver(m, shelf),
                         'bg-background': !isDragOver(m, shelf) && !getSlot(m, shelf),

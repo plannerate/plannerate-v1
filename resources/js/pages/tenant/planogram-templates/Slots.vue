@@ -68,6 +68,14 @@ const groupingSearchUrl = computed(() =>
         .url(props.subdomain)
         .replace(/^\/\/[^/]+/, ''),
 );
+const productsPath = computed(() =>
+    PlanogramTemplateController.show
+        .url({
+            subdomain: props.subdomain,
+            planogramTemplate: props.template.id,
+        })
+        .replace(/^\/\/[^/]+/, '') + '#products',
+);
 
 const pendingSlotAction = ref<PendingSlotAction | null>(null);
 const confirmDialogOpen = ref(false);
@@ -418,7 +426,7 @@ const breadcrumbs = [
                     >Módulos:</span
                 >
                 <button
-                    v-for="n in [1, 2, 3, 4, 5, 6]"
+                    v-for="n in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]"
                     :key="n"
                     type="button"
                     class="rounded-md border px-3 py-1.5 text-sm font-medium transition"
