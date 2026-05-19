@@ -98,7 +98,15 @@ class ProductSelectionService
             $rankedProducts = $rankedProducts->filter(fn ($p) => $p->salesTotal > 0);
         }
 
-        // 5. Ordenar por score (maior = mais importante)
+        // 5. Filtrar produtos sem dimensões (width ou height)
+        $rankedProducts = $rankedProducts->filter(function ($p) {
+            $width = (float) ($p->product->width ?? 0);
+            $height = (float) ($p->product->height ?? 0);
+
+            return $width > 0 && $height > 0;
+        });
+
+        // 6. Ordenar por score (maior = mais importante)
         return $rankedProducts->sortByDesc('score')->values();
     }
 
