@@ -29,6 +29,7 @@ class GondolaFactory extends Factory
             'tenant_id' => Tenant::factory(),
             'user_id' => User::factory(),
             'planogram_id' => Planogram::factory(),
+            'template_id' => null,
             'linked_map_gondola_id' => null,
             'linked_map_gondola_category' => null,
             'name' => Str::title($name),

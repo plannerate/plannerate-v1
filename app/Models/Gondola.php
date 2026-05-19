@@ -27,6 +27,7 @@ class Gondola extends EditorGondola
         'tenant_id',
         'user_id',
         'planogram_id',
+        'template_id',
         'linked_map_gondola_id',
         'linked_map_gondola_category',
         'name',

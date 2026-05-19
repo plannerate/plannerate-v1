@@ -36,6 +36,8 @@ export interface Product {
     weight?: number;
     volume?: number;
     brand?: string;
+    grouping?: string;
+    grouping_normalized?: string;
     category?: string;
     status?: string;
     /** Indica se o produto tem dimensões (altura, largura e profundidade) preenchidas. */
@@ -138,6 +140,7 @@ export interface Gondola {
     width?: number;
     depth?: number;
     planogram_id?: string;
+    template_id?: string | null;
     linked_map_gondola_id?: string | null;
     linked_map_gondola_category?: string | null;
     created_at?: string;

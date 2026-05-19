@@ -35,6 +35,7 @@ class GondolaPayloadService
             'width' => $gondola->width,
             'depth' => $gondola->depth,
             'planogram_id' => $gondola->planogram_id,
+            'template_id' => $gondola->template_id,
             'linked_map_gondola_id' => $gondola->linked_map_gondola_id,
             'linked_map_gondola_category' => $gondola->linked_map_gondola_category,
             'created_at' => $gondola->created_at?->toISOString(),
@@ -115,6 +116,8 @@ class GondolaPayloadService
                                             'depth' => $segment->layer->product->depth,
                                             'weight' => $segment->layer->product->weight,
                                             'brand' => $segment->layer->product->brand,
+                                            'grouping' => $segment->layer->product->grouping,
+                                            'grouping_normalized' => $segment->layer->product->grouping_normalized,
                                             'status' => $segment->layer->product->status,
                                             'category' => $segment->layer->product->category?->name,
                                             'category_full_path' => $segment->layer->product->relationLoaded('category') && $segment->layer->product->category

@@ -5,6 +5,7 @@
             :key="section.id"
             :section="section"
             :scale="scale"
+            :highlightGroupingNormalized="highlightGroupingNormalized"
             :firstSection="index === 0"
             :lastSection="index === sections.length - 1"
         />
@@ -18,6 +19,7 @@ import Section from './Section.vue';
 interface Props {
     sections: SectionType[];
     scale: number;
+    highlightGroupingNormalized?: string | null;
 }
 
 defineProps<Props>();

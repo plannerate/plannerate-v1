@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\PlacementFailureReason;
 use App\Models\PlanogramRejectedProduct;
+use App\Models\PlanogramSubtemplate;
+use App\Models\PlanogramTemplateSlot;
 use App\Models\ScoringWeights;
 use App\Services\AutoPlanogram\AutoPlanogramService;
 use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
@@ -44,6 +46,10 @@ class AutoPlanogramController extends Controller
             }
 
             $templateId = $request->input('template_id');
+
+            $gondolaModel->forceFill([
+                'template_id' => $templateId,
+            ])->save();
 
             // No modo template o especialista define quais produtos entram — venda só refina a ordem.
             // Forçamos includeProductsWithoutSales=true para que produtos sem histórico cheguem ao placer.
@@ -206,6 +212,82 @@ class AutoPlanogramController extends Controller
             ]);
 
         return response()->json(['data' => $rejected]);
+    }
+
+    public function templateGroupings(Request $request, string $subdomain, string $gondola): JsonResponse
+    {
+        unset($request, $subdomain);
+
+        $gondolaModel = Gondola::query()
+            ->withCount('sections')
+            ->findOrFail($gondola);
+
+        if (! is_string($gondolaModel->template_id) || trim($gondolaModel->template_id) === '') {
+            return response()->json([
+                'data' => [],
+                'meta' => [
+                    'template_id' => null,
+                    'subtemplate_id' => null,
+                ],
+            ]);
+        }
+
+        $numModules = max((int) $gondolaModel->sections_count, (int) ($gondolaModel->num_modulos ?? 0));
+
+        $subtemplate = PlanogramSubtemplate::query()
+            ->where('template_id', $gondolaModel->template_id)
+            ->where('num_modules', '<=', $numModules)
+            ->where('is_active', true)
+            ->orderByDesc('num_modules')
+            ->first();
+
+        if (! $subtemplate) {
+            return response()->json([
+                'data' => [],
+                'meta' => [
+                    'template_id' => $gondolaModel->template_id,
+                    'subtemplate_id' => null,
+                ],
+            ]);
+        }
+
+        $slots = PlanogramTemplateSlot::query()
+            ->where('subtemplate_id', $subtemplate->id)
+            ->whereNotNull('grouping_normalized')
+            ->where('grouping_normalized', '!=', '')
+            ->orderBy('module_number')
+            ->orderBy('shelf_order')
+            ->get([
+                'grouping',
+                'grouping_normalized',
+                'module_number',
+                'shelf_order',
+            ]);
+
+        $groupings = $slots
+            ->groupBy('grouping_normalized')
+            ->map(function ($items, $groupingNormalized): array {
+                $first = $items->first();
+
+                return [
+                    'grouping' => $first->grouping,
+                    'grouping_normalized' => (string) $groupingNormalized,
+                    'slots_count' => $items->count(),
+                    'modules' => $items->pluck('module_number')->unique()->sort()->values()->all(),
+                    'shelves' => $items->pluck('shelf_order')->unique()->sort()->values()->all(),
+                ];
+            })
+            ->sortBy('grouping')
+            ->values()
+            ->all();
+
+        return response()->json([
+            'data' => $groupings,
+            'meta' => [
+                'template_id' => $gondolaModel->template_id,
+                'subtemplate_id' => $subtemplate->id,
+            ],
+        ]);
     }
 
     public function destroyRejectedProduct(Request $request, string $subdomain, string $gondola, string $rejected): JsonResponse

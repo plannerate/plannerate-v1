@@ -26,6 +26,7 @@ class Gondola extends Model
     protected $fillable = [
         'tenant_id',
         'planogram_id',
+        'template_id',
         'user_id',
         'name',
         'slug',

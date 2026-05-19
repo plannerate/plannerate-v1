@@ -7,6 +7,8 @@
             'ring-3 ring-primary ring-offset-2 bg-primary/20 shadow-xl scale-[1.02] animate-pulse z-50': isSegmentSelected,
             'ring-2 ring-amber-500/70 ring-offset-1 bg-amber-100/50 shadow-lg z-40':
                 isEanMatch && !isSegmentSelected && !isDropTarget,
+            'ring-2 ring-emerald-500 ring-offset-1 bg-emerald-50/70 shadow-lg z-40 animate-pulse':
+                isGroupingMatch && !isSegmentSelected && !isDropTarget,
             'hover:opacity-90':
                 !isSegmentSelected && !isDragging && !isDropTarget,
             'cursor-grabbing opacity-40': isDragging,
@@ -108,6 +110,7 @@ interface Props {
     fillSectionWidth?: boolean;
     sectionWidth?: number;
     internalAlignment?: 'left' | 'right' | 'center' | 'justify';
+    highlightGroupingNormalized?: string | null;
 }
 
 const props = defineProps<Props>();
@@ -134,6 +137,17 @@ const isEanMatch = computed(() => {
     }
 
     return productEan.includes(query);
+});
+
+const isGroupingMatch = computed(() => {
+    const targetGrouping = (props.highlightGroupingNormalized ?? '').trim();
+    const productGrouping = String(layer.value?.product?.grouping_normalized ?? '').trim();
+
+    if (!targetGrouping || !productGrouping) {
+        return false;
+    }
+
+    return targetGrouping === productGrouping;
 });
 
 const isSegmentSelected = computed(() => {

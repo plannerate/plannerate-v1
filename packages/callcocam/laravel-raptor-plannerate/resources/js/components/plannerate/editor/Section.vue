@@ -18,6 +18,7 @@
             :shelves="sortedShelves"
             :section="section"
             :scale="scale"
+            :highlightGroupingNormalized="highlightGroupingNormalized"
             :sectionWidth="sectionWidth"
             :sectionHeight="sectionHeight"
             :holes="holes"
@@ -61,6 +62,7 @@ interface Props {
     lastSection?: boolean;
     firstSection?: boolean;
     scale: number;
+    highlightGroupingNormalized?: string | null;
 }
 
 const props = defineProps<Props>();

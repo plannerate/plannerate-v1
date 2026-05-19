@@ -32,11 +32,23 @@ export function useAutoplanogramUrls(gondolaId: string) {
         );
     }
 
+    function templateGroupingsUrl(): string {
+        return stripDomain(
+            `//${subdomain.value}.plannerate.localhost/api/gondolas/${gondolaId}/template-groupings`,
+        );
+    }
+
     function destroyRejectedUrl(rejectedId: string): string {
         return stripDomain(
             `//${subdomain.value}.plannerate.localhost/api/gondolas/${gondolaId}/rejected-products/${rejectedId}`,
         );
     }
 
-    return { subdomain, rejectedProductsUrl, swapProductUrl, destroyRejectedUrl };
+    return {
+        subdomain,
+        rejectedProductsUrl,
+        swapProductUrl,
+        destroyRejectedUrl,
+        templateGroupingsUrl,
+    };
 }

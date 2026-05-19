@@ -29,6 +29,7 @@
             <Segment v-for="(segment, index) in segments" :key="segment.id" :segment="segment" :scale="scale"
                 :sectionWidth="sectionWidth" :shelf-depth="shelf.shelf_depth" :isFirstInShelf="index === 0"
                 :isLastInShelf="index === segments.length - 1" :fill-section-width="isSingleSegmentJustify"
+                :highlightGroupingNormalized="highlightGroupingNormalized"
                 :internal-alignment="isSingleSegmentJustify ? 'justify' : undefined
                     " style="pointer-events: auto" />
         </div>
@@ -114,6 +115,7 @@ interface Props {
     firstShelf?: ShelfType;
     lastShelf?: ShelfType;
     isLast?: boolean;
+    highlightGroupingNormalized?: string | null;
 }
 
 const props = defineProps<Props>();

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onClickOutside } from '@vueuse/core';
 import { Package } from 'lucide-vue-next';
-import { computed, onMounted, useTemplateRef, watch } from 'vue';
+import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { useT } from '@/composables/useT';
@@ -9,6 +9,7 @@ import type { Gondola } from '@/types/planogram';
 import Sections from './editor/Sections.vue';
 import Indicador from './Indicador.vue';
 import RejectedProductsDrawer from './editor/RejectedProductsDrawer.vue';
+import TemplateGroupingDrawer from './editor/TemplateGroupingDrawer.vue';
 
 interface Props {
     record?: Gondola;
@@ -129,6 +130,18 @@ const flowDirection = computed(
     () => editor.currentGondola.value?.flow || 'left_to_right',
 );
 const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
+const selectedGroupingNormalized = ref<string | null>(null);
+
+watch(
+    () => props.record?.template_id,
+    () => {
+        selectedGroupingNormalized.value = null;
+    },
+);
+
+function updateSelectedGrouping(value: string | null): void {
+    selectedGroupingNormalized.value = value;
+}
 </script>
 <template>
     <div class="relative flex min-w-0 flex-1 flex-col bg-muted/30" ref="target" v-if="containerHeight">
@@ -146,7 +159,11 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
             <!-- Sections do Planograma -->
             <div v-if="sortedSections.length > 0" class="relative z-0 flex min-h-full items-start pb-4"
                 :style="{ paddingTop: canvasTopPadding + 'px' }" data-planogram-canvas @click="handleCanvasClick">
-                <Sections :sections="sortedSections" :scale="editor.scaleFactor.value" />
+                <Sections
+                    :sections="sortedSections"
+                    :scale="editor.scaleFactor.value"
+                    :highlightGroupingNormalized="selectedGroupingNormalized"
+                />
             </div>
 
             <!-- Placeholder quando não há sections -->
@@ -165,6 +182,13 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
                 </div>
             </div>
         </div>
+
+        <TemplateGroupingDrawer
+            v-if="record?.id"
+            :gondola-id="record.id"
+            :template-id="record?.template_id ?? null"
+            @update:selectedGroupingNormalized="updateSelectedGrouping"
+        />
 
         <!-- Drawer de produtos rejeitados (overlay bottom) -->
         <RejectedProductsDrawer v-if="record?.id" :gondola-id="record.id" />
