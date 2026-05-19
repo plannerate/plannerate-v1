@@ -26,6 +26,7 @@ class PlanogramRejectedProduct extends Model
         'rejection_reason',
         'slot_id',
         'grouping',
+        'grouping_normalized',
         'module_number',
         'shelf_order',
     ];

@@ -2,6 +2,7 @@
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { useRejectedProductsStore } from '@/composables/plannerate/editor/useRejectedProductsStore';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
+import { selectedTemplateGroupingNormalized } from '@/composables/plannerate/editor/useGondolaState';
 import { useAutoplanogramUrls } from '@/composables/useAutoplanogramUrls';
 import { ArrowLeftRight, ChevronDown, ChevronUp, GripVertical, Layers, Loader2, MoveHorizontal, Ruler, X } from 'lucide-vue-next';
 import { type Component, computed, onMounted, onUnmounted, ref, watch } from 'vue';
@@ -22,6 +23,7 @@ interface RejectedProduct {
     rejection_reason_label: string;
     slot_id: string | null;
     grouping: string | null;
+    grouping_normalized: string | null;
     module_number: number | null;
     shelf_order: number | null;
 }
@@ -42,6 +44,25 @@ const swapSource = ref<RejectedProduct | null>(null);
 
 const swapModeActive = computed(() => swapSource.value !== null);
 
+// ── Cookie utilities ─────────────────────────────────────────────────────────
+const DRAWER_STATE_COOKIE = 'rejected-products-drawer-state';
+
+function getCookie(name: string): string | null {
+    if (typeof document === 'undefined') return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+    return null;
+}
+
+function setCookie(name: string, value: string, days: number = 30): void {
+    if (typeof document === 'undefined') return;
+    const date = new Date();
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+    const expires = `expires=${date.toUTCString()}`;
+    document.cookie = `${name}=${value}; ${expires}; path=/`;
+}
+
 // ── Click / dblclick (mesmo padrão do Card.vue do sidebar) ───────────────────
 let clickTimer: ReturnType<typeof setTimeout> | null = null;
 const clickDelay = 250;
@@ -59,6 +80,13 @@ function handleCardClick(_event: MouseEvent, product: RejectedProduct) {
     clickTimer = setTimeout(() => {
         // @ts-ignore
         selection.selectItem('product', product.product_id, buildProduct(product));
+        
+        // Se o produto tem grouping_normalized, atualizar filtro na gôndola
+        // Mas só se for diferente do selecionado atual (para não refazer busca desnecessária)
+        if (product.grouping_normalized && product.grouping_normalized !== selectedTemplateGroupingNormalized.value) {
+            selectedTemplateGroupingNormalized.value = product.grouping_normalized;
+        }
+        
         clickTimer = null;
     }, clickDelay);
 }
@@ -110,14 +138,15 @@ async function deleteFromBackend(rejectedId: string) {
 }
 
 // ── Fetch ────────────────────────────────────────────────────────────────────
-async function fetchRejected() {
+async function fetchRejected(shouldAutoOpen: boolean = false) {
     isLoading.value = true;
     try {
         const res = await fetch(rejectedProductsUrl());
         if (!res.ok) throw new Error();
         const json = await res.json();
         rejectedProducts.value = json.data ?? [];
-        if (rejectedProducts.value.length > 0) isOpen.value = true;
+        // Só força abrir se for a primeira vez (shouldAutoOpen = true)
+        if (shouldAutoOpen && rejectedProducts.value.length > 0) isOpen.value = true;
     } catch {
         toast.error('Não foi possível carregar produtos rejeitados.');
     } finally {
@@ -214,7 +243,7 @@ async function executeSwap(layerId: string) {
 
         toast.success(`"${source.product_name}" posicionado na gôndola.`);
         selection.clearSelection();
-        await fetchRejected();
+        await fetchRejected(false);
     } catch {
         swapSource.value = source;
         toast.error('Não foi possível realizar a troca. Tente novamente.');
@@ -236,7 +265,28 @@ watch(
     },
 );
 
-onMounted(() => void fetchRejected());
+onMounted(() => {
+    // Restaura estado do drawer do cookie
+    const savedState = getCookie(DRAWER_STATE_COOKIE);
+    const hasUserPreference = savedState !== null;
+    
+    if (savedState === 'open') {
+        isOpen.value = true;
+    } else if (savedState === 'closed') {
+        isOpen.value = false;
+    }
+    
+    // Só força abrir automaticamente se for a primeira vez (sem cookie)
+    void fetchRejected(!hasUserPreference);
+});
+
+watch(
+    () => isOpen.value,
+    (value) => {
+        setCookie(DRAWER_STATE_COOKIE, value ? 'open' : 'closed');
+    },
+);
+
 onUnmounted(() => rejectedStore.clearOnProductPlaced());
 
 defineExpose({ fetchRejected });
@@ -265,105 +315,114 @@ defineExpose({ fetchRejected });
             <ChevronDown v-else class="size-4 text-muted-foreground" />
         </button>
 
-        <!-- Drawer Body -->
-        <div
-            v-if="isOpen"
-            class="border-t border-border bg-background"
+        <!-- Drawer Body with Transition -->
+        <Transition
+            enter-active-class="transition-all duration-300 ease-out"
+            leave-active-class="transition-all duration-300 ease-in"
+            enter-from-class="max-h-0 opacity-0 overflow-hidden"
+            enter-to-class="max-h-screen opacity-100 overflow-visible"
+            leave-from-class="max-h-screen opacity-100 overflow-visible"
+            leave-to-class="max-h-0 opacity-0 overflow-hidden"
         >
-            <!-- Swap mode banner -->
             <div
-                v-if="swapModeActive"
-                class="flex items-center justify-between bg-amber-50 px-4 py-2 text-sm dark:bg-amber-950/30"
+                v-if="isOpen"
+                class="border-t border-border bg-background"
             >
-                <span class="font-medium text-amber-700 dark:text-amber-400">
-                    Clique em um produto na gôndola para trocar com
-                    <strong>{{ swapSource?.product_name }}</strong>
-                </span>
-                <Button variant="ghost" size="sm" class="h-6 gap-1 text-xs" @click="cancelSwapMode">
-                    <X class="size-3" /> Cancelar
-                </Button>
-            </div>
-
-            <!-- Empty state -->
-            <div v-if="!isLoading && rejectedProducts.length === 0" class="flex h-20 items-center justify-center text-sm text-muted-foreground">
-                Nenhum produto rejeitado nesta geração.
-            </div>
-
-            <!-- Product cards -->
-            <div v-else class="flex gap-3 overflow-x-auto p-3">
+                <!-- Swap mode banner -->
                 <div
-                    v-for="product in rejectedProducts"
-                    :key="product.id"
-                    draggable="true"
-                    class="flex w-36 flex-shrink-0 flex-col gap-1.5 rounded-lg border p-2 transition-all select-none"
-                    :class="{
-                        'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200 dark:bg-blue-950/20 dark:ring-blue-900':
-                            isProductSelected(product) && !swapModeActive,
-                        'border-border bg-card': !isProductSelected(product),
-                        'ring-2 ring-amber-400 border-amber-400': swapSource?.id === product.id,
-                        'opacity-40': swapModeActive && swapSource?.id !== product.id,
-                        'cursor-grabbing opacity-50 ring-2 ring-primary': draggingId === product.id,
-                        'cursor-grab': draggingId !== product.id,
-                    }"
-                    @click.stop="handleCardClick($event, product)"
-                    @dragstart="handleDragStart($event, product)"
-                    @dragend="handleDragEnd"
-                    @dblclick.stop="handleDoubleClick(product)"
+                    v-if="swapModeActive"
+                    class="flex items-center justify-between bg-amber-50 px-4 py-2 text-sm dark:bg-amber-950/30"
                 >
-                    <!-- Drag handle hint + image -->
-                    <div class="relative flex h-16 items-center justify-center overflow-hidden rounded bg-muted">
-                        <GripVertical class="absolute left-0.5 top-0.5 size-3 text-muted-foreground/40" />
-                        <img
-                            v-if="product.image_url"
-                            :src="product.image_url"
-                            :alt="product.product_name"
-                            class="max-h-full max-w-full object-contain"
-                        />
-                        <span v-else class="text-xs text-muted-foreground">Sem imagem</span>
-                    </div>
-
-                    <!-- Product name -->
-                    <p class="line-clamp-2 text-xs font-medium leading-tight">
-                        {{ product.product_name }}
-                    </p>
-
-                    <!-- Grouping -->
-                    <p v-if="product.grouping" class="truncate text-xs text-muted-foreground">
-                        {{ product.grouping.split(' | ').at(-1) }}
-                    </p>
-
-                    <!-- Reason badge -->
-                    <TooltipProvider :delay-duration="200">
-                        <Tooltip>
-                            <TooltipTrigger as-child>
-                                <Badge
-                                    :variant="reasonMeta(product.rejection_reason).variant"
-                                    class="w-full cursor-default justify-start gap-1 px-1.5 py-0.5 text-xs"
-                                >
-                                    <component :is="reasonMeta(product.rejection_reason).icon" class="size-3 shrink-0" />
-                                    {{ reasonMeta(product.rejection_reason).label }}
-                                </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">
-                                {{ product.rejection_reason_label }}
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-
-                    <!-- Swap button -->
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        class="mt-auto h-7 w-full gap-1 text-xs"
-                        :disabled="isSwapping || (swapModeActive && swapSource?.id !== product.id)"
-                        @click.stop="swapSource?.id === product.id ? cancelSwapMode() : enterSwapMode(product)"
-                    >
-                        <Loader2 v-if="isSwapping && swapSource?.id === product.id" class="size-3 animate-spin" />
-                        <ArrowLeftRight v-else class="size-3" />
-                        {{ swapSource?.id === product.id ? 'Cancelar' : 'Trocar' }}
+                    <span class="font-medium text-amber-700 dark:text-amber-400">
+                        Clique em um produto na gôndola para trocar com
+                        <strong>{{ swapSource?.product_name }}</strong>
+                    </span>
+                    <Button variant="ghost" size="sm" class="h-6 gap-1 text-xs" @click="cancelSwapMode">
+                        <X class="size-3" /> Cancelar
                     </Button>
                 </div>
+
+                <!-- Empty state -->
+                <div v-if="!isLoading && rejectedProducts.length === 0" class="flex h-20 items-center justify-center text-sm text-muted-foreground">
+                    Nenhum produto rejeitado nesta geração.
+                </div>
+
+                <!-- Product cards -->
+                <div v-else class="flex gap-3 overflow-x-auto p-3">
+                    <div
+                        v-for="product in rejectedProducts"
+                        :key="product.id"
+                        draggable="true"
+                        class="flex w-36 flex-shrink-0 flex-col gap-1.5 rounded-lg border p-2 transition-all select-none"
+                        :class="{
+                            'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200 dark:bg-blue-950/20 dark:ring-blue-900':
+                                isProductSelected(product) && !swapModeActive,
+                            'border-border bg-card': !isProductSelected(product),
+                            'ring-2 ring-amber-400 border-amber-400': swapSource?.id === product.id,
+                            'opacity-40': swapModeActive && swapSource?.id !== product.id,
+                            'cursor-grabbing opacity-50 ring-2 ring-primary': draggingId === product.id,
+                            'cursor-grab': draggingId !== product.id,
+                        }"
+                        @click.stop="handleCardClick($event, product)"
+                        @dragstart="handleDragStart($event, product)"
+                        @dragend="handleDragEnd"
+                        @dblclick.stop="handleDoubleClick(product)"
+                    >
+                        <!-- Drag handle hint + image -->
+                        <div class="relative flex h-16 items-center justify-center overflow-hidden rounded bg-muted">
+                            <GripVertical class="absolute left-0.5 top-0.5 size-3 text-muted-foreground/40" />
+                            <img
+                                v-if="product.image_url"
+                                :src="product.image_url"
+                                :alt="product.product_name"
+                                class="max-h-full max-w-full object-contain"
+                            />
+                            <span v-else class="text-xs text-muted-foreground">Sem imagem</span>
+                        </div>
+
+                        <!-- Product name -->
+                        <p class="line-clamp-2 text-xs font-medium leading-tight">
+                            {{ product.product_name }}
+                        </p>
+
+                        <!-- Grouping -->
+                        <p v-if="product.grouping" class="truncate text-xs text-muted-foreground">
+                            {{ product.grouping.split(' | ').at(-1) }}
+                        </p>
+
+                        <!-- Reason badge -->
+                        <TooltipProvider :delay-duration="200">
+                            <Tooltip>
+                                <TooltipTrigger as-child>
+                                    <Badge
+                                        :variant="reasonMeta(product.rejection_reason).variant"
+                                        class="w-full cursor-default justify-start gap-1 px-1.5 py-0.5 text-xs"
+                                    >
+                                        <component :is="reasonMeta(product.rejection_reason).icon" class="size-3 shrink-0" />
+                                        {{ reasonMeta(product.rejection_reason).label }}
+                                    </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                    {{ product.rejection_reason_label }}
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
+                        <!-- Swap button -->
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            class="mt-auto h-7 w-full gap-1 text-xs"
+                            :disabled="isSwapping || (swapModeActive && swapSource?.id !== product.id)"
+                            @click.stop="swapSource?.id === product.id ? cancelSwapMode() : enterSwapMode(product)"
+                        >
+                            <Loader2 v-if="isSwapping && swapSource?.id === product.id" class="size-3 animate-spin" />
+                            <ArrowLeftRight v-else class="size-3" />
+                            {{ swapSource?.id === product.id ? 'Cancelar' : 'Trocar' }}
+                        </Button>
+                    </div>
+                </div>
             </div>
-        </div>
+        </Transition>
     </div>
 </template>

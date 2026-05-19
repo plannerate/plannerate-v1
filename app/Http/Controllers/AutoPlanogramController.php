@@ -207,6 +207,7 @@ class AutoPlanogramController extends Controller
                 'rejection_reason_label' => $r->rejection_reason->label(),
                 'slot_id' => $r->slot_id,
                 'grouping' => $r->grouping,
+                'grouping_normalized' => $r->grouping_normalized,
                 'module_number' => $r->module_number,
                 'shelf_order' => $r->shelf_order,
             ]);
