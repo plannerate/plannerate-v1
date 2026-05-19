@@ -183,7 +183,8 @@ class AutoPlanogramController extends Controller
     {
         $gondolaModel = Gondola::findOrFail($gondola);
 
-        $rejected = PlanogramRejectedProduct::where('gondola_id', $gondola)
+        $rejected = PlanogramRejectedProduct::with('product')
+            ->where('gondola_id', $gondola)
             ->where('planogram_id', $gondolaModel->planogram_id)
             ->orderBy('grouping')
             ->orderBy('shelf_order')
@@ -193,7 +194,7 @@ class AutoPlanogramController extends Controller
                 'product_id' => $r->product_id,
                 'product_name' => $r->product_name,
                 'ean' => $r->ean,
-                'image_url' => $r->image_url,
+                'image_url' => $r->product?->image_url ?: $r->image_url,
                 'product_width' => $r->product_width,
                 'product_height' => $r->product_height,
                 'rejection_reason' => $r->rejection_reason->value,

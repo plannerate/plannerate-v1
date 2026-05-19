@@ -46,6 +46,11 @@ class PlanogramRejectedProduct extends Model
         return $this->belongsTo(Gondola::class);
     }
 
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+
     public function rejectionReasonLabel(): string
     {
         return $this->rejection_reason->label();

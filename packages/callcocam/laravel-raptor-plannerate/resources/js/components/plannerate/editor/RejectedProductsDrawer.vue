@@ -50,20 +50,15 @@ function isProductSelected(product: RejectedProduct): boolean {
     return selection.isSelected('product', product.product_id);
 }
 
-function handleCardClick(event: MouseEvent, product: RejectedProduct) {
+function handleCardClick(_event: MouseEvent, product: RejectedProduct) {
     if (clickTimer) {
         clearTimeout(clickTimer);
         clickTimer = null;
         return; // dblclick — deixa handleDoubleClick tratar
     }
     clickTimer = setTimeout(() => {
-        if (event.ctrlKey || event.metaKey) {
-            // @ts-ignore
-            selection.toggleSelection('product', product.product_id, buildProduct(product));
-        } else {
-            //  @ts-ignore
-            selection.selectItem('product', product.product_id, buildProduct(product));
-        }
+        // @ts-ignore
+        selection.selectItem('product', product.product_id, buildProduct(product));
         clickTimer = null;
     }, clickDelay);
 }
