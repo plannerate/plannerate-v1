@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Concerns\InteractsWithSyncImageDownLoad;
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplate;
 use App\Models\PlanogramTemplateSlot;
@@ -32,7 +33,7 @@ class TemplateSlotController extends Controller
         unset($subdomain);
         $this->authorize('view', $planogramTemplate);
 
-        $planogramTemplate->load(['subtemplates.slots']);
+        $planogramTemplate->load(['subtemplates.slots.category']);
 
         return Inertia::render('tenant/planogram-templates/Slots', [
             'subdomain' => $this->tenantSubdomain(),
@@ -53,7 +54,7 @@ class TemplateSlotController extends Controller
             'shelf_width_cm' => ['nullable', 'numeric', 'min:30', 'max:500'],
         ]);
 
-        $planogramTemplate->load(['subtemplates.slots']);
+        $planogramTemplate->load(['subtemplates.slots.category']);
 
         $currentModule = (int) ($validated['module'] ?? 1);
 
@@ -102,7 +103,7 @@ class TemplateSlotController extends Controller
             'tenant_id' => $this->tenantId(),
         ]);
 
-        $planogramTemplate->load(['subtemplates.slots']);
+        $planogramTemplate->load(['subtemplates.slots.category']);
 
         return redirect()->route('tenant.planogram-templates.slots.index', [
             'subdomain' => $this->tenantSubdomain(),
@@ -131,6 +132,22 @@ class TemplateSlotController extends Controller
         ]);
     }
 
+    public function destroySubtemplate(string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
+    {
+        unset($subdomain);
+        $this->authorize('update', $planogramTemplate);
+
+        $planogramSubtemplate->slots()->delete();
+        $planogramSubtemplate->delete();
+
+        $planogramTemplate->load(['subtemplates.slots.category']);
+
+        return redirect()->route('tenant.planogram-templates.slots.index', [
+            'subdomain' => $this->tenantSubdomain(),
+            'planogramTemplate' => $planogramTemplate->id,
+        ]);
+    }
+
     public function storeSlot(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
     {
         unset($subdomain);
@@ -142,7 +159,7 @@ class TemplateSlotController extends Controller
             'tenant_id' => $this->tenantId(),
         ]);
 
-        $planogramTemplate->load(['subtemplates.slots']);
+        $planogramTemplate->load(['subtemplates.slots.category']);
 
         return redirect()->route('tenant.planogram-templates.slots.index', [
             'subdomain' => $this->tenantSubdomain(),
@@ -159,7 +176,7 @@ class TemplateSlotController extends Controller
 
         $this->service->updateSlot($planogramTemplateSlot, $validated);
 
-        $planogramTemplate->load(['subtemplates.slots']);
+        $planogramTemplate->load(['subtemplates.slots.category']);
 
         return redirect()->route('tenant.planogram-templates.slots.index', [
             'subdomain' => $this->tenantSubdomain(),
@@ -174,7 +191,7 @@ class TemplateSlotController extends Controller
 
         $this->service->destroySlot($planogramTemplateSlot);
 
-        $planogramTemplate->load(['subtemplates.slots']);
+        $planogramTemplate->load(['subtemplates.slots.category']);
 
         return redirect()->route('tenant.planogram-templates.slots.index', [
             'subdomain' => $this->tenantSubdomain(),
@@ -191,7 +208,7 @@ class TemplateSlotController extends Controller
 
         $this->service->reorderSlots($planogramTemplate, $validated);
 
-        $planogramTemplate->load(['subtemplates.slots']);
+        $planogramTemplate->load(['subtemplates.slots.category']);
 
         return redirect()->route('tenant.planogram-templates.slots.index', [
             'subdomain' => $this->tenantSubdomain(),
@@ -206,12 +223,14 @@ class TemplateSlotController extends Controller
         $this->authorize('viewAny', Product::class);
 
         $validated = $request->validate([
-            'grouping_normalized' => ['required', 'string', 'max:255'],
+            'category_id' => ['required', 'string', 'max:26'],
         ]);
 
+        $categoryIds = Category::getDescendantIds($validated['category_id']);
+
         $products = Product::query()
-            ->select(['id', 'name', 'ean', 'brand', 'grouping', 'grouping_normalized'])
-            ->where('grouping_normalized', $validated['grouping_normalized'])
+            ->select(['id', 'name', 'ean', 'brand', 'category_id'])
+            ->whereIn('category_id', $categoryIds)
             ->orderBy('name')
             ->limit(200)
             ->get();
@@ -222,8 +241,7 @@ class TemplateSlotController extends Controller
                 'name' => (string) $product->name,
                 'ean' => (string) ($product->ean ?? ''),
                 'brand' => (string) ($product->brand ?? ''),
-                'grouping' => (string) ($product->grouping ?? ''),
-                'grouping_normalized' => (string) ($product->grouping_normalized ?? ''),
+                'category_id' => (string) ($product->category_id ?? ''),
             ])->values()->all(),
         ]);
     }

@@ -2,7 +2,7 @@
 import { Pencil, X } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useT } from '@/composables/useT';
-import { groupingToColor } from './types';
+import { slotColor } from './types';
 import type { PlanogramTemplateSlot } from './types';
 
 const props = defineProps<{
@@ -16,7 +16,7 @@ const emit = defineEmits<{
 
 const { t } = useT();
 
-const colors = computed(() => groupingToColor(props.slot.grouping));
+const colors = computed(() => slotColor(props.slot.category_id ?? ''));
 
 const priceOrderLabel: Record<string, string> = {
     asc: t('planogram-templates.slot_card.price_order.asc'),
@@ -43,7 +43,12 @@ function onDragStart(event: DragEvent): void {
         draggable="true"
         @dragstart="onDragStart"
     >
-        <span class="line-clamp-2 font-semibold leading-tight">{{ slot.grouping }}</span>
+        <span class="line-clamp-2 font-semibold leading-tight">
+            {{ slot.category_name ?? 'Sem categoria' }}
+        </span>
+        <span v-if="slot.category_path" class="line-clamp-1 text-[10px] opacity-70">
+            {{ slot.category_path }}
+        </span>
         <div class="flex flex-wrap gap-1 text-[10px] opacity-75">
             <span>{{ t('planogram-templates.slot_card.min_facings_label') }} {{ slot.min_facings }}{{ t('planogram-templates.slot_card.facings_abbr') }}</span>
             <span v-if="priceOrderLabel[slot.price_order]">· {{ priceOrderLabel[slot.price_order] }}</span>

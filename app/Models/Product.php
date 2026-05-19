@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\HasCategory;
-use App\Models\Traits\SyncsGroupingFromSortimentAttribute;
 use App\Models\Traits\UsesTenantConnection;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -19,7 +18,7 @@ use Tall\Sluggable\SlugOptions;
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
-    use BelongsToTenant, HasCategory, HasFactory, HasSlug, HasUlids, SoftDeletes, SyncsGroupingFromSortimentAttribute, UsesTenantConnection;
+    use BelongsToTenant, HasCategory, HasFactory, HasSlug, HasUlids, SoftDeletes, UsesTenantConnection;
 
     /**
      * The attributes that are mass assignable.
@@ -76,8 +75,6 @@ class Product extends Model
         'dimensions_status',
         'dimensions_description',
         'current_stock',
-        'grouping',
-        'grouping_normalized',
     ];
 
     protected $appends = [
@@ -106,14 +103,6 @@ class Product extends Model
             'last_purchase_date' => 'date',
             'resolution_details' => 'array',
         ];
-    }
-
-    public function setGroupingAttribute(?string $value): void
-    {
-        $this->attributes['grouping'] = $value;
-        $this->attributes['grouping_normalized'] = $value !== null && $value !== ''
-            ? (string) preg_replace('/\s+/', ' ', mb_strtolower(trim($value), 'UTF-8'))
-            : null;
     }
 
     public function getImageUrlAttribute(): string

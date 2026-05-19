@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, Download, Upload } from 'lucide-vue-next';
+import { ChevronLeft, ChevronRight, Download, Trash2, Upload } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
-import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import GondolaGrid from '@/components/planogram-templates/GondolaGrid.vue';
 import ModuleSelectorButtons from '@/components/planogram-templates/ModuleSelectorButtons.vue';
 import PlanogramConfirmDialog from '@/components/planogram-templates/PlanogramConfirmDialog.vue';
@@ -34,7 +33,8 @@ type SlotDropPosition = { module_number: number; shelf_order: number };
 
 type PendingSlotAction =
     | { type: 'remove'; slotId: string }
-    | { type: 'swap'; from: SlotDropPosition; to: SlotDropPosition };
+    | { type: 'swap'; from: SlotDropPosition; to: SlotDropPosition }
+    | { type: 'remove-subtemplate'; subtemplateId: string; numModules: number };
 
 const props = defineProps<{
     subdomain: string;
@@ -64,11 +64,6 @@ const editPath = computed(() =>
         })
         .replace(/^\/\/[^/]+/, ''),
 );
-const groupingSearchUrl = computed(() =>
-    ProductController.sortimentAttributes
-        .url(props.subdomain)
-        .replace(/^\/\/[^/]+/, ''),
-);
 const reviewPath = computed(() =>
     `${baseUrl.value}/review`,
 );
@@ -83,8 +78,17 @@ const confirmDialogContent = computed(() => {
     if (pendingSlotAction.value?.type === 'remove') {
         return {
             title: 'Remover slot?',
-            description:
-                'Este grouping será removido desta posição do template.',
+            description: 'Este slot será removido desta posição do template.',
+            confirmLabel: 'Remover',
+            kind: 'delete' as const,
+        };
+    }
+
+    if (pendingSlotAction.value?.type === 'remove-subtemplate') {
+        const n = pendingSlotAction.value.numModules;
+        return {
+            title: `Remover ${n} módulo${n > 1 ? 's' : ''}?`,
+            description: `Todos os ${pendingSlotAction.value.numModules === 1 ? 'slot deste módulo será removido' : `slots dos ${n} módulos serão removidos`} permanentemente. Esta ação não pode ser desfeita.`,
             confirmLabel: 'Remover',
             kind: 'delete' as const,
         };
@@ -222,10 +226,7 @@ function openSlotEditor(
 }
 
 function saveSlot(
-    draft: Omit<
-        PlanogramTemplateSlot,
-        'id' | 'subtemplate_id' | 'grouping_normalized' | 'ordering'
-    >,
+    draft: Omit<PlanogramTemplateSlot, 'id' | 'subtemplate_id' | 'ordering'>,
 ): void {
     const existingSlot = currentSubtemplate.value?.slots.find(
         (s) =>
@@ -353,7 +354,6 @@ function handleSlotDrop(
 
 function confirmSlotAction(): void {
     const action = pendingSlotAction.value;
-    const subtemplate = currentSubtemplate.value;
 
     if (!action) {
         return;
@@ -361,14 +361,29 @@ function confirmSlotAction(): void {
 
     if (action.type === 'remove') {
         deleteSlot(action.slotId);
-
         return;
     }
+
+    if (action.type === 'remove-subtemplate') {
+        confirmDialogBusy.value = true;
+        router.delete(`${baseUrl.value}/subtemplates/${action.subtemplateId}`, {
+            onSuccess: () => {
+                currentModules.value = props.subtemplates[0]?.num_modules ?? 1;
+            },
+            onFinish: () => {
+                confirmDialogBusy.value = false;
+                confirmDialogOpen.value = false;
+                pendingSlotAction.value = null;
+            },
+        });
+        return;
+    }
+
+    const subtemplate = currentSubtemplate.value;
 
     if (!subtemplate) {
         confirmDialogOpen.value = false;
         pendingSlotAction.value = null;
-
         return;
     }
 
@@ -390,6 +405,17 @@ function confirmSlotAction(): void {
             },
         },
     );
+}
+
+function requestRemoveSubtemplate(): void {
+    const subtemplate = currentSubtemplate.value;
+    if (!subtemplate) return;
+    pendingSlotAction.value = {
+        type: 'remove-subtemplate',
+        subtemplateId: subtemplate.id,
+        numModules: subtemplate.num_modules,
+    };
+    confirmDialogOpen.value = true;
 }
 
 // ── Export / Import ────────────────────────────────────────────────────────────
@@ -442,7 +468,7 @@ const breadcrumbs = [
                 <div>
                     <h1 class="text-xl font-semibold">{{ template.name }}</h1>
                     <p class="text-sm text-muted-foreground">
-                        Etapa 2 — configure os groupings por módulo e prateleira
+                        Etapa 2 — configure as categorias por módulo e prateleira
                     </p>
                 </div>
                 <div class="flex gap-2">
@@ -487,6 +513,16 @@ const breadcrumbs = [
                             : 'Novo'
                     }}
                 </Badge>
+                <Button
+                    v-if="subtemplateExists(currentModules)"
+                    variant="ghost"
+                    size="sm"
+                    class="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    title="Remover este subtemplate"
+                    @click="requestRemoveSubtemplate"
+                >
+                    <Trash2 class="size-3.5" />
+                </Button>
             </div>
 
             <!-- Shelf count control -->
@@ -565,7 +601,6 @@ const breadcrumbs = [
         :module-number="editingModule"
         :shelf-order="editingShelf"
         :template-slot="editingSlot"
-        :grouping-search-url="groupingSearchUrl"
         @save="saveSlot"
     />
 

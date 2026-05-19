@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PlacementFailureReason;
+use App\Models\Category;
 use App\Models\PlanogramRejectedProduct;
 use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplateSlot;
@@ -254,25 +255,29 @@ class AutoPlanogramController extends Controller
 
         $slots = PlanogramTemplateSlot::query()
             ->where('subtemplate_id', $subtemplate->id)
-            ->whereNotNull('grouping_normalized')
-            ->where('grouping_normalized', '!=', '')
+            ->whereNotNull('category_id')
             ->orderBy('module_number')
             ->orderBy('shelf_order')
-            ->get([
-                'grouping',
-                'grouping_normalized',
-                'module_number',
-                'shelf_order',
-            ]);
+            ->get(['category_id', 'module_number', 'shelf_order']);
+
+        $categoryIds = $slots->pluck('category_id')->unique()->filter()->values()->all();
+
+        $categories = $categoryIds !== []
+            ? Category::withoutGlobalScopes()
+                ->whereIn('id', $categoryIds)
+                ->get(['id', 'name'])
+                ->keyBy('id')
+            : collect();
 
         $groupings = $slots
-            ->groupBy('grouping_normalized')
-            ->map(function ($items, $groupingNormalized): array {
-                $first = $items->first();
+            ->groupBy('category_id')
+            ->map(function ($items, $categoryId) use ($categories): array {
+                $categoryName = (string) ($categories->get($categoryId)?->name ?? $categoryId);
 
                 return [
-                    'grouping' => $first->grouping,
-                    'grouping_normalized' => (string) $groupingNormalized,
+                    'category_id' => (string) $categoryId,
+                    'grouping' => $categoryName,
+                    'grouping_normalized' => (string) $categoryId,
                     'slots_count' => $items->count(),
                     'modules' => $items->pluck('module_number')->unique()->sort()->values()->all(),
                     'shelves' => $items->pluck('shelf_order')->unique()->sort()->values()->all(),

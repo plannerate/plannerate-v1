@@ -18,6 +18,14 @@ final class TemplateImportReport
     /** @var list<string> */
     public array $warnings = [];
 
+    /**
+     * Slots cuja categoria não foi resolvida pelo nome do grouping.
+     * Precisam de ajuste manual no wizard de template.
+     *
+     * @var list<array{grouping: string, module: int, shelf_order: int, sugestao: string}>
+     */
+    public array $slotsWithoutCategory = [];
+
     public function addError(string $message): void
     {
         $this->errors[] = $message;

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormSwitchField from '@/components/form/FormSwitchField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
-import RemoteAutocompleteField from '@/components/form/RemoteAutocompleteField.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -12,20 +12,22 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
 import type { PlanogramTemplateSlot } from './types';
 
-type SlotDraft = Omit<
-    PlanogramTemplateSlot,
-    | 'id'
-    | 'subtemplate_id'
-    | 'grouping_normalized'
-    | 'ordering'
-    | 'category'
-    | 'subcategory'
-> & {
-    category: string;
-    subcategory: string;
+type SlotDraft = {
+    module_number: number;
+    shelf_order: number;
+    category_id: string | null;
+    min_facings: number;
+    priority: number;
+    price_order: PlanogramTemplateSlot['price_order'];
+    size_order: PlanogramTemplateSlot['size_order'];
+    brand_exposure: PlanogramTemplateSlot['brand_exposure'];
+    flavor_exposure: PlanogramTemplateSlot['flavor_exposure'];
+    space_fallback: PlanogramTemplateSlot['space_fallback'];
+    use_target_stock: boolean;
 };
 
 const props = defineProps<{
@@ -33,7 +35,6 @@ const props = defineProps<{
     moduleNumber: number;
     shelfOrder: number;
     templateSlot?: PlanogramTemplateSlot | null;
-    groupingSearchUrl?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -44,9 +45,7 @@ const emit = defineEmits<{
 const draft = reactive<SlotDraft>({
     module_number: props.moduleNumber,
     shelf_order: props.shelfOrder,
-    grouping: '',
-    category: '',
-    subcategory: '',
+    category_id: null,
     min_facings: 1,
     priority: 1,
     price_order: 'none',
@@ -72,9 +71,7 @@ watch(
 
         draft.module_number = module;
         draft.shelf_order = shelf;
-        draft.grouping = slot?.grouping ?? '';
-        draft.category = slot?.category ?? '';
-        draft.subcategory = slot?.subcategory ?? '';
+        draft.category_id = slot?.category_id ?? null;
         draft.min_facings = slot?.min_facings ?? 1;
         draft.priority = slot?.priority ?? 1;
         draft.price_order = slot?.price_order ?? 'none';
@@ -106,36 +103,12 @@ const priorityModel = computed({
 });
 
 function saveSlot(): void {
-    if (!draft.grouping.trim()) {
+    if (!draft.category_id) {
         return;
     }
 
     emit('save', { ...draft });
     emit('update:open', false);
-}
-
-function applyGroupingHierarchy(grouping: string): void {
-    const segments = grouping
-        .split('|')
-        .map((segment) => segment.trim())
-        .filter((segment) => segment !== '');
-
-    if (segments.length === 0) {
-        draft.category = '';
-        draft.subcategory = '';
-
-        return;
-    }
-
-    if (segments.length === 1) {
-        draft.category = segments[0];
-        draft.subcategory = segments[0];
-
-        return;
-    }
-
-    draft.category = segments[segments.length - 2];
-    draft.subcategory = segments[segments.length - 1];
 }
 </script>
 
@@ -153,50 +126,19 @@ function applyGroupingHierarchy(grouping: string): void {
             </DialogHeader>
 
             <div class="grid gap-5 py-2">
-                <!-- Grouping -->
-                <RemoteAutocompleteField
-                    id="slot-grouping"
-                    v-model="draft.grouping"
-                    :label="t('planogram-templates.slot_editor.grouping_label')"
-                    :search-url="groupingSearchUrl"
-                    :placeholder="
-                        t('planogram-templates.slot_editor.grouping_example')
-                    "
-                    :hint="t('planogram-templates.slot_editor.grouping_hint')"
-                    :empty-text="'Nenhum sortiment_attribute encontrado.'"
-                    required
-                    @select="applyGroupingHierarchy"
-                />
-
-                <!-- Categoria / Subcategoria -->
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <FormTextField
-                        id="slot-category"
-                        v-model="draft.category"
-                        name="category"
-                        :label="
-                            t('planogram-templates.slot_editor.category_label')
-                        "
-                        :placeholder="
-                            t(
-                                'planogram-templates.slot_editor.category_example',
-                            )
-                        "
-                    />
-                    <FormTextField
-                        id="slot-subcategory"
-                        v-model="draft.subcategory"
-                        name="subcategory"
-                        :label="
-                            t(
-                                'planogram-templates.slot_editor.subcategory_label',
-                            )
-                        "
-                        :placeholder="
-                            t(
-                                'planogram-templates.slot_editor.subcategory_example',
-                            )
-                        "
+                <!-- Categoria -->
+                <div class="flex flex-col gap-y-1.5">
+                    <Label class="text-sm font-medium">
+                        Categoria
+                        <span class="text-destructive">*</span>
+                    </Label>
+                    <p class="text-xs text-muted-foreground">
+                        Define quais produtos entram neste slot. Selecionar uma categoria pai inclui todos os produtos das subcategorias.
+                    </p>
+                    <CategoryCascadeSelect
+                        v-model="draft.category_id"
+                        :cascade-levels="5"
+                        :cols="2"
                     />
                 </div>
 
@@ -418,7 +360,7 @@ function applyGroupingHierarchy(grouping: string): void {
                 <Button variant="ghost" @click="emit('update:open', false)">{{
                     t('planogram-templates.slot_editor.cancel_button')
                 }}</Button>
-                <Button :disabled="!draft.grouping.trim()" @click="saveSlot">{{
+                <Button :disabled="!draft.category_id" @click="saveSlot">{{
                     t('planogram-templates.slot_editor.save_button')
                 }}</Button>
             </DialogFooter>

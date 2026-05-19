@@ -4,7 +4,6 @@ namespace App\Services\AutoPlanogram\Template;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 final class TemplateSlotService
 {
@@ -14,7 +13,7 @@ final class TemplateSlotService
         return $request->validate([
             'module_number' => ['required', 'integer', 'min:1', 'max:6'],
             'shelf_order' => ['required', 'integer', 'min:1', 'max:10'],
-            'grouping' => ['required', 'string', 'max:255'],
+            'category_id' => ['nullable', 'string', 'max:26'],
             'category' => ['nullable', 'string', 'max:255'],
             'subcategory' => ['nullable', 'string', 'max:255'],
             'min_facings' => ['required', 'integer', 'min:1', 'max:20'],
@@ -38,11 +37,6 @@ final class TemplateSlotService
             'to.module_number' => ['required', 'integer', 'min:1'],
             'to.shelf_order' => ['required', 'integer', 'min:1'],
         ]);
-    }
-
-    public function normalizeGrouping(string $value): string
-    {
-        return Str::slug($value);
     }
 
     /** @param array<string, mixed> $extra */
@@ -74,7 +68,6 @@ final class TemplateSlotService
         $subtemplate->slots()->create([
             ...$validated,
             ...$extra,
-            'grouping_normalized' => $this->normalizeGrouping($validated['grouping']),
             'ordering' => $nextOrdering,
         ]);
     }
@@ -82,10 +75,7 @@ final class TemplateSlotService
     /** @param array<string, mixed> $validated */
     public function updateSlot(Model $slot, array $validated): void
     {
-        $slot->update([
-            ...$validated,
-            'grouping_normalized' => $this->normalizeGrouping($validated['grouping']),
-        ]);
+        $slot->update($validated);
     }
 
     public function destroySlot(Model $slot): void
@@ -143,25 +133,28 @@ final class TemplateSlotService
                 'id' => $sub->id,
                 'code' => $sub->code,
                 'num_modules' => $sub->num_modules,
-                'slots' => $sub->slots->map(fn (Model $slot): array => [
-                    'id' => $slot->id,
-                    'subtemplate_id' => $slot->subtemplate_id,
-                    'module_number' => $slot->module_number,
-                    'shelf_order' => $slot->shelf_order,
-                    'category' => $slot->category,
-                    'subcategory' => $slot->subcategory,
-                    'grouping' => $slot->grouping,
-                    'grouping_normalized' => $slot->grouping_normalized,
-                    'min_facings' => $slot->min_facings,
-                    'priority' => $slot->priority,
-                    'price_order' => $slot->price_order->value,
-                    'size_order' => $slot->size_order->value,
-                    'brand_exposure' => $slot->brand_exposure->value,
-                    'flavor_exposure' => $slot->flavor_exposure->value,
-                    'space_fallback' => $slot->space_fallback->value,
-                    'use_target_stock' => $slot->use_target_stock,
-                    'ordering' => $slot->ordering,
-                ])->values()->all(),
+                'slots' => $sub->slots->map(function (Model $slot): array {
+                    $category = $slot->relationLoaded('category') ? $slot->getRelation('category') : null;
+
+                    return [
+                        'id' => $slot->id,
+                        'subtemplate_id' => $slot->subtemplate_id,
+                        'category_id' => $slot->category_id,
+                        'category_name' => $category?->name,
+                        'category_path' => $category?->full_path,
+                        'module_number' => $slot->module_number,
+                        'shelf_order' => $slot->shelf_order,
+                        'min_facings' => $slot->min_facings,
+                        'priority' => $slot->priority,
+                        'price_order' => $slot->price_order->value,
+                        'size_order' => $slot->size_order->value,
+                        'brand_exposure' => $slot->brand_exposure->value,
+                        'flavor_exposure' => $slot->flavor_exposure->value,
+                        'space_fallback' => $slot->space_fallback->value,
+                        'use_target_stock' => $slot->use_target_stock,
+                        'ordering' => $slot->ordering,
+                    ];
+                })->values()->all(),
             ])
             ->values()
             ->all();

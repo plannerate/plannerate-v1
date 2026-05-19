@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\TenantScope;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\HasCategory;
 use App\Models\Traits\UsesTenantConnection;
@@ -111,6 +112,33 @@ class Category extends Model
     public function getMercadologicoDepth(): int
     {
         return $this->getFullHierarchy()->count();
+    }
+
+    /**
+     * Retorna array com o próprio ID e todos os IDs descendentes (BFS).
+     * Usado pelo motor de placement para matching hierárquico de slots.
+     *
+     * @return list<string>
+     */
+    public static function getDescendantIds(string $categoryId): array
+    {
+        $ids = [$categoryId];
+        $queue = [$categoryId];
+
+        while ($queue !== []) {
+            $parentId = array_shift($queue);
+            $childIds = static::withoutGlobalScope(TenantScope::class)
+                ->where('category_id', $parentId)
+                ->pluck('id')
+                ->all();
+
+            foreach ($childIds as $childId) {
+                $ids[] = $childId;
+                $queue[] = $childId;
+            }
+        }
+
+        return $ids;
     }
 
     /**

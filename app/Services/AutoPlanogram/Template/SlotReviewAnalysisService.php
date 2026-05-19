@@ -6,6 +6,7 @@ use App\Enums\BrandExposure;
 use App\Enums\PlacementFailureReason;
 use App\Enums\PriceOrder;
 use App\Enums\SizeOrder;
+use App\Models\Category;
 use App\Models\PlanogramTemplateSlot;
 use App\Models\Product;
 use App\Models\Sale;
@@ -46,6 +47,10 @@ final readonly class SlotReviewAnalysisService
      */
     public function analyze(PlanogramTemplateSlot $slot, float $shelfWidthCm = 100.0): array
     {
+        $categoryIds = $slot->category_id
+            ? Category::getDescendantIds($slot->category_id)
+            : [];
+
         $candidates = Product::query()
             ->select([
                 'id',
@@ -53,8 +58,7 @@ final readonly class SlotReviewAnalysisService
                 'ean',
                 'codigo_erp',
                 'brand',
-                'grouping',
-                'grouping_normalized',
+                'category_id',
                 'status',
                 'packaging_content',
                 'url',
@@ -63,7 +67,11 @@ final readonly class SlotReviewAnalysisService
                 'depth',
                 'unit',
             ])
-            ->where('grouping_normalized', $slot->grouping_normalized)
+            ->when(
+                $categoryIds !== [],
+                fn ($q) => $q->whereIn('category_id', $categoryIds),
+                fn ($q) => $q->whereRaw('1 = 0'),
+            )
             ->where('status', '!=', 'draft')
             ->get();
 
@@ -163,7 +171,7 @@ final readonly class SlotReviewAnalysisService
         return [
             'summary' => [
                 'slot_id' => (string) $slot->id,
-                'grouping' => (string) $slot->grouping,
+                'category_id' => $slot->category_id,
                 'shelf_width_cm' => round($shelfWidthCm, 1),
                 'occupied_width_cm' => round($occupiedWidth, 1),
                 'free_width_cm' => round(max(0.0, $shelfWidthCm - $occupiedWidth), 1),

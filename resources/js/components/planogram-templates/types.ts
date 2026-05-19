@@ -9,10 +9,9 @@ export type PlanogramTemplateSlot = {
     subtemplate_id?: string;
     module_number: number;
     shelf_order: number;
-    category?: string | null;
-    subcategory?: string | null;
-    grouping: string;
-    grouping_normalized?: string;
+    category_id: string | null;
+    category_name?: string | null;
+    category_path?: string | null;
     min_facings: number;
     priority: number;
     price_order: SlotPriceOrder;
@@ -36,8 +35,7 @@ export type SlotProduct = {
     name: string;
     ean: string;
     brand: string;
-    grouping: string;
-    grouping_normalized: string;
+    category_id: string;
 };
 
 export type SlotAnalysisRow = {
@@ -80,16 +78,16 @@ export type WizardStep = {
     href?: string;
 };
 
-/** Deterministic HSL color from a grouping string */
-export function groupingToColor(grouping: string): {
+/** Deterministic HSL color from a slot identifier (category_id or any string) */
+export function slotColor(id: string): {
     background: string;
     border: string;
     color: string;
 } {
     let hash = 0;
 
-    for (let i = 0; i < grouping.length; i++) {
-        hash = (hash << 5) - hash + grouping.charCodeAt(i);
+    for (let i = 0; i < id.length; i++) {
+        hash = (hash << 5) - hash + id.charCodeAt(i);
         hash |= 0;
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Services\AutoPlanogram\Template;
 
+use App\Models\Category;
 use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplate;
 use App\Models\PlanogramTemplateSlot;
@@ -106,6 +107,17 @@ final class TemplateImportService
                     $moduleNumber = (int) ($row['E'] ?? 1);
                     $shelfOrder = (int) ($row['F'] ?? 1);
 
+                    $categoryId = $this->resolveSlotCategory($grouping, $tenantId);
+
+                    if ($categoryId === null) {
+                        $report->slotsWithoutCategory[] = [
+                            'grouping' => $grouping,
+                            'module' => $moduleNumber,
+                            'shelf_order' => $shelfOrder,
+                            'sugestao' => 'Configure manualmente no wizard de template',
+                        ];
+                    }
+
                     $slot = PlanogramTemplateSlot::withoutGlobalScopes()->updateOrCreate(
                         [
                             'subtemplate_id' => $subtemplate->getKey(),
@@ -114,10 +126,9 @@ final class TemplateImportService
                         ],
                         [
                             'tenant_id' => $tenantId,
+                            'category_id' => $categoryId,
                             'category' => trim((string) ($row['G'] ?? '')),
                             'subcategory' => trim((string) ($row['H'] ?? '')),
-                            'grouping' => $grouping,
-                            'grouping_normalized' => $this->templateSlotService->normalizeGrouping($grouping),
                             'min_facings' => max(1, (int) ($row['J'] ?? 1)),
                             'price_order' => $this->parsePriceOrder((string) ($row['K'] ?? '')),
                             'size_order' => $this->parseSizeOrder((string) ($row['L'] ?? '')),
@@ -151,6 +162,30 @@ final class TemplateImportService
                 ]);
             }
         }
+    }
+
+    private function resolveSlotCategory(string $grouping, string $tenantId): ?string
+    {
+        $parts = explode('|', $grouping);
+        $lastName = mb_strtolower(trim((string) end($parts)), 'UTF-8');
+
+        $category = Category::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->whereRaw('LOWER(name) = ?', [$lastName])
+            ->first(['id']);
+
+        if ($category) {
+            return $category->id;
+        }
+
+        $fullName = mb_strtolower(trim($grouping), 'UTF-8');
+
+        $category = Category::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->whereRaw('LOWER(name) = ?', [$fullName])
+            ->first(['id']);
+
+        return $category?->id;
     }
 
     private function parsePriceOrder(string $value): string

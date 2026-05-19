@@ -6,6 +6,7 @@ use App\Enums\BrandExposure;
 use App\Enums\PlacementFailureReason;
 use App\Enums\PriceOrder;
 use App\Enums\SizeOrder;
+use App\Models\Category;
 use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplateSlot;
 use App\Models\Scopes\TenantScope;
@@ -23,6 +24,9 @@ use Illuminate\Support\Facades\Log;
 
 final class TemplatePlacementEngine implements PlacementEngineInterface
 {
+    /** @var array<string, list<string>> Cache de descendentes por category_id dentro de uma geração */
+    private array $descendantsCache = [];
+
     public function __construct(
         private readonly ProductWidthResolver $widthResolver,
         private readonly GreedyShelfPlacer $greedyPlacer,
@@ -87,7 +91,8 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             if ($candidates->isEmpty()) {
                 $groupingsSemProduto++;
                 Log::debug('TemplatePlacementEngine: sem produto para slot', [
-                    'grouping' => $slot->grouping,
+                    'category_id' => $slot->category_id,
+                    'category_name' => $slot->relationLoaded('category') ? ($slot->category?->name ?? 'sem categoria') : 'não carregada',
                     'module' => $slot->module_number,
                     'shelf_order' => $slot->shelf_order,
                 ]);
@@ -106,7 +111,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             $livre = round(max(0.0, $available - $occupied), 1);
             $slotAnalysis[] = [
                 'slot_id' => $slot->id,
-                'grouping' => $slot->grouping,
+                'category_id' => $slot->category_id,
                 'module_number' => $slot->module_number,
                 'shelf_order' => $slot->shelf_order,
                 'shelf_id' => $shelf->getKey(),
@@ -143,7 +148,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
         Log::info('TemplatePlacementEngine: análise de espaço por slot', [
             'slots' => collect($slotAnalysis)->map(fn ($s) => [
-                'grouping' => $s['grouping'],
+                'category_id' => $s['category_id'],
                 'shelf_order' => $s['shelf_order'],
                 'uso_percentual' => $s['percentual_uso'].'%',
                 'largura_livre' => $s['largura_livre'].'cm',
@@ -186,10 +191,29 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /** @param Collection<int, mixed> $settings->products */
     private function findCandidates(PlanogramTemplateSlot $slot, PlacementSettings $settings): Collection
     {
+        if (! $slot->category_id) {
+            Log::warning('TemplatePlacementEngine: slot sem category_id', [
+                'slot_id' => $slot->id,
+                'module' => $slot->module_number,
+                'shelf_order' => $slot->shelf_order,
+            ]);
+
+            return collect();
+        }
+
+        $categoryIds = $this->getDescendantsCached($slot->category_id);
+
         return $settings->products->filter(
-            fn ($product) => $product->grouping_normalized === $slot->grouping_normalized
+            fn ($product) => in_array($product->category_id, $categoryIds, true)
                 && $product->status !== 'draft'
         )->values();
+    }
+
+    /** @return list<string> */
+    private function getDescendantsCached(string $categoryId): array
+    {
+        return $this->descendantsCache[$categoryId]
+            ??= Category::getDescendantIds($categoryId);
     }
 
     private function orderCandidates(Collection $products, PlanogramTemplateSlot $slot): Collection

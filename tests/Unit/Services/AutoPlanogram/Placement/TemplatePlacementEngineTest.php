@@ -11,39 +11,52 @@ use Illuminate\Support\Str;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-function makeSlotForGrouping(string $groupingNormalized): PlanogramTemplateSlot
-{
-    $slot = new PlanogramTemplateSlot;
-    $slot->grouping_normalized = $groupingNormalized;
-    $slot->grouping = strtoupper($groupingNormalized);
-
-    return $slot;
-}
-
-function makeProductForGrouping(string $groupingNormalized, string $status = 'published'): Product
-{
-    $product = new Product;
-    $product->id = (string) Str::ulid();
-    $product->name = "Produto {$groupingNormalized}";
-    $product->ean = '7890000000000';
-    $product->width = 10.0;
-    $product->grouping_normalized = $groupingNormalized;
-    $product->status = $status;
-
-    return $product;
-}
-
-function makeFindCandidatesCallable(): Closure
+function makeEngine(?array $descendantsCache = null): TemplatePlacementEngine
 {
     $engine = new TemplatePlacementEngine(
         new ProductWidthResolver,
         new GreedyShelfPlacer(new ProductWidthResolver),
     );
 
-    $reflection = new ReflectionMethod($engine, 'findCandidates');
-    $reflection->setAccessible(true);
+    if ($descendantsCache !== null) {
+        $ref = new ReflectionProperty($engine, 'descendantsCache');
+        $ref->setAccessible(true);
+        $ref->setValue($engine, $descendantsCache);
+    }
 
-    return fn (PlanogramTemplateSlot $slot, PlacementSettings $settings): Collection => $reflection->invoke($engine, $slot, $settings);
+    return $engine;
+}
+
+function callFindCandidates(
+    TemplatePlacementEngine $engine,
+    PlanogramTemplateSlot $slot,
+    PlacementSettings $settings,
+): Collection {
+    $ref = new ReflectionMethod($engine, 'findCandidates');
+    $ref->setAccessible(true);
+
+    return $ref->invoke($engine, $slot, $settings);
+}
+
+function makeSlot(?string $categoryId): PlanogramTemplateSlot
+{
+    $slot = new PlanogramTemplateSlot;
+    $slot->category_id = $categoryId;
+
+    return $slot;
+}
+
+function makeProduct(string $categoryId, string $status = 'published'): Product
+{
+    $product = new Product;
+    $product->id = (string) Str::ulid();
+    $product->name = "Produto {$categoryId}";
+    $product->ean = '7890000000000';
+    $product->width = 10.0;
+    $product->category_id = $categoryId;
+    $product->status = $status;
+
+    return $product;
 }
 
 function makeSettings(Collection $products): PlacementSettings
@@ -60,68 +73,108 @@ function makeSettings(Collection $products): PlacementSettings
 
 // ── tests ─────────────────────────────────────────────────────────────────────
 
-test('findCandidates inclui produto com grouping_normalized igual ao slot', function (): void {
-    $findCandidates = makeFindCandidatesCallable();
-    $product = makeProductForGrouping('cereais | biscoitos');
-    $slot = makeSlotForGrouping('cereais | biscoitos');
-    $settings = makeSettings(collect([$product]));
+test('findCandidates inclui produto com category_id igual ao slot', function (): void {
+    $catId = (string) Str::ulid();
+    $engine = makeEngine([$catId => [$catId]]);
+    $product = makeProduct($catId);
+    $slot = makeSlot($catId);
 
-    $result = $findCandidates($slot, $settings);
+    $result = callFindCandidates($engine, $slot, makeSettings(collect([$product])));
 
     expect($result)->toHaveCount(1)
         ->and($result->first()->id)->toBe($product->id);
 });
 
-test('findCandidates exclui produto com grouping_normalized diferente', function (): void {
-    $findCandidates = makeFindCandidatesCallable();
-    $product = makeProductForGrouping('laticínios | queijos');
-    $slot = makeSlotForGrouping('cereais | biscoitos');
-    $settings = makeSettings(collect([$product]));
+test('findCandidates inclui produto de categoria descendente', function (): void {
+    $parentId = (string) Str::ulid();
+    $childId = (string) Str::ulid();
+    $engine = makeEngine([$parentId => [$parentId, $childId]]);
 
-    $result = $findCandidates($slot, $settings);
+    $productParent = makeProduct($parentId);
+    $productChild = makeProduct($childId);
+    $slot = makeSlot($parentId);
+
+    $result = callFindCandidates($engine, $slot, makeSettings(collect([$productParent, $productChild])));
+
+    expect($result)->toHaveCount(2);
+});
+
+test('findCandidates exclui produto de categoria diferente', function (): void {
+    $slotCatId = (string) Str::ulid();
+    $otherCatId = (string) Str::ulid();
+    $engine = makeEngine([$slotCatId => [$slotCatId]]);
+
+    $product = makeProduct($otherCatId);
+    $slot = makeSlot($slotCatId);
+
+    $result = callFindCandidates($engine, $slot, makeSettings(collect([$product])));
 
     expect($result)->toBeEmpty();
 });
 
-test('findCandidates exclui produto com status draft mesmo com grouping correto', function (): void {
-    $findCandidates = makeFindCandidatesCallable();
-    $product = makeProductForGrouping('cereais | biscoitos', 'draft');
-    $slot = makeSlotForGrouping('cereais | biscoitos');
-    $settings = makeSettings(collect([$product]));
+test('findCandidates exclui produto draft mesmo com category_id correto', function (): void {
+    $catId = (string) Str::ulid();
+    $engine = makeEngine([$catId => [$catId]]);
 
-    $result = $findCandidates($slot, $settings);
+    $product = makeProduct($catId, 'draft');
+    $slot = makeSlot($catId);
+
+    $result = callFindCandidates($engine, $slot, makeSettings(collect([$product])));
 
     expect($result)->toBeEmpty();
 });
 
-test('findCandidates inclui produto published com grouping correto', function (): void {
-    $findCandidates = makeFindCandidatesCallable();
-    $product = makeProductForGrouping('cereais | biscoitos', 'published');
-    $slot = makeSlotForGrouping('cereais | biscoitos');
-    $settings = makeSettings(collect([$product]));
+test('findCandidates inclui produto synced com category_id correto', function (): void {
+    $catId = (string) Str::ulid();
+    $engine = makeEngine([$catId => [$catId]]);
 
-    $result = $findCandidates($slot, $settings);
+    $product = makeProduct($catId, 'synced');
+    $slot = makeSlot($catId);
+
+    $result = callFindCandidates($engine, $slot, makeSettings(collect([$product])));
 
     expect($result)->toHaveCount(1);
 });
 
-test('findCandidates inclui produto synced com grouping correto', function (): void {
-    $findCandidates = makeFindCandidatesCallable();
-    $product = makeProductForGrouping('cereais | biscoitos', 'synced');
-    $slot = makeSlotForGrouping('cereais | biscoitos');
-    $settings = makeSettings(collect([$product]));
+test('findCandidates retorna vazio quando slot sem category_id', function (): void {
+    $engine = makeEngine([]);
 
-    $result = $findCandidates($slot, $settings);
+    $product = makeProduct((string) Str::ulid());
+    $slot = makeSlot(null);
 
-    expect($result)->toHaveCount(1);
+    $result = callFindCandidates($engine, $slot, makeSettings(collect([$product])));
+
+    expect($result)->toBeEmpty();
 });
 
 test('findCandidates retorna vazio quando não há produtos', function (): void {
-    $findCandidates = makeFindCandidatesCallable();
-    $slot = makeSlotForGrouping('cereais | biscoitos');
-    $settings = makeSettings(collect());
+    $catId = (string) Str::ulid();
+    $engine = makeEngine([$catId => [$catId]]);
 
-    $result = $findCandidates($slot, $settings);
+    $slot = makeSlot($catId);
+
+    $result = callFindCandidates($engine, $slot, makeSettings(collect()));
 
     expect($result)->toBeEmpty();
+});
+
+test('cache de descendentes é reutilizado: getDescendantIds chamado uma vez por category_id único', function (): void {
+    $catId = (string) Str::ulid();
+
+    // Pre-popula o cache → getDescendantIds NUNCA será chamado
+    $engine = makeEngine([$catId => [$catId]]);
+
+    $ref = new ReflectionProperty($engine, 'descendantsCache');
+    $ref->setAccessible(true);
+
+    $product = makeProduct($catId);
+    $slot = makeSlot($catId);
+    $settings = makeSettings(collect([$product]));
+
+    callFindCandidates($engine, $slot, $settings);
+    callFindCandidates($engine, $slot, $settings);
+
+    // Cache continua com apenas uma entrada
+    expect($ref->getValue($engine))->toHaveKey($catId)
+        ->and($ref->getValue($engine))->toHaveCount(1);
 });
