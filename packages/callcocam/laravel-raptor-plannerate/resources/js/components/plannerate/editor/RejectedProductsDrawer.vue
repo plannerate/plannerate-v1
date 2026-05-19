@@ -42,6 +42,32 @@ const swapSource = ref<RejectedProduct | null>(null);
 
 const swapModeActive = computed(() => swapSource.value !== null);
 
+// ── Click / dblclick (mesmo padrão do Card.vue do sidebar) ───────────────────
+let clickTimer: ReturnType<typeof setTimeout> | null = null;
+const clickDelay = 250;
+
+function isProductSelected(product: RejectedProduct): boolean {
+    return selection.isSelected('product', product.product_id);
+}
+
+function handleCardClick(event: MouseEvent, product: RejectedProduct) {
+    if (clickTimer) {
+        clearTimeout(clickTimer);
+        clickTimer = null;
+        return; // dblclick — deixa handleDoubleClick tratar
+    }
+    clickTimer = setTimeout(() => {
+        if (event.ctrlKey || event.metaKey) {
+            // @ts-ignore
+            selection.toggleSelection('product', product.product_id, buildProduct(product));
+        } else {
+            //  @ts-ignore
+            selection.selectItem('product', product.product_id, buildProduct(product));
+        }
+        clickTimer = null;
+    }, clickDelay);
+}
+
 const csrfToken = () =>
     (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
 
@@ -61,8 +87,8 @@ function buildProduct(r: RejectedProduct) {
     return {
         id: r.product_id,
         name: r.product_name,
-        ean: r.ean,
-        image_url: r.image_url,
+        ean: r.ean ?? undefined,
+        image_url: r.image_url ?? undefined,
         width: r.product_width,
         height: r.product_height,
         depth: null,
@@ -274,13 +300,17 @@ defineExpose({ fetchRejected });
                     v-for="product in rejectedProducts"
                     :key="product.id"
                     draggable="true"
-                    class="flex w-36 flex-shrink-0 flex-col gap-1.5 rounded-lg border border-border bg-card p-2 transition-all select-none"
+                    class="flex w-36 flex-shrink-0 flex-col gap-1.5 rounded-lg border p-2 transition-all select-none"
                     :class="{
-                        'ring-2 ring-amber-400': swapSource?.id === product.id,
+                        'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200 dark:bg-blue-950/20 dark:ring-blue-900':
+                            isProductSelected(product) && !swapModeActive,
+                        'border-border bg-card': !isProductSelected(product),
+                        'ring-2 ring-amber-400 border-amber-400': swapSource?.id === product.id,
                         'opacity-40': swapModeActive && swapSource?.id !== product.id,
                         'cursor-grabbing opacity-50 ring-2 ring-primary': draggingId === product.id,
                         'cursor-grab': draggingId !== product.id,
                     }"
+                    @click.stop="handleCardClick($event, product)"
                     @dragstart="handleDragStart($event, product)"
                     @dragend="handleDragEnd"
                     @dblclick.stop="handleDoubleClick(product)"
@@ -331,7 +361,7 @@ defineExpose({ fetchRejected });
                         variant="outline"
                         class="mt-auto h-7 w-full gap-1 text-xs"
                         :disabled="isSwapping || (swapModeActive && swapSource?.id !== product.id)"
-                        @click="swapSource?.id === product.id ? cancelSwapMode() : enterSwapMode(product)"
+                        @click.stop="swapSource?.id === product.id ? cancelSwapMode() : enterSwapMode(product)"
                     >
                         <Loader2 v-if="isSwapping && swapSource?.id === product.id" class="size-3 animate-spin" />
                         <ArrowLeftRight v-else class="size-3" />
