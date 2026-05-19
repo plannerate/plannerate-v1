@@ -89,7 +89,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="absolute right-4 top-4 z-40 w-80 rounded-lg border border-border bg-background/95 shadow-sm backdrop-blur">
+    <div class="absolute right-4 top-4 z-40 w-96 rounded-lg border border-border bg-background/95 shadow-sm backdrop-blur">
         <div class="flex items-center justify-between border-b border-border px-3 py-2">
             <div class="flex items-center gap-2 text-sm font-medium">
                 <Tags class="size-4 text-muted-foreground" />

@@ -36,3 +36,6 @@ export const showZoneIndicators = ref(true);
 
 // Busca de produto por EAN na gondola atual
 export const eanSearchQuery = ref('');
+
+// Grouping de template selecionado para highlight no canvas
+export const selectedTemplateGroupingNormalized = ref<string | null>(null);

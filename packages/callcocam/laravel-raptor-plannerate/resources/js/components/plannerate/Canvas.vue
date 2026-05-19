@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { onClickOutside } from '@vueuse/core';
 import { Package } from 'lucide-vue-next';
-import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { computed, onMounted, useTemplateRef, watch } from 'vue';
+import { selectedTemplateGroupingNormalized } from '@/composables/plannerate/editor/useGondolaState';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { useT } from '@/composables/useT';
@@ -9,7 +10,6 @@ import type { Gondola } from '@/types/planogram';
 import Sections from './editor/Sections.vue';
 import Indicador from './Indicador.vue';
 import RejectedProductsDrawer from './editor/RejectedProductsDrawer.vue';
-import TemplateGroupingDrawer from './editor/TemplateGroupingDrawer.vue';
 
 interface Props {
     record?: Gondola;
@@ -75,7 +75,7 @@ function handleCanvasClick(event: MouseEvent) {
     // Verifica se o clique foi em um elemento que não deve deselecionar
     if (
         target.closest(
-            '[data-shelf], [data-segment], [data-section], [data-properties-panel], [data-products-panel], [data-toolbar], [data-modal], [data-slot="select-trigger"], [data-slot="select-content"], [data-slot="select-item"]',
+            '[data-shelf], [data-segment], [data-section], [data-properties-panel], [data-products-panel], [data-modal], [data-slot="select-trigger"], [data-slot="select-content"], [data-slot="select-item"]',
         )
     ) {
         return;
@@ -130,7 +130,7 @@ const flowDirection = computed(
     () => editor.currentGondola.value?.flow || 'left_to_right',
 );
 const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
-const selectedGroupingNormalized = ref<string | null>(null);
+const selectedGroupingNormalized = selectedTemplateGroupingNormalized;
 
 watch(
     () => props.record?.template_id,
@@ -138,10 +138,6 @@ watch(
         selectedGroupingNormalized.value = null;
     },
 );
-
-function updateSelectedGrouping(value: string | null): void {
-    selectedGroupingNormalized.value = value;
-}
 </script>
 <template>
     <div class="relative flex min-w-0 flex-1 flex-col bg-muted/30" ref="target" v-if="containerHeight">
@@ -182,13 +178,6 @@ function updateSelectedGrouping(value: string | null): void {
                 </div>
             </div>
         </div>
-
-        <TemplateGroupingDrawer
-            v-if="record?.id"
-            :gondola-id="record.id"
-            :template-id="record?.template_id ?? null"
-            @update:selectedGroupingNormalized="updateSelectedGrouping"
-        />
 
         <!-- Drawer de produtos rejeitados (overlay bottom) -->
         <RejectedProductsDrawer v-if="record?.id" :gondola-id="record.id" />

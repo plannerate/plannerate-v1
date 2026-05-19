@@ -67,6 +67,7 @@ import DropdownPerformance from '../DropdownPerformance.vue';
 import AutoGenerateModal from './AutoGenerateModal.vue';
 import ConfirmDeleteGondolaDialog from './ConfirmDeleteGondolaDialog.vue';
 import MapRegionSelectorModal from './MapRegionSelectorModal.vue';
+import TemplateGroupingDropdown from './TemplateGroupingDropdown.vue';
 import TransferSectionDialog from './partials/TransferSectionDialog.vue';
 import Performance from './Performance.vue';
 
@@ -503,6 +504,22 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
+
+                <TemplateGroupingDropdown :gondola-id="currentGondola?.id ?? null"
+                    :template-id="currentGondola?.template_id ?? null" />
+
+
+
+                <div class="flex h-8 items-center gap-1 rounded-md border bg-background px-2">
+                    <Search class="size-3.5 text-muted-foreground" />
+                    <Input v-model="eanSearchModel" :placeholder="t('plannerate.toolbar.search_ean_placeholder')"
+                        class="h-7 w-40 border-0 px-1 text-xs shadow-none focus-visible:ring-0" />
+                    <ButtonWithTooltip v-if="eanSearchModel" variant="ghost" size="icon-sm" class="size-7"
+                        :tooltip="t('plannerate.toolbar.clear_ean_search')" @click="eanSearchModel = ''">
+                        <X class="size-3.5" />
+                    </ButtonWithTooltip>
+                </div>
+                <Separator orientation="vertical" class="h-8" />
                 <!-- ============================================================
              CONTROLES DE ZOOM/ESCALA
              Diminuir, Input (readonly), Aumentar
@@ -520,19 +537,6 @@ const handleMapRegionSelect = (regionId: string | null) => {
                         <Plus class="size-4" />
                     </ButtonWithTooltip>
                 </div>
-
-                <div class="flex h-8 items-center gap-1 rounded-md border bg-background px-2">
-                    <Search class="size-3.5 text-muted-foreground" />
-                    <Input v-model="eanSearchModel" :placeholder="t('plannerate.toolbar.search_ean_placeholder')"
-                        class="h-7 w-40 border-0 px-1 text-xs shadow-none focus-visible:ring-0" />
-                    <ButtonWithTooltip v-if="eanSearchModel" variant="ghost" size="icon-sm" class="size-7"
-                        :tooltip="t('plannerate.toolbar.clear_ean_search')" @click="eanSearchModel = ''">
-                        <X class="size-3.5" />
-                    </ButtonWithTooltip>
-                </div>
-
-                <Separator orientation="vertical" class="h-8" />
-
                 <!-- ============================================================
              FERRAMENTAS DE ALINHAMENTO E GRADE
              Grade, Alinhar Esquerda/Direita/Centro, Justificar
@@ -592,7 +596,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
 
                     <Separator orientation="vertical" class="h-5" />
 
-                <!-- ============================================================
+                    <!-- ============================================================
              HISTÓRICO (UNDO/REDO)
              Integrado com usePlanogramHistory composable
              ============================================================ -->
@@ -622,16 +626,15 @@ const handleMapRegionSelect = (regionId: string | null) => {
                 <!-- Toggle Auto-save -->
                 <ButtonGroup aria-label="Salvar e salvamento automático"
                     class="h-8 border-primary/40 bg-primary/5 *:h-full *:rounded-none">
-                    <Button variant="ghost" size="sm" class="h-full rounded-none border-0 hover:bg-primary/10"
-                        :title="hasChanges
-                            ? t(
-                                changeCount === 1
-                                    ? 'plannerate.toolbar.save_tooltip_single'
-                                    : 'plannerate.toolbar.save_tooltip_plural',
-                                { count: String(changeCount) },
-                            )
-                            : t('plannerate.toolbar.save_none')
-                            " :disabled="!isMounted || !hasChanges || isSaving" @click="editor.save()">
+                    <Button variant="ghost" size="sm" class="h-full rounded-none border-0 hover:bg-primary/10" :title="hasChanges
+                        ? t(
+                            changeCount === 1
+                                ? 'plannerate.toolbar.save_tooltip_single'
+                                : 'plannerate.toolbar.save_tooltip_plural',
+                            { count: String(changeCount) },
+                        )
+                        : t('plannerate.toolbar.save_none')
+                        " :disabled="!isMounted || !hasChanges || isSaving" @click="editor.save()">
                         <Save class="mr-2 size-4" :class="{ 'animate-pulse': isSaving }" />
                         <span v-if="isSaving">{{ t('plannerate.toolbar.saving') }}</span>
                         <span v-else-if="hasChanges">{{ t('plannerate.toolbar.save', { count: String(changeCount) })
@@ -669,8 +672,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     :open="showAutoGenerateModal" :gondola-id="currentGondola?.id || ''"
                     :category-id="(currentGondola?.planogram as any)?.category_id"
                     :start-date="(currentGondola?.planogram as any)?.start_date"
-                    :end-date="(currentGondola?.planogram as any)?.end_date"
-                    :strategy-options="strategyOptions"
+                    :end-date="(currentGondola?.planogram as any)?.end_date" :strategy-options="strategyOptions"
                     :planogram-templates="planogramTemplates"
                     @update:open="(value: boolean) => (showAutoGenerateModal = value)" />
 
@@ -678,7 +680,8 @@ const handleMapRegionSelect = (regionId: string | null) => {
                 <DropdownActions :can-remove-gondola="permissions.can_remove_gondola" :has-store="hasStore"
                     :current-map-region-id="currentMapRegionId" :on-add-module="() => editor.addModule()"
                     :on-transfer-section="() => (showTransferSectionDialog = true)"
-                    :on-open-map="() => (showMapRegionSelector = true)" :on-remove-gondola="() => editor.removeGondola()" />
+                    :on-open-map="() => (showMapRegionSelector = true)"
+                    :on-remove-gondola="() => editor.removeGondola()" />
 
             </div>
         </div>
