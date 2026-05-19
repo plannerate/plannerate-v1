@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { useRejectedProductsStore } from '@/composables/plannerate/editor/useRejectedProductsStore';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { useAutoplanogramUrls } from '@/composables/useAutoplanogramUrls';
-import { ArrowLeftRight, ChevronDown, ChevronUp, Layers, Loader2, MoveHorizontal, Ruler, X } from 'lucide-vue-next';
-import { type Component, computed, onMounted, ref, watch } from 'vue';
+import { ArrowLeftRight, ChevronDown, ChevronUp, GripVertical, Layers, Loader2, MoveHorizontal, Ruler, X } from 'lucide-vue-next';
+import { type Component, computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,22 +26,26 @@ interface RejectedProduct {
     shelf_order: number | null;
 }
 
-const props = defineProps<{
-    gondolaId: string;
-}>();
+const props = defineProps<{ gondolaId: string }>();
 
-const { rejectedProductsUrl, swapProductUrl } = useAutoplanogramUrls(props.gondolaId);
+const { rejectedProductsUrl, swapProductUrl, destroyRejectedUrl } = useAutoplanogramUrls(props.gondolaId);
 const selection = usePlanogramSelection();
 const editor = usePlanogramEditor();
+const rejectedStore = useRejectedProductsStore();
 
 const isOpen = ref(false);
 const isLoading = ref(false);
 const isSwapping = ref(false);
+const draggingId = ref<string | null>(null);
 const rejectedProducts = ref<RejectedProduct[]>([]);
 const swapSource = ref<RejectedProduct | null>(null);
 
 const swapModeActive = computed(() => swapSource.value !== null);
 
+const csrfToken = () =>
+    (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
+
+// ── Reason badge ────────────────────────────────────────────────────────────
 const reasonMeta = (
     reason: string,
 ): { icon: Component; label: string; variant: 'outline' | 'destructive' | 'secondary' } => {
@@ -51,20 +56,47 @@ const reasonMeta = (
     return { icon: Layers, label: 'Nível', variant: 'secondary' };
 };
 
+// ── Build product object compatible with addProductToShelf ──────────────────
+function buildProduct(r: RejectedProduct) {
+    return {
+        id: r.product_id,
+        name: r.product_name,
+        ean: r.ean,
+        image_url: r.image_url,
+        width: r.product_width,
+        height: r.product_height,
+        depth: null,
+        status: 'published',
+        has_dimensions: !!(r.product_width && r.product_height),
+    };
+}
+
+// ── Optimistic remove + backend cleanup ─────────────────────────────────────
+function removeLocally(rejectedId: string) {
+    rejectedProducts.value = rejectedProducts.value.filter((r) => r.id !== rejectedId);
+    if (rejectedProducts.value.length === 0) isOpen.value = false;
+}
+
+async function deleteFromBackend(rejectedId: string) {
+    try {
+        await fetch(destroyRejectedUrl(rejectedId), {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': csrfToken() },
+        });
+    } catch {
+        // silently ignore — list will reconcile on next fetchRejected
+    }
+}
+
+// ── Fetch ────────────────────────────────────────────────────────────────────
 async function fetchRejected() {
     isLoading.value = true;
-
     try {
         const res = await fetch(rejectedProductsUrl());
-
-        if (!res.ok) throw new Error('Falha ao buscar rejeitados');
-
+        if (!res.ok) throw new Error();
         const json = await res.json();
         rejectedProducts.value = json.data ?? [];
-
-        if (rejectedProducts.value.length > 0) {
-            isOpen.value = true;
-        }
+        if (rejectedProducts.value.length > 0) isOpen.value = true;
     } catch {
         toast.error('Não foi possível carregar produtos rejeitados.');
     } finally {
@@ -72,6 +104,50 @@ async function fetchRejected() {
     }
 }
 
+// ── Drag ─────────────────────────────────────────────────────────────────────
+function handleDragStart(event: DragEvent, product: RejectedProduct) {
+    draggingId.value = product.id;
+    if (!event.dataTransfer) return;
+    const productObj = buildProduct(product);
+    event.dataTransfer.effectAllowed = 'copy';
+    event.dataTransfer.setData('application/x-product-id', productObj.id);
+    event.dataTransfer.setData('application/x-product', JSON.stringify(productObj));
+    event.dataTransfer.setData('text/plain', productObj.name ?? '');
+    // tag to identify rejected origin — used by the placed-callback below
+    event.dataTransfer.setData('application/x-rejected-id', product.id);
+}
+
+function handleDragEnd() {
+    draggingId.value = null;
+}
+
+// ── Double-click: add to selected shelf ──────────────────────────────────────
+function handleDoubleClick(product: RejectedProduct) {
+    if (selection.selectedType.value !== 'shelf' || !selection.selectedId.value) {
+        toast.error('Selecione uma prateleira primeiro (clique nela uma vez).');
+        return;
+    }
+    const productObj = buildProduct(product);
+    if (!productObj.has_dimensions) {
+        toast.error(`"${product.product_name}" não tem dimensões cadastradas.`);
+        return;
+    }
+    removeLocally(product.id);
+    editor.addProductToShelf(selection.selectedId.value, productObj.id, productObj, () => {
+        void deleteFromBackend(product.id);
+    });
+    toast.success(`"${product.product_name}" adicionado à prateleira.`);
+}
+
+// ── Listen for drag-placed event from useShelfDragDrop ───────────────────────
+rejectedStore.setOnProductPlaced((productId: string) => {
+    const found = rejectedProducts.value.find((r) => r.product_id === productId);
+    if (!found) return;
+    removeLocally(found.id);
+    void deleteFromBackend(found.id);
+});
+
+// ── Swap mode (controle seguro) ───────────────────────────────────────────────
 function enterSwapMode(product: RejectedProduct) {
     swapSource.value = product;
     toast.info(`Clique em um produto na gôndola para trocar com "${product.product_name}".`, {
@@ -86,7 +162,6 @@ function cancelSwapMode() {
 
 async function executeSwap(layerId: string) {
     if (!swapSource.value) return;
-
     isSwapping.value = true;
     const source = swapSource.value;
     swapSource.value = null;
@@ -96,17 +171,13 @@ async function executeSwap(layerId: string) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '',
+                'X-CSRF-TOKEN': csrfToken(),
             },
-            body: JSON.stringify({
-                rejected_product_id: source.id,
-                layer_id: layerId,
-            }),
+            body: JSON.stringify({ rejected_product_id: source.id, layer_id: layerId }),
         });
 
-        if (!res.ok) throw new Error('Falha na troca');
+        if (!res.ok) throw new Error();
 
-        // Atualiza o estado reativo do editor imediatamente
         editor.updateLayer(layerId, {
             product_id: source.product_id,
             ean: source.ean,
@@ -131,28 +202,21 @@ async function executeSwap(layerId: string) {
     }
 }
 
-// Intercept segment selection when swap mode is active
 watch(
     () => selection.selectedItem.value,
     (item) => {
-        if (!swapModeActive.value || !item) return;
-        if (item.type !== 'segment') return;
-
-        const segment = item.item as any;
-        const layerId: string | undefined = segment?.layer?.id;
-
+        if (!swapModeActive.value || !item || item.type !== 'segment') return;
+        const layerId: string | undefined = (item.item as any)?.layer?.id;
         if (!layerId) {
             toast.warning('Este segmento não tem layer. Clique em outro produto.');
             return;
         }
-
         void executeSwap(layerId);
     },
 );
 
-onMounted(() => {
-    void fetchRejected();
-});
+onMounted(() => void fetchRejected());
+onUnmounted(() => rejectedStore.clearOnProductPlaced());
 
 defineExpose({ fetchRejected });
 </script>
@@ -209,14 +273,21 @@ defineExpose({ fetchRejected });
                 <div
                     v-for="product in rejectedProducts"
                     :key="product.id"
-                    class="flex w-36 flex-shrink-0 flex-col gap-1.5 rounded-lg border border-border bg-card p-2 transition-all"
+                    draggable="true"
+                    class="flex w-36 flex-shrink-0 flex-col gap-1.5 rounded-lg border border-border bg-card p-2 transition-all select-none"
                     :class="{
                         'ring-2 ring-amber-400': swapSource?.id === product.id,
                         'opacity-40': swapModeActive && swapSource?.id !== product.id,
+                        'cursor-grabbing opacity-50 ring-2 ring-primary': draggingId === product.id,
+                        'cursor-grab': draggingId !== product.id,
                     }"
+                    @dragstart="handleDragStart($event, product)"
+                    @dragend="handleDragEnd"
+                    @dblclick.stop="handleDoubleClick(product)"
                 >
-                    <!-- Product image -->
-                    <div class="flex h-16 items-center justify-center overflow-hidden rounded bg-muted">
+                    <!-- Drag handle hint + image -->
+                    <div class="relative flex h-16 items-center justify-center overflow-hidden rounded bg-muted">
+                        <GripVertical class="absolute left-0.5 top-0.5 size-3 text-muted-foreground/40" />
                         <img
                             v-if="product.image_url"
                             :src="product.image_url"

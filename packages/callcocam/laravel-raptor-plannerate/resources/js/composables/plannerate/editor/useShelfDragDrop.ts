@@ -1,14 +1,16 @@
 import { inject, ref } from 'vue';
 import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
 import { draggingSegmentShelfId } from './useGondolaState';
+import { useRejectedProductsStore } from './useRejectedProductsStore';
 
 /**
  * Composable para gerenciar drag & drop na shelf
  */
 export function useShelfDragDrop(shelfId: string) {
     const editor = usePlanogramEditor();
+    const rejectedStore = useRejectedProductsStore();
     const isDropTarget = ref(false);
-    
+
     // Injeta função para remover produto da lista quando usado
     const removeUsedProduct = inject<((productId: string) => void) | undefined>(
         'removeUsedProduct',
@@ -126,9 +128,8 @@ return;
                 product.id,
                 product,
                 (addedProductId) => {
-                    if (removeUsedProduct) {
-                        removeUsedProduct(addedProductId);
-                    }
+                    removeUsedProduct?.(addedProductId);
+                    rejectedStore.notifyProductPlaced(addedProductId);
                 },
             );
         }
@@ -154,9 +155,8 @@ return;
             productId,
             product,
             (addedProductId) => {
-                if (removeUsedProduct) {
-                    removeUsedProduct(addedProductId);
-                }
+                removeUsedProduct?.(addedProductId);
+                rejectedStore.notifyProductPlaced(addedProductId);
             },
         );
     };

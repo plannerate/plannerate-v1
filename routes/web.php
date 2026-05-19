@@ -213,6 +213,8 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
                 ->name('gondolas.auto-generate');
             Route::get('gondolas/{gondola}/rejected-products', [AutoPlanogramController::class, 'rejectedProducts'])
                 ->name('gondolas.rejected-products');
+            Route::delete('gondolas/{gondola}/rejected-products/{rejected}', [AutoPlanogramController::class, 'destroyRejectedProduct'])
+                ->name('gondolas.rejected-products.destroy');
             Route::post('gondolas/{gondola}/swap-product', [AutoPlanogramController::class, 'swapProduct'])
                 ->name('gondolas.swap-product');
         });

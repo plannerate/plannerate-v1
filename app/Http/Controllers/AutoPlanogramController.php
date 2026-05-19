@@ -207,6 +207,15 @@ class AutoPlanogramController extends Controller
         return response()->json(['data' => $rejected]);
     }
 
+    public function destroyRejectedProduct(Request $request, string $subdomain, string $gondola, string $rejected): JsonResponse
+    {
+        PlanogramRejectedProduct::where('id', $rejected)
+            ->where('gondola_id', $gondola)
+            ->delete();
+
+        return response()->json(['success' => true]);
+    }
+
     public function swapProduct(Request $request, string $subdomain, string $gondola): JsonResponse
     {
         $request->validate([

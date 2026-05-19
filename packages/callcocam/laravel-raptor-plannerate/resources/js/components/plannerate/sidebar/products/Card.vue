@@ -6,8 +6,8 @@
                 ? 'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200 dark:bg-blue-950/20 dark:ring-blue-900'
                 : 'border-border bg-card hover:bg-accent',
         isDragging ? 'cursor-grabbing opacity-50' : 'cursor-grab',
-    ]" :draggable="isDraggable ? 'true' : 'false'" data-product-card @click.stop="handlerselectClick" @dblclick.stop="handlerDbClick"
-        @dragstart="handleDragStart" @dragend="handleDragEnd">
+    ]" :draggable="isDraggable ? 'true' : 'false'" data-product-card @click.stop="handlerselectClick"
+        @dblclick.stop="handlerDbClick" @dragstart="handleDragStart" @dragend="handleDragEnd">
         <!-- Badge de seleção -->
         <div v-if="isSelected"
             class="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full text-xs font-bold text-white shadow-sm"
@@ -39,24 +39,13 @@
                     </span>
                 </p>
             </div>
-            
+
             <!-- Badge: tem dimensão (has_dimensions) -->
-            <div 
-                :title="getDimensionsTooltip()"
-                class="shrink-0"
-            >
-                <Badge
-                    :variant="product.has_dimensions ? 'default' : 'destructive'"
-                    class="flex items-center gap-1 text-xs"
-                >
-                    <CheckCircle2
-                        v-if="product.has_dimensions"
-                        class="size-3"
-                    />
-                    <AlertCircle
-                        v-else
-                        class="size-3"
-                    />
+            <div :title="getDimensionsTooltip()" class="shrink-0">
+                <Badge :variant="product.has_dimensions ? 'default' : 'destructive'"
+                    class="flex items-center gap-1 text-xs">
+                    <CheckCircle2 v-if="product.has_dimensions" class="size-3" />
+                    <AlertCircle v-else class="size-3" />
                     <span class="hidden sm:inline">
                         {{
                             product.has_dimensions
@@ -121,8 +110,8 @@ const getDimensionsTooltip = () => {
 
     return issues.length
         ? t('plannerate.sidebar.product_card.tooltip_without_dimensions_with_issues', {
-              issues: issues.join(', '),
-          })
+            issues: issues.join(', '),
+        })
         : t('plannerate.sidebar.product_card.without_dimensions');
 };
 
@@ -138,11 +127,11 @@ const handleDragStart = (event: DragEvent) => {
 
     if (event.dataTransfer) {
         event.dataTransfer.effectAllowed = 'copy';
-        
+
         // Verifica se há múltiplos produtos selecionados
         const selectedProducts = selection.getSelectedProducts();
         const hasMultiple = selectedProducts.length > 1;
-        
+
         if (hasMultiple) {
             // Modo múltiplo: inclui array de produtos
             event.dataTransfer.setData(
@@ -156,13 +145,13 @@ const handleDragStart = (event: DragEvent) => {
             event.dataTransfer.setData(
                 'text/plain',
                 t('plannerate.sidebar.product_card.selected_products', {
-                    count: selectedProducts.length,
+                    count: String(selectedProducts.length),
                 }),
             );
-            
+
             // Toast informativo
             toast.info(t('plannerate.sidebar.product_card.dragging_products', {
-                count: selectedProducts.length,
+                count: String(selectedProducts.length),
             }), {
                 duration: 1500,
             });
@@ -223,7 +212,7 @@ const handlerDbClick = () => {
     if (!props.product.has_dimensions) {
         toast.error(
             t('plannerate.sidebar.product_card.error_no_dimensions', {
-                product: props.product.name,
+                product: props.product.name || '',
             }),
         );
 
