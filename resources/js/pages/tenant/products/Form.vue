@@ -24,6 +24,7 @@ type ProductPayload = {
     id: string;
     category_id: string | null;
     name: string | null;
+    grouping: string | null;
     slug: string | null;
     ean: string | null;
     codigo_erp: string | null;
@@ -109,6 +110,7 @@ const imageError = ref('');
 const localErrors = ref<Record<string, string>>({});
 
 const productName = ref(props.product?.name ?? '');
+const grouping = ref(props.product?.grouping ?? '');
 const ean = ref(props.product?.ean ?? '');
 const codigoErp = ref(props.product?.codigo_erp ?? '');
 const productStatus = ref(props.product?.status ?? 'draft');
@@ -143,11 +145,16 @@ const tabs = computed(() => [
     },
 ]);
 
+function normalizeGrouping(value: string): string {
+    return value.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
 const fieldTabMap: Record<string, TabKey> = {
     name: 'identification',
     ean: 'identification',
     codigo_erp: 'identification',
     status: 'identification',
+    grouping: 'identification',
     url: 'identification',
 
     category_id: 'market',
@@ -405,6 +412,23 @@ const pageMeta = useCrudPageMeta({
                                     :error="resolveError('name', errors)"
                                     class="md:col-span-12"
                                 />
+                                <div class="md:col-span-12">
+                                    <FormTextField
+                                        id="grouping"
+                                        v-model="grouping"
+                                        name="grouping"
+                                        label="Agrupamento de exposição"
+                                        placeholder="Ex: CEREAIS | FARINÁCEOS | FAROFA DE MANDIOCA"
+                                        hint="Usado pelo template de planograma para determinar em qual slot o produto será posicionado."
+                                        :error="resolveError('grouping', errors)"
+                                    />
+                                    <p
+                                        v-if="grouping.trim()"
+                                        class="mt-1 text-xs text-muted-foreground"
+                                    >
+                                        Normalizado: <span class="font-mono">{{ normalizeGrouping(grouping) }}</span>
+                                    </p>
+                                </div>
                                 <FormSelectField
                                     id="status"
                                     v-model="productStatus"

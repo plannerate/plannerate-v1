@@ -109,18 +109,8 @@ class PlanogramTemplateController extends Controller
                 'templates' => $report->templatesCreated,
                 'subtemplates' => $report->subtemplatesCreated,
                 'slots' => $report->slotsCreated,
-                'products' => $report->productsImported,
             ]),
         ]);
-
-        if ($report->productsNotInMix > 0) {
-            Inertia::flash('toast', [
-                'type' => 'warning',
-                'message' => __('app.tenant.planogram-templates.messages.products_not_in_mix', [
-                    'count' => $report->productsNotInMix,
-                ]),
-            ]);
-        }
 
         return to_route('tenant.planogram-templates.index', $this->tenantRouteParameters());
     }
@@ -211,7 +201,7 @@ class PlanogramTemplateController extends Controller
 
     private function templatesPaginator(string $search, int $perPage): LengthAwarePaginator
     {
-        return PlanogramTemplate::withCount(['subtemplates', 'templateProducts'])
+        return PlanogramTemplate::withCount(['subtemplates'])
             ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search): void {
                 $w->where('code', 'like', '%'.$search.'%')
                     ->orWhere('name', 'like', '%'.$search.'%')
@@ -227,7 +217,6 @@ class PlanogramTemplateController extends Controller
                 'department' => $t->department,
                 'is_active' => $t->is_active,
                 'subtemplates_count' => $t->subtemplates_count,
-                'template_products_count' => $t->template_products_count,
                 'created_at' => $t->created_at?->toDateTimeString(),
             ]);
     }

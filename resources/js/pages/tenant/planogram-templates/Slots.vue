@@ -63,7 +63,6 @@ const editPath = computed(() =>
         })
         .replace(/^\/\/[^/]+/, ''),
 );
-const productsPath = computed(() => `${baseUrl.value}/products`);
 const groupingSearchUrl = computed(() =>
     ProductController.sortimentAttributes
         .url(props.subdomain)
@@ -106,20 +105,11 @@ const wizardSteps: WizardStep[] = [
         label: t('planogram-templates.wizard.step2_label'),
         description: t('planogram-templates.wizard.step2_description'),
     },
-    {
-        step: 3,
-        label: t('planogram-templates.wizard.step3_label'),
-        description: t('planogram-templates.wizard.step3_description'),
-    },
 ];
 
 function navigateWizard(step: 1 | 2 | 3): void {
     if (step === 1) {
         router.visit(editPath.value);
-    }
-
-    if (step === 3) {
-        router.visit(productsPath.value);
     }
 }
 

@@ -10,12 +10,6 @@ final class TemplateImportReport
 
     public int $slotsCreated = 0;
 
-    public int $productsImported = 0;
-
-    public int $productsMatchedToMix = 0;
-
-    public int $productsNotInMix = 0;
-
     /** @var list<string> */
     public array $errors = [];
 

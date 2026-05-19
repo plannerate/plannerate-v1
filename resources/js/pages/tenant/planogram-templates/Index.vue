@@ -22,7 +22,6 @@ type TemplateRow = {
     department: string;
     is_active: boolean;
     subtemplates_count: number;
-    template_products_count: number;
     created_at: string | null;
 };
 
@@ -84,7 +83,6 @@ function handleDelete(id: string): void {
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.code_name') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.department') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.subtemplates') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.products') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.status') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.created_at') }}</th>
                         <th class="px-4 py-3 font-medium ">{{ t('app.tenant.planogram_templates.fields.actions') }}</th>
@@ -92,10 +90,10 @@ function handleDelete(id: string): void {
                 </thead>
                 <tbody>
                     <template v-if="templatesLoading">
-                        <TableLoadingSkeleton :columns="7" :rows="6" />
+                        <TableLoadingSkeleton :columns="6" :rows="6" />
                     </template>
                     <tr v-else-if="templatesRows.length === 0">
-                        <td class="px-4 py-8 text-center text-muted-foreground" colspan="7">
+                        <td class="px-4 py-8 text-center text-muted-foreground" colspan="6">
                             {{ t('app.tenant.planogram_templates.empty') }}
                             <a :href="PlanogramTemplateController.create.url(props.subdomain)" class="ml-1 text-primary underline">
                                 {{ t('app.tenant.planogram_templates.empty_action') }}
@@ -112,7 +110,6 @@ function handleDelete(id: string): void {
                         </td>
                         <td class="px-4 py-3 text-muted-foreground">{{ template.department }}</td>
                         <td class="px-4 py-3">{{ template.subtemplates_count }}</td>
-                        <td class="px-4 py-3">{{ template.template_products_count }}</td>
                         <td class="px-4 py-3">
                             <Badge :variant="template.is_active ? 'default' : 'secondary'">
                                 {{ template.is_active ? t('app.tenant.planogram_templates.status.active') : t('app.tenant.planogram_templates.status.inactive') }}

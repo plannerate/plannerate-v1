@@ -34,9 +34,4 @@ class PlanogramTemplate extends Model
     {
         return $this->hasMany(PlanogramSubtemplate::class, 'template_id');
     }
-
-    public function templateProducts(): HasMany
-    {
-        return $this->hasMany(PlanogramTemplateProduct::class, 'template_id');
-    }
 }

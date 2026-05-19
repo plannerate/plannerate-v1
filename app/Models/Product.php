@@ -75,6 +75,8 @@ class Product extends Model
         'dimensions_status',
         'dimensions_description',
         'current_stock',
+        'grouping',
+        'grouping_normalized',
     ];
 
     protected $appends = [
@@ -103,6 +105,14 @@ class Product extends Model
             'last_purchase_date' => 'date',
             'resolution_details' => 'array',
         ];
+    }
+
+    public function setGroupingAttribute(?string $value): void
+    {
+        $this->attributes['grouping'] = $value;
+        $this->attributes['grouping_normalized'] = $value !== null && $value !== ''
+            ? (string) preg_replace('/\s+/', ' ', mb_strtolower(trim($value), 'UTF-8'))
+            : null;
     }
 
     public function getImageUrlAttribute(): string

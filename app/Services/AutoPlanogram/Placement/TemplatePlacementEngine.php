@@ -7,7 +7,6 @@ use App\Enums\PlacementFailureReason;
 use App\Enums\PriceOrder;
 use App\Enums\SizeOrder;
 use App\Models\PlanogramSubtemplate;
-use App\Models\PlanogramTemplateProduct;
 use App\Models\PlanogramTemplateSlot;
 use App\Models\Scopes\TenantScope;
 use App\Services\AutoPlanogram\DTO\OrderedBlock;
@@ -16,7 +15,6 @@ use App\Services\AutoPlanogram\DTO\PlacedSegment;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\ProductWidthResolver;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Illuminate\Support\Collection;
@@ -188,27 +186,10 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /** @param Collection<int, mixed> $settings->products */
     private function findCandidates(PlanogramTemplateSlot $slot, PlacementSettings $settings): Collection
     {
-        $templateProductIds = PlanogramTemplateProduct::withoutGlobalScope(TenantScope::class)
-            ->where('tenant_id', $settings->tenantId)
-            ->where('template_id', $slot->subtemplate->template_id)
-            ->where('grouping_normalized', $slot->grouping_normalized)
-            ->whereNotNull('product_id')
-            ->pluck('product_id');
-
-        if ($templateProductIds->isEmpty()) {
-            return collect();
-        }
-
-        // Use pre-loaded pool first (already ranked/scored by sales)
-        $fromPool = $settings->products->whereIn('id', $templateProductIds->all())->values();
-        if ($fromPool->isNotEmpty()) {
-            return $fromPool;
-        }
-
-        // Fallback: load directly from tenant DB (product not in category filter or has no sales)
-        return Product::withoutGlobalScope(TenantScope::class)
-            ->whereIn('id', $templateProductIds->all())
-            ->get();
+        return $settings->products->filter(
+            fn ($product) => $product->grouping_normalized === $slot->grouping_normalized
+                && $product->status !== 'draft'
+        )->values();
     }
 
     private function orderCandidates(Collection $products, PlanogramTemplateSlot $slot): Collection

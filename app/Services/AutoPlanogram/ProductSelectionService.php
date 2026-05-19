@@ -10,7 +10,7 @@ namespace App\Services\AutoPlanogram;
 
 use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use App\Services\AutoPlanogram\DTO\RankedProductDTO;
-use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;  
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Carbon\Carbon;
@@ -168,8 +168,14 @@ class ProductSelectionService
             ->with(['category.parent.parent.parent.parent.parent.parent'])
             ->get();
 
+        $total = $products->count();
+        $draftCount = $products->filter(fn ($p) => $p->status === 'draft')->count();
+        $products = $products->filter(fn ($p) => $p->status !== 'draft')->values();
+
         Log::info('🛒 Produtos encontrados', [
-            'total' => $products->count(),
+            'total_categoria' => $total,
+            'excluidos_draft' => $draftCount,
+            'candidatos_finais' => $products->count(),
             'tenant_connection' => $connection->getName(),
             'sample_products' => $products->take(3)->pluck('name', 'id')->toArray(),
         ]);

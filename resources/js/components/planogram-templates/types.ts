@@ -31,38 +31,6 @@ export type PlanogramSubtemplate = {
     slots: PlanogramTemplateSlot[];
 };
 
-export type PlanogramTemplateProduct = {
-    id: string;
-    ean: string;
-    product_id: string | null;
-    description: string;
-    brand: string;
-    grouping: string;
-    category?: string | null;
-    subcategory?: string | null;
-    package_type?: string | null;
-    package_content?: string | null;
-    width?: string | number | null;
-    height?: string | number | null;
-    depth?: string | number | null;
-    unit?: string | null;
-    has_dimensions?: boolean;
-};
-
-export type ProductSearchResult = {
-    id: string;
-    ean: string;
-    name: string;
-    brand: string;
-    description?: string;
-    sortiment_attribute?: string | null;
-};
-
-export type GroupingOption = {
-    id: string;
-    name: string;
-};
-
 export type WizardStepStatus = 'complete' | 'active' | 'pending';
 
 export type WizardStep = {

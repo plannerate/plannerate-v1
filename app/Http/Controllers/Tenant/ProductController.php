@@ -101,6 +101,7 @@ class ProductController extends Controller
         $search = $this->requestString($request, 'search');
         $status = $this->requestEnum($request, 'status', ['draft', 'published', 'synced', 'error']);
         $categoryId = $this->requestString($request, 'category_id');
+        $grouping = $this->requestString($request, 'grouping');
         $trashed = $this->resolveTrashedFilter($request);
         $requestedSort = trim((string) $request->query('sort', ''));
         $sort = in_array($requestedSort, ['name', 'ean', 'status', 'created_at', 'category'], true) ? $requestedSort : null;
@@ -111,6 +112,7 @@ class ProductController extends Controller
             $search,
             $status,
             $categoryId,
+            $grouping,
             $trashed,
             $sort,
             $direction,
@@ -121,10 +123,12 @@ class ProductController extends Controller
                 'search' => $search,
                 'status' => $status,
                 'category_id' => $categoryId,
+                'grouping' => $grouping,
                 'trashed' => $trashed,
             ],
             'filter_options' => [
                 'categories' => $this->categoriesForSelect(),
+                'groupings' => $this->groupingsForSelect(),
             ],
             'can' => $this->resolveCanCreate(Product::class, 'product_limit', Product::count()),
         ]);
@@ -163,6 +167,7 @@ class ProductController extends Controller
         string $search,
         string $status,
         string $categoryId,
+        string $grouping,
         string $trashed,
         ?string $sort,
         string $direction,
@@ -186,6 +191,7 @@ class ProductController extends Controller
             })
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($categoryIds !== [], fn ($query) => $query->whereIn('category_id', $categoryIds))
+            ->when($grouping !== '', fn ($query) => $query->where('grouping', $grouping))
             ->when(
                 $sort !== null,
                 function ($query) use ($sort, $direction): void {
@@ -361,6 +367,23 @@ class ProductController extends Controller
     }
 
     /**
+     * @return list<string>
+     */
+    private function groupingsForSelect(): array
+    {
+        return Product::query()
+            ->select('grouping')
+            ->whereNotNull('grouping')
+            ->where('grouping', '!=', '')
+            ->distinct()
+            ->orderBy('grouping')
+            ->pluck('grouping')
+            ->filter(fn (mixed $g): bool => is_string($g) && trim($g) !== '')
+            ->values()
+            ->all();
+    }
+
+    /**
      * @return array<int, array{id: string, name: string}>
      */
     private function categoriesForSelect(): array
@@ -430,6 +453,7 @@ class ProductController extends Controller
             'unit_measure' => $product->unit_measure,
             'auxiliary_description' => $product->auxiliary_description,
             'additional_information' => $product->additional_information,
+            'grouping' => $product->grouping,
             'sortiment_attribute' => $product->sortiment_attribute,
             'sortiment_attribute_levels' => $product->sortiment_attribute_levels,
             'dimensions_ean' => $product->dimensions_ean,

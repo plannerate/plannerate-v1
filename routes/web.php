@@ -40,7 +40,6 @@ use App\Http\Controllers\Tenant\SaleController;
 use App\Http\Controllers\Tenant\SimilarGroupController;
 use App\Http\Controllers\Tenant\StoreController;
 use App\Http\Controllers\Tenant\SystemLogController;
-use App\Http\Controllers\Tenant\TemplateProductController;
 use App\Http\Controllers\Tenant\TemplateSlotController;
 use App\Http\Controllers\Tenant\UserController as TenantUserController;
 use App\Http\Controllers\Tenant\WorkflowExecutionController;
@@ -309,20 +308,6 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('planogram-templates.slots.update');
         Route::delete('planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}', [TemplateSlotController::class, 'destroySlot'])
             ->name('planogram-templates.slots.destroy');
-
-        // Wizard etapa 3 — Products (tenant)
-        Route::get('planogram-templates/{planogramTemplate}/products/template', [TemplateProductController::class, 'downloadTemplate'])
-            ->name('planogram-templates.products.download-template');
-        Route::post('planogram-templates/{planogramTemplate}/products/bulk', [TemplateProductController::class, 'bulkImport'])
-            ->name('planogram-templates.products.bulk-import');
-        Route::get('planogram-templates/{planogramTemplate}/products', [TemplateProductController::class, 'index'])
-            ->name('planogram-templates.products.index');
-        Route::post('planogram-templates/{planogramTemplate}/products', [TemplateProductController::class, 'store'])
-            ->name('planogram-templates.products.store');
-        Route::put('planogram-templates/{planogramTemplate}/products/{planogramTemplateProduct}', [TemplateProductController::class, 'update'])
-            ->name('planogram-templates.products.update');
-        Route::delete('planogram-templates/{planogramTemplate}/products/{planogramTemplateProduct}', [TemplateProductController::class, 'destroy'])
-            ->name('planogram-templates.products.destroy');
 
         Route::resource('users', TenantUserController::class)
             ->except(['show'])

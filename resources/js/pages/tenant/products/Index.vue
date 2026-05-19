@@ -53,10 +53,12 @@ const props = defineProps<{
         search: string;
         status: string;
         category_id: string;
+        grouping: string;
         trashed: 'without' | 'only' | 'with';
     };
     filter_options: {
         categories: Array<{ id: string; name: string }>;
+        groupings: string[];
     };
     can: {
         create: boolean;
@@ -192,6 +194,15 @@ const pageMeta = useCrudPageMeta({
                     <option value="published">{{ t('app.tenant.products.status_options.published') }}</option>
                     <option value="synced">{{ t('app.tenant.products.status_options.synced') }}</option>
                     <option value="error">{{ t('app.tenant.products.status_options.error') }}</option>
+                </select>
+                <select
+                    v-if="filter_options.groupings.length > 0"
+                    name="grouping"
+                    :value="props.filters.grouping"
+                    class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                >
+                    <option value="">Agrupamento</option>
+                    <option v-for="g in filter_options.groupings" :key="g" :value="g">{{ g }}</option>
                 </select>
                 <input type="hidden" name="category_id" :value="categoryId ?? ''" />
 

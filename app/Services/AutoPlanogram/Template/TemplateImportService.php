@@ -4,9 +4,7 @@ namespace App\Services\AutoPlanogram\Template;
 
 use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplate;
-use App\Models\PlanogramTemplateProduct;
 use App\Models\PlanogramTemplateSlot;
-use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -20,7 +18,6 @@ final class TemplateImportService
 
         DB::transaction(function () use ($spreadsheet, $tenantId, $report): void {
             $templatesSheet = $spreadsheet->getSheetByName('Templates');
-            $productsSheet = $spreadsheet->getSheetByName('Produtos');
 
             if ($templatesSheet === null) {
                 $report->addError('Aba "Templates" não encontrada no arquivo.');
@@ -28,14 +25,7 @@ final class TemplateImportService
                 return;
             }
 
-            if ($productsSheet === null) {
-                $report->addError('Aba "Produtos" não encontrada no arquivo.');
-
-                return;
-            }
-
             $this->importTemplates($templatesSheet, $tenantId, $report);
-            $this->importProducts($productsSheet, $tenantId, $report);
         });
 
         return $report;
@@ -43,7 +33,7 @@ final class TemplateImportService
 
     private function normalizeGrouping(string $value): string
     {
-        return (string) preg_replace('/\s+/', ' ', strtolower(trim($value)));
+        return (string) preg_replace('/\s+/', ' ', mb_strtolower(trim($value), 'UTF-8'));
     }
 
     private function importTemplates(Worksheet $sheet, string $tenantId, TemplateImportReport $report): void
@@ -135,77 +125,6 @@ final class TemplateImportService
 
                     $report->slotsCreated++;
                 }
-            }
-        }
-    }
-
-    private function importProducts(Worksheet $sheet, string $tenantId, TemplateImportReport $report): void
-    {
-        $rows = $sheet->toArray(null, true, true, true);
-
-        // Pre-load EAN → product_id map for this tenant
-        $eanMap = Product::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->whereNotNull('ean')
-            ->pluck('id', 'ean')
-            ->toArray();
-
-        // Group by template code (we need the template to link products)
-        // The products sheet doesn't have template code — we link by department/category match
-        // Per spec: template_id comes from the template that matches the department
-        $templatesByDepartment = PlanogramTemplate::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->pluck('id', 'department')
-            ->toArray();
-
-        foreach ($rows as $rowIndex => $row) {
-            if ($rowIndex === 1) {
-                continue; // skip header
-            }
-
-            $ean = trim((string) ($row['A'] ?? ''));
-            if ($ean === '') {
-                continue;
-            }
-
-            $department = trim((string) ($row['C'] ?? ''));
-            $templateId = $templatesByDepartment[$department] ?? null;
-
-            if ($templateId === null) {
-                $report->addWarning("Produto EAN {$ean}: departamento '{$department}' sem template correspondente.");
-
-                continue;
-            }
-
-            $grouping = trim((string) ($row['F'] ?? ''));
-            $productId = $eanMap[$ean] ?? null;
-
-            PlanogramTemplateProduct::withoutGlobalScopes()->updateOrCreate(
-                ['tenant_id' => $tenantId, 'template_id' => $templateId, 'ean' => $ean],
-                [
-                    'tenant_id' => $tenantId,
-                    'template_id' => $templateId,
-                    'ean' => $ean,
-                    'product_id' => $productId,
-                    'description' => trim((string) ($row['B'] ?? '')),
-                    'department' => $department,
-                    'category' => trim((string) ($row['D'] ?? '')),
-                    'subcategory' => trim((string) ($row['E'] ?? '')),
-                    'grouping' => $grouping,
-                    'grouping_normalized' => $this->normalizeGrouping($grouping),
-                    'brand' => trim((string) ($row['G'] ?? '')),
-                    'package_type' => trim((string) ($row['H'] ?? '')) ?: null,
-                    'package_content' => trim((string) ($row['I'] ?? '')) ?: null,
-                ],
-            );
-
-            $report->productsImported++;
-
-            if ($productId !== null) {
-                $report->productsMatchedToMix++;
-            } else {
-                $report->productsNotInMix++;
-                $report->addWarning("EAN {$ean} não encontrado no mix da loja.");
             }
         }
     }

@@ -60,6 +60,7 @@ class StoreProductRequest extends FormRequest
             'unit_measure' => ['nullable', 'string', 'max:255'],
             'auxiliary_description' => ['nullable', 'string', 'max:255'],
             'additional_information' => ['nullable', 'string', 'max:255'],
+            'grouping' => ['nullable', 'string', 'max:255'],
             'sortiment_attribute' => ['nullable', 'string', 'max:255'],
             'sortiment_attribute_levels' => ['nullable', 'string', 'max:255'],
             'dimensions_ean' => ['nullable', 'string', 'max:13'],
