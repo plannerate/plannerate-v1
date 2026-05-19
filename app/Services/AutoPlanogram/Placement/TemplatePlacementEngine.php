@@ -61,6 +61,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $placed = collect();
         $rejected = collect();
         $groupingsSemProduto = 0;
+        $slotAnalysis = [];
 
         $slots = $subtemplate->slots()
             ->withoutGlobalScope(TenantScope::class)
@@ -102,6 +103,27 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
             $placed = $placed->merge($slotResult['placed']);
             $rejected = $rejected->merge($slotResult['rejected']);
+
+            $occupied = round((float) $slotResult['placed']->sum('width'), 1);
+            $livre = round(max(0.0, $available - $occupied), 1);
+            $slotAnalysis[] = [
+                'slot_id' => $slot->id,
+                'grouping' => $slot->grouping,
+                'module_number' => $slot->module_number,
+                'shelf_order' => $slot->shelf_order,
+                'shelf_id' => $shelf->getKey(),
+                'largura_total' => round($available, 1),
+                'largura_usada' => $occupied,
+                'largura_livre' => $livre,
+                'percentual_uso' => $available > 0 ? (int) round(($occupied / $available) * 100) : 0,
+                'produtos_posicionados' => $slotResult['placed']->count(),
+                'produtos_rejeitados' => $slotResult['rejected']->count(),
+                'produtos_rejeitados_nomes' => $slotResult['rejected']
+                    ->filter(fn ($r) => $r['product'] !== null)
+                    ->map(fn ($r) => $r['product']->name)
+                    ->values()
+                    ->toArray(),
+            ];
         }
 
         if ($settings->planogramId !== null) {
@@ -121,7 +143,17 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             'rejeitados_sem_espaco' => $rejected->whereNotNull('product')->where('reason', PlacementFailureReason::NoHorizontalSpace)->count(),
         ]);
 
-        return new PlacementResult($placed, $rejected);
+        Log::info('TemplatePlacementEngine: análise de espaço por slot', [
+            'slots' => collect($slotAnalysis)->map(fn ($s) => [
+                'grouping' => $s['grouping'],
+                'shelf_order' => $s['shelf_order'],
+                'uso_percentual' => $s['percentual_uso'].'%',
+                'largura_livre' => $s['largura_livre'].'cm',
+                'rejeitados' => $s['produtos_rejeitados'],
+            ])->toArray(),
+        ]);
+
+        return new PlacementResult($placed, $rejected, $slotAnalysis);
     }
 
     private function resolveSubtemplate(PlacementSettings $settings): ?PlanogramSubtemplate

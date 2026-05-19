@@ -116,7 +116,7 @@ class AutoPlanogramController extends Controller
 
             Inertia::flash('validation_report', $report->toArray());
 
-            Inertia::flash('capacity_report', [
+            $capacityReport = [
                 'total_produtos' => $totalProducts,
                 'posicionados' => $output->totalAllocated(),
                 'rejeitados_espaco' => $rejectedSpace,
@@ -132,7 +132,18 @@ class AutoPlanogramController extends Controller
                         'name' => $r['product']->name,
                         'category' => $r['product']->category?->name,
                     ])->values(),
-            ]);
+            ];
+
+            if ($templateId !== null) {
+                $capacityReport['suggestions'] = $output->suggestions;
+                $capacityReport['slot_analysis'] = $output->slotAnalysis;
+                $capacityReport['has_space'] = collect($output->slotAnalysis)->some(fn ($s) => $s['largura_livre'] > 10);
+                $capacityReport['has_rejects'] = $rejectedSpace > 0;
+                $capacityReport['template_id'] = $templateId;
+                $capacityReport['subdomain'] = $subdomain;
+            }
+
+            Inertia::flash('capacity_report', $capacityReport);
 
             Log::info('AutoPlanogramController: geração concluída', [
                 'gondola_id' => $gondola,

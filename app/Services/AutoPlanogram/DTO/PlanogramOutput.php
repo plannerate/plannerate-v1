@@ -25,6 +25,10 @@ final readonly class PlanogramOutput
         public ValidationReport $validationReport,
         /** Tipo de score aplicado: 'composite', 'abc' ou 'neutral' (sem dados de venda no modo template) */
         public string $scoreType = 'composite',
+        /** @var list<array<string, mixed>> Per-slot space analysis (template mode only) */
+        public array $slotAnalysis = [],
+        /** @var list<array<string, mixed>> Actionable suggestions (template mode only) */
+        public array $suggestions = [],
     ) {}
 
     public function totalAllocated(): int

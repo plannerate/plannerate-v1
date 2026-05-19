@@ -12,5 +12,7 @@ final readonly class PlacementResult
         public Collection $placedSegments,
         /** @var Collection<int, array{product: mixed, reason: PlacementFailureReason}> */
         public Collection $rejectedProducts,
+        /** @var list<array<string, mixed>> Per-slot space analysis (template mode only) */
+        public array $slotAnalysis = [],
     ) {}
 }

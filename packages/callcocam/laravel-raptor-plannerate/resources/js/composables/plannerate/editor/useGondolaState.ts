@@ -32,6 +32,7 @@ export const showDeleteConfirmation = ref(false);
 export const showAddModuleDrawer = ref(false);
 export const showPerformanceModal = ref(false);
 export const showGrid = ref(false);
+export const showZoneIndicators = ref(true);
 
 // Busca de produto por EAN na gondola atual
 export const eanSearchQuery = ref('');

@@ -2,6 +2,7 @@
 import { Plus } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { useT } from '@/composables/useT';
+import { getShelfLevel, getZoneConfig } from '@/composables/plannerate/useShelfZone';
 import SlotCard from './SlotCard.vue';
 import type { PlanogramTemplateSlot } from './types';
 
@@ -40,6 +41,10 @@ function getSlot(module: number, shelf: number): PlanogramTemplateSlot | null {
 const shelvesTopToBottom = computed(() =>
     Array.from({ length: props.numShelves }, (_, i) => props.numShelves - i),
 );
+
+function shelfZoneConfig(indexFromTop: number) {
+    return getZoneConfig(getShelfLevel(indexFromTop, props.numShelves));
+}
 
 /** modules left-to-right */
 const modulesLeftToRight = computed(() =>
@@ -94,12 +99,14 @@ function isDragOver(module: number, shelf: number): boolean {
             </div>
 
             <!-- Data rows: shelf label + cells -->
-            <template v-for="shelf in shelvesTopToBottom" :key="`row-${shelf}`">
-                <!-- Shelf label -->
+            <template v-for="(shelf, indexFromTop) in shelvesTopToBottom" :key="`row-${shelf}`">
+                <!-- Shelf label with zone indicator -->
                 <div
-                    class="flex items-center justify-center border-b border-r border-border bg-muted/30 px-1 py-1 text-[11px] font-medium text-muted-foreground last:border-b-0"
+                    class="flex items-center justify-center border-b border-r border-border px-1 py-1 text-[11px] font-medium last:border-b-0"
+                    :class="[shelfZoneConfig(indexFromTop).bgClass, shelfZoneConfig(indexFromTop).textClass]"
+                    :title="shelfZoneConfig(indexFromTop).label"
                 >
-                    <span class="writing-mode-vertical rotate-0">{{ t('planogram-templates.grid.shelf_label') }}{{ shelf }}</span>
+                    <span class="writing-mode-vertical rotate-0">{{ t('planogram-templates.grid.shelf_label') }}{{ shelf }} · {{ shelfZoneConfig(indexFromTop).labelShort }}</span>
                 </div>
 
                 <!-- Cells -->

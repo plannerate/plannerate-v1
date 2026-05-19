@@ -3,6 +3,7 @@ import type {Ref} from 'vue';
 import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/useSectionFields';
 import { calculateHolePositions } from '@/composables/plannerate/useSectionHoles';
 import { useShelfAreaCalculation } from '@/composables/plannerate/useShelfAreaCalculation';
+import { getShelfLevel, getZoneConfig } from '@/composables/plannerate/useShelfZone';
 import type { Section, Shelf as ShelfType } from '@/types/planogram';
 
 interface UseShelfLayoutOptions {
@@ -110,6 +111,19 @@ return 1;
         );
     });
 
+    const activeShelvesCount = computed(() => {
+        if (!options.section.value?.shelves) return 1;
+        return options.section.value.shelves.filter((s) => !s.deleted_at).length;
+    });
+
+    const shelfIndexFromTop = computed(() => {
+        return Math.max(0, activeShelvesCount.value - shelfDisplayNumber.value);
+    });
+
+    const shelfZone = computed(() => {
+        return getZoneConfig(getShelfLevel(shelfIndexFromTop.value, activeShelvesCount.value));
+    });
+
     const currentAlignment = computed(
         () => options.alignment.value ?? 'justify',
     );
@@ -147,6 +161,8 @@ return 1;
         segments,
         isHookType,
         shelfDisplayNumber,
+        shelfIndexFromTop,
+        shelfZone,
         currentAlignment,
         isSingleSegmentJustify,
         alignmentClass,

@@ -2,6 +2,7 @@
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import PlanogramCapacityBanner from '@/components/PlanogramCapacityBanner.vue';
+import PlanogramSuggestions from '@/components/PlanogramSuggestions.vue';
 import PlanogramValidationReport from '@/components/PlanogramValidationReport.vue';
 import Planogram from '@/components/plannerate/Planogram.vue';
 // @ts-expect-error - BackendBreadcrumb type definition may not be available
@@ -70,6 +71,11 @@ const { record, products, analysis } = props;
 const page = usePage();
 const validationReport = computed(() => (page.props.flash as any)?.validation_report ?? null);
 const capacityReport = computed(() => (page.props.flash as any)?.capacity_report ?? null);
+const suggestionsReport = computed(() => {
+    const report = capacityReport.value;
+    if (!report?.suggestions?.length || !report?.template_id) return null;
+    return report;
+});
 </script>
 
 <template>
@@ -85,6 +91,13 @@ const capacityReport = computed(() => (page.props.flash as any)?.capacity_report
         />
         <PlanogramCapacityBanner
             :report="capacityReport"
+            class="mx-4 mb-2"
+        />
+        <PlanogramSuggestions
+            v-if="suggestionsReport"
+            :suggestions="suggestionsReport.suggestions"
+            :template-id="suggestionsReport.template_id"
+            :subdomain="suggestionsReport.subdomain"
             class="mx-4 mb-2"
         />
         <PlanogramValidationReport

@@ -20,6 +20,7 @@ import {
     selectedItem,
     selectedType,
     showGrid,
+    showZoneIndicators,
     showPerformanceModal,
     showProductsPanel,
     showPropertiesPanel,
@@ -1273,6 +1274,10 @@ return [];
         showGrid.value = !showGrid.value;
     }
 
+    function toggleZoneIndicators() {
+        showZoneIndicators.value = !showZoneIndicators.value;
+    }
+
     // ==================== ALIGNMENT FUNCTIONS ====================
 
     /**
@@ -2397,6 +2402,8 @@ return;
         // Ações do Toolbar
         showGrid,
         toggleGrid,
+        showZoneIndicators,
+        toggleZoneIndicators,
 
         // Alinhamento da gondola
         setAlignment,

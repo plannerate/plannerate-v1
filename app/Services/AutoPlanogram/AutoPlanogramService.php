@@ -14,6 +14,7 @@ use App\Services\AutoPlanogram\Placement\PlanogramWriterInterface;
 use App\Services\AutoPlanogram\Placement\TemplatePlacementEngine;
 use App\Services\AutoPlanogram\Placement\VerticalBlockPlacer;
 use App\Services\AutoPlanogram\Scoring\ProductScorerInterface;
+use App\Services\AutoPlanogram\Template\SlotSuggestionGenerator;
 use App\Services\AutoPlanogram\Validation\PlanogramValidator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +51,7 @@ final class AutoPlanogramService
         private readonly VerticalBlockPlacer $verticalPlacer,
         private readonly PlanogramValidator $validator,
         private readonly PlanogramWriterInterface $writer,
+        private readonly SlotSuggestionGenerator $suggestionGenerator,
     ) {}
 
     public function generate(PlanogramInput $input): PlanogramOutput
@@ -171,15 +173,26 @@ final class AutoPlanogramService
             $this->writer->write($input->gondolaId, $input->sections, $allSegments);
         });
 
+        $suggestions = $this->suggestionGenerator->generate($result->slotAnalysis);
+
         Log::info('AutoPlanogramService: geração com template concluída', [
             'gondola_id' => $input->gondolaId,
             'template_id' => $settings->templateId,
             'segments_placed' => $allSegments->count(),
             'validation_passed' => $report->passed,
             'score_type' => $scoreType,
+            'sugestoes' => count($suggestions),
         ]);
 
-        return new PlanogramOutput($input->gondolaId, $allSegments, $result->rejectedProducts, $report, $scoreType);
+        return new PlanogramOutput(
+            gondolaId: $input->gondolaId,
+            placedSegments: $allSegments,
+            rejectedProducts: $result->rejectedProducts,
+            validationReport: $report,
+            scoreType: $scoreType,
+            slotAnalysis: $result->slotAnalysis,
+            suggestions: $suggestions,
+        );
     }
 
     /**

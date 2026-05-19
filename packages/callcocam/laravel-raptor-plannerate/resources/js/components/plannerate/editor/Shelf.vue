@@ -1,9 +1,27 @@
 <template>
     <!-- Container: Área total da prateleira (do chão/prateleira anterior até esta) -->
-    <div data-shelf-area="true" class="group/shelf absolute hover:bg-primary/10" :class="{
-        'bg-primary/10 ring-2 ring-primary': isSelected,
-    }" :style="shelfAreaStyle" @click="handleSelectShelf" @dragover.prevent="handleProductDragOver"
-        @dragleave="handleProductDragLeave" @drop.prevent="handleProductDrop">
+    <div
+        data-shelf-area="true"
+        class="group/shelf absolute hover:bg-primary/10"
+        :class="[
+            isSelected ? 'bg-primary/10 ring-2 ring-primary' : '',
+            showZoneIndicators ? shelfZone.bgClass : '',
+        ]"
+        :style="shelfAreaStyle"
+        @click="handleSelectShelf"
+        @dragover.prevent="handleProductDragOver"
+        @dragleave="handleProductDragLeave"
+        @drop.prevent="handleProductDrop"
+    >
+        <!-- Faixa lateral de zona — lateral esquerda -->
+        <div
+            v-if="showZoneIndicators"
+            class="absolute top-0 left-0 flex h-full w-1.5 cursor-default items-center justify-center"
+            :class="shelfZone.borderClass"
+            :title="shelfZone.label"
+            style="z-index: 135"
+            @click.stop
+        />
         <!-- Segmentos um do lado do outro (horizontalmente) -->
         <div v-if="segments.length > 0" class="absolute right-0 left-0 flex"
             :class="[alignmentClass, isHookType ? 'items-start' : 'items-end']"
@@ -81,6 +99,7 @@ import { usePlanogramEditor } from '../../../composables/plannerate/usePlanogram
 import { usePlanogramSelection } from '../../../composables/plannerate/usePlanogramSelection';
 import type { Section, Shelf as ShelfType } from '../../../types/planogram';
 import Segment from './Segment.vue';
+import { showZoneIndicators } from '../../../composables/plannerate/editor/useGondolaState';
 
 interface Props {
     shelf: ShelfType;
@@ -135,6 +154,7 @@ const {
     segments,
     isHookType,
     shelfDisplayNumber,
+    shelfZone,
     isSingleSegmentJustify,
     alignmentClass,
     segmentsPositionStyle,

@@ -23,6 +23,7 @@ import {
     Save,
     Search,
     Sparkles,
+    Thermometer,
     Trash2,
     Undo2,
     X,
@@ -544,6 +545,12 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     :tooltip="t('plannerate.toolbar.toggle_grid')" @click="editor.toggleGrid()">
                     <Grid3x3 class="mr-2 size-4" />
                     {{ t('plannerate.toolbar.grid') }}
+                </ButtonWithTooltip>
+
+                <ButtonWithTooltip :variant="editor.showZoneIndicators.value ? 'default' : 'outline'" size="sm"
+                    tooltip="Zonas de exposição" @click="editor.toggleZoneIndicators()">
+                    <Thermometer class="mr-2 size-4" />
+                    Zonas
                 </ButtonWithTooltip>
 
                 <ButtonWithTooltip :variant="alignment === 'left' ? 'default' : 'outline'" size="sm"
