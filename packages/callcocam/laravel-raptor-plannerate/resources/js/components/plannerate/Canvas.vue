@@ -6,9 +6,9 @@ import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor'
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { useT } from '@/composables/useT';
 import type { Gondola } from '@/types/planogram';
-import RejectedProductsDrawer from '@/components/RejectedProductsDrawer.vue';
 import Sections from './editor/Sections.vue';
 import Indicador from './Indicador.vue';
+import RejectedProductsDrawer from './editor/RejectedProductsDrawer.vue';
 
 interface Props {
     record?: Gondola;
@@ -131,47 +131,26 @@ const flowDirection = computed(
 const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
 </script>
 <template>
-    <div
-        class="relative flex min-w-0 flex-1 flex-col bg-muted/30"
-        ref="target"
-        v-if="containerHeight"
-    >
+    <div class="relative flex min-w-0 flex-1 flex-col bg-muted/30" ref="target" v-if="containerHeight">
         <!-- Indicador de Direção da Gôndola - fixo no topo do canvas -->
         <Indicador :isLeftToRight="isLeftToRight" />
 
-        <div
-            class="relative isolate overflow-auto border border-dashed border-border bg-background p-8 dark:bg-background"
-            :style="{ height: containerHeight + 'px' }"
-        >
+        <div class="relative isolate overflow-auto border border-dashed border-border bg-background p-8 dark:bg-background"
+            :style="{ height: containerHeight + 'px' }">
             <!-- Grade de alinhamento -->
-            <div
-                v-if="editor.showGrid.value"
-                class="pointer-events-none absolute inset-0 z-10"
-                :style="{
-                    backgroundImage:
-                        'repeating-linear-gradient(0deg, transparent, transparent 49px, color-mix(in srgb, currentColor 15%, transparent) 49px, color-mix(in srgb, currentColor 15%, transparent) 50px), repeating-linear-gradient(90deg, transparent, transparent 49px, color-mix(in srgb, currentColor 15%, transparent) 49px, color-mix(in srgb, currentColor 15%, transparent) 50px)',
-                }"
-            />
+            <div v-if="editor.showGrid.value" class="pointer-events-none absolute inset-0 z-10" :style="{
+                backgroundImage:
+                    'repeating-linear-gradient(0deg, transparent, transparent 49px, color-mix(in srgb, currentColor 15%, transparent) 49px, color-mix(in srgb, currentColor 15%, transparent) 50px), repeating-linear-gradient(90deg, transparent, transparent 49px, color-mix(in srgb, currentColor 15%, transparent) 49px, color-mix(in srgb, currentColor 15%, transparent) 50px)',
+            }" />
 
             <!-- Sections do Planograma -->
-            <div
-                v-if="sortedSections.length > 0"
-                class="relative z-0 flex min-h-full items-start pb-4"
-                :style="{ paddingTop: canvasTopPadding + 'px' }"
-                data-planogram-canvas
-                @click="handleCanvasClick"
-            >
-                <Sections
-                    :sections="sortedSections"
-                    :scale="editor.scaleFactor.value"
-                />
+            <div v-if="sortedSections.length > 0" class="relative z-0 flex min-h-full items-start pb-4"
+                :style="{ paddingTop: canvasTopPadding + 'px' }" data-planogram-canvas @click="handleCanvasClick">
+                <Sections :sections="sortedSections" :scale="editor.scaleFactor.value" />
             </div>
 
             <!-- Placeholder quando não há sections -->
-            <div
-                v-else
-                class="flex h-full flex-col items-center justify-center gap-4 p-12 text-center"
-            >
+            <div v-else class="flex h-full flex-col items-center justify-center gap-4 p-12 text-center">
                 <div class="rounded-full bg-muted p-4">
                     <Package class="size-8 text-muted-foreground" />
                 </div>
@@ -188,9 +167,6 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
         </div>
 
         <!-- Drawer de produtos rejeitados (overlay bottom) -->
-        <RejectedProductsDrawer
-            v-if="record?.id"
-            :gondola-id="record.id"
-        />
+        <RejectedProductsDrawer v-if="record?.id" :gondola-id="record.id" />
     </div>
 </template>
