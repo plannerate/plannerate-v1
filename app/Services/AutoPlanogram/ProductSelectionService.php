@@ -6,11 +6,11 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AutoGenerate;
+namespace App\Services\AutoPlanogram;
 
-use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
-use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\AutoGenerateConfigDTO;
-use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\RankedProductDTO;
+use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
+use App\Services\AutoPlanogram\DTO\RankedProductDTO;
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;  
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Carbon\Carbon;

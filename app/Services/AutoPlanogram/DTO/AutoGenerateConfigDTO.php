@@ -6,7 +6,7 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate;
+namespace App\Services\AutoPlanogram\DTO;
 
 /**
  * DTO de Configuração para Geração Automática de Planogramas

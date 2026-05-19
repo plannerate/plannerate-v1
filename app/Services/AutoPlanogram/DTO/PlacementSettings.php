@@ -2,8 +2,7 @@
 
 namespace App\Services\AutoPlanogram\DTO;
 
-use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
-use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\AutoGenerateConfigDTO;
+use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue; 
 use Illuminate\Support\Collection;
 
 /**

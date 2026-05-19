@@ -3,13 +3,11 @@
 namespace Callcocam\LaravelRaptorPlannerate;
 
 use App\Http\Middleware\SetPermissionTeamContext;
-use Callcocam\LaravelRaptorPlannerate\Commands\Plannerate\TestAutoGenerateCommand;
 use Callcocam\LaravelRaptorPlannerate\Commands\SyncPlannerateMigrationsCommand;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Policies\GondolaPolicy;
 use Callcocam\LaravelRaptorPlannerate\Policies\PlanogramPolicy;
-use Callcocam\LaravelRaptorPlannerate\Providers\AutoPlanogramServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Spatie\LaravelPackageTools\Package;
@@ -23,13 +21,7 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-raptor-plannerate')
             ->hasConfigFile('plannerate')
-            ->hasCommand(SyncPlannerateMigrationsCommand::class)
-            ->hasCommand(TestAutoGenerateCommand::class);
-    }
-
-    public function packageRegistered(): void
-    {
-        $this->app->register(AutoPlanogramServiceProvider::class);
+            ->hasCommand(SyncPlannerateMigrationsCommand::class);
     }
 
     public function packageBooted(): void

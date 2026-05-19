@@ -2,10 +2,10 @@
 
 namespace App\Services\AutoPlanogram;
 
+use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
-use App\Services\AutoPlanogram\DTO\ScoredProduct;
-use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\AutoGenerateConfigDTO;
-use Callcocam\LaravelRaptorPlannerate\DTOs\Plannerate\AutoGenerate\RankedProductDTO;
+use App\Services\AutoPlanogram\DTO\RankedProductDTO;
+use App\Services\AutoPlanogram\DTO\ScoredProduct;  
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
