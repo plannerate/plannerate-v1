@@ -1,19 +1,65 @@
 <script setup lang="ts">
+import { ImageDown } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import type {
     PlanogramTemplateSlot,
     SlotAnalysisData,
 } from '@/components/planogram-templates/types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const props = defineProps<{
     selectedSlot: PlanogramTemplateSlot | null;
     analysis: SlotAnalysisData | null;
     loading: boolean;
 }>();
+
+const emit = defineEmits<{
+    syncImages: [];
+}>();
+
+const localFilter = ref('');
+
+const filteredRows = computed(() => {
+    if (!props.analysis) {
+        return [];
+    }
+
+    const query = localFilter.value.trim().toLowerCase();
+
+    if (query === '') {
+        return props.analysis.rows;
+    }
+
+    return props.analysis.rows.filter((row) => {
+        const name = row.name.toLowerCase();
+        const ean = (row.ean ?? '').toLowerCase();
+        const codigoErp = (row.codigo_erp ?? '').toLowerCase();
+
+        return (
+            name.includes(query) ||
+            ean.includes(query) ||
+            codigoErp.includes(query)
+        );
+    });
+});
 </script>
 
 <template>
     <div class="rounded-lg border bg-card p-4 col-end-12 md:col-span-9 lg:col-span-8">
-        <p class="mb-1 text-sm font-semibold">Análise de alocação</p>
+        <div class="mb-2 flex items-center justify-between gap-2">
+            <p class="text-sm font-semibold">Análise de alocação</p>
+            <Button
+                v-if="props.analysis && props.analysis.rows.length > 0"
+                type="button"
+                size="sm"
+                variant="outline"
+                @click="emit('syncImages')"
+            >
+                <ImageDown class="size-4" />
+                Atualizar imagens
+            </Button>
+        </div>
         <p class="mb-3 text-xs text-muted-foreground">
             {{
                 props.selectedSlot
@@ -32,6 +78,18 @@ const props = defineProps<{
             Nenhum dado de análise para este slot.
         </div>
         <div v-else-if="props.analysis" class="space-y-3">
+            <div class="flex items-center justify-between gap-3">
+                <Input
+                    v-model="localFilter"
+                    type="text"
+                    placeholder="Filtrar por nome, EAN ou código ERP"
+                    class="max-w-md"
+                />
+                <p class="text-xs text-muted-foreground">
+                    {{ filteredRows.length }} de {{ props.analysis.rows.length }}
+                </p>
+            </div>
+
             <div class="grid grid-cols-2 gap-2 lg:grid-cols-4">
                 <div class="rounded-md border px-3 py-2">
                     <p class="text-xs text-muted-foreground">Total</p>
@@ -59,20 +117,22 @@ const props = defineProps<{
                 </div>
             </div>
 
-            <div class="overflow-x-auto rounded-md border">
+            <div class="max-h-[70vh] overflow-auto rounded-md border">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/40">
+                    <thead class="sticky top-0 z-10 bg-muted/40">
                         <tr>
                             <th class="px-3 py-2 text-left">Produto</th>
                             <th class="px-3 py-2 text-left">Status</th>
                             <th class="px-3 py-2 text-left">Motivo</th>
+                            <th class="px-3 py-2 text-left">Venda</th>
+                            <th class="px-3 py-2 text-left">Dimensões</th>
                             <th class="px-3 py-2 text-left">Facing</th>
                             <th class="px-3 py-2 text-left">Largura (cm)</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="row in props.analysis.rows"
+                            v-for="row in filteredRows"
                             :key="row.product_id"
                             class="border-t"
                         >
@@ -103,6 +163,9 @@ const props = defineProps<{
                                             EAN: {{ row.ean || '-' }} · Marca:
                                             {{ row.brand || '-' }}
                                         </p>
+                                        <p class="text-xs text-muted-foreground">
+                                            Cód. ERP: {{ row.codigo_erp || '-' }}
+                                        </p>
                                     </div>
                                 </div>
                             </td>
@@ -119,6 +182,20 @@ const props = defineProps<{
                             </td>
                             <td class="px-3 py-2 text-muted-foreground">
                                 {{ row.reason }}
+                            </td>
+                            <td class="px-3 py-2">
+                                <span
+                                    :class="
+                                        row.has_sales
+                                            ? 'text-emerald-600'
+                                            : 'text-muted-foreground'
+                                    "
+                                >
+                                    {{ row.has_sales ? 'Com venda' : 'Sem venda' }}
+                                </span>
+                            </td>
+                            <td class="px-3 py-2 text-muted-foreground">
+                                {{ row.dimensions }}
                             </td>
                             <td class="px-3 py-2">{{ row.facing_used }}</td>
                             <td class="px-3 py-2">

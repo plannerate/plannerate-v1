@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
 import TemplateSlotController from '@/actions/App/Http/Controllers/Tenant/TemplateSlotController';
 import ModuleSelectorButtons from '@/components/planogram-templates/ModuleSelectorButtons.vue';
@@ -32,6 +32,9 @@ const props = defineProps<{
     subdomain: string;
     template: TemplateBasic;
     subtemplates: PlanogramSubtemplate[];
+    current_module: number;
+    selected_slot_id: string | null;
+    slot_analysis: SlotAnalysisData | null;
 }>();
 
 const { t } = useT();
@@ -94,7 +97,32 @@ function navigateWizard(step: 1 | 2 | 3): void {
     }
 }
 
-const currentModules = ref(props.subtemplates[0]?.num_modules ?? 1);
+const allSlotsFromTemplate = computed(() =>
+    props.subtemplates
+        .flatMap((subtemplate) => subtemplate.slots)
+        .slice()
+        .sort((a, b) => {
+            if (a.module_number === b.module_number) {
+                return a.shelf_order - b.shelf_order;
+            }
+
+            return a.module_number - b.module_number;
+        }),
+);
+
+const selectedSlotFromTemplate = computed(
+    () =>
+        allSlotsFromTemplate.value.find(
+            (slot) => slot.id === props.selected_slot_id,
+        ) ?? null,
+);
+
+const currentModules = ref(
+    props.current_module ||
+        selectedSlotFromTemplate.value?.module_number ||
+        props.subtemplates[0]?.num_modules ||
+        1,
+);
 
 const currentSubtemplate = computed(
     () =>
@@ -113,86 +141,99 @@ const allSlots = computed(() =>
     }),
 );
 
-const selectedSlotId = ref<string | null>(null);
-const slotAnalysis = ref<SlotAnalysisData | null>(null);
+const selectedSlotId = ref<string | null>(props.selected_slot_id);
+const slotAnalysis = ref<SlotAnalysisData | null>(props.slot_analysis);
 const productsLoading = ref(false);
 
 const selectedSlot = computed(
     () => allSlots.value.find((slot) => slot.id === selectedSlotId.value) ?? null,
 );
 
-function normalizeGrouping(value: string): string {
-    return value
-        .trim()
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/\s+/g, '-');
+function selectSlotForProducts(slotId: string): void {
+    selectedSlotId.value = slotId;
+    productsLoading.value = true;
+    router.get(
+        TemplateSlotController.review.url(
+            {
+                subdomain: props.subdomain,
+                planogramTemplate: props.template.id,
+            },
+            {
+                query: {
+                    slot_id: slotId,
+                    module: currentModules.value,
+                },
+            },
+        ),
+        {},
+        {
+            preserveScroll: true,
+            replace: true,
+            onFinish: () => {
+                productsLoading.value = false;
+            },
+        },
+    );
 }
 
-async function loadSlotProducts(slot: PlanogramTemplateSlot): Promise<void> {
-    const groupingNormalized =
-        slot.grouping_normalized || normalizeGrouping(slot.grouping ?? '');
-
-    if (!groupingNormalized) {
-        slotAnalysis.value = null;
-
+function syncCurrentAnalysisImages(): void {
+    if (!slotAnalysis.value) {
         return;
     }
 
-    productsLoading.value = true;
+    const eans = Array.from(
+        new Set(
+            slotAnalysis.value.rows
+                .map((row) => row.ean?.trim() ?? '')
+                .filter((ean) => ean !== ''),
+        ),
+    );
 
-    try {
-        const response = await fetch(
-            TemplateSlotController.slotAnalysis
-                .url(
-                    {
-                        subdomain: props.subdomain,
-                        planogramTemplate: props.template.id,
-                    },
-                    {
-                        query: {
-                            slot_id: slot.id,
-                        },
-                    },
-                )
-                .replace(/^\/\/[^/]+/, ''),
-            {
-                credentials: 'same-origin',
-                headers: {
-                    Accept: 'application/json',
-                },
-            },
-        );
-
-        if (!response.ok) {
-            slotAnalysis.value = null;
-
-            return;
-        }
-
-        const payload = (await response.json()) as { data?: SlotAnalysisData };
-        slotAnalysis.value = payload.data ?? null;
-    } catch {
-        slotAnalysis.value = null;
-    } finally {
-        productsLoading.value = false;
+    if (eans.length === 0) {
+        return;
     }
+
+    router.post(
+        TemplateSlotController.syncImages.url({
+            subdomain: props.subdomain,
+            planogramTemplate: props.template.id,
+        }),
+        { eans },
+        {
+            preserveScroll: true,
+            preserveState: true,
+        },
+    );
 }
 
-function selectSlotForProducts(slotId: string): void {
-    selectedSlotId.value = slotId;
-    const slot = allSlots.value.find((item) => item.id === slotId);
-
-    if (slot) {
-        void loadSlotProducts(slot);
-    }
-}
-
-watch(currentSubtemplate, () => {
+function changeCurrentModule(moduleNumber: number): void {
+    currentModules.value = moduleNumber;
     selectedSlotId.value = null;
     slotAnalysis.value = null;
-});
+    productsLoading.value = true;
+
+    router.get(
+        TemplateSlotController.review.url(
+            {
+                subdomain: props.subdomain,
+                planogramTemplate: props.template.id,
+            },
+            {
+                query: {
+                    module: moduleNumber,
+                },
+            },
+        ),
+        {},
+        {
+            preserveScroll: true,
+            replace: true,
+            onFinish: () => {
+                productsLoading.value = false;
+            },
+        },
+    );
+}
 
 const breadcrumbs = [
     {
@@ -206,15 +247,12 @@ const breadcrumbs = [
 </script>
 
 <template>
+
     <Head :title="`Revisão — ${template.code}`" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 p-6">
             <div class="mx-auto max-w-3xl">
-                <WizardProgress
-                    :current-step="3"
-                    :steps="wizardSteps"
-                    @navigate="navigateWizard"
-                />
+                <WizardProgress :current-step="3" :steps="wizardSteps" @navigate="navigateWizard" />
             </div>
 
             <div class="flex flex-wrap items-center justify-between gap-4">
@@ -226,38 +264,27 @@ const breadcrumbs = [
                 </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="text-sm font-medium text-muted-foreground">Módulos:</span>
-                <ModuleSelectorButtons
-                    :current-module="currentModules"
-                    @select="currentModules = $event"
-                />
-                <Badge
-                    :variant="
-                        props.subtemplates.some((item) => item.num_modules === currentModules)
-                            ? 'default'
-                            : 'secondary'
-                    "
-                >
-                    {{
-                        props.subtemplates.some((item) => item.num_modules === currentModules)
-                            ? 'Configurado'
-                            : 'Novo'
-                    }}
-                </Badge>
-            </div>
+
 
             <div class="grid gap-4  grid-cols-12">
-                <ReviewSlotsList
-                    :slots="allSlots"
-                    :selected-slot-id="selectedSlotId"
-                    @select="selectSlotForProducts"
-                />
-                <ReviewSlotProductsPanel
-                    :selected-slot="selectedSlot"
-                    :analysis="slotAnalysis"
-                    :loading="productsLoading"
-                />
+                <ReviewSlotsList :slots="allSlots" :selected-slot-id="selectedSlotId" @select="selectSlotForProducts">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-sm font-medium text-muted-foreground">Módulos:</span>
+                        <ModuleSelectorButtons :current-module="currentModules" @select="changeCurrentModule" />
+                        <Badge :variant="props.subtemplates.some((item) => item.num_modules === currentModules)
+                                ? 'default'
+                                : 'secondary'
+                            ">
+                            {{
+                                props.subtemplates.some((item) => item.num_modules === currentModules)
+                                    ? 'Configurado'
+                                    : 'Novo'
+                            }}
+                        </Badge>
+                    </div>
+                </ReviewSlotsList>
+                <ReviewSlotProductsPanel :selected-slot="selectedSlot" :analysis="slotAnalysis"
+                    :loading="productsLoading" @sync-images="syncCurrentAnalysisImages" />
             </div>
 
             <div class="flex justify-between pt-2">

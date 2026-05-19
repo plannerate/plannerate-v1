@@ -308,6 +308,9 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('planogram-templates.slots.reorder');
         Route::get('planogram-templates/{planogramTemplate}/slots/products', [TemplateSlotController::class, 'slotProducts'])
             ->name('planogram-templates.slots.products');
+        Route::post('planogram-templates/{planogramTemplate}/slots/sync-images', [TemplateSlotController::class, 'syncImages'])
+            ->name('planogram-templates.slots.sync-images');
+
         Route::get('planogram-templates/{planogramTemplate}/slots/analysis', [TemplateSlotController::class, 'slotAnalysis'])
             ->name('planogram-templates.slots.analysis');
         Route::put('planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}', [TemplateSlotController::class, 'updateSlot'])

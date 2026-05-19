@@ -8,6 +8,7 @@ use App\Enums\PriceOrder;
 use App\Enums\SizeOrder;
 use App\Models\PlanogramTemplateSlot;
 use App\Models\Product;
+use App\Models\Sale;
 use App\Services\AutoPlanogram\ProductWidthResolver;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -32,7 +33,10 @@ final readonly class SlotReviewAnalysisService
      *     product_id: string,
      *     name: string,
      *     ean: string,
+     *     codigo_erp: string,
      *     brand: string,
+     *     has_sales: bool,
+     *     dimensions: string,
      *     status: 'entrou'|'fora',
      *     reason: string,
      *     facing_used: int,
@@ -43,10 +47,46 @@ final readonly class SlotReviewAnalysisService
     public function analyze(PlanogramTemplateSlot $slot, float $shelfWidthCm = 100.0): array
     {
         $candidates = Product::query()
-            ->select(['id', 'name', 'ean', 'brand', 'grouping', 'grouping_normalized', 'status', 'packaging_content', 'url'])
+            ->select([
+                'id',
+                'name',
+                'ean',
+                'codigo_erp',
+                'brand',
+                'grouping',
+                'grouping_normalized',
+                'status',
+                'packaging_content',
+                'url',
+                'width',
+                'height',
+                'depth',
+                'unit',
+            ])
             ->where('grouping_normalized', $slot->grouping_normalized)
             ->where('status', '!=', 'draft')
             ->get();
+
+        $productIds = $candidates->pluck('id')->filter()->values();
+        $eans = $candidates->pluck('ean')->filter(fn (mixed $ean): bool => is_string($ean) && trim($ean) !== '')->values();
+
+        $salesProductIds = Sale::query()
+            ->whereIn('product_id', $productIds)
+            ->whereNotNull('product_id')
+            ->distinct()
+            ->pluck('product_id')
+            ->map(fn (mixed $id): string => (string) $id)
+            ->values()
+            ->all();
+
+        $salesEans = Sale::query()
+            ->whereIn('ean', $eans)
+            ->whereNotNull('ean')
+            ->distinct()
+            ->pluck('ean')
+            ->map(fn (mixed $ean): string => (string) $ean)
+            ->values()
+            ->all();
 
         $ordered = $this->orderCandidates($candidates, $slot);
 
@@ -65,7 +105,11 @@ final readonly class SlotReviewAnalysisService
                     'product_id' => (string) $product->id,
                     'name' => (string) $product->name,
                     'ean' => (string) ($product->ean ?? ''),
+                    'codigo_erp' => (string) ($product->codigo_erp ?? ''),
                     'brand' => (string) ($product->brand ?? ''),
+                    'has_sales' => in_array((string) $product->id, $salesProductIds, true)
+                        || in_array((string) ($product->ean ?? ''), $salesEans, true),
+                    'dimensions' => $this->formatDimensions($product),
                     'status' => 'entrou',
                     'reason' => 'Cabe na largura disponível',
                     'facing_used' => $facing,
@@ -80,7 +124,11 @@ final readonly class SlotReviewAnalysisService
                 'product_id' => (string) $product->id,
                 'name' => (string) $product->name,
                 'ean' => (string) ($product->ean ?? ''),
+                'codigo_erp' => (string) ($product->codigo_erp ?? ''),
                 'brand' => (string) ($product->brand ?? ''),
+                'has_sales' => in_array((string) $product->id, $salesProductIds, true)
+                    || in_array((string) ($product->ean ?? ''), $salesEans, true),
+                'dimensions' => $this->formatDimensions($product),
                 'status' => 'fora',
                 'reason' => PlacementFailureReason::NoHorizontalSpace->label(),
                 'facing_used' => $facing,
@@ -167,5 +215,26 @@ final readonly class SlotReviewAnalysisService
             'l', 'kg' => $value,
             default => $value,
         };
+    }
+
+    private function formatDimensions(Product $product): string
+    {
+        $width = (float) ($product->width ?? 0);
+        $height = (float) ($product->height ?? 0);
+        $depth = (float) ($product->depth ?? 0);
+
+        if ($width <= 0 || $height <= 0 || $depth <= 0) {
+            return '-';
+        }
+
+        $unit = (string) ($product->unit ?? 'cm');
+
+        return sprintf(
+            '%sx%sx%s %s',
+            number_format($width, 1, '.', ''),
+            number_format($height, 1, '.', ''),
+            number_format($depth, 1, '.', ''),
+            $unit,
+        );
     }
 }

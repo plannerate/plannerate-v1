@@ -44,7 +44,10 @@ export type SlotAnalysisRow = {
     product_id: string;
     name: string;
     ean: string;
+    codigo_erp: string;
     brand: string;
+    has_sales: boolean;
+    dimensions: string;
     status: 'entrou' | 'fora';
     reason: string;
     facing_used: number;

@@ -192,6 +192,62 @@ test('tenant admin can view template review page', function (): void {
             ->where('template.code', 'LIMPEZA-REV'));
 });
 
+test('review page keeps selected slot from query param', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForTemplates('tpl-review-slot');
+    assignTenantAdminRoleForTemplates($user, $tenant->id);
+
+    $template = PlanogramTemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'code' => 'LIMPEZA-REV-SLOT',
+        'name' => 'LIMPEZA-REV-SLOT',
+        'department' => 'LIMPEZA',
+        'is_active' => true,
+    ]);
+
+    $subtemplate = PlanogramSubtemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'template_id' => $template->id,
+        'code' => 'LIMPEZA-REV-SLOT-1M',
+        'num_modules' => 1,
+        'is_active' => true,
+    ]);
+
+    $slot = PlanogramTemplateSlot::query()->create([
+        'tenant_id' => $tenant->id,
+        'subtemplate_id' => $subtemplate->id,
+        'module_number' => 1,
+        'shelf_order' => 1,
+        'grouping' => 'CEREAL MATINAL',
+        'grouping_normalized' => 'cereal-matinal',
+        'min_facings' => 1,
+        'priority' => 1,
+        'price_order' => 'none',
+        'size_order' => 'none',
+        'brand_exposure' => 'mixed',
+        'flavor_exposure' => 'mixed',
+        'space_fallback' => 'skip',
+        'use_target_stock' => false,
+        'ordering' => 1,
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-review-slot.'.config('app.landlord_domain')])
+        ->get(route('tenant.planogram-templates.slots.review', [
+            'subdomain' => 'tpl-review-slot',
+            'planogramTemplate' => $template->id,
+            'slot_id' => $slot->id,
+        ], false));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/planogram-templates/Review')
+            ->where('selected_slot_id', $slot->id));
+});
+
 test('tenant admin can soft-delete a template', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);

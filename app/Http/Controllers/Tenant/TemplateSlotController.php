@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithSyncImageDownLoad;
 use App\Http\Controllers\Controller;
 use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplate;
@@ -18,6 +19,7 @@ use Inertia\Response;
 
 class TemplateSlotController extends Controller
 {
+    use InteractsWithSyncImageDownLoad;
     use InteractsWithTenantContext;
 
     public function __construct(
@@ -39,17 +41,51 @@ class TemplateSlotController extends Controller
         ]);
     }
 
-    public function review(string $subdomain, PlanogramTemplate $planogramTemplate): Response
+    public function review(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): Response
     {
         unset($subdomain);
         $this->authorize('view', $planogramTemplate);
+        $this->authorize('viewAny', Product::class);
+
+        $validated = $request->validate([
+            'slot_id' => ['nullable', 'string'],
+            'module' => ['nullable', 'integer', 'min:1', 'max:20'],
+            'shelf_width_cm' => ['nullable', 'numeric', 'min:30', 'max:500'],
+        ]);
 
         $planogramTemplate->load(['subtemplates.slots']);
+
+        $currentModule = (int) ($validated['module'] ?? 1);
+
+        $selectedSlotId = is_string($validated['slot_id'] ?? null) && $validated['slot_id'] !== ''
+            ? $validated['slot_id']
+            : null;
+
+        $slotAnalysis = null;
+
+        if ($selectedSlotId !== null) {
+            $slot = PlanogramTemplateSlot::query()
+                ->whereKey($selectedSlotId)
+                ->whereHas('subtemplate', fn ($query) => $query->where('template_id', $planogramTemplate->getKey()))
+                ->first();
+
+            if ($slot !== null) {
+                $slotAnalysis = $this->reviewAnalysisService->analyze(
+                    $slot,
+                    (float) ($validated['shelf_width_cm'] ?? 100.0),
+                );
+            } else {
+                $selectedSlotId = null;
+            }
+        }
 
         return Inertia::render('tenant/planogram-templates/Review', [
             'subdomain' => $this->tenantSubdomain(),
             'template' => $this->service->templateData($planogramTemplate),
             'subtemplates' => $this->service->subtemplatesData($planogramTemplate),
+            'current_module' => $currentModule,
+            'selected_slot_id' => $selectedSlotId,
+            'slot_analysis' => $slotAnalysis,
         ]);
     }
 
@@ -195,5 +231,13 @@ class TemplateSlotController extends Controller
         return response()->json([
             'data' => $analysis,
         ]);
+    }
+
+    public function syncImages(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): RedirectResponse
+    {
+        unset($subdomain);
+        $this->authorize('view', $planogramTemplate);
+
+        return $this->updateImages($request);
     }
 }
