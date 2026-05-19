@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplate;
+use App\Models\PlanogramTemplateSlot;
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
@@ -163,6 +166,32 @@ test('tenant admin can view template show page', function (): void {
             ->where('planogramTemplate.code', 'LIMPEZA-SHOW'));
 });
 
+test('tenant admin can view template review page', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForTemplates('tpl-review');
+    assignTenantAdminRoleForTemplates($user, $tenant->id);
+
+    $template = PlanogramTemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'code' => 'LIMPEZA-REV',
+        'name' => 'LIMPEZA-REV',
+        'department' => 'LIMPEZA',
+        'is_active' => true,
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-review.'.config('app.landlord_domain')])
+        ->get(route('tenant.planogram-templates.slots.review', ['subdomain' => 'tpl-review', 'planogramTemplate' => $template->id], false));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/planogram-templates/Review')
+            ->where('template.code', 'LIMPEZA-REV'));
+});
+
 test('tenant admin can soft-delete a template', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);
@@ -234,6 +263,78 @@ test('planogram template routes are forbidden without permissions', function ():
         ->get(route('tenant.planogram-templates.index', ['subdomain' => 'tpl-no-perm'], false));
 
     $response->assertForbidden();
+});
+
+test('slot products endpoint returns only products from slot grouping_normalized', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForTemplates('tpl-slot-products');
+    assignTenantAdminRoleForTemplates($user, $tenant->id);
+
+    $template = PlanogramTemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'code' => 'TPL-SLOT',
+        'name' => 'TPL-SLOT',
+        'department' => 'MERCEARIA',
+        'is_active' => true,
+    ]);
+
+    $subtemplate = PlanogramSubtemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'template_id' => $template->id,
+        'code' => 'TPL-SLOT-1M',
+        'num_modules' => 1,
+        'is_active' => true,
+    ]);
+
+    PlanogramTemplateSlot::query()->create([
+        'tenant_id' => $tenant->id,
+        'subtemplate_id' => $subtemplate->id,
+        'module_number' => 1,
+        'shelf_order' => 1,
+        'grouping' => 'CEREAL MATINAL',
+        'grouping_normalized' => 'cereal-matinal',
+        'min_facings' => 1,
+        'priority' => 1,
+        'price_order' => 'none',
+        'size_order' => 'none',
+        'brand_exposure' => 'mixed',
+        'flavor_exposure' => 'mixed',
+        'space_fallback' => 'skip',
+        'use_target_stock' => false,
+        'ordering' => 1,
+    ]);
+
+    Product::factory()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $user->id,
+        'name' => 'Produto Match',
+        'grouping' => 'CEREAL MATINAL',
+        'grouping_normalized' => 'cereal-matinal',
+    ]);
+
+    Product::factory()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $user->id,
+        'name' => 'Produto Outro',
+        'grouping' => 'BISCOITO',
+        'grouping_normalized' => 'biscoito',
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-slot-products.'.config('app.landlord_domain')])
+        ->getJson(route('tenant.planogram-templates.slots.products', [
+            'subdomain' => 'tpl-slot-products',
+            'planogramTemplate' => $template->id,
+            'grouping_normalized' => 'cereal-matinal',
+        ], false));
+
+    $response
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.name', 'Produto Match')
+        ->assertJsonPath('data.0.grouping_normalized', 'cereal-matinal');
 });
 
 // ── helpers ──────────────────────────────────────────────────────────────────

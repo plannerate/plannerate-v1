@@ -298,12 +298,16 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         // Wizard etapa 2 — Slots (tenant)
         Route::get('planogram-templates/{planogramTemplate}/slots', [TemplateSlotController::class, 'index'])
             ->name('planogram-templates.slots.index');
+        Route::get('planogram-templates/{planogramTemplate}/review', [TemplateSlotController::class, 'review'])
+            ->name('planogram-templates.slots.review');
         Route::post('planogram-templates/{planogramTemplate}/subtemplates', [TemplateSlotController::class, 'createSubtemplate'])
             ->name('planogram-templates.subtemplates.store');
         Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots', [TemplateSlotController::class, 'storeSlot'])
             ->name('planogram-templates.slots.store');
         Route::post('planogram-templates/{planogramTemplate}/slots/reorder', [TemplateSlotController::class, 'reorder'])
             ->name('planogram-templates.slots.reorder');
+        Route::get('planogram-templates/{planogramTemplate}/slots/products', [TemplateSlotController::class, 'slotProducts'])
+            ->name('planogram-templates.slots.products');
         Route::put('planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}', [TemplateSlotController::class, 'updateSlot'])
             ->name('planogram-templates.slots.update');
         Route::delete('planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}', [TemplateSlotController::class, 'destroySlot'])

@@ -31,6 +31,15 @@ export type PlanogramSubtemplate = {
     slots: PlanogramTemplateSlot[];
 };
 
+export type SlotProduct = {
+    id: string;
+    name: string;
+    ean: string;
+    brand: string;
+    grouping: string;
+    grouping_normalized: string;
+};
+
 export type WizardStepStatus = 'complete' | 'active' | 'pending';
 
 export type WizardStep = {

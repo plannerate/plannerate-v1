@@ -5,6 +5,7 @@ import { computed, ref, watch } from 'vue';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import GondolaGrid from '@/components/planogram-templates/GondolaGrid.vue';
+import ModuleSelectorButtons from '@/components/planogram-templates/ModuleSelectorButtons.vue';
 import PlanogramConfirmDialog from '@/components/planogram-templates/PlanogramConfirmDialog.vue';
 import SlotEditorModal from '@/components/planogram-templates/SlotEditorModal.vue';
 import type {
@@ -68,13 +69,8 @@ const groupingSearchUrl = computed(() =>
         .url(props.subdomain)
         .replace(/^\/\/[^/]+/, ''),
 );
-const productsPath = computed(() =>
-    PlanogramTemplateController.show
-        .url({
-            subdomain: props.subdomain,
-            planogramTemplate: props.template.id,
-        })
-        .replace(/^\/\/[^/]+/, '') + '#products',
+const reviewPath = computed(() =>
+    `${baseUrl.value}/review`,
 );
 
 const pendingSlotAction = ref<PendingSlotAction | null>(null);
@@ -113,11 +109,21 @@ const wizardSteps: WizardStep[] = [
         label: t('planogram-templates.wizard.step2_label'),
         description: t('planogram-templates.wizard.step2_description'),
     },
+    {
+        step: 3,
+        label: 'Revisar slots',
+        description: 'Selecione um slot e veja os produtos relacionados',
+    },
 ];
 
 function navigateWizard(step: 1 | 2 | 3): void {
     if (step === 1) {
         router.visit(editPath.value);
+
+        return;
+    }
+    if (step === 3) {
+        router.visit(reviewPath.value);
     }
 }
 
@@ -425,20 +431,10 @@ const breadcrumbs = [
                 <span class="text-sm font-medium text-muted-foreground"
                     >Módulos:</span
                 >
-                <button
-                    v-for="n in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]"
-                    :key="n"
-                    type="button"
-                    class="rounded-md border px-3 py-1.5 text-sm font-medium transition"
-                    :class="
-                        currentModules === n
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-border bg-background text-foreground hover:border-primary/60 hover:bg-muted/30'
-                    "
-                    @click="selectModules(n)"
-                >
-                    {{ n }} módulo{{ n > 1 ? 's' : '' }}
-                </button>
+                <ModuleSelectorButtons
+                    :current-module="currentModules"
+                    @select="selectModules"
+                />
                 <Badge
                     :variant="
                         subtemplateExists(currentModules)
@@ -467,7 +463,6 @@ const breadcrumbs = [
                 />
             </div>
 
-            <!-- Gondola grid -->
             <GondolaGrid
                 :slots="currentSubtemplate?.slots ?? []"
                 :num-modules="currentModules"
@@ -483,8 +478,8 @@ const breadcrumbs = [
                     <ChevronLeft class="size-4" />
                     {{ t('planogram-templates.wizard.back_to_basics_button') }}
                 </Button>
-                <Button :as="'a'" :href="productsPath">
-                    Próximo — Produtos
+                <Button :as="'a'" :href="reviewPath">
+                    Próximo — Revisão de slots
                     <ChevronRight class="size-4" />
                 </Button>
             </div>

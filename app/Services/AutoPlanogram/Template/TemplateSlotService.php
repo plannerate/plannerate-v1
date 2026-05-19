@@ -151,6 +151,7 @@ final class TemplateSlotService
                     'category' => $slot->category,
                     'subcategory' => $slot->subcategory,
                     'grouping' => $slot->grouping,
+                    'grouping_normalized' => $slot->grouping_normalized,
                     'min_facings' => $slot->min_facings,
                     'priority' => $slot->priority,
                     'price_order' => $slot->price_order->value,

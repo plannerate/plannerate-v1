@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplate;
 use App\Models\PlanogramTemplateSlot;
+use App\Models\Product;
 use App\Services\AutoPlanogram\Template\TemplateSlotService;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -27,6 +29,20 @@ class TemplateSlotController extends Controller
         $planogramTemplate->load(['subtemplates.slots']);
 
         return Inertia::render('tenant/planogram-templates/Slots', [
+            'subdomain' => $this->tenantSubdomain(),
+            'template' => $this->service->templateData($planogramTemplate),
+            'subtemplates' => $this->service->subtemplatesData($planogramTemplate),
+        ]);
+    }
+
+    public function review(string $subdomain, PlanogramTemplate $planogramTemplate): Response
+    {
+        unset($subdomain);
+        $this->authorize('view', $planogramTemplate);
+
+        $planogramTemplate->load(['subtemplates.slots']);
+
+        return Inertia::render('tenant/planogram-templates/Review', [
             'subdomain' => $this->tenantSubdomain(),
             'template' => $this->service->templateData($planogramTemplate),
             'subtemplates' => $this->service->subtemplatesData($planogramTemplate),
@@ -116,9 +132,38 @@ class TemplateSlotController extends Controller
 
         $planogramTemplate->load(['subtemplates.slots']);
 
-        return  redirect()->route('tenant.planogram-templates.slots.index', [
+        return redirect()->route('tenant.planogram-templates.slots.index', [
             'subdomain' => $this->tenantSubdomain(),
             'planogramTemplate' => $planogramTemplate->id,
+        ]);
+    }
+
+    public function slotProducts(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): JsonResponse
+    {
+        unset($subdomain);
+        $this->authorize('view', $planogramTemplate);
+        $this->authorize('viewAny', Product::class);
+
+        $validated = $request->validate([
+            'grouping_normalized' => ['required', 'string', 'max:255'],
+        ]);
+
+        $products = Product::query()
+            ->select(['id', 'name', 'ean', 'brand', 'grouping', 'grouping_normalized'])
+            ->where('grouping_normalized', $validated['grouping_normalized'])
+            ->orderBy('name')
+            ->limit(200)
+            ->get();
+
+        return response()->json([
+            'data' => $products->map(fn (Product $product): array => [
+                'id' => (string) $product->id,
+                'name' => (string) $product->name,
+                'ean' => (string) ($product->ean ?? ''),
+                'brand' => (string) ($product->brand ?? ''),
+                'grouping' => (string) ($product->grouping ?? ''),
+                'grouping_normalized' => (string) ($product->grouping_normalized ?? ''),
+            ])->values()->all(),
         ]);
     }
 }
