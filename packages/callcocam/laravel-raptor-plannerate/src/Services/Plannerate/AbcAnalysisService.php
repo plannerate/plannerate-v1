@@ -3,6 +3,8 @@
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Category;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\MonthlySalesSummary;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Sale;
@@ -63,7 +65,7 @@ class AbcAnalysisService
      *
      * @param  Category  $category  Categoria e seus pais serão incluídos
      * @param  string  $tableType  'sales' ou 'monthly_summaries'
-     * @param  array  $filters  Filtros adicionais (deve incluir tenant_id)
+     * @param  array  $filters  Filtros adicionais (deve incluir tenant_id, pode incluir gondola_id)
      */
     public function analyzeByCategory(
         Category $category,
@@ -100,16 +102,31 @@ class AbcAnalysisService
             ->pluck('id')
             ->toArray();
 
+        // Se uma gôndola foi especificada, filtra apenas os produtos alocados nela
+        if (isset($filters['gondola_id']) && ! empty($filters['gondola_id'])) {
+            $gondolaProductIds = $this->getProductIdsByGondola($filters['gondola_id']);
+            $productIds = array_intersect($productIds, $gondolaProductIds);
+
+            Log::info('ABC Analysis - Filtrando por gôndola', [
+                'tenant_id' => $filters['tenant_id'],
+                'gondola_id' => $filters['gondola_id'],
+                'products_before_filter' => count(Product::whereIn('category_id', $allCategoryIds)->pluck('id')->toArray()),
+                'products_after_filter' => count($productIds),
+            ]);
+        }
+
         Log::info('ABC Analysis - analyzeByCategory', [
             'tenant_id' => $filters['tenant_id'],
             'category_id' => $category->id,
             'category_ids' => $allCategoryIds,
             'product_ids_count' => count($productIds),
+            'gondola_id' => $filters['gondola_id'] ?? null,
         ]);
 
         if (empty($productIds)) {
             Log::warning('ABC Analysis - Nenhum produto encontrado para as categorias', [
                 'category_ids' => $allCategoryIds,
+                'gondola_id' => $filters['gondola_id'] ?? null,
             ]);
 
             return collect();
@@ -300,17 +317,41 @@ class AbcAnalysisService
         }
 
         // Busca dados agregados de vendas por codigo_erp
-        $salesData = $this->getSalesDataByCodigoErp($codigosErp, $productIds, $tableType, $filters);
+        // toBase() converte para Support\Collection para evitar que operações da
+        // EloquentCollection (groupBy, etc.) chamem getKey() em itens que não são models
+        $salesData = $this->getSalesDataByCodigoErp($codigosErp, $productIds, $tableType, $filters)->toBase();
+
+        // Inclui produtos da gôndola sem vendas com valores zerados
+        $productsWithSalesIds = $salesData->pluck('product_id')->toArray();
+        $productsWithoutSalesIds = array_diff($productIds, $productsWithSalesIds);
+
+        if (! empty($productsWithoutSalesIds)) {
+            $zeroRecords = Product::query()
+                ->whereIn('id', $productsWithoutSalesIds)
+                ->select('id', 'category_id')
+                ->get()
+                ->toBase()
+                ->map(fn ($p) => (object) [
+                    'product_id' => $p->id,
+                    'category_id' => $p->category_id,
+                    'qtde' => 0,
+                    'valor' => 0,
+                    'margem' => 0,
+                ]);
+
+            $salesData = $salesData->merge($zeroRecords);
+        }
 
         Log::info('ABC Analysis - analyzeByCodigoErp', [
             'tenant_id' => $filters['tenant_id'] ?? 'N/A',
             'table_type' => $tableType,
             'codigos_erp_count' => count($codigosErp),
             'sales_data_count' => $salesData->count(),
+            'sem_venda_count' => count($productsWithoutSalesIds),
         ]);
 
         if ($salesData->isEmpty()) {
-            Log::warning('ABC Analysis - Nenhuma venda encontrada', [
+            Log::warning('ABC Analysis - Nenhum produto encontrado', [
                 'tenant_id' => $filters['tenant_id'] ?? 'N/A',
                 'table_type' => $tableType,
                 'codigos_erp_count' => count($codigosErp),
@@ -356,6 +397,20 @@ class AbcAnalysisService
             $result = $result->merge($processed);
         }
 
+        Log::info('ABC Analysis - Final results', [
+            'total_results' => $result->count(),
+            'products_with_sales' => $productsWithWeight->count(),
+            'unique_products' => $products->count(),
+        ]);
+
+        $retirarDoMixCount = $result->where('retirar_do_mix', true)->count();
+        $manter = $result->where('retirar_do_mix', false)->count();
+        Log::info('ABC Analysis - Products to remove from mix', [
+            'retirar_do_mix_count' => $retirarDoMixCount,
+            'manter_count' => $manter,
+            'total_count' => $result->count(),
+        ]);
+
         return $result;
     }
 
@@ -393,11 +448,21 @@ class AbcAnalysisService
     private function getSalesDataByCodigoErp(array $codigosErp, array $productIds, string $tableType, array $filters): Collection
     {
         $query = match ($tableType) {
-            'monthly_summaries' => $this->getMonthlySummariesQueryByCodigoErp($codigosErp, $filters),
-            default => $this->getSalesQueryByCodigoErp($codigosErp, $filters),
+            'monthly_summaries' => $this->getMonthlySummariesQueryByCodigoErp($codigosErp, $productIds, $filters),
+            default => $this->getSalesQueryByCodigoErp($codigosErp, $productIds, $filters),
         };
 
-        return $query->get();
+        $salesData = $query->get();
+
+        Log::info('ABC Analysis - getSalesDataByCodigoErp details', [
+            'table_type' => $tableType,
+            'codigos_erp_count' => count($codigosErp),
+            'product_ids_count' => count($productIds),
+            'sales_records_count' => $salesData->count(),
+            'unique_products_in_sales' => $salesData->pluck('product_id')->unique()->count(),
+        ]);
+
+        return $salesData;
     }
 
     /**
@@ -406,7 +471,7 @@ class AbcAnalysisService
      * No contexto tenant, as tabelas products e sales já estão no banco do tenant,
      * então não precisamos filtrar por tenant_id (a conexão já isola o tenant)
      */
-    private function getSalesQueryByCodigoErp(array $codigosErp, array $filters): Builder
+    private function getSalesQueryByCodigoErp(array $codigosErp, array $productIds, array $filters): Builder
     {
         // No banco tenant, products e sales já pertencem ao tenant
         // Usa codigo_erp para fazer o join entre products e sales
@@ -422,8 +487,14 @@ class AbcAnalysisService
             ])
             ->whereIn('sales.codigo_erp', $codigosErp)
             ->groupBy('products.id', 'products.category_id');
+        // Filtro crítico: garante que retorna vendas apenas dos produtos da gôndola/filtro
+        $query->whereIn('products.id', $productIds);
 
         // Aplica filtros adicionais
+        Log::info('ABC Analysis - Applying filters to sales query', [
+            'filters_keys' => array_keys($filters),
+            'filters' => $filters,
+        ]);
 
         if (isset($filters['store_id'])) {
             $query->where('sales.store_id', $filters['store_id']);
@@ -431,10 +502,12 @@ class AbcAnalysisService
 
         if (isset($filters['date_from'])) {
             $query->where('sales.sale_date', '>=', $filters['date_from']);
+            Log::info('ABC Analysis - Applied date_from filter', ['date_from' => $filters['date_from']]);
         }
 
         if (isset($filters['date_to'])) {
             $query->where('sales.sale_date', '<=', $filters['date_to']);
+            Log::info('ABC Analysis - Applied date_to filter', ['date_to' => $filters['date_to']]);
         }
 
         return $query;
@@ -446,7 +519,7 @@ class AbcAnalysisService
      * No contexto tenant, as tabelas products e monthly_sales_summaries já estão no banco do tenant,
      * então não precisamos filtrar por tenant_id (a conexão já isola o tenant)
      */
-    private function getMonthlySummariesQueryByCodigoErp(array $codigosErp, array $filters): Builder
+    private function getMonthlySummariesQueryByCodigoErp(array $codigosErp, array $productIds, array $filters): Builder
     {
         // No banco tenant, products e monthly_sales_summaries já pertencem ao tenant
         // Usa codigo_erp para fazer o join entre products e monthly_sales_summaries
@@ -461,6 +534,7 @@ class AbcAnalysisService
                 DB::raw('SUM(monthly_sales_summaries.margem_contribuicao) as margem'),
             ])
             ->whereIn('monthly_sales_summaries.codigo_erp', $codigosErp)
+            ->whereIn('products.id', $productIds)
             ->groupBy('products.id', 'products.category_id');
 
         // Aplica filtros adicionais
@@ -539,7 +613,44 @@ class AbcAnalysisService
         $totalPonderado = $products->sum('media_ponderada');
 
         if ($totalPonderado == 0) {
-            return collect();
+            // Todos sem vendas: lista como classe C sem retirar do mix
+            $ranking = 1;
+            $noSalesResult = collect();
+
+            foreach ($products as $product) {
+                $productModel = $productsCache?->get($product['product_id'])
+                    ?? Product::with(['category'])->find($product['product_id']);
+
+                $fullPath = $productModel?->category?->full_path ?? 'Sem categoria';
+                $categoryName = $this->limitCategoryPathToFiveLevels($fullPath);
+                $level5CategoryId = $this->getCategoryIdAtLevel5($productModel) ?? $categoryId;
+                $lastSaleData = $lastSalesCache?->get($product['product_id']);
+                $status = $this->calculateProductStatusOptimized($productModel, $lastSaleData);
+
+                $noSalesResult->push([
+                    'product_id' => $product['product_id'],
+                    'product_name' => $productModel?->name ?? 'Produto não encontrado',
+                    'ean' => $productModel?->ean,
+                    'image_url' => $productModel?->image_url,
+                    'category_id' => $level5CategoryId,
+                    'category_name' => $categoryName,
+                    'qtde' => 0,
+                    'valor' => 0,
+                    'margem' => 0,
+                    'media_ponderada' => 0,
+                    'percentual_individual' => 0,
+                    'percentual_acumulado' => 0,
+                    'classificacao' => 'C',
+                    'ranking' => $ranking,
+                    'class_rank' => 'C'.$ranking,
+                    'retirar_do_mix' => false,
+                    'status' => $status,
+                ]);
+
+                $ranking++;
+            }
+
+            return $noSalesResult;
         }
 
         $acumulado = 0;
@@ -737,5 +848,30 @@ class AbcAnalysisService
             'status' => 'Inativo',
             'motivo' => $diasSemVenda === null ? 'Sem vendas' : 'Sem venda há mais de 120 dias',
         ];
+    }
+
+    /**
+     * Obtém os IDs de todos os produtos alocados em uma gôndola específica
+     *
+     * Navega pela hierarquia: Gondola → Sections → Shelves → Segments → Layers → Products
+     *
+     * @param  string  $gondolaId  ID da gôndola
+     * @return array Array de IDs de produtos
+     */
+    private function getProductIdsByGondola(string $gondolaId): array
+    {
+        return Layer::query()
+            ->join('segments', 'segments.id', '=', 'layers.segment_id')
+            ->join('shelves', 'shelves.id', '=', 'segments.shelf_id')
+            ->join('sections', 'sections.id', '=', 'shelves.section_id')
+            ->where('sections.gondola_id', $gondolaId)
+            ->whereNotNull('layers.product_id')
+            ->whereNull('layers.deleted_at')
+            ->whereNull('segments.deleted_at')
+            ->whereNull('shelves.deleted_at')
+            ->whereNull('sections.deleted_at')
+            ->distinct()
+            ->pluck('layers.product_id')
+            ->toArray();
     }
 }

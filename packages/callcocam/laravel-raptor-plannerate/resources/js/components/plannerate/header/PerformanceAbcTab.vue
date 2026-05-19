@@ -1,11 +1,7 @@
 <template>
     <div class="space-y-2">
         <!-- Modal de Parâmetros -->
-        <AbcParamsModal
-            v-model:open="showParametersModal"
-            :initial-data="form"
-            @submit="handleParamsSubmit"
-        />
+        <AbcParamsModal v-model:open="showParametersModal" :initial-data="form" @submit="handleParamsSubmit" />
 
         <!-- Loading State -->
         <Card v-if="loading">
@@ -21,22 +17,23 @@
         <AbcResultsList v-else-if="results.length > 0" :results="results" :loading="loading">
             <template #top>
                 <div class="flex flex-wrap items-center gap-2">
-                    <div class="inline-flex items-center gap-1.5 rounded-md border border-border bg-accent/30 px-2 py-1 text-[11px] font-medium text-foreground">
+                    <div
+                        class="inline-flex items-center gap-1.5 rounded-md border border-border bg-accent/30 px-2 py-1 text-[11px] font-medium text-foreground">
                         <Settings class="size-3.5 text-muted-foreground" />
                         {{ t('plannerate.performance.abc.analysis_parameters') }}
                     </div>
 
-                    <div class="inline-flex min-w-32 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
+                    <div
+                        class="inline-flex min-w-32 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
                         <span class="text-muted-foreground">{{ t('plannerate.performance.common.type') }}</span>
                         <span class="font-medium">
-                            {{ form.table_type === 'sales' ? t('plannerate.performance.common.sales') : t('plannerate.performance.common.monthly_summary') }}
+                            {{ form.table_type === 'sales' ? t('plannerate.performance.common.sales') :
+                                t('plannerate.performance.common.monthly_summary') }}
                         </span>
                     </div>
 
-                    <div
-                        v-if="form.table_type === 'sales'"
-                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]"
-                    >
+                    <div v-if="form.table_type === 'sales'"
+                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
                         <span class="inline-flex items-center gap-1 text-muted-foreground">
                             <Calendar class="size-3.5" />
                             {{ t('plannerate.performance.common.start') }}
@@ -44,10 +41,8 @@
                         <span class="font-medium">{{ formatDate(form.date_from) }}</span>
                     </div>
 
-                    <div
-                        v-if="form.table_type === 'sales'"
-                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]"
-                    >
+                    <div v-if="form.table_type === 'sales'"
+                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
                         <span class="inline-flex items-center gap-1 text-muted-foreground">
                             <Calendar class="size-3.5" />
                             {{ t('plannerate.performance.common.end') }}
@@ -55,10 +50,8 @@
                         <span class="font-medium">{{ formatDate(form.date_to) }}</span>
                     </div>
 
-                    <div
-                        v-if="form.table_type === 'monthly_summaries'"
-                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]"
-                    >
+                    <div v-if="form.table_type === 'monthly_summaries'"
+                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
                         <span class="inline-flex items-center gap-1 text-muted-foreground">
                             <Calendar class="size-3.5" />
                             {{ t('plannerate.performance.common.start_month') }}
@@ -66,10 +59,8 @@
                         <span class="font-medium">{{ formatMonth(form.start_month) }}</span>
                     </div>
 
-                    <div
-                        v-if="form.table_type === 'monthly_summaries'"
-                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]"
-                    >
+                    <div v-if="form.table_type === 'monthly_summaries'"
+                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
                         <span class="inline-flex items-center gap-1 text-muted-foreground">
                             <Calendar class="size-3.5" />
                             {{ t('plannerate.performance.common.end_month') }}
@@ -77,21 +68,19 @@
                         <span class="font-medium">{{ formatMonth(form.end_month) }}</span>
                     </div>
 
-                    <div class="inline-flex min-w-44 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
+                    <div
+                        class="inline-flex min-w-44 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
                         <span class="text-muted-foreground">{{ t('plannerate.performance.abc.weights') }}</span>
                         <span class="font-medium">
                             Q:{{ form.peso_qtde }} V:{{ form.peso_valor }} M:{{ form.peso_margem }}
                         </span>
                     </div>
 
-                    <Button
-                        type="button"
-                        size="sm"
+                    <Button type="button" size="sm"
                         class="ml-auto h-9 gap-2 border border-primary/40 bg-primary/10 px-3 font-semibold text-primary shadow-sm transition-colors hover:bg-primary/20 focus-visible:ring-2 focus-visible:ring-primary/40"
-                        @click="openParametersModal"
-                    > 
-                            <Settings /> 
-                        <span >{{ t('plannerate.performance.common.configure') }}</span>
+                        @click="openParametersModal">
+                        <Settings />
+                        <span>{{ t('plannerate.performance.common.configure') }}</span>
                     </Button>
                 </div>
             </template>
@@ -112,17 +101,19 @@
                     <BarChart3 class="size-10 text-muted-foreground/50" />
                     <div>
                         <p class="text-sm font-medium">{{ t('plannerate.performance.abc.no_analysis') }}</p>
-                        <p class="mt-1 text-xs text-muted-foreground">{{ t('plannerate.performance.abc.no_analysis_description') }}</p>
+                        <p class="mt-1 text-xs text-muted-foreground">{{
+                            t('plannerate.performance.abc.no_analysis_description')
+                            }}</p>
                     </div>
-                    <Button type="button" size="sm" class="gap-2" @click="openParametersModal"> 
-                            <Settings /> 
+                    <Button type="button" size="sm" class="gap-2" @click="openParametersModal">
+                        <Settings />
                         {{ t('plannerate.performance.common.configure_and_calculate') }}
                     </Button>
                 </div>
             </CardContent>
         </Card>
     </div>
-</template> 
+</template>
 
 <script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3';
@@ -131,7 +122,7 @@ import { computed, ref, watch } from 'vue';
 import { calculateAbcApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 import AbcParamsModal from '@/components/plannerate/analysis/AbcParamsModal.vue';
 import AbcResultsList from '@/components/plannerate/analysis/AbcResultsList.vue';
-import { Button } from '@/components/ui/button'; 
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -162,6 +153,7 @@ interface Emits {
 }
 
 interface AbcFormData {
+    gondola_id: string;
     table_type: 'sales' | 'monthly_summaries';
     date_from: string;
     date_to: string;
@@ -208,6 +200,7 @@ const showParametersModal = ref(false);
 const getStorageKey = (gondolaId: string): string => `plannerate:performance:abc:params:${gondolaId}`;
 
 const buildDefaultForm = (): AbcFormData => ({
+    gondola_id: props.gondolaId || '',
     table_type: 'sales',
     date_from: props.planogram?.start_date || '',
     date_to: props.planogram?.end_date || '',
@@ -259,15 +252,15 @@ const { setClassifications } = useAbcClassification();
 // Função para converter data para formato de mês (YYYY-MM) - fallback caso não venha do backend
 function dateToMonth(dateString: string | null | undefined): string {
     if (!dateString) {
-return '';
-}
+        return '';
+    }
 
     try {
         const date = new Date(dateString);
 
         if (isNaN(date.getTime())) {
-return '';
-}
+            return '';
+        }
 
         const year = date.getFullYear();
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -319,19 +312,19 @@ watch(() => props.gondolaId, () => {
 const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) {
         return t('plannerate.performance.common.not_defined_feminine');
-}
-    
+    }
+
     try {
         const date = new Date(dateString);
 
         if (isNaN(date.getTime())) {
-return dateString;
-}
-        
+            return dateString;
+        }
+
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
         const year = date.getFullYear();
-        
+
         return `${day}/${month}/${year}`;
     } catch {
         return dateString;
@@ -341,14 +334,14 @@ return dateString;
 const formatMonth = (monthString: string | null | undefined): string => {
     if (!monthString) {
         return t('plannerate.performance.common.not_defined');
-}
+    }
 
     try {
         const [year, month] = monthString.split('-');
 
         if (!year || !month) {
-return monthString;
-}
+            return monthString;
+        }
 
         return `${month}/${year}`;
     } catch {
@@ -356,14 +349,14 @@ return monthString;
     }
 };
 
-const handleParamsSubmit = (data: typeof form.value): void => {
+const handleParamsSubmit = (data: Partial<AbcFormData>): void => {
     const subdomain = resolvedSubdomain.value;
 
     if (!props.gondolaId || !subdomain) {
         return;
     }
 
-    form.value = { ...data };
+    form.value = { ...form.value, ...data };
     saveStoredForm(form.value);
 
     loading.value = true;
