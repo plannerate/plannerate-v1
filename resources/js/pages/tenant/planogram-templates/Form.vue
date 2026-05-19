@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { Layers, PlusSquare, Upload } from 'lucide-vue-next';
+import { Download, Layers, PlusSquare, Upload } from 'lucide-vue-next';
 import { computed } from 'vue';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
 import FormCard from '@/components/FormCard.vue';
@@ -35,6 +35,18 @@ const indexPath = PlanogramTemplateController.index
 const importPath = PlanogramTemplateController.importPage
     .url(props.subdomain)
     .replace(/^\/\/[^/]+/, '');
+const exportAllPath = PlanogramTemplateController.exportAll
+    ?.url(props.subdomain)
+    ?.replace(/^\/\/[^/]+/, '') ?? null;
+const exportTemplatePath = computed(() => {
+    if (!isEdit.value) return null;
+    return PlanogramTemplateController.export
+        .url({
+            subdomain: props.subdomain,
+            planogramTemplate: props.template!.id,
+        })
+        .replace(/^\/\/[^/]+/, '');
+});
 const slotsPath = computed(() =>
     isEdit.value
         ? PlanogramTemplateController.show
@@ -134,6 +146,36 @@ const wizardSteps: WizardStep[] = [
                                     )
                                 }}
                             </Link>
+                        </Button>
+                        <Button
+                            v-if="isEdit && exportTemplatePath"
+                            variant="outline"
+                            type="button"
+                            as-child
+                        >
+                            <a :href="exportTemplatePath">
+                                <Download class="size-4" />
+                                {{
+                                    t(
+                                        'app.tenant.planogram_templates.actions.export',
+                                    )
+                                }}
+                            </a>
+                        </Button>
+                        <Button
+                            v-else
+                            variant="outline"
+                            type="button"
+                            as-child
+                        >
+                            <a :href="exportAllPath">
+                                <Download class="size-4" />
+                                {{
+                                    t(
+                                        'app.tenant.planogram_templates.actions.export_all',
+                                    )
+                                }}
+                            </a>
                         </Button>
                         <Button
                             v-if="isEdit && slotsPath"

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { Plus, Upload } from 'lucide-vue-next';
+import { Download, Plus, Upload } from 'lucide-vue-next';
+import { computed } from 'vue';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
@@ -35,6 +36,12 @@ const props = defineProps<{
 
 const { t } = useT();
 const indexPath = PlanogramTemplateController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const exportPath = computed(() => {
+    const search = props.filters.search;
+    return PlanogramTemplateController.exportAll
+        .url(props.subdomain, search ? { query: { search } } : undefined)
+        .replace(/^\/\/[^/]+/, '');
+});
 const { meta: templatesMeta, rows: templatesRows, loading: templatesLoading } = useDeferredPaginator(() => props.templates, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.planogram_templates.title'),
@@ -63,6 +70,10 @@ function handleDelete(id: string): void {
                 <Button variant="outline" :as="'a'" :href="PlanogramTemplateController.importPage.url(props.subdomain)">
                     <Upload class="size-4" />
                     {{ t('app.tenant.planogram_templates.actions.import') }}
+                </Button>
+                <Button variant="outline" :as="'a'" :href="exportPath">
+                    <Download class="size-4" />
+                    {{ t('app.tenant.planogram_templates.actions.export_all') }}
                 </Button>
             </div>
         </template>

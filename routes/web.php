@@ -296,6 +296,10 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('planogram-templates.import-page');
         Route::post('planogram-templates/import', [PlanogramTemplateController::class, 'import'])
             ->name('planogram-templates.import');
+        Route::get('planogram-templates/export', [PlanogramTemplateController::class, 'exportAll'])
+            ->name('planogram-templates.export-all');
+        Route::get('planogram-templates/{planogramTemplate}/export', [PlanogramTemplateController::class, 'export'])
+            ->name('planogram-templates.export');
         Route::get('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'show'])
             ->name('planogram-templates.show');
         Route::delete('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'destroy'])

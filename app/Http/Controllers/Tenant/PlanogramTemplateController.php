@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Models\PlanogramTemplate;
 use App\Models\Tenant;
+use App\Services\AutoPlanogram\Template\TemplateExportService;
 use App\Services\AutoPlanogram\Template\TemplateImportService;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -13,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PlanogramTemplateController extends Controller
 {
@@ -182,6 +184,22 @@ class PlanogramTemplateController extends Controller
                 'created_at' => $planogramTemplate->created_at?->toDateTimeString(),
             ],
         ]);
+    }
+
+    public function export(string $subdomain, PlanogramTemplate $planogramTemplate, TemplateExportService $exportService): StreamedResponse
+    {
+        unset($subdomain);
+        $this->authorize('view', $planogramTemplate);
+
+        return $exportService->exportTemplate($planogramTemplate);
+    }
+
+    public function exportAll(Request $request, string $subdomain, TemplateExportService $exportService): StreamedResponse
+    {
+        unset($subdomain);
+        $this->authorize('viewAny', PlanogramTemplate::class);
+
+        return $exportService->exportAll($this->tenantId(), $this->requestString($request, 'search'));
     }
 
     public function destroy(string $subdomain, PlanogramTemplate $planogramTemplate): RedirectResponse
