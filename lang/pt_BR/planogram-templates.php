@@ -142,6 +142,7 @@ return [
             'grouping' => 'Agrupamento',
             'package_type' => 'Embalagem',
             'package_content' => 'Conteúdo',
+            'dimensions' => 'Dimensões',
             'status' => 'Status',
         ],
         'empty_message' => 'Nenhum produto adicionado ainda',

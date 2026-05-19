@@ -26,7 +26,7 @@ class TemplateProductController extends Controller
         unset($subdomain);
         $this->authorize('view', $planogramTemplate);
 
-        $planogramTemplate->load(['subtemplates.slots', 'templateProducts']);
+        $planogramTemplate->load(['subtemplates.slots', 'templateProducts.product']);
 
         $selectedGroupingId = $this->requestString($request, 'groupingId');
         $selectedGroupingName = $this->service->resolveGroupingNameById($planogramTemplate, $selectedGroupingId);

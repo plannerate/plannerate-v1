@@ -32,20 +32,44 @@ final class TemplateProductService
     public function productsData(Model $template): array
     {
         return $template->templateProducts
-            ->map(fn (Model $p): array => [
-                'id' => $p->id,
-                'ean' => $p->ean,
-                'product_id' => $p->product_id,
-                'description' => $p->description,
-                'brand' => $p->brand,
-                'grouping' => $p->grouping,
-                'category' => $p->category,
-                'subcategory' => $p->subcategory,
-                'package_type' => $p->package_type,
-                'package_content' => $p->package_content,
-            ])
+            ->map(function (Model $p): array {
+                $product = $p->relationLoaded('product') ? $p->getRelation('product') : null;
+                $width = $product?->width;
+                $height = $product?->height;
+                $depth = $product?->depth;
+
+                return [
+                    'id' => $p->id,
+                    'ean' => $p->ean,
+                    'product_id' => $p->product_id,
+                    'description' => $p->description,
+                    'brand' => $p->brand,
+                    'grouping' => $p->grouping,
+                    'category' => $p->category,
+                    'subcategory' => $p->subcategory,
+                    'package_type' => $p->package_type,
+                    'package_content' => $p->package_content,
+                    'width' => $width,
+                    'height' => $height,
+                    'depth' => $depth,
+                    'unit' => $product?->unit,
+                    'has_dimensions' => $this->hasDimensions($width, $height, $depth),
+                ];
+            })
             ->values()
             ->all();
+    }
+
+    private function hasDimensions(mixed $width, mixed $height, mixed $depth): bool
+    {
+        return $this->isPositiveNumber($width)
+            && $this->isPositiveNumber($height)
+            && $this->isPositiveNumber($depth);
+    }
+
+    private function isPositiveNumber(mixed $value): bool
+    {
+        return is_numeric($value) && (float) $value > 0;
     }
 
     /** @return list<string> */

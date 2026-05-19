@@ -9,6 +9,7 @@ use App\Enums\SizeOrder;
 use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplateProduct;
 use App\Models\PlanogramTemplateSlot;
+use App\Models\Scopes\TenantScope;
 use App\Services\AutoPlanogram\DTO\OrderedBlock;
 use App\Services\AutoPlanogram\DTO\PlacedLayer;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
@@ -62,7 +63,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $groupingsSemProduto = 0;
 
         $slots = $subtemplate->slots()
-            ->withoutGlobalScopes()
+            ->withoutGlobalScope(TenantScope::class)
             ->orderBy('module_number')
             ->orderBy('shelf_order')
             ->orderBy('ordering')
@@ -125,7 +126,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
     private function resolveSubtemplate(PlacementSettings $settings): ?PlanogramSubtemplate
     {
-        return PlanogramSubtemplate::withoutGlobalScopes()
+        return PlanogramSubtemplate::withoutGlobalScope(TenantScope::class)
             ->where('template_id', $settings->templateId)
             ->where('num_modules', '<=', $settings->numModules)
             ->where('is_active', true)
@@ -155,7 +156,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /** @param Collection<int, mixed> $settings->products */
     private function findCandidates(PlanogramTemplateSlot $slot, PlacementSettings $settings): Collection
     {
-        $templateProductIds = PlanogramTemplateProduct::withoutGlobalScopes()
+        $templateProductIds = PlanogramTemplateProduct::withoutGlobalScope(TenantScope::class)
             ->where('tenant_id', $settings->tenantId)
             ->where('template_id', $slot->subtemplate->template_id)
             ->where('grouping_normalized', $slot->grouping_normalized)
@@ -173,7 +174,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         }
 
         // Fallback: load directly from tenant DB (product not in category filter or has no sales)
-        return Product::withoutGlobalScopes()
+        return Product::withoutGlobalScope(TenantScope::class)
             ->whereIn('id', $templateProductIds->all())
             ->get();
     }

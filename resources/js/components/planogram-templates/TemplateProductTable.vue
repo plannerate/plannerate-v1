@@ -26,6 +26,10 @@ const emit = defineEmits<{
 
 const { t } = useT();
 
+const dimensionFormatter = new Intl.NumberFormat('pt-BR', {
+    maximumFractionDigits: 2,
+});
+
 function onImportChange(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
 
@@ -34,6 +38,34 @@ function onImportChange(event: Event): void {
     }
 
     (event.target as HTMLInputElement).value = '';
+}
+
+function formatDimensionValue(
+    value: string | number | null | undefined,
+): string | null {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+
+    const numericValue = Number(value);
+
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+        return null;
+    }
+
+    return dimensionFormatter.format(numericValue);
+}
+
+function productDimensions(product: PlanogramTemplateProduct): string | null {
+    const width = formatDimensionValue(product.width);
+    const height = formatDimensionValue(product.height);
+    const depth = formatDimensionValue(product.depth);
+
+    if (!width || !height || !depth) {
+        return null;
+    }
+
+    return `${width} x ${height} x ${depth} ${product.unit ?? 'cm'}`;
 }
 </script>
 
@@ -82,7 +114,7 @@ function onImportChange(event: Event): void {
         <div
             class="min-h-0 flex-1 overflow-auto rounded-md border border-border"
         >
-            <table class="w-full min-w-[58rem] caption-bottom text-sm">
+            <table class="w-full min-w-[66rem] caption-bottom text-sm">
                 <thead
                     class="sticky top-0 z-20 bg-card shadow-sm [&_tr]:border-b"
                 >
@@ -142,6 +174,15 @@ function onImportChange(event: Event): void {
                             }}
                         </th>
                         <th
+                            class="h-9 w-32 px-2 text-left align-middle text-xs font-medium whitespace-nowrap text-foreground"
+                        >
+                            {{
+                                t(
+                                    'planogram-templates.product_table.columns.dimensions',
+                                )
+                            }}
+                        </th>
+                        <th
                             class="h-9 w-24 px-2 text-left align-middle text-xs font-medium whitespace-nowrap text-foreground"
                         >
                             {{
@@ -161,7 +202,7 @@ function onImportChange(event: Event): void {
                         class="border-b transition-colors"
                     >
                         <td
-                            colspan="8"
+                            colspan="9"
                             class="p-2 py-10 text-center align-middle text-sm whitespace-nowrap text-muted-foreground"
                         >
                             {{
@@ -230,6 +271,16 @@ function onImportChange(event: Event): void {
                         >
                             {{
                                 product.package_content ??
+                                t(
+                                    'planogram-templates.product_table.empty_value',
+                                )
+                            }}
+                        </td>
+                        <td
+                            class="p-2 align-middle font-mono text-xs whitespace-nowrap text-muted-foreground"
+                        >
+                            {{
+                                productDimensions(product) ??
                                 t(
                                     'planogram-templates.product_table.empty_value',
                                 )

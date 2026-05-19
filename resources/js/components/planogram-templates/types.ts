@@ -42,6 +42,11 @@ export type PlanogramTemplateProduct = {
     subcategory?: string | null;
     package_type?: string | null;
     package_content?: string | null;
+    width?: string | number | null;
+    height?: string | number | null;
+    depth?: string | number | null;
+    unit?: string | null;
+    has_dimensions?: boolean;
 };
 
 export type ProductSearchResult = {
@@ -68,13 +73,20 @@ export type WizardStep = {
 };
 
 /** Deterministic HSL color from a grouping string */
-export function groupingToColor(grouping: string): { background: string; border: string; color: string } {
+export function groupingToColor(grouping: string): {
+    background: string;
+    border: string;
+    color: string;
+} {
     let hash = 0;
+
     for (let i = 0; i < grouping.length; i++) {
-        hash = ((hash << 5) - hash) + grouping.charCodeAt(i);
+        hash = (hash << 5) - hash + grouping.charCodeAt(i);
         hash |= 0;
     }
+
     const hue = Math.abs(hash) % 360;
+
     return {
         background: `hsl(${hue}, 60%, 92%)`,
         border: `hsl(${hue}, 50%, 72%)`,
