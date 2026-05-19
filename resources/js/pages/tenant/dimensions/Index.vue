@@ -103,44 +103,45 @@ function handleKeydown(event: KeyboardEvent, id: string): void {
 }
 
 const pageMeta = useCrudPageMeta({
-    headTitle: 'Dimensões',
-    title: 'Dimensões',
-    description: 'Gerencie as dimensões dos produtos diretamente na lista.',
+    headTitle: t('app.tenant.dimensions.title'),
+    title: t('app.tenant.dimensions.title'),
+    description: t('app.tenant.dimensions.description'),
     breadcrumbs: [
         { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
-        { title: 'Dimensões', href: indexPath },
+        { title: t('app.tenant.dimensions.navigation'), href: indexPath },
     ],
 });
 </script>
 
 <template>
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+
         <Head :title="pageMeta.headTitle" />
 
-        <ListPage :meta="meta" label="produto" :action="indexPath" :clear-href="indexPath"
+        <ListPage :meta="meta" :label="t('app.tenant.dimensions.product_label')" :action="indexPath" :clear-href="indexPath"
             :search-value="props.filters.search" :search-placeholder="t('app.tenant.common.search')"
             :filter-label="t('app.tenant.common.filter')" :clear-label="t('app.tenant.common.clear_filters')">
             <template #filters>
                 <select name="dimension_status" :value="filters.dimension_status"
                     class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
-                    <option value="">Todos</option>
-                    <option value="draft">Rascunho</option>
-                    <option value="published">Publicado</option>
+                    <option value="">{{ t('app.tenant.common.all') }}</option>
+                    <option value="draft">{{ t('app.tenant.products.dimensions_status_options.draft') }}</option>
+                    <option value="published">{{ t('app.tenant.products.dimensions_status_options.published') }}</option>
                 </select>
             </template>
 
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
-                        <ColumnHeader field="codigo_erp">Cód. ERP</ColumnHeader>
-                        <ColumnHeader field="ean">EAN Produto</ColumnHeader>
-                        <ColumnHeader field="width">Largura</ColumnHeader>
-                        <ColumnHeader field="height">Altura</ColumnHeader>
-                        <ColumnHeader field="depth">Profundidade</ColumnHeader>
-                        <th class="px-4 py-3 font-medium">Peso</th>
-                        <th class="px-4 py-3 font-medium">Unidade</th>
-                        <ColumnHeader field="dimension_status">Status</ColumnHeader>
-                        <th class="w-20 px-4 py-3 text-center font-medium">Ações</th>
+                        <ColumnHeader field="codigo_erp">{{ t('app.tenant.products.fields.codigo_erp') }}</ColumnHeader>
+                        <ColumnHeader field="ean">{{ t('app.tenant.products.fields.ean') }}</ColumnHeader>
+                        <ColumnHeader field="height">{{ t('app.tenant.products.fields.height') }}</ColumnHeader>
+                        <ColumnHeader field="width">{{ t('app.tenant.products.fields.width') }}</ColumnHeader>
+                        <ColumnHeader field="depth">{{ t('app.tenant.products.fields.depth') }}</ColumnHeader>
+                        <!-- <th class="px-4 py-3 font-medium">Peso</th> -->
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.products.fields.unit') }}</th>
+                        <ColumnHeader field="dimension_status">{{ t('app.tenant.common.status') }}</ColumnHeader>
+                        <th class="w-20 px-4 py-3 text-center font-medium">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -157,47 +158,46 @@ const pageMeta = useCrudPageMeta({
                         :class="{ 'bg-primary/5 even:bg-primary/5': editingId === row.id }">
                         <td class="px-4 py-2">{{ row.codigo_erp ?? '-' }}</td>
                         <td class="px-4 py-2">{{ row.ean ?? '-' }}</td>
-
                         <template v-if="editingId === row.id && editingData">
-                            <td class="px-2 py-1">
-                                <input v-model="editingData.width" type="number" min="0" step="0.01"
-                                    class="h-8 w-20 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                                    placeholder="Larg." @keydown="handleKeydown($event, row.id)" />
-                            </td>
                             <td class="px-2 py-1">
                                 <input v-model="editingData.height" type="number" min="0" step="0.01"
                                     class="h-8 w-20 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                                    placeholder="Alt." @keydown="handleKeydown($event, row.id)" />
+                                    :placeholder="t('app.tenant.dimensions.placeholders.height_short')" @keydown="handleKeydown($event, row.id)" />
                             </td>
                             <td class="px-2 py-1">
                                 <input v-model="editingData.depth" type="number" min="0" step="0.01"
                                     class="h-8 w-20 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                                    placeholder="Prof." @keydown="handleKeydown($event, row.id)" />
+                                    :placeholder="t('app.tenant.dimensions.placeholders.depth_short')" @keydown="handleKeydown($event, row.id)" />
                             </td>
                             <td class="px-2 py-1">
+                                <input v-model="editingData.width" type="number" min="0" step="0.01"
+                                    class="h-8 w-20 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                                    :placeholder="t('app.tenant.dimensions.placeholders.width_short')" @keydown="handleKeydown($event, row.id)" />
+                            </td>
+                            <!-- <td class="px-2 py-1">
                                 <input v-model="editingData.weight" type="number" min="0" step="0.01"
                                     class="h-8 w-20 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
                                     placeholder="Peso" @keydown="handleKeydown($event, row.id)" />
-                            </td>
+                            </td> -->
                             <td class="px-2 py-1">
                                 <input v-model="editingData.unit"
                                     class="h-8 w-16 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                                    placeholder="cm" maxlength="20" @keydown="handleKeydown($event, row.id)" />
+                                    :placeholder="t('app.tenant.dimensions.placeholders.unit')" maxlength="20" @keydown="handleKeydown($event, row.id)" />
                             </td>
                             <td class="px-2 py-1">
                                 <select v-model="editingData.dimension_status"
                                     class="h-8 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20">
-                                    <option value="draft">Rascunho</option>
-                                    <option value="published">Publicado</option>
+                                    <option value="draft">{{ t('app.tenant.products.dimensions_status_options.draft') }}</option>
+                                    <option value="published">{{ t('app.tenant.products.dimensions_status_options.published') }}</option>
                                 </select>
                             </td>
                         </template>
 
                         <template v-else>
-                            <td class="px-4 py-2">{{ row.width ?? '-' }}</td>
                             <td class="px-4 py-2">{{ row.height ?? '-' }}</td>
+                            <td class="px-4 py-2">{{ row.width ?? '-' }}</td>
                             <td class="px-4 py-2">{{ row.depth ?? '-' }}</td>
-                            <td class="px-4 py-2">{{ row.weight ?? '-' }}</td>
+                            <!-- <td class="px-4 py-2">{{ row.weight ?? '-' }}</td> -->
                             <td class="px-4 py-2">{{ row.unit ?? '-' }}</td>
                             <td class="px-4 py-2">
                                 <ColumnStatusBadge :status="row.dimension_status ?? 'draft'" />
@@ -209,13 +209,13 @@ const pageMeta = useCrudPageMeta({
                                 <div class="flex items-center justify-center gap-1">
                                     <button type="button" :disabled="savingId === row.id"
                                         class="flex size-7 items-center justify-center rounded bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
-                                        title="Salvar" @click="saveEdit(row.id)">
+                                        :title="t('app.actions.save')" @click="saveEdit(row.id)">
                                         <Loader2 v-if="savingId === row.id" class="size-3.5 animate-spin" />
                                         <Check v-else class="size-3.5" />
                                     </button>
                                     <button type="button"
                                         class="flex size-7 items-center justify-center rounded border border-border bg-background transition hover:bg-muted"
-                                        title="Cancelar" @click="cancelEdit">
+                                        :title="t('app.actions.cancel')" @click="cancelEdit">
                                         <X class="size-3.5" />
                                     </button>
                                 </div>
@@ -223,7 +223,7 @@ const pageMeta = useCrudPageMeta({
                             <template v-else>
                                 <button type="button"
                                     class="flex size-7 items-center justify-center rounded border border-border bg-background transition hover:bg-muted"
-                                    title="Editar dimensões" @click="startEdit(row)">
+                                    :title="t('app.tenant.dimensions.actions.edit_dimensions')" @click="startEdit(row)">
                                     <Pencil class="size-3.5" />
                                 </button>
                             </template>

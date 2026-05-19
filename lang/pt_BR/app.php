@@ -1306,6 +1306,21 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 ],
             ],
         ],
+        'dimensions' => [
+            'navigation' => 'Dimensões',
+            'title' => 'Dimensões',
+            'description' => 'Gerencie as dimensões dos produtos diretamente na lista.',
+            'product_label' => 'produto',
+            'actions' => [
+                'edit_dimensions' => 'Editar dimensões',
+            ],
+            'placeholders' => [
+                'height_short' => 'Alt.',
+                'width_short' => 'Larg.',
+                'depth_short' => 'Prof.',
+                'unit' => 'cm',
+            ],
+        ],
         'users' => [
             'navigation' => 'Usuarios',
             'title' => 'Usuarios',
