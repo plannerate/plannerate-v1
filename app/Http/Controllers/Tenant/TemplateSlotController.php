@@ -7,6 +7,7 @@ use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplate;
 use App\Models\PlanogramTemplateSlot;
 use App\Models\Product;
+use App\Services\AutoPlanogram\Template\SlotReviewAnalysisService;
 use App\Services\AutoPlanogram\Template\TemplateSlotService;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Http\JsonResponse;
@@ -19,7 +20,10 @@ class TemplateSlotController extends Controller
 {
     use InteractsWithTenantContext;
 
-    public function __construct(private readonly TemplateSlotService $service) {}
+    public function __construct(
+        private readonly TemplateSlotService $service,
+        private readonly SlotReviewAnalysisService $reviewAnalysisService,
+    ) {}
 
     public function index(string $subdomain, PlanogramTemplate $planogramTemplate): Response
     {
@@ -164,6 +168,32 @@ class TemplateSlotController extends Controller
                 'grouping' => (string) ($product->grouping ?? ''),
                 'grouping_normalized' => (string) ($product->grouping_normalized ?? ''),
             ])->values()->all(),
+        ]);
+    }
+
+    public function slotAnalysis(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): JsonResponse
+    {
+        unset($subdomain);
+        $this->authorize('view', $planogramTemplate);
+        $this->authorize('viewAny', Product::class);
+
+        $validated = $request->validate([
+            'slot_id' => ['required', 'string'],
+            'shelf_width_cm' => ['nullable', 'numeric', 'min:30', 'max:500'],
+        ]);
+
+        $slot = PlanogramTemplateSlot::query()
+            ->whereKey($validated['slot_id'])
+            ->whereHas('subtemplate', fn ($query) => $query->where('template_id', $planogramTemplate->getKey()))
+            ->firstOrFail();
+
+        $analysis = $this->reviewAnalysisService->analyze(
+            $slot,
+            (float) ($validated['shelf_width_cm'] ?? 100.0),
+        );
+
+        return response()->json([
+            'data' => $analysis,
         ]);
     }
 }

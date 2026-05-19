@@ -337,6 +337,81 @@ test('slot products endpoint returns only products from slot grouping_normalized
         ->assertJsonPath('data.0.grouping_normalized', 'cereal-matinal');
 });
 
+test('slot analysis endpoint returns placement summary and row reasons', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForTemplates('tpl-slot-analysis');
+    assignTenantAdminRoleForTemplates($user, $tenant->id);
+
+    $template = PlanogramTemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'code' => 'TPL-ANALYSIS',
+        'name' => 'TPL-ANALYSIS',
+        'department' => 'MERCEARIA',
+        'is_active' => true,
+    ]);
+
+    $subtemplate = PlanogramSubtemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'template_id' => $template->id,
+        'code' => 'TPL-ANALYSIS-1M',
+        'num_modules' => 1,
+        'is_active' => true,
+    ]);
+
+    $slot = PlanogramTemplateSlot::query()->create([
+        'tenant_id' => $tenant->id,
+        'subtemplate_id' => $subtemplate->id,
+        'module_number' => 1,
+        'shelf_order' => 1,
+        'grouping' => 'CEREAL MATINAL',
+        'grouping_normalized' => 'cereal-matinal',
+        'min_facings' => 2,
+        'priority' => 1,
+        'price_order' => 'none',
+        'size_order' => 'none',
+        'brand_exposure' => 'mixed',
+        'flavor_exposure' => 'mixed',
+        'space_fallback' => 'skip',
+        'use_target_stock' => false,
+        'ordering' => 1,
+    ]);
+
+    Product::factory()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $user->id,
+        'name' => 'Produto Cabe',
+        'grouping' => 'CEREAL MATINAL',
+        'grouping_normalized' => 'cereal-matinal',
+        'width' => 20,
+    ]);
+
+    Product::factory()->create([
+        'tenant_id' => $tenant->id,
+        'user_id' => $user->id,
+        'name' => 'Produto Fora',
+        'grouping' => 'CEREAL MATINAL',
+        'grouping_normalized' => 'cereal-matinal',
+        'width' => 80,
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-slot-analysis.'.config('app.landlord_domain')])
+        ->getJson(route('tenant.planogram-templates.slots.analysis', [
+            'subdomain' => 'tpl-slot-analysis',
+            'planogramTemplate' => $template->id,
+            'slot_id' => $slot->id,
+            'shelf_width_cm' => 100,
+        ], false));
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('data.summary.total_products', 2)
+        ->assertJsonPath('data.summary.placed_products', 1)
+        ->assertJsonPath('data.summary.rejected_products', 1);
+});
+
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function makeTenantForTemplates(string $subdomain): Tenant

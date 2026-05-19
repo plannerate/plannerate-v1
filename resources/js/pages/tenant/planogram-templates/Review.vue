@@ -8,9 +8,9 @@ import ModuleSelectorButtons from '@/components/planogram-templates/ModuleSelect
 import ReviewSlotProductsPanel from '@/components/planogram-templates/ReviewSlotProductsPanel.vue';
 import ReviewSlotsList from '@/components/planogram-templates/ReviewSlotsList.vue';
 import type {
+    SlotAnalysisData,
     PlanogramSubtemplate,
     PlanogramTemplateSlot,
-    SlotProduct,
     WizardStep,
 } from '@/components/planogram-templates/types';
 import WizardProgress from '@/components/planogram-templates/WizardProgress.vue';
@@ -114,7 +114,7 @@ const allSlots = computed(() =>
 );
 
 const selectedSlotId = ref<string | null>(null);
-const slotProducts = ref<SlotProduct[]>([]);
+const slotAnalysis = ref<SlotAnalysisData | null>(null);
 const productsLoading = ref(false);
 
 const selectedSlot = computed(
@@ -135,7 +135,7 @@ async function loadSlotProducts(slot: PlanogramTemplateSlot): Promise<void> {
         slot.grouping_normalized || normalizeGrouping(slot.grouping ?? '');
 
     if (!groupingNormalized) {
-        slotProducts.value = [];
+        slotAnalysis.value = null;
 
         return;
     }
@@ -144,7 +144,7 @@ async function loadSlotProducts(slot: PlanogramTemplateSlot): Promise<void> {
 
     try {
         const response = await fetch(
-            TemplateSlotController.slotProducts
+            TemplateSlotController.slotAnalysis
                 .url(
                     {
                         subdomain: props.subdomain,
@@ -152,7 +152,7 @@ async function loadSlotProducts(slot: PlanogramTemplateSlot): Promise<void> {
                     },
                     {
                         query: {
-                            grouping_normalized: groupingNormalized,
+                            slot_id: slot.id,
                         },
                     },
                 )
@@ -166,15 +166,15 @@ async function loadSlotProducts(slot: PlanogramTemplateSlot): Promise<void> {
         );
 
         if (!response.ok) {
-            slotProducts.value = [];
+            slotAnalysis.value = null;
 
             return;
         }
 
-        const payload = (await response.json()) as { data?: SlotProduct[] };
-        slotProducts.value = Array.isArray(payload.data) ? payload.data : [];
+        const payload = (await response.json()) as { data?: SlotAnalysisData };
+        slotAnalysis.value = payload.data ?? null;
     } catch {
-        slotProducts.value = [];
+        slotAnalysis.value = null;
     } finally {
         productsLoading.value = false;
     }
@@ -191,7 +191,7 @@ function selectSlotForProducts(slotId: string): void {
 
 watch(currentSubtemplate, () => {
     selectedSlotId.value = null;
-    slotProducts.value = [];
+    slotAnalysis.value = null;
 });
 
 const breadcrumbs = [
@@ -255,7 +255,7 @@ const breadcrumbs = [
                 />
                 <ReviewSlotProductsPanel
                     :selected-slot="selectedSlot"
-                    :products="slotProducts"
+                    :analysis="slotAnalysis"
                     :loading="productsLoading"
                 />
             </div>

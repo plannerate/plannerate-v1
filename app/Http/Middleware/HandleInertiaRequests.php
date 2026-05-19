@@ -151,12 +151,17 @@ class HandleInertiaRequests extends Middleware
         $routeTenant = $request->route('tenant');
 
         if ($routeTenant instanceof Tenant) {
+
+            config(['app.url' => $routeTenant->domain->host]);
+
             return $routeTenant;
         }
 
         $current = Tenant::current();
 
         if ($current instanceof Tenant) {
+            config(['app.url' => $current->domain->host]);
+
             return $current;
         }
 

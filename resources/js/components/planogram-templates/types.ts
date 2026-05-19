@@ -40,6 +40,34 @@ export type SlotProduct = {
     grouping_normalized: string;
 };
 
+export type SlotAnalysisRow = {
+    product_id: string;
+    name: string;
+    ean: string;
+    brand: string;
+    status: 'entrou' | 'fora';
+    reason: string;
+    facing_used: number;
+    required_width_cm: number;
+    url: string;
+};
+
+export type SlotAnalysisSummary = {
+    slot_id: string;
+    grouping: string;
+    shelf_width_cm: number;
+    occupied_width_cm: number;
+    free_width_cm: number;
+    total_products: number;
+    placed_products: number;
+    rejected_products: number;
+};
+
+export type SlotAnalysisData = {
+    summary: SlotAnalysisSummary;
+    rows: SlotAnalysisRow[];
+};
+
 export type WizardStepStatus = 'complete' | 'active' | 'pending';
 
 export type WizardStep = {
