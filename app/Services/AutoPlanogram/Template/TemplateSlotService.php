@@ -4,6 +4,7 @@ namespace App\Services\AutoPlanogram\Template;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 final class TemplateSlotService
 {
@@ -41,7 +42,7 @@ final class TemplateSlotService
 
     public function normalizeGrouping(string $value): string
     {
-        return (string) preg_replace('/\s+/', ' ', strtolower(trim($value)));
+        return Str::slug($value);
     }
 
     /** @param array<string, mixed> $extra */

@@ -8,6 +8,7 @@ use App\Enums\PriceOrder;
 use App\Enums\SizeOrder;
 use App\Enums\SpaceFallback;
 use App\Models\Traits\BelongsToTenant;
+use App\Models\Traits\SyncsGroupingNormalizedFromGrouping;
 use App\Models\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PlanogramTemplateSlot extends Model
 {
-    use BelongsToTenant, HasUlids, SoftDeletes, UsesTenantConnection;
+    use BelongsToTenant, HasUlids, SoftDeletes, SyncsGroupingNormalizedFromGrouping, UsesTenantConnection;
 
     protected $fillable = [
         'tenant_id',

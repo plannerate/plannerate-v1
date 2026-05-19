@@ -138,7 +138,7 @@ class SyncCategorySortimentAttributesCommand extends Command
             ->with(['category'])
             ->chunkById(200, function (Collection $products) use ($preview, &$updated, &$skipped): void {
                 foreach ($products as $product) {
-                    $result = $this->computeSortimentData($product->category);
+                    $result = $this->buildProductSyncData($product->category);
 
                     if ($result === null) {
                         $skipped++;
@@ -146,11 +146,14 @@ class SyncCategorySortimentAttributesCommand extends Command
                         continue;
                     }
 
-                    [$sortimentAttribute, $sortimentAttributeLevels] = $result;
+                    $sortimentAttribute = $result['sortiment_attribute'];
+                    $sortimentAttributeLevels = $result['sortiment_attribute_levels'];
 
                     if (
                         $product->sortiment_attribute === $sortimentAttribute
                         && $product->sortiment_attribute_levels === $sortimentAttributeLevels
+                        && $product->grouping === $result['grouping']
+                        && $product->grouping_normalized === $result['grouping_normalized']
                     ) {
                         $skipped++;
 
@@ -161,6 +164,8 @@ class SyncCategorySortimentAttributesCommand extends Command
                         $product->updateQuietly([
                             'sortiment_attribute' => $sortimentAttribute,
                             'sortiment_attribute_levels' => $sortimentAttributeLevels,
+                            'grouping' => $result['grouping'],
+                            'grouping_normalized' => $result['grouping_normalized'],
                         ]);
                     }
 
@@ -177,14 +182,15 @@ class SyncCategorySortimentAttributesCommand extends Command
     }
 
     /**
-     * Calcula sortiment_attribute e sortiment_attribute_levels a partir da hierarquia da categoria.
+     * Calcula sortiment_attribute, sortiment_attribute_levels, grouping e grouping_normalized
+     * a partir da hierarquia da categoria.
      *
      * Inclui os nós nas posições 2 (departamento), 3 (subdepartamento), 4 (categoria) e 5 (subcategoria)
      * quando presentes na hierarquia.
      *
-     * @return array{0: string, 1: string}|null
+     * @return array{sortiment_attribute: string, sortiment_attribute_levels: string, grouping: string, grouping_normalized: string}|null
      */
-    private function computeSortimentData(?Category $category): ?array
+    public function buildProductSyncData(?Category $category): ?array
     {
         if (! $category instanceof Category) {
             return null;
@@ -221,9 +227,13 @@ class SyncCategorySortimentAttributesCommand extends Command
             return null;
         }
 
+        $sortimentAttribute = implode(' | ', $names);
+
         return [
-            implode(' | ', $names),
-            implode(',', $levelKeys),
+            'sortiment_attribute' => $sortimentAttribute,
+            'sortiment_attribute_levels' => implode(',', $levelKeys),
+            'grouping' => $sortimentAttribute,
+            'grouping_normalized' => Str::slug($sortimentAttribute),
         ];
     }
 

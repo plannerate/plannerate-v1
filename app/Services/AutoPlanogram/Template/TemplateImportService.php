@@ -11,6 +11,10 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 final class TemplateImportService
 {
+    public function __construct(private readonly TemplateSlotService $templateSlotService)
+    {
+    }
+
     public function import(string $filePath, string $tenantId): TemplateImportReport
     {
         $spreadsheet = IOFactory::load($filePath);
@@ -29,11 +33,6 @@ final class TemplateImportService
         });
 
         return $report;
-    }
-
-    private function normalizeGrouping(string $value): string
-    {
-        return (string) preg_replace('/\s+/', ' ', mb_strtolower(trim($value), 'UTF-8'));
     }
 
     private function importTemplates(Worksheet $sheet, string $tenantId, TemplateImportReport $report): void
@@ -111,7 +110,7 @@ final class TemplateImportService
                         'category' => trim((string) ($row['G'] ?? '')),
                         'subcategory' => trim((string) ($row['H'] ?? '')),
                         'grouping' => $grouping,
-                        'grouping_normalized' => $this->normalizeGrouping($grouping),
+                        'grouping_normalized' => $this->templateSlotService->normalizeGrouping($grouping),
                         'min_facings' => max(1, (int) ($row['J'] ?? 1)),
                         'price_order' => $this->parsePriceOrder((string) ($row['K'] ?? '')),
                         'size_order' => $this->parseSizeOrder((string) ($row['L'] ?? '')),
