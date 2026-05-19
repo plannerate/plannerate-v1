@@ -5,7 +5,6 @@ namespace App\Support\Navigation;
 use App\Models\Category;
 use App\Models\Cluster;
 use App\Models\EanReference;
-use App\Models\GlobalPlanogramTemplate;
 use App\Models\IntegrationApi;
 use App\Models\Module;
 use App\Models\Permission;
@@ -111,14 +110,6 @@ class SidebarNavigationService
                             ->icon('package')
                             ->authorize('viewAny', EanReference::class)
                             ->setOrder(40);
-                    })
-                    ->item('landlord.planogram-templates', function ($item): void {
-                        $item
-                            ->label(__('app.landlord.planogram_templates.navigation'))
-                            ->href(route('landlord.planogram-templates.index', absolute: false))
-                            ->icon('file-spreadsheet')
-                            ->authorize('viewAny', GlobalPlanogramTemplate::class)
-                            ->setOrder(45);
                     })
                     ->item('landlord.useful-links', function ($item): void {
                         $item
