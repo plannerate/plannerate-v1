@@ -11,6 +11,7 @@ use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use App\Services\AutoPlanogram\Grouping\BlockGrouperInterface;
 use App\Services\AutoPlanogram\Placement\PlacementEngineInterface;
 use App\Services\AutoPlanogram\Placement\PlanogramWriterInterface;
+use App\Services\AutoPlanogram\Placement\RejectedProductsWriter;
 use App\Services\AutoPlanogram\Placement\TemplatePlacementEngine;
 use App\Services\AutoPlanogram\Placement\VerticalBlockPlacer;
 use App\Services\AutoPlanogram\Scoring\ProductScorerInterface;
@@ -52,6 +53,7 @@ final class AutoPlanogramService
         private readonly PlanogramValidator $validator,
         private readonly PlanogramWriterInterface $writer,
         private readonly SlotSuggestionGenerator $suggestionGenerator,
+        private readonly RejectedProductsWriter $rejectedProductsWriter,
     ) {}
 
     public function generate(PlanogramInput $input): PlanogramOutput
@@ -131,8 +133,11 @@ final class AutoPlanogramService
 
         $this->logCapacityAnalysis($input, $fullResult);
 
-        DB::transaction(function () use ($input, $allSegments) {
+        $output = new PlanogramOutput($input->gondolaId, $allSegments, $allRejected, $report, $scoreType);
+
+        DB::transaction(function () use ($input, $allSegments, $output): void {
             $this->writer->write($input->gondolaId, $input->sections, $allSegments);
+            $this->rejectedProductsWriter->write($input->planogramId, $input->gondolaId, $input->tenantId, $output);
         });
 
         Log::info('AutoPlanogramService: geração concluída', [
@@ -141,7 +146,7 @@ final class AutoPlanogramService
             'validation_passed' => $report->passed,
         ]);
 
-        return new PlanogramOutput($input->gondolaId, $allSegments, $allRejected, $report, $scoreType);
+        return $output;
     }
 
     private function generateWithTemplate(PlanogramInput $input, Collection $scored, string $scoreType): PlanogramOutput
@@ -169,11 +174,22 @@ final class AutoPlanogramService
 
         $this->logCapacityAnalysis($input, $fullResult);
 
-        DB::transaction(function () use ($input, $allSegments): void {
-            $this->writer->write($input->gondolaId, $input->sections, $allSegments);
-        });
-
         $suggestions = $this->suggestionGenerator->generate($result->slotAnalysis);
+
+        $templateOutput = new PlanogramOutput(
+            gondolaId: $input->gondolaId,
+            placedSegments: $allSegments,
+            rejectedProducts: $result->rejectedProducts,
+            validationReport: $report,
+            scoreType: $scoreType,
+            slotAnalysis: $result->slotAnalysis,
+            suggestions: $suggestions,
+        );
+
+        DB::transaction(function () use ($input, $allSegments, $templateOutput): void {
+            $this->writer->write($input->gondolaId, $input->sections, $allSegments);
+            $this->rejectedProductsWriter->write($input->planogramId, $input->gondolaId, $input->tenantId, $templateOutput);
+        });
 
         Log::info('AutoPlanogramService: geração com template concluída', [
             'gondola_id' => $input->gondolaId,
@@ -184,15 +200,7 @@ final class AutoPlanogramService
             'sugestoes' => count($suggestions),
         ]);
 
-        return new PlanogramOutput(
-            gondolaId: $input->gondolaId,
-            placedSegments: $allSegments,
-            rejectedProducts: $result->rejectedProducts,
-            validationReport: $report,
-            scoreType: $scoreType,
-            slotAnalysis: $result->slotAnalysis,
-            suggestions: $suggestions,
-        );
+        return $templateOutput;
     }
 
     /**

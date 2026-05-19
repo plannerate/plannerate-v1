@@ -3,18 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PlacementFailureReason;
+use App\Models\PlanogramRejectedProduct;
 use App\Models\ScoringWeights;
 use App\Services\AutoPlanogram\AutoPlanogramService;
 use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\ProductSelectionService;
-use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue; 
+use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\AutoGeneratePlanogramRequest;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram; 
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class AutoPlanogramController extends Controller
@@ -171,5 +177,87 @@ class AutoPlanogramController extends Controller
 
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    public function rejectedProducts(Request $request, string $subdomain, string $gondola): JsonResponse
+    {
+        $gondolaModel = Gondola::findOrFail($gondola);
+
+        $rejected = PlanogramRejectedProduct::where('gondola_id', $gondola)
+            ->where('planogram_id', $gondolaModel->planogram_id)
+            ->orderBy('grouping')
+            ->orderBy('shelf_order')
+            ->get()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'product_id' => $r->product_id,
+                'product_name' => $r->product_name,
+                'ean' => $r->ean,
+                'image_url' => $r->image_url,
+                'product_width' => $r->product_width,
+                'product_height' => $r->product_height,
+                'rejection_reason' => $r->rejection_reason->value,
+                'rejection_reason_label' => $r->rejection_reason->label(),
+                'slot_id' => $r->slot_id,
+                'grouping' => $r->grouping,
+                'module_number' => $r->module_number,
+                'shelf_order' => $r->shelf_order,
+            ]);
+
+        return response()->json(['data' => $rejected]);
+    }
+
+    public function swapProduct(Request $request, string $subdomain, string $gondola): JsonResponse
+    {
+        $request->validate([
+            'rejected_product_id' => ['required', 'string'],
+            'layer_id' => ['required', 'string'],
+        ]);
+
+        $rejected = PlanogramRejectedProduct::where('id', $request->rejected_product_id)
+            ->where('gondola_id', $gondola)
+            ->firstOrFail();
+
+        $layer = Layer::findOrFail($request->layer_id);
+
+        DB::transaction(function () use ($rejected, $layer, $gondola): void {
+            $tenantId = app('currentTenant')?->getKey() ?? '';
+
+            // Captura o produto que estava posicionado antes de trocar
+            $displacedProductId = $layer->product_id;
+            $displacedEan = $layer->ean;
+            $displacedProduct = $layer->product;
+
+            // Posiciona o produto rejeitado no layer
+            $layer->product_id = $rejected->product_id;
+            $layer->ean = $rejected->ean;
+            $layer->save();
+
+            // Remove o rejeitado que foi posicionado
+            $rejected->delete();
+
+            // Cria novo registro de rejeitado para o produto deslocado
+            if ($displacedProductId) {
+                PlanogramRejectedProduct::create([
+                    'id' => (string) Str::ulid(),
+                    'tenant_id' => $tenantId,
+                    'planogram_id' => $rejected->planogram_id,
+                    'gondola_id' => $gondola,
+                    'product_id' => $displacedProductId,
+                    'product_name' => $displacedProduct?->name,
+                    'ean' => $displacedEan,
+                    'image_url' => $displacedProduct?->image_url ?? null,
+                    'product_width' => $displacedProduct?->width ?? null,
+                    'product_height' => $displacedProduct?->height ?? null,
+                    'rejection_reason' => PlacementFailureReason::NoHorizontalSpace->value,
+                    'slot_id' => $rejected->slot_id,
+                    'grouping' => $rejected->grouping,
+                    'module_number' => $rejected->module_number,
+                    'shelf_order' => $rejected->shelf_order,
+                ]);
+            }
+        });
+
+        return response()->json(['success' => true]);
     }
 }

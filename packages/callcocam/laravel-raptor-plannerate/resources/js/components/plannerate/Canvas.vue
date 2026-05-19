@@ -6,6 +6,7 @@ import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor'
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { useT } from '@/composables/useT';
 import type { Gondola } from '@/types/planogram';
+import RejectedProductsDrawer from '@/components/RejectedProductsDrawer.vue';
 import Sections from './editor/Sections.vue';
 import Indicador from './Indicador.vue';
 
@@ -185,5 +186,11 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
                 </div>
             </div>
         </div>
+
+        <!-- Drawer de produtos rejeitados (overlay bottom) -->
+        <RejectedProductsDrawer
+            v-if="record?.id"
+            :gondola-id="record.id"
+        />
     </div>
 </template>

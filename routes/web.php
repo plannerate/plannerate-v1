@@ -211,6 +211,10 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
         Route::prefix('api')->name('api.')->group(function (): void {
             Route::post('gondolas/{gondola}/auto-generate', [AutoPlanogramController::class, 'generate'])
                 ->name('gondolas.auto-generate');
+            Route::get('gondolas/{gondola}/rejected-products', [AutoPlanogramController::class, 'rejectedProducts'])
+                ->name('gondolas.rejected-products');
+            Route::post('gondolas/{gondola}/swap-product', [AutoPlanogramController::class, 'swapProduct'])
+                ->name('gondolas.swap-product');
         });
     });
 
