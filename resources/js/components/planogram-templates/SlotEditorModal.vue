@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
-import type { PlanogramTemplateSlot } from './types';
+import type { PlanogramSlotDefaults, PlanogramTemplateSlot } from './types';
 
 type SlotDraft = {
     module_number: number;
@@ -35,6 +35,7 @@ const props = defineProps<{
     moduleNumber: number;
     shelfOrder: number;
     templateSlot?: PlanogramTemplateSlot | null;
+    slotDefaults?: PlanogramSlotDefaults | null;
 }>();
 
 const emit = defineEmits<{
@@ -72,14 +73,14 @@ watch(
         draft.module_number = module;
         draft.shelf_order = shelf;
         draft.category_id = slot?.category_id ?? null;
-        draft.min_facings = slot?.min_facings ?? 1;
-        draft.priority = slot?.priority ?? 1;
-        draft.price_order = slot?.price_order ?? 'none';
-        draft.size_order = slot?.size_order ?? 'none';
-        draft.brand_exposure = slot?.brand_exposure ?? 'horizontal';
-        draft.flavor_exposure = slot?.flavor_exposure ?? 'horizontal';
-        draft.space_fallback = slot?.space_fallback ?? 'reduce_c';
-        draft.use_target_stock = slot?.use_target_stock ?? false;
+        draft.min_facings = slot?.min_facings ?? props.slotDefaults?.min_facings ?? 1;
+        draft.priority = slot?.priority ?? props.slotDefaults?.priority ?? 1;
+        draft.price_order = slot?.price_order ?? props.slotDefaults?.price_order ?? 'none';
+        draft.size_order = slot?.size_order ?? props.slotDefaults?.size_order ?? 'none';
+        draft.brand_exposure = slot?.brand_exposure ?? props.slotDefaults?.brand_exposure ?? 'horizontal';
+        draft.flavor_exposure = slot?.flavor_exposure ?? props.slotDefaults?.flavor_exposure ?? 'horizontal';
+        draft.space_fallback = slot?.space_fallback ?? props.slotDefaults?.space_fallback ?? 'reduce_c';
+        draft.use_target_stock = slot?.use_target_stock ?? props.slotDefaults?.use_target_stock ?? false;
     },
     { immediate: true },
 );

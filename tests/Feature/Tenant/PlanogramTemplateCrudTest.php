@@ -468,6 +468,89 @@ test('slot analysis endpoint returns placement summary and row reasons', functio
         ->assertJsonPath('data.summary.rejected_products', 1);
 });
 
+test('saving slot persists subtemplate slot defaults and exposes them in slots payload', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForTemplates('tpl-slot-defaults');
+    assignTenantAdminRoleForTemplates($user, $tenant->id);
+
+    $template = PlanogramTemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'code' => 'LIMPEZA-DEFAULTS',
+        'name' => 'LIMPEZA-DEFAULTS',
+        'department' => 'LIMPEZA',
+        'is_active' => true,
+    ]);
+
+    $subtemplate = PlanogramSubtemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'template_id' => $template->id,
+        'code' => 'LIMPEZA-DEFAULTS-1M',
+        'num_modules' => 1,
+        'is_active' => true,
+    ]);
+
+    $payload = [
+        'module_number' => 1,
+        'shelf_order' => 1,
+        'category_id' => null,
+        'min_facings' => 3,
+        'priority' => 2,
+        'price_order' => 'desc',
+        'size_order' => 'asc',
+        'brand_exposure' => 'vertical',
+        'flavor_exposure' => 'mixed',
+        'space_fallback' => 'reduce_facings',
+        'use_target_stock' => true,
+    ];
+
+    $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-slot-defaults.'.config('app.landlord_domain')])
+        ->post(
+            route('tenant.planogram-templates.slots.store', [
+                'subdomain' => 'tpl-slot-defaults',
+                'planogramTemplate' => $template->id,
+                'planogramSubtemplate' => $subtemplate->id,
+            ], false),
+            $payload,
+        )
+        ->assertRedirect(route('tenant.planogram-templates.slots.index', [
+            'subdomain' => 'tpl-slot-defaults',
+            'planogramTemplate' => $template->id,
+        ], false));
+
+    $subtemplate->refresh();
+
+    expect($subtemplate->slot_defaults)->toMatchArray([
+        'min_facings' => 3,
+        'priority' => 2,
+        'price_order' => 'desc',
+        'size_order' => 'asc',
+        'brand_exposure' => 'vertical',
+        'flavor_exposure' => 'mixed',
+        'space_fallback' => 'reduce_facings',
+        'use_target_stock' => true,
+    ]);
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-slot-defaults.'.config('app.landlord_domain')])
+        ->get(route('tenant.planogram-templates.slots.index', [
+            'subdomain' => 'tpl-slot-defaults',
+            'planogramTemplate' => $template->id,
+        ], false));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/planogram-templates/Slots')
+            ->where('subtemplates.0.slot_defaults.min_facings', 3)
+            ->where('subtemplates.0.slot_defaults.priority', 2)
+            ->where('subtemplates.0.slot_defaults.price_order', 'desc')
+            ->where('subtemplates.0.slot_defaults.space_fallback', 'reduce_facings')
+            ->where('subtemplates.0.slot_defaults.use_target_stock', true));
+});
+
 test('reimport do mesmo Excel faz upsert — não apaga slots existentes', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);

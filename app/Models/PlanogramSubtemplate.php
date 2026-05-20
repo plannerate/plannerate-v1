@@ -22,6 +22,7 @@ class PlanogramSubtemplate extends Model
         'code',
         'num_modules',
         'description',
+        'slot_defaults',
         'is_active',
     ];
 
@@ -29,6 +30,7 @@ class PlanogramSubtemplate extends Model
     {
         return [
             'num_modules' => 'integer',
+            'slot_defaults' => 'array',
             'is_active' => 'boolean',
         ];
     }

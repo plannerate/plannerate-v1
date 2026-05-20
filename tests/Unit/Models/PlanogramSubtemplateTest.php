@@ -17,3 +17,17 @@ test('cloneWithSlots lança InvalidArgumentException quando targetModules menor 
     expect(fn () => $sub->cloneWithSlots(2))
         ->toThrow(InvalidArgumentException::class);
 });
+
+test('slot_defaults é convertido para array pelo cast do model', function (): void {
+    $sub = new PlanogramSubtemplate;
+    $sub->slot_defaults = [
+        'min_facings' => 2,
+        'priority' => 4,
+        'price_order' => 'desc',
+    ];
+
+    expect($sub->slot_defaults)->toBeArray()
+        ->and($sub->slot_defaults['min_facings'])->toBe(2)
+        ->and($sub->slot_defaults['priority'])->toBe(4)
+        ->and($sub->slot_defaults['price_order'])->toBe('desc');
+});

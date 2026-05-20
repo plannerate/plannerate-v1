@@ -143,6 +143,10 @@ const currentSubtemplate = computed(
         ) ?? null,
 );
 
+const currentSlotDefaults = computed(
+    () => currentSubtemplate.value?.slot_defaults ?? null,
+);
+
 const subtemplateExists = (n: number): boolean =>
     props.subtemplates.some((s) => s.num_modules === n);
 
@@ -601,6 +605,7 @@ const breadcrumbs = [
         :module-number="editingModule"
         :shelf-order="editingShelf"
         :template-slot="editingSlot"
+        :slot-defaults="currentSlotDefaults"
         @save="saveSlot"
     />
 

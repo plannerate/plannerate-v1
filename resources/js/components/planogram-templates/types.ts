@@ -23,10 +23,23 @@ export type PlanogramTemplateSlot = {
     ordering?: number;
 };
 
+export type PlanogramSlotDefaults = Pick<
+    PlanogramTemplateSlot,
+    | 'min_facings'
+    | 'priority'
+    | 'price_order'
+    | 'size_order'
+    | 'brand_exposure'
+    | 'flavor_exposure'
+    | 'space_fallback'
+    | 'use_target_stock'
+>;
+
 export type PlanogramSubtemplate = {
     id: string;
     code: string;
     num_modules: number;
+    slot_defaults?: PlanogramSlotDefaults | null;
     slots: PlanogramTemplateSlot[];
 };
 

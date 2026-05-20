@@ -71,12 +71,21 @@ final class TemplateSlotService
             ...$extra,
             'ordering' => $nextOrdering,
         ]);
+
+        $this->updateSubtemplateSlotDefaults($subtemplate, $normalized);
     }
 
     /** @param array<string, mixed> $validated */
     public function updateSlot(Model $slot, array $validated): void
     {
-        $slot->update($this->normalizeSlotPayload($validated));
+        $normalized = $this->normalizeSlotPayload($validated);
+
+        $slot->update($normalized);
+
+        $subtemplate = $slot->subtemplate;
+        if ($subtemplate !== null) {
+            $this->updateSubtemplateSlotDefaults($subtemplate, $normalized);
+        }
     }
 
     /**
@@ -94,6 +103,25 @@ final class TemplateSlotService
             : '';
 
         return $payload;
+    }
+
+    /**
+     * @param  array<string, mixed>  $slotPayload
+     */
+    private function updateSubtemplateSlotDefaults(Model $subtemplate, array $slotPayload): void
+    {
+        $subtemplate->update([
+            'slot_defaults' => [
+                'min_facings' => (int) ($slotPayload['min_facings'] ?? 1),
+                'priority' => (int) ($slotPayload['priority'] ?? 1),
+                'price_order' => (string) ($slotPayload['price_order'] ?? 'none'),
+                'size_order' => (string) ($slotPayload['size_order'] ?? 'none'),
+                'brand_exposure' => (string) ($slotPayload['brand_exposure'] ?? 'horizontal'),
+                'flavor_exposure' => (string) ($slotPayload['flavor_exposure'] ?? 'horizontal'),
+                'space_fallback' => (string) ($slotPayload['space_fallback'] ?? 'reduce_c'),
+                'use_target_stock' => (bool) ($slotPayload['use_target_stock'] ?? false),
+            ],
+        ]);
     }
 
     public function destroySlot(Model $slot): void
@@ -151,6 +179,7 @@ final class TemplateSlotService
                 'id' => $sub->id,
                 'code' => $sub->code,
                 'num_modules' => $sub->num_modules,
+                'slot_defaults' => $sub->slot_defaults,
                 'slots' => $sub->slots->map(function (Model $slot): array {
                     $category = $slot->relationLoaded('category') ? $slot->getRelation('category') : null;
 
