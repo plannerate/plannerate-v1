@@ -158,6 +158,25 @@ test('findCandidates retorna vazio quando não há produtos', function (): void 
     expect($result)->toBeEmpty();
 });
 
+test('findCandidates exclui produto já posicionado em slot anterior da mesma categoria', function (): void {
+    $catId = (string) Str::ulid();
+    $engine = makeEngine([$catId => [$catId]]);
+
+    $p1 = makeProduct($catId);
+    $p2 = makeProduct($catId);
+    $slot = makeSlot($catId);
+
+    // Simula p1 já posicionado por um slot anterior
+    $ref = new ReflectionProperty($engine, 'globalPlacedProductIds');
+    $ref->setAccessible(true);
+    $ref->setValue($engine, [$p1->id => true]);
+
+    $result = callFindCandidates($engine, $slot, makeSettings(collect([$p1, $p2])));
+
+    expect($result)->toHaveCount(1)
+        ->and($result->first()->id)->toBe($p2->id);
+});
+
 test('cache de descendentes é reutilizado: getDescendantIds chamado uma vez por category_id único', function (): void {
     $catId = (string) Str::ulid();
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BrandExposure;
+use App\Enums\FacingExpansion;
 use App\Enums\FlavorExposure;
 use App\Enums\PriceOrder;
 use App\Enums\SizeOrder;
@@ -34,6 +35,8 @@ class PlanogramTemplateSlot extends Model
         'flavor_exposure',
         'space_fallback',
         'use_target_stock',
+        'facing_expansion',
+        'max_facings',
         'ordering',
     ];
 
@@ -46,6 +49,8 @@ class PlanogramTemplateSlot extends Model
             'priority' => 'integer',
             'ordering' => 'integer',
             'use_target_stock' => 'boolean',
+            'max_facings' => 'integer',
+            'facing_expansion' => FacingExpansion::class,
             'price_order' => PriceOrder::class,
             'size_order' => SizeOrder::class,
             'brand_exposure' => BrandExposure::class,

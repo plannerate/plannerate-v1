@@ -21,6 +21,7 @@ type SlotDraft = {
     shelf_order: number;
     category_id: string | null;
     min_facings: number;
+    max_facings: number;
     priority: number;
     price_order: PlanogramTemplateSlot['price_order'];
     size_order: PlanogramTemplateSlot['size_order'];
@@ -28,6 +29,7 @@ type SlotDraft = {
     flavor_exposure: PlanogramTemplateSlot['flavor_exposure'];
     space_fallback: PlanogramTemplateSlot['space_fallback'];
     use_target_stock: boolean;
+    facing_expansion: PlanogramTemplateSlot['facing_expansion'];
 };
 
 const props = defineProps<{
@@ -48,6 +50,7 @@ const draft = reactive<SlotDraft>({
     shelf_order: props.shelfOrder,
     category_id: null,
     min_facings: 1,
+    max_facings: 5,
     priority: 1,
     price_order: 'none',
     size_order: 'none',
@@ -55,6 +58,7 @@ const draft = reactive<SlotDraft>({
     flavor_exposure: 'horizontal',
     space_fallback: 'reduce_c',
     use_target_stock: false,
+    facing_expansion: 'none',
 });
 
 watch(
@@ -74,6 +78,7 @@ watch(
         draft.shelf_order = shelf;
         draft.category_id = slot?.category_id ?? props.slotDefaults?.category_id ?? null;
         draft.min_facings = slot?.min_facings ?? props.slotDefaults?.min_facings ?? 1;
+        draft.max_facings = slot?.max_facings ?? props.slotDefaults?.max_facings ?? 5;
         draft.priority = slot?.priority ?? props.slotDefaults?.priority ?? 1;
         draft.price_order = slot?.price_order ?? props.slotDefaults?.price_order ?? 'none';
         draft.size_order = slot?.size_order ?? props.slotDefaults?.size_order ?? 'none';
@@ -81,6 +86,7 @@ watch(
         draft.flavor_exposure = slot?.flavor_exposure ?? props.slotDefaults?.flavor_exposure ?? 'horizontal';
         draft.space_fallback = slot?.space_fallback ?? props.slotDefaults?.space_fallback ?? 'reduce_c';
         draft.use_target_stock = slot?.use_target_stock ?? props.slotDefaults?.use_target_stock ?? false;
+        draft.facing_expansion = slot?.facing_expansion ?? props.slotDefaults?.facing_expansion ?? 'none';
     },
     { immediate: true },
 );
@@ -92,6 +98,14 @@ const minFacingsModel = computed({
     set: (value: string | number) => {
         const parsed = Number(value);
         draft.min_facings = Number.isFinite(parsed) ? parsed : 1;
+    },
+});
+
+const maxFacingsModel = computed({
+    get: () => draft.max_facings,
+    set: (value: string | number) => {
+        const parsed = Number(value);
+        draft.max_facings = Number.isFinite(parsed) ? parsed : 5;
     },
 });
 
@@ -144,8 +158,8 @@ function saveSlot(): void {
                     />
                 </div>
 
-                <!-- Min facings / Prioridade -->
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <!-- Min facings / Max facings / Prioridade -->
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <FormTextField
                         id="slot-min-facings"
                         v-model="minFacingsModel"
@@ -156,6 +170,16 @@ function saveSlot(): void {
                                 'planogram-templates.slot_editor.min_facings_label',
                             )
                         "
+                        :min="1"
+                        :max="20"
+                    />
+                    <FormTextField
+                        id="slot-max-facings"
+                        v-model="maxFacingsModel"
+                        name="max_facings"
+                        type="number"
+                        label="Frentes máximas"
+                        hint="Teto de expansão por SKU"
                         :min="1"
                         :max="20"
                     />
@@ -310,6 +334,20 @@ function saveSlot(): void {
                         </option>
                     </FormSelectField>
                 </div>
+
+                <!-- Expansão de frentes -->
+                <FormSelectField
+                    id="slot-facing-expansion"
+                    v-model="draft.facing_expansion"
+                    name="facing_expansion"
+                    label="Expansão de frentes"
+                    hint="Como usar espaço livre acima do mínimo"
+                >
+                    <option value="none">Não expandir</option>
+                    <option value="score">Por score ABC / vendas</option>
+                    <option value="current_stock">Por estoque atual</option>
+                    <option value="equal">Distribuição igual</option>
+                </FormSelectField>
 
                 <!-- Se faltar espaço / Estoque alvo -->
                 <div class="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">

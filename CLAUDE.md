@@ -221,3 +221,65 @@ Vue components must have a single root element.
 - IMPORTANT: Activate `inertia-vue-development` when working with Inertia Vue client-side patterns.
 
 </laravel-boost-guidelines>
+
+# Plannerate Project Rules
+
+## Session Startup (REQUIRED)
+
+At the start of every session, read these two files before doing any work:
+
+1. `storage/app/private/prompts/auto-planogram/Resumo sessao plannerate.md`
+2. `storage/app/private/prompts/auto-planogram/25 changelog grouping para category id.md`
+
+The full session prerequisite guide is at:
+`storage/app/private/prompts/auto-planogram/00 prerequisitos.md`
+
+## Environment: Docker Compose (REQUIRED)
+
+This project runs inside Docker. Never run commands directly — always prefix with `docker compose exec`.
+
+### PHP / Artisan
+
+```bash
+docker compose exec php php artisan <command>
+docker compose exec php vendor/bin/pint --dirty --format agent
+```
+
+### Wayfinder (requires root for writing to resources/js/actions/)
+
+```bash
+# Generate TypeScript actions only
+docker compose exec -u root php php artisan wayfinder:generate --with-form
+
+# Generate + rebuild frontend
+docker compose exec -u root php php artisan wayfinder:generate --with-form && VITE_ENABLE_WAYFINDER=false npm run build
+```
+
+**Never** run `php artisan wayfinder:generate` without the `docker compose exec -u root php` prefix.
+
+### Tests
+
+```bash
+docker compose exec php php artisan test --compact
+docker compose exec php php artisan test --compact --filter=TestName
+```
+
+### Migrations (multi-tenant Spatie)
+
+```bash
+# Roda em TODOS os tenants (obrigatório para tabelas de tenant)
+docker compose exec php php artisan tenants:artisan "migrate --database=tenant"
+
+# Migrations do schema central (tabelas não-tenant)
+docker compose exec php php artisan migrate
+```
+
+> Migrations com SQL raw (`DB::statement`) devem checar o driver:
+> `if (DB::connection($this->connection)->getDriverName() !== 'pgsql') return;`
+> para não quebrar os testes que usam SQLite em memória.
+
+## Key Architecture Conventions
+
+- Slot → product binding: `category_id` FK (NOT `grouping_normalized` — field removed)
+- `shelf_order 1` = floor; physical index: `num_shelves - shelf_order`
+- Test tenant: `albert` (tenant_id: `01jym02qk8n1cwdq2hd5drpgsz`)

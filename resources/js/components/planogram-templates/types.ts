@@ -3,6 +3,7 @@ export type SlotSizeOrder = 'asc' | 'desc' | 'none';
 export type SlotBrandExposure = 'vertical' | 'horizontal' | 'mixed';
 export type SlotFlavorExposure = 'vertical' | 'horizontal' | 'mixed';
 export type SlotSpaceFallback = 'reduce_c' | 'reduce_facings' | 'skip';
+export type SlotFacingExpansion = 'none' | 'score' | 'current_stock' | 'equal';
 
 export type PlanogramTemplateSlot = {
     id?: string;
@@ -13,6 +14,7 @@ export type PlanogramTemplateSlot = {
     category_name?: string | null;
     category_path?: string | null;
     min_facings: number;
+    max_facings: number;
     priority: number;
     price_order: SlotPriceOrder;
     size_order: SlotSizeOrder;
@@ -20,6 +22,7 @@ export type PlanogramTemplateSlot = {
     flavor_exposure: SlotFlavorExposure;
     space_fallback: SlotSpaceFallback;
     use_target_stock: boolean;
+    facing_expansion: SlotFacingExpansion;
     ordering?: number;
 };
 
@@ -27,6 +30,7 @@ export type PlanogramSlotDefaults = Pick<
     PlanogramTemplateSlot,
     | 'category_id'
     | 'min_facings'
+    | 'max_facings'
     | 'priority'
     | 'price_order'
     | 'size_order'
@@ -34,6 +38,7 @@ export type PlanogramSlotDefaults = Pick<
     | 'flavor_exposure'
     | 'space_fallback'
     | 'use_target_stock'
+    | 'facing_expansion'
 >;
 
 export type PlanogramSubtemplate = {

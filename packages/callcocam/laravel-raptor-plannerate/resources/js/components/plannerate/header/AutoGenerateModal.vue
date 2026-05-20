@@ -124,6 +124,8 @@ watch(hasTemplates, (templatesAvailable) => {
 watch(mode, (newMode) => {
     if (newMode === 'automatic') {
         form.template_id = null;
+    } else {
+        form.category_id = null;
     }
 });
 
@@ -267,14 +269,6 @@ function selectTemplate(templateId: string): void {
                         <p class="text-xs text-amber-700 dark:text-amber-300">
                             O subtemplate com o número de módulos mais próximo da gôndola será usado automaticamente.
                         </p>
-                    </div>
-
-                    <div class="space-y-4 rounded-lg border border-purple-200 p-4">
-                        <CategorySelect
-                            v-model="form.category_id"
-                            :disabled="false"
-                            :required="false"
-                        />
                     </div>
 
                     <div class="border-t" />

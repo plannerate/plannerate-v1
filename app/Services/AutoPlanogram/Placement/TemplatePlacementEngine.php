@@ -3,6 +3,7 @@
 namespace App\Services\AutoPlanogram\Placement;
 
 use App\Enums\BrandExposure;
+use App\Enums\FacingExpansion;
 use App\Enums\PlacementFailureReason;
 use App\Enums\PriceOrder;
 use App\Enums\SizeOrder;
@@ -27,6 +28,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /** @var array<string, list<string>> Cache de descendentes por category_id dentro de uma geração */
     private array $descendantsCache = [];
 
+    /** @var array<string, true> Produtos já posicionados na geração atual — evita duplicatas entre slots da mesma categoria */
+    private array $globalPlacedProductIds = [];
+
     public function __construct(
         private readonly ProductWidthResolver $widthResolver,
         private readonly GreedyShelfPlacer $greedyPlacer,
@@ -49,6 +53,8 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         PlacementSettings $settings,
         array $reservedWidthPerShelf = [],
     ): PlacementResult {
+        $this->globalPlacedProductIds = [];
+
         $subtemplate = $this->resolveSubtemplate($settings);
 
         if ($subtemplate === null) {
@@ -102,8 +108,14 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             }
 
             $ordered = $this->orderCandidates($candidates, $slot);
-            $available = $this->getShelfAvailableWidth($section, $shelf);
+            $available = $this->getShelfAvailableWidth($section);
             $slotResult = $this->distributeInShelf($ordered, $section, $shelf, $slot, $available);
+
+            foreach ($slotResult['placed'] as $seg) {
+                foreach ($seg->layers as $layer) {
+                    $this->globalPlacedProductIds[$layer->productId] = true;
+                }
+            }
 
             $placed = $placed->merge($slotResult['placed']);
             $rejected = $rejected->merge($slotResult['rejected']);
@@ -122,9 +134,10 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 'largura_livre' => $livre,
                 'percentual_uso' => $available > 0 ? (int) round(($occupied / $available) * 100) : 0,
                 'produtos_posicionados' => $slotResult['placed']->count(),
-                'produtos_rejeitados' => $slotResult['rejected']->count(),
+                'produtos_rejeitados' => $slotResult['rejected']->where('reason', PlacementFailureReason::NoHorizontalSpace)->count(),
+                'rejeitados_sem_dimensao' => $slotResult['rejected']->where('reason', PlacementFailureReason::MissingDimensions)->count(),
                 'produtos_rejeitados_nomes' => $slotResult['rejected']
-                    ->filter(fn ($r) => $r['product'] !== null)
+                    ->filter(fn ($r) => $r['product'] !== null && $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
                     ->map(fn ($r) => $r['product']->name)
                     ->values()
                     ->toArray(),
@@ -146,6 +159,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             'slots_sem_prateleira' => $rejected->whereNull('product')->count(),
             'segmentos_criados' => $placed->count(),
             'rejeitados_sem_espaco' => $rejected->whereNotNull('product')->where('reason', PlacementFailureReason::NoHorizontalSpace)->count(),
+            'rejeitados_sem_dimensao' => $rejected->whereNotNull('product')->where('reason', PlacementFailureReason::MissingDimensions)->count(),
         ]);
 
         Log::info('TemplatePlacementEngine: análise de espaço por slot', [
@@ -155,6 +169,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 'uso_percentual' => $s['percentual_uso'].'%',
                 'largura_livre' => $s['largura_livre'].'cm',
                 'rejeitados' => $s['produtos_rejeitados'],
+                'sem_dimensao' => $s['rejeitados_sem_dimensao'],
             ])->toArray(),
         ]);
 
@@ -190,7 +205,6 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         return $shelves[$index] ?? null;
     }
 
-    /** @param Collection<int, mixed> $settings->products */
     private function findCandidates(PlanogramTemplateSlot $slot, PlacementSettings $settings): Collection
     {
         if (! $slot->category_id) {
@@ -208,6 +222,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         return $settings->products->filter(
             fn ($product) => in_array($product->category_id, $categoryIds, true)
                 && $product->status !== 'draft'
+                && ! isset($this->globalPlacedProductIds[$product->id])
         )->values();
     }
 
@@ -224,7 +239,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
         if ($slot->size_order !== SizeOrder::None) {
             $sorted = $sorted->sortBy(
-                fn ($p) => $this->parseSize((string) ($p->package_content ?? '0')),
+                fn ($p) => $this->resolveProductSize($p),
                 SORT_NUMERIC,
                 $slot->size_order === SizeOrder::Desc,
             );
@@ -255,33 +270,37 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         PlanogramTemplateSlot $slot,
         float $available,
     ): array {
-        $placed = collect();
+        /** @var array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}> $placedItems */
+        $placedItems = [];
         $rejected = collect();
         $occupied = 0.0;
         $ordering = 0;
 
+        // Phase 1: place with min_facings
         foreach ($products as $product) {
+            $rawWidth = isset($product->width) ? (float) $product->width : null;
+
+            if ($rawWidth === null || $rawWidth <= 0) {
+                $rejected->push([
+                    'product' => $product,
+                    'reason' => PlacementFailureReason::MissingDimensions,
+                    'slot_id' => $slot->id,
+                ]);
+
+                continue;
+            }
+
             $facing = max($slot->min_facings, 1);
-            $productWidth = $this->widthResolver->resolve($product);
-            $width = (int) round($productWidth * $facing);
+            $singleWidth = $this->widthResolver->resolve($product);
+            $width = (int) round($singleWidth * $facing);
 
             if ($occupied + $width <= $available) {
-                $placed->push(new PlacedSegment(
-                    sectionId: $section->getKey(),
-                    shelfId: $shelf->getKey(),
-                    ordering: $ordering++,
-                    position: (int) round($occupied),
-                    width: $width,
-                    distributedWidth: $width,
-                    layers: collect([
-                        new PlacedLayer(
-                            productId: $product->id,
-                            ean: (string) ($product->ean ?? ''),
-                            quantity: $facing,
-                            height: 1,
-                        ),
-                    ]),
-                ));
+                $placedItems[] = [
+                    'product' => $product,
+                    'facings' => $facing,
+                    'singleWidth' => $singleWidth,
+                    'ordering' => $ordering++,
+                ];
                 $occupied += $width;
             } else {
                 $rejected->push([
@@ -292,13 +311,111 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             }
         }
 
-        if ($rejected->isNotEmpty()) {
-            $fallback = $this->applyFallback($rejected, $available - $occupied, $slot, $section, $shelf, $ordering);
-            $placed = $placed->merge($fallback['placed']);
-            $rejected = $fallback['remaining'];
+        // Phase 2: expand facings with leftover space
+        if ($slot->facing_expansion !== FacingExpansion::None && $placedItems !== []) {
+            [$placedItems, $occupied] = $this->expandFacings($placedItems, $slot, $available, $occupied);
         }
 
-        return ['placed' => $placed, 'rejected' => $rejected];
+        // Build readonly PlacedSegment DTOs
+        $placed = collect();
+        $x = 0.0;
+
+        foreach ($placedItems as $item) {
+            $product = $item['product'];
+            $facings = $item['facings'];
+            $width = (int) round($item['singleWidth'] * $facings);
+
+            $placed->push(new PlacedSegment(
+                sectionId: $section->getKey(),
+                shelfId: $shelf->getKey(),
+                ordering: $item['ordering'],
+                position: (int) round($x),
+                width: $width,
+                distributedWidth: $width,
+                layers: collect([
+                    new PlacedLayer(
+                        productId: $product->id,
+                        ean: (string) ($product->ean ?? ''),
+                        quantity: $facings,
+                        height: 1,
+                    ),
+                ]),
+            ));
+            $x += $width;
+        }
+
+        // Fallback only for NoHorizontalSpace — MissingDimensions must not be retried
+        $noSpaceRejected = $rejected->where('reason', PlacementFailureReason::NoHorizontalSpace)->values();
+
+        if ($noSpaceRejected->isNotEmpty()) {
+            $fallback = $this->applyFallback($noSpaceRejected, $available - $occupied, $slot, $section, $shelf, $ordering);
+            $placed = $placed->merge($fallback['placed']);
+            $noSpaceRejected = $fallback['remaining'];
+        }
+
+        $missingDimRejected = $rejected->where('reason', PlacementFailureReason::MissingDimensions)->values();
+
+        return ['placed' => $placed, 'rejected' => $noSpaceRejected->merge($missingDimRejected)];
+    }
+
+    /**
+     * Phase 2: distribute leftover shelf space as extra facings.
+     *
+     * @param  array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}>  $placedItems
+     * @return array{0: array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}>, 1: float}
+     */
+    private function expandFacings(array $placedItems, PlanogramTemplateSlot $slot, float $available, float $occupied): array
+    {
+        $maxFacings = max($slot->max_facings, 1);
+        $remainingWidth = $available - $occupied;
+
+        if ($remainingWidth <= 0 || $maxFacings <= 1) {
+            return [$placedItems, $occupied];
+        }
+
+        $expansionOrder = $this->expansionOrder($placedItems, $slot->facing_expansion);
+
+        // Round-robin: give +1 facing per pass until space runs out or all hit max_facings
+        $changed = true;
+
+        while ($changed && $remainingWidth > 0) {
+            $changed = false;
+
+            foreach ($expansionOrder as $idx) {
+                if ($placedItems[$idx]['facings'] >= $maxFacings) {
+                    continue;
+                }
+
+                $singleWidth = $placedItems[$idx]['singleWidth'];
+
+                if ($remainingWidth >= $singleWidth) {
+                    $placedItems[$idx]['facings']++;
+                    $remainingWidth -= $singleWidth;
+                    $occupied += $singleWidth;
+                    $changed = true;
+                }
+            }
+        }
+
+        return [$placedItems, $occupied];
+    }
+
+    /**
+     * Returns indices of $placedItems ordered by expansion priority.
+     *
+     * @param  array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}>  $placedItems
+     * @return list<int>
+     */
+    private function expansionOrder(array $placedItems, FacingExpansion $mode): array
+    {
+        $indices = array_keys($placedItems);
+
+        if ($mode === FacingExpansion::CurrentStock) {
+            usort($indices, fn (int $a, int $b): int => (float) ($placedItems[$b]['product']->current_stock ?? 0) <=> (float) ($placedItems[$a]['product']->current_stock ?? 0));
+        }
+
+        // Score and Equal use existing order (products are already sorted by score)
+        return $indices;
     }
 
     /**
@@ -355,12 +472,27 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         return ['placed' => $placed, 'remaining' => $remaining];
     }
 
-    private function getShelfAvailableWidth(Section $section, Shelf $shelf): float
+    private function getShelfAvailableWidth(Section $section): float
     {
         $sectionWidth = (float) ($section->width ?? 100.0);
         $cremalheiraWidth = (float) ($section->cremalheira_width ?? 0.0);
 
         return max(0.0, $sectionWidth - $cremalheiraWidth);
+    }
+
+    /**
+     * Resolve o tamanho de um produto para fins de ordenação.
+     * Tenta packaging_content ("500ml", "1kg") e cai em weight (decimal) como fallback.
+     */
+    private function resolveProductSize(mixed $product): float
+    {
+        $content = trim((string) ($product->packaging_content ?? ''));
+
+        if ($content !== '' && $content !== '0') {
+            return $this->parseSize($content);
+        }
+
+        return (float) ($product->weight ?? 0.0);
     }
 
     private function parseSize(string $content): float

@@ -18,6 +18,7 @@ import type { PlanogramSlotDefaults, PlanogramTemplateSlot } from './types';
 type ModuleDefaultsDraft = {
     category_id: string | null;
     min_facings: number;
+    max_facings: number;
     priority: number;
     price_order: PlanogramTemplateSlot['price_order'];
     size_order: PlanogramTemplateSlot['size_order'];
@@ -25,6 +26,7 @@ type ModuleDefaultsDraft = {
     flavor_exposure: PlanogramTemplateSlot['flavor_exposure'];
     space_fallback: PlanogramTemplateSlot['space_fallback'];
     use_target_stock: boolean;
+    facing_expansion: PlanogramTemplateSlot['facing_expansion'];
 };
 
 const props = defineProps<{
@@ -41,6 +43,7 @@ const emit = defineEmits<{
 const draft = reactive<ModuleDefaultsDraft>({
     category_id: null,
     min_facings: 1,
+    max_facings: 5,
     priority: 1,
     price_order: 'none',
     size_order: 'none',
@@ -48,6 +51,7 @@ const draft = reactive<ModuleDefaultsDraft>({
     flavor_exposure: 'horizontal',
     space_fallback: 'reduce_c',
     use_target_stock: false,
+    facing_expansion: 'none',
 });
 
 watch(
@@ -58,6 +62,7 @@ watch(
         }
 
         draft.min_facings = defaults?.min_facings ?? 1;
+        draft.max_facings = defaults?.max_facings ?? 5;
         draft.category_id = defaults?.category_id ?? null;
         draft.priority = defaults?.priority ?? 1;
         draft.price_order = defaults?.price_order ?? 'none';
@@ -66,6 +71,7 @@ watch(
         draft.flavor_exposure = defaults?.flavor_exposure ?? 'horizontal';
         draft.space_fallback = defaults?.space_fallback ?? 'reduce_c';
         draft.use_target_stock = defaults?.use_target_stock ?? false;
+        draft.facing_expansion = defaults?.facing_expansion ?? 'none';
     },
     { immediate: true },
 );
@@ -77,6 +83,14 @@ const minFacingsModel = computed({
     set: (value: string | number) => {
         const parsed = Number(value);
         draft.min_facings = Number.isFinite(parsed) ? parsed : 1;
+    },
+});
+
+const maxFacingsModel = computed({
+    get: () => draft.max_facings,
+    set: (value: string | number) => {
+        const parsed = Number(value);
+        draft.max_facings = Number.isFinite(parsed) ? parsed : 5;
     },
 });
 
@@ -116,13 +130,23 @@ function saveDefaults(): void {
                     />
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <FormTextField
                         id="module-default-min-facings"
                         v-model="minFacingsModel"
                         name="min_facings"
                         type="number"
                         :label="t('planogram-templates.slot_editor.min_facings_label')"
+                        :min="1"
+                        :max="20"
+                    />
+                    <FormTextField
+                        id="module-default-max-facings"
+                        v-model="maxFacingsModel"
+                        name="max_facings"
+                        type="number"
+                        label="Frentes máximas"
+                        hint="Teto de expansão por SKU"
                         :min="1"
                         :max="20"
                     />
@@ -183,6 +207,19 @@ function saveDefaults(): void {
                         <option value="mixed">{{ t('planogram-templates.slot_editor.exposure_options.mixed') }}</option>
                     </FormSelectField>
                 </div>
+
+                <FormSelectField
+                    id="module-default-facing-expansion"
+                    v-model="draft.facing_expansion"
+                    name="facing_expansion"
+                    label="Expansão de frentes"
+                    hint="Como usar espaço livre acima do mínimo"
+                >
+                    <option value="none">Não expandir</option>
+                    <option value="score">Por score ABC / vendas</option>
+                    <option value="current_stock">Por estoque atual</option>
+                    <option value="equal">Distribuição igual</option>
+                </FormSelectField>
 
                 <div class="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
                     <FormSelectField
