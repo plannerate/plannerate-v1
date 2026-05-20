@@ -7,7 +7,8 @@ namespace App\Services\AutoPlanogram\Template;
  *
  * @phpstan-type SlotAnalysis array{
  *   slot_id: string,
- *   grouping: string,
+ *   category_id: string,
+ *   category_name: string,
  *   module_number: int,
  *   shelf_order: int,
  *   shelf_id: string,
@@ -56,12 +57,13 @@ final class SlotSuggestionGenerator
                 'tipo' => 'espaco_disponivel',
                 'prioridade' => $prioridade,
                 'slot_id' => $slot['slot_id'],
-                'mensagem' => "Prat #{$slot['shelf_order']} ({$slot['grouping']}) tem {$slot['largura_livre']}cm livres ({$slot['percentual_uso']}% usado).",
-                'acao' => "Considere adicionar mais produtos ao grouping \"{$slot['grouping']}\" no template.",
+                'mensagem' => "Prat #{$slot['shelf_order']} ({$slot['category_name']}) tem {$slot['largura_livre']}cm livres ({$slot['percentual_uso']}% usado).",
+                'acao' => "Considere adicionar mais produtos à categoria \"{$slot['category_name']}\" no template.",
                 'dados' => [
                     'largura_livre' => $slot['largura_livre'],
                     'percentual_uso' => $slot['percentual_uso'],
-                    'grouping' => $slot['grouping'],
+                    'category_id' => $slot['category_id'],
+                    'category_name' => $slot['category_name'],
                     'shelf_order' => $slot['shelf_order'],
                     'module_number' => $slot['module_number'],
                 ],
@@ -70,7 +72,7 @@ final class SlotSuggestionGenerator
 
         if ($slotsComRejeitos->isNotEmpty()) {
             $totalRejeitados = $slotsComRejeitos->sum('produtos_rejeitados');
-            $groupingsAfetados = $slotsComRejeitos->pluck('grouping')->unique()->values()->toArray();
+            $groupingsAfetados = $slotsComRejeitos->pluck('category_name')->unique()->values()->toArray();
             $produtosFora = $slotsComRejeitos->flatMap(fn ($s) => $s['produtos_rejeitados_nomes'])->toArray();
 
             $suggestions[] = [

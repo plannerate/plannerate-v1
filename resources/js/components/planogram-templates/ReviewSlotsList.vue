@@ -24,7 +24,7 @@ const emit = defineEmits<{
                     : 'border-border hover:border-primary/50 hover:bg-muted/30'
                     " @click="slot.id ? emit('select', slot.id) : null">
                 Prateleira
-                {{ slot.shelf_order }} — {{ slot.grouping }}
+                {{ slot.shelf_order }} — {{ slot.category_name ?? slot.category_id }}
             </button>
             <p v-if="props.slots.length === 0" class="text-sm text-muted-foreground">
                 Nenhum slot criado para este módulo.

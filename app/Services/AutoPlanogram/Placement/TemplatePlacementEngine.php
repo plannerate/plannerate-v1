@@ -67,6 +67,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
         $slots = $subtemplate->slots()
             ->withoutGlobalScope(TenantScope::class)
+            ->with('category')
             ->orderBy('module_number')
             ->orderBy('shelf_order')
             ->orderBy('ordering')
@@ -112,6 +113,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             $slotAnalysis[] = [
                 'slot_id' => $slot->id,
                 'category_id' => $slot->category_id,
+                'category_name' => $slot->category?->name ?? $slot->category_id,
                 'module_number' => $slot->module_number,
                 'shelf_order' => $slot->shelf_order,
                 'shelf_id' => $shelf->getKey(),

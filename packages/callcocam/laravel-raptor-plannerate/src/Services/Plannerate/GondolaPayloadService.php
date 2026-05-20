@@ -116,9 +116,8 @@ class GondolaPayloadService
                                             'depth' => $segment->layer->product->depth,
                                             'weight' => $segment->layer->product->weight,
                                             'brand' => $segment->layer->product->brand,
-                                            'grouping' => $segment->layer->product->grouping,
-                                            'grouping_normalized' => $segment->layer->product->grouping_normalized,
                                             'status' => $segment->layer->product->status,
+                                            'category_id' => $segment->layer->product->category_id,
                                             'category' => $segment->layer->product->category?->name,
                                             'category_full_path' => $segment->layer->product->relationLoaded('category') && $segment->layer->product->category
                                                 ? $segment->layer->product->category->name

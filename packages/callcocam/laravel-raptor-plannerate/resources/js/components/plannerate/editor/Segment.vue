@@ -141,7 +141,7 @@ const isEanMatch = computed(() => {
 
 const isGroupingMatch = computed(() => {
     const targetGrouping = (props.highlightGroupingNormalized ?? '').trim();
-    const productGrouping = String(layer.value?.product?.grouping_normalized ?? '').trim();
+    const productGrouping = String(layer.value?.product?.category_id ?? '').trim();
 
     if (!targetGrouping || !productGrouping) {
         return false;

@@ -31,7 +31,8 @@ final class RejectedProductsWriter
                 $product = $rejected['product'];
                 $slotId = $rejected['slot_id'] ?? null;
                 $slotData = $slotId ? ($slotAnalysisIndex[$slotId] ?? []) : [];
-                $grouping = $slotData['grouping'] ?? null;
+                $categoryName = $slotData['category_name'] ?? null;
+                $categoryId = $slotData['category_id'] ?? null;
 
                 return [
                     'id' => (string) Str::ulid(),
@@ -46,8 +47,8 @@ final class RejectedProductsWriter
                     'product_height' => $product->height ?? null,
                     'rejection_reason' => $rejected['reason']->value,
                     'slot_id' => $slotId,
-                    'grouping' => $grouping,
-                    'grouping_normalized' => $grouping ? Str::slug($grouping) : null,
+                    'grouping' => $categoryName,
+                    'grouping_normalized' => $categoryId,
                     'module_number' => $slotData['module_number'] ?? null,
                     'shelf_order' => $slotData['shelf_order'] ?? null,
                     'created_at' => $now,
