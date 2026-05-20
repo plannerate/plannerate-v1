@@ -179,22 +179,21 @@ const pageMeta = useCrudPageMeta({
 <template>
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <template #header-actions>
-            <button
-                type="button"
-                :disabled="syncingPage || loading || rows.length === 0"
+            <button type="button" :disabled="syncingPage || loading || rows.length === 0"
                 class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                @click="syncCurrentPageFromReference"
-            >
+                @click="syncCurrentPageFromReference">
                 <RefreshCcw class="size-3.5 shrink-0" :class="{ 'animate-spin': syncingPage }" />
-                {{ syncingPage ? t('app.tenant.dimensions.actions.syncing') : t('app.tenant.dimensions.actions.sync_page_from_reference') }}
+                {{ syncingPage ? t('app.tenant.dimensions.actions.syncing') :
+                    t('app.tenant.dimensions.actions.sync_page_from_reference') }}
             </button>
         </template>
 
         <Head :title="pageMeta.headTitle" />
 
-        <ListPage ref="listPageRef" :meta="meta" :label="t('app.tenant.dimensions.product_label')" :action="indexPath" :clear-href="indexPath"
-            :search-value="props.filters.search" :search-placeholder="t('app.tenant.common.search')"
-            :filter-label="t('app.tenant.common.filter')" :clear-label="t('app.tenant.common.clear_filters')">
+        <ListPage ref="listPageRef" :meta="meta" :label="t('app.tenant.dimensions.product_label')" :action="indexPath"
+            :clear-href="indexPath" :search-value="props.filters.search"
+            :search-placeholder="t('app.tenant.common.search')" :filter-label="t('app.tenant.common.filter')"
+            :clear-label="t('app.tenant.common.clear_filters')">
             <template #filters>
                 <input type="hidden" name="category_id" :value="categoryId ?? ''" />
 
@@ -233,7 +232,8 @@ const pageMeta = useCrudPageMeta({
                     class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
                     <option value="">{{ t('app.tenant.common.all') }}</option>
                     <option value="draft">{{ t('app.tenant.products.dimensions_status_options.draft') }}</option>
-                    <option value="published">{{ t('app.tenant.products.dimensions_status_options.published') }}</option>
+                    <option value="published">{{ t('app.tenant.products.dimensions_status_options.published') }}
+                    </option>
                 </select>
             </template>
 
@@ -269,17 +269,20 @@ const pageMeta = useCrudPageMeta({
                             <td class="px-2 py-1">
                                 <input v-model="editingData.height" type="number" min="0" step="0.01"
                                     class="h-8 w-20 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                                    :placeholder="t('app.tenant.dimensions.placeholders.height_short')" @keydown="handleKeydown($event, row.id)" />
-                            </td>
-                            <td class="px-2 py-1">
-                                <input v-model="editingData.depth" type="number" min="0" step="0.01"
-                                    class="h-8 w-20 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                                    :placeholder="t('app.tenant.dimensions.placeholders.depth_short')" @keydown="handleKeydown($event, row.id)" />
+                                    :placeholder="t('app.tenant.dimensions.placeholders.height_short')"
+                                    @keydown="handleKeydown($event, row.id)" />
                             </td>
                             <td class="px-2 py-1">
                                 <input v-model="editingData.width" type="number" min="0" step="0.01"
                                     class="h-8 w-20 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                                    :placeholder="t('app.tenant.dimensions.placeholders.width_short')" @keydown="handleKeydown($event, row.id)" />
+                                    :placeholder="t('app.tenant.dimensions.placeholders.width_short')"
+                                    @keydown="handleKeydown($event, row.id)" />
+                            </td>
+                            <td class="px-2 py-1">
+                                <input v-model="editingData.depth" type="number" min="0" step="0.01"
+                                    class="h-8 w-20 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                                    :placeholder="t('app.tenant.dimensions.placeholders.depth_short')"
+                                    @keydown="handleKeydown($event, row.id)" />
                             </td>
                             <!-- <td class="px-2 py-1">
                                 <input v-model="editingData.weight" type="number" min="0" step="0.01"
@@ -289,13 +292,16 @@ const pageMeta = useCrudPageMeta({
                             <td class="px-2 py-1">
                                 <input v-model="editingData.unit"
                                     class="h-8 w-16 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                                    :placeholder="t('app.tenant.dimensions.placeholders.unit')" maxlength="20" @keydown="handleKeydown($event, row.id)" />
+                                    :placeholder="t('app.tenant.dimensions.placeholders.unit')" maxlength="20"
+                                    @keydown="handleKeydown($event, row.id)" />
                             </td>
                             <td class="px-2 py-1">
                                 <select v-model="editingData.dimension_status"
                                     class="h-8 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20">
-                                    <option value="draft">{{ t('app.tenant.products.dimensions_status_options.draft') }}</option>
-                                    <option value="published">{{ t('app.tenant.products.dimensions_status_options.published') }}</option>
+                                    <option value="draft">{{ t('app.tenant.products.dimensions_status_options.draft') }}
+                                    </option>
+                                    <option value="published">{{
+                                        t('app.tenant.products.dimensions_status_options.published') }}</option>
                                 </select>
                             </td>
                         </template>
@@ -329,19 +335,17 @@ const pageMeta = useCrudPageMeta({
                             </template>
                             <template v-else>
                                 <div class="flex items-center justify-center gap-1">
-                                    <button
-                                        type="button"
-                                        :disabled="syncingRowId === row.id || syncingPage"
+                                    <button type="button" :disabled="syncingRowId === row.id || syncingPage"
                                         class="flex size-7 items-center justify-center rounded border border-border bg-background transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                                         :title="t('app.tenant.dimensions.actions.sync_from_reference')"
-                                        @click="syncRowFromReference(row.id)"
-                                    >
+                                        @click="syncRowFromReference(row.id)">
                                         <Loader2 v-if="syncingRowId === row.id" class="size-3.5 animate-spin" />
                                         <RefreshCcw v-else class="size-3.5" />
                                     </button>
                                     <button type="button"
                                         class="flex size-7 items-center justify-center rounded border border-border bg-background transition hover:bg-muted"
-                                        :title="t('app.tenant.dimensions.actions.edit_dimensions')" @click="startEdit(row)">
+                                        :title="t('app.tenant.dimensions.actions.edit_dimensions')"
+                                        @click="startEdit(row)">
                                         <Pencil class="size-3.5" />
                                     </button>
                                 </div>
