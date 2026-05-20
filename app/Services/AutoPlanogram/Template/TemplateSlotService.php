@@ -64,9 +64,10 @@ final class TemplateSlotService
             ->delete();
 
         $nextOrdering = (int) ($subtemplate->slots()->max('ordering')) + 1;
+        $normalized = $this->normalizeSlotPayload($validated);
 
         $subtemplate->slots()->create([
-            ...$validated,
+            ...$normalized,
             ...$extra,
             'ordering' => $nextOrdering,
         ]);
@@ -75,7 +76,24 @@ final class TemplateSlotService
     /** @param array<string, mixed> $validated */
     public function updateSlot(Model $slot, array $validated): void
     {
-        $slot->update($validated);
+        $slot->update($this->normalizeSlotPayload($validated));
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function normalizeSlotPayload(array $payload): array
+    {
+        $payload['category'] = is_string($payload['category'] ?? null)
+            ? trim((string) $payload['category'])
+            : '';
+
+        $payload['subcategory'] = is_string($payload['subcategory'] ?? null)
+            ? trim((string) $payload['subcategory'])
+            : '';
+
+        return $payload;
     }
 
     public function destroySlot(Model $slot): void

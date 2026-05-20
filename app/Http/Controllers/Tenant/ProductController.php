@@ -147,7 +147,6 @@ class ProductController extends Controller
             })
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($categoryIds !== [], fn ($query) => $query->whereIn('category_id', $categoryIds))
-            ->when($grouping !== '', fn ($query) => $query->where('grouping', $grouping))
             ->when(
                 $sort !== null,
                 function ($query) use ($sort, $direction): void {
@@ -327,16 +326,7 @@ class ProductController extends Controller
      */
     private function groupingsForSelect(): array
     {
-        return Product::query()
-            ->select('grouping')
-            ->whereNotNull('grouping')
-            ->where('grouping', '!=', '')
-            ->distinct()
-            ->orderBy('grouping')
-            ->pluck('grouping')
-            ->filter(fn (mixed $g): bool => is_string($g) && trim($g) !== '')
-            ->values()
-            ->all();
+        return [];
     }
 
     /**

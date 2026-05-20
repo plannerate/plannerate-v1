@@ -61,17 +61,38 @@ class PlanogramSubtemplate extends Model
         }
 
         return DB::transaction(function () use ($targetModules): self {
-            $clone = $this->replicate();
-            $clone->num_modules = $targetModules;
-            $clone->code = $this->code."-{$targetModules}M";
-            $clone->description = "Baseado em {$this->code} ({$this->num_modules} módulos)";
-            $clone->save();
+            $clone = self::withTrashed()
+                ->where('template_id', $this->template_id)
+                ->where('num_modules', $targetModules)
+                ->lockForUpdate()
+                ->first();
+
+            if ($clone === null) {
+                $clone = $this->replicate();
+                $clone->num_modules = $targetModules;
+                $clone->code = $this->code."-{$targetModules}M";
+                $clone->description = "Baseado em {$this->code} ({$this->num_modules} módulos)";
+                $clone->save();
+            } else {
+                if ($clone->trashed()) {
+                    $clone->restore();
+                }
+
+                $clone->code = $this->code."-{$targetModules}M";
+                $clone->description = "Baseado em {$this->code} ({$this->num_modules} módulos)";
+                $clone->is_active = true;
+                $clone->save();
+
+                $clone->slots()->withTrashed()->forceDelete();
+            }
 
             $this->loadMissing('slots');
 
             foreach ($this->slots as $slot) {
                 $newSlot = $slot->replicate();
                 $newSlot->subtemplate_id = $clone->getKey();
+                $newSlot->category = is_string($newSlot->category) ? $newSlot->category : '';
+                $newSlot->subcategory = is_string($newSlot->subcategory) ? $newSlot->subcategory : '';
                 $newSlot->save();
             }
 
