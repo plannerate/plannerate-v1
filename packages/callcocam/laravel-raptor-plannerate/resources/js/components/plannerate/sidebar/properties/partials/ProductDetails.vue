@@ -13,6 +13,28 @@
 
             <Separator />
 
+            <div
+                v-if="rejectionDetails"
+                class="space-y-2 rounded-lg border border-amber-300/70 bg-amber-50/70 p-3 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/20 dark:text-amber-200"
+            >
+                <p class="text-sm font-semibold">Detalhes da rejeição</p> 
+                <p>
+                    Motivo:
+                    <span class="font-medium">{{ rejectionDetails.reasonLabel }}</span>
+                </p>
+                <p v-if="rejectionDetails.moduleNumber !== null || rejectionDetails.shelfOrder !== null">
+                    Slot:
+                    <span class="font-medium">
+                        M{{ rejectionDetails.moduleNumber ?? '-' }} • P{{ rejectionDetails.shelfOrder ?? '-' }}
+                    </span>
+                </p>
+                <p v-if="rejectionDetails.grouping">
+                    Agrupamento: <span class="font-medium">{{ rejectionDetails.grouping }}</span>
+                </p> 
+            </div>
+
+            <Separator v-if="rejectionDetails" />
+
             <!-- Badge de edição múltipla -->
             <div v-if="hasMultipleSelections"
                 class="rounded-lg border border-orange-500 bg-orange-50 p-3 dark:bg-orange-950/20">
@@ -70,6 +92,36 @@ const reloadProductsList = inject<(() => Promise<void>) | undefined>(
 // Verifica se há múltiplos produtos selecionados
 const selectedProducts = computed(() => selection.getSelectedProducts());
 const hasMultipleSelections = computed(() => selectedProducts.value.length > 1);
+const selectedItem = computed(() => selection.selectedItem.value);
+
+const rejectionDetails = computed(() => {
+    const context = selectedItem.value?.context as
+        | {
+            source?: string;
+            rejection?: {
+                reason?: string;
+                reason_label?: string;
+                grouping?: string | null;
+                grouping_normalized?: string | null;
+                module_number?: number | null;
+                shelf_order?: number | null;
+            };
+        }
+        | undefined;
+
+    if (context?.source !== 'rejected_products' || !context.rejection) {
+        return null;
+    }
+
+    return {
+        reason: context.rejection.reason ?? 'unknown',
+        reasonLabel: context.rejection.reason_label ?? 'Sem motivo',
+        grouping: context.rejection.grouping ?? null,
+        groupingNormalized: context.rejection.grouping_normalized ?? null,
+        moduleNumber: context.rejection.module_number ?? null,
+        shelfOrder: context.rejection.shelf_order ?? null,
+    };
+});
 
 // Estado do upload de imagem
 const showImageUploadDialog = ref(false);

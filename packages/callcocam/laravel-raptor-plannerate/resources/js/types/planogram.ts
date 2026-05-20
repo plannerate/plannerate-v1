@@ -90,6 +90,25 @@ export interface Shelf {
     segments?: Segment[];
     shelves?: Shelf[];
     product_type?: string;
+    template_slot?: {
+        id: string;
+        subtemplate_id: string;
+        category_id?: string | null;
+        category_name?: string | null;
+        subcategory?: string | null;
+        module_number: number;
+        shelf_order: number;
+        priority?: number | null;
+        price_order?: string | null;
+        size_order?: string | null;
+        brand_exposure?: string | null;
+        flavor_exposure?: string | null;
+        space_fallback?: string | null;
+        use_target_stock?: boolean;
+        min_facings?: number | null;
+        max_facings?: number | null;
+        facing_expansion?: string | null;
+    } | null;
     deleted_at?: string;
 }
 

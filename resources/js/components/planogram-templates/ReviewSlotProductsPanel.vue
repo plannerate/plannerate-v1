@@ -43,6 +43,26 @@ const filteredRows = computed(() => {
         );
     });
 });
+
+const slotLabel = computed(() =>
+    props.selectedSlot
+        ? props.selectedSlot.category_name ?? props.selectedSlot.category_id ?? '—'
+        : null,
+);
+
+const hasOutroSlot = computed(
+    () => (props.analysis?.summary.outro_slot_products ?? 0) > 0,
+);
+
+const hasPreviousSlots = computed(
+    () => (props.analysis?.summary.previous_slots_placed ?? 0) > 0,
+);
+
+const summaryColClass = computed(() => {
+    const extra = (hasOutroSlot.value ? 1 : 0) + (hasPreviousSlots.value ? 1 : 0);
+    const total = 4 + extra;
+    return `lg:grid-cols-${total}`;
+});
 </script>
 
 <template>
@@ -62,8 +82,8 @@ const filteredRows = computed(() => {
         </div>
         <p class="mb-3 text-xs text-muted-foreground">
             {{
-                props.selectedSlot
-                    ? `Grouping: ${props.selectedSlot.grouping} (simulação parcial)`
+                slotLabel
+                    ? `${slotLabel} (simulação parcial)`
                     : 'Selecione um slot para iniciar a análise.'
             }}
         </p>
@@ -90,17 +110,30 @@ const filteredRows = computed(() => {
                 </p>
             </div>
 
-            <div class="grid grid-cols-2 gap-2 lg:grid-cols-4">
+            <!-- Summary cards -->
+            <div class="grid grid-cols-2 gap-2" :class="summaryColClass">
                 <div class="rounded-md border px-3 py-2">
-                    <p class="text-xs text-muted-foreground">Total</p>
+                    <p class="text-xs text-muted-foreground">Total na categoria</p>
                     <p class="text-sm font-semibold">
                         {{ props.analysis.summary.total_products }}
                     </p>
                 </div>
+                <div v-if="hasPreviousSlots" class="rounded-md border px-3 py-2">
+                    <p class="text-xs text-muted-foreground">Prateleiras anteriores</p>
+                    <p class="text-sm font-semibold text-muted-foreground">
+                        {{ props.analysis.summary.previous_slots_placed }}
+                    </p>
+                </div>
                 <div class="rounded-md border px-3 py-2">
-                    <p class="text-xs text-muted-foreground">Entrou</p>
+                    <p class="text-xs text-muted-foreground">Entrou aqui</p>
                     <p class="text-sm font-semibold text-emerald-600">
                         {{ props.analysis.summary.placed_products }}
+                    </p>
+                </div>
+                <div v-if="hasOutroSlot" class="rounded-md border px-3 py-2">
+                    <p class="text-xs text-muted-foreground">Outro slot</p>
+                    <p class="text-sm font-semibold text-blue-600">
+                        {{ props.analysis.summary.outro_slot_products }}
                     </p>
                 </div>
                 <div class="rounded-md border px-3 py-2">
@@ -169,15 +202,15 @@ const filteredRows = computed(() => {
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-3 py-2">
+                            <td class="px-3 py-2 whitespace-nowrap">
                                 <span
-                                    :class="
-                                        row.status === 'entrou'
-                                            ? 'text-emerald-600'
-                                            : 'text-amber-600'
-                                    "
+                                    :class="{
+                                        'text-emerald-600': row.status === 'entrou',
+                                        'text-blue-600': row.status === 'outro_slot',
+                                        'text-amber-600': row.status === 'fora',
+                                    }"
                                 >
-                                    {{ row.status }}
+                                    {{ row.status === 'outro_slot' ? 'outro slot' : row.status }}
                                 </span>
                             </td>
                             <td class="px-3 py-2 text-muted-foreground">

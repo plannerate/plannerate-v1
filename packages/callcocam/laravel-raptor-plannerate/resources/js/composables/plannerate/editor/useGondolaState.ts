@@ -39,3 +39,24 @@ export const eanSearchQuery = ref('');
 
 // Grouping de template selecionado para highlight no canvas
 export const selectedTemplateGroupingNormalized = ref<string | null>(null);
+
+// Produtos rejeitados na última geração automática
+export interface RejectedProduct {
+    id: string;
+    product_id: string;
+    product_name: string;
+    ean: string | null;
+    image_url: string | null;
+    product_width: number | null;
+    product_height: number | null;
+    rejection_reason: string;
+    rejection_reason_label: string;
+    slot_id: string | null;
+    grouping: string | null;
+    grouping_normalized: string | null;
+    module_number: number | null;
+    shelf_order: number | null;
+}
+
+export const rejectedProducts = ref<RejectedProduct[]>([]);
+export const isLoadingRejectedProducts = ref(false);

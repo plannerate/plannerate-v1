@@ -66,7 +66,7 @@ export type SlotAnalysisRow = {
     brand: string;
     has_sales: boolean;
     dimensions: string;
-    status: 'entrou' | 'fora';
+    status: 'entrou' | 'fora' | 'outro_slot';
     reason: string;
     facing_used: number;
     required_width_cm: number;
@@ -80,7 +80,9 @@ export type SlotAnalysisSummary = {
     occupied_width_cm: number;
     free_width_cm: number;
     total_products: number;
+    previous_slots_placed: number;
     placed_products: number;
+    outro_slot_products: number;
     rejected_products: number;
 };
 

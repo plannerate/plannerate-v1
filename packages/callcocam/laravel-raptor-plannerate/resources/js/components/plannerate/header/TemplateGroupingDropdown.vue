@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { Check, ChevronsUpDown, Loader2, Search, Tags } from 'lucide-vue-next';
-import { usePage } from '@inertiajs/vue3';
-import { computed, onMounted, ref, watch } from 'vue';
-import { toast } from 'vue-sonner';
+import { Check, ChevronsUpDown, Search, Tags } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,15 +8,16 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+    currentGondola,
     selectedTemplateGroupingNormalized,
 } from '@/composables/plannerate/editor/useGondolaState';
 
 interface TemplateGrouping {
+    category_id: string;
     grouping: string;
     grouping_normalized: string;
     slots_count: number;
@@ -26,36 +25,58 @@ interface TemplateGrouping {
     shelves: number[];
 }
 
-const props = defineProps<{
-    gondolaId: string | null;
-    templateId: string | null;
-}>();
-
-const groupings = ref<TemplateGrouping[]>([]);
-const isLoading = ref(false);
 const searchQuery = ref('');
-const page = usePage<{ subdomain?: string }>();
 
-const hasTemplate = computed(() => !!props.templateId && !!props.gondolaId);
+const hasTemplate = computed(() => !!currentGondola.value?.template_id);
 
-function stripDomain(url: string): string {
-    return url.replace(/^\/\/[^/]+/, '');
-}
+const groupings = computed<TemplateGrouping[]>(() => {
+    const gondola = currentGondola.value;
+    if (!gondola?.sections) {
+        return [];
+    }
 
-function templateGroupingsUrl(): string {
-    const subdomain = page.props.subdomain?.toString().trim()
-        || (typeof window !== 'undefined' ? window.location.hostname.split('.')[0] || '' : '');
-    const gondolaId = props.gondolaId ?? '';
+    const byCategory = new Map<
+        string,
+        { name: string; modules: Set<number>; shelves: Set<number>; count: number }
+    >();
 
-    return stripDomain(
-        `//${subdomain}.plannerate.localhost/api/gondolas/${gondolaId}/template-groupings`,
-    );
-}
+    for (const section of gondola.sections) {
+        for (const shelf of section.shelves ?? []) {
+            const slot = shelf.template_slot;
+            if (!slot?.category_id) {
+                continue;
+            }
+
+            const entry = byCategory.get(slot.category_id) ?? {
+                name: slot.category_name ?? slot.category_id,
+                modules: new Set<number>(),
+                shelves: new Set<number>(),
+                count: 0,
+            };
+
+            entry.modules.add(slot.module_number);
+            entry.shelves.add(slot.shelf_order);
+            entry.count++;
+            byCategory.set(slot.category_id, entry);
+        }
+    }
+
+    return [...byCategory.entries()]
+        .map(([categoryId, data]) => ({
+            category_id: categoryId,
+            grouping: data.name,
+            grouping_normalized: categoryId,
+            slots_count: data.count,
+            modules: [...data.modules].sort((a, b) => a - b),
+            shelves: [...data.shelves].sort((a, b) => a - b),
+        }))
+        .sort((a, b) => a.grouping.localeCompare(b.grouping, 'pt-BR'));
+});
 
 const selectedGrouping = computed(() => {
     return (
         groupings.value.find(
-            (g) => g.grouping_normalized === selectedTemplateGroupingNormalized.value,
+            (g) => g.category_id === selectedTemplateGroupingNormalized.value,
         ) ?? null
     );
 });
@@ -68,8 +89,7 @@ const filteredGroupings = computed(() => {
     }
 
     return groupings.value.filter((item) => {
-        const haystack = `${item.grouping} ${item.grouping_normalized}`.toLocaleLowerCase('pt-BR');
-
+        const haystack = item.grouping.toLocaleLowerCase('pt-BR');
         return haystack.includes(normalizedSearch);
     });
 });
@@ -79,10 +99,6 @@ function groupingTail(grouping: string): string {
         .split('|')
         .map((part) => part.trim())
         .filter(Boolean);
-
-    if (parts.length === 0) {
-        return grouping;
-    }
 
     return parts[parts.length - 1] ?? grouping;
 }
@@ -108,58 +124,25 @@ const buttonLabel = computed(() => {
     return selectedGrouping.value ? groupingTail(selectedGrouping.value.grouping) : 'Selecionar grouping';
 });
 
-async function loadGroupings(): Promise<void> {
-    if (!hasTemplate.value) {
-        groupings.value = [];
-        selectedTemplateGroupingNormalized.value = null;
-
-        return;
-    }
-
-    isLoading.value = true;
-
-    try {
-        const response = await fetch(templateGroupingsUrl());
-        if (!response.ok) {
-            throw new Error('request_failed');
-        }
-
-        const payload = await response.json();
-        groupings.value = Array.isArray(payload.data) ? payload.data : [];
-
-        const stillValidSelection = groupings.value.some(
-            (item) => item.grouping_normalized === selectedTemplateGroupingNormalized.value,
-        );
-
-        if (!stillValidSelection) {
-            selectedTemplateGroupingNormalized.value = null;
-        }
-    } catch {
-        toast.error('Nao foi possivel carregar os groupings do template.');
-    } finally {
-        isLoading.value = false;
-    }
-}
-
-watch(
-    () => [props.gondolaId, props.templateId] as const,
-    () => {
-        void loadGroupings();
-    },
-);
-
-onMounted(() => {
-    void loadGroupings();
-});
-
 watch(
     () => hasTemplate.value,
     (value) => {
         if (!value) {
             searchQuery.value = '';
+            selectedTemplateGroupingNormalized.value = null;
         }
     },
 );
+
+watch(groupings, (newGroupings) => {
+    const stillValid = newGroupings.some(
+        (g) => g.category_id === selectedTemplateGroupingNormalized.value,
+    );
+
+    if (!stillValid) {
+        selectedTemplateGroupingNormalized.value = null;
+    }
+});
 </script>
 
 <template>
@@ -171,8 +154,7 @@ watch(
                     <span class="truncate">{{ buttonLabel }}</span>
                 </span>
                 <span class="flex items-center gap-1.5 shrink-0">
-                    <Loader2 v-if="isLoading" class="size-3.5 animate-spin text-muted-foreground" />
-                    <Badge v-else-if="groupings.length > 0" variant="secondary" class="h-5 px-1.5 text-[10px]">
+                    <Badge v-if="groupings.length > 0" variant="secondary" class="h-5 px-1.5 text-[10px]">
                         {{ groupings.length }}
                     </Badge>
                     <ChevronsUpDown class="size-3.5 text-muted-foreground" />
@@ -187,19 +169,20 @@ watch(
                     <Search
                         class="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                     <Input v-model="searchQuery" placeholder="Buscar grouping..." class="h-8 pl-9" />
-
                 </div>
             </div>
 
             <DropdownMenuSeparator />
 
-            <DropdownMenuItem v-for="grouping in filteredGroupings" :key="grouping.grouping_normalized"
+            <DropdownMenuItem
+                v-for="grouping in filteredGroupings"
+                :key="grouping.category_id"
                 class="cursor-pointer"
-                :class="selectedTemplateGroupingNormalized === grouping.grouping_normalized ? 'bg-muted/70' : ''"
-                @click="selectedTemplateGroupingNormalized = grouping.grouping_normalized">
+                :class="selectedTemplateGroupingNormalized === grouping.category_id ? 'bg-muted/70' : ''"
+                @click="selectedTemplateGroupingNormalized = grouping.category_id">
                 <div class="flex w-full items-start justify-between gap-2">
                     <div class="min-w-0">
-                        <div class="flex items-end space-x-1 ">
+                        <div class="flex items-end space-x-1">
                             <p class="truncate text-sm font-medium">{{ groupingTail(grouping.grouping) }}</p>
                             <p v-if="groupingHead(grouping.grouping)"
                                 class="truncate text-[11px] text-muted-foreground">
@@ -207,11 +190,11 @@ watch(
                             </p>
                         </div>
                         <p class="text-[11px] text-muted-foreground">
-                            Modulos: {{ grouping.modules.join(', ') }}
+                            Módulos: {{ grouping.modules.join(', ') }}
                         </p>
                     </div>
                     <div class="flex items-center gap-1">
-                        <Check v-if="selectedTemplateGroupingNormalized === grouping.grouping_normalized"
+                        <Check v-if="selectedTemplateGroupingNormalized === grouping.category_id"
                             class="size-4 text-primary" />
                         <Badge variant="secondary" class="h-5 px-1.5 text-[10px]">
                             {{ grouping.slots_count }}
@@ -220,7 +203,7 @@ watch(
                 </div>
             </DropdownMenuItem>
 
-            <DropdownMenuItem v-if="!isLoading && filteredGroupings.length === 0" disabled>
+            <DropdownMenuItem v-if="filteredGroupings.length === 0" disabled>
                 Nenhum grouping encontrado
             </DropdownMenuItem>
         </DropdownMenuContent>

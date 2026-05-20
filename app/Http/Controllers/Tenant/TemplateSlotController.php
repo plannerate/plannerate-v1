@@ -71,9 +71,16 @@ class TemplateSlotController extends Controller
                 ->first();
 
             if ($slot !== null) {
+                $allCategorySlots = PlanogramTemplateSlot::query()
+                    ->where('subtemplate_id', $slot->subtemplate_id)
+                    ->where('category_id', $slot->category_id)
+                    ->orderBy('shelf_order')
+                    ->get();
+
                 $slotAnalysis = $this->reviewAnalysisService->analyze(
                     $slot,
                     (float) ($validated['shelf_width_cm'] ?? 100.0),
+                    $allCategorySlots->count() > 1 ? $allCategorySlots : null,
                 );
             } else {
                 $selectedSlotId = null;

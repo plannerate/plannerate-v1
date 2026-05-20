@@ -3,6 +3,7 @@
 // ============================================================================
 
 import { router } from '@inertiajs/vue3';
+import { toast } from 'vue-sonner';
 import { computed, ref } from 'vue';
 import { calculateAbc } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
@@ -15,6 +16,8 @@ import type { Gondola, Product, Section, Shelf } from '@/types/planogram';
 // Importa módulos separados por responsabilidade
 import {
     currentGondola,
+    isLoadingRejectedProducts,
+    rejectedProducts,
     scaleFactor,
     selectedId,
     selectedItem,
@@ -24,6 +27,7 @@ import {
     showPerformanceModal,
     showProductsPanel,
     showPropertiesPanel,
+    type RejectedProduct,
 } from './editor/useGondolaState';
 
 
@@ -58,7 +62,6 @@ export function usePlanogramEditor() {
     const { t } = useT();
     const history = usePlanogramHistory();
     const changes = usePlanogramChanges();
-
     // Inicializa módulos de operações
     const sectionOps = useSectionOperations();
     const shelfOps = useShelfOperations();
@@ -76,8 +79,8 @@ export function usePlanogramEditor() {
      */
     function captureBeforeState(snapshot: OptimisticSnapshot): any {
         if (!currentGondola.value) {
-return null;
-}
+            return null;
+        }
 
         try {
             switch (snapshot.type) {
@@ -88,9 +91,9 @@ return null;
                         const shelfData = findShelfById(snapshot.shelfId);
 
                         if (!shelfData) {
-return null;
-}
-                        
+                            return null;
+                        }
+
                         // Captura posição, section_id e outros dados importantes
                         return history.cloneState({
                             shelf_position: shelfData.shelf.shelf_position,
@@ -178,8 +181,8 @@ return null;
      */
     function captureAfterState(snapshot: OptimisticSnapshot, beforeState: any): any {
         if (!currentGondola.value || !beforeState) {
-return null;
-}
+            return null;
+        }
 
         try {
             switch (snapshot.type) {
@@ -190,9 +193,9 @@ return null;
                         const shelfData = findShelfById(snapshot.shelfId);
 
                         if (!shelfData) {
-return null;
-}
-                        
+                            return null;
+                        }
+
                         // Captura nova posição, section_id e outros dados importantes
                         return history.cloneState({
                             shelf_position: shelfData.shelf.shelf_position,
@@ -219,7 +222,7 @@ return null;
                     if (beforeState.sourceShelfId && beforeState.targetShelfId) {
                         const sourceShelf = findShelfById(beforeState.sourceShelfId);
                         const targetShelf = findShelfById(beforeState.targetShelfId);
-                        
+
                         return {
                             sourceShelfId: beforeState.sourceShelfId,
                             targetShelfId: beforeState.targetShelfId,
@@ -235,7 +238,7 @@ return null;
                     // Para copy, captura estado DEPOIS da prateleira de destino
                     if (beforeState.targetShelfId) {
                         const targetShelf = findShelfById(beforeState.targetShelfId);
-                        
+
                         return {
                             targetShelfId: beforeState.targetShelfId,
                             targetShelfSegments: targetShelf ? history.cloneState(targetShelf.shelf.segments) : [],
@@ -345,7 +348,7 @@ return null;
                 } else {
                     afterState = captureAfterState(historySnapshot, beforeState);
                 }
-                
+
                 history.recordAction({
                     ...historySnapshot,
                     beforeState,
@@ -386,14 +389,14 @@ return null;
     ): boolean {
         const segment1 = findSegmentById(segment1Id);
         const segment2 = findSegmentById(segment2Id);
-        
+
         if (!segment1 || !segment2) {
-return false;
-}
+            return false;
+        }
 
         if (segment1.shelf.id !== segment2.shelf.id) {
-return false;
-}
+            return false;
+        }
 
         const result = commitOptimistic({
             apply: () => swapSegmentOp(segment1Id, segment2Id, recordChange),
@@ -421,14 +424,14 @@ return false;
         const found = findSegmentById(segmentId);
 
         if (!found) {
-return false;
-}
+            return false;
+        }
 
         const targetShelf = findShelfById(targetShelfId);
 
         if (!targetShelf) {
-return false;
-}
+            return false;
+        }
 
         // Captura estado completo ANTES da operação
         const beforeState = {
@@ -471,14 +474,14 @@ return false;
         const found = findSegmentById(segmentId);
 
         if (!found) {
-return false;
-}
+            return false;
+        }
 
         const targetShelf = findShelfById(targetShelfId);
 
         if (!targetShelf) {
-return false;
-}
+            return false;
+        }
 
         // Captura estado completo ANTES da operação
         const beforeState = {
@@ -524,8 +527,8 @@ return false;
         const shelf = findShelfById(shelfId);
 
         if (!shelf) {
-return false;
-}
+            return false;
+        }
 
         const result = commitOptimistic({
             apply: () => shelfOps.moveShelfWithinSection(shelfId, newPosition, recordChange),
@@ -553,8 +556,8 @@ return false;
         const shelf = findShelfById(shelfId);
 
         if (!shelf) {
-return false;
-}
+            return false;
+        }
 
         const result = commitOptimistic({
             apply: () => shelfOps.moveShelfToSection(shelfId, targetSectionId, newPosition, recordChange),
@@ -627,8 +630,8 @@ return false;
         const flow = currentGondola.value?.flow || 'left_to_right';
 
         if (!sections) {
-return [];
-}
+            return [];
+        }
 
         // Filtra seções deletadas e ordena por ordering
         const filtered = sections.filter((s: Section) => !s.deleted_at);
@@ -666,6 +669,10 @@ return [];
 
         // Inicializa histórico
         history.initializeHistory();
+
+        // Limpa lista de rejeitados da geração anterior
+        rejectedProducts.value = [];
+        isLoadingRejectedProducts.value = false;
     }
 
     /**
@@ -678,8 +685,8 @@ return [];
      */
     function updateGondola(updates: Partial<Gondola>) {
         if (!currentGondola.value?.id) {
-return null;
-}
+            return null;
+        }
 
         return commitOptimistic({
             apply: () => {
@@ -730,8 +737,8 @@ return null;
      */
     function gondolasAvailable(): Gondola[] {
         if (!currentGondola.value) {
-return [];
-}
+            return [];
+        }
 
         const { gondolas } = currentGondola.value.planogram || {};
 
@@ -760,8 +767,8 @@ return [];
         const shelf = findShelfById(shelfId);
 
         if (!shelf) {
-return null;
-}
+            return null;
+        }
 
         return commitOptimistic({
             apply: () =>
@@ -806,8 +813,8 @@ return null;
         const shelf = findShelfById(shelfId);
 
         if (!shelf) {
-return null;
-}
+            return null;
+        }
 
         return commitOptimistic({
             apply: () => shelfOps.updateShelf(shelfId, updates, recordChange),
@@ -850,8 +857,8 @@ return null;
      */
     function swapSectionsOrdering(sectionIds: string[], newOrderings: Record<string, number>) {
         if (!currentGondola.value?.sections) {
-return;
-}
+            return;
+        }
 
         return commitOptimistic({
             apply: () => {
@@ -898,8 +905,8 @@ return;
         const found = findSegmentById(segmentId);
 
         if (!found) {
-return null;
-}
+            return null;
+        }
 
         return commitOptimistic({
             apply: () => {
@@ -985,8 +992,8 @@ return null;
         const found = findSegmentByLayerId(layerId);
 
         if (!found || !found.segment.layer) {
-return null;
-}
+            return null;
+        }
 
         return commitOptimistic({
             apply: () => {
@@ -1029,14 +1036,14 @@ return null;
         const found = findSegmentByLayerId(layerId);
 
         if (!found || !found.segment.layer?.product) {
-return null;
-}
+            return null;
+        }
 
         const product = found.segment.layer.product;
 
         if (!product) {
-return null;
-}
+            return null;
+        }
 
         // Atualiza o campo diretamente no produto
         const updatedProduct = {
@@ -1082,10 +1089,10 @@ return null;
         dimension: 'width' | 'height' | 'depth',
         value: number,
         onSaved?: () => void | Promise<void>,
-    ) { 
+    ) {
         if (!product) {
-return null;
-}
+            return null;
+        }
 
         // Atualiza o campo diretamente no produto
         // product[dimension] = value;
@@ -1101,7 +1108,7 @@ return null;
 
         return commitOptimistic({
             apply: () => {
-                
+
                 return updatedProduct;
             },
             change: {
@@ -1130,8 +1137,8 @@ return null;
         onSaved?: () => void | Promise<void>,
     ) {
         if (!productIds.length) {
-return [];
-}
+            return [];
+        }
 
         const results: any[] = [];
         let callbackAdded = false;
@@ -1142,21 +1149,21 @@ return [];
             const gondola = currentGondola.value;
 
             if (!gondola?.sections) {
-continue;
-}
+                continue;
+            }
 
             let layerId: string | null = null;
 
             // Busca o layer pelo product_id
             outerLoop: for (const section of gondola.sections) {
                 if (!section.shelves) {
-continue;
-}
+                    continue;
+                }
 
                 for (const shelf of section.shelves) {
                     if (!shelf.segments) {
-continue;
-}
+                        continue;
+                    }
 
                     for (const segment of shelf.segments) {
                         if (segment.layer?.product?.id === productId) {
@@ -1182,12 +1189,12 @@ continue;
                     results.push(result);
 
                     if (isLast) {
-callbackAdded = true;
-}
+                        callbackAdded = true;
+                    }
                 }
             }
         }
- 
+
         return results;
     }
     function updateMultipleProductsDimensionsDirectly(
@@ -1197,8 +1204,8 @@ callbackAdded = true;
         onSaved?: () => void | Promise<void>,
     ) {
         if (!products.length) {
-return [];
-}
+            return [];
+        }
 
         const results: any[] = [];
 
@@ -1285,8 +1292,8 @@ return [];
      */
     function setAlignment(alignment: 'left' | 'right' | 'center' | 'justify') {
         if (!currentGondola.value?.id) {
-return false;
-}
+            return false;
+        }
 
         const result = commitOptimistic({
             apply: () => {
@@ -1334,8 +1341,8 @@ return false;
      */
     function setFlow(flow: 'left_to_right' | 'right_to_left') {
         if (!currentGondola.value?.id) {
-return false;
-}
+            return false;
+        }
 
         const flowLabel = flow === 'left_to_right' ? 'Esquerda → Direita' : 'Direita → Esquerda';
 
@@ -1367,8 +1374,8 @@ return false;
      */
     function toggleFlow() {
         if (!currentGondola.value?.id) {
-return false;
-}
+            return false;
+        }
 
         const currentFlow = currentGondola.value.flow || 'left_to_right';
         const newFlow =
@@ -1570,26 +1577,26 @@ return false;
         const { beforeState } = snapshot;
         const currentSectionId = currentShelfData.shelf.section_id;
         const targetSectionId = beforeState.section_id;
- 
+
 
         // Verifica se é uma transferência entre seções
         if (currentSectionId !== targetSectionId) {
             // É uma transferência - precisa mover a shelf de volta
             const currentSection = findSectionById(currentSectionId);
             const targetSection = findSectionById(targetSectionId);
-            
+
             if (!currentSection || !targetSection) {
                 console.error('❌ Modulos não encontradas');
 
                 return;
             }
- 
+
 
             // Remove da seção atual
             const shelfIndex = currentSection.shelves?.findIndex(
                 (s: any) => s.id === snapshot.shelfId
             ) ?? -1;
-            
+
             if (shelfIndex !== -1 && currentSection.shelves) {
                 const shelf = currentSection.shelves[shelfIndex];
                 currentSection.shelves.splice(shelfIndex, 1);
@@ -1600,8 +1607,8 @@ return false;
 
                 // Adiciona na seção de destino
                 if (!targetSection.shelves) {
-targetSection.shelves = [];
-}
+                    targetSection.shelves = [];
+                }
 
                 targetSection.shelves.push(shelf);
                 targetSection.shelves = [...targetSection.shelves];
@@ -1620,7 +1627,7 @@ targetSection.shelves = [];
 
             if (section && currentGondola.value?.sections) {
                 section.shelves = [...(section.shelves || [])];
-                
+
                 // Encontra o índice da seção para updateSectionReactive
                 const sectionIndex = currentGondola.value.sections.findIndex(s => s.id === currentSectionId);
 
@@ -1634,7 +1641,7 @@ targetSection.shelves = [];
         if (shouldPersist) {
             // Usa a mesma lógica de detecção: verifica se mudou de seção
             const isTransfer = currentSectionId !== targetSectionId;
-            
+
             if (isTransfer) {
                 // shelf_transfer: move entre seções
                 recordChange({
@@ -1723,7 +1730,7 @@ targetSection.shelves = [];
                 'hole_height', 'hole_width', 'hole_spacing',
                 'ordering', 'alignment'
             ];
-            
+
             const data: Record<string, any> = {};
 
             for (const field of allowedFields) {
@@ -1731,7 +1738,7 @@ targetSection.shelves = [];
                     data[field] = snapshot.beforeState[field];
                 }
             }
-            
+
             recordChange({
                 type: 'section_update',
                 entityType: 'section',
@@ -1758,7 +1765,7 @@ targetSection.shelves = [];
             const sectionIndex = currentGondola.value?.sections?.findIndex(
                 (s: any) => s.id === sectionId
             ) ?? -1;
-            
+
             if (sectionIndex !== -1 && beforeOrderings[sectionId] !== undefined) {
                 // Usa updateSectionReactive para garantir reatividade
                 updateSectionReactive(sectionIndex, {
@@ -1794,8 +1801,14 @@ targetSection.shelves = [];
             return;
         }
 
-        // Aplica as mudanças do estado
-        Object.assign(found.segment.layer, snapshot.beforeState);
+        // Aplica as mudanças do estado (excluindo campos auxiliares de undo)
+        const { _rejectedProduct, ...layerState } = snapshot.beforeState ?? {};
+        Object.assign(found.segment.layer, layerState);
+
+        // Restaura produto à lista de rejeitados se havia sido removido
+        if (_rejectedProduct) {
+            rejectedProducts.value = [_rejectedProduct, ...rejectedProducts.value];
+        }
 
         // Força reatividade
         updateSegmentReactive(
@@ -1811,7 +1824,7 @@ targetSection.shelves = [];
                 type: 'layer_update',
                 entityType: 'layer',
                 entityId: snapshot.layerId,
-                data: snapshot.beforeState,
+                data: layerState,
             });
         }
     }
@@ -1824,18 +1837,18 @@ targetSection.shelves = [];
         const gondola = currentGondola.value;
 
         if (!gondola?.sections) {
-return;
-}
+            return;
+        }
 
         for (const section of gondola.sections) {
             if (!section.shelves) {
-continue;
-}
+                continue;
+            }
 
             for (const shelf of section.shelves) {
                 if (!shelf.segments) {
-continue;
-}
+                    continue;
+                }
 
                 for (const segment of shelf.segments) {
                     if (segment.layer?.product?.id === snapshot.entityId) {
@@ -1878,15 +1891,15 @@ continue;
      */
     function applySegmentTransferSnapshot(snapshot: any, shouldPersist: boolean) {
         if (!currentGondola.value) {
-return;
-}
-        
+            return;
+        }
+
         const { sourceShelfId, targetShelfId, sourceShelfSegments, targetShelfSegments } = snapshot.beforeState;
-        
+
         // Busca as prateleiras ATUAIS (onde o segmento está agora)
         const currentTargetShelf = findShelfById(targetShelfId);
         const currentSourceShelf = findShelfById(sourceShelfId);
-        
+
         if (!currentTargetShelf || !currentSourceShelf) {
             console.error('❌ Prateleiras não encontradas para undo de transfer');
 
@@ -1959,18 +1972,23 @@ return;
      */
     function applySegmentCopySnapshot(snapshot: any, shouldPersist: boolean) {
         if (!currentGondola.value) {
-return;
-}
-        
-        const { targetShelfId, targetShelfSegments } = snapshot.beforeState;
-        
+            return;
+        }
+
+        const { targetShelfId, targetShelfSegments, _rejectedProduct } = snapshot.beforeState;
+
         // Busca a prateleira de destino
         const targetShelfData = findShelfById(targetShelfId);
-        
+
         if (!targetShelfData) {
             console.error('❌ Prateleira não encontrada para undo de copy');
 
             return;
+        }
+
+        // Restaura produto à lista de rejeitados se havia sido removido
+        if (_rejectedProduct) {
+            rejectedProducts.value = [_rejectedProduct, ...rejectedProducts.value];
         }
 
         // Restaura os segmentos da prateleira (remove o copiado)
@@ -1986,7 +2004,7 @@ return;
         // Força reatividade
         targetShelfData.shelf.segments = [...targetShelfData.shelf.segments];
         targetShelfData.section.shelves = [...(targetShelfData.section.shelves || [])];
-        
+
         if (currentGondola.value.sections) {
             currentGondola.value.sections = [...currentGondola.value.sections];
         }
@@ -2014,8 +2032,8 @@ return;
      */
     function applyGondolaSnapshot(snapshot: any, shouldPersist: boolean) {
         if (!currentGondola.value) {
-return;
-}
+            return;
+        }
 
         const gondolaId = currentGondola.value.id; // Salva ID antes de aplicar mudanças
 
@@ -2329,6 +2347,237 @@ return;
         }
     }
 
+    // ========================================================================
+    // PRODUTOS REJEITADOS
+    // ========================================================================
+
+    function rejectedApiUrl(gondolaId: string, path: string): string {
+        return `/api/gondolas/${gondolaId}/${path}`;
+    }
+
+    function csrfToken(): string {
+        return (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
+    }
+
+    async function fetchRejectedProducts(gondolaId?: string): Promise<void> {
+        const id = gondolaId ?? currentGondola.value?.id;
+
+        if (!id) {
+            return;
+        }
+
+        isLoadingRejectedProducts.value = true;
+
+        try {
+            const res = await fetch(rejectedApiUrl(id, 'rejected-products'));
+
+            if (!res.ok) {
+                throw new Error('request_failed');
+            }
+
+            const json = await res.json();
+            rejectedProducts.value = (json.data ?? []) as RejectedProduct[];
+        } catch {
+            toast.error('Não foi possível carregar produtos rejeitados.');
+        } finally {
+            isLoadingRejectedProducts.value = false;
+        }
+    }
+
+    function removeRejectedProductLocally(rejectedId: string): void {
+        rejectedProducts.value = rejectedProducts.value.filter((r) => r.id !== rejectedId);
+    }
+
+    function deleteRejectedProductFromBackend(rejectedId: string): void {
+        const id = currentGondola.value?.id;
+
+        if (!id) {
+            return;
+        }
+
+        void fetch(rejectedApiUrl(id, `rejected-products/${rejectedId}`), {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': csrfToken() },
+        });
+    }
+
+    /**
+     * Remove o produto rejeitado da lista in-memory (undoável via histórico)
+     * e dispara DELETE no backend em fire-and-forget.
+     */
+    function deleteRejectedProduct(rejectedId: string): void {
+        removeRejectedProductLocally(rejectedId);
+        deleteRejectedProductFromBackend(rejectedId);
+    }
+
+    /**
+     * Posiciona um produto rejeitado numa prateleira via operação atômica.
+     *
+     * Usa `commitOptimistic` com snapshot do tipo `segment_copy` para que o
+     * undo restaure tanto os segmentos da prateleira quanto o produto de volta
+     * à lista de rejeitados.
+     */
+    function placeFromRejected(source: RejectedProduct, shelfId: string): boolean {
+        const shelfData = findShelfById(shelfId);
+
+        if (!shelfData) {
+            return false;
+        }
+
+        const productObj = {
+            id: source.product_id,
+            name: source.product_name,
+            ean: source.ean ?? undefined,
+            image_url: source.image_url ?? undefined,
+            width: source.product_width,
+            height: source.product_height,
+            depth: null,
+            status: 'published',
+            has_dimensions: !!(source.product_width && source.product_height),
+        };
+
+        // Captura estado da prateleira ANTES da inserção
+        const beforeShelfSegments = history.cloneState(shelfData.shelf.segments);
+
+        const result = commitOptimistic({
+            apply: () => {
+                const placed = shelfOps.addProductToShelf(
+                    shelfId,
+                    source.product_id,
+                    productObj,
+                    undefined,
+                    recordChange,
+                    t('plannerate.editor.product_does_not_fit_selected_shelf'),
+                );
+
+                if (placed) {
+                    removeRejectedProductLocally(source.id);
+                    deleteRejectedProductFromBackend(source.id);
+                }
+
+                return placed;
+            },
+            historySnapshot: {
+                type: 'segment_copy',
+                shelfId,
+                sectionId: shelfData.section.id,
+                description: `Posicionar produto rejeitado na prateleira`,
+                beforeState: {
+                    targetShelfId: shelfId,
+                    targetShelfSegments: beforeShelfSegments,
+                    _rejectedProduct: source,
+                },
+                afterState: null,
+            },
+        });
+
+        return result !== null;
+    }
+
+    /**
+     * Retroativamente vincula um produto rejeitado ao snapshot mais recente do
+     * histórico (usado pelo callback de drag-and-drop, que dispara APÓS o segmento
+     * já ter sido adicionado à gôndola). Garante que undo restaure o produto à lista.
+     */
+    function patchRejectedProductToLastAction(source: RejectedProduct): void {
+        history.patchCurrentBeforeState({ _rejectedProduct: source });
+    }
+
+    /**
+     * Troca um produto na gôndola por um produto rejeitado.
+     *
+     * O POST ao backend é aguardado antes de qualquer mutação local. Em caso
+     * de sucesso, `commitOptimistic` registra a atualização do layer + remoção
+     * da lista como uma única operação atômica — undo restaura os dois estados.
+     */
+    async function swapRejectedProduct(source: RejectedProduct, layerId: string): Promise<boolean> {
+        const gondolaId = currentGondola.value?.id;
+
+        if (!gondolaId) {
+            return false;
+        }
+
+        const found = findSegmentByLayerId(layerId);
+
+        if (!found || !found.segment.layer) {
+            return false;
+        }
+
+        try {
+            const res = await fetch(rejectedApiUrl(gondolaId, 'swap-product'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken(),
+                },
+                body: JSON.stringify({ rejected_product_id: source.id, layer_id: layerId }),
+            });
+
+            if (!res.ok) {
+                throw new Error('request_failed');
+            }
+
+            // Captura beforeState do layer incluindo o produto rejeitado —
+            // isso permite que o undo restaure ambos: layer e lista de rejeitados.
+            const beforeLayerState = history.cloneState({
+                ...found.segment.layer,
+                _rejectedProduct: source,
+            });
+
+            const newProduct = {
+                id: source.product_id,
+                name: source.product_name,
+                ean: source.ean,
+                image_url: source.image_url,
+                width: source.product_width,
+                height: source.product_height,
+            };
+
+            commitOptimistic({
+                apply: () => {
+                    updateSegmentReactive(
+                        found.section,
+                        found.shelfIndex,
+                        found.segmentIndex,
+                        {
+                            layer: {
+                                ...found.segment.layer,
+                                product_id: source.product_id,
+                                ean: source.ean,
+                                product: newProduct,
+                            },
+                        },
+                    );
+                    removeRejectedProductLocally(source.id);
+                },
+                historySnapshot: {
+                    type: 'layer_update',
+                    layerId,
+                    sectionId: found.section.id,
+                    description: `Trocar produto rejeitado na gôndola`,
+                    beforeState: beforeLayerState,
+                    afterState: null,
+                },
+                change: {
+                    type: 'layer_update',
+                    entityType: 'layer',
+                    entityId: layerId,
+                    data: {
+                        product_id: source.product_id,
+                        ean: source.ean,
+                        product: newProduct,
+                    },
+                },
+            });
+
+            await fetchRejectedProducts(gondolaId);
+
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
     function setSaveChangesRoute(route: string) {
         if (currentGondola.value?.id) {
             changes.setAutoSaveContext(currentGondola.value.id, route);
@@ -2435,8 +2684,18 @@ return;
         showReports,
         exportAsImage,
         setSaveChangesRoute,
-        
+
         // Debug
         debugHistory,
+
+        // Produtos rejeitados
+        rejectedProducts,
+        isLoadingRejectedProducts,
+        fetchRejectedProducts,
+        removeRejectedProductLocally,
+        deleteRejectedProduct,
+        placeFromRejected,
+        patchRejectedProductToLastAction,
+        swapRejectedProduct,
     };
 }

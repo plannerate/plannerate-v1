@@ -3,7 +3,7 @@ import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor'
 import { useRejectedProductsStore } from '@/composables/plannerate/editor/useRejectedProductsStore';
 import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
 import { selectedTemplateGroupingNormalized } from '@/composables/plannerate/editor/useGondolaState';
-import { useAutoplanogramUrls } from '@/composables/useAutoplanogramUrls';
+import type { RejectedProduct } from '@/composables/plannerate/editor/useGondolaState';
 import { ArrowLeftRight, ChevronDown, ChevronUp, GripVertical, Layers, Loader2, MoveHorizontal, Ruler, X } from 'lucide-vue-next';
 import { type Component, computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
@@ -11,35 +11,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-interface RejectedProduct {
-    id: string;
-    product_id: string;
-    product_name: string;
-    ean: string | null;
-    image_url: string | null;
-    product_width: number | null;
-    product_height: number | null;
-    rejection_reason: string;
-    rejection_reason_label: string;
-    slot_id: string | null;
-    grouping: string | null;
-    grouping_normalized: string | null;
-    module_number: number | null;
-    shelf_order: number | null;
-}
-
 const props = defineProps<{ gondolaId: string }>();
 
-const { rejectedProductsUrl, swapProductUrl, destroyRejectedUrl } = useAutoplanogramUrls(props.gondolaId);
-const selection = usePlanogramSelection();
 const editor = usePlanogramEditor();
+const selection = usePlanogramSelection();
 const rejectedStore = useRejectedProductsStore();
 
 const isOpen = ref(false);
-const isLoading = ref(false);
 const isSwapping = ref(false);
 const draggingId = ref<string | null>(null);
-const rejectedProducts = ref<RejectedProduct[]>([]);
 const swapSource = ref<RejectedProduct | null>(null);
 
 const swapModeActive = computed(() => swapSource.value !== null);
@@ -63,7 +43,7 @@ function setCookie(name: string, value: string, days: number = 30): void {
     document.cookie = `${name}=${value}; ${expires}; path=/`;
 }
 
-// ── Click / dblclick (mesmo padrão do Card.vue do sidebar) ───────────────────
+// ── Click / dblclick ─────────────────────────────────────────────────────────
 let clickTimer: ReturnType<typeof setTimeout> | null = null;
 const clickDelay = 250;
 
@@ -75,26 +55,32 @@ function handleCardClick(_event: MouseEvent, product: RejectedProduct) {
     if (clickTimer) {
         clearTimeout(clickTimer);
         clickTimer = null;
-        return; // dblclick — deixa handleDoubleClick tratar
+        return;
     }
     clickTimer = setTimeout(() => {
-        // @ts-ignore
-        selection.selectItem('product', product.product_id, buildProduct(product));
-        
-        // Se o produto tem grouping_normalized, atualizar filtro na gôndola
-        // Mas só se for diferente do selecionado atual (para não refazer busca desnecessária)
+        selection.selectItem('product', product.product_id, buildProduct(product), {
+            source: 'rejected_products',
+            rejection: {
+                id: product.id,
+                reason: product.rejection_reason,
+                reason_label: product.rejection_reason_label,
+                slot_id: product.slot_id,
+                grouping: product.grouping,
+                grouping_normalized: product.grouping_normalized,
+                module_number: product.module_number,
+                shelf_order: product.shelf_order,
+            },
+        });
+
         if (product.grouping_normalized && product.grouping_normalized !== selectedTemplateGroupingNormalized.value) {
             selectedTemplateGroupingNormalized.value = product.grouping_normalized;
         }
-        
+
         clickTimer = null;
     }, clickDelay);
 }
 
-const csrfToken = () =>
-    (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '';
-
-// ── Reason badge ────────────────────────────────────────────────────────────
+// ── Reason badge ─────────────────────────────────────────────────────────────
 const reasonMeta = (
     reason: string,
 ): { icon: Component; label: string; variant: 'outline' | 'destructive' | 'secondary' } => {
@@ -105,53 +91,19 @@ const reasonMeta = (
     return { icon: Layers, label: 'Nível', variant: 'secondary' };
 };
 
-// ── Build product object compatible with addProductToShelf ──────────────────
+// ── Build product object compatible with addProductToShelf ───────────────────
 function buildProduct(r: RejectedProduct) {
     return {
         id: r.product_id,
         name: r.product_name,
         ean: r.ean ?? undefined,
         image_url: r.image_url ?? undefined,
-        width: r.product_width,
-        height: r.product_height,
-        depth: null,
+        width: r.product_width ?? undefined,
+        height: r.product_height ?? undefined,
+        depth: undefined,
         status: 'published',
         has_dimensions: !!(r.product_width && r.product_height),
     };
-}
-
-// ── Optimistic remove + backend cleanup ─────────────────────────────────────
-function removeLocally(rejectedId: string) {
-    rejectedProducts.value = rejectedProducts.value.filter((r) => r.id !== rejectedId);
-    if (rejectedProducts.value.length === 0) isOpen.value = false;
-}
-
-async function deleteFromBackend(rejectedId: string) {
-    try {
-        await fetch(destroyRejectedUrl(rejectedId), {
-            method: 'DELETE',
-            headers: { 'X-CSRF-TOKEN': csrfToken() },
-        });
-    } catch {
-        // silently ignore — list will reconcile on next fetchRejected
-    }
-}
-
-// ── Fetch ────────────────────────────────────────────────────────────────────
-async function fetchRejected(shouldAutoOpen: boolean = false) {
-    isLoading.value = true;
-    try {
-        const res = await fetch(rejectedProductsUrl());
-        if (!res.ok) throw new Error();
-        const json = await res.json();
-        rejectedProducts.value = json.data ?? [];
-        // Só força abrir se for a primeira vez (shouldAutoOpen = true)
-        if (shouldAutoOpen && rejectedProducts.value.length > 0) isOpen.value = true;
-    } catch {
-        toast.error('Não foi possível carregar produtos rejeitados.');
-    } finally {
-        isLoading.value = false;
-    }
 }
 
 // ── Drag ─────────────────────────────────────────────────────────────────────
@@ -163,7 +115,6 @@ function handleDragStart(event: DragEvent, product: RejectedProduct) {
     event.dataTransfer.setData('application/x-product-id', productObj.id);
     event.dataTransfer.setData('application/x-product', JSON.stringify(productObj));
     event.dataTransfer.setData('text/plain', productObj.name ?? '');
-    // tag to identify rejected origin — used by the placed-callback below
     event.dataTransfer.setData('application/x-rejected-id', product.id);
 }
 
@@ -177,27 +128,25 @@ function handleDoubleClick(product: RejectedProduct) {
         toast.error('Selecione uma prateleira primeiro (clique nela uma vez).');
         return;
     }
-    const productObj = buildProduct(product);
-    if (!productObj.has_dimensions) {
+    if (!product.product_width || !product.product_height) {
         toast.error(`"${product.product_name}" não tem dimensões cadastradas.`);
         return;
     }
-    removeLocally(product.id);
-    editor.addProductToShelf(selection.selectedId.value, productObj.id, productObj, () => {
-        void deleteFromBackend(product.id);
-    });
-    toast.success(`"${product.product_name}" adicionado à prateleira.`);
+    const placed = editor.placeFromRejected(product, selection.selectedId.value);
+    if (placed) {
+        toast.success(`"${product.product_name}" adicionado à prateleira.`);
+    }
 }
 
 // ── Listen for drag-placed event from useShelfDragDrop ───────────────────────
 rejectedStore.setOnProductPlaced((productId: string) => {
-    const found = rejectedProducts.value.find((r) => r.product_id === productId);
+    const found = editor.rejectedProducts.value.find((r) => r.product_id === productId);
     if (!found) return;
-    removeLocally(found.id);
-    void deleteFromBackend(found.id);
+    editor.patchRejectedProductToLastAction(found);
+    void editor.deleteRejectedProduct(found.id);
 });
 
-// ── Swap mode (controle seguro) ───────────────────────────────────────────────
+// ── Swap mode ────────────────────────────────────────────────────────────────
 function enterSwapMode(product: RejectedProduct) {
     swapSource.value = product;
     toast.info(`Clique em um produto na gôndola para trocar com "${product.product_name}".`, {
@@ -216,40 +165,17 @@ async function executeSwap(layerId: string) {
     const source = swapSource.value;
     swapSource.value = null;
 
-    try {
-        const res = await fetch(swapProductUrl(), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken(),
-            },
-            body: JSON.stringify({ rejected_product_id: source.id, layer_id: layerId }),
-        });
+    const success = await editor.swapRejectedProduct(source, layerId);
 
-        if (!res.ok) throw new Error();
-
-        editor.updateLayer(layerId, {
-            product_id: source.product_id,
-            ean: source.ean,
-            product: {
-                id: source.product_id,
-                name: source.product_name,
-                ean: source.ean,
-                image_url: source.image_url,
-                width: source.product_width,
-                height: source.product_height,
-            },
-        });
-
+    if (success) {
         toast.success(`"${source.product_name}" posicionado na gôndola.`);
         selection.clearSelection();
-        await fetchRejected(false);
-    } catch {
+    } else {
         swapSource.value = source;
         toast.error('Não foi possível realizar a troca. Tente novamente.');
-    } finally {
-        isSwapping.value = false;
     }
+
+    isSwapping.value = false;
 }
 
 watch(
@@ -266,18 +192,20 @@ watch(
 );
 
 onMounted(() => {
-    // Restaura estado do drawer do cookie
     const savedState = getCookie(DRAWER_STATE_COOKIE);
     const hasUserPreference = savedState !== null;
-    
+
     if (savedState === 'open') {
         isOpen.value = true;
     } else if (savedState === 'closed') {
         isOpen.value = false;
     }
-    
-    // Só força abrir automaticamente se for a primeira vez (sem cookie)
-    void fetchRejected(!hasUserPreference);
+
+    void editor.fetchRejectedProducts(props.gondolaId).then(() => {
+        if (!hasUserPreference && editor.rejectedProducts.value.length > 0) {
+            isOpen.value = true;
+        }
+    });
 });
 
 watch(
@@ -289,7 +217,9 @@ watch(
 
 onUnmounted(() => rejectedStore.clearOnProductPlaced());
 
-defineExpose({ fetchRejected });
+defineExpose({
+    fetchRejected: () => editor.fetchRejectedProducts(props.gondolaId),
+});
 </script>
 
 <template>
@@ -306,10 +236,10 @@ defineExpose({ fetchRejected });
             <div class="flex items-center gap-2">
                 <ArrowLeftRight class="size-4 text-muted-foreground" />
                 <span>Produtos rejeitados</span>
-                <Badge v-if="rejectedProducts.length > 0" variant="destructive" class="h-5 px-1.5 text-xs">
-                    {{ rejectedProducts.length }}
+                <Badge v-if="editor.rejectedProducts.value.length > 0" variant="destructive" class="h-5 px-1.5 text-xs">
+                    {{ editor.rejectedProducts.value.length }}
                 </Badge>
-                <Loader2 v-if="isLoading" class="size-3.5 animate-spin text-muted-foreground" />
+                <Loader2 v-if="editor.isLoadingRejectedProducts.value" class="size-3.5 animate-spin text-muted-foreground" />
             </div>
             <ChevronUp v-if="isOpen" class="size-4 text-muted-foreground" />
             <ChevronDown v-else class="size-4 text-muted-foreground" />
@@ -343,17 +273,20 @@ defineExpose({ fetchRejected });
                 </div>
 
                 <!-- Empty state -->
-                <div v-if="!isLoading && rejectedProducts.length === 0" class="flex h-20 items-center justify-center text-sm text-muted-foreground">
+                <div
+                    v-if="!editor.isLoadingRejectedProducts.value && editor.rejectedProducts.value.length === 0"
+                    class="flex h-20 items-center justify-center text-sm text-muted-foreground"
+                >
                     Nenhum produto rejeitado nesta geração.
                 </div>
 
                 <!-- Product cards -->
                 <div v-else class="flex gap-3 overflow-x-auto p-3">
                     <div
-                        v-for="product in rejectedProducts"
+                        v-for="product in editor.rejectedProducts.value"
                         :key="product.id"
                         draggable="true"
-                        class="flex w-36 flex-shrink-0 flex-col gap-1.5 rounded-lg border p-2 transition-all select-none"
+                        class="flex w-36 shrink-0 flex-col gap-1.5 rounded-lg border p-2 transition-all select-none"
                         :class="{
                             'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200 dark:bg-blue-950/20 dark:ring-blue-900':
                                 isProductSelected(product) && !swapModeActive,
@@ -383,11 +316,6 @@ defineExpose({ fetchRejected });
                         <!-- Product name -->
                         <p class="line-clamp-2 text-xs font-medium leading-tight">
                             {{ product.product_name }}
-                        </p>
-
-                        <!-- Grouping -->
-                        <p v-if="product.grouping" class="truncate text-xs text-muted-foreground">
-                            {{ product.grouping.split(' | ').at(-1) }}
                         </p>
 
                         <!-- Reason badge -->

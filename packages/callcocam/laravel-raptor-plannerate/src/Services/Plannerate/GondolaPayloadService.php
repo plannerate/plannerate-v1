@@ -2,12 +2,14 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
+use App\Models\PlanogramTemplateSlot;
 use App\Models\Tenant;
 use App\Models\WorkflowGondolaExecution;
 use App\Support\Modules\ModuleSlug;
 use App\Support\Modules\TenantModuleService;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Store;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 class GondolaPayloadService
@@ -19,6 +21,9 @@ class GondolaPayloadService
      */
     public function buildEditorPayload(Gondola $gondola): array
     {
+        $templateSlotMap = $this->resolveTemplateSlotMap($gondola);
+        $sectionModuleMap = $this->resolveSectionModuleMap($gondola);
+
         $recordData = [
             'id' => $gondola->id,
             'name' => $gondola->name,
@@ -44,7 +49,7 @@ class GondolaPayloadService
         ];
 
         if ($gondola->relationLoaded('sections')) {
-            $recordData['sections'] = $gondola->sections->map(function ($section) use ($gondola) {
+            $recordData['sections'] = $gondola->sections->map(function ($section) use ($gondola, $templateSlotMap, $sectionModuleMap) {
                 return [
                     'id' => $section->id,
                     'gondola_id' => $section->gondola_id,
@@ -66,7 +71,13 @@ class GondolaPayloadService
                     'deleted_at' => $section->deleted_at?->toISOString(),
                     'section_width' => ($section->width + 2) + ($section->cremalheira_width * $gondola->scale_factor),
                     'section_height' => $section->height * $gondola->scale_factor,
-                    'shelves' => $section->relationLoaded('shelves') ? $section->shelves->map(function ($shelf) {
+                    'shelves' => $section->relationLoaded('shelves') ? $section->shelves->map(function ($shelf) use ($section, $templateSlotMap, $sectionModuleMap) {
+                        $moduleNumber = $sectionModuleMap[(string) $section->id] ?? null;
+                        $shelfOrder = $this->resolveShelfOrder($section, (string) $shelf->id);
+                        $templateSlot = $moduleNumber !== null
+                            ? ($templateSlotMap["{$moduleNumber}:{$shelfOrder}"] ?? null)
+                            : null;
+
                         return [
                             'id' => $shelf->id,
                             'section_id' => $shelf->section_id,
@@ -78,6 +89,7 @@ class GondolaPayloadService
                             'ordering' => $shelf->ordering,
                             'alignment' => $shelf->alignment,
                             'product_type' => $shelf->product_type,
+                            'template_slot' => $templateSlot,
                             'deleted_at' => $shelf->deleted_at?->toISOString(),
                             'segments' => $shelf->relationLoaded('segments') ? $shelf->segments->map(function ($segment) {
                                 return [
@@ -270,5 +282,100 @@ class GondolaPayloadService
         $resolved = app($containerKey);
 
         return $resolved instanceof Tenant ? $resolved : null;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function resolveTemplateSlotMap(Gondola $gondola): array
+    {
+        if (! $gondola->planogram || ! is_string($gondola->template_id) || trim($gondola->template_id) === '') {
+            return [];
+        }
+
+        $subtemplateId = $gondola->planogram->subtemplate_id;
+
+        $slotsQuery = PlanogramTemplateSlot::query()
+            ->whereHas('subtemplate', fn ($query) => $query->where('template_id', $gondola->template_id));
+
+        if (is_string($subtemplateId) && trim($subtemplateId) !== '') {
+            $slotsQuery->where('subtemplate_id', $subtemplateId);
+        }
+
+        return $slotsQuery
+            ->with(['category:id,name'])
+            ->get()
+            ->mapWithKeys(fn (PlanogramTemplateSlot $slot): array => [
+                "{$slot->module_number}:{$slot->shelf_order}" => [
+                    'id' => (string) $slot->id,
+                    'subtemplate_id' => (string) $slot->subtemplate_id,
+                    'category_id' => is_string($slot->category_id) ? $slot->category_id : null,
+                    'category_name' => $this->resolveSlotCategoryName($slot),
+                    'subcategory' => is_string($slot->subcategory) ? $slot->subcategory : null,
+                    'module_number' => $slot->module_number,
+                    'shelf_order' => $slot->shelf_order,
+                    'priority' => $slot->priority,
+                    'price_order' => $slot->price_order?->value,
+                    'size_order' => $slot->size_order?->value,
+                    'brand_exposure' => $slot->brand_exposure?->value,
+                    'flavor_exposure' => $slot->flavor_exposure?->value,
+                    'space_fallback' => $slot->space_fallback?->value,
+                    'use_target_stock' => $slot->use_target_stock,
+                    'min_facings' => $slot->min_facings,
+                    'max_facings' => $slot->max_facings,
+                    'facing_expansion' => $slot->facing_expansion?->value,
+                ],
+            ])->all();
+    }
+
+    /**
+     * @return array<string, int> [section_id => module_number]
+     */
+    private function resolveSectionModuleMap(Gondola $gondola): array
+    {
+        if (! $gondola->relationLoaded('sections')) {
+            return [];
+        }
+
+        return $gondola->sections
+            ->sortBy('ordering')
+            ->values()
+            ->mapWithKeys(fn ($section, int $index): array => [
+                (string) $section->id => $index + 1,
+            ])
+            ->all();
+    }
+
+    private function resolveShelfOrder(mixed $section, string $shelfId): int
+    {
+        if (! $section->relationLoaded('shelves')) {
+            return 0;
+        }
+
+        $shelves = $section->shelves->sortBy('shelf_position')->values();
+        $index = $shelves->search(fn ($shelf): bool => (string) $shelf->id === $shelfId);
+
+        if (! is_int($index) || $index < 0) {
+            return 0;
+        }
+
+        return $shelves->count() - $index;
+    }
+
+    private function resolveSlotCategoryName(PlanogramTemplateSlot $slot): ?string
+    {
+        if ($slot->relationLoaded('category')) {
+            $category = $slot->getRelation('category');
+
+            if ($category instanceof Model) {
+                $name = $category->getAttribute('name');
+
+                return is_string($name) && $name !== '' ? $name : null;
+            }
+        }
+
+        return is_string($slot->getAttribute('category')) && $slot->getAttribute('category') !== ''
+            ? $slot->getAttribute('category')
+            : null;
     }
 }

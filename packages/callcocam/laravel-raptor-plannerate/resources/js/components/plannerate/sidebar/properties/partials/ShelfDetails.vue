@@ -95,6 +95,56 @@
 
             <Separator />
 
+            <div
+                v-if="shelf.template_slot"
+                class="space-y-3 rounded-lg border border-border/70 bg-muted/40 p-3"
+            >
+                <div class="flex items-center justify-between gap-3">
+                    <Label class="text-sm font-semibold">{{ t('plannerate.sidebar.shelf_details.shelf') }} Template Slot</Label>
+                    <span class="rounded-full bg-background px-2 py-1 text-[11px] text-muted-foreground">
+                        M{{ shelf.template_slot.module_number }} • P{{ shelf.template_slot.shelf_order }}
+                    </span>
+                </div>
+
+                <div class="space-y-1">
+                    <p class="text-xs font-medium text-foreground">
+                        {{ shelf.template_slot.category_name || shelf.template_slot.category_id || 'Sem categoria' }}
+                    </p>
+                    <p v-if="shelf.template_slot.subcategory" class="text-xs text-muted-foreground">
+                        Subcategoria: {{ shelf.template_slot.subcategory }}
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="rounded-md bg-background/70 px-2 py-1.5 text-muted-foreground">
+                        Facings: <span class="text-foreground">min {{ shelf.template_slot.min_facings ?? '-' }} / max {{ shelf.template_slot.max_facings ?? '-' }}</span>
+                    </div>
+                    <div class="rounded-md bg-background/70 px-2 py-1.5 text-muted-foreground">
+                        Prioridade: <span class="text-foreground">{{ shelf.template_slot.priority ?? '-' }}</span>
+                    </div>
+                    <div class="rounded-md bg-background/70 px-2 py-1.5 text-muted-foreground">
+                        Tamanho: <span class="text-foreground">{{ humanizeOrder(shelf.template_slot.size_order) }}</span>
+                    </div>
+                    <div class="rounded-md bg-background/70 px-2 py-1.5 text-muted-foreground">
+                        Preço: <span class="text-foreground">{{ humanizeOrder(shelf.template_slot.price_order) }}</span>
+                    </div>
+                    <div class="rounded-md bg-background/70 px-2 py-1.5 text-muted-foreground">
+                        Exposição marca: <span class="text-foreground">{{ humanizeExposure(shelf.template_slot.brand_exposure) }}</span>
+                    </div>
+                    <div class="rounded-md bg-background/70 px-2 py-1.5 text-muted-foreground">
+                        Exposição sabor: <span class="text-foreground">{{ humanizeExposure(shelf.template_slot.flavor_exposure) }}</span>
+                    </div>
+                </div>
+
+                <p class="text-xs text-muted-foreground">
+                    Fallback: <span class="text-foreground">{{ humanizeFallback(shelf.template_slot.space_fallback) }}</span> •
+                    Expansão: <span class="text-foreground">{{ humanizeFacingExpansion(shelf.template_slot.facing_expansion) }}</span> •
+                    Estoque alvo: <span class="text-foreground">{{ shelf.template_slot.use_target_stock ? 'Sim' : 'Não' }}</span>
+                </p>
+            </div>
+
+            <Separator />
+
             <!-- Botões de ação -->
             <div class="space-y-2">
                 <Label>{{ t('plannerate.sidebar.section_details.actions') }}</Label>
@@ -338,5 +388,52 @@ function handleDelete() {
         // A prateleira já está selecionada acima
         selection.deleteSelected();
     }
+}
+
+function humanizeOrder(value?: string | null): string {
+    if (value === 'asc') {
+        return 'Crescente';
+    }
+    if (value === 'desc') {
+        return 'Decrescente';
+    }
+
+    return 'Nenhum';
+}
+
+function humanizeExposure(value?: string | null): string {
+    if (value === 'vertical') {
+        return 'Vertical';
+    }
+    if (value === 'horizontal') {
+        return 'Horizontal';
+    }
+
+    return 'Mista';
+}
+
+function humanizeFallback(value?: string | null): string {
+    if (value === 'reduce_facings') {
+        return 'Reduzir facings';
+    }
+    if (value === 'reduce_c') {
+        return 'Reduzir classe C';
+    }
+
+    return 'Pular';
+}
+
+function humanizeFacingExpansion(value?: string | null): string {
+    if (value === 'score') {
+        return 'Por score';
+    }
+    if (value === 'current_stock') {
+        return 'Por estoque atual';
+    }
+    if (value === 'equal') {
+        return 'Distribuição igual';
+    }
+
+    return 'Sem expansão';
 }
 </script>

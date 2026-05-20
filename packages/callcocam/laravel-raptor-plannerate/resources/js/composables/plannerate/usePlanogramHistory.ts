@@ -243,6 +243,31 @@ return null;
         return historyStack.value.slice(-count);
     }
 
+    /**
+     * Mescla dados extras no beforeState da ação mais recente do histórico.
+     * Usado para retroativamente vincular contexto (ex: produto rejeitado) a uma
+     * ação já registrada, de modo que o undo possa restaurar o estado completo.
+     */
+    function patchCurrentBeforeState(data: Record<string, any>): void {
+        if (currentIndex.value < 0) {
+            return;
+        }
+
+        const current = historyStack.value[currentIndex.value];
+
+        if (!current) {
+            return;
+        }
+
+        if (current.beforeState === null || current.beforeState === undefined) {
+            current.beforeState = data;
+        } else {
+            Object.assign(current.beforeState, data);
+        }
+
+        saveToLocalStorage();
+    }
+
     return {
         // Estado (agora são computed refs)
         canUndo,
@@ -258,6 +283,9 @@ return null;
         getRecentActions,
         cloneState,
         
+        // Patch retroativo no beforeState da ação atual
+        patchCurrentBeforeState,
+
         // LocalStorage
         saveToLocalStorage,
         loadFromLocalStorage,

@@ -505,8 +505,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
                 </DropdownMenu>
 
 
-                <TemplateGroupingDropdown :gondola-id="currentGondola?.id ?? null"
-                    :template-id="currentGondola?.template_id ?? null" />
+                <TemplateGroupingDropdown />
 
 
 
