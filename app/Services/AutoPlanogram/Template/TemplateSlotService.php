@@ -2,6 +2,7 @@
 
 namespace App\Services\AutoPlanogram\Template;
 
+use App\Models\PlanogramRejectedProduct;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
@@ -205,13 +206,24 @@ final class TemplateSlotService
     /** @return list<array<string, mixed>> */
     public function subtemplatesData(Model $template): array
     {
+        $slotIds = $template->subtemplates
+            ->flatMap(fn (Model $sub): array => $sub->slots->pluck('id')->all())
+            ->all();
+
+        $rejectedCounts = $slotIds !== []
+            ? PlanogramRejectedProduct::whereIn('slot_id', $slotIds)
+                ->selectRaw('slot_id, count(*) as total')
+                ->groupBy('slot_id')
+                ->pluck('total', 'slot_id')
+            : collect();
+
         return $template->subtemplates
             ->map(fn (Model $sub): array => [
                 'id' => $sub->id,
                 'code' => $sub->code,
                 'num_modules' => $sub->num_modules,
                 'slot_defaults' => $sub->slot_defaults,
-                'slots' => $sub->slots->map(function (Model $slot): array {
+                'slots' => $sub->slots->map(function (Model $slot) use ($rejectedCounts): array {
                     $category = $slot->relationLoaded('category') ? $slot->getRelation('category') : null;
 
                     return [
@@ -233,6 +245,7 @@ final class TemplateSlotService
                         'use_target_stock' => $slot->use_target_stock,
                         'facing_expansion' => $slot->facing_expansion->value,
                         'ordering' => $slot->ordering,
+                        'rejected_count' => (int) ($rejectedCounts->get($slot->id) ?? 0),
                     ];
                 })->values()->all(),
             ])

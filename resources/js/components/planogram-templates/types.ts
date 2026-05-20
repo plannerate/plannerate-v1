@@ -24,6 +24,7 @@ export type PlanogramTemplateSlot = {
     use_target_stock: boolean;
     facing_expansion: SlotFacingExpansion;
     ordering?: number;
+    rejected_count?: number;
 };
 
 export type PlanogramSlotDefaults = Pick<
@@ -74,7 +75,7 @@ export type SlotAnalysisRow = {
 
 export type SlotAnalysisSummary = {
     slot_id: string;
-    grouping: string;
+    category_id: string | null;
     shelf_width_cm: number;
     occupied_width_cm: number;
     free_width_cm: number;

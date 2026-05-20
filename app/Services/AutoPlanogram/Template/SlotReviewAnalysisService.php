@@ -22,7 +22,7 @@ final readonly class SlotReviewAnalysisService
      * @return array{
      *   summary: array{
      *     slot_id: string,
-     *     grouping: string,
+     *     category_id: string|null,
      *     shelf_width_cm: float,
      *     occupied_width_cm: float,
      *     free_width_cm: float,
