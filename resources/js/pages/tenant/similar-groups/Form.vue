@@ -136,7 +136,7 @@ const pageMeta = useCrudPageMeta({
         ? 'Editar Grupo de Similares'
         : 'Novo Grupo de Similares',
     description:
-        'Monte famílias de produtos equivalentes e normalize as dimensões em lote.',
+        'Monte o grupo de produtos equivalentes e normalize as dimensões em lote.',
     breadcrumbs: [
         {
             title: t('app.navigation.dashboard'),
