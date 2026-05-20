@@ -645,7 +645,6 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'protected' => 'Esta permissao e protegida e nao pode ser alterada.',
             ],
         ],
-    ],
     'tenant_access' => [
         'title' => 'Acessos do tenant',
         'description' => 'Gerencie os usuarios e perfis de acesso deste tenant.',
@@ -815,6 +814,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'seeded' => 'Templates padrão criados com sucesso.',
             ],
         ],
+    ],
     ],
 
     'tenant' => [

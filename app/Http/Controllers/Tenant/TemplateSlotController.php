@@ -148,6 +148,20 @@ class TemplateSlotController extends Controller
         ]);
     }
 
+    public function updateSubtemplateSlotDefaults(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
+    {
+        unset($subdomain);
+        $this->authorize('update', $planogramTemplate);
+
+        $validated = $this->service->validateSlotDefaults($request);
+        $this->service->updateSlotDefaults($planogramSubtemplate, $validated);
+
+        return redirect()->route('tenant.planogram-templates.slots.index', [
+            'subdomain' => $this->tenantSubdomain(),
+            'planogramTemplate' => $planogramTemplate->id,
+        ]);
+    }
+
     public function storeSlot(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
     {
         unset($subdomain);

@@ -39,6 +39,21 @@ final class TemplateSlotService
         ]);
     }
 
+    /** @return array<string, mixed> */
+    public function validateSlotDefaults(Request $request): array
+    {
+        return $request->validate([
+            'min_facings' => ['required', 'integer', 'min:1', 'max:20'],
+            'priority' => ['required', 'integer', 'min:1', 'max:10'],
+            'price_order' => ['required', 'string', 'in:asc,desc,none'],
+            'size_order' => ['required', 'string', 'in:asc,desc,none'],
+            'brand_exposure' => ['required', 'string', 'in:vertical,horizontal,mixed'],
+            'flavor_exposure' => ['required', 'string', 'in:vertical,horizontal,mixed'],
+            'space_fallback' => ['required', 'string', 'in:reduce_c,reduce_facings,skip'],
+            'use_target_stock' => ['boolean'],
+        ]);
+    }
+
     /** @param array<string, mixed> $extra */
     public function createSubtemplate(Model $template, int $numModules, array $extra = []): void
     {
@@ -122,6 +137,12 @@ final class TemplateSlotService
                 'use_target_stock' => (bool) ($slotPayload['use_target_stock'] ?? false),
             ],
         ]);
+    }
+
+    /** @param array<string, mixed> $validated */
+    public function updateSlotDefaults(Model $subtemplate, array $validated): void
+    {
+        $this->updateSubtemplateSlotDefaults($subtemplate, $validated);
     }
 
     public function destroySlot(Model $slot): void

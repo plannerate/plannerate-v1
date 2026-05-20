@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, Download, Trash2, Upload } from 'lucide-vue-next';
+import { ChevronLeft, ChevronRight, Download, Settings2, Trash2, Upload } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
 import GondolaGrid from '@/components/planogram-templates/GondolaGrid.vue';
+import ModuleDefaultsModal from '@/components/planogram-templates/ModuleDefaultsModal.vue';
 import ModuleSelectorButtons from '@/components/planogram-templates/ModuleSelectorButtons.vue';
 import PlanogramConfirmDialog from '@/components/planogram-templates/PlanogramConfirmDialog.vue';
 import SlotEditorModal from '@/components/planogram-templates/SlotEditorModal.vue';
@@ -214,6 +215,7 @@ watch(
 
 // ── Slot editor ────────────────────────────────────────────────────────────────
 const slotEditorOpen = ref(false);
+const moduleDefaultsOpen = ref(false);
 const editingModule = ref(1);
 const editingShelf = ref(1);
 const editingSlot = ref<PlanogramTemplateSlot | null>(null);
@@ -289,6 +291,43 @@ function saveSlot(
             },
         );
     }
+}
+
+function saveCurrentModuleDefaults(
+    defaults: Pick<
+        PlanogramTemplateSlot,
+        | 'min_facings'
+        | 'priority'
+        | 'price_order'
+        | 'size_order'
+        | 'brand_exposure'
+        | 'flavor_exposure'
+        | 'space_fallback'
+        | 'use_target_stock'
+    >,
+): void {
+    const subtemplate = currentSubtemplate.value;
+
+    if (!subtemplate) {
+        return;
+    }
+
+    router.put(
+        `${baseUrl.value}/subtemplates/${subtemplate.id}/slot-defaults`,
+        defaults,
+        {
+            preserveState: true,
+            only: ['subtemplates'],
+        },
+    );
+}
+
+function openModuleDefaultsModal(): void {
+    if (!currentSubtemplate.value) {
+        return;
+    }
+
+    moduleDefaultsOpen.value = true;
 }
 
 function removeSlot(module: number, shelf: number): void {
@@ -527,6 +566,15 @@ const breadcrumbs = [
                 >
                     <Trash2 class="size-3.5" />
                 </Button>
+                <Button
+                    v-if="subtemplateExists(currentModules)"
+                    variant="outline"
+                    size="sm"
+                    @click="openModuleDefaultsModal"
+                >
+                    <Settings2 class="size-3.5" />
+                    Configuração padrão do módulo
+                </Button>
             </div>
 
             <!-- Shelf count control -->
@@ -607,6 +655,12 @@ const breadcrumbs = [
         :template-slot="editingSlot"
         :slot-defaults="currentSlotDefaults"
         @save="saveSlot"
+    />
+    <ModuleDefaultsModal
+        v-model:open="moduleDefaultsOpen"
+        :module-number="currentModules"
+        :slot-defaults="currentSlotDefaults"
+        @save="saveCurrentModuleDefaults"
     />
 
     <PlanogramConfirmDialog

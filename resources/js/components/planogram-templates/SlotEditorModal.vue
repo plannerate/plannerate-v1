@@ -111,6 +111,7 @@ function saveSlot(): void {
     emit('save', { ...draft });
     emit('update:open', false);
 }
+
 </script>
 
 <template>
