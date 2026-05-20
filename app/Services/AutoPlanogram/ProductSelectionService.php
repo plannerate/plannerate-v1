@@ -13,6 +13,8 @@ use App\Services\AutoPlanogram\DTO\RankedProductDTO;
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
+use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AbcAnalysisService;
+use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\TargetStockService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +32,11 @@ use Illuminate\Support\Facades\Log;
 class ProductSelectionService
 {
     use UsesPlannerateTenantDatabase;
+
+    public function __construct(
+        private readonly AbcAnalysisService $abcAnalysis,
+        private readonly TargetStockService $targetStock,
+    ) {}
 
     /**
      * Selecionar e rankear produtos para o planograma
@@ -277,35 +284,103 @@ class ProductSelectionService
     }
 
     /**
-     * Buscar análises ABC existentes (se configurado)
+     * Buscar análises ABC — tenta cache em product_analyses, senão computa on-the-fly.
      *
-     * IMPORTANTE: BelongsToConnection já configurou a conexão para o tenant correto
-     *
-     * @return array ['product_id' => ['abc' => 'A'|'B'|'C', 'target_stock' => float, 'safety_stock' => float]]
+     * @return array<string, array{abc: string, target_stock: float, safety_stock: float}>
      */
     protected function getAbcAnalyses(Collection $products, AutoGenerateConfigDTO $config): array
     {
-        if (! $config->useExistingAnalysis) {
+        $productIds = $products->pluck('id')->toArray();
+
+        if ($config->useExistingAnalysis) {
+            $cached = $this->plannerateTenantTable('product_analyses')
+                ->whereIn('product_id', $productIds)
+                ->select(['product_id', 'abc_classification', 'target_stock', 'safety_stock'])
+                ->get();
+
+            if ($cached->isNotEmpty()) {
+                $result = [];
+                foreach ($cached as $row) {
+                    $result[$row->product_id] = [
+                        'abc' => $row->abc_classification,
+                        'target_stock' => (float) ($row->target_stock ?? 0),
+                        'safety_stock' => (float) ($row->safety_stock ?? 0),
+                    ];
+                }
+
+                return $result;
+            }
+        }
+
+        return $this->computeAbcOnTheFly($productIds, $config);
+    }
+
+    /**
+     * Computa ABC + Estoque Alvo on-the-fly usando os services do pacote.
+     *
+     * @param  array<string>  $productIds
+     * @return array<string, array{abc: string, target_stock: float, safety_stock: float}>
+     */
+    private function computeAbcOnTheFly(array $productIds, AutoGenerateConfigDTO $config): array
+    {
+        if (empty($productIds)) {
             return [];
         }
 
-        $productIds = $products->pluck('id')->toArray();
+        $tenantId = app('currentTenant')?->getKey() ?? '';
+        $filters = ['tenant_id' => $tenantId];
 
-        $analyses = $this->plannerateTenantTable('product_analyses')
-            ->whereIn('product_id', $productIds)
-            ->select(['product_id', 'abc_classification', 'target_stock', 'safety_stock'])
-            ->get();
+        if ($config->tableType === 'monthly_summaries') {
+            if ($config->startDate) {
+                $filters['month_from'] = Carbon::parse($config->startDate)->startOfMonth()->toDateString();
+            }
+            if ($config->endDate) {
+                $filters['month_to'] = Carbon::parse($config->endDate)->endOfMonth()->toDateString();
+            }
+        } else {
+            if ($config->startDate) {
+                $filters['date_from'] = $config->startDate;
+            }
+            if ($config->endDate) {
+                $filters['date_to'] = $config->endDate;
+            }
+        }
 
-        $abcData = [];
-        foreach ($analyses as $analysis) {
-            $abcData[$analysis->product_id] = [
-                'abc' => $analysis->abc_classification,
-                'target_stock' => (float) ($analysis->target_stock ?? 0),
-                'safety_stock' => (float) ($analysis->safety_stock ?? 0),
+        $abcResults = $this->abcAnalysis->analyzeByProductIds($productIds, $config->tableType, $filters);
+
+        if ($abcResults->isEmpty()) {
+            Log::info('ProductSelectionService: ABC on-the-fly sem resultados (sem vendas no período)');
+
+            return [];
+        }
+
+        $targetResults = $this->targetStock->calculateByAbcResults(
+            abcResults: $abcResults->toArray(),
+            tableType: $config->tableType,
+            filters: $filters,
+        );
+
+        $targetByProductId = $targetResults->keyBy('product_id');
+
+        Log::info('ProductSelectionService: ABC on-the-fly concluído', [
+            'products_com_abc' => $abcResults->count(),
+            'A' => $abcResults->where('classificacao', 'A')->count(),
+            'B' => $abcResults->where('classificacao', 'B')->count(),
+            'C' => $abcResults->where('classificacao', 'C')->count(),
+        ]);
+
+        $result = [];
+        foreach ($abcResults as $item) {
+            $pid = $item['product_id'];
+            $target = $targetByProductId->get($pid);
+            $result[$pid] = [
+                'abc' => $item['classificacao'],
+                'target_stock' => (float) ($target['estoque_alvo'] ?? 0),
+                'safety_stock' => (float) ($target['estoque_seguranca'] ?? 0),
             ];
         }
 
-        return $abcData;
+        return $result;
     }
 
     /**

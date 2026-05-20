@@ -7,6 +7,7 @@ use App\Enums\FacingExpansion;
 use App\Enums\PlacementFailureReason;
 use App\Enums\PriceOrder;
 use App\Enums\SizeOrder;
+use App\Enums\SpaceFallback;
 use App\Models\Category;
 use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplateSlot;
@@ -31,6 +32,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /** @var array<string, true> Produtos já posicionados na geração atual — evita duplicatas entre slots da mesma categoria */
     private array $globalPlacedProductIds = [];
 
+    /** @var array<string, string> Mapa ABC [product_id => 'A'|'B'|'C'] vindo de PlacementSettings */
+    private array $abcClassMap = [];
+
     public function __construct(
         private readonly ProductWidthResolver $widthResolver,
         private readonly GreedyShelfPlacer $greedyPlacer,
@@ -54,6 +58,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         array $reservedWidthPerShelf = [],
     ): PlacementResult {
         $this->globalPlacedProductIds = [];
+        $this->abcClassMap = $settings->abcClassMap;
 
         $subtemplate = $this->resolveSubtemplate($settings);
 
@@ -108,6 +113,17 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             }
 
             $ordered = $this->orderCandidates($candidates, $slot);
+
+            // ReduceC: garante que produtos C ficam por último para serem rejeitados primeiro
+            if ($slot->space_fallback === SpaceFallback::ReduceC && ! empty($this->abcClassMap)) {
+                $ordered = $ordered->sortBy(fn ($p) => match ($this->abcClassMap[$p->id] ?? 'B') {
+                    'A' => 0,
+                    'B' => 1,
+                    'C' => 2,
+                    default => 1,
+                })->values();
+            }
+
             $available = $this->getShelfAvailableWidth($section);
             $slotResult = $this->distributeInShelf($ordered, $section, $shelf, $slot, $available);
 

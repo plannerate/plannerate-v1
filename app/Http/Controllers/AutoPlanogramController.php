@@ -86,6 +86,11 @@ class AutoPlanogramController extends Controller
 
             $products = $rankedProducts->map(fn ($dto) => $dto->product);
 
+            $abcClassMap = $rankedProducts
+                ->filter(fn ($dto) => $dto->abcClass !== null)
+                ->mapWithKeys(fn ($dto) => [$dto->product->id => $dto->abcClass])
+                ->all();
+
             $weightsModel = ScoringWeights::first();
             $weights = $weightsModel
                 ? ScoringWeightsValue::fromModel($weightsModel)
@@ -93,10 +98,9 @@ class AutoPlanogramController extends Controller
 
             $tenantId = app('currentTenant')?->getKey();
 
-            $settings = PlacementSettings::fromConfigDto($config)->withExtras(
-                tenantId: $tenantId,
-                weights: $weights,
-            );
+            $settings = PlacementSettings::fromConfigDto($config)
+                ->withExtras(tenantId: $tenantId, weights: $weights)
+                ->withAbcMap($abcClassMap);
 
             if ($templateId) {
                 $settings = $settings->withTemplate(
