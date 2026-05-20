@@ -366,7 +366,7 @@ function clearDimensionSource(): void {
                                     <h2
                                         class="text-sm font-semibold text-foreground"
                                     >
-                                        Produtos da família
+                                       Produtos do grupo de similares
                                     </h2>
                                 </div>
 
@@ -526,7 +526,8 @@ function clearDimensionSource(): void {
                                                                 referência para
                                                                 preencher a
                                                                 dimensão padrão
-                                                                da família. É
+                                                                do grupo de
+                                                                similares. É
                                                                 opcional e você
                                                                 ainda pode
                                                                 editar os campos
@@ -560,8 +561,8 @@ function clearDimensionSource(): void {
                                                     colspan="4"
                                                 >
                                                     Escolha ao menos dois
-                                                    produtos que pertençam à
-                                                    mesma família.
+                                                    produtos que pertençam ao
+                                                    mesmo grupo de similares.
                                                 </td>
                                             </tr>
                                             <tr
@@ -649,7 +650,7 @@ function clearDimensionSource(): void {
                                         <h2
                                             class="text-sm font-semibold text-foreground"
                                         >
-                                            Dimensão padrão da família
+                                            Dimensão padrão do grupo de similares
                                         </h2>
                                         <p
                                             class="text-xs text-muted-foreground"
