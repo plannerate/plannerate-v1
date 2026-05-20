@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useT } from '@/composables/useT';
+import { Gondola } from '@/types/planogram';
 
 interface StrategyOption {
     value: string;
@@ -35,7 +36,7 @@ interface TemplateOption {
 
 const props = defineProps<{
     open: boolean;
-    gondolaId: string;
+    gondola: Gondola;
     startDate?: string;
     endDate?: string;
     categoryId?: string | null;
@@ -60,7 +61,7 @@ const form = useForm({
     include_products_without_sales: false,
     table_type: 'monthly_summaries' as 'sales' | 'monthly_summaries',
     category_id: props.categoryId ?? null,
-    template_id: null as string | null,
+    template_id: props.gondola.template_id ?? null,
 });
 
 const hasTemplates = computed(() => (props.planogramTemplates?.length ?? 0) > 0);
@@ -151,7 +152,7 @@ function handleGenerate() {
         return;
     }
 
-    form.post(`/api/gondolas/${props.gondolaId}/auto-generate`, {
+    form.post(`/api/gondolas/${props.gondola.id}/auto-generate`, {
         preserveScroll: true,
         preserveState: false,
         onSuccess: () => {

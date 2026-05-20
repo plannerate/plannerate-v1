@@ -38,7 +38,11 @@ class AutoPlanogramController extends Controller
         try {
             $config = AutoGenerateConfigDTO::fromArray($request->validated());
 
+
+
             $gondolaModel = Gondola::with(['sections.shelves'])->findOrFail($gondola);
+
+            $gondolaModel->template_id = $request->input('template_id');
 
             $planogram = Planogram::with(['category'])->find($gondolaModel->planogram_id);
 
@@ -75,7 +79,7 @@ class AutoPlanogramController extends Controller
                 return back()->with('warning', __('app.messages.no_products_found'));
             }
 
-            $products = $rankedProducts->map(fn ($dto) => $dto->product);
+            $products = $rankedProducts->map(fn($dto) => $dto->product);
 
             $weightsModel = ScoringWeights::first();
             $weights = $weightsModel
@@ -112,10 +116,10 @@ class AutoPlanogramController extends Controller
             $report = $output->validationReport;
             $totalProducts = $input->products->count();
             $rejectedSpace = $output->rejectedProducts
-                ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
+                ->filter(fn($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
                 ->count();
             $rejectedHeight = $output->rejectedProducts
-                ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::HeightExceedsShelf)
+                ->filter(fn($r) => $r['reason'] === PlacementFailureReason::HeightExceedsShelf)
                 ->count();
 
             Inertia::flash('toast', [
@@ -139,8 +143,8 @@ class AutoPlanogramController extends Controller
                 'score_type' => $output->scoreType,
                 'has_sales_data' => $output->scoreType !== 'neutral',
                 'produtos_rejeitados_espaco' => $output->rejectedProducts
-                    ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
-                    ->map(fn ($r) => [
+                    ->filter(fn($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
+                    ->map(fn($r) => [
                         'id' => $r['product']->id,
                         'name' => $r['product']->name,
                         'category' => $r['product']->category?->name,
@@ -150,7 +154,7 @@ class AutoPlanogramController extends Controller
             if ($templateId !== null) {
                 $capacityReport['suggestions'] = $output->suggestions;
                 $capacityReport['slot_analysis'] = $output->slotAnalysis;
-                $capacityReport['has_space'] = collect($output->slotAnalysis)->some(fn ($s) => $s['largura_livre'] > 10);
+                $capacityReport['has_space'] = collect($output->slotAnalysis)->some(fn($s) => $s['largura_livre'] > 10);
                 $capacityReport['has_rejects'] = $rejectedSpace > 0;
                 $capacityReport['template_id'] = $templateId;
                 $capacityReport['subdomain'] = $subdomain;
@@ -166,7 +170,6 @@ class AutoPlanogramController extends Controller
             ]);
 
             return back();
-
         } catch (\RuntimeException $e) {
             Log::info('AutoPlanogramController: geração cancelada', [
                 'gondola_id' => $gondola,
@@ -174,7 +177,6 @@ class AutoPlanogramController extends Controller
             ]);
 
             return back()->with('warning', $e->getMessage());
-
         } catch (\Exception $e) {
             Log::error('AutoPlanogramController: erro técnico', [
                 'gondola_id' => $gondola,
@@ -196,7 +198,7 @@ class AutoPlanogramController extends Controller
             ->orderBy('grouping')
             ->orderBy('shelf_order')
             ->get()
-            ->map(fn ($r) => [
+            ->map(fn($r) => [
                 'id' => $r->id,
                 'product_id' => $r->product_id,
                 'product_name' => $r->product_name,
@@ -264,9 +266,9 @@ class AutoPlanogramController extends Controller
 
         $categories = $categoryIds !== []
             ? Category::withoutGlobalScopes()
-                ->whereIn('id', $categoryIds)
-                ->get(['id', 'name'])
-                ->keyBy('id')
+            ->whereIn('id', $categoryIds)
+            ->get(['id', 'name'])
+            ->keyBy('id')
             : collect();
 
         $groupings = $slots

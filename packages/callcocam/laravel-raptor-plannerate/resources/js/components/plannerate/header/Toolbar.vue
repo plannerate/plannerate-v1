@@ -668,13 +668,6 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     <span class="max-w-24 truncate">
                         {{ t('plannerate.toolbar.auto_generate') }}</span>
                 </ButtonWithTooltip>
-                <AutoGenerateModal v-if="autoGenerateEnabled && permissions.can_autogenate_gondola"
-                    :open="showAutoGenerateModal" :gondola-id="currentGondola?.id || ''"
-                    :category-id="(currentGondola?.planogram as any)?.category_id"
-                    :start-date="(currentGondola?.planogram as any)?.start_date"
-                    :end-date="(currentGondola?.planogram as any)?.end_date" :strategy-options="strategyOptions"
-                    :planogram-templates="planogramTemplates"
-                    @update:open="(value: boolean) => (showAutoGenerateModal = value)" />
 
                 <!-- Dropdown Ações -->
                 <DropdownActions :can-remove-gondola="permissions.can_remove_gondola" :has-store="hasStore"
@@ -686,6 +679,16 @@ const handleMapRegionSelect = (regionId: string | null) => {
             </div>
         </div>
 
+        <!-- ============================================================
+         MODAL DE GERAÇÃO AUTOMÁTICA
+         ============================================================ -->
+        <AutoGenerateModal v-if="autoGenerateEnabled && permissions.can_autogenate_gondola"
+            :open="showAutoGenerateModal" :gondola="currentGondola as Gondola"
+            :category-id="(currentGondola?.planogram as any)?.category_id"
+            :start-date="(currentGondola?.planogram as any)?.start_date"
+            :end-date="(currentGondola?.planogram as any)?.end_date" :strategy-options="strategyOptions"
+            :planogram-templates="planogramTemplates"
+            @update:open="(value: boolean) => (showAutoGenerateModal = value)" />
         <!-- ============================================================
          MODAL DE CONFIRMAÇÃO DE REMOÇÃO DE GÔNDOLA
          ============================================================ -->

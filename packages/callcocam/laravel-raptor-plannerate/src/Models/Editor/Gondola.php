@@ -8,6 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Models\Editor;
 
+use App\Models\Tenant;
 use App\Models\Traits\BelongsToTenant;
 use Callcocam\LaravelRaptorPlannerate\Models\Traits\UsesPlannerateTenantConnection;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
 class Gondola extends Model
@@ -63,8 +65,14 @@ class Gondola extends Model
     {
         if (! Route::has('tenant.planograms.gondolas.editor')) {
             return null;
-        }
-        $subdomain = str(request()->getHost())->before('.')->toString();
+        } 
+        $subdomain = Cache::rememberForever("tenants_{$this->tenant_id}_subdomain", function () {
+            // Lógica para obter o subdomínio do tenant, por exemplo:
+            if ($tenant = Tenant::current()) { 
+                return str($tenant->domain->host)->before('.')->toString() ?? null;
+            }
+            return null;
+        });
 
         return route('tenant.planograms.gondolas.editor', ['planogram' => $this->planogram_id, 'record' => $this->id, 'subdomain' => $subdomain], false);
     }
