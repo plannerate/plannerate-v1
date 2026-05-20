@@ -1,17 +1,19 @@
 <?php
 
 use App\Services\AutoPlanogram\Template\TemplateSlotService;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
-test('normalizeGrouping converte grouping em slug', function (): void {
+test('validateSlot requer category_id', function (): void {
     $service = new TemplateSlotService;
 
-    expect($service->normalizeGrouping('CEREAIS | FARINÁCEOS | FAROFA DE MANDIOCA'))
-        ->toBe('cereais-farinaceos-farofa-de-mandioca');
+    $request = new Request;
+    $request->merge([]);
+
+    expect(fn () => $service->validateSlot($request))
+        ->toThrow(ValidationException::class);
 });
 
-test('normalizeGrouping remove espaços extras e acentos', function (): void {
-    $service = new TemplateSlotService;
-
-    expect($service->normalizeGrouping('  HIGIENE   PESSOAL  '))
-        ->toBe('higiene-pessoal');
+test('TemplateSlotService pode ser instanciado', function (): void {
+    expect(new TemplateSlotService)->toBeInstanceOf(TemplateSlotService::class);
 });

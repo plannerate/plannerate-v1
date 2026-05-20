@@ -3,7 +3,7 @@
 use App\Console\Commands\SyncCategorySortimentAttributesCommand;
 use App\Models\Category;
 
-test('buildProductSyncData preenche sortiment e grouping a partir da hierarquia da categoria', function (): void {
+test('buildProductSyncData preenche sortiment_attribute e sortiment_attribute_levels a partir da hierarquia da categoria', function (): void {
     $root = new Category([
         'name' => 'Matriz',
         'level_name' => 'Departamento',
@@ -51,7 +51,7 @@ test('buildProductSyncData preenche sortiment e grouping a partir da hierarquia 
         ->and($result)->toMatchArray([
             'sortiment_attribute' => 'Higiene | Pessoal | Sabonetes | Líquido',
             'sortiment_attribute_levels' => 'departamento,subdepartamento,categoria,subcategoria',
-            'grouping' => 'Higiene | Pessoal | Sabonetes | Líquido',
-            'grouping_normalized' => 'higiene-pessoal-sabonetes-liquido',
-        ]);
+        ])
+        ->and($result)->not->toHaveKey('grouping')
+        ->and($result)->not->toHaveKey('grouping_normalized');
 });

@@ -10,6 +10,7 @@ use App\Models\User;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -122,7 +123,8 @@ test('import with valid xlsx creates template and slots', function (): void {
     $slots = $subtemplate->slots()->get();
     expect($slots)->toHaveCount(2);
     expect($slots->first()->ordering)->toBe(1);
-    expect($slots->first()->grouping)->toBe('AMACIANTE');
+    // category_id será null quando não há categorias correspondentes no banco de teste
+    expect($slots->first()->category_id)->toBeNull();
 });
 
 test('import without file fails validation', function (): void {
@@ -220,8 +222,6 @@ test('review page keeps selected slot from query param', function (): void {
         'subtemplate_id' => $subtemplate->id,
         'module_number' => 1,
         'shelf_order' => 1,
-        'grouping' => 'CEREAL MATINAL',
-        'grouping_normalized' => 'cereal-matinal',
         'min_facings' => 1,
         'priority' => 1,
         'price_order' => 'none',
@@ -321,7 +321,7 @@ test('planogram template routes are forbidden without permissions', function ():
     $response->assertForbidden();
 });
 
-test('slot products endpoint returns only products from slot grouping_normalized', function (): void {
+test('slot products endpoint returns only products from slot category_id', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);
 
@@ -336,46 +336,21 @@ test('slot products endpoint returns only products from slot grouping_normalized
         'is_active' => true,
     ]);
 
-    $subtemplate = PlanogramSubtemplate::query()->create([
-        'tenant_id' => $tenant->id,
-        'template_id' => $template->id,
-        'code' => 'TPL-SLOT-1M',
-        'num_modules' => 1,
-        'is_active' => true,
-    ]);
-
-    PlanogramTemplateSlot::query()->create([
-        'tenant_id' => $tenant->id,
-        'subtemplate_id' => $subtemplate->id,
-        'module_number' => 1,
-        'shelf_order' => 1,
-        'grouping' => 'CEREAL MATINAL',
-        'grouping_normalized' => 'cereal-matinal',
-        'min_facings' => 1,
-        'priority' => 1,
-        'price_order' => 'none',
-        'size_order' => 'none',
-        'brand_exposure' => 'mixed',
-        'flavor_exposure' => 'mixed',
-        'space_fallback' => 'skip',
-        'use_target_stock' => false,
-        'ordering' => 1,
-    ]);
+    $cerealCategoryId = (string) Str::ulid();
+    $biscoitoCategoryId = (string) Str::ulid();
 
     Product::factory()->create([
         'tenant_id' => $tenant->id,
         'user_id' => $user->id,
         'name' => 'Produto Match',
-        'grouping' => 'CEREAL MATINAL',
-        'grouping_normalized' => 'cereal-matinal',
+        'category_id' => $cerealCategoryId,
     ]);
 
     Product::factory()->create([
         'tenant_id' => $tenant->id,
         'user_id' => $user->id,
         'name' => 'Produto Outro',
-        'grouping' => 'BISCOITO',
-        'grouping_normalized' => 'biscoito',
+        'category_id' => $biscoitoCategoryId,
     ]);
 
     $response = $this
@@ -383,14 +358,14 @@ test('slot products endpoint returns only products from slot grouping_normalized
         ->getJson(route('tenant.planogram-templates.slots.products', [
             'subdomain' => 'tpl-slot-products',
             'planogramTemplate' => $template->id,
-            'grouping_normalized' => 'cereal-matinal',
+            'category_id' => $cerealCategoryId,
         ], false));
 
     $response
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.name', 'Produto Match')
-        ->assertJsonPath('data.0.grouping_normalized', 'cereal-matinal');
+        ->assertJsonPath('data.0.category_id', $cerealCategoryId);
 });
 
 test('slot analysis endpoint returns placement summary and row reasons', function (): void {
@@ -416,13 +391,14 @@ test('slot analysis endpoint returns placement summary and row reasons', functio
         'is_active' => true,
     ]);
 
+    $cerealCategoryId = (string) Str::ulid();
+
     $slot = PlanogramTemplateSlot::query()->create([
         'tenant_id' => $tenant->id,
         'subtemplate_id' => $subtemplate->id,
+        'category_id' => $cerealCategoryId,
         'module_number' => 1,
         'shelf_order' => 1,
-        'grouping' => 'CEREAL MATINAL',
-        'grouping_normalized' => 'cereal-matinal',
         'min_facings' => 2,
         'priority' => 1,
         'price_order' => 'none',
@@ -438,18 +414,18 @@ test('slot analysis endpoint returns placement summary and row reasons', functio
         'tenant_id' => $tenant->id,
         'user_id' => $user->id,
         'name' => 'Produto Cabe',
-        'grouping' => 'CEREAL MATINAL',
-        'grouping_normalized' => 'cereal-matinal',
+        'category_id' => $cerealCategoryId,
         'width' => 20,
+        'status' => 'active',
     ]);
 
     Product::factory()->create([
         'tenant_id' => $tenant->id,
         'user_id' => $user->id,
         'name' => 'Produto Fora',
-        'grouping' => 'CEREAL MATINAL',
-        'grouping_normalized' => 'cereal-matinal',
+        'category_id' => $cerealCategoryId,
         'width' => 80,
+        'status' => 'active',
     ]);
 
     $response = $this
@@ -611,8 +587,6 @@ test('tenant admin pode clonar subtemplate para mais módulos', function (): voi
         'subtemplate_id' => $subtemplate->id,
         'module_number' => 1,
         'shelf_order' => 1,
-        'grouping' => 'AMACIANTE',
-        'grouping_normalized' => 'amaciante',
         'min_facings' => 2,
         'priority' => 1,
         'price_order' => 'none',

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AutoPlanogramController;
+use App\Models\Category;
 use App\Models\Gondola;
 use App\Models\Planogram;
 use App\Models\PlanogramSubtemplate;
@@ -13,6 +14,18 @@ use Illuminate\Support\Str;
 
 beforeEach(function (): void {
     Schema::connection('tenant')->dropAllTables();
+
+    Schema::connection('tenant')->create('categories', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26)->nullable();
+        $table->char('category_id', 26)->nullable();
+        $table->string('name');
+        $table->string('slug')->nullable();
+        $table->string('level_name')->nullable();
+        $table->unsignedTinyInteger('hierarchy_position')->default(1);
+        $table->timestamps();
+        $table->softDeletes();
+    });
 
     Schema::connection('tenant')->create('planograms', function (Blueprint $table): void {
         $table->char('id', 26)->primary();
@@ -74,12 +87,11 @@ beforeEach(function (): void {
         $table->char('id', 26)->primary();
         $table->char('tenant_id', 26);
         $table->char('subtemplate_id', 26);
+        $table->char('category_id', 26)->nullable();
         $table->unsignedTinyInteger('module_number');
         $table->unsignedTinyInteger('shelf_order');
-        $table->string('category');
-        $table->string('subcategory');
-        $table->string('grouping');
-        $table->string('grouping_normalized')->nullable();
+        $table->string('category')->nullable();
+        $table->string('subcategory')->nullable();
         $table->unsignedTinyInteger('min_facings')->default(1);
         $table->unsignedTinyInteger('priority')->default(1);
         $table->unsignedTinyInteger('ordering')->default(1);
@@ -98,6 +110,20 @@ function makeAutoPlanogramControllerForTemplateGroupingTest(): AutoPlanogramCont
 
 test('templateGroupings returns unique grouping list for gondola template', function (): void {
     $tenantId = (string) Str::ulid();
+
+    $catBebidas = Category::query()->create([
+        'id' => (string) Str::ulid(),
+        'tenant_id' => $tenantId,
+        'name' => 'Bebidas',
+        'hierarchy_position' => 4,
+    ]);
+
+    $catSnacks = Category::query()->create([
+        'id' => (string) Str::ulid(),
+        'tenant_id' => $tenantId,
+        'name' => 'Snacks',
+        'hierarchy_position' => 4,
+    ]);
 
     $planogram = Planogram::query()->create([
         'tenant_id' => $tenantId,
@@ -138,12 +164,9 @@ test('templateGroupings returns unique grouping list for gondola template', func
     PlanogramTemplateSlot::query()->create([
         'tenant_id' => $tenantId,
         'subtemplate_id' => $subtemplate->id,
+        'category_id' => $catBebidas->id,
         'module_number' => 1,
         'shelf_order' => 1,
-        'category' => 'CAT',
-        'subcategory' => 'SUB',
-        'grouping' => 'Bebidas',
-        'grouping_normalized' => 'bebidas',
         'min_facings' => 1,
         'priority' => 1,
         'ordering' => 1,
@@ -152,12 +175,9 @@ test('templateGroupings returns unique grouping list for gondola template', func
     PlanogramTemplateSlot::query()->create([
         'tenant_id' => $tenantId,
         'subtemplate_id' => $subtemplate->id,
+        'category_id' => $catBebidas->id,
         'module_number' => 2,
         'shelf_order' => 2,
-        'category' => 'CAT',
-        'subcategory' => 'SUB',
-        'grouping' => 'Bebidas',
-        'grouping_normalized' => 'bebidas',
         'min_facings' => 1,
         'priority' => 1,
         'ordering' => 2,
@@ -166,12 +186,9 @@ test('templateGroupings returns unique grouping list for gondola template', func
     PlanogramTemplateSlot::query()->create([
         'tenant_id' => $tenantId,
         'subtemplate_id' => $subtemplate->id,
+        'category_id' => $catSnacks->id,
         'module_number' => 1,
         'shelf_order' => 3,
-        'category' => 'CAT',
-        'subcategory' => 'SUB',
-        'grouping' => 'Snacks',
-        'grouping_normalized' => 'snacks',
         'min_facings' => 1,
         'priority' => 1,
         'ordering' => 3,
@@ -187,10 +204,12 @@ test('templateGroupings returns unique grouping list for gondola template', func
         ->and($payload['meta']['template_id'])->toBe($template->id)
         ->and($payload['meta']['subtemplate_id'])->toBe($subtemplate->id)
         ->and($payload['data'][0]['grouping'])->toBe('Bebidas')
-        ->and($payload['data'][0]['grouping_normalized'])->toBe('bebidas')
+        ->and($payload['data'][0]['grouping_normalized'])->toBe($catBebidas->id)
+        ->and($payload['data'][0]['category_id'])->toBe($catBebidas->id)
         ->and($payload['data'][0]['slots_count'])->toBe(2)
         ->and($payload['data'][1]['grouping'])->toBe('Snacks')
-        ->and($payload['data'][1]['grouping_normalized'])->toBe('snacks')
+        ->and($payload['data'][1]['grouping_normalized'])->toBe($catSnacks->id)
+        ->and($payload['data'][1]['category_id'])->toBe($catSnacks->id)
         ->and($payload['data'][1]['slots_count'])->toBe(1);
 });
 

@@ -11,13 +11,15 @@ function makeSlotAnalysis(
     array $rejeitadosNomes = [],
     int $shelfOrder = 1,
     int $moduleNumber = 1,
-    string $grouping = 'Bebidas',
+    string $categoryName = 'Bebidas',
+    string $categoryId = 'cat-bebidas',
 ): array {
     $livre = max(0.0, $larguraTotal - $larguraUsada);
 
     return [
         'slot_id' => 'slot-'.uniqid(),
-        'grouping' => $grouping,
+        'category_id' => $categoryId,
+        'category_name' => $categoryName,
         'module_number' => $moduleNumber,
         'shelf_order' => $shelfOrder,
         'shelf_id' => 'shelf-'.uniqid(),
@@ -93,8 +95,8 @@ it('consolidates multiple slots with rejects into one capacidade_excedida sugges
     $generator = new SlotSuggestionGenerator;
 
     $slots = [
-        makeSlotAnalysis(larguraUsada: 100.0, rejeitados: 1, rejeitadosNomes: ['Produto A'], grouping: 'Bebidas'),
-        makeSlotAnalysis(larguraUsada: 100.0, rejeitados: 2, rejeitadosNomes: ['Produto B', 'Produto C'], grouping: 'Snacks'),
+        makeSlotAnalysis(larguraUsada: 100.0, rejeitados: 1, rejeitadosNomes: ['Produto A'], categoryName: 'Bebidas'),
+        makeSlotAnalysis(larguraUsada: 100.0, rejeitados: 2, rejeitadosNomes: ['Produto B', 'Produto C'], categoryName: 'Snacks'),
     ];
 
     $suggestions = $generator->generate($slots);

@@ -152,8 +152,6 @@ class SyncCategorySortimentAttributesCommand extends Command
                     if (
                         $product->sortiment_attribute === $sortimentAttribute
                         && $product->sortiment_attribute_levels === $sortimentAttributeLevels
-                        && $product->grouping === $result['grouping']
-                        && $product->grouping_normalized === $result['grouping_normalized']
                     ) {
                         $skipped++;
 
@@ -164,8 +162,6 @@ class SyncCategorySortimentAttributesCommand extends Command
                         $product->updateQuietly([
                             'sortiment_attribute' => $sortimentAttribute,
                             'sortiment_attribute_levels' => $sortimentAttributeLevels,
-                            'grouping' => $result['grouping'],
-                            'grouping_normalized' => $result['grouping_normalized'],
                         ]);
                     }
 
@@ -182,13 +178,12 @@ class SyncCategorySortimentAttributesCommand extends Command
     }
 
     /**
-     * Calcula sortiment_attribute, sortiment_attribute_levels, grouping e grouping_normalized
-     * a partir da hierarquia da categoria.
+     * Calcula sortiment_attribute e sortiment_attribute_levels a partir da hierarquia da categoria.
      *
      * Inclui os nós nas posições 2 (departamento), 3 (subdepartamento), 4 (categoria) e 5 (subcategoria)
      * quando presentes na hierarquia.
      *
-     * @return array{sortiment_attribute: string, sortiment_attribute_levels: string, grouping: string, grouping_normalized: string}|null
+     * @return array{sortiment_attribute: string, sortiment_attribute_levels: string}|null
      */
     public function buildProductSyncData(?Category $category): ?array
     {
@@ -232,8 +227,6 @@ class SyncCategorySortimentAttributesCommand extends Command
         return [
             'sortiment_attribute' => $sortimentAttribute,
             'sortiment_attribute_levels' => implode(',', $levelKeys),
-            'grouping' => $sortimentAttribute,
-            'grouping_normalized' => Str::slug($sortimentAttribute),
         ];
     }
 

@@ -108,7 +108,7 @@ final class TemplateExportService
                         $slot->shelf_order,
                         $slot->category,
                         $slot->subcategory,
-                        $slot->grouping,
+                        $slot->category?->name,
                         $slot->min_facings,
                         $this->priceOrderLabel($slot->price_order),
                         $this->sizeOrderLabel($slot->size_order),

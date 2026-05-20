@@ -357,6 +357,7 @@ class AutoPlanogramController extends Controller
                     'rejection_reason' => PlacementFailureReason::NoHorizontalSpace->value,
                     'slot_id' => $rejected->slot_id,
                     'grouping' => $rejected->grouping,
+                    'grouping_normalized' => $rejected->grouping_normalized,
                     'module_number' => $rejected->module_number,
                     'shelf_order' => $rejected->shelf_order,
                 ]);
