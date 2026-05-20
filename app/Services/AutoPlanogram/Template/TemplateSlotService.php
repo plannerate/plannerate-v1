@@ -17,6 +17,7 @@ final class TemplateSlotService
             'category' => ['nullable', 'string', 'max:255'],
             'subcategory' => ['nullable', 'string', 'max:255'],
             'min_facings' => ['required', 'integer', 'min:1', 'max:20'],
+            'max_facings' => ['required', 'integer', 'min:1', 'max:20'],
             'priority' => ['required', 'integer', 'min:1', 'max:10'],
             'price_order' => ['required', 'string', 'in:asc,desc,none'],
             'size_order' => ['required', 'string', 'in:asc,desc,none'],
@@ -24,6 +25,7 @@ final class TemplateSlotService
             'flavor_exposure' => ['required', 'string', 'in:vertical,horizontal,mixed'],
             'space_fallback' => ['required', 'string', 'in:reduce_c,reduce_facings,skip'],
             'use_target_stock' => ['boolean'],
+            'facing_expansion' => ['required', 'string', 'in:none,score,current_stock,equal'],
         ]);
     }
 
@@ -45,6 +47,7 @@ final class TemplateSlotService
         return $request->validate([
             'category_id' => ['nullable', 'string', 'max:26'],
             'min_facings' => ['required', 'integer', 'min:1', 'max:20'],
+            'max_facings' => ['required', 'integer', 'min:1', 'max:20'],
             'priority' => ['required', 'integer', 'min:1', 'max:10'],
             'price_order' => ['required', 'string', 'in:asc,desc,none'],
             'size_order' => ['required', 'string', 'in:asc,desc,none'],
@@ -52,6 +55,7 @@ final class TemplateSlotService
             'flavor_exposure' => ['required', 'string', 'in:vertical,horizontal,mixed'],
             'space_fallback' => ['required', 'string', 'in:reduce_c,reduce_facings,skip'],
             'use_target_stock' => ['boolean'],
+            'facing_expansion' => ['required', 'string', 'in:none,score,current_stock,equal'],
         ]);
     }
 
@@ -132,6 +136,7 @@ final class TemplateSlotService
                     ? $slotPayload['category_id']
                     : null,
                 'min_facings' => (int) ($slotPayload['min_facings'] ?? 1),
+                'max_facings' => (int) ($slotPayload['max_facings'] ?? 5),
                 'priority' => (int) ($slotPayload['priority'] ?? 1),
                 'price_order' => (string) ($slotPayload['price_order'] ?? 'none'),
                 'size_order' => (string) ($slotPayload['size_order'] ?? 'none'),
@@ -139,6 +144,7 @@ final class TemplateSlotService
                 'flavor_exposure' => (string) ($slotPayload['flavor_exposure'] ?? 'horizontal'),
                 'space_fallback' => (string) ($slotPayload['space_fallback'] ?? 'reduce_c'),
                 'use_target_stock' => (bool) ($slotPayload['use_target_stock'] ?? false),
+                'facing_expansion' => (string) ($slotPayload['facing_expansion'] ?? 'none'),
             ],
         ]);
     }
@@ -217,6 +223,7 @@ final class TemplateSlotService
                         'module_number' => $slot->module_number,
                         'shelf_order' => $slot->shelf_order,
                         'min_facings' => $slot->min_facings,
+                        'max_facings' => $slot->max_facings,
                         'priority' => $slot->priority,
                         'price_order' => $slot->price_order->value,
                         'size_order' => $slot->size_order->value,
@@ -224,6 +231,7 @@ final class TemplateSlotService
                         'flavor_exposure' => $slot->flavor_exposure->value,
                         'space_fallback' => $slot->space_fallback->value,
                         'use_target_stock' => $slot->use_target_stock,
+                        'facing_expansion' => $slot->facing_expansion->value,
                         'ordering' => $slot->ordering,
                     ];
                 })->values()->all(),
