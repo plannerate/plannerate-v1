@@ -320,7 +320,7 @@ function clearDimensionSource(): void {
                             <FormTextField
                                 id="name"
                                 name="name"
-                                label="Nome da Família"
+                                label="Nome do Grupo de Similares"
                                 :default-value="props.similarGroup?.name ?? ''"
                                 :error="errors.name"
                                 class="md:col-span-8"
