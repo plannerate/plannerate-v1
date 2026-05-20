@@ -117,6 +117,13 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 }
             }
 
+            foreach ($slotResult['rejected'] as $rejection) {
+                if ($rejection['reason'] === PlacementFailureReason::MissingDimensions
+                    && $rejection['product'] !== null) {
+                    $this->globalPlacedProductIds[$rejection['product']->id] = true;
+                }
+            }
+
             $placed = $placed->merge($slotResult['placed']);
             $rejected = $rejected->merge($slotResult['rejected']);
 

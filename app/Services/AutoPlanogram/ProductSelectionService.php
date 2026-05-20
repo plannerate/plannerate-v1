@@ -38,7 +38,8 @@ class ProductSelectionService
      */
     public function selectAndRankProducts(
         Planogram $planogram,
-        AutoGenerateConfigDTO $config
+        AutoGenerateConfigDTO $config,
+        bool $requireDimensions = true,
     ): Collection {
 
         // 1. Buscar produtos da categoria (e filhas)
@@ -99,12 +100,15 @@ class ProductSelectionService
         }
 
         // 5. Filtrar produtos sem dimensões (width ou height)
-        $rankedProducts = $rankedProducts->filter(function ($p) {
-            $width = (float) ($p->product->width ?? 0);
-            $height = (float) ($p->product->height ?? 0);
+        // No modo template ($requireDimensions = false) o engine é quem rejeita e loga MissingDimensions
+        if ($requireDimensions) {
+            $rankedProducts = $rankedProducts->filter(function ($p) {
+                $width = (float) ($p->product->width ?? 0);
+                $height = (float) ($p->product->height ?? 0);
 
-            return $width > 0 && $height > 0;
-        });
+                return $width > 0 && $height > 0;
+            });
+        }
 
         // 6. Ordenar por score (maior = mais importante)
         return $rankedProducts->sortByDesc('score')->values();

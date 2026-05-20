@@ -74,7 +74,11 @@ class AutoPlanogramController extends Controller
                 )
                 : $config;
 
-            $rankedProducts = $this->productSelection->selectAndRankProducts($planogram, $effectiveConfig);
+            $rankedProducts = $this->productSelection->selectAndRankProducts(
+                $planogram,
+                $effectiveConfig,
+                requireDimensions: $templateId === null,
+            );
 
             if ($rankedProducts->isEmpty()) {
                 return back()->with('warning', __('app.messages.no_products_found'));
