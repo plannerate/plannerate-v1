@@ -2511,8 +2511,7 @@ export function usePlanogramEditor() {
                     'X-CSRF-TOKEN': csrfToken(),
                 },
                 body: JSON.stringify({ rejected_product_id: source.id, layer_id: layerId }),
-            });
-
+            }); 
             if (!res.ok) {
                 throw new Error('request_failed');
             }
