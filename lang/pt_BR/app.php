@@ -1318,6 +1318,9 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'product_label' => 'produto',
             'actions' => [
                 'edit_dimensions' => 'Editar dimensões',
+                'sync_from_reference' => 'Atualizar por EAN',
+                'sync_page_from_reference' => 'Atualizar página por EAN',
+                'syncing' => 'Atualizando...',
             ],
             'placeholders' => [
                 'height_short' => 'Alt.',

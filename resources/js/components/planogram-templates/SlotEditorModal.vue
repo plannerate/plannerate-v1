@@ -72,7 +72,7 @@ watch(
 
         draft.module_number = module;
         draft.shelf_order = shelf;
-        draft.category_id = slot?.category_id ?? null;
+        draft.category_id = slot?.category_id ?? props.slotDefaults?.category_id ?? null;
         draft.min_facings = slot?.min_facings ?? props.slotDefaults?.min_facings ?? 1;
         draft.priority = slot?.priority ?? props.slotDefaults?.priority ?? 1;
         draft.price_order = slot?.price_order ?? props.slotDefaults?.price_order ?? 'none';

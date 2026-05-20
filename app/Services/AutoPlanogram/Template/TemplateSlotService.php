@@ -43,6 +43,7 @@ final class TemplateSlotService
     public function validateSlotDefaults(Request $request): array
     {
         return $request->validate([
+            'category_id' => ['nullable', 'string', 'max:26'],
             'min_facings' => ['required', 'integer', 'min:1', 'max:20'],
             'priority' => ['required', 'integer', 'min:1', 'max:10'],
             'price_order' => ['required', 'string', 'in:asc,desc,none'],
@@ -127,6 +128,9 @@ final class TemplateSlotService
     {
         $subtemplate->update([
             'slot_defaults' => [
+                'category_id' => is_string($slotPayload['category_id'] ?? null) && $slotPayload['category_id'] !== ''
+                    ? $slotPayload['category_id']
+                    : null,
                 'min_facings' => (int) ($slotPayload['min_facings'] ?? 1),
                 'priority' => (int) ($slotPayload['priority'] ?? 1),
                 'price_order' => (string) ($slotPayload['price_order'] ?? 'none'),

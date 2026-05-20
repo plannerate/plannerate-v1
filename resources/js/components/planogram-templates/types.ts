@@ -25,6 +25,7 @@ export type PlanogramTemplateSlot = {
 
 export type PlanogramSlotDefaults = Pick<
     PlanogramTemplateSlot,
+    | 'category_id'
     | 'min_facings'
     | 'priority'
     | 'price_order'

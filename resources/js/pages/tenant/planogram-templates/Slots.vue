@@ -296,6 +296,7 @@ function saveSlot(
 function saveCurrentModuleDefaults(
     defaults: Pick<
         PlanogramTemplateSlot,
+        | 'category_id'
         | 'min_facings'
         | 'priority'
         | 'price_order'

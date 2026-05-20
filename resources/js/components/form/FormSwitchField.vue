@@ -52,7 +52,7 @@ const modelValue = useVModel(props, 'modelValue', emits, {
         >
             <Switch
                 :id="id"
-                v-model:checked="modelValue"
+                v-model:model-value="modelValue"
                 :disabled="disabled"
             />
             <span class="text-sm text-muted-foreground">

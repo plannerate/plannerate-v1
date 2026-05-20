@@ -39,7 +39,7 @@ withDefaults(
 </script>
 
 <template>
-    <div :class="['mx-auto w-full space-y-4 px-4 sm:px-6 pb-8', maxWidth]">
+    <div :class="['mx-auto w-full space-y-4 px-4 sm:px-6 pb-8 list-page-container', maxWidth]">
         <div class="flex items-center justify-between gap-4">
             <div class="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">Total: {{ meta.total }}</Badge>

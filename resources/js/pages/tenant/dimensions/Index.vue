@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { Check, Loader2, Pencil, X } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { Check, ChevronDown, Loader2, Pencil, RefreshCcw, SlidersHorizontal, X } from 'lucide-vue-next';
+import { computed, nextTick, ref, watch } from 'vue';
 import ListPage from '@/components/ListPage.vue';
 import ColumnHeader from '@/components/table/columns/ColumnHeader.vue';
 import ColumnStatusBadge from '@/components/table/columns/ColumnStatusBadge.vue';
 import TableLoadingSkeleton from '@/components/table/TableLoadingSkeleton.vue';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
@@ -40,19 +42,42 @@ const props = defineProps<{
     products?: Paginator<DimensionRow>;
     filters: {
         search: string;
+        category_id: string;
         dimension_status: string;
     };
 }>();
 
 const { t } = useT();
 const { meta, rows, loading } = useDeferredPaginator(() => props.products, 20);
+const listPageRef = ref<InstanceType<typeof ListPage> | null>(null);
+const categoryId = ref<string | null>(props.filters.category_id ?? null);
+const categoryPopoverOpen = ref(false);
+
+watch(categoryId, (value, prev) => {
+    if (value !== prev) {
+        categoryPopoverOpen.value = false;
+        nextTick(() => listPageRef.value?.submitForm());
+    }
+});
+
+const categoryLabel = computed(() => {
+    if (!categoryId.value) {
+        return t('app.tenant.products.fields.category');
+    }
+
+    return `${t('app.tenant.products.fields.category')} ✓`;
+});
 
 const indexPath = `/dimensions`;
 const updatePath = (id: string) => `/dimensions/${id}`;
+const syncRowPath = (id: string) => `/dimensions/${id}/sync-from-reference`;
+const syncPagePath = `/dimensions/sync-from-reference-page`;
 
 const editingId = ref<string | null>(null);
 const editingData = ref<EditingRow | null>(null);
 const savingId = ref<string | null>(null);
+const syncingRowId = ref<string | null>(null);
+const syncingPage = ref(false);
 
 function startEdit(row: DimensionRow): void {
     editingId.value = row.id;
@@ -102,6 +127,44 @@ function handleKeydown(event: KeyboardEvent, id: string): void {
     }
 }
 
+function syncRowFromReference(id: string): void {
+    if (syncingRowId.value || syncingPage.value || savingId.value) {
+        return;
+    }
+
+    syncingRowId.value = id;
+
+    router.post(
+        syncRowPath(id),
+        {},
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                syncingRowId.value = null;
+            },
+        },
+    );
+}
+
+function syncCurrentPageFromReference(): void {
+    if (syncingPage.value || loading.value || rows.value.length === 0) {
+        return;
+    }
+
+    syncingPage.value = true;
+
+    router.post(
+        syncPagePath,
+        { product_ids: rows.value.map((row) => row.id) },
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                syncingPage.value = false;
+            },
+        },
+    );
+}
+
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.dimensions.title'),
     title: t('app.tenant.dimensions.title'),
@@ -115,13 +178,57 @@ const pageMeta = useCrudPageMeta({
 
 <template>
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
+        <template #header-actions>
+            <button
+                type="button"
+                :disabled="syncingPage || loading || rows.length === 0"
+                class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                @click="syncCurrentPageFromReference"
+            >
+                <RefreshCcw class="size-3.5 shrink-0" :class="{ 'animate-spin': syncingPage }" />
+                {{ syncingPage ? t('app.tenant.dimensions.actions.syncing') : t('app.tenant.dimensions.actions.sync_page_from_reference') }}
+            </button>
+        </template>
 
         <Head :title="pageMeta.headTitle" />
 
-        <ListPage :meta="meta" :label="t('app.tenant.dimensions.product_label')" :action="indexPath" :clear-href="indexPath"
+        <ListPage ref="listPageRef" :meta="meta" :label="t('app.tenant.dimensions.product_label')" :action="indexPath" :clear-href="indexPath"
             :search-value="props.filters.search" :search-placeholder="t('app.tenant.common.search')"
             :filter-label="t('app.tenant.common.filter')" :clear-label="t('app.tenant.common.clear_filters')">
             <template #filters>
+                <input type="hidden" name="category_id" :value="categoryId ?? ''" />
+
+                <Popover v-model:open="categoryPopoverOpen">
+                    <PopoverTrigger as-child>
+                        <button type="button"
+                            class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted"
+                            :class="categoryId ? 'border-primary/60 text-primary' : ''">
+                            <SlidersHorizontal class="size-3.5 shrink-0" />
+                            <span>{{ categoryLabel }}</span>
+                            <button v-if="categoryId" type="button" class="ml-1 rounded-sm opacity-60 hover:opacity-100"
+                                @click.stop="categoryId = null">
+                                <X class="size-3" />
+                            </button>
+                            <ChevronDown v-else class="size-3.5 shrink-0 opacity-50" />
+                        </button>
+                    </PopoverTrigger>
+                    <PopoverContent class="w-170 p-4" align="start">
+                        <p class="mb-3 text-sm font-medium">{{ t('app.tenant.products.form.sections.category') }}</p>
+                        <CategoryCascadeSelect v-model="categoryId" />
+                        <div class="mt-4 flex justify-end gap-2">
+                            <button type="button" class="rounded-md px-3 py-1.5 text-sm hover:bg-muted"
+                                @click="categoryId = null; categoryPopoverOpen = false">
+                                {{ t('app.tenant.common.clear_filters') }}
+                            </button>
+                            <button type="submit"
+                                class="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
+                                @click="categoryPopoverOpen = false">
+                                {{ t('app.tenant.common.filter') }}
+                            </button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+
                 <select name="dimension_status" :value="filters.dimension_status"
                     class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
                     <option value="">{{ t('app.tenant.common.all') }}</option>
@@ -141,7 +248,7 @@ const pageMeta = useCrudPageMeta({
                         <!-- <th class="px-4 py-3 font-medium">Peso</th> -->
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.products.fields.unit') }}</th>
                         <ColumnHeader field="dimension_status">{{ t('app.tenant.common.status') }}</ColumnHeader>
-                        <th class="w-20 px-4 py-3 text-center font-medium">{{ t('app.tenant.common.actions') }}</th>
+                        <th class="w-28 px-4 py-3 text-center font-medium">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -221,11 +328,23 @@ const pageMeta = useCrudPageMeta({
                                 </div>
                             </template>
                             <template v-else>
-                                <button type="button"
-                                    class="flex size-7 items-center justify-center rounded border border-border bg-background transition hover:bg-muted"
-                                    :title="t('app.tenant.dimensions.actions.edit_dimensions')" @click="startEdit(row)">
-                                    <Pencil class="size-3.5" />
-                                </button>
+                                <div class="flex items-center justify-center gap-1">
+                                    <button
+                                        type="button"
+                                        :disabled="syncingRowId === row.id || syncingPage"
+                                        class="flex size-7 items-center justify-center rounded border border-border bg-background transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                                        :title="t('app.tenant.dimensions.actions.sync_from_reference')"
+                                        @click="syncRowFromReference(row.id)"
+                                    >
+                                        <Loader2 v-if="syncingRowId === row.id" class="size-3.5 animate-spin" />
+                                        <RefreshCcw v-else class="size-3.5" />
+                                    </button>
+                                    <button type="button"
+                                        class="flex size-7 items-center justify-center rounded border border-border bg-background transition hover:bg-muted"
+                                        :title="t('app.tenant.dimensions.actions.edit_dimensions')" @click="startEdit(row)">
+                                        <Pencil class="size-3.5" />
+                                    </button>
+                                </div>
                             </template>
                         </td>
                     </tr>

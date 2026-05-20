@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormSwitchField from '@/components/form/FormSwitchField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
@@ -15,6 +16,7 @@ import { useT } from '@/composables/useT';
 import type { PlanogramSlotDefaults, PlanogramTemplateSlot } from './types';
 
 type ModuleDefaultsDraft = {
+    category_id: string | null;
     min_facings: number;
     priority: number;
     price_order: PlanogramTemplateSlot['price_order'];
@@ -37,6 +39,7 @@ const emit = defineEmits<{
 }>();
 
 const draft = reactive<ModuleDefaultsDraft>({
+    category_id: null,
     min_facings: 1,
     priority: 1,
     price_order: 'none',
@@ -55,6 +58,7 @@ watch(
         }
 
         draft.min_facings = defaults?.min_facings ?? 1;
+        draft.category_id = defaults?.category_id ?? null;
         draft.priority = defaults?.priority ?? 1;
         draft.price_order = defaults?.price_order ?? 'none';
         draft.size_order = defaults?.size_order ?? 'none';
@@ -100,6 +104,18 @@ function saveDefaults(): void {
             </DialogHeader>
 
             <div class="grid gap-5 py-2">
+                <div class="flex flex-col gap-y-1.5">
+                    <span class="text-sm font-medium">Categoria padrão</span>
+                    <p class="text-xs text-muted-foreground">
+                        Novos slots deste módulo já abrem com essa categoria selecionada.
+                    </p>
+                    <CategoryCascadeSelect
+                        v-model="draft.category_id"
+                        :cascade-levels="5"
+                        :cols="2"
+                    />
+                </div>
+
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <FormTextField
                         id="module-default-min-facings"

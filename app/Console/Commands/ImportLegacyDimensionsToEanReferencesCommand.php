@@ -124,7 +124,8 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
     }
 
     /**
-     * @param  Builder  $baseQuery
+     * @param  string $ean
+     * @return string Apenas os dígitos do EAN, sem espaços ou caracteres especiais
      */
     private function normalizeEan(string $ean): string
     {

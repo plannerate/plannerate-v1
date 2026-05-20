@@ -255,6 +255,10 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
 
         Route::get('dimensions', [ProductDimensionController::class, 'index'])
             ->name('dimensions.index');
+        Route::post('dimensions/sync-from-reference-page', [ProductDimensionController::class, 'syncPageFromReference'])
+            ->name('dimensions.sync-from-reference-page');
+        Route::post('dimensions/{product}/sync-from-reference', [ProductDimensionController::class, 'syncFromReference'])
+            ->name('dimensions.sync-from-reference');
         Route::patch('dimensions/{product}', [ProductDimensionController::class, 'update'])
             ->name('dimensions.update');
 
