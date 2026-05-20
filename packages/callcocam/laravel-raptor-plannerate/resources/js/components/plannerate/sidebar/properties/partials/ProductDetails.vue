@@ -13,11 +13,9 @@
 
             <Separator />
 
-            <div
-                v-if="rejectionDetails"
-                class="space-y-2 rounded-lg border border-amber-300/70 bg-amber-50/70 p-3 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/20 dark:text-amber-200"
-            >
-                <p class="text-sm font-semibold">Detalhes da rejeição</p> 
+            <div v-if="rejectionDetails"
+                class="space-y-2 rounded-lg border border-amber-300/70 bg-amber-50/70 p-3 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/20 dark:text-amber-200">
+                <p class="text-sm font-semibold">Detalhes da rejeição</p>
                 <p>
                     Motivo:
                     <span class="font-medium">{{ rejectionDetails.reasonLabel }}</span>
@@ -30,7 +28,7 @@
                 </p>
                 <p v-if="rejectionDetails.grouping">
                     Agrupamento: <span class="font-medium">{{ rejectionDetails.grouping }}</span>
-                </p> 
+                </p>
             </div>
 
             <Separator v-if="rejectionDetails" />
@@ -41,7 +39,9 @@
                 <div class="flex items-center gap-2 text-orange-700 dark:text-orange-400">
                     <Users class="size-4" />
                     <span class="text-sm font-medium">
-                        {{ t('plannerate.sidebar.product_details.editing_products', { count: selectedProducts.length }) }}
+                        {{ t('plannerate.sidebar.product_details.editing_products', {
+                            count:
+                                String(selectedProducts.length) }) }}
                     </span>
                 </div>
                 <p class="mt-1 text-xs text-orange-600 dark:text-orange-500">
@@ -143,22 +143,22 @@ function handleUpdateProductDimension(
 ) {
 
     if (!product.value?.id) {
-return;
-}
+        return;
+    }
 
     // Se há múltiplos produtos selecionados, atualiza todos
     if (hasMultipleSelections.value && selectedProducts.value.length > 0) {
         const count = selectedProducts.value.length;
 
-        toast.info(t('plannerate.sidebar.product_details.updating_products', { count }), {
+        toast.info(t('plannerate.sidebar.product_details.updating_products', { count: String(count) }), {
             description: t('plannerate.sidebar.product_details.dimension_update', {
                 dimension:
                     dimension === 'width'
                         ? t('plannerate.print.product_detail.width')
                         : dimension === 'height'
-                          ? t('plannerate.print.product_detail.height')
-                          : t('plannerate.print.product_detail.depth'),
-                value,
+                            ? t('plannerate.print.product_detail.height')
+                            : t('plannerate.print.product_detail.depth'),
+                value: String(value),
             }),
             duration: 2000,
         });
@@ -169,7 +169,7 @@ return;
             value,
             reloadProductsList ? async () => {
                 await reloadProductsList();
-                toast.success(t('plannerate.sidebar.product_details.updated_success', { count }));
+                toast.success(t('plannerate.sidebar.product_details.updated_success', { count: String(count) }));
             } : undefined
         );
     } else {
@@ -180,6 +180,7 @@ return;
             value,
             reloadProductsList ? async () => {
                 await reloadProductsList();
+                toast.success(t('plannerate.sidebar.product_details.updated_success', { count: '1' }));
             } : undefined
         );
     }
