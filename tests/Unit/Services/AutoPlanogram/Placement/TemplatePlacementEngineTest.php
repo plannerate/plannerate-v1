@@ -177,6 +177,36 @@ test('findCandidates exclui produto já posicionado em slot anterior da mesma ca
         ->and($result->first()->id)->toBe($p2->id);
 });
 
+// ── PlacementResult: campos de descasamento de módulos ───────────────────────
+
+use App\Services\AutoPlanogram\DTO\PlacementResult;
+
+test('PlacementResult expõe modulesMismatch false por padrão', function (): void {
+    $result = new PlacementResult(collect(), collect());
+
+    expect($result->modulesMismatch)->toBeFalse()
+        ->and($result->templateModules)->toBe(0)
+        ->and($result->gondolaModules)->toBe(0)
+        ->and($result->subtemplateId)->toBeNull();
+});
+
+test('PlacementResult expõe modulesMismatch true quando gondola tem mais módulos', function (): void {
+    $result = new PlacementResult(
+        placedSegments: collect(),
+        rejectedProducts: collect(),
+        slotAnalysis: [],
+        modulesMismatch: true,
+        templateModules: 2,
+        gondolaModules: 4,
+        subtemplateId: 'sub-abc',
+    );
+
+    expect($result->modulesMismatch)->toBeTrue()
+        ->and($result->templateModules)->toBe(2)
+        ->and($result->gondolaModules)->toBe(4)
+        ->and($result->subtemplateId)->toBe('sub-abc');
+});
+
 test('cache de descendentes é reutilizado: getDescendantIds chamado uma vez por category_id único', function (): void {
     $catId = (string) Str::ulid();
 

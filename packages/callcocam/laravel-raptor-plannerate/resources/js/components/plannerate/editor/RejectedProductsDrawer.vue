@@ -24,6 +24,13 @@ const swapSource = ref<RejectedProduct | null>(null);
 
 const swapModeActive = computed(() => swapSource.value !== null);
 
+const filteredRejectedProducts = computed(() => {
+    const all = editor.rejectedProducts.value;
+    const filter = selectedTemplateGroupingNormalized.value;
+    if (!filter) return all;
+    return all.filter((p) => p.grouping_normalized === filter);
+});
+
 // ── Cookie utilities ─────────────────────────────────────────────────────────
 const DRAWER_STATE_COOKIE = 'rejected-products-drawer-state';
 
@@ -237,7 +244,12 @@ defineExpose({
                 <ArrowLeftRight class="size-4 text-muted-foreground" />
                 <span>Produtos rejeitados</span>
                 <Badge v-if="editor.rejectedProducts.value.length > 0" variant="destructive" class="h-5 px-1.5 text-xs">
-                    {{ editor.rejectedProducts.value.length }}
+                    <template v-if="selectedTemplateGroupingNormalized && filteredRejectedProducts.length !== editor.rejectedProducts.value.length">
+                        {{ filteredRejectedProducts.length }}/{{ editor.rejectedProducts.value.length }}
+                    </template>
+                    <template v-else>
+                        {{ editor.rejectedProducts.value.length }}
+                    </template>
                 </Badge>
                 <Loader2 v-if="editor.isLoadingRejectedProducts.value" class="size-3.5 animate-spin text-muted-foreground" />
             </div>
@@ -274,16 +286,19 @@ defineExpose({
 
                 <!-- Empty state -->
                 <div
-                    v-if="!editor.isLoadingRejectedProducts.value && editor.rejectedProducts.value.length === 0"
+                    v-if="!editor.isLoadingRejectedProducts.value && filteredRejectedProducts.length === 0"
                     class="flex h-20 items-center justify-center text-sm text-muted-foreground"
                 >
-                    Nenhum produto rejeitado nesta geração.
+                    <span v-if="selectedTemplateGroupingNormalized && editor.rejectedProducts.value.length > 0">
+                        Nenhum produto rejeitado neste grouping.
+                    </span>
+                    <span v-else>Nenhum produto rejeitado nesta geração.</span>
                 </div>
 
                 <!-- Product cards -->
                 <div v-else class="flex gap-3 overflow-x-auto p-3">
                     <div
-                        v-for="product in editor.rejectedProducts.value"
+                        v-for="product in filteredRejectedProducts"
                         :key="product.id"
                         draggable="true"
                         class="flex w-36 shrink-0 flex-col gap-1.5 rounded-lg border p-2 transition-all select-none"

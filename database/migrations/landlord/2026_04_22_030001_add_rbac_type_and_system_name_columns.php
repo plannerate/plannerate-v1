@@ -148,15 +148,17 @@ return new class extends Migration
 
         $this->setTypeColumnsNotNull();
 
-        DB::connection($this->connection)->statement('ALTER TABLE "permissions" DROP CONSTRAINT IF EXISTS "permissions_name_guard_name_unique"');
-        DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_team_name_guard_unique"');
-        DB::connection($this->connection)->statement('ALTER TABLE "permissions" DROP CONSTRAINT IF EXISTS "permissions_guard_name_type_unique"');
-        DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_team_name_guard_type_unique"');
-        DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_system_name_unique"');
+        if (DB::connection($this->connection)->getDriverName() === 'pgsql') {
+            DB::connection($this->connection)->statement('ALTER TABLE "permissions" DROP CONSTRAINT IF EXISTS "permissions_name_guard_name_unique"');
+            DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_team_name_guard_unique"');
+            DB::connection($this->connection)->statement('ALTER TABLE "permissions" DROP CONSTRAINT IF EXISTS "permissions_guard_name_type_unique"');
+            DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_team_name_guard_type_unique"');
+            DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_system_name_unique"');
 
-        DB::connection($this->connection)->statement('ALTER TABLE "permissions" ADD CONSTRAINT "permissions_guard_name_type_unique" UNIQUE ("guard_name", "name", "type")');
-        DB::connection($this->connection)->statement('ALTER TABLE "roles" ADD CONSTRAINT "roles_team_name_guard_type_unique" UNIQUE ("tenant_id", "guard_name", "name", "type")');
-        DB::connection($this->connection)->statement('ALTER TABLE "roles" ADD CONSTRAINT "roles_system_name_unique" UNIQUE ("system_name")');
+            DB::connection($this->connection)->statement('ALTER TABLE "permissions" ADD CONSTRAINT "permissions_guard_name_type_unique" UNIQUE ("guard_name", "name", "type")');
+            DB::connection($this->connection)->statement('ALTER TABLE "roles" ADD CONSTRAINT "roles_team_name_guard_type_unique" UNIQUE ("tenant_id", "guard_name", "name", "type")');
+            DB::connection($this->connection)->statement('ALTER TABLE "roles" ADD CONSTRAINT "roles_system_name_unique" UNIQUE ("system_name")');
+        }
     }
 
     public function down(): void
@@ -166,9 +168,11 @@ return new class extends Migration
             return;
         }
 
-        DB::connection($this->connection)->statement('ALTER TABLE "permissions" DROP CONSTRAINT IF EXISTS "permissions_guard_name_type_unique"');
-        DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_team_name_guard_type_unique"');
-        DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_system_name_unique"');
+        if (DB::connection($this->connection)->getDriverName() === 'pgsql') {
+            DB::connection($this->connection)->statement('ALTER TABLE "permissions" DROP CONSTRAINT IF EXISTS "permissions_guard_name_type_unique"');
+            DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_team_name_guard_type_unique"');
+            DB::connection($this->connection)->statement('ALTER TABLE "roles" DROP CONSTRAINT IF EXISTS "roles_system_name_unique"');
+        }
 
         if (Schema::connection($this->connection)->hasColumn('roles', 'system_name')) {
             Schema::connection($this->connection)->table('roles', function (Blueprint $table): void {
@@ -188,12 +192,18 @@ return new class extends Migration
             });
         }
 
-        DB::connection($this->connection)->statement('ALTER TABLE "permissions" ADD CONSTRAINT "permissions_name_guard_name_unique" UNIQUE ("name", "guard_name")');
-        DB::connection($this->connection)->statement('ALTER TABLE "roles" ADD CONSTRAINT "roles_team_name_guard_unique" UNIQUE ("tenant_id", "name", "guard_name")');
+        if (DB::connection($this->connection)->getDriverName() === 'pgsql') {
+            DB::connection($this->connection)->statement('ALTER TABLE "permissions" ADD CONSTRAINT "permissions_name_guard_name_unique" UNIQUE ("name", "guard_name")');
+            DB::connection($this->connection)->statement('ALTER TABLE "roles" ADD CONSTRAINT "roles_team_name_guard_unique" UNIQUE ("tenant_id", "name", "guard_name")');
+        }
     }
 
     private function setTypeColumnsNotNull(): void
     {
+        if (DB::connection($this->connection)->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         $connection = DB::connection($this->connection);
         $connection->statement('ALTER TABLE "permissions" ALTER COLUMN "type" SET NOT NULL');
         $connection->statement('ALTER TABLE "roles" ALTER COLUMN "type" SET NOT NULL');

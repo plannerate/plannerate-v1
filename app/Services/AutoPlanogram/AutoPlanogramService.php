@@ -184,6 +184,10 @@ final class AutoPlanogramService
             scoreType: $scoreType,
             slotAnalysis: $result->slotAnalysis,
             suggestions: $suggestions,
+            modulesMismatch: $result->modulesMismatch,
+            templateModules: $result->templateModules,
+            gondolaModules: $result->gondolaModules,
+            subtemplateId: $result->subtemplateId,
         );
 
         DB::transaction(function () use ($input, $allSegments, $templateOutput): void {

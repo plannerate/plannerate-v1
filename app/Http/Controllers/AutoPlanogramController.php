@@ -130,6 +130,9 @@ class AutoPlanogramController extends Controller
             $rejectedHeight = $output->rejectedProducts
                 ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::HeightExceedsShelf)
                 ->count();
+            $rejectedMissingDimensions = $output->rejectedProducts
+                ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::MissingDimensions)
+                ->count();
 
             Inertia::flash('toast', [
                 'type' => $report->errorCount > 0 ? 'warning' : 'success',
@@ -147,6 +150,7 @@ class AutoPlanogramController extends Controller
                 'posicionados' => $output->totalAllocated(),
                 'rejeitados_espaco' => $rejectedSpace,
                 'rejeitados_altura' => $rejectedHeight,
+                'rejeitados_sem_dimensao' => $rejectedMissingDimensions,
                 'mix_excede_gondola' => $rejectedSpace > 0,
                 'taxa_cobertura' => round($output->totalAllocated() / max($totalProducts, 1), 3),
                 'score_type' => $output->scoreType,
@@ -167,6 +171,10 @@ class AutoPlanogramController extends Controller
                 $capacityReport['has_rejects'] = $rejectedSpace > 0;
                 $capacityReport['template_id'] = $templateId;
                 $capacityReport['subdomain'] = $subdomain;
+                $capacityReport['modules_mismatch'] = $output->modulesMismatch;
+                $capacityReport['template_modules'] = $output->templateModules;
+                $capacityReport['gondola_modules'] = $output->gondolaModules;
+                $capacityReport['subtemplate_id'] = $output->subtemplateId;
             }
 
             Inertia::flash('capacity_report', $capacityReport);

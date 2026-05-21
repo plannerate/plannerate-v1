@@ -241,6 +241,10 @@ final readonly class SlotReviewAnalysisService
         $placedProducts = collect($rows)->where('status', 'entrou')->count();
         $outroSlotProducts = collect($rows)->where('status', 'outro_slot')->count();
         $rejectedProducts = collect($rows)->where('status', 'fora')->count();
+        $missingDimensions = collect($rows)
+            ->where('status', 'fora')
+            ->where('reason', PlacementFailureReason::MissingDimensions->label())
+            ->count();
 
         return [
             'summary' => [
@@ -254,6 +258,7 @@ final readonly class SlotReviewAnalysisService
                 'placed_products' => $placedProducts,
                 'outro_slot_products' => $outroSlotProducts,
                 'rejected_products' => $rejectedProducts,
+                'missing_dimensions' => $missingDimensions,
             ],
             'rows' => array_values($rows),
         ];

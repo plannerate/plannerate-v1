@@ -29,6 +29,10 @@ final readonly class PlanogramOutput
         public array $slotAnalysis = [],
         /** @var list<array<string, mixed>> Actionable suggestions (template mode only) */
         public array $suggestions = [],
+        public bool $modulesMismatch = false,
+        public int $templateModules = 0,
+        public int $gondolaModules = 0,
+        public ?string $subtemplateId = null,
     ) {}
 
     public function totalAllocated(): int

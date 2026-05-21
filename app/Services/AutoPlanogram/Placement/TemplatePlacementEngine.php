@@ -196,7 +196,18 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             ])->toArray(),
         ]);
 
-        return new PlacementResult($placed, $rejected, $slotAnalysis);
+        $gondolaModules = $sections->count();
+        $templateModules = $subtemplate->num_modules;
+
+        return new PlacementResult(
+            placedSegments: $placed,
+            rejectedProducts: $rejected,
+            slotAnalysis: $slotAnalysis,
+            modulesMismatch: $gondolaModules > $templateModules,
+            templateModules: $templateModules,
+            gondolaModules: $gondolaModules,
+            subtemplateId: $subtemplate->getKey(),
+        );
     }
 
     private function resolveSubtemplate(PlacementSettings $settings): ?PlanogramSubtemplate

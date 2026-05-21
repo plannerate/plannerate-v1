@@ -14,5 +14,9 @@ final readonly class PlacementResult
         public Collection $rejectedProducts,
         /** @var list<array<string, mixed>> Per-slot space analysis (template mode only) */
         public array $slotAnalysis = [],
+        public bool $modulesMismatch = false,
+        public int $templateModules = 0,
+        public int $gondolaModules = 0,
+        public ?string $subtemplateId = null,
     ) {}
 }

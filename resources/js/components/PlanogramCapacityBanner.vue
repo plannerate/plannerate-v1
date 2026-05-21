@@ -1,5 +1,45 @@
 <template>
   <div v-if="report" class="space-y-2">
+    <!-- Descasamento de módulos: gôndola tem mais módulos que o subtemplate ativo -->
+    <div v-if="report.modules_mismatch" class="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950">
+      <div class="flex items-start gap-3">
+        <svg class="mt-0.5 h-5 w-5 shrink-0 text-orange-500 dark:text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+        </svg>
+        <div class="flex-1">
+          <p class="font-medium text-orange-800 dark:text-orange-100">Módulos da gôndola não cobertos pelo template</p>
+          <p class="mt-1 text-sm text-orange-700 dark:text-orange-300">
+            A gôndola tem <strong>{{ report.gondola_modules }}</strong> módulo(s), mas o subtemplate ativo cobre apenas
+            <strong>{{ report.template_modules }}</strong>. Os módulos
+            {{ (report.template_modules ?? 0) + 1 }}–{{ report.gondola_modules }} ficarão vazios.
+          </p>
+          <p class="mt-2 text-sm text-orange-700 dark:text-orange-300">
+            Clone o subtemplate para <strong>{{ report.gondola_modules }} módulos</strong> e configure os slots extras no wizard.
+          </p>
+          <form
+            v-if="report.subtemplate_id && report.template_id && report.subdomain"
+            :action="cloneUrl"
+            method="POST"
+            class="mt-3"
+            @submit.prevent="submitClone"
+          >
+            <input type="hidden" name="target_modules" :value="report.gondola_modules" />
+            <button
+              type="submit"
+              :disabled="cloning"
+              class="inline-flex items-center gap-2 rounded-md bg-orange-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-60 dark:bg-orange-700 dark:hover:bg-orange-600"
+            >
+              <svg v-if="cloning" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              </svg>
+              Clonar subtemplate para {{ report.gondola_modules }} módulos
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <!-- Score neutro: sem dados de venda no modo template -->
     <div v-if="report.score_type === 'neutral'" class="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
       <div class="flex items-start gap-3">
@@ -56,6 +96,20 @@
       </div>
     </div>
 
+    <!-- Produtos sem dimensões cadastradas -->
+    <div v-if="report.rejeitados_sem_dimensao && report.rejeitados_sem_dimensao > 0" class="rounded-lg border border-purple-200 bg-purple-50 p-4 dark:border-purple-800 dark:bg-purple-950">
+      <div class="flex items-start gap-3">
+        <svg class="mt-0.5 h-5 w-5 shrink-0 text-purple-500 dark:text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+        </svg>
+        <p class="text-sm text-purple-700 dark:text-purple-300">
+          <strong>{{ report.rejeitados_sem_dimensao }} produto(s)</strong> foram excluídos porque não possuem
+          <strong>width</strong> ou <strong>height</strong> cadastrados. Cadastre as dimensões destes produtos
+          para que sejam incluídos na geração.
+        </p>
+      </div>
+    </div>
+
     <!-- Produtos com altura maior que o clearance da prateleira -->
     <div v-if="report.rejeitados_altura > 0" class="rounded-lg border border-blue-200 bg-blue-50 p-4">
       <div class="flex items-start gap-3">
@@ -73,6 +127,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+import { router } from '@inertiajs/vue3'
+import { cloneSubtemplate } from '@/actions/App/Http/Controllers/Tenant/TemplateSlotController'
+
 interface RejectedProduct {
   id: string
   name: string
@@ -89,9 +147,39 @@ interface CapacityReport {
   score_type?: string
   has_sales_data?: boolean
   produtos_rejeitados_espaco: RejectedProduct[]
+  rejeitados_sem_dimensao?: number
+  modules_mismatch?: boolean
+  template_modules?: number
+  gondola_modules?: number
+  subtemplate_id?: string
+  template_id?: string
+  subdomain?: string
 }
 
-defineProps<{
+const props = defineProps<{
   report: CapacityReport | null
 }>()
+
+const cloning = ref(false)
+
+const cloneUrl = computed(() => {
+  const r = props.report
+  if (!r?.subtemplate_id || !r.template_id || !r.subdomain) return ''
+  return cloneSubtemplate.url({
+    subdomain: r.subdomain,
+    planogramTemplate: r.template_id,
+    planogramSubtemplate: r.subtemplate_id,
+  })
+})
+
+function submitClone(): void {
+  const r = props.report
+  if (!r?.subtemplate_id || !r.template_id || !r.subdomain || !r.gondola_modules) return
+  cloning.value = true
+  router.post(
+    cloneUrl.value,
+    { target_modules: r.gondola_modules },
+    { onFinish: () => { cloning.value = false } },
+  )
+}
 </script>
