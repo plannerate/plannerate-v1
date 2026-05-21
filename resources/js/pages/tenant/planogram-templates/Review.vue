@@ -7,7 +7,9 @@ import TemplateSlotController from '@/actions/App/Http/Controllers/Tenant/Templa
 import ModuleSelectorButtons from '@/components/planogram-templates/ModuleSelectorButtons.vue';
 import ReviewSlotProductsPanel from '@/components/planogram-templates/ReviewSlotProductsPanel.vue';
 import ReviewSlotsList from '@/components/planogram-templates/ReviewSlotsList.vue';
+import SlotEditorModal from '@/components/planogram-templates/SlotEditorModal.vue';
 import type {
+    PlanogramTemplateSlot,
     SlotAnalysisData,
     PlanogramSubtemplate,
     WizardStep,
@@ -63,6 +65,14 @@ const productsPath = computed(() =>
             planogramTemplate: props.template.id,
         })
         .replace(/^\/\/[^/]+/, '') + '#products',
+);
+const baseUrl = computed(() =>
+    PlanogramTemplateController.show
+        .url({
+            subdomain: props.subdomain,
+            planogramTemplate: props.template.id,
+        })
+        .replace(/^\/\/[^/]+/, ''),
 );
 
 const wizardSteps: WizardStep[] = [
@@ -233,6 +243,34 @@ function changeCurrentModule(moduleNumber: number): void {
     );
 }
 
+// ── Slot editor (inline, from review) ─────────────────────────────────────────
+const slotEditorOpen = ref(false);
+const editingSlot = ref<PlanogramTemplateSlot | null>(null);
+
+const currentSlotDefaults = computed(
+    () => currentSubtemplate.value?.slot_defaults ?? null,
+);
+
+function openSlotEditor(slot: PlanogramTemplateSlot): void {
+    editingSlot.value = slot;
+    slotEditorOpen.value = true;
+}
+
+function saveSlot(
+    draft: Omit<PlanogramTemplateSlot, 'id' | 'subtemplate_id' | 'ordering'>,
+): void {
+    const slot = editingSlot.value;
+
+    if (!slot?.id) {
+        return;
+    }
+
+    router.put(`${baseUrl.value}/slots/${slot.id}`, draft, {
+        preserveState: true,
+        only: ['subtemplates'],
+    });
+}
+
 const breadcrumbs = [
     {
         title: t('app.navigation.dashboard'),
@@ -265,7 +303,12 @@ const breadcrumbs = [
 
 
             <div class="grid gap-4  grid-cols-12">
-                <ReviewSlotsList :slots="allSlots" :selected-slot-id="selectedSlotId" @select="selectSlotForProducts">
+                <ReviewSlotsList
+                    :slots="allSlots"
+                    :selected-slot-id="selectedSlotId"
+                    @select="selectSlotForProducts"
+                    @edit="openSlotEditor"
+                >
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="text-sm font-medium text-muted-foreground">Módulos:</span>
                         <ModuleSelectorButtons
@@ -292,4 +335,13 @@ const breadcrumbs = [
             </div>
         </div>
     </AppLayout>
+
+    <SlotEditorModal
+        v-model:open="slotEditorOpen"
+        :module-number="editingSlot?.module_number ?? 1"
+        :shelf-order="editingSlot?.shelf_order ?? 1"
+        :template-slot="editingSlot"
+        :slot-defaults="currentSlotDefaults"
+        @save="saveSlot"
+    />
 </template>

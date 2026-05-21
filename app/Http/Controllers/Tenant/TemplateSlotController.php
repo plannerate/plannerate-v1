@@ -199,10 +199,7 @@ class TemplateSlotController extends Controller
 
         $planogramTemplate->load(['subtemplates.slots.category']);
 
-        return redirect()->route('tenant.planogram-templates.slots.index', [
-            'subdomain' => $this->tenantSubdomain(),
-            'planogramTemplate' => $planogramTemplate->id,
-        ]);
+        return back();
     }
 
     public function destroySlot(string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramTemplateSlot $planogramTemplateSlot): RedirectResponse
