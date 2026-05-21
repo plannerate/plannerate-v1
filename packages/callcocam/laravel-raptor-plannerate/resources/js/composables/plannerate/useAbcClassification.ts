@@ -1,125 +1,75 @@
-import { ref, computed } from 'vue';
+import { createEanAnalysisStore } from './analysis/useEanAnalysisStore';
 
 /**
- * Composable para gerenciar classificações ABC de produtos em tempo real
- * Armazena um mapa de EAN → Classificação (A, B ou C)
- * 
- * Uso:
- * - No PerformanceAbcTab: salvar resultados após cálculo
- * - No Segment: buscar classificação por EAN do produto
+ * Store singleton para classificações ABC por EAN.
+ * Criada no nível do módulo para garantir estado compartilhado entre todos os
+ * componentes que chamarem `useAbcClassification()`.
+ *
+ * Cada valor armazenado é diretamente a classificação ('A' | 'B' | 'C'),
+ * portanto `getClassificacao` simplesmente retorna o próprio item.
  */
+const useAbcStore = createEanAnalysisStore<'A' | 'B' | 'C'>('abc-classification', {
+    getClassificacao: (item) => item,
+});
 
-// Estado global reativo - Map de EAN → Classificação
-const abcClassifications = ref<Map<string, 'A' | 'B' | 'C'>>(new Map());
-
-// Timestamp da última análise
-const lastAnalysisDate = ref<Date | null>(null);
-
-// Controle de visibilidade dos indicadores ABC
-const isVisible = ref<boolean>(true);
-
+/**
+ * Composable para gerenciar classificações ABC de produtos em tempo real.
+ * Armazena um mapa de EAN → Classificação (A, B ou C).
+ *
+ * Uso:
+ * - No PerformanceAbcTab: salvar resultados após cálculo via `setClassifications`
+ * - No Segment / AbcBadge: buscar classificação por EAN via `getClassification`
+ */
 export function useAbcClassification() {
+    const store = useAbcStore();
+
     /**
-     * Define a classificação ABC de um produto pelo EAN
+     * Define a classificação ABC de um produto pelo EAN.
+     * Não atualiza lastAnalysisDate — use `setClassifications` (batch) para isso.
      */
     function setClassification(ean: string, classification: 'A' | 'B' | 'C') {
-        if (!ean) {
-            console.warn('⚠️ EAN vazio ao definir classificação ABC');
-
-            return;
-        }
-        
-        abcClassifications.value.set(ean, classification);
+        store.set(ean, classification);
     }
 
     /**
-     * Define múltiplas classificações de uma vez (batch)
-     * Usado quando recebe resultados da análise ABC
+     * Define múltiplas classificações de uma vez (batch) e registra a data da análise.
+     * Itens com EAN ou classificação vazios são ignorados silenciosamente.
      */
     function setClassifications(items: Array<{ ean: string; classificacao: 'A' | 'B' | 'C' }>) {
-        items.forEach(item => {
-            if (item.ean && item.classificacao) {
-                setClassification(item.ean, item.classificacao);
-            }
-        });
-        
-        lastAnalysisDate.value = new Date();
+        store.setBatch(
+            items
+                .filter((i) => i.ean && i.classificacao)
+                .map((i) => ({ ean: i.ean, value: i.classificacao })),
+        );
     }
 
     /**
-     * Obtém a classificação ABC de um produto pelo EAN
-     * Retorna undefined se não houver classificação
+     * Obtém a classificação ABC de um produto pelo EAN.
+     * Retorna undefined se não houver classificação registrada.
      */
     function getClassification(ean: string | undefined): 'A' | 'B' | 'C' | undefined {
-        if (!ean) {
-return undefined;
-}
-
-        return abcClassifications.value.get(ean);
+        return store.get(ean);
     }
 
     /**
-     * Verifica se existe classificação para um EAN
+     * Verifica se existe classificação para o EAN informado.
      */
     function hasClassification(ean: string | undefined): boolean {
-        if (!ean) {
-return false;
-}
-
-        return abcClassifications.value.has(ean);
+        return store.has(ean);
     }
 
     /**
-     * Remove todas as classificações
+     * Remove todas as classificações e reseta o timestamp da análise.
      */
     function clearClassifications() {
-        abcClassifications.value.clear();
-        lastAnalysisDate.value = null;
+        store.clear();
     }
 
     /**
-     * Remove classificação de um produto específico
+     * Remove a classificação de um produto específico pelo EAN.
      */
     function removeClassification(ean: string) {
-        if (!ean) {
-return;
-}
-
-        abcClassifications.value.delete(ean);
-    }
-
-    /**
-     * Retorna estatísticas das classificações
-     */
-    const stats = computed(() => {
-        const classifications = Array.from(abcClassifications.value.values());
-        
-        return {
-            total: classifications.length,
-            classA: classifications.filter(c => c === 'A').length,
-            classB: classifications.filter(c => c === 'B').length,
-            classC: classifications.filter(c => c === 'C').length,
-            lastAnalysis: lastAnalysisDate.value
-        };
-    });
-
-    /**
-     * Verifica se há classificações carregadas
-     */
-    const hasData = computed(() => abcClassifications.value.size > 0);
-
-    /**
-     * Alterna a visibilidade dos indicadores ABC
-     */
-    function toggleVisibility() {
-        isVisible.value = !isVisible.value;
-    }
-
-    /**
-     * Define a visibilidade dos indicadores ABC
-     */
-    function setVisibility(visible: boolean) {
-        isVisible.value = visible;
+        store.remove(ean);
     }
 
     return {
@@ -130,14 +80,13 @@ return;
         hasClassification,
         clearClassifications,
         removeClassification,
-        toggleVisibility,
-        setVisibility,
-        
+        toggleVisibility: store.toggleVisibility,
+        setVisibility: store.setVisibility,
+
         // Computed
-        stats,
-        hasData,
-        isVisible: computed(() => isVisible.value),
-        lastAnalysisDate: computed(() => lastAnalysisDate.value),
+        stats: store.stats,
+        hasData: store.hasData,
+        isVisible: store.isVisible,
+        lastAnalysisDate: store.lastAnalysisDate,
     };
 }
-
