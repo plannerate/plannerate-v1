@@ -346,6 +346,7 @@ function saveSlot(): void {
                     <option value="none">Não expandir</option>
                     <option value="score">Por score ABC / vendas</option>
                     <option value="current_stock">Por estoque atual</option>
+                    <option value="target_stock">Por déficit de estoque</option>
                     <option value="equal">Distribuição igual</option>
                 </FormSelectField>
 

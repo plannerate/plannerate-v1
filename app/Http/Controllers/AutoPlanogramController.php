@@ -91,6 +91,11 @@ class AutoPlanogramController extends Controller
                 ->mapWithKeys(fn ($dto) => [$dto->product->id => $dto->abcClass])
                 ->all();
 
+            $targetStockMap = $rankedProducts
+                ->filter(fn ($dto) => $dto->targetStock !== null && $dto->targetStock > 0)
+                ->mapWithKeys(fn ($dto) => [$dto->product->id => (float) $dto->targetStock])
+                ->all();
+
             $weightsModel = ScoringWeights::first();
             $weights = $weightsModel
                 ? ScoringWeightsValue::fromModel($weightsModel)
@@ -100,7 +105,8 @@ class AutoPlanogramController extends Controller
 
             $settings = PlacementSettings::fromConfigDto($config)
                 ->withExtras(tenantId: $tenantId, weights: $weights)
-                ->withAbcMap($abcClassMap);
+                ->withAbcMap($abcClassMap)
+                ->withTargetStockMap($targetStockMap);
 
             if ($templateId) {
                 $settings = $settings->withTemplate(
@@ -212,7 +218,7 @@ class AutoPlanogramController extends Controller
         $rejected = PlanogramRejectedProduct::with('product')
             ->where('gondola_id', $gondola)
             ->where('planogram_id', $gondolaModel->planogram_id)
-            ->orderBy('grouping')
+            ->orderBy('category_name')
             ->orderBy('shelf_order')
             ->get()
             ->map(fn ($r) => [
@@ -226,8 +232,8 @@ class AutoPlanogramController extends Controller
                 'rejection_reason' => $r->rejection_reason->value,
                 'rejection_reason_label' => $r->rejection_reason->label(),
                 'slot_id' => $r->slot_id,
-                'grouping' => $r->grouping,
-                'grouping_normalized' => $r->grouping_normalized,
+                'category_name' => $r->category_name,
+                'category_id' => $r->category_id,
                 'module_number' => $r->module_number,
                 'shelf_order' => $r->shelf_order,
             ]);
@@ -295,14 +301,13 @@ class AutoPlanogramController extends Controller
 
                 return [
                     'category_id' => (string) $categoryId,
-                    'grouping' => $categoryName,
-                    'grouping_normalized' => (string) $categoryId,
+                    'category_name' => $categoryName,
                     'slots_count' => $items->count(),
                     'modules' => $items->pluck('module_number')->unique()->sort()->values()->all(),
                     'shelves' => $items->pluck('shelf_order')->unique()->sort()->values()->all(),
                 ];
             })
-            ->sortBy('grouping')
+            ->sortBy('category_name')
             ->values()
             ->all();
 
@@ -368,8 +373,8 @@ class AutoPlanogramController extends Controller
                     'product_height' => $displacedProduct?->height ?? null,
                     'rejection_reason' => PlacementFailureReason::NoHorizontalSpace->value,
                     'slot_id' => $rejected->slot_id,
-                    'grouping' => $rejected->grouping,
-                    'grouping_normalized' => $rejected->grouping_normalized,
+                    'category_name' => $rejected->category_name,
+                    'category_id' => $rejected->category_id,
                     'module_number' => $rejected->module_number,
                     'shelf_order' => $rejected->shelf_order,
                 ]);

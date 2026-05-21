@@ -203,12 +203,10 @@ test('templateGroupings returns unique grouping list for gondola template', func
     expect($payload['data'])->toHaveCount(2)
         ->and($payload['meta']['template_id'])->toBe($template->id)
         ->and($payload['meta']['subtemplate_id'])->toBe($subtemplate->id)
-        ->and($payload['data'][0]['grouping'])->toBe('Bebidas')
-        ->and($payload['data'][0]['grouping_normalized'])->toBe($catBebidas->id)
+        ->and($payload['data'][0]['category_name'])->toBe('Bebidas')
         ->and($payload['data'][0]['category_id'])->toBe($catBebidas->id)
         ->and($payload['data'][0]['slots_count'])->toBe(2)
-        ->and($payload['data'][1]['grouping'])->toBe('Snacks')
-        ->and($payload['data'][1]['grouping_normalized'])->toBe($catSnacks->id)
+        ->and($payload['data'][1]['category_name'])->toBe('Snacks')
         ->and($payload['data'][1]['category_id'])->toBe($catSnacks->id)
         ->and($payload['data'][1]['slots_count'])->toBe(1);
 });

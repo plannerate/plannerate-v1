@@ -52,8 +52,8 @@ export interface RejectedProduct {
     rejection_reason: string;
     rejection_reason_label: string;
     slot_id: string | null;
-    grouping: string | null;
-    grouping_normalized: string | null;
+    category_name: string | null;
+    category_id: string | null;
     module_number: number | null;
     shelf_order: number | null;
 }

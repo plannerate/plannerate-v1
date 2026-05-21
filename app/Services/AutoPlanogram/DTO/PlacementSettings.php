@@ -81,6 +81,9 @@ final readonly class PlacementSettings
 
         /** Mapa ABC por produto [product_id => 'A'|'B'|'C'] para expansion e ReduceC fallback */
         public array $abcClassMap = [],
+
+        /** Mapa de estoque alvo por produto [product_id => float] vindo da análise ABC */
+        public array $targetStockMap = [],
     ) {}
 
     public function usesTemplate(): bool
@@ -114,6 +117,7 @@ final readonly class PlacementSettings
             planogramId: $planogramId,
             products: $products,
             abcClassMap: $this->abcClassMap,
+            targetStockMap: $this->targetStockMap,
         );
     }
 
@@ -143,6 +147,38 @@ final readonly class PlacementSettings
             planogramId: $this->planogramId,
             products: $this->products,
             abcClassMap: $abcClassMap,
+            targetStockMap: $this->targetStockMap,
+        );
+    }
+
+    /** @param array<string, float> $targetStockMap */
+    public function withTargetStockMap(array $targetStockMap): self
+    {
+        return new self(
+            strategy: $this->strategy,
+            useExistingAnalysis: $this->useExistingAnalysis,
+            startDate: $this->startDate,
+            endDate: $this->endDate,
+            minFacings: $this->minFacings,
+            maxFacings: $this->maxFacings,
+            groupBySubcategory: $this->groupBySubcategory,
+            includeProductsWithoutSales: $this->includeProductsWithoutSales,
+            tableType: $this->tableType,
+            categoryId: $this->categoryId,
+            tenantId: $this->tenantId,
+            storeId: $this->storeId,
+            weights: $this->weights,
+            blockHierarchyLevel: $this->blockHierarchyLevel,
+            adjacencyHierarchyLevel: $this->adjacencyHierarchyLevel,
+            targetOccupancyRate: $this->targetOccupancyRate,
+            verticalBlockThreshold: $this->verticalBlockThreshold,
+            verticalBlockMinShelves: $this->verticalBlockMinShelves,
+            templateId: $this->templateId,
+            numModules: $this->numModules,
+            planogramId: $this->planogramId,
+            products: $this->products,
+            abcClassMap: $this->abcClassMap,
+            targetStockMap: $targetStockMap,
         );
     }
 
@@ -172,6 +208,7 @@ final readonly class PlacementSettings
             planogramId: $this->planogramId,
             products: $this->products,
             abcClassMap: $this->abcClassMap,
+            targetStockMap: $this->targetStockMap,
         );
     }
 
@@ -201,6 +238,7 @@ final readonly class PlacementSettings
             planogramId: $this->planogramId,
             products: $products,
             abcClassMap: $this->abcClassMap,
+            targetStockMap: $this->targetStockMap,
         );
     }
 

@@ -61,7 +61,7 @@ function makeProduct(string $categoryId, string $status = 'published'): Product
     return $product;
 }
 
-function makeSettings(Collection $products): PlacementSettings
+function makeTemplateSettings(Collection $products): PlacementSettings
 {
     return new PlacementSettings(
         strategy: 'sales',
@@ -81,7 +81,7 @@ test('findCandidates inclui produto com category_id igual ao slot', function ():
     $product = makeProduct($catId);
     $slot = makeSlot($catId);
 
-    $result = callFindCandidates($engine, $slot, makeSettings(collect([$product])));
+    $result = callFindCandidates($engine, $slot, makeTemplateSettings(collect([$product])));
 
     expect($result)->toHaveCount(1)
         ->and($result->first()->id)->toBe($product->id);
@@ -96,7 +96,7 @@ test('findCandidates inclui produto de categoria descendente', function (): void
     $productChild = makeProduct($childId);
     $slot = makeSlot($parentId);
 
-    $result = callFindCandidates($engine, $slot, makeSettings(collect([$productParent, $productChild])));
+    $result = callFindCandidates($engine, $slot, makeTemplateSettings(collect([$productParent, $productChild])));
 
     expect($result)->toHaveCount(2);
 });
@@ -109,7 +109,7 @@ test('findCandidates exclui produto de categoria diferente', function (): void {
     $product = makeProduct($otherCatId);
     $slot = makeSlot($slotCatId);
 
-    $result = callFindCandidates($engine, $slot, makeSettings(collect([$product])));
+    $result = callFindCandidates($engine, $slot, makeTemplateSettings(collect([$product])));
 
     expect($result)->toBeEmpty();
 });
@@ -121,7 +121,7 @@ test('findCandidates exclui produto draft mesmo com category_id correto', functi
     $product = makeProduct($catId, 'draft');
     $slot = makeSlot($catId);
 
-    $result = callFindCandidates($engine, $slot, makeSettings(collect([$product])));
+    $result = callFindCandidates($engine, $slot, makeTemplateSettings(collect([$product])));
 
     expect($result)->toBeEmpty();
 });
@@ -133,7 +133,7 @@ test('findCandidates inclui produto synced com category_id correto', function ()
     $product = makeProduct($catId, 'synced');
     $slot = makeSlot($catId);
 
-    $result = callFindCandidates($engine, $slot, makeSettings(collect([$product])));
+    $result = callFindCandidates($engine, $slot, makeTemplateSettings(collect([$product])));
 
     expect($result)->toHaveCount(1);
 });
@@ -144,7 +144,7 @@ test('findCandidates retorna vazio quando slot sem category_id', function (): vo
     $product = makeProduct((string) Str::ulid());
     $slot = makeSlot(null);
 
-    $result = callFindCandidates($engine, $slot, makeSettings(collect([$product])));
+    $result = callFindCandidates($engine, $slot, makeTemplateSettings(collect([$product])));
 
     expect($result)->toBeEmpty();
 });
@@ -155,7 +155,7 @@ test('findCandidates retorna vazio quando não há produtos', function (): void 
 
     $slot = makeSlot($catId);
 
-    $result = callFindCandidates($engine, $slot, makeSettings(collect()));
+    $result = callFindCandidates($engine, $slot, makeTemplateSettings(collect()));
 
     expect($result)->toBeEmpty();
 });
@@ -173,7 +173,7 @@ test('findCandidates exclui produto já posicionado em slot anterior da mesma ca
     $ref->setAccessible(true);
     $ref->setValue($engine, [$p1->id => true]);
 
-    $result = callFindCandidates($engine, $slot, makeSettings(collect([$p1, $p2])));
+    $result = callFindCandidates($engine, $slot, makeTemplateSettings(collect([$p1, $p2])));
 
     expect($result)->toHaveCount(1)
         ->and($result->first()->id)->toBe($p2->id);
@@ -181,6 +181,7 @@ test('findCandidates exclui produto já posicionado em slot anterior da mesma ca
 
 // ── PlacementResult: campos de descasamento de módulos ───────────────────────
 
+use App\Enums\FacingExpansion;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
 
 test('PlacementResult expõe modulesMismatch false por padrão', function (): void {
@@ -220,7 +221,7 @@ test('cache de descendentes é reutilizado: getDescendantIds chamado uma vez por
 
     $product = makeProduct($catId);
     $slot = makeSlot($catId);
-    $settings = makeSettings(collect([$product]));
+    $settings = makeTemplateSettings(collect([$product]));
 
     callFindCandidates($engine, $slot, $settings);
     callFindCandidates($engine, $slot, $settings);
@@ -228,4 +229,45 @@ test('cache de descendentes é reutilizado: getDescendantIds chamado uma vez por
     // Cache continua com apenas uma entrada
     expect($ref->getValue($engine))->toHaveKey($catId)
         ->and($ref->getValue($engine))->toHaveCount(1);
+});
+
+test('expansionOrder TargetStock: maior déficit recebe facing extra primeiro', function (): void {
+    $engine = makeEngine();
+
+    // Produto A: target=100, current=90 → déficit=10
+    $productA = makeProduct('cat1');
+    $productA->current_stock = 90.0;
+
+    // Produto B: target=100, current=20 → déficit=80 (deve ser o primeiro)
+    $productB = makeProduct('cat1');
+    $productB->current_stock = 20.0;
+
+    // Produto C: sem target → vai para o fim
+    $productC = makeProduct('cat1');
+    $productC->current_stock = 50.0;
+
+    $placedItems = [
+        0 => ['product' => $productA, 'facings' => 1, 'singleWidth' => 10.0, 'ordering' => 0],
+        1 => ['product' => $productB, 'facings' => 1, 'singleWidth' => 10.0, 'ordering' => 1],
+        2 => ['product' => $productC, 'facings' => 1, 'singleWidth' => 10.0, 'ordering' => 2],
+    ];
+
+    // Injetar targetStockMap via reflection
+    $mapRef = new ReflectionProperty($engine, 'targetStockMap');
+    $mapRef->setAccessible(true);
+    $mapRef->setValue($engine, [
+        $productA->id => 100.0,
+        $productB->id => 100.0,
+        // productC sem entrada → vai para o fim
+    ]);
+
+    $method = new ReflectionMethod($engine, 'expansionOrder');
+    $method->setAccessible(true);
+
+    $order = $method->invoke($engine, $placedItems, FacingExpansion::TargetStock);
+
+    // Esperado: B primeiro (déficit 80), depois A (déficit 10), depois C (sem target)
+    expect($order[0])->toBe(1)
+        ->and($order[1])->toBe(0)
+        ->and($order[2])->toBe(2);
 });

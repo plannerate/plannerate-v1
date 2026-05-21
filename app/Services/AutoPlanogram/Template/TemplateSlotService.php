@@ -24,7 +24,7 @@ final class TemplateSlotService
             'flavor_exposure' => ['required', 'string', 'in:vertical,horizontal,mixed'],
             'space_fallback' => ['required', 'string', 'in:reduce_c,reduce_facings,skip'],
             'use_target_stock' => ['boolean'],
-            'facing_expansion' => ['required', 'string', 'in:none,score,current_stock,equal'],
+            'facing_expansion' => ['required', 'string', 'in:none,score,current_stock,target_stock,equal'],
         ]);
     }
 
@@ -54,7 +54,7 @@ final class TemplateSlotService
             'flavor_exposure' => ['required', 'string', 'in:vertical,horizontal,mixed'],
             'space_fallback' => ['required', 'string', 'in:reduce_c,reduce_facings,skip'],
             'use_target_stock' => ['boolean'],
-            'facing_expansion' => ['required', 'string', 'in:none,score,current_stock,equal'],
+            'facing_expansion' => ['required', 'string', 'in:none,score,current_stock,target_stock,equal'],
         ]);
     }
 
@@ -97,37 +97,25 @@ final class TemplateSlotService
             ->delete();
 
         $nextOrdering = (int) ($subtemplate->slots()->max('ordering')) + 1;
-        $normalized = $this->normalizeSlotPayload($validated);
 
         $subtemplate->slots()->create([
-            ...$normalized,
+            ...$validated,
             ...$extra,
             'ordering' => $nextOrdering,
         ]);
 
-        $this->updateSubtemplateSlotDefaults($subtemplate, $normalized);
+        $this->updateSubtemplateSlotDefaults($subtemplate, $validated);
     }
 
     /** @param array<string, mixed> $validated */
     public function updateSlot(Model $slot, array $validated): void
     {
-        $normalized = $this->normalizeSlotPayload($validated);
-
-        $slot->update($normalized);
+        $slot->update($validated);
 
         $subtemplate = $slot->subtemplate;
         if ($subtemplate !== null) {
-            $this->updateSubtemplateSlotDefaults($subtemplate, $normalized);
+            $this->updateSubtemplateSlotDefaults($subtemplate, $validated);
         }
-    }
-
-    /**
-     * @param  array<string, mixed>  $payload
-     * @return array<string, mixed>
-     */
-    private function normalizeSlotPayload(array $payload): array
-    {
-        return $payload;
     }
 
     /**

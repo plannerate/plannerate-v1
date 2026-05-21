@@ -5,7 +5,7 @@ namespace App\Services\AutoPlanogram;
 use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\RankedProductDTO;
-use App\Services\AutoPlanogram\DTO\ScoredProduct;  
+use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -65,11 +65,6 @@ final class FacingCalculatorService
         return max($config->minFacings, min($calculatedFacings, $config->maxFacings));
     }
 
-    public function calculate(RankedProductDTO $product, AutoGenerateConfigDTO $config, float $maxSales): int
-    {
-        return $this->calculateIdeal($product, $config, $maxSales);
-    }
-
     /**
      * @param  Collection<int, ScoredProduct>  $scoredProducts
      * @return Collection<int, ScoredProduct>
@@ -84,7 +79,7 @@ final class FacingCalculatorService
         $maxSales = (float) ($scoredProducts->max(fn (ScoredProduct $sp): float => (float) ($sp->metadata['sales_total'] ?? $sp->metadata['raw_quantity'] ?? 0.0)) ?? 0.0);
 
         return $scoredProducts->map(function (ScoredProduct $scoredProduct) use ($config, $maxSales): ScoredProduct {
-            $rankedProduct = $this->toRankedProductDto($scoredProduct);
+            $rankedProduct = ScoredProductMapper::toRanked($scoredProduct);
             $facingIdeal = $this->calculateIdeal($rankedProduct, $config, $maxSales);
 
             return new ScoredProduct(
@@ -197,19 +192,5 @@ final class FacingCalculatorService
         }
 
         return [$clean, $bruta, $invalidCount];
-    }
-
-    private function toRankedProductDto(ScoredProduct $scoredProduct): RankedProductDTO
-    {
-        return new RankedProductDTO(
-            product: $scoredProduct->product,
-            abcClass: $scoredProduct->metadata['abc_class'] ?? null,
-            score: $scoredProduct->score,
-            salesTotal: (float) ($scoredProduct->metadata['sales_total'] ?? $scoredProduct->metadata['raw_quantity'] ?? 0),
-            margin: (float) ($scoredProduct->metadata['margin'] ?? $scoredProduct->metadata['raw_margem'] ?? 0),
-            subcategoryId: $scoredProduct->product->category_id ?? null,
-            targetStock: isset($scoredProduct->metadata['target_stock']) ? (float) $scoredProduct->metadata['target_stock'] : null,
-            safetyStock: isset($scoredProduct->metadata['safety_stock']) ? (float) $scoredProduct->metadata['safety_stock'] : null,
-        );
     }
 }

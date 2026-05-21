@@ -9,6 +9,7 @@ use App\Enums\PriceOrder;
 use App\Enums\SizeOrder;
 use App\Enums\SpaceFallback;
 use App\Models\Category;
+use App\Models\Planogram;
 use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplateSlot;
 use App\Models\Scopes\TenantScope;
@@ -22,7 +23,6 @@ use App\Services\AutoPlanogram\ProductWidthResolver;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 final class TemplatePlacementEngine implements PlacementEngineInterface
@@ -35,6 +35,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
     /** @var array<string, string> Mapa ABC [product_id => 'A'|'B'|'C'] vindo de PlacementSettings */
     private array $abcClassMap = [];
+
+    /** @var array<string, float> Mapa de estoque alvo [product_id => float] vindo de PlacementSettings */
+    private array $targetStockMap = [];
 
     public function __construct(
         private readonly ProductWidthResolver $widthResolver,
@@ -61,6 +64,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     ): PlacementResult {
         $this->globalPlacedProductIds = [];
         $this->abcClassMap = $settings->abcClassMap;
+        $this->targetStockMap = $settings->targetStockMap;
 
         $subtemplate = $this->resolveSubtemplate($settings);
 
@@ -448,6 +452,29 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
         if ($mode === FacingExpansion::CurrentStock) {
             usort($indices, fn (int $a, int $b): int => (float) ($placedItems[$b]['product']->current_stock ?? 0) <=> (float) ($placedItems[$a]['product']->current_stock ?? 0));
+        } elseif ($mode === FacingExpansion::TargetStock) {
+            // Maior déficit (target - current) primeiro; quem não tem target vai para o fim
+            usort($indices, function (int $a, int $b) use ($placedItems): int {
+                $idA = $placedItems[$a]['product']->id;
+                $idB = $placedItems[$b]['product']->id;
+                $targetA = $this->targetStockMap[$idA] ?? null;
+                $targetB = $this->targetStockMap[$idB] ?? null;
+
+                if ($targetA === null && $targetB === null) {
+                    return 0;
+                }
+                if ($targetA === null) {
+                    return 1;
+                }
+                if ($targetB === null) {
+                    return -1;
+                }
+
+                $deficitA = $targetA - (float) ($placedItems[$a]['product']->current_stock ?? 0);
+                $deficitB = $targetB - (float) ($placedItems[$b]['product']->current_stock ?? 0);
+
+                return $deficitB <=> $deficitA;
+            });
         }
 
         // Score and Equal use existing order (products are already sorted by score)
@@ -518,8 +545,6 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
     private function recordSubtemplateUsed(string $planogramId, string $subtemplateId): void
     {
-        DB::connection('tenant')->table('planograms')
-            ->where('id', $planogramId)
-            ->update(['subtemplate_id' => $subtemplateId]);
+        Planogram::withoutGlobalScopes()->where('id', $planogramId)->update(['subtemplate_id' => $subtemplateId]);
     }
 }

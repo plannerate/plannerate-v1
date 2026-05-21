@@ -3,7 +3,7 @@ export type SlotSizeOrder = 'asc' | 'desc' | 'none';
 export type SlotBrandExposure = 'vertical' | 'horizontal' | 'mixed';
 export type SlotFlavorExposure = 'vertical' | 'horizontal' | 'mixed';
 export type SlotSpaceFallback = 'reduce_c' | 'reduce_facings' | 'skip';
-export type SlotFacingExpansion = 'none' | 'score' | 'current_stock' | 'equal';
+export type SlotFacingExpansion = 'none' | 'score' | 'current_stock' | 'target_stock' | 'equal';
 
 export type PlanogramTemplateSlot = {
     id?: string;

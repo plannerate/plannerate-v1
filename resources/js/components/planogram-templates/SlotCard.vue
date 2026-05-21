@@ -28,6 +28,7 @@ const expansionLabel: Record<SlotFacingExpansion, string> = {
     none: '',
     score: 'ABC',
     current_stock: 'Estoque',
+    target_stock: 'Déficit',
     equal: 'Igual',
 };
 

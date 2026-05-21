@@ -11,13 +11,11 @@ namespace App\Services\AutoPlanogram\DTO;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 
 /**
- * DTO de Produto Ranqueado para Geração Automática
+ * DTO de Produto para Geração Automática
  *
- * Armazena o produto + metadados de análise:
- * - Classificação ABC
- * - Pontuação (score) calculada pela estratégia
- * - Dados de vendas
- * - Facings calculados
+ * Armazena produto + metadados de análise ABC.
+ * O campo `score` é prioridade de fetch (A=3, B=2, C=1, 0=sem ABC) e NÃO determina
+ * o placement — quem faz isso é o CompositeScorer em AutoPlanogramService.
  */
 class RankedProductDTO
 {
@@ -28,7 +26,7 @@ class RankedProductDTO
         /** Classificação ABC: 'A', 'B', 'C' ou null */
         public readonly ?string $abcClass,
 
-        /** Pontuação calculada pela estratégia (maior = mais importante) */
+        /** Prioridade de fetch: A=3, B=2, C=1, 0=sem ABC. Não afeta o placement. */
         public readonly float $score,
 
         /** Total de vendas no período */

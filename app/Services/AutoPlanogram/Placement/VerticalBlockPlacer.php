@@ -9,6 +9,7 @@ use App\Services\AutoPlanogram\DTO\PlacedSegment;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use App\Services\AutoPlanogram\DTO\VerticalBlockResult;
+use App\Services\AutoPlanogram\ProductWidthResolver;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Illuminate\Support\Collection;
@@ -23,6 +24,10 @@ use Illuminate\Support\Facades\Log;
  */
 final class VerticalBlockPlacer
 {
+    public function __construct(
+        private readonly ProductWidthResolver $widthResolver = new ProductWidthResolver,
+    ) {}
+
     /**
      * @param  Collection<int, OrderedBlock>  $orderedBlocks
      * @param  Collection<int, Section>  $sections
@@ -108,8 +113,7 @@ final class VerticalBlockPlacer
             ?? $sp->metadata['facing']
             ?? 1);
 
-        $rawWidth = (float) ($sp->product->width ?? 0.0);
-        $productWidth = ($rawWidth > 0 && $rawWidth <= 60) ? $rawWidth : 10.0;
+        $productWidth = $this->widthResolver->resolve($sp->product);
         $occupiedWidth = $productWidth * $facing;
         $productHeight = (float) ($sp->product->height ?? 0.0);
 

@@ -26,7 +26,7 @@ function makeSizeSlot(SizeOrder $sizeOrder): PlanogramTemplateSlot
     $slot = new PlanogramTemplateSlot;
     $slot->size_order = $sizeOrder;
     $slot->price_order = PriceOrder::None;
-    $slot->brand_exposure = BrandExposure::None;
+    $slot->brand_exposure = BrandExposure::Mixed;
 
     return $slot;
 }

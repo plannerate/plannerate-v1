@@ -56,9 +56,9 @@ class ShelfLayoutDTO
      *
      * @return bool True se coube, false se não há espaço ou não cabe em profundidade
      */
-    public function addProduct(RankedProductDTO $product): bool
+    public function addProduct(RankedProductDTO $product, float $singleWidth = 0.0): bool
     {
-        $productWidth = ($product->product->width ?? 10) * $product->facings;
+        $productWidth = ($singleWidth > 0 ? $singleWidth : ($product->product->width ?? 10)) * $product->facings;
         $productDepth = (float) ($product->product->depth ?? 0);
 
         // Validar profundidade (se produto tiver depth > 0)
@@ -88,9 +88,9 @@ class ShelfLayoutDTO
     /**
      * Verificar se há espaço para um produto
      */
-    public function hasSpace(RankedProductDTO $product): bool
+    public function hasSpace(RankedProductDTO $product, float $singleWidth = 0.0): bool
     {
-        $productWidth = ($product->product->width ?? 10) * $product->facings;
+        $productWidth = ($singleWidth > 0 ? $singleWidth : ($product->product->width ?? 10)) * $product->facings;
 
         return ($this->occupiedWidth + $productWidth) <= $this->availableWidth;
     }

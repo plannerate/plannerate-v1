@@ -13,6 +13,7 @@ use App\Services\AutoPlanogram\DTO\RankedProductDTO;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use App\Services\AutoPlanogram\DTO\ShelfLayoutDTO;
 use App\Services\AutoPlanogram\ProductWidthResolver;
+use App\Services\AutoPlanogram\ScoredProductMapper;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Illuminate\Support\Collection;
@@ -36,11 +37,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
     /** @param  Collection<int, Section>  $sections */
     public function totalAvailableWidth(Collection $sections): float
     {
-        return (float) $sections->sum(function (Section $section): float {
-            return (float) $section->shelves->sum(function (Shelf $shelf) use ($section): float {
-                return $this->getShelfAvailableWidth($section, $shelf);
-            });
-        });
+        return (float) $sections->sum(fn (Section $section): float => $section->shelves->count() * $this->getShelfAvailableWidth($section));
     }
 
     /**
@@ -164,7 +161,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
                     id: $shelf->id,
                     shelfIndex: $index,
                     height: $clearances[$shelf->id] ?? 0.0,
-                    availableWidth: max(0.0, $this->getShelfAvailableWidth($section, $shelf) - $reserved),
+                    availableWidth: max(0.0, $this->getShelfAvailableWidth($section) - $reserved),
                     depth: (float) ($shelf->shelf_depth ?? 40),
                     shelfPosition: (int) $shelfPos,
                 );
@@ -214,7 +211,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
         return $clearances;
     }
 
-    private function getShelfAvailableWidth(Section $section, Shelf $shelf): float
+    private function getShelfAvailableWidth(Section $section): float
     {
         $sectionWidth = (float) ($section->width ?? 100.0);
         $cremalheiraWidth = (float) ($section->cremalheira_width ?? 0.0);
@@ -348,23 +345,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
 
     private function toRankedProductDto(ScoredProduct $sp): RankedProductDTO
     {
-        $rankedProduct = new RankedProductDTO(
-            product: $sp->product,
-            abcClass: $sp->metadata['abc_class'] ?? null,
-            score: $sp->score,
-            salesTotal: (float) ($sp->metadata['sales_total'] ?? $sp->metadata['raw_quantity'] ?? 0),
-            margin: (float) ($sp->metadata['margin'] ?? $sp->metadata['raw_margem'] ?? 0),
-            subcategoryId: $sp->product->category_id ?? null,
-            targetStock: isset($sp->metadata['target_stock']) ? (float) $sp->metadata['target_stock'] : null,
-            safetyStock: isset($sp->metadata['safety_stock']) ? (float) $sp->metadata['safety_stock'] : null,
-        );
-
-        $rankedProduct->setFacings((int) ($sp->metadata['facing_final']
-            ?? $sp->metadata['estimated_facing']
-            ?? $sp->metadata['facing_ideal']
-            ?? 1));
-
-        return $rankedProduct;
+        return ScoredProductMapper::toRankedWithFacings($sp);
     }
 
     private function tryAllocate(array $shelves, RankedProductDTO $product, int $index): bool
@@ -386,7 +367,7 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
             return false;
         }
 
-        $allocated = $shelf->addProduct($product);
+        $allocated = $shelf->addProduct($product, $this->widthResolver->resolve($product->product));
 
         return $allocated;
     }

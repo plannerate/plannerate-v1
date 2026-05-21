@@ -25,9 +25,12 @@ use Illuminate\Support\Facades\Log;
  *
  * Responsável por:
  * 1. Buscar produtos da categoria do planograma (hierarquia completa)
- * 2. Buscar dados de vendas (ano anterior para sazonalidade)
- * 3. Calcular pontuação baseado na estratégia escolhida
- * 4. Rankear produtos por importância
+ * 2. Buscar dados de vendas e análise ABC
+ * 3. Retornar pool ordenado por ABC (A→B→C) para que A's entrem primeiro nos slots
+ *
+ * IMPORTANTE: o score aqui serve apenas para ordenar o fetch; o placement real
+ * é determinado pelo CompositeScorer em AutoPlanogramService::generate().
+ * Não altere a estratégia aqui esperando mudar o layout — use os pesos do CompositeScorer.
  */
 class ProductSelectionService
 {
@@ -56,48 +59,34 @@ class ProductSelectionService
             return collect();
         }
 
-        // 2. Buscar dados de vendas e análises
+        // 2. Buscar dados de vendas e análises ABC
         $salesData = $this->getSalesData($products, $planogram, $config);
         $abcAnalyses = $this->getAbcAnalyses($products, $config);
 
-        // Calcular valores máximos para normalização (proteção contra array vazio)
-        $salesTotals = array_column($salesData, 'total');
-        $marginTotals = array_column($salesData, 'margin');
-
-        $maxSales = ! empty($salesTotals) ? max($salesTotals) : 1.0;
-        $maxMargin = ! empty($marginTotals) ? max($marginTotals) : 1.0;
-
-        Log::info('📊 Dados para normalização', [
-            'total_products' => $products->count(),
-            'products_with_sales' => count($salesData),
-            'max_sales' => $maxSales,
-            'max_margin' => $maxMargin,
-        ]);
-
-        // 3. Calcular pontuação para cada produto
-        $rankedProducts = $products->map(function (Product $product) use ($salesData, $abcAnalyses, $config, $maxSales, $maxMargin) {
+        // 3. Montar DTOs com ABC e dados de venda (score = prioridade ABC para ordenar o fetch)
+        $rankedProducts = $products->map(function (Product $product) use ($salesData, $abcAnalyses) {
             $productId = $product->id;
-
-            $salesTotal = $salesData[$productId]['total'] ?? 0;
-            $margin = $salesData[$productId]['margin'] ?? 0;
 
             $analysisData = $abcAnalyses[$productId] ?? null;
             $abcClass = $analysisData['abc'] ?? null;
-            $targetStock = $analysisData['target_stock'] ?? null;
-            $safetyStock = $analysisData['safety_stock'] ?? null;
 
-            // Calcular score baseado na estratégia (com normalização)
-            $score = $this->calculateScore($salesTotal, $margin, $abcClass, $config->strategy, $maxSales, $maxMargin);
+            // A=3, B=2, C=1, sem ABC=0 — apenas para pré-ordenar o pool
+            $score = match ($abcClass) {
+                'A' => 3.0,
+                'B' => 2.0,
+                'C' => 1.0,
+                default => 0.0,
+            };
 
             return new RankedProductDTO(
                 product: $product,
                 abcClass: $abcClass,
                 score: $score,
-                salesTotal: $salesTotal,
-                margin: $margin,
+                salesTotal: $salesData[$productId]['total'] ?? 0,
+                margin: $salesData[$productId]['margin'] ?? 0,
                 subcategoryId: $product->category_id,
-                targetStock: $targetStock,
-                safetyStock: $safetyStock,
+                targetStock: $analysisData['target_stock'] ?? null,
+                safetyStock: $analysisData['safety_stock'] ?? null,
             );
         });
 
@@ -381,47 +370,5 @@ class ProductSelectionService
         }
 
         return $result;
-    }
-
-    /**
-     * Calcular pontuação baseado na estratégia
-     *
-     * Estratégias:
-     * - abc: 100% peso na classificação ABC
-     * - sales: 100% peso nas vendas
-     * - margin: 100% peso na margem
-     * - mix: 40% ABC + 40% vendas + 20% margem
-     *
-     * IMPORTANTE: Todos os scores são normalizados para escala 0-100
-     * para que tenham peso equivalente na estratégia "mix"
-     */
-    protected function calculateScore(
-        float $salesTotal,
-        float $margin,
-        ?string $abcClass,
-        string $strategy,
-        float $maxSales = 1.0,
-        float $maxMargin = 1.0
-    ): float {
-        // Normalizar ABC para pontuação (A=100, B=50, C=25, null=0)
-        $abcScore = match ($abcClass) {
-            'A' => 100,
-            'B' => 50,
-            'C' => 25,
-            default => 0,
-        };
-
-        // Normalizar vendas e margem para escala 0-100
-        // Evita divisão por zero
-        $salesScore = $maxSales > 0 ? ($salesTotal / $maxSales) * 100 : 0;
-        $marginScore = $maxMargin > 0 ? ($margin / $maxMargin) * 100 : 0;
-
-        return match ($strategy) {
-            'abc' => $abcScore,
-            'sales' => $salesScore,
-            'margin' => $marginScore,
-            'mix' => ($abcScore * 0.4) + ($salesScore * 0.4) + ($marginScore * 0.2),
-            default => $salesScore,
-        };
     }
 }

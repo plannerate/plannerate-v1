@@ -28,7 +28,7 @@ const filteredRejectedProducts = computed(() => {
     const all = editor.rejectedProducts.value;
     const filter = selectedTemplateGroupingNormalized.value;
     if (!filter) return all;
-    return all.filter((p) => p.grouping_normalized === filter);
+    return all.filter((p) => p.category_id === filter);
 });
 
 // ── Cookie utilities ─────────────────────────────────────────────────────────
@@ -72,15 +72,15 @@ function handleCardClick(_event: MouseEvent, product: RejectedProduct) {
                 reason: product.rejection_reason,
                 reason_label: product.rejection_reason_label,
                 slot_id: product.slot_id,
-                grouping: product.grouping,
-                grouping_normalized: product.grouping_normalized,
+                category_name: product.category_name,
+                category_id: product.category_id,
                 module_number: product.module_number,
                 shelf_order: product.shelf_order,
             },
         });
 
-        if (product.grouping_normalized && product.grouping_normalized !== selectedTemplateGroupingNormalized.value) {
-            selectedTemplateGroupingNormalized.value = product.grouping_normalized;
+        if (product.category_id && product.category_id !== selectedTemplateGroupingNormalized.value) {
+            selectedTemplateGroupingNormalized.value = product.category_id;
         }
 
         clickTimer = null;

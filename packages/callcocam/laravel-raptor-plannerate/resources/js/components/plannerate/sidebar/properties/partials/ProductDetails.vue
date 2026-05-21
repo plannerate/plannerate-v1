@@ -26,8 +26,8 @@
                         M{{ rejectionDetails.moduleNumber ?? '-' }} • P{{ rejectionDetails.shelfOrder ?? '-' }}
                     </span>
                 </p>
-                <p v-if="rejectionDetails.grouping">
-                    Agrupamento: <span class="font-medium">{{ rejectionDetails.grouping }}</span>
+                <p v-if="rejectionDetails.categoryName">
+                    Agrupamento: <span class="font-medium">{{ rejectionDetails.categoryName }}</span>
                 </p>
             </div>
 
@@ -101,8 +101,8 @@ const rejectionDetails = computed(() => {
             rejection?: {
                 reason?: string;
                 reason_label?: string;
-                grouping?: string | null;
-                grouping_normalized?: string | null;
+                category_name?: string | null;
+                category_id?: string | null;
                 module_number?: number | null;
                 shelf_order?: number | null;
             };
@@ -116,8 +116,8 @@ const rejectionDetails = computed(() => {
     return {
         reason: context.rejection.reason ?? 'unknown',
         reasonLabel: context.rejection.reason_label ?? 'Sem motivo',
-        grouping: context.rejection.grouping ?? null,
-        groupingNormalized: context.rejection.grouping_normalized ?? null,
+        categoryName: context.rejection.category_name ?? null,
+        categoryId: context.rejection.category_id ?? null,
         moduleNumber: context.rejection.module_number ?? null,
         shelfOrder: context.rejection.shelf_order ?? null,
     };
