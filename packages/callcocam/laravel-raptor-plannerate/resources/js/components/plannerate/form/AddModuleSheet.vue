@@ -23,11 +23,11 @@ import {
 import {
     getInitialSectionFields,
     toSnakeCase as sectionToSnakeCase,
-} from '@/composables/plannerate/useSectionFields';
+} from '@/composables/plannerate/fields/useSectionFields';
 import {
     getInitialShelfFields,
     toSnakeCase as shelfToSnakeCase,
-} from '@/composables/plannerate/useShelfFields';
+} from '@/composables/plannerate/fields/useShelfFields';
 import { useT } from '@/composables/useT';
 import type { Section } from '@/types/planogram';
 import { wayfinderPath } from '../../../libs/wayfinderPath';

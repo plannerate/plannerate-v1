@@ -189,7 +189,7 @@ import { Loader2, TrendingDown } from 'lucide-vue-next';
 import { watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useProductSales } from '@/composables/plannerate/useProductSales';
+import { useProductSales } from '@/composables/plannerate/products/useProductSales';
 import { useT } from '@/composables/useT';
 
 interface Props {

@@ -1,4 +1,4 @@
-import { createEanAnalysisStore } from './analysis/useEanAnalysisStore';
+import { createEanAnalysisStore } from './useEanAnalysisStore';
 
 /**
  * Store singleton para classificações ABC por EAN.

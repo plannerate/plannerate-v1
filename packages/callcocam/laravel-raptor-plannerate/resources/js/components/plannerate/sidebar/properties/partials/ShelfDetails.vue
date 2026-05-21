@@ -231,11 +231,11 @@ import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { usePlanogramKeyboard } from '@/composables/plannerate/usePlanogramKeyboard';
-import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
-import { findNearestHole } from '@/composables/plannerate/useSectionHoles';
-import { useShelfActions } from '@/composables/plannerate/useShelfActions';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
+import { usePlanogramKeyboard } from '@/composables/plannerate/interactions/usePlanogramKeyboard';
+import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
+import { findNearestHole } from '@/composables/plannerate/geometry/useSectionHoles';
+import { useShelfActions } from '@/composables/plannerate/actions/useShelfActions';
 import { useT } from '@/composables/useT';
 import type { Shelf } from '@/types/planogram';
 

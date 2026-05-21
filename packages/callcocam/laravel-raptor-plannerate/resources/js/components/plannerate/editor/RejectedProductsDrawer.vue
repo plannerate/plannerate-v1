@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { useRejectedProductsStore } from '@/composables/plannerate/editor/useRejectedProductsStore';
-import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
-import { selectedTemplateGroupingNormalized } from '@/composables/plannerate/editor/useGondolaState';
-import type { RejectedProduct } from '@/composables/plannerate/editor/useGondolaState';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
+import { useRejectedProductsStore } from '@/composables/plannerate/interactions/useRejectedProductsStore';
+import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
+import { selectedTemplateCategoryId } from '@/composables/plannerate/core/useGondolaState';
+import type { RejectedProduct } from '@/composables/plannerate/core/useGondolaState';
 import { ArrowLeftRight, ChevronDown, ChevronUp, GripVertical, Layers, Loader2, MoveHorizontal, Ruler, X } from 'lucide-vue-next';
 import { type Component, computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
@@ -33,7 +33,7 @@ const swapModeActive = computed(() => swapSource.value !== null);
 
 const filteredRejectedProducts = computed(() => {
     const all = editor.rejectedProducts.value;
-    const filter = selectedTemplateGroupingNormalized.value;
+    const filter = selectedTemplateCategoryId.value;
     if (!filter) return all;
     return all.filter((p) => p.category_id === filter);
 });
@@ -87,8 +87,8 @@ function handleCardClick(_event: MouseEvent, product: RejectedProduct) {
             },
         });
 
-        if (product.category_id && product.category_id !== selectedTemplateGroupingNormalized.value) {
-            selectedTemplateGroupingNormalized.value = product.category_id;
+        if (product.category_id && product.category_id !== selectedTemplateCategoryId.value) {
+            selectedTemplateCategoryId.value = product.category_id;
         }
 
         clickTimer = null;
@@ -254,7 +254,7 @@ defineExpose({
                 <ArrowLeftRight class="size-4 text-muted-foreground" />
                 <span>Produtos rejeitados</span>
                 <Badge v-if="editor.rejectedProducts.value.length > 0" variant="destructive" class="h-5 px-1.5 text-xs">
-                    <template v-if="selectedTemplateGroupingNormalized && filteredRejectedProducts.length !== editor.rejectedProducts.value.length">
+                    <template v-if="selectedTemplateCategoryId && filteredRejectedProducts.length !== editor.rejectedProducts.value.length">
                         {{ filteredRejectedProducts.length }}/{{ editor.rejectedProducts.value.length }}
                     </template>
                     <template v-else>
@@ -265,12 +265,12 @@ defineExpose({
             </div>
             <div class="flex items-center gap-2">
                 <Button
-                    v-if="selectedTemplateGroupingNormalized"
+                    v-if="selectedTemplateCategoryId"
                     type="button"
                     variant="ghost"
                     size="sm"
                     class="h-6 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-                    @click.stop="selectedTemplateGroupingNormalized = null"
+                    @click.stop="selectedTemplateCategoryId = null"
                 >
                     <X class="size-3" />
                     Limpar filtro
@@ -323,7 +323,7 @@ defineExpose({
                     v-if="!editor.isLoadingRejectedProducts.value && filteredRejectedProducts.length === 0"
                     class="flex h-20 items-center justify-center text-sm text-muted-foreground"
                 >
-                    <span v-if="selectedTemplateGroupingNormalized && editor.rejectedProducts.value.length > 0">
+                    <span v-if="selectedTemplateCategoryId && editor.rejectedProducts.value.length > 0">
                         Nenhum produto rejeitado neste grouping.
                     </span>
                     <span v-else>Nenhum produto rejeitado nesta geração.</span>

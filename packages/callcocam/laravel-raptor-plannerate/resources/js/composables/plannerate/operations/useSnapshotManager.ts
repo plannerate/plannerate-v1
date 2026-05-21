@@ -5,22 +5,22 @@
 // e aplicação de snapshots para undo/redo do editor de planogramas.
 // ============================================================================
 
-import type { usePlanogramChanges } from '../usePlanogramChanges';
-import type { usePlanogramHistory } from '../usePlanogramHistory';
+import type { usePlanogramChanges } from '../core/usePlanogramChanges';
+import type { usePlanogramHistory } from '../core/usePlanogramHistory';
 import {
     currentGondola,
     rejectedProducts,
-} from './useGondolaState';
+} from '../core/useGondolaState';
 import {
     findSectionById,
     findSegmentById,
     findSegmentByLayerId,
     findShelfById,
-} from './useLookupHelpers';
+} from '../core/useLookupHelpers';
 import {
     updateSectionReactive,
     updateSegmentReactive,
-} from './useReactivityHelpers';
+} from '../core/useReactivityHelpers';
 import type {
     SegmentCopyAfterState,
     SegmentTransferAfterState,

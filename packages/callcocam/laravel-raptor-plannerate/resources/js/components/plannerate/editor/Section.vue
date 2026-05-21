@@ -42,18 +42,18 @@ import {
     draggingShelfId,
     draggingShelfOffset,
     draggingShelfSectionId,
-} from '../../../composables/plannerate/editor/useGondolaState';
-import { findShelfById } from '../../../composables/plannerate/editor/useLookupHelpers';
-import { usePlanogramEditor } from '../../../composables/plannerate/usePlanogramEditor';
-import { usePlanogramSelection } from '../../../composables/plannerate/usePlanogramSelection';
+} from '../../../composables/plannerate/core/useGondolaState';
+import { findShelfById } from '../../../composables/plannerate/core/useLookupHelpers';
+import { usePlanogramEditor } from '../../../composables/plannerate/core/usePlanogramEditor';
+import { usePlanogramSelection } from '../../../composables/plannerate/core/usePlanogramSelection';
 import {
     DEFAULT_SECTION_FIELDS,
     toCamelCase,
-} from '../../../composables/plannerate/useSectionFields';
+} from '../../../composables/plannerate/fields/useSectionFields';
 import {
     calculateHoles,
     findNearestHole,
-} from '../../../composables/plannerate/useSectionHoles';
+} from '../../../composables/plannerate/geometry/useSectionHoles';
 import type { Section as SectionType } from '../../../types/planogram';
 import Cremalheira from './Cremalheira.vue';
 import Shelves from './Shelves.vue';

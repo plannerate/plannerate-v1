@@ -338,7 +338,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useT } from '@/composables/useT';
-import { useTargetStockAnalysis } from '../../../composables/plannerate/useTargetStockAnalysis';
+import { useTargetStockAnalysis } from '../../../composables/plannerate/analysis/useTargetStockAnalysis';
 import type { Segment } from '../../../types/planogram';
 
 interface Props {

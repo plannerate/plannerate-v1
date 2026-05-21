@@ -10,7 +10,7 @@ import {
     DEFAULT_SECTION_FIELDS,
     calculateUsableHeight,
     toCamelCase,
-} from './useSectionFields';
+} from '../fields/useSectionFields';
 
 /**
  * Interface para um furo da cremalheira

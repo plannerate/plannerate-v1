@@ -65,8 +65,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { currentGondola } from '@/composables/plannerate/editor/useGondolaState';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { currentGondola } from '@/composables/plannerate/core/useGondolaState';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { useT } from '@/composables/useT';
 import ShareQRCodeModal from './header/ShareQRCodeModal.vue';
 

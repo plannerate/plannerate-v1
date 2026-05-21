@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import { toRef } from 'vue';
-import { useArrayNavigation } from '../../../composables/plannerate/useArrayNavigation';
+import { useArrayNavigation } from '../../../composables/plannerate/shared/useArrayNavigation';
 import type { Section, Shelf as ShelfType } from '../../../types/planogram';
 import Shelf from './Shelf.vue';
 

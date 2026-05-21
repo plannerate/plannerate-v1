@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useAbcClassification } from '@/composables/plannerate/useAbcClassification';
+import { useAbcClassification } from '@/composables/plannerate/analysis/useAbcClassification';
 import { useT } from '@/composables/useT';
 
 const { isVisible } = useAbcClassification();

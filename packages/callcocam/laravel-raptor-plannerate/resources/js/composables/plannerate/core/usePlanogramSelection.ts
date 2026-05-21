@@ -1,5 +1,20 @@
+/**
+ * usePlanogramSelection — ÚNICO dono do estado de seleção do editor.
+ *
+ * Contrato arquitetural (Fase 6):
+ * - Todo estado de seleção de item (section, shelf, segment, layer, product)
+ *   vive AQUI. Nenhum outro composable ou store deve manter refs paralelas de
+ *   seleção de item do editor.
+ * - Componentes consomem apenas via este composable; nunca escrevem diretamente
+ *   nas refs internas.
+ * - Estado compartilhado via module-level refs (singleton), garantindo que
+ *   qualquer componente veja sempre a mesma seleção ativa.
+ *
+ * Nota: `selectedTemplateGroupingNormalized` em useGondolaState é estado de
+ * filtro/highlight de categoria — não é seleção de item e está fora deste contrato.
+ */
 import { computed, readonly, ref } from 'vue';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { usePlanogramEditor } from './usePlanogramEditor';
 import type { Layer, Product, Section, Segment, Shelf } from '@/types/planogram';
 
 interface SelectedItem {

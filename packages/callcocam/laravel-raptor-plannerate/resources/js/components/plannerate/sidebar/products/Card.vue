@@ -63,8 +63,8 @@ import { AlertCircle, CheckCircle2 } from 'lucide-vue-next';
 import { computed, inject, onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
 import { useT } from '@/composables/useT';
 import type { Product } from '@/types/planogram';
 

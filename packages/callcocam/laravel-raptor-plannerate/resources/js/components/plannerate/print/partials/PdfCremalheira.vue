@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { calculateHolePositions } from '@/composables/plannerate/useSectionHoles'
+import { calculateHolePositions } from '@/composables/plannerate/geometry/useSectionHoles'
 import type { Section } from '@/types/planogram'
 
 interface Props {

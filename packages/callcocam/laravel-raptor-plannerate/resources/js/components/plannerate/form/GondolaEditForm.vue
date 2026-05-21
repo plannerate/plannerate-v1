@@ -15,8 +15,8 @@ import { Separator } from '@/components/ui/separator';
 import {
     DEFAULT_GONDOLA_FIELDS,
     toSnakeCase,
-} from '@/composables/plannerate/useGondolaFields';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+} from '@/composables/plannerate/fields/useGondolaFields';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { useT } from '@/composables/useT';
 import type { Gondola } from '@/types/planogram';
 import SectionShelfBulkUpdate from './SectionShelfBulkUpdate.vue';

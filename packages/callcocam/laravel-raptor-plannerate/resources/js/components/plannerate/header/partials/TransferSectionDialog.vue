@@ -330,7 +330,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { useT } from '@/composables/useT';
 import type { Section } from '@/types/planogram';
 

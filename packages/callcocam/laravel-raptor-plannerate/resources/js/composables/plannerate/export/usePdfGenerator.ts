@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import { ref } from 'vue';
 import { useT } from '@/composables/useT';
-import { captureElementAsCanvas } from './export/useCanvasCapture';
+import { captureElementAsCanvas } from './useCanvasCapture';
 
 export interface PdfGeneratorOptions {
     filename?: string;

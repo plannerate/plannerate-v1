@@ -4,12 +4,12 @@ import { toast } from 'vue-sonner';
 import { useT } from '@/composables/useT';
 import type { Layer, Section, Segment, Shelf } from '@/types/planogram';
 import { validateShelfWidth } from '@plannerate/libs/validation';
-import { usePlanogramEditor } from './usePlanogramEditor';
-import { usePlanogramSelection } from './usePlanogramSelection';
-import { shouldShowDeleteConfirm } from './usePlanogramUtils';
-import { useSectionActions } from './useSectionActions';
-import { segmentsMoving, useSegmentActions } from './useSegmentActions';
-import { useShelfActions } from './useShelfActions';
+import { usePlanogramEditor } from '../core/usePlanogramEditor';
+import { usePlanogramSelection } from '../core/usePlanogramSelection';
+import { shouldShowDeleteConfirm } from '../shared/usePlanogramUtils';
+import { useSectionActions } from '../actions/useSectionActions';
+import { segmentsMoving, useSegmentActions } from '../actions/useSegmentActions';
+import { useShelfActions } from '../actions/useShelfActions';
 
 // ============================================================================
 // ESTADO GLOBAL (SINGLETON PATTERN)

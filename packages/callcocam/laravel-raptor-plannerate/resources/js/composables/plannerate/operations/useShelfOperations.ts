@@ -2,12 +2,12 @@ import { ulid } from 'ulid';
 import { toast } from 'vue-sonner';
 import type { Layer, Segment, Shelf } from '@/types/planogram';
 import { validateShelfWidth } from '@plannerate/libs/validation';
-import { currentGondola } from './useGondolaState';
-import { findSectionById, findShelfById } from './useLookupHelpers';
+import { currentGondola } from '../core/useGondolaState';
+import { findSectionById, findShelfById } from '../core/useLookupHelpers';
 import {
     reorderShelvesByPosition,
     updateShelfReactive,
-} from './useReactivityHelpers';
+} from '../core/useReactivityHelpers';
 
 /**
  * Operações relacionadas a Shelves

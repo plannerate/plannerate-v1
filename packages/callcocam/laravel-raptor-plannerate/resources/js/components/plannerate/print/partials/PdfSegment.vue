@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useAbcClassification } from '@/composables/plannerate/useAbcClassification'
+import { useAbcClassification } from '@/composables/plannerate/analysis/useAbcClassification'
 import type { Segment } from '@/types/planogram'
 import PdfAbcBadge from './PdfAbcBadge.vue'
 import PdfLayer from './PdfLayer.vue'

@@ -41,8 +41,8 @@ import { computed } from 'vue';
 import {
     DEFAULT_SECTION_FIELDS,
     toCamelCase,
-} from '../../../composables/plannerate/useSectionFields';
-import { calculateHolePositions } from '../../../composables/plannerate/useSectionHoles';
+} from '../../../composables/plannerate/fields/useSectionFields';
+import { calculateHolePositions } from '../../../composables/plannerate/geometry/useSectionHoles';
 import type { Section } from '../../../types/planogram';
 
 interface Props {

@@ -1,6 +1,6 @@
 import { inject, ref } from 'vue';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { draggingSegmentShelfId } from './useGondolaState';
+import { usePlanogramEditor } from '../core/usePlanogramEditor';
+import { draggingSegmentShelfId } from '../core/useGondolaState';
 import { useRejectedProductsStore } from './useRejectedProductsStore';
 
 /**

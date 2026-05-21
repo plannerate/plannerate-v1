@@ -13,8 +13,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
     currentGondola,
-    selectedTemplateGroupingNormalized,
-} from '@/composables/plannerate/editor/useGondolaState';
+    selectedTemplateCategoryId,
+} from '@/composables/plannerate/core/useGondolaState';
 
 interface TemplateGrouping {
     category_id: string;
@@ -76,7 +76,7 @@ const groupings = computed<TemplateGrouping[]>(() => {
 const selectedGrouping = computed(() => {
     return (
         groupings.value.find(
-            (g) => g.category_id === selectedTemplateGroupingNormalized.value,
+            (g) => g.category_id === selectedTemplateCategoryId.value,
         ) ?? null
     );
 });
@@ -129,18 +129,18 @@ watch(
     (value) => {
         if (!value) {
             searchQuery.value = '';
-            selectedTemplateGroupingNormalized.value = null;
+            selectedTemplateCategoryId.value = null;
         }
     },
 );
 
 watch(groupings, (newGroupings) => {
     const stillValid = newGroupings.some(
-        (g) => g.category_id === selectedTemplateGroupingNormalized.value,
+        (g) => g.category_id === selectedTemplateCategoryId.value,
     );
 
     if (!stillValid) {
-        selectedTemplateGroupingNormalized.value = null;
+        selectedTemplateCategoryId.value = null;
     }
 });
 </script>
@@ -163,12 +163,12 @@ watch(groupings, (newGroupings) => {
                 </Button>
             </DropdownMenuTrigger>
             <Button
-                v-if="selectedTemplateGroupingNormalized"
+                v-if="selectedTemplateCategoryId"
                 variant="ghost"
                 size="icon"
                 class="size-8 shrink-0"
                 title="Limpar seleção de grouping"
-                @click="selectedTemplateGroupingNormalized = null"
+                @click="selectedTemplateCategoryId = null"
             >
                 <X class="size-3.5" />
             </Button>
@@ -190,8 +190,8 @@ watch(groupings, (newGroupings) => {
                 v-for="grouping in filteredGroupings"
                 :key="grouping.category_id"
                 class="cursor-pointer"
-                :class="selectedTemplateGroupingNormalized === grouping.category_id ? 'bg-muted/70' : ''"
-                @click="selectedTemplateGroupingNormalized = grouping.category_id">
+                :class="selectedTemplateCategoryId === grouping.category_id ? 'bg-muted/70' : ''"
+                @click="selectedTemplateCategoryId = grouping.category_id">
                 <div class="flex w-full items-start justify-between gap-2">
                     <div class="min-w-0">
                         <div class="flex items-end space-x-1">
@@ -206,7 +206,7 @@ watch(groupings, (newGroupings) => {
                         </p>
                     </div>
                     <div class="flex items-center gap-1">
-                        <Check v-if="selectedTemplateGroupingNormalized === grouping.category_id"
+                        <Check v-if="selectedTemplateCategoryId === grouping.category_id"
                             class="size-4 text-primary" />
                         <Badge variant="secondary" class="h-5 px-1.5 text-[10px]">
                             {{ grouping.slots_count }}

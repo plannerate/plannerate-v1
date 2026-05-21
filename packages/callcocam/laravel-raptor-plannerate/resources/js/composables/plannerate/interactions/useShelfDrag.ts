@@ -5,7 +5,7 @@ import {
     draggingShelfId,
     draggingShelfOffset,
     draggingShelfSectionId,
-} from './useGondolaState';
+} from '../core/useGondolaState';
 
 interface UseShelfDragOptions {
     shelf: Ref<ShelfType>;

@@ -47,12 +47,12 @@ import { Switch } from '@/components/ui/switch';
 import {
     currentGondola,
     eanSearchQuery,
-    selectedTemplateGroupingNormalized,
+    selectedTemplateCategoryId,
     showPerformanceModal,
-} from '@/composables/plannerate/editor/useGondolaState';
-import { usePlanogramChanges } from '@/composables/plannerate/usePlanogramChanges';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
+} from '@/composables/plannerate/core/useGondolaState';
+import { usePlanogramChanges } from '@/composables/plannerate/core/usePlanogramChanges';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
 import { useT } from '@/composables/useT';
 
 // Types
@@ -291,7 +291,7 @@ const showTransferSectionDialog = ref(false);
 /**
  * Indica se há um grouping selecionado no template
  */
-const hasSelection = computed(() => !!selectedTemplateGroupingNormalized.value);
+const hasSelection = computed(() => !!selectedTemplateCategoryId.value);
 
 /**
  * Seção selecionada (se houver)
@@ -623,7 +623,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     <Separator orientation="vertical" class="h-5" />
 
                     <ButtonWithTooltip variant="ghost" size="sm" :disabled="!isMounted || !hasSelection"
-                        tooltip="Limpar grouping selecionado" @click="selectedTemplateGroupingNormalized = null">
+                        tooltip="Limpar grouping selecionado" @click="selectedTemplateCategoryId = null">
                         <X class="mr-1.5 size-4" />
                         Seleção
                     </ButtonWithTooltip>

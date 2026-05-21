@@ -1,8 +1,8 @@
 import { computed } from 'vue';
 import type { Section } from '@/types/planogram';
-import { usePlanogramEditor } from './usePlanogramEditor';
-import { usePlanogramSelection } from './usePlanogramSelection';
-import { shouldShowDeleteConfirm } from './usePlanogramUtils';
+import { usePlanogramEditor } from '../core/usePlanogramEditor';
+import { usePlanogramSelection } from '../core/usePlanogramSelection';
+import { shouldShowDeleteConfirm } from '../shared/usePlanogramUtils';
 
 // Map global para rastrear seções em movimento (previne execução dupla)
 const sectionsMoving = new Map<string, boolean>();

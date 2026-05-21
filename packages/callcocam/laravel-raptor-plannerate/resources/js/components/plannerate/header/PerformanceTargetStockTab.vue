@@ -145,7 +145,7 @@ import {
     Card,
     CardContent,
 } from '@/components/ui/card';
-import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis';
+import { useTargetStockAnalysis } from '@/composables/plannerate/analysis/useTargetStockAnalysis';
 import { useT } from '@/composables/useT';
 import { wayfinderPath } from '../../../libs/wayfinderPath';
 

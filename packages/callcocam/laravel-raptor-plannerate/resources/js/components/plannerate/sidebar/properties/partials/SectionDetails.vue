@@ -224,10 +224,10 @@ import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { usePlanogramKeyboard } from '@/composables/plannerate/usePlanogramKeyboard';
-import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
-import { useSectionActions } from '@/composables/plannerate/useSectionActions';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
+import { usePlanogramKeyboard } from '@/composables/plannerate/interactions/usePlanogramKeyboard';
+import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
+import { useSectionActions } from '@/composables/plannerate/actions/useSectionActions';
 import { useT } from '@/composables/useT';
 import type { Section } from '@/types/planogram';
 

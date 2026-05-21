@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { update } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 import { useT } from '@/composables/useT';
-import { wayfinderPath } from '../../libs/wayfinderPath';
+import { wayfinderPath } from '../../../libs/wayfinderPath';
 
 export function useProductImage() {
     const { t } = useT();

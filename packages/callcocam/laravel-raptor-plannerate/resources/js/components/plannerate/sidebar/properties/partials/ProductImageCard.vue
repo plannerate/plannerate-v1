@@ -87,7 +87,7 @@
 import { Download, Loader2, Trash2, Upload } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useProductImage } from '@/composables/plannerate/useProductImage';
+import { useProductImage } from '@/composables/plannerate/products/useProductImage';
 import { useT } from '@/composables/useT';
 import type { Product } from '@/types/planogram';
 

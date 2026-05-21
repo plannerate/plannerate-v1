@@ -28,8 +28,8 @@ export const showZoneIndicators = ref(true);
 // Busca de produto por EAN na gondola atual
 export const eanSearchQuery = ref('');
 
-// Grouping de template selecionado para highlight no canvas
-export const selectedTemplateGroupingNormalized = ref<string | null>(null);
+/** category_id da categoria de template selecionada para highlight no canvas */
+export const selectedTemplateCategoryId = ref<string | null>(null);
 
 // Produtos rejeitados na última geração automática
 export interface RejectedProduct {

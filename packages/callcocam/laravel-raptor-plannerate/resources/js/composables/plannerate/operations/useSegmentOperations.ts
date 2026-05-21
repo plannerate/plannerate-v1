@@ -6,8 +6,8 @@ import { ulid } from 'ulid';
 import { toast } from 'vue-sonner';
 import type { Segment } from '@/types/planogram';
 import { validateShelfWidth } from '@plannerate/libs/validation';
-import { currentGondola } from './useGondolaState';
-import { findSegmentById } from './useLookupHelpers';
+import { currentGondola } from '../core/useGondolaState';
+import { findSegmentById } from '../core/useLookupHelpers';
 
 /**
  * Move um segmento de uma prateleira para outra

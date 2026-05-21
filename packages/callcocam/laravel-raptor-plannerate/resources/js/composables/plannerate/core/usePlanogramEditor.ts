@@ -6,9 +6,9 @@ import { router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { calculateAbc } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
-import { usePlanogramChanges } from '@/composables/plannerate/usePlanogramChanges';
-import { usePlanogramHistory } from '@/composables/plannerate/usePlanogramHistory';
-import { findNearestHole } from '@/composables/plannerate/useSectionHoles';
+import { usePlanogramChanges } from './usePlanogramChanges';
+import { usePlanogramHistory } from './usePlanogramHistory';
+import { findNearestHole } from '../geometry/useSectionHoles';
 import { useT } from '@/composables/useT';
 import type { Gondola, Product, Section, Shelf } from '@/types/planogram';
 
@@ -22,27 +22,27 @@ import {
     showProductsPanel,
     showPropertiesPanel,
     showZoneIndicators,
-} from './editor/useGondolaState';
+} from './useGondolaState';
 import {
     findSectionById,
     findSegmentById,
     findSegmentByLayerId,
     findShelfById,
-} from './editor/useLookupHelpers';
+} from './useLookupHelpers';
 import {
     updateSectionReactive,
     updateSegmentReactive,
-} from './editor/useReactivityHelpers';
-import { useRejectedProductsModule } from './editor/useRejectedProductsModule';
-import { useSectionOperations } from './editor/useSectionOperations';
+} from './useReactivityHelpers';
+import { useRejectedProductsModule } from '../interactions/useRejectedProductsModule';
+import { useSectionOperations } from '../operations/useSectionOperations';
 import {
     copySegmentToShelf as copySegmentOperation,
     moveSegmentToShelf as moveSegmentOperation,
     swapSegmentPositions as swapSegmentOp,
-} from './editor/useSegmentOperations';
-import { useShelfOperations } from './editor/useShelfOperations';
-import { useSnapshotManager } from './editor/useSnapshotManager';
-import { captureElementAsCanvas } from './export/useCanvasCapture';
+} from '../operations/useSegmentOperations';
+import { useShelfOperations } from '../operations/useShelfOperations';
+import { useSnapshotManager } from '../operations/useSnapshotManager';
+import { captureElementAsCanvas } from '../export/useCanvasCapture';
 
 // ============================================================================
 // COMPOSABLE

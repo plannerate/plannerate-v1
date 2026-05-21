@@ -1,9 +1,9 @@
 import { computed  } from 'vue';
 import type {Ref} from 'vue';
-import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/useSectionFields';
-import { calculateHolePositions } from '@/composables/plannerate/useSectionHoles';
-import { useShelfAreaCalculation } from '@/composables/plannerate/useShelfAreaCalculation';
-import { getShelfLevel, getZoneConfig } from '@/composables/plannerate/useShelfZone';
+import { DEFAULT_SECTION_FIELDS } from '../fields/useSectionFields';
+import { calculateHolePositions } from './useSectionHoles';
+import { useShelfAreaCalculation } from './useShelfAreaCalculation';
+import { getShelfLevel, getZoneConfig } from './useShelfZone';
 import type { Section, Shelf as ShelfType } from '@/types/planogram';
 
 interface UseShelfLayoutOptions {

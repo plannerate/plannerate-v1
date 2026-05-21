@@ -8,9 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { useAbcClassification } from '@/composables/plannerate/useAbcClassification'
-import { useProductSales } from '@/composables/plannerate/useProductSales'
-import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis'
+import { useAbcClassification } from '@/composables/plannerate/analysis/useAbcClassification'
+import { useProductSales } from '@/composables/plannerate/products/useProductSales'
+import { useTargetStockAnalysis } from '@/composables/plannerate/analysis/useTargetStockAnalysis'
 import { useT } from '@/composables/useT'
 import type { Product } from '@/types/planogram'
 

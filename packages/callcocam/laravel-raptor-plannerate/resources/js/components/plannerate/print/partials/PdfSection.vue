@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useArrayNavigation } from '@/composables/plannerate/useArrayNavigation'
+import { useArrayNavigation } from '@/composables/plannerate/shared/useArrayNavigation'
 import type { Section } from '@/types/planogram'
 import PdfCremalheira from './PdfCremalheira.vue'
 import PdfShelf from './PdfShelf.vue'

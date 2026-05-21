@@ -24,12 +24,12 @@ import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { calculateUsableHeight } from '@/composables/plannerate/useSectionFields';
+import { calculateUsableHeight } from '@/composables/plannerate/fields/useSectionFields';
 import {
     calculateShelfSpacing,
     calculateTotalDisplayArea,
     validateShelfFields,
-} from '@/composables/plannerate/useShelfFields';
+} from '@/composables/plannerate/fields/useShelfFields';
 import { useT } from '@/composables/useT';
 
 interface Props {

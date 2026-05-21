@@ -1,6 +1,6 @@
 import { ulid } from 'ulid';
 import type { Section } from '@/types/planogram';
-import { currentGondola } from './useGondolaState';
+import { currentGondola } from '../core/useGondolaState';
 
 /**
  * Operações relacionadas a Sections

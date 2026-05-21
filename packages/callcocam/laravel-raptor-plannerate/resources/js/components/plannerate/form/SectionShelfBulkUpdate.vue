@@ -17,20 +17,20 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import {
     calculateUsableHeight,
     DEFAULT_SECTION_FIELDS,
     toCamelCase as sectionToCamelCase,
     toSnakeCase as sectionToSnakeCase,
-} from '@/composables/plannerate/useSectionFields';
+} from '@/composables/plannerate/fields/useSectionFields';
 import {
     calculateShelfSpacing,
     calculateTotalDisplayArea,
     DEFAULT_SHELF_FIELDS,
     toCamelCase as shelfToCamelCase,
     toSnakeCase as shelfToSnakeCase,
-} from '@/composables/plannerate/useShelfFields';
+} from '@/composables/plannerate/fields/useShelfFields';
 import { useT } from '@/composables/useT';
 
 const editor = usePlanogramEditor();

@@ -23,9 +23,9 @@ import {
     DEFAULT_GONDOLA_FIELDS,
     generateGondolaCode,
     getInitialGondolaFields,
-} from '@/composables/plannerate/useGondolaFields';
-import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/useSectionFields';
-import { DEFAULT_SHELF_FIELDS } from '@/composables/plannerate/useShelfFields';
+} from '@/composables/plannerate/fields/useGondolaFields';
+import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/fields/useSectionFields';
+import { DEFAULT_SHELF_FIELDS } from '@/composables/plannerate/fields/useShelfFields';
 import { useT } from '@/composables/useT';
 import Step1BasicInfo, {
     validate as validateStep1,

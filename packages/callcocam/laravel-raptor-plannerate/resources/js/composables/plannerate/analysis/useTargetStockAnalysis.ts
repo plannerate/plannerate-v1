@@ -1,5 +1,5 @@
 import { computed } from 'vue';
-import { createEanAnalysisStore } from './analysis/useEanAnalysisStore';
+import { createEanAnalysisStore } from './useEanAnalysisStore';
 
 /**
  * Interface dos dados de estoque alvo por produto (armazenados por EAN).

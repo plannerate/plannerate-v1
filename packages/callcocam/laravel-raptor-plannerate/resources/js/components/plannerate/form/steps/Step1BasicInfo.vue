@@ -26,7 +26,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { validateGondolaFields } from '@/composables/plannerate/useGondolaFields';
+import { validateGondolaFields } from '@/composables/plannerate/fields/useGondolaFields';
 import { useT } from '@/composables/useT';
 
 interface Props {

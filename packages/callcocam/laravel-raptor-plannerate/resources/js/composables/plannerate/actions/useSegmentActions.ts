@@ -1,7 +1,7 @@
 import { computed } from 'vue';
 import type { Segment, Shelf } from '@/types/planogram';
-import { usePlanogramEditor } from './usePlanogramEditor';
-import { shouldShowDeleteConfirm } from './usePlanogramUtils';
+import { usePlanogramEditor } from '../core/usePlanogramEditor';
+import { shouldShowDeleteConfirm } from '../shared/usePlanogramUtils';
 
 // Map global para rastrear segmentos em movimento (previne execução dupla)
 // Exportado para ser compartilhado com usePlanogramKeyboard

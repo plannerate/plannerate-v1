@@ -127,7 +127,7 @@ import {
     Card,
     CardContent,
 } from '@/components/ui/card';
-import { useAbcClassification } from '@/composables/plannerate/useAbcClassification';
+import { useAbcClassification } from '@/composables/plannerate/analysis/useAbcClassification';
 import { useT } from '@/composables/useT';
 import { wayfinderPath } from '../../../libs/wayfinderPath';
 

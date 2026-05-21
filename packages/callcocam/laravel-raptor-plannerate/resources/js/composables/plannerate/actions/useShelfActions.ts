@@ -1,9 +1,9 @@
 import { computed } from 'vue';
 import type { Section, Shelf } from '@/types/planogram';
-import { usePlanogramEditor } from './usePlanogramEditor';
-import { shouldShowDeleteConfirm } from './usePlanogramUtils';
-import { toCamelCase, DEFAULT_SECTION_FIELDS } from './useSectionFields';
-import { calculateHolePositions } from './useSectionHoles';
+import { usePlanogramEditor } from '../core/usePlanogramEditor';
+import { shouldShowDeleteConfirm } from '../shared/usePlanogramUtils';
+import { toCamelCase, DEFAULT_SECTION_FIELDS } from '../fields/useSectionFields';
+import { calculateHolePositions } from '../geometry/useSectionHoles';
 
 // Map global para rastrear shelves em movimento entre seções (previne execução dupla)
 // Exportado para ser compartilhado com usePlanogramKeyboard

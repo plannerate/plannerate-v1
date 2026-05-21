@@ -92,10 +92,10 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import {
     draggingSegmentShelfId,
     eanSearchQuery,
-} from '../../../composables/plannerate/editor/useGondolaState';
-import { useAbcClassification } from '../../../composables/plannerate/useAbcClassification';
-import { usePlanogramEditor } from '../../../composables/plannerate/usePlanogramEditor';
-import { usePlanogramSelection } from '../../../composables/plannerate/usePlanogramSelection';
+} from '../../../composables/plannerate/core/useGondolaState';
+import { useAbcClassification } from '../../../composables/plannerate/analysis/useAbcClassification';
+import { usePlanogramEditor } from '../../../composables/plannerate/core/usePlanogramEditor';
+import { usePlanogramSelection } from '../../../composables/plannerate/core/usePlanogramSelection';
 import type { Layer, Segment } from '../../../types/planogram';
 import AbcBadge from './AbcBadge.vue';
 import LayerRenderer from './Layer.vue';

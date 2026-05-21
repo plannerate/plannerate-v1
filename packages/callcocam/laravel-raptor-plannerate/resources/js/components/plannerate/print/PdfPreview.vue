@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
-import { useAbcClassification } from '@/composables/plannerate/useAbcClassification';
-import { usePdfGenerator } from '@/composables/plannerate/usePdfGenerator';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis';
+import { useAbcClassification } from '@/composables/plannerate/analysis/useAbcClassification';
+import { usePdfGenerator } from '@/composables/plannerate/export/usePdfGenerator';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
+import { useTargetStockAnalysis } from '@/composables/plannerate/analysis/useTargetStockAnalysis';
 import { useT } from '@/composables/useT';
 import type {
     AbcAnalysis,

@@ -2,9 +2,9 @@
 import { onClickOutside } from '@vueuse/core';
 import { Package } from 'lucide-vue-next';
 import { computed, onMounted, useTemplateRef, watch } from 'vue';
-import { selectedTemplateGroupingNormalized } from '@/composables/plannerate/editor/useGondolaState';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
+import { selectedTemplateCategoryId } from '@/composables/plannerate/core/useGondolaState';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
 import { useT } from '@/composables/useT';
 import type { Gondola } from '@/types/planogram';
 import Sections from './editor/Sections.vue';
@@ -130,7 +130,7 @@ const flowDirection = computed(
     () => editor.currentGondola.value?.flow || 'left_to_right',
 );
 const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
-const selectedGroupingNormalized = selectedTemplateGroupingNormalized;
+const selectedGroupingNormalized = selectedTemplateCategoryId;
 
 watch(
     () => props.record?.template_id,

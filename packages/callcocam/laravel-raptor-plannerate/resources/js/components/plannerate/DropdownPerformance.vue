@@ -76,7 +76,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-import { usePerformanceIndicators } from '@/composables/plannerate/usePerformanceIndicators';
+import { usePerformanceIndicators } from '@/composables/plannerate/analysis/usePerformanceIndicators';
 import { useT } from '@/composables/useT';
 import type { AbcAnalysis, Gondola, StockAnalysis } from '@/types/planogram';
 

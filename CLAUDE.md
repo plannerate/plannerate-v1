@@ -66,7 +66,7 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 ## Frontend Bundling
 
-- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `npm run build`, `npm run dev`, or `composer run dev`. Ask them.
+- **NEVER** run `npm run build` directly neste projeto — não funciona. Use sempre `docker compose exec -u root php php artisan wayfinder:generate --with-form && VITE_ENABLE_WAYFINDER=false npm run build` para rebuild do frontend.
 
 ## Documentation Files
 
@@ -245,13 +245,17 @@ docker compose exec php php artisan <command>
 docker compose exec php vendor/bin/pint --dirty --format agent
 ```
 
-### Wayfinder (requires root for writing to resources/js/actions/)
+### Frontend Build (CRITICAL)
+
+**NEVER** run `npm run build` directly — it does not work in this project.
+
+Always use one of the Docker commands below:
 
 ```bash
-# Generate TypeScript actions only
+# Generate TypeScript actions only (sem rebuild)
 docker compose exec -u root php php artisan wayfinder:generate --with-form
 
-# Generate + rebuild frontend
+# Generate + rebuild frontend (use este quando precisar que as mudanças apareçam no browser)
 docker compose exec -u root php php artisan wayfinder:generate --with-form && VITE_ENABLE_WAYFINDER=false npm run build
 ```
 

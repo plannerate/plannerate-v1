@@ -93,14 +93,14 @@
 
 <script setup lang="ts">
 import { computed, toRef } from 'vue';
-import { useShelfDrag } from '../../../composables/plannerate/editor/useShelfDrag';
-import { useShelfDragDrop } from '../../../composables/plannerate/editor/useShelfDragDrop';
-import { useShelfLayout } from '../../../composables/plannerate/editor/useShelfLayout';
-import { usePlanogramEditor } from '../../../composables/plannerate/usePlanogramEditor';
-import { usePlanogramSelection } from '../../../composables/plannerate/usePlanogramSelection';
+import { useShelfDrag } from '../../../composables/plannerate/interactions/useShelfDrag';
+import { useShelfDragDrop } from '../../../composables/plannerate/interactions/useShelfDragDrop';
+import { useShelfLayout } from '../../../composables/plannerate/geometry/useShelfLayout';
+import { usePlanogramEditor } from '../../../composables/plannerate/core/usePlanogramEditor';
+import { usePlanogramSelection } from '../../../composables/plannerate/core/usePlanogramSelection';
 import type { Section, Shelf as ShelfType } from '../../../types/planogram';
 import Segment from './Segment.vue';
-import { showZoneIndicators } from '../../../composables/plannerate/editor/useGondolaState';
+import { showZoneIndicators } from '../../../composables/plannerate/core/useGondolaState';
 
 interface Props {
     shelf: ShelfType;

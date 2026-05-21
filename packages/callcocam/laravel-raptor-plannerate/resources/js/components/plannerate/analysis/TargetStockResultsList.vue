@@ -19,9 +19,9 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { useAnalysisFilters } from '@/composables/plannerate/analysis/useAnalysisFilters';
-import { usePlanogramEditor } from '@/composables/plannerate/usePlanogramEditor';
-import { usePlanogramSelection } from '@/composables/plannerate/usePlanogramSelection';
-import { useTargetStockAnalysis } from '@/composables/plannerate/useTargetStockAnalysis';
+import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
+import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
+import { useTargetStockAnalysis } from '@/composables/plannerate/analysis/useTargetStockAnalysis';
 import { useT } from '@/composables/useT';
 
 interface Props {

@@ -2,7 +2,7 @@
 import { Plus } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { useT } from '@/composables/useT';
-import { getShelfLevel, getZoneConfig } from '@/composables/plannerate/useShelfZone';
+import { getShelfLevel, getZoneConfig } from '@/composables/plannerate/geometry/useShelfZone';
 import SlotCard from './SlotCard.vue';
 import type { PlanogramTemplateSlot } from './types';
 
