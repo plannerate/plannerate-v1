@@ -18,6 +18,7 @@ use App\Http\Controllers\Landlord\TenantUserAccessController;
 use App\Http\Controllers\Landlord\UsefulLinkController;
 use App\Http\Controllers\Landlord\UserController;
 use App\Http\Controllers\Landlord\WorkflowTemplateController as LandlordWorkflowTemplateController;
+use App\Http\Controllers\PlanogramProductRuleController;
 use App\Http\Controllers\Settings\AdjacencyMatrixController;
 use App\Http\Controllers\Settings\PlanogramSettingsController;
 use App\Http\Controllers\Settings\ScoringWeightsController;
@@ -343,6 +344,13 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('planogram-templates.slots.update');
         Route::delete('planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}', [TemplateSlotController::class, 'destroySlot'])
             ->name('planogram-templates.slots.destroy');
+
+        Route::get('planogram-product-rules', [PlanogramProductRuleController::class, 'index'])
+            ->name('planogram-product-rules.index');
+        Route::post('planogram-product-rules', [PlanogramProductRuleController::class, 'store'])
+            ->name('planogram-product-rules.store');
+        Route::delete('planogram-product-rules/{planogramProductRule}', [PlanogramProductRuleController::class, 'destroy'])
+            ->name('planogram-product-rules.destroy');
 
         Route::resource('users', TenantUserController::class)
             ->except(['show'])

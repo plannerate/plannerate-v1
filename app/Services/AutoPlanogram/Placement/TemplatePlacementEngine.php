@@ -44,6 +44,18 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /** @var array<string, array{giro: float, margem: float}> Métricas por produto para ordenação por zona */
     private array $zoneMetricsMap = [];
 
+    /** @var array<string, true> Produtos obrigatórios [product_id => true] */
+    private array $mandatoryProductIds = [];
+
+    /** @var array<string, true> Produtos bloqueados [product_id => true] */
+    private array $blockedProductIds = [];
+
+    /** @var array<string, true> Marcas bloqueadas [brand => true] */
+    private array $blockedBrands = [];
+
+    /** @var array<string, true> Subcategorias bloqueadas [category_id => true] */
+    private array $blockedSubcategoryIds = [];
+
     /** Critério de priorização para zona quente (Eye + Hand) */
     private ZonePriority $hotZonePriority = ZonePriority::None;
 
@@ -77,6 +89,10 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $this->abcClassMap = $settings->abcClassMap;
         $this->targetStockMap = $settings->targetStockMap;
         $this->zoneMetricsMap = $settings->zoneMetricsMap;
+        $this->mandatoryProductIds = $settings->mandatoryProductIds;
+        $this->blockedProductIds = $settings->blockedProductIds;
+        $this->blockedBrands = $settings->blockedBrands;
+        $this->blockedSubcategoryIds = $settings->blockedSubcategoryIds;
 
         $subtemplate = $this->resolveSubtemplate($settings);
 
@@ -119,7 +135,18 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 continue;
             }
 
-            $candidates = $this->findCandidates($slot, $settings);
+            $allCandidates = $this->findCandidates($slot, $settings);
+
+            // Separar bloqueados antes de qualquer ordenação
+            [$candidates, $blockedCandidates] = $this->partitionBlocked($allCandidates);
+
+            foreach ($blockedCandidates as $blockedProduct) {
+                $rejected->push([
+                    'product' => $blockedProduct,
+                    'reason' => PlacementFailureReason::Blocked,
+                    'slot_id' => $slot->id,
+                ]);
+            }
 
             if ($candidates->isEmpty()) {
                 $groupingsSemProduto++;
@@ -161,8 +188,19 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 }
             }
 
+            // Re-etiquetar obrigatórios sem espaço para motivo específico
+            $slotRejected = collect($slotResult['rejected'])->map(function (array $item): array {
+                if ($item['reason'] === PlacementFailureReason::NoHorizontalSpace
+                    && $item['product'] !== null
+                    && isset($this->mandatoryProductIds[$item['product']->id])) {
+                    return array_merge($item, ['reason' => PlacementFailureReason::MandatoryNoSpace]);
+                }
+
+                return $item;
+            });
+
             $placed = $placed->merge($slotResult['placed']);
-            $rejected = $rejected->merge($slotResult['rejected']);
+            $rejected = $rejected->merge($slotRejected);
 
             $occupied = round((float) $slotResult['placed']->sum('width'), 1);
             $livre = round(max(0.0, $available - $occupied), 1);
@@ -261,6 +299,46 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         return $shelves[$index] ?? null;
     }
 
+    /**
+     * Separa produtos bloqueados por regra do pool de candidatos.
+     * Retorna [candidatos_validos, bloqueados].
+     *
+     * @return array{0: Collection, 1: Collection}
+     */
+    private function partitionBlocked(Collection $candidates): array
+    {
+        if (empty($this->blockedProductIds) && empty($this->blockedBrands) && empty($this->blockedSubcategoryIds)) {
+            return [$candidates, collect()];
+        }
+
+        $blocked = $candidates->filter(fn ($p) => $this->isProductBlocked($p));
+        $valid = $candidates->reject(fn ($p) => $this->isProductBlocked($p));
+
+        return [$valid->values(), $blocked->values()];
+    }
+
+    /**
+     * Verifica se um produto está bloqueado por qualquer regra ativa.
+     */
+    private function isProductBlocked(mixed $product): bool
+    {
+        if (isset($this->blockedProductIds[$product->id])) {
+            return true;
+        }
+
+        $brand = $product->brand ?? null;
+        if ($brand !== null && isset($this->blockedBrands[$brand])) {
+            return true;
+        }
+
+        $categoryId = $product->category_id ?? null;
+        if ($categoryId !== null && isset($this->blockedSubcategoryIds[$categoryId])) {
+            return true;
+        }
+
+        return false;
+    }
+
     private function findCandidates(PlanogramTemplateSlot $slot, PlacementSettings $settings): Collection
     {
         if (! $slot->category_id) {
@@ -297,6 +375,11 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
         // Zona térmica — aplicado por último para ser critério primário (stable sort)
         $sorted = $this->applyZoneOrdering($sorted, $section, $shelf);
+
+        // Obrigatórios sempre no topo — garantem espaço antes de qualquer outro produto
+        if (! empty($this->mandatoryProductIds)) {
+            $sorted = $sorted->sortBy(fn ($p) => isset($this->mandatoryProductIds[$p->id]) ? 0 : 1);
+        }
 
         return $sorted->values();
     }

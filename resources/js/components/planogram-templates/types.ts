@@ -120,6 +120,22 @@ export type SlotAnalysisData = {
     rows: SlotAnalysisRow[];
 };
 
+export type ProductRuleType = 'mandatory' | 'blocked';
+
+export type ProductRule = {
+    id: string;
+    type: ProductRuleType;
+    type_label: string;
+    product_id: string | null;
+    product_name: string | null;
+    product_ean: string | null;
+    brand: string | null;
+    subcategory_id: string | null;
+    subcategory_name: string | null;
+    reason: string | null;
+    created_at: string | null;
+};
+
 export type WizardStepStatus = 'complete' | 'active' | 'pending';
 
 export type WizardStep = {

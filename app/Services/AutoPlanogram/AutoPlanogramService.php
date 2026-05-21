@@ -165,10 +165,18 @@ final class AutoPlanogramService
             ],
         ])->all();
 
+        $productRules = $this->loadProductRules($input->settings->tenantId ?? '');
+
         $settings = $input->settings
             ->withExtras($input->settings->tenantId, $input->settings->weights)
             ->withProducts($sortedProducts)
-            ->withZoneMetrics($zoneMetricsMap);
+            ->withZoneMetrics($zoneMetricsMap)
+            ->withProductRules(
+                $productRules['mandatoryProductIds'],
+                $productRules['blockedProductIds'],
+                $productRules['blockedBrands'],
+                $productRules['blockedSubcategoryIds'],
+            );
 
         $result = $this->templatePlacement->place(
             collect(),
@@ -273,6 +281,54 @@ final class AutoPlanogramService
      * @param  Collection<int, PlacedSegment>  $segments
      * @return Collection<int, PlacedSegment>
      */
+    /**
+     * Carrega regras mandatory/blocked do banco do tenant para injetar no engine.
+     *
+     * @return array{mandatoryProductIds: array<string,true>, blockedProductIds: array<string,true>, blockedBrands: array<string,true>, blockedSubcategoryIds: array<string,true>}
+     */
+    private function loadProductRules(string $tenantId): array
+    {
+        if ($tenantId === '') {
+            return [
+                'mandatoryProductIds' => [],
+                'blockedProductIds' => [],
+                'blockedBrands' => [],
+                'blockedSubcategoryIds' => [],
+            ];
+        }
+
+        $rows = DB::connection('tenant')
+            ->table('planogram_product_rules')
+            ->where('tenant_id', $tenantId)
+            ->whereNull('deleted_at')
+            ->get(['type', 'product_id', 'brand', 'subcategory_id']);
+
+        $mandatoryProductIds = [];
+        $blockedProductIds = [];
+        $blockedBrands = [];
+        $blockedSubcategoryIds = [];
+
+        foreach ($rows as $row) {
+            if ($row->type === 'mandatory' && $row->product_id !== null) {
+                $mandatoryProductIds[$row->product_id] = true;
+            }
+
+            if ($row->type === 'blocked') {
+                if ($row->product_id !== null) {
+                    $blockedProductIds[$row->product_id] = true;
+                }
+                if ($row->brand !== null) {
+                    $blockedBrands[$row->brand] = true;
+                }
+                if ($row->subcategory_id !== null) {
+                    $blockedSubcategoryIds[$row->subcategory_id] = true;
+                }
+            }
+        }
+
+        return compact('mandatoryProductIds', 'blockedProductIds', 'blockedBrands', 'blockedSubcategoryIds');
+    }
+
     private function renumberOrderings(Collection $segments): Collection
     {
         return $segments

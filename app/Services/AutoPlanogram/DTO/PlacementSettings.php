@@ -92,6 +92,34 @@ final readonly class PlacementSettings
          * @var array<string, array{giro: float, margem: float}>
          */
         public array $zoneMetricsMap = [],
+
+        /**
+         * Produtos obrigatórios [product_id => true] — entram mesmo sem histórico de vendas.
+         *
+         * @var array<string, true>
+         */
+        public array $mandatoryProductIds = [],
+
+        /**
+         * Produtos bloqueados [product_id => true] — nunca entram no planograma.
+         *
+         * @var array<string, true>
+         */
+        public array $blockedProductIds = [],
+
+        /**
+         * Marcas bloqueadas [brand => true] — todos os produtos da marca são excluídos.
+         *
+         * @var array<string, true>
+         */
+        public array $blockedBrands = [],
+
+        /**
+         * Subcategorias bloqueadas [category_id => true] — todos os produtos da subcat são excluídos.
+         *
+         * @var array<string, true>
+         */
+        public array $blockedSubcategoryIds = [],
     ) {}
 
     public function usesTemplate(): bool
@@ -127,6 +155,10 @@ final readonly class PlacementSettings
             abcClassMap: $this->abcClassMap,
             targetStockMap: $this->targetStockMap,
             zoneMetricsMap: $this->zoneMetricsMap,
+            mandatoryProductIds: $this->mandatoryProductIds,
+            blockedProductIds: $this->blockedProductIds,
+            blockedBrands: $this->blockedBrands,
+            blockedSubcategoryIds: $this->blockedSubcategoryIds,
         );
     }
 
@@ -158,6 +190,10 @@ final readonly class PlacementSettings
             abcClassMap: $abcClassMap,
             targetStockMap: $this->targetStockMap,
             zoneMetricsMap: $this->zoneMetricsMap,
+            mandatoryProductIds: $this->mandatoryProductIds,
+            blockedProductIds: $this->blockedProductIds,
+            blockedBrands: $this->blockedBrands,
+            blockedSubcategoryIds: $this->blockedSubcategoryIds,
         );
     }
 
@@ -190,6 +226,10 @@ final readonly class PlacementSettings
             abcClassMap: $this->abcClassMap,
             targetStockMap: $targetStockMap,
             zoneMetricsMap: $this->zoneMetricsMap,
+            mandatoryProductIds: $this->mandatoryProductIds,
+            blockedProductIds: $this->blockedProductIds,
+            blockedBrands: $this->blockedBrands,
+            blockedSubcategoryIds: $this->blockedSubcategoryIds,
         );
     }
 
@@ -221,6 +261,10 @@ final readonly class PlacementSettings
             abcClassMap: $this->abcClassMap,
             targetStockMap: $this->targetStockMap,
             zoneMetricsMap: $this->zoneMetricsMap,
+            mandatoryProductIds: $this->mandatoryProductIds,
+            blockedProductIds: $this->blockedProductIds,
+            blockedBrands: $this->blockedBrands,
+            blockedSubcategoryIds: $this->blockedSubcategoryIds,
         );
     }
 
@@ -252,6 +296,10 @@ final readonly class PlacementSettings
             abcClassMap: $this->abcClassMap,
             targetStockMap: $this->targetStockMap,
             zoneMetricsMap: $this->zoneMetricsMap,
+            mandatoryProductIds: $this->mandatoryProductIds,
+            blockedProductIds: $this->blockedProductIds,
+            blockedBrands: $this->blockedBrands,
+            blockedSubcategoryIds: $this->blockedSubcategoryIds,
         );
     }
 
@@ -286,6 +334,55 @@ final readonly class PlacementSettings
             abcClassMap: $this->abcClassMap,
             targetStockMap: $this->targetStockMap,
             zoneMetricsMap: $zoneMetricsMap,
+            mandatoryProductIds: $this->mandatoryProductIds,
+            blockedProductIds: $this->blockedProductIds,
+            blockedBrands: $this->blockedBrands,
+            blockedSubcategoryIds: $this->blockedSubcategoryIds,
+        );
+    }
+
+    /**
+     * @param  array<string, true>  $mandatoryProductIds
+     * @param  array<string, true>  $blockedProductIds
+     * @param  array<string, true>  $blockedBrands
+     * @param  array<string, true>  $blockedSubcategoryIds
+     */
+    public function withProductRules(
+        array $mandatoryProductIds,
+        array $blockedProductIds,
+        array $blockedBrands,
+        array $blockedSubcategoryIds,
+    ): self {
+        return new self(
+            strategy: $this->strategy,
+            useExistingAnalysis: $this->useExistingAnalysis,
+            startDate: $this->startDate,
+            endDate: $this->endDate,
+            minFacings: $this->minFacings,
+            maxFacings: $this->maxFacings,
+            groupBySubcategory: $this->groupBySubcategory,
+            includeProductsWithoutSales: $this->includeProductsWithoutSales,
+            tableType: $this->tableType,
+            categoryId: $this->categoryId,
+            tenantId: $this->tenantId,
+            storeId: $this->storeId,
+            weights: $this->weights,
+            blockHierarchyLevel: $this->blockHierarchyLevel,
+            adjacencyHierarchyLevel: $this->adjacencyHierarchyLevel,
+            targetOccupancyRate: $this->targetOccupancyRate,
+            verticalBlockThreshold: $this->verticalBlockThreshold,
+            verticalBlockMinShelves: $this->verticalBlockMinShelves,
+            templateId: $this->templateId,
+            numModules: $this->numModules,
+            planogramId: $this->planogramId,
+            products: $this->products,
+            abcClassMap: $this->abcClassMap,
+            targetStockMap: $this->targetStockMap,
+            zoneMetricsMap: $this->zoneMetricsMap,
+            mandatoryProductIds: $mandatoryProductIds,
+            blockedProductIds: $blockedProductIds,
+            blockedBrands: $blockedBrands,
+            blockedSubcategoryIds: $blockedSubcategoryIds,
         );
     }
 
