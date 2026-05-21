@@ -1,3 +1,11 @@
+export type VisualCriterionKey = 'marca' | 'preco' | 'tamanho' | 'score_abc' | 'margem';
+export type VisualCriterionDirection = 'asc' | 'desc' | 'none';
+
+export type VisualCriterionItem = {
+    key: VisualCriterionKey;
+    direction: VisualCriterionDirection;
+};
+
 export type ZonePriority =
     | 'none'
     | 'maior_margem'
@@ -37,6 +45,10 @@ export type PlanogramTemplateSlot = {
     use_target_stock: boolean;
     facing_expansion: SlotFacingExpansion;
     role_override?: CategoryRole | null;
+    visual_criteria?: VisualCriterionItem[] | null;
+    max_share_per_sku?: number | null;
+    max_share_per_brand?: number | null;
+    max_share_per_subcategory?: number | null;
     ordering?: number;
     rejected_count?: number;
 };

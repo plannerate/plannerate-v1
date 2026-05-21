@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
 import { categoryRoleOptions } from './slot-editor';
 import type { SlotDraft } from './slot-editor';
+import VisualCriteriaEditor from './VisualCriteriaEditor.vue';
 import type { SlotValidationErrors } from './validation';
 
 const draft = defineModel<SlotDraft>('draft', { required: true });
@@ -40,6 +41,27 @@ const priorityModel = computed({
         const parsed = Number(value);
         draft.value.priority = Number.isFinite(parsed) ? parsed : 1;
     },
+});
+
+function parseShareLimit(value: string | number): number | null {
+    if (value === '' || value === null || value === undefined) return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed >= 1 && parsed <= 100 ? Math.round(parsed) : null;
+}
+
+const maxSharePerSkuModel = computed({
+    get: () => draft.value.max_share_per_sku ?? '',
+    set: (value: string | number) => { draft.value.max_share_per_sku = parseShareLimit(value); },
+});
+
+const maxSharePerBrandModel = computed({
+    get: () => draft.value.max_share_per_brand ?? '',
+    set: (value: string | number) => { draft.value.max_share_per_brand = parseShareLimit(value); },
+});
+
+const maxSharePerSubcategoryModel = computed({
+    get: () => draft.value.max_share_per_subcategory ?? '',
+    set: (value: string | number) => { draft.value.max_share_per_subcategory = parseShareLimit(value); },
 });
 </script>
 
@@ -120,7 +142,11 @@ const priorityModel = computed({
             </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="rounded-md border border-border p-3">
+            <VisualCriteriaEditor v-model="draft.visual_criteria" />
+        </div>
+
+        <div v-if="draft.visual_criteria === null" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormSelectField
                 id="slot-price-order"
                 v-model="draft.price_order"
@@ -145,6 +171,7 @@ const priorityModel = computed({
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormSelectField
+                v-if="draft.visual_criteria === null"
                 id="slot-brand-exposure"
                 v-model="draft.brand_exposure"
                 name="brand_exposure"
@@ -197,6 +224,56 @@ const priorityModel = computed({
                 name="use_target_stock"
                 :label="t('planogram-templates.slot_editor.target_stock_label')"
             />
+        </div>
+
+        <div class="rounded-md border border-border p-3 flex flex-col gap-3">
+            <div>
+                <p class="text-sm font-medium">Limites de participação</p>
+                <p class="text-xs text-muted-foreground">
+                    Tetos relativos que evitam monopólio durante a expansão de frentes. Deixe em branco para sem limite.
+                </p>
+            </div>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div class="flex flex-col gap-y-1">
+                    <FormTextField
+                        id="slot-max-share-per-sku"
+                        v-model="maxSharePerSkuModel"
+                        name="max_share_per_sku"
+                        type="number"
+                        label="Máx. % por SKU"
+                        hint="% do slot por produto"
+                        :min="1"
+                        :max="100"
+                    />
+                    <p v-if="errors.max_share_per_sku" class="text-xs text-destructive">{{ errors.max_share_per_sku }}</p>
+                </div>
+                <div class="flex flex-col gap-y-1">
+                    <FormTextField
+                        id="slot-max-share-per-brand"
+                        v-model="maxSharePerBrandModel"
+                        name="max_share_per_brand"
+                        type="number"
+                        label="Máx. % por marca"
+                        hint="% do slot por marca"
+                        :min="1"
+                        :max="100"
+                    />
+                    <p v-if="errors.max_share_per_brand" class="text-xs text-destructive">{{ errors.max_share_per_brand }}</p>
+                </div>
+                <div class="flex flex-col gap-y-1">
+                    <FormTextField
+                        id="slot-max-share-per-subcategory"
+                        v-model="maxSharePerSubcategoryModel"
+                        name="max_share_per_subcategory"
+                        type="number"
+                        label="Máx. % por subcategoria"
+                        hint="% do slot por subcategoria"
+                        :min="1"
+                        :max="100"
+                    />
+                    <p v-if="errors.max_share_per_subcategory" class="text-xs text-destructive">{{ errors.max_share_per_subcategory }}</p>
+                </div>
+            </div>
         </div>
     </div>
 </template>

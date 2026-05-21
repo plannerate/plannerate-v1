@@ -38,6 +38,10 @@ class PlanogramTemplateSlot extends Model
         'max_facings',
         'ordering',
         'role_override',
+        'visual_criteria',
+        'max_share_per_sku',
+        'max_share_per_brand',
+        'max_share_per_subcategory',
     ];
 
     protected function casts(): array
@@ -57,6 +61,10 @@ class PlanogramTemplateSlot extends Model
             'flavor_exposure' => FlavorExposure::class,
             'space_fallback' => SpaceFallback::class,
             'role_override' => CategoryRole::class,
+            'visual_criteria' => 'array',
+            'max_share_per_sku' => 'integer',
+            'max_share_per_brand' => 'integer',
+            'max_share_per_subcategory' => 'integer',
         ];
     }
 

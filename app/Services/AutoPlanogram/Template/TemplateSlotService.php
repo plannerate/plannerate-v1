@@ -28,6 +28,12 @@ final class TemplateSlotService
             'use_target_stock' => ['boolean'],
             'facing_expansion' => ['required', 'string', 'in:none,score,current_stock,target_stock,equal'],
             'role_override' => ['nullable', 'string', 'in:destino,rotina,conveniencia,impulso,sazonal,complementar'],
+            'visual_criteria' => ['nullable', 'array'],
+            'visual_criteria.*.key' => ['required_with:visual_criteria', 'string', 'in:marca,preco,tamanho,score_abc,margem'],
+            'visual_criteria.*.direction' => ['required_with:visual_criteria', 'string', 'in:asc,desc,none'],
+            'max_share_per_sku' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'max_share_per_brand' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'max_share_per_subcategory' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
         if ((int) ($validated['max_facings'] ?? 1) < (int) ($validated['min_facings'] ?? 1)) {
@@ -269,6 +275,10 @@ final class TemplateSlotService
                         'use_target_stock' => $slot->use_target_stock,
                         'facing_expansion' => $slot->facing_expansion->value,
                         'role_override' => $slot->role_override?->value,
+                        'visual_criteria' => $slot->visual_criteria,
+                        'max_share_per_sku' => $slot->max_share_per_sku,
+                        'max_share_per_brand' => $slot->max_share_per_brand,
+                        'max_share_per_subcategory' => $slot->max_share_per_subcategory,
                         'ordering' => $slot->ordering,
                         'rejected_count' => (int) ($rejectedCounts->get($slot->id) ?? 0),
                     ];

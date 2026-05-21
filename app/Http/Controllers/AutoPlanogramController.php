@@ -12,6 +12,8 @@ use App\Services\AutoPlanogram\AutoPlanogramService;
 use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
+use App\Services\AutoPlanogram\Placement\ExposureRedistributeService;
+use App\Services\AutoPlanogram\Placement\VisualReorderService;
 use App\Services\AutoPlanogram\ProductSelectionService;
 use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\AutoGeneratePlanogramRequest;
@@ -31,6 +33,8 @@ class AutoPlanogramController extends Controller
     public function __construct(
         private readonly AutoPlanogramService $service,
         private readonly ProductSelectionService $productSelection,
+        private readonly VisualReorderService $reorderService,
+        private readonly ExposureRedistributeService $redistributeService,
     ) {}
 
     public function generate(AutoGeneratePlanogramRequest $request, string $subdomain, string $gondola): RedirectResponse
@@ -328,6 +332,54 @@ class AutoPlanogramController extends Controller
             ->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Reordena segmentos já posicionados no slot usando o motor de critérios visuais.
+     * Não altera produtos nem frentes — apenas ordering e position.
+     */
+    public function reorderVisual(Request $request, string $subdomain, string $gondola): JsonResponse
+    {
+        unset($subdomain);
+
+        $request->validate([
+            'slot_id' => ['required', 'string'],
+        ]);
+
+        $slot = PlanogramTemplateSlot::findOrFail($request->slot_id);
+        $gondolaModel = Gondola::with(['sections.shelves'])->findOrFail($gondola);
+
+        $count = $this->reorderService->reorder($gondolaModel, $slot);
+
+        return response()->json([
+            'success' => true,
+            'reordered' => $count,
+            'level' => 'reorder',
+        ]);
+    }
+
+    /**
+     * Redistribui segmentos já posicionados no slot ao mudar exposição (brand/flavor).
+     * Mantém {produto: frentes} — recalcula apenas posições físicas.
+     */
+    public function redistributeExposure(Request $request, string $subdomain, string $gondola): JsonResponse
+    {
+        unset($subdomain);
+
+        $request->validate([
+            'slot_id' => ['required', 'string'],
+        ]);
+
+        $slot = PlanogramTemplateSlot::findOrFail($request->slot_id);
+        $gondolaModel = Gondola::with(['sections.shelves'])->findOrFail($gondola);
+
+        $count = $this->redistributeService->redistribute($gondolaModel, $slot);
+
+        return response()->json([
+            'success' => true,
+            'redistributed' => $count,
+            'level' => 'redistribute',
+        ]);
     }
 
     public function swapProduct(Request $request, string $subdomain, string $gondola): JsonResponse

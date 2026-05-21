@@ -31,6 +31,36 @@ export const slotDraftSchema = z
             .enum(['destino', 'rotina', 'conveniencia', 'impulso', 'sazonal', 'complementar'])
             .nullable()
             .optional(),
+        visual_criteria: z
+            .array(
+                z.object({
+                    key: z.enum(['marca', 'preco', 'tamanho', 'score_abc', 'margem']),
+                    direction: z.enum(['asc', 'desc', 'none']),
+                }),
+            )
+            .nullable()
+            .optional(),
+        max_share_per_sku: z
+            .number({ invalid_type_error: 'Limite de SKU deve ser um número.' })
+            .int()
+            .min(1, 'Mínimo 1%.')
+            .max(100, 'Máximo 100%.')
+            .nullable()
+            .optional(),
+        max_share_per_brand: z
+            .number({ invalid_type_error: 'Limite de marca deve ser um número.' })
+            .int()
+            .min(1, 'Mínimo 1%.')
+            .max(100, 'Máximo 100%.')
+            .nullable()
+            .optional(),
+        max_share_per_subcategory: z
+            .number({ invalid_type_error: 'Limite de subcategoria deve ser um número.' })
+            .int()
+            .min(1, 'Mínimo 1%.')
+            .max(100, 'Máximo 100%.')
+            .nullable()
+            .optional(),
     })
     .refine((data) => data.max_facings >= data.min_facings, {
         message: 'Frentes máximas deve ser maior ou igual às frentes mínimas.',

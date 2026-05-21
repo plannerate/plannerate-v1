@@ -219,6 +219,10 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
                 ->name('gondolas.rejected-products.destroy');
             Route::post('gondolas/{gondola}/swap-product', [AutoPlanogramController::class, 'swapProduct'])
                 ->name('gondolas.swap-product');
+            Route::post('gondolas/{gondola}/reorder-visual', [AutoPlanogramController::class, 'reorderVisual'])
+                ->name('gondolas.reorder-visual');
+            Route::post('gondolas/{gondola}/redistribute', [AutoPlanogramController::class, 'redistributeExposure'])
+                ->name('gondolas.redistribute');
         });
     });
 

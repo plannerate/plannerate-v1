@@ -3,6 +3,11 @@ import { Head, router } from '@inertiajs/vue3';
 import { ChevronLeft, ChevronRight, Download, Settings2, Trash2, Upload } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
 import { computed, ref, watch } from 'vue';
+import {
+    ALTERATION_LEVEL_LABELS,
+    classifyAlteration,
+    diffSlotFields,
+} from '@/components/planogram-templates/alteration-classifier';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
 import GondolaGrid from '@/components/planogram-templates/GondolaGrid.vue';
 import ModuleDefaultsModal from '@/components/planogram-templates/ModuleDefaultsModal.vue';
@@ -242,10 +247,23 @@ function saveSlot(
     );
 
     if (existingSlot?.id) {
-        // Update
+        // Detecta o nível de alteração para avisar o usuário sobre o planograma gerado
+        const changedFields = diffSlotFields(
+            existingSlot as unknown as Record<string, unknown>,
+            draft as unknown as Record<string, unknown>,
+        );
+        const level = classifyAlteration(changedFields);
+
         router.put(`${baseUrl.value}/slots/${existingSlot.id}`, draft, {
             preserveState: true,
             only: ['subtemplates'],
+            onSuccess: () => {
+                if (level) {
+                    toast.info(
+                        `Slot atualizado — planogramas gerados precisam de: ${ALTERATION_LEVEL_LABELS[level]}`,
+                    );
+                }
+            },
             onError: (errs) => {
                 const first = Object.values(errs)[0];
                 if (first) toast.error(first);

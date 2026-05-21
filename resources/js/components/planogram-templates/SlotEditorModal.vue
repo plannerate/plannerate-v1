@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { useT } from '@/composables/useT';
 import type { SlotDraft } from './slot-editor';
+import type { VisualCriterionItem } from './types';
 import SlotEditorFields from './SlotEditorFields.vue';
 import type { PlanogramSlotDefaults, PlanogramTemplateSlot } from './types';
 import { validateSlotDraft } from './validation';
@@ -43,6 +44,10 @@ const draft = reactive<SlotDraft>({
     use_target_stock: false,
     facing_expansion: 'none',
     role_override: null,
+    visual_criteria: null,
+    max_share_per_sku: null,
+    max_share_per_brand: null,
+    max_share_per_subcategory: null,
 });
 
 const errors = ref<SlotValidationErrors>({});
@@ -75,6 +80,10 @@ watch(
         draft.use_target_stock = slot?.use_target_stock ?? props.slotDefaults?.use_target_stock ?? false;
         draft.facing_expansion = slot?.facing_expansion ?? props.slotDefaults?.facing_expansion ?? 'none';
         draft.role_override = slot?.role_override ?? null;
+        draft.visual_criteria = (slot?.visual_criteria as VisualCriterionItem[] | null | undefined) ?? null;
+        draft.max_share_per_sku = slot?.max_share_per_sku ?? null;
+        draft.max_share_per_brand = slot?.max_share_per_brand ?? null;
+        draft.max_share_per_subcategory = slot?.max_share_per_subcategory ?? null;
     },
     { immediate: true },
 );

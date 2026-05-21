@@ -181,7 +181,10 @@ test('findCandidates exclui produto já posicionado em slot anterior da mesma ca
 
 // ── PlacementResult: campos de descasamento de módulos ───────────────────────
 
+use App\Enums\BrandExposure;
 use App\Enums\FacingExpansion;
+use App\Enums\PriceOrder;
+use App\Enums\SizeOrder;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
 
 test('PlacementResult expõe modulesMismatch false por padrão', function (): void {
@@ -229,6 +232,196 @@ test('cache de descendentes é reutilizado: getDescendantIds chamado uma vez por
     // Cache continua com apenas uma entrada
     expect($ref->getValue($engine))->toHaveKey($catId)
         ->and($ref->getValue($engine))->toHaveCount(1);
+});
+
+// ── visual_criteria: cascade sort ─────────────────────────────────────────────
+
+/**
+ * Chama orderCandidates (private) via reflection, sem seção/prateleira (zone = neutral).
+ */
+function callOrderCandidates(
+    TemplatePlacementEngine $engine,
+    Collection $products,
+    PlanogramTemplateSlot $slot,
+): Collection {
+    $ref = new ReflectionMethod($engine, 'orderCandidates');
+    $ref->setAccessible(true);
+
+    return $ref->invoke($engine, $products, $slot, null, null);
+}
+
+/**
+ * Cria um slot configurado com campos legado e visual_criteria opcionais.
+ *
+ * @param  array{key: string, direction: string}[]|null  $visualCriteria
+ */
+function makeOrderSlot(
+    PriceOrder $priceOrder = PriceOrder::None,
+    SizeOrder $sizeOrder = SizeOrder::None,
+    BrandExposure $brandExposure = BrandExposure::Horizontal,
+    ?array $visualCriteria = null,
+): PlanogramTemplateSlot {
+    $slot = new PlanogramTemplateSlot;
+    $slot->price_order = $priceOrder;
+    $slot->size_order = $sizeOrder;
+    $slot->brand_exposure = $brandExposure;
+    $slot->visual_criteria = $visualCriteria;
+
+    return $slot;
+}
+
+test('visual_criteria null usa comportamento legado: price_order desc', function (): void {
+    $engine = makeEngine();
+
+    $p1 = makeProduct('cat1');
+    $p1->price = 5.0;
+    $p2 = makeProduct('cat1');
+    $p2->price = 10.0;
+
+    $slot = makeOrderSlot(priceOrder: PriceOrder::Desc, visualCriteria: null);
+    $result = callOrderCandidates($engine, collect([$p1, $p2]), $slot);
+
+    // legado price desc: p2 (10) primeiro
+    expect($result->first()->price)->toBe(10.0);
+});
+
+test('visual_criteria vazio não altera a ordem dos produtos', function (): void {
+    $engine = makeEngine();
+
+    $p1 = makeProduct('cat1');
+    $p1->price = 5.0;
+    $p2 = makeProduct('cat1');
+    $p2->price = 10.0;
+
+    $slot = makeOrderSlot(visualCriteria: []);
+    $result = callOrderCandidates($engine, collect([$p1, $p2]), $slot);
+
+    // sem critérios: ordem original preservada
+    expect($result->first()->id)->toBe($p1->id);
+});
+
+test('visual_criteria preco desc ordena por preço decrescente', function (): void {
+    $engine = makeEngine();
+
+    $p1 = makeProduct('cat1');
+    $p1->price = 5.0;
+    $p2 = makeProduct('cat1');
+    $p2->price = 10.0;
+    $p3 = makeProduct('cat1');
+    $p3->price = 2.0;
+
+    $slot = makeOrderSlot(
+        priceOrder: PriceOrder::None, // ignorado quando visual_criteria set
+        visualCriteria: [['key' => 'preco', 'direction' => 'desc']],
+    );
+    $result = callOrderCandidates($engine, collect([$p1, $p2, $p3]), $slot);
+
+    expect($result->pluck('price')->values()->all())->toBe([10.0, 5.0, 2.0]);
+});
+
+test('visual_criteria preco asc ordena por preço crescente', function (): void {
+    $engine = makeEngine();
+
+    $p1 = makeProduct('cat1');
+    $p1->price = 5.0;
+    $p2 = makeProduct('cat1');
+    $p2->price = 10.0;
+    $p3 = makeProduct('cat1');
+    $p3->price = 2.0;
+
+    $slot = makeOrderSlot(visualCriteria: [['key' => 'preco', 'direction' => 'asc']]);
+    $result = callOrderCandidates($engine, collect([$p1, $p2, $p3]), $slot);
+
+    expect($result->pluck('price')->values()->all())->toBe([2.0, 5.0, 10.0]);
+});
+
+test('visual_criteria tamanho asc ordena por tamanho crescente (packaging_content)', function (): void {
+    $engine = makeEngine();
+
+    // ProductSizeResolver usa packaging_content como fonte primária
+    $pSmall = makeProduct('cat1');
+    $pSmall->packaging_content = '500ml'; // 0.5 kg
+    $pBig = makeProduct('cat1');
+    $pBig->packaging_content = '2000ml'; // 2.0 kg
+    $pMed = makeProduct('cat1');
+    $pMed->packaging_content = '1000ml'; // 1.0 kg
+
+    $slot = makeOrderSlot(visualCriteria: [['key' => 'tamanho', 'direction' => 'asc']]);
+    $result = callOrderCandidates($engine, collect([$pBig, $pMed, $pSmall]), $slot);
+
+    // crescente: small(0.5), med(1.0), big(2.0)
+    expect($result->pluck('packaging_content')->values()->all())->toBe(['500ml', '1000ml', '2000ml']);
+});
+
+test('visual_criteria cascata: preco desc como primário e tamanho asc como secundário', function (): void {
+    $engine = makeEngine();
+
+    // Dois produtos com mesmo preço (5.0), tamanho diferente → tamanho (packaging_content) decide
+    $pA = makeProduct('cat1');
+    $pA->price = 5.0;
+    $pA->packaging_content = '2000ml'; // tamanho grande
+
+    $pB = makeProduct('cat1');
+    $pB->price = 5.0;
+    $pB->packaging_content = '500ml'; // tamanho pequeno
+
+    // Produto mais caro — preço decide
+    $pC = makeProduct('cat1');
+    $pC->price = 10.0;
+    $pC->packaging_content = '100ml';
+
+    $slot = makeOrderSlot(visualCriteria: [
+        ['key' => 'preco', 'direction' => 'desc'],
+        ['key' => 'tamanho', 'direction' => 'asc'],
+    ]);
+    $result = callOrderCandidates($engine, collect([$pA, $pB, $pC]), $slot);
+
+    // pC vem primeiro (preço 10), depois pB (preço 5, tamanho 0.5 < 2.0), depois pA (preço 5, tamanho 2.0)
+    expect($result->pluck('id')->values()->all())->toBe([$pC->id, $pB->id, $pA->id]);
+});
+
+test('visual_criteria score_abc asc ordena A antes de B antes de C', function (): void {
+    $engine = makeEngine();
+
+    $pA = makeProduct('cat1');
+    $pB = makeProduct('cat1');
+    $pC = makeProduct('cat1');
+
+    // Injetar abcClassMap
+    $mapRef = new ReflectionProperty($engine, 'abcClassMap');
+    $mapRef->setAccessible(true);
+    $mapRef->setValue($engine, [
+        $pA->id => 'A',
+        $pB->id => 'B',
+        $pC->id => 'C',
+    ]);
+
+    $slot = makeOrderSlot(visualCriteria: [['key' => 'score_abc', 'direction' => 'asc']]);
+    // Passar em ordem C, B, A — deve sair A, B, C
+    $result = callOrderCandidates($engine, collect([$pC, $pB, $pA]), $slot);
+
+    $abcResult = $result->map(fn ($p) => ['A' => 'A', 'B' => 'B', 'C' => 'C'][$p->id === $pA->id ? 'A' : ($p->id === $pB->id ? 'B' : 'C')])->values()->all();
+    expect($abcResult)->toBe(['A', 'B', 'C']);
+});
+
+test('visual_criteria margem desc ordena maior margem primeiro', function (): void {
+    $engine = makeEngine();
+
+    $pHigh = makeProduct('cat1');
+    $pLow = makeProduct('cat1');
+
+    // Injetar zoneMetricsMap
+    $mapRef = new ReflectionProperty($engine, 'zoneMetricsMap');
+    $mapRef->setAccessible(true);
+    $mapRef->setValue($engine, [
+        $pHigh->id => ['giro' => 1.0, 'margem' => 0.45],
+        $pLow->id => ['giro' => 1.0, 'margem' => 0.10],
+    ]);
+
+    $slot = makeOrderSlot(visualCriteria: [['key' => 'margem', 'direction' => 'desc']]);
+    $result = callOrderCandidates($engine, collect([$pLow, $pHigh]), $slot);
+
+    expect($result->first()->id)->toBe($pHigh->id);
 });
 
 test('expansionOrder TargetStock: maior déficit recebe facing extra primeiro', function (): void {

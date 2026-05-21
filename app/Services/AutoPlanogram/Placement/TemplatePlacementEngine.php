@@ -291,6 +291,21 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
     private function orderCandidates(Collection $products, PlanogramTemplateSlot $slot, ?Section $section = null, ?Shelf $shelf = null): Collection
     {
+        $sorted = $slot->visual_criteria !== null
+            ? $this->applyCriteriaCascade($products, $slot->visual_criteria)
+            : $this->applyLegacyOrdering($products, $slot);
+
+        // Zona térmica — aplicado por último para ser critério primário (stable sort)
+        $sorted = $this->applyZoneOrdering($sorted, $section, $shelf);
+
+        return $sorted->values();
+    }
+
+    /**
+     * Comportamento legado: size → price → brand (para compatibilidade quando visual_criteria = null).
+     */
+    private function applyLegacyOrdering(Collection $products, PlanogramTemplateSlot $slot): Collection
+    {
         $sorted = $products;
 
         if ($slot->size_order !== SizeOrder::None) {
@@ -313,10 +328,72 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             $sorted = $sorted->groupBy(fn ($p) => $p->brand ?? 'SEM MARCA')->flatten(1);
         }
 
-        // Zona térmica — aplicado por último para ser critério primário (stable sort)
-        $sorted = $this->applyZoneOrdering($sorted, $section, $shelf);
+        return $sorted;
+    }
 
-        return $sorted->values();
+    /**
+     * Aplica ordenação estável em cascata pela lista de critérios.
+     * Aplica do menos prioritário ao mais prioritário (ordem reversa),
+     * para que o primeiro critério da lista domine o resultado final.
+     *
+     * @param  list<array{key: string, direction: string}>  $criteria
+     */
+    private function applyCriteriaCascade(Collection $products, array $criteria): Collection
+    {
+        $sorted = $products;
+
+        foreach (array_reverse($criteria) as $item) {
+            $key = $item['key'] ?? '';
+            $direction = $item['direction'] ?? 'none';
+            $sorted = $this->applySingleCriterion($sorted, $key, $direction);
+        }
+
+        return $sorted;
+    }
+
+    /**
+     * Aplica um único critério de ordenação (stable sort).
+     *
+     * @param  string  $key  marca|preco|tamanho|score_abc|margem
+     * @param  string  $direction  asc|desc|none
+     */
+    private function applySingleCriterion(Collection $products, string $key, string $direction): Collection
+    {
+        $desc = $direction === 'desc';
+
+        return match ($key) {
+            'marca' => $products->sortBy(
+                fn ($p) => strtolower((string) ($p->brand ?? 'zzz')),
+                SORT_STRING,
+                $desc,
+            ),
+            'preco' => $products->sortBy(
+                fn ($p) => (float) ($p->price ?? 0),
+                SORT_NUMERIC,
+                $desc,
+            ),
+            'tamanho' => $products->sortBy(
+                fn ($p) => $this->sizeResolver->resolve($p),
+                SORT_NUMERIC,
+                $desc,
+            ),
+            'score_abc' => $products->sortBy(
+                fn ($p) => match ($this->abcClassMap[$p->id] ?? 'B') {
+                    'A' => 0,
+                    'B' => 1,
+                    'C' => 2,
+                    default => 1,
+                },
+                SORT_NUMERIC,
+                $desc,
+            ),
+            'margem' => $products->sortBy(
+                fn ($p) => (float) ($this->zoneMetricsMap[$p->id]['margem'] ?? 0),
+                SORT_NUMERIC,
+                $desc,
+            ),
+            default => $products,
+        };
     }
 
     /**
@@ -488,6 +565,10 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /**
      * Phase 2: distribute leftover shelf space as extra facings.
      *
+     * Respeita `max_facings` como teto absoluto e os limites relativos de participação
+     * (`max_share_per_sku`, `max_share_per_brand`, `max_share_per_subcategory`) como tetos adicionais.
+     * O menor limite entre os dois vence. Limites null são ignorados (comportamento original).
+     *
      * @param  array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}>  $placedItems
      * @return array{0: array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}>, 1: float}
      */
@@ -515,16 +596,91 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
                 $singleWidth = $placedItems[$idx]['singleWidth'];
 
-                if ($remainingWidth >= $singleWidth) {
-                    $placedItems[$idx]['facings']++;
-                    $remainingWidth -= $singleWidth;
-                    $occupied += $singleWidth;
-                    $changed = true;
+                if ($remainingWidth < $singleWidth) {
+                    continue;
                 }
+
+                if ($this->violatesParticipationLimit($placedItems, $idx, $slot, $available)) {
+                    continue;
+                }
+
+                $placedItems[$idx]['facings']++;
+                $remainingWidth -= $singleWidth;
+                $occupied += $singleWidth;
+                $changed = true;
             }
         }
 
         return [$placedItems, $occupied];
+    }
+
+    /**
+     * Verifica se dar +1 frente ao item $idx violaria algum limite relativo de participação.
+     *
+     * Referência de largura: slot disponível ($available) para todos os três níveis,
+     * pois o engine opera dentro de um único slot por vez.
+     * Limites null → ignorados (sem restrição).
+     *
+     * @param  array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}>  $placedItems
+     */
+    private function violatesParticipationLimit(array $placedItems, int $idx, PlanogramTemplateSlot $slot, float $available): bool
+    {
+        if ($available <= 0) {
+            return false;
+        }
+
+        $item = $placedItems[$idx];
+        $singleWidth = $item['singleWidth'];
+        $newFacings = $item['facings'] + 1;
+        $newSkuWidth = $singleWidth * $newFacings;
+
+        // Limite por SKU: porcentagem do slot que um único produto pode ocupar
+        if ($slot->max_share_per_sku !== null && $slot->max_share_per_sku > 0) {
+            if (($newSkuWidth / $available) * 100 > $slot->max_share_per_sku) {
+                return true;
+            }
+        }
+
+        // Limite por marca: porcentagem do slot que todos os produtos de uma marca podem ocupar
+        if ($slot->max_share_per_brand !== null && $slot->max_share_per_brand > 0) {
+            $brand = $item['product']->brand ?? null;
+            $currentBrandWidth = 0.0;
+
+            foreach ($placedItems as $i => $p) {
+                if ($i !== $idx && ($p['product']->brand ?? null) === $brand) {
+                    $currentBrandWidth += $p['singleWidth'] * $p['facings'];
+                }
+            }
+
+            // Soma a largura atual deste item (antes do incremento) + mais 1 facing
+            $currentBrandWidth += $singleWidth * $item['facings'];
+            $newBrandWidth = $currentBrandWidth + $singleWidth;
+
+            if (($newBrandWidth / $available) * 100 > $slot->max_share_per_brand) {
+                return true;
+            }
+        }
+
+        // Limite por subcategoria: porcentagem do slot que todos os produtos de uma subcategoria podem ocupar
+        if ($slot->max_share_per_subcategory !== null && $slot->max_share_per_subcategory > 0) {
+            $subcatId = $item['product']->category_id ?? null;
+            $currentSubcatWidth = 0.0;
+
+            foreach ($placedItems as $i => $p) {
+                if ($i !== $idx && ($p['product']->category_id ?? null) === $subcatId) {
+                    $currentSubcatWidth += $p['singleWidth'] * $p['facings'];
+                }
+            }
+
+            $currentSubcatWidth += $singleWidth * $item['facings'];
+            $newSubcatWidth = $currentSubcatWidth + $singleWidth;
+
+            if (($newSubcatWidth / $available) * 100 > $slot->max_share_per_subcategory) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -1,4 +1,4 @@
-import type { CategoryRole, PlanogramTemplateSlot } from './types';
+import type { CategoryRole, PlanogramTemplateSlot, VisualCriterionItem, VisualCriterionKey } from './types';
 
 export type SlotDraft = {
     module_number: number;
@@ -15,6 +15,22 @@ export type SlotDraft = {
     use_target_stock: boolean;
     facing_expansion: PlanogramTemplateSlot['facing_expansion'];
     role_override: CategoryRole | null;
+    /** null = usar legado (price_order/size_order/brand_exposure); array = critérios arrastáveis */
+    visual_criteria: VisualCriterionItem[] | null;
+    /** Porcentagem máxima do slot que um SKU pode ocupar (1-100). null = sem limite. */
+    max_share_per_sku: number | null;
+    /** Porcentagem máxima do slot que uma marca pode ocupar (1-100). null = sem limite. */
+    max_share_per_brand: number | null;
+    /** Porcentagem máxima do slot que uma subcategoria pode ocupar (1-100). null = sem limite. */
+    max_share_per_subcategory: number | null;
+};
+
+export const visualCriterionMeta: Record<VisualCriterionKey, { label: string; supportsDirection: boolean }> = {
+    marca: { label: 'Marca', supportsDirection: true },
+    preco: { label: 'Preço', supportsDirection: true },
+    tamanho: { label: 'Tamanho', supportsDirection: true },
+    score_abc: { label: 'Curva ABC', supportsDirection: false },
+    margem: { label: 'Margem', supportsDirection: true },
 };
 
 export const categoryRoleOptions: { value: CategoryRole | ''; label: string }[] = [
