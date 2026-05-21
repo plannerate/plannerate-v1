@@ -34,8 +34,9 @@ export const slotDraftSchema = z
         visual_criteria: z
             .array(
                 z.object({
-                    key: z.enum(['marca', 'preco', 'tamanho', 'score_abc', 'margem']),
+                    key: z.enum(['marca', 'preco', 'tamanho', 'score_abc', 'margem', 'embalagem']),
                     direction: z.enum(['asc', 'desc', 'none']),
+                    packaging_order: z.array(z.string()).optional(),
                 }),
             )
             .nullable()

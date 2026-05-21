@@ -1,9 +1,11 @@
-export type VisualCriterionKey = 'marca' | 'preco' | 'tamanho' | 'score_abc' | 'margem';
+export type VisualCriterionKey = 'marca' | 'preco' | 'tamanho' | 'score_abc' | 'margem' | 'embalagem';
 export type VisualCriterionDirection = 'asc' | 'desc' | 'none';
 
 export type VisualCriterionItem = {
     key: VisualCriterionKey;
     direction: VisualCriterionDirection;
+    /** Ordem de tipos de embalagem — usado apenas quando key = 'embalagem' */
+    packaging_order?: string[];
 };
 
 export type ZonePriority =

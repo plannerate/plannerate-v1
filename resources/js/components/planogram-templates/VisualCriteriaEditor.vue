@@ -25,6 +25,20 @@ const available = computed<VisualCriterionKey[]>(() => {
 /** Se visual_criteria é null, o slot usa o modo legado */
 const isLegacyMode = computed(() => modelValue.value === null);
 
+/** Índice do critério 'embalagem' na lista ativa (ou -1) */
+const packagingCriterionIndex = computed(() => active.value.findIndex((c) => c.key === 'embalagem'));
+
+/** Lista de tipos de embalagem do critério ativo */
+const packagingOrder = computed<string[]>(() => {
+    const idx = packagingCriterionIndex.value;
+    if (idx === -1) return [];
+    return active.value[idx].packaging_order ?? [];
+});
+
+const newPackagingType = ref('');
+const packagingDragIndex = ref<number | null>(null);
+const packagingDragOverIndex = ref<number | null>(null);
+
 function enableCustomMode(): void {
     modelValue.value = [];
 }
@@ -36,7 +50,11 @@ function revertToLegacy(): void {
 function addCriterion(key: VisualCriterionKey): void {
     const meta = visualCriterionMeta[key];
     const defaultDirection: VisualCriterionDirection = meta.supportsDirection ? 'asc' : 'none';
-    modelValue.value = [...(modelValue.value ?? []), { key, direction: defaultDirection }];
+    const item: VisualCriterionItem =
+        key === 'embalagem'
+            ? { key, direction: 'none', packaging_order: [] }
+            : { key, direction: defaultDirection };
+    modelValue.value = [...(modelValue.value ?? []), item];
 }
 
 function removeCriterion(index: number): void {
@@ -58,7 +76,7 @@ function toggleDirection(index: number): void {
     modelValue.value = items;
 }
 
-// Drag-and-drop — estado local
+// Drag-and-drop dos critérios principais — estado local
 const dragIndex = ref<number | null>(null);
 const dragOverIndex = ref<number | null>(null);
 
@@ -112,6 +130,67 @@ function directionTitle(item: VisualCriterionItem): string {
     }
 
     return item.direction === 'asc' ? 'Crescente — clique para inverter' : item.direction === 'desc' ? 'Decrescente — clique para inverter' : 'Sem direção — clique para definir';
+}
+
+/** Atualiza o packaging_order do critério embalagem preservando os demais campos */
+function updatePackagingOrder(order: string[]): void {
+    const idx = packagingCriterionIndex.value;
+    if (idx === -1) return;
+    const items = [...(modelValue.value ?? [])];
+    items[idx] = { ...items[idx], packaging_order: order };
+    modelValue.value = items;
+}
+
+function addPackagingType(): void {
+    const val = newPackagingType.value.trim();
+    if (!val || packagingOrder.value.includes(val)) {
+        newPackagingType.value = '';
+        return;
+    }
+    updatePackagingOrder([...packagingOrder.value, val]);
+    newPackagingType.value = '';
+}
+
+function removePackagingType(index: number): void {
+    const next = [...packagingOrder.value];
+    next.splice(index, 1);
+    updatePackagingOrder(next);
+}
+
+// Drag-and-drop dos tipos de embalagem
+function onPackagingDragStart(index: number, event: DragEvent): void {
+    packagingDragIndex.value = index;
+    if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+    }
+}
+
+function onPackagingDragOver(index: number, event: DragEvent): void {
+    event.preventDefault();
+    packagingDragOverIndex.value = index;
+    if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'move';
+    }
+}
+
+function onPackagingDrop(targetIndex: number): void {
+    const from = packagingDragIndex.value;
+    if (from === null || from === targetIndex) {
+        packagingDragIndex.value = null;
+        packagingDragOverIndex.value = null;
+        return;
+    }
+    const items = [...packagingOrder.value];
+    const [moved] = items.splice(from, 1);
+    items.splice(targetIndex, 0, moved);
+    updatePackagingOrder(items);
+    packagingDragIndex.value = null;
+    packagingDragOverIndex.value = null;
+}
+
+function onPackagingDragEnd(): void {
+    packagingDragIndex.value = null;
+    packagingDragOverIndex.value = null;
 }
 </script>
 
@@ -193,6 +272,63 @@ function directionTitle(item: VisualCriterionItem): string {
             <p v-else class="text-xs text-muted-foreground italic">
                 Nenhum critério ativo — adicione abaixo ou reverta para o padrão.
             </p>
+
+            <!-- Sub-editor de ordem de tipos de embalagem -->
+            <div v-if="packagingCriterionIndex !== -1" class="rounded-md border border-border p-3 flex flex-col gap-y-2">
+                <span class="text-xs font-medium text-foreground">Ordem dos tipos de embalagem</span>
+                <span class="text-xs text-muted-foreground">Arraste para reordenar. Tipos não listados vão para o fim.</span>
+
+                <!-- Lista reordenável de tipos -->
+                <div v-if="packagingOrder.length > 0" class="flex flex-wrap gap-2">
+                    <div
+                        v-for="(type, pIdx) in packagingOrder"
+                        :key="type"
+                        draggable="true"
+                        class="group flex cursor-grab items-center gap-1 rounded border px-2 py-0.5 text-xs select-none active:cursor-grabbing"
+                        :class="[
+                            packagingDragOverIndex === pIdx && packagingDragIndex !== pIdx
+                                ? 'border-primary bg-primary/10 ring-1 ring-primary'
+                                : 'border-border bg-muted',
+                            packagingDragIndex === pIdx ? 'opacity-40' : '',
+                        ]"
+                        @dragstart="onPackagingDragStart(pIdx, $event)"
+                        @dragover="onPackagingDragOver(pIdx, $event)"
+                        @drop="onPackagingDrop(pIdx)"
+                        @dragend="onPackagingDragEnd"
+                    >
+                        <span class="font-mono text-muted-foreground">{{ pIdx + 1 }}</span>
+                        <span>{{ type }}</span>
+                        <button
+                            type="button"
+                            class="ml-1 rounded-full text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                            title="Remover tipo"
+                            @click="removePackagingType(pIdx)"
+                        >×</button>
+                    </div>
+                </div>
+
+                <p v-else class="text-xs text-muted-foreground italic">
+                    Nenhum tipo adicionado — todos os produtos ficam juntos sem distinção de embalagem.
+                </p>
+
+                <!-- Input para adicionar novo tipo -->
+                <div class="flex gap-2">
+                    <input
+                        v-model="newPackagingType"
+                        type="text"
+                        placeholder="Ex: caixa, sache, pet, lata…"
+                        class="flex h-7 flex-1 rounded-md border border-border bg-background px-2 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                        @keydown.enter.prevent="addPackagingType"
+                    />
+                    <button
+                        type="button"
+                        class="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
+                        @click="addPackagingType"
+                    >
+                        + Adicionar
+                    </button>
+                </div>
+            </div>
 
             <!-- Critérios disponíveis para adicionar -->
             <div v-if="available.length > 0" class="flex flex-wrap gap-2">

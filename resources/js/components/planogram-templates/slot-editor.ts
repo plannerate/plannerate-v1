@@ -31,6 +31,7 @@ export const visualCriterionMeta: Record<VisualCriterionKey, { label: string; su
     tamanho: { label: 'Tamanho', supportsDirection: true },
     score_abc: { label: 'Curva ABC', supportsDirection: false },
     margem: { label: 'Margem', supportsDirection: true },
+    embalagem: { label: 'Embalagem', supportsDirection: false },
 };
 
 export const categoryRoleOptions: { value: CategoryRole | ''; label: string }[] = [

@@ -424,16 +424,14 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
      * Aplica do menos prioritário ao mais prioritário (ordem reversa),
      * para que o primeiro critério da lista domine o resultado final.
      *
-     * @param  list<array{key: string, direction: string}>  $criteria
+     * @param  list<array{key: string, direction: string, packaging_order?: list<string>}>  $criteria
      */
     private function applyCriteriaCascade(Collection $products, array $criteria): Collection
     {
         $sorted = $products;
 
         foreach (array_reverse($criteria) as $item) {
-            $key = $item['key'] ?? '';
-            $direction = $item['direction'] ?? 'none';
-            $sorted = $this->applySingleCriterion($sorted, $key, $direction);
+            $sorted = $this->applySingleCriterion($sorted, $item);
         }
 
         return $sorted;
@@ -442,11 +440,12 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /**
      * Aplica um único critério de ordenação (stable sort).
      *
-     * @param  string  $key  marca|preco|tamanho|score_abc|margem
-     * @param  string  $direction  asc|desc|none
+     * @param  array{key: string, direction: string, packaging_order?: list<string>}  $item
      */
-    private function applySingleCriterion(Collection $products, string $key, string $direction): Collection
+    private function applySingleCriterion(Collection $products, array $item): Collection
     {
+        $key = $item['key'] ?? '';
+        $direction = $item['direction'] ?? 'none';
         $desc = $direction === 'desc';
 
         return match ($key) {
@@ -480,8 +479,29 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 SORT_NUMERIC,
                 $desc,
             ),
+            'embalagem' => $this->applyPackagingOrder($products, $item['packaging_order'] ?? []),
             default => $products,
         };
+    }
+
+    /**
+     * Ordena produtos pela posição do packaging_type na lista configurada.
+     * Produtos com tipo não listado (ou sem tipo) vão para o fim.
+     *
+     * @param  list<string>  $order  Lista de packaging_type em ordem de prioridade
+     */
+    private function applyPackagingOrder(Collection $products, array $order): Collection
+    {
+        if (empty($order)) {
+            return $products;
+        }
+
+        $indexMap = array_flip($order);
+
+        return $products->sortBy(
+            fn ($p) => $indexMap[$p->packaging_type ?? ''] ?? PHP_INT_MAX,
+            SORT_NUMERIC,
+        );
     }
 
     /**
