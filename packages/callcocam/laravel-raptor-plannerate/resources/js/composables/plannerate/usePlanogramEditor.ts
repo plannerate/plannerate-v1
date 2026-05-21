@@ -19,9 +19,6 @@ import {
     isLoadingRejectedProducts,
     rejectedProducts,
     scaleFactor,
-    selectedId,
-    selectedItem,
-    selectedType,
     showGrid,
     showZoneIndicators,
     showPerformanceModal,
@@ -1384,46 +1381,6 @@ export function usePlanogramEditor() {
         return setFlow(newFlow);
     }
 
-    // ==================== DEPRECATED - MANTER POR COMPATIBILIDADE COM VERSÃO ANTIGA ====================
-    // Estas funções são mantidas apenas para compatibilidade com componentes da versão antiga (Editor.vue)
-    // Não devem ser usadas em novos componentes. Use as funções modernas correspondentes.
-
-    /**
-     * @deprecated Use setAlignment('left') ou alignLeft()
-     * Mantida apenas por compatibilidade com Editor.vue (versão antiga)
-     */
-    function alignHorizontal() {
-        console.warn(
-            '⚠️ alignHorizontal() deprecated - use alignLeft/Right/Center',
-        );
-
-        return alignLeft();
-    }
-
-    /**
-     * @deprecated Use setAlignment('right') ou alignRight()
-     * Mantida apenas por compatibilidade com Editor.vue (versão antiga)
-     */
-    function alignVertical() {
-        console.warn(
-            '⚠️ alignVertical() deprecated - use setAlignment() ou alignRight()',
-        );
-
-        return alignRight();
-    }
-
-    /**
-     * @deprecated Use setAlignment('justify') ou alignJustify()
-     * Mantida apenas por compatibilidade com Editor.vue (versão antiga)
-     */
-    function distribute() {
-        console.warn(
-            '⚠️ distribute() deprecated - use setAlignment("justify") ou alignJustify()',
-        );
-
-        return alignJustify();
-    }
-
     /**
      * Abre drawer para adicionar novo módulo
      */
@@ -2087,13 +2044,6 @@ export function usePlanogramEditor() {
     }
 
     /**
-     * Debug: Mostra estado atual do histórico
-     */
-    function debugHistory() {
-        // Estado do histórico disponível via history.canUndo, history.canRedo, history.historyStack, history.getRecentActions()
-    }
-
-    /**
      * Salva as mudanças pendentes manualmente
      *
      * - Valida se há gôndola selecionada
@@ -2155,65 +2105,6 @@ export function usePlanogramEditor() {
         const route = calculateAbc(currentGondola.value.id);
         window.open(route.url, '_blank');
     }
-    /**
-     * Converte cores oklch para rgb (html2canvas não suporta oklch)
-     * (Currently unused - left for potential future use)
-     */
-    /*
-    function _convertOklchToRgb(element: HTMLElement): HTMLElement {
-        const clone = element.cloneNode(true) as HTMLElement;
-
-        // Função para converter oklch para rgb usando getComputedStyle
-        function processElement(el: HTMLElement) {
-            const computed = window.getComputedStyle(el);
-
-            // Lista de propriedades CSS que podem ter cores
-            const colorProps = [
-                'color',
-                'background-color',
-                'border-color',
-                'border-top-color',
-                'border-right-color',
-                'border-bottom-color',
-                'border-left-color',
-                'outline-color',
-                'text-decoration-color',
-                'fill',
-                'stroke',
-            ];
-
-            colorProps.forEach((prop) => {
-                const value = computed.getPropertyValue(prop);
-                if (
-                    value &&
-                    value !== 'rgba(0, 0, 0, 0)' &&
-                    value !== 'transparent' &&
-                    value !== 'none'
-                ) {
-                    // Aplica a cor computada (já convertida pelo navegador)
-                    el.style.setProperty(prop, value, 'important');
-                }
-            });
-
-            // Remove classes do Tailwind que podem ter oklch
-            if (el.hasAttribute('class')) {
-                const classes = el.className;
-                // Preserva as classes mas força as cores inline
-                el.setAttribute('data-original-class', classes);
-            }
-
-            // Processa filhos recursivamente
-            Array.from(el.children).forEach((child) => {
-                if (child instanceof HTMLElement) {
-                    processElement(child);
-                }
-            });
-        }
-
-        processElement(clone);
-        return clone;
-    }
-    */
 
     /**
      * Exporta o planograma como imagem PNG
@@ -2592,9 +2483,6 @@ export function usePlanogramEditor() {
         scaleFactor,
         showProductsPanel,
         showPropertiesPanel,
-        selectedType,
-        selectedId,
-        selectedItem,
         showDeleteConfirmation,
         showAddModuleDrawer,
 
@@ -2664,11 +2552,6 @@ export function usePlanogramEditor() {
         setFlow,
         toggleFlow,
 
-        // Deprecated (manter por compatibilidade com versão antiga)
-        alignHorizontal,
-        alignVertical,
-        distribute,
-
         // Outras ações
         addModule,
         handleModuleAdded,
@@ -2683,9 +2566,6 @@ export function usePlanogramEditor() {
         showReports,
         exportAsImage,
         setSaveChangesRoute,
-
-        // Debug
-        debugHistory,
 
         // Produtos rejeitados
         rejectedProducts,

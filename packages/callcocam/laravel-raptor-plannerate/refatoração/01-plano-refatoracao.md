@@ -9,6 +9,10 @@
 > - Wayfinder só com `-u root` (e, idealmente, não rodar — escrever actions à mão)
 > - Pint após mexer em PHP (aqui é só TS/Vue → rodar ESLint/Prettier do projeto)
 > - Cada mudança precisa de teste programático quando aplicável
+> - **Código bem comentado:** toda função nova ou movida deve ter um docblock JSDoc
+>   (`/** ... */`) em PT-BR explicando o que faz, seguindo o estilo dos arquivos
+>   vizinhos. Ao extrair/reescrever funções (Fases 3, 4, 5), manter ou adicionar esses
+>   comentários.
 
 ## Como validar cada fase
 

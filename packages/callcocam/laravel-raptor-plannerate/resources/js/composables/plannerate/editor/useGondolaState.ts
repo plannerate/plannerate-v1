@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { ref } from 'vue';
-import type { Gondola, Section, Segment, Shelf } from '@/types/planogram';
+import type { Gondola } from '@/types/planogram';
 
 // Estado da gôndola atual
 export const currentGondola = ref<Gondola | null>(null);
@@ -20,16 +20,7 @@ export const scaleFactor = ref(3);
 export const showProductsPanel = ref(true);
 export const showPropertiesPanel = ref(false);
 
-// Estado de seleção
-export const selectedType = ref<
-    'section' | 'shelf' | 'segment' | 'layer' | null
->(null);
-export const selectedId = ref<string | null>(null);
-export const selectedItem = ref<Section | Shelf | Segment | null>(null);
-
 // Estados de UI
-export const showDeleteConfirmation = ref(false);
-export const showAddModuleDrawer = ref(false);
 export const showPerformanceModal = ref(false);
 export const showGrid = ref(false);
 export const showZoneIndicators = ref(true);
