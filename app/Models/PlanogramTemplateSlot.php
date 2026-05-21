@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BrandExposure;
+use App\Enums\CategoryRole;
 use App\Enums\FacingExpansion;
 use App\Enums\FlavorExposure;
 use App\Enums\PriceOrder;
@@ -36,6 +37,7 @@ class PlanogramTemplateSlot extends Model
         'facing_expansion',
         'max_facings',
         'ordering',
+        'role_override',
     ];
 
     protected function casts(): array
@@ -54,7 +56,18 @@ class PlanogramTemplateSlot extends Model
             'brand_exposure' => BrandExposure::class,
             'flavor_exposure' => FlavorExposure::class,
             'space_fallback' => SpaceFallback::class,
+            'role_override' => CategoryRole::class,
         ];
+    }
+
+    /**
+     * Papel efetivo: override do slot ou papel da categoria vinculada.
+     * Retorna null se nenhum dos dois estiver configurado.
+     */
+    public function effectiveRole(): ?CategoryRole
+    {
+        return $this->role_override
+            ?? ($this->relationLoaded('category') ? $this->category?->role : null);
     }
 
     public function subtemplate(): BelongsTo

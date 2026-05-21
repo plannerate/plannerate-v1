@@ -3,7 +3,7 @@ import { AlertTriangle, Pencil, X } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useT } from '@/composables/useT';
 import { slotColor } from './types';
-import type { PlanogramTemplateSlot, SlotFacingExpansion, SlotPriceOrder } from './types';
+import type { CategoryRole, PlanogramTemplateSlot, SlotFacingExpansion, SlotPriceOrder } from './types';
 
 const props = defineProps<{
     slot: PlanogramTemplateSlot;
@@ -38,6 +38,19 @@ const facingsRange = computed(() => {
     return min === max ? `${min}f` : `${min}–${max}f`;
 });
 
+const roleLabels: Record<CategoryRole, string> = {
+    destino: 'Destino',
+    rotina: 'Rotina',
+    conveniencia: 'Conv.',
+    impulso: 'Impulso',
+    sazonal: 'Sazonal',
+    complementar: 'Compl.',
+};
+
+const effectiveRole = computed<CategoryRole | null>(
+    () => props.slot.role_override ?? props.slot.category_role ?? null,
+);
+
 function onDragStart(event: DragEvent): void {
     event.dataTransfer?.setData('application/json', JSON.stringify({
         module_number: props.slot.module_number,
@@ -65,6 +78,16 @@ function onDragStart(event: DragEvent): void {
         <!-- Category breadcrumb path -->
         <span v-if="slot.category_path" class="line-clamp-1 text-[10px] opacity-70">
             {{ slot.category_path }}
+        </span>
+
+        <!-- Role badge -->
+        <span
+            v-if="effectiveRole"
+            class="w-fit rounded px-1 py-px text-[9px] font-semibold uppercase tracking-wide"
+            style="background-color: rgba(0,0,0,0.10)"
+            :title="slot.role_override ? 'Papel configurado neste slot' : 'Papel da categoria'"
+        >
+            {{ roleLabels[effectiveRole] }}
         </span>
 
         <!-- Facings range + expansion mode + priority -->

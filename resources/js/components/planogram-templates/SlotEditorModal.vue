@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormSwitchField from '@/components/form/FormSwitchField.vue';
@@ -14,7 +14,8 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
-import type { PlanogramSlotDefaults, PlanogramTemplateSlot } from './types';
+import { validateSlotDraft, type SlotValidationErrors } from './validation';
+import type { CategoryRole, PlanogramSlotDefaults, PlanogramTemplateSlot } from './types';
 
 type SlotDraft = {
     module_number: number;
@@ -30,6 +31,7 @@ type SlotDraft = {
     space_fallback: PlanogramTemplateSlot['space_fallback'];
     use_target_stock: boolean;
     facing_expansion: PlanogramTemplateSlot['facing_expansion'];
+    role_override: CategoryRole | null;
 };
 
 const props = defineProps<{
@@ -59,7 +61,10 @@ const draft = reactive<SlotDraft>({
     space_fallback: 'reduce_c',
     use_target_stock: false,
     facing_expansion: 'none',
+    role_override: null,
 });
+
+const errors = ref<SlotValidationErrors>({});
 
 watch(
     () =>
@@ -70,10 +75,8 @@ watch(
             props.shelfOrder,
         ] as const,
     ([open, slot, module, shelf]) => {
-        if (!open) {
-            return;
-        }
-
+        if (!open) return;
+        errors.value = {};
         draft.module_number = module;
         draft.shelf_order = shelf;
         draft.category_id = slot?.category_id ?? props.slotDefaults?.category_id ?? null;
@@ -87,6 +90,7 @@ watch(
         draft.space_fallback = slot?.space_fallback ?? props.slotDefaults?.space_fallback ?? 'reduce_c';
         draft.use_target_stock = slot?.use_target_stock ?? props.slotDefaults?.use_target_stock ?? false;
         draft.facing_expansion = slot?.facing_expansion ?? props.slotDefaults?.facing_expansion ?? 'none';
+        draft.role_override = slot?.role_override ?? null;
     },
     { immediate: true },
 );
@@ -117,20 +121,31 @@ const priorityModel = computed({
     },
 });
 
+const categoryRoleOptions: { value: CategoryRole | ''; label: string }[] = [
+    { value: '', label: 'Herdar da categoria' },
+    { value: 'destino', label: 'Destino — gera tráfego, área nobre' },
+    { value: 'rotina', label: 'Rotina — exposição equilibrada, centro' },
+    { value: 'conveniencia', label: 'Conveniência — leitura simples, acesso fácil' },
+    { value: 'impulso', label: 'Impulso — área quente, maior visibilidade' },
+    { value: 'sazonal', label: 'Sazonal — destaque temporário' },
+    { value: 'complementar', label: 'Complementar — zona fria, área de associação' },
+];
+
 function saveSlot(): void {
-    if (!draft.category_id) {
+    const result = validateSlotDraft(draft);
+    if (Object.keys(result).length > 0) {
+        errors.value = result;
         return;
     }
-
+    errors.value = {};
     emit('save', { ...draft });
     emit('update:open', false);
 }
-
 </script>
 
 <template>
     <Dialog :open="open" @update:open="emit('update:open', $event)">
-        <DialogContent class="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogContent class="max-h-[80vh] w-[95vw] max-w-6xl overflow-y-auto">
             <DialogHeader>
                 <DialogTitle
                     >{{ t('planogram-templates.slot_editor.title') }} —
@@ -156,47 +171,76 @@ function saveSlot(): void {
                         :cascade-levels="5"
                         :cols="2"
                     />
+                    <p v-if="errors.category_id" class="text-xs text-destructive">
+                        {{ errors.category_id }}
+                    </p>
+                </div>
+
+                <!-- Papel da categoria (override) -->
+                <div class="flex flex-col gap-y-1.5">
+                    <Label for="slot-role-override" class="text-sm font-medium">Papel da categoria</Label>
+                    <p class="text-xs text-muted-foreground">
+                        Orienta a posição macro e a estratégia do bloco. "Herdar da categoria" usa o papel configurado na categoria selecionada.
+                    </p>
+                    <select
+                        id="slot-role-override"
+                        v-model="draft.role_override"
+                        class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                        <option v-for="opt in categoryRoleOptions" :key="opt.value" :value="opt.value || null">
+                            {{ opt.label }}
+                        </option>
+                    </select>
                 </div>
 
                 <!-- Min facings / Max facings / Prioridade -->
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <FormTextField
-                        id="slot-min-facings"
-                        v-model="minFacingsModel"
-                        name="min_facings"
-                        type="number"
-                        :label="
-                            t(
-                                'planogram-templates.slot_editor.min_facings_label',
-                            )
-                        "
-                        :min="1"
-                        :max="20"
-                    />
-                    <FormTextField
-                        id="slot-max-facings"
-                        v-model="maxFacingsModel"
-                        name="max_facings"
-                        type="number"
-                        label="Frentes máximas"
-                        hint="Teto de expansão por SKU"
-                        :min="1"
-                        :max="20"
-                    />
-                    <FormTextField
-                        id="slot-priority"
-                        v-model="priorityModel"
-                        name="priority"
-                        type="number"
-                        :label="
-                            t('planogram-templates.slot_editor.priority_label')
-                        "
-                        :hint="
-                            t('planogram-templates.slot_editor.priority_hint')
-                        "
-                        :min="1"
-                        :max="10"
-                    />
+                    <div class="flex flex-col gap-y-1">
+                        <FormTextField
+                            id="slot-min-facings"
+                            v-model="minFacingsModel"
+                            name="min_facings"
+                            type="number"
+                            :label="
+                                t(
+                                    'planogram-templates.slot_editor.min_facings_label',
+                                )
+                            "
+                            :min="1"
+                            :max="20"
+                        />
+                        <p v-if="errors.min_facings" class="text-xs text-destructive">{{ errors.min_facings }}</p>
+                    </div>
+                    <div class="flex flex-col gap-y-1">
+                        <FormTextField
+                            id="slot-max-facings"
+                            v-model="maxFacingsModel"
+                            name="max_facings"
+                            type="number"
+                            label="Frentes máximas"
+                            hint="Teto de expansão por SKU"
+                            :min="1"
+                            :max="20"
+                        />
+                        <p v-if="errors.max_facings" class="text-xs text-destructive">{{ errors.max_facings }}</p>
+                    </div>
+                    <div class="flex flex-col gap-y-1">
+                        <FormTextField
+                            id="slot-priority"
+                            v-model="priorityModel"
+                            name="priority"
+                            type="number"
+                            :label="
+                                t('planogram-templates.slot_editor.priority_label')
+                            "
+                            :hint="
+                                t('planogram-templates.slot_editor.priority_hint')
+                            "
+                            :min="1"
+                            :max="10"
+                        />
+                        <p v-if="errors.priority" class="text-xs text-destructive">{{ errors.priority }}</p>
+                    </div>
                 </div>
 
                 <!-- Ordem por preço / tamanho -->
@@ -401,7 +445,7 @@ function saveSlot(): void {
                 <Button variant="ghost" @click="emit('update:open', false)">{{
                     t('planogram-templates.slot_editor.cancel_button')
                 }}</Button>
-                <Button :disabled="!draft.category_id" @click="saveSlot">{{
+                <Button @click="saveSlot">{{
                     t('planogram-templates.slot_editor.save_button')
                 }}</Button>
             </DialogFooter>

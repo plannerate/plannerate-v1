@@ -5,13 +5,14 @@ namespace App\Services\AutoPlanogram\Template;
 use App\Models\PlanogramRejectedProduct;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 final class TemplateSlotService
 {
     /** @return array<string, mixed> */
     public function validateSlot(Request $request): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'module_number' => ['required', 'integer', 'min:1', 'max:6'],
             'shelf_order' => ['required', 'integer', 'min:1', 'max:10'],
             'category_id' => ['nullable', 'string', 'max:26'],
@@ -25,7 +26,16 @@ final class TemplateSlotService
             'space_fallback' => ['required', 'string', 'in:reduce_c,reduce_facings,skip'],
             'use_target_stock' => ['boolean'],
             'facing_expansion' => ['required', 'string', 'in:none,score,current_stock,target_stock,equal'],
+            'role_override' => ['nullable', 'string', 'in:destino,rotina,conveniencia,impulso,sazonal,complementar'],
         ]);
+
+        if ((int) ($validated['max_facings'] ?? 1) < (int) ($validated['min_facings'] ?? 1)) {
+            throw ValidationException::withMessages([
+                'max_facings' => ['Frentes máximas deve ser maior ou igual às frentes mínimas.'],
+            ]);
+        }
+
+        return $validated;
     }
 
     /** @return array<string, mixed> */
@@ -43,7 +53,7 @@ final class TemplateSlotService
     /** @return array<string, mixed> */
     public function validateSlotDefaults(Request $request): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'category_id' => ['nullable', 'string', 'max:26'],
             'min_facings' => ['required', 'integer', 'min:1', 'max:20'],
             'max_facings' => ['required', 'integer', 'min:1', 'max:20'],
@@ -56,6 +66,14 @@ final class TemplateSlotService
             'use_target_stock' => ['boolean'],
             'facing_expansion' => ['required', 'string', 'in:none,score,current_stock,target_stock,equal'],
         ]);
+
+        if ((int) ($validated['max_facings'] ?? 1) < (int) ($validated['min_facings'] ?? 1)) {
+            throw ValidationException::withMessages([
+                'max_facings' => ['Frentes máximas deve ser maior ou igual às frentes mínimas.'],
+            ]);
+        }
+
+        return $validated;
     }
 
     /** @param array<string, mixed> $extra */
@@ -224,6 +242,7 @@ final class TemplateSlotService
                         'category_id' => $slot->category_id,
                         'category_name' => $category?->name,
                         'category_path' => $category?->full_path,
+                        'category_role' => $category?->role?->value,
                         'module_number' => $slot->module_number,
                         'shelf_order' => $slot->shelf_order,
                         'min_facings' => $slot->min_facings,
@@ -236,6 +255,7 @@ final class TemplateSlotService
                         'space_fallback' => $slot->space_fallback->value,
                         'use_target_stock' => $slot->use_target_stock,
                         'facing_expansion' => $slot->facing_expansion->value,
+                        'role_override' => $slot->role_override?->value,
                         'ordering' => $slot->ordering,
                         'rejected_count' => (int) ($rejectedCounts->get($slot->id) ?? 0),
                     ];

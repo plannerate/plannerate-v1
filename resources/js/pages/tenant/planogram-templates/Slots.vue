@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { ChevronLeft, ChevronRight, Download, Settings2, Trash2, Upload } from 'lucide-vue-next';
+import { toast } from 'vue-sonner';
 import { computed, ref, watch } from 'vue';
 import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
 import GondolaGrid from '@/components/planogram-templates/GondolaGrid.vue';
@@ -245,6 +246,10 @@ function saveSlot(
         router.put(`${baseUrl.value}/slots/${existingSlot.id}`, draft, {
             preserveState: true,
             only: ['subtemplates'],
+            onError: (errs) => {
+                const first = Object.values(errs)[0];
+                if (first) toast.error(first);
+            },
         });
 
         return;
@@ -260,6 +265,10 @@ function saveSlot(
             {
                 preserveState: true,
                 only: ['subtemplates'],
+                onError: (errs) => {
+                    const first = Object.values(errs)[0];
+                    if (first) toast.error(first);
+                },
             },
         );
     } else {
@@ -270,6 +279,10 @@ function saveSlot(
             {
                 preserveState: true,
                 only: ['subtemplates'],
+                onError: (errs) => {
+                    const first = Object.values(errs)[0];
+                    if (first) toast.error(first);
+                },
                 onSuccess: () => {
                     const newSub = props.subtemplates.find(
                         (s) => s.num_modules === currentModules.value,
@@ -285,6 +298,10 @@ function saveSlot(
                         {
                             preserveState: true,
                             only: ['subtemplates'],
+                            onError: (errs) => {
+                                const first = Object.values(errs)[0];
+                                if (first) toast.error(first);
+                            },
                         },
                     );
                 },

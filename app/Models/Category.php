@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CategoryRole;
 use App\Models\Scopes\TenantScope;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\HasCategory;
@@ -42,6 +43,7 @@ class Category extends Model
         'full_path',
         'hierarchy_path',
         'is_placeholder',
+        'role',
     ];
 
     /**
@@ -56,6 +58,7 @@ class Category extends Model
             'hierarchy_position' => 'integer',
             'hierarchy_path' => 'array',
             'is_placeholder' => 'boolean',
+            'role' => CategoryRole::class,
         ];
     }
 

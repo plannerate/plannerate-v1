@@ -155,6 +155,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 'slot_id' => $slot->id,
                 'category_id' => $slot->category_id,
                 'category_name' => $slot->category?->name ?? $slot->category_id,
+                'role' => $slot->effectiveRole()?->value,
                 'module_number' => $slot->module_number,
                 'shelf_order' => $slot->shelf_order,
                 'shelf_id' => $shelf->getKey(),
