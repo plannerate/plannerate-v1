@@ -2,6 +2,7 @@
 
 namespace App\Services\AutoPlanogram\Template;
 
+use App\Enums\ZonePriority;
 use App\Models\PlanogramRejectedProduct;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -53,6 +54,8 @@ final class TemplateSlotService
     /** @return array<string, mixed> */
     public function validateSlotDefaults(Request $request): array
     {
+        $zonePriorityValues = implode(',', array_column(ZonePriority::cases(), 'value'));
+
         $validated = $request->validate([
             'category_id' => ['nullable', 'string', 'max:26'],
             'min_facings' => ['required', 'integer', 'min:1', 'max:20'],
@@ -65,6 +68,8 @@ final class TemplateSlotService
             'space_fallback' => ['required', 'string', 'in:reduce_c,reduce_facings,skip'],
             'use_target_stock' => ['boolean'],
             'facing_expansion' => ['required', 'string', 'in:none,score,current_stock,target_stock,equal'],
+            'hot_zone_priority' => ['nullable', 'string', "in:{$zonePriorityValues}"],
+            'cold_zone_priority' => ['nullable', 'string', "in:{$zonePriorityValues}"],
         ]);
 
         if ((int) ($validated['max_facings'] ?? 1) < (int) ($validated['min_facings'] ?? 1)) {
@@ -164,6 +169,12 @@ final class TemplateSlotService
     public function updateSlotDefaults(Model $subtemplate, array $validated): void
     {
         $this->updateSubtemplateSlotDefaults($subtemplate, $validated);
+
+        // Zone priorities are separate columns, not part of slot_defaults JSON
+        $subtemplate->update([
+            'hot_zone_priority' => $validated['hot_zone_priority'] ?? null,
+            'cold_zone_priority' => $validated['cold_zone_priority'] ?? null,
+        ]);
     }
 
     public function destroySlot(Model $slot): void
@@ -233,6 +244,8 @@ final class TemplateSlotService
                 'code' => $sub->code,
                 'num_modules' => $sub->num_modules,
                 'slot_defaults' => $sub->slot_defaults,
+                'hot_zone_priority' => $sub->hot_zone_priority?->value,
+                'cold_zone_priority' => $sub->cold_zone_priority?->value,
                 'slots' => $sub->slots->map(function (Model $slot) use ($rejectedCounts): array {
                     $category = $slot->relationLoaded('category') ? $slot->getRelation('category') : null;
 

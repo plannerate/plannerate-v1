@@ -13,7 +13,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useT } from '@/composables/useT';
-import type { PlanogramSlotDefaults, PlanogramTemplateSlot } from './types';
+import type { PlanogramSlotDefaults, PlanogramTemplateSlot, ZonePriority } from './types';
 
 type ModuleDefaultsDraft = {
     category_id: string | null;
@@ -27,12 +27,16 @@ type ModuleDefaultsDraft = {
     space_fallback: PlanogramTemplateSlot['space_fallback'];
     use_target_stock: boolean;
     facing_expansion: PlanogramTemplateSlot['facing_expansion'];
+    hot_zone_priority: ZonePriority | null;
+    cold_zone_priority: ZonePriority | null;
 };
 
 const props = defineProps<{
     open: boolean;
     moduleNumber: number;
     slotDefaults?: PlanogramSlotDefaults | null;
+    hotZonePriority?: ZonePriority | null;
+    coldZonePriority?: ZonePriority | null;
 }>();
 
 const emit = defineEmits<{
@@ -52,11 +56,13 @@ const draft = reactive<ModuleDefaultsDraft>({
     space_fallback: 'reduce_c',
     use_target_stock: false,
     facing_expansion: 'none',
+    hot_zone_priority: null,
+    cold_zone_priority: null,
 });
 
 watch(
-    () => [props.open, props.slotDefaults] as const,
-    ([open, defaults]) => {
+    () => [props.open, props.slotDefaults, props.hotZonePriority, props.coldZonePriority] as const,
+    ([open, defaults, hotPriority, coldPriority]) => {
         if (!open) {
             return;
         }
@@ -72,6 +78,8 @@ watch(
         draft.space_fallback = defaults?.space_fallback ?? 'reduce_c';
         draft.use_target_stock = defaults?.use_target_stock ?? false;
         draft.facing_expansion = defaults?.facing_expansion ?? 'none';
+        draft.hot_zone_priority = hotPriority ?? null;
+        draft.cold_zone_priority = coldPriority ?? null;
     },
     { immediate: true },
 );
@@ -239,6 +247,43 @@ function saveDefaults(): void {
                         name="use_target_stock"
                         :label="t('planogram-templates.slot_editor.target_stock_label')"
                     />
+                </div>
+
+                <!-- Priorização por zona térmica -->
+                <div class="rounded-md border border-border p-3">
+                    <p class="mb-3 text-sm font-medium">Priorização por zona térmica</p>
+                    <p class="mb-3 text-xs text-muted-foreground">
+                        Define qual critério de ordenação é aplicado aos produtos em prateleiras quentes (olhos / mãos)
+                        e frias (alta / chão). Não filtra produtos — apenas reordena dentro do slot.
+                    </p>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormSelectField
+                            id="module-default-hot-zone-priority"
+                            v-model="draft.hot_zone_priority"
+                            name="hot_zone_priority"
+                            label="Zona quente (olhos + mãos)"
+                            hint="Eye + Hand: área nobre da gôndola"
+                        >
+                            <option :value="null">Sem critério (padrão)</option>
+                            <option value="maior_margem">Maior margem</option>
+                            <option value="maior_giro">Maior giro (vendas)</option>
+                            <option value="maior_valor_vendido">Maior valor vendido</option>
+                            <option value="curva_a">Curva A primeiro</option>
+                        </FormSelectField>
+                        <FormSelectField
+                            id="module-default-cold-zone-priority"
+                            v-model="draft.cold_zone_priority"
+                            name="cold_zone_priority"
+                            label="Zona fria (alto + chão)"
+                            hint="High + Low: área de menor visibilidade"
+                        >
+                            <option :value="null">Sem critério (padrão)</option>
+                            <option value="menor_margem">Menor margem</option>
+                            <option value="complementar_fria">Complementar / sazonais</option>
+                            <option value="maior_volume">Maior volume físico</option>
+                            <option value="menor_prioridade">Menor prioridade geral</option>
+                        </FormSelectField>
+                    </div>
                 </div>
             </div>
 

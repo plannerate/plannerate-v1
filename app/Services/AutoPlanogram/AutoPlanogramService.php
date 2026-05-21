@@ -157,9 +157,18 @@ final class AutoPlanogramService
             ->sortBy(fn ($p) => $scoreOrder->get($p->id, PHP_INT_MAX))
             ->values();
 
+        // Extrair métricas brutas do scored para priorização por zona térmica
+        $zoneMetricsMap = $scored->mapWithKeys(fn ($sp) => [
+            $sp->product->id => [
+                'giro' => (float) ($sp->metadata['raw_quantity'] ?? 0),
+                'margem' => (float) ($sp->metadata['raw_margem'] ?? 0.0),
+            ],
+        ])->all();
+
         $settings = $input->settings
             ->withExtras($input->settings->tenantId, $input->settings->weights)
-            ->withProducts($sortedProducts);
+            ->withProducts($sortedProducts)
+            ->withZoneMetrics($zoneMetricsMap);
 
         $result = $this->templatePlacement->place(
             collect(),

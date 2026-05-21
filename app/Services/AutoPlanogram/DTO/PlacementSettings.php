@@ -84,6 +84,14 @@ final readonly class PlacementSettings
 
         /** Mapa de estoque alvo por produto [product_id => float] vindo da análise ABC */
         public array $targetStockMap = [],
+
+        /**
+         * Métricas de zona por produto [product_id => ['giro' => float, 'margem' => float]]
+         * Usadas pelo TemplatePlacementEngine para priorizar produtos por zona térmica.
+         *
+         * @var array<string, array{giro: float, margem: float}>
+         */
+        public array $zoneMetricsMap = [],
     ) {}
 
     public function usesTemplate(): bool
@@ -118,6 +126,7 @@ final readonly class PlacementSettings
             products: $products,
             abcClassMap: $this->abcClassMap,
             targetStockMap: $this->targetStockMap,
+            zoneMetricsMap: $this->zoneMetricsMap,
         );
     }
 
@@ -148,6 +157,7 @@ final readonly class PlacementSettings
             products: $this->products,
             abcClassMap: $abcClassMap,
             targetStockMap: $this->targetStockMap,
+            zoneMetricsMap: $this->zoneMetricsMap,
         );
     }
 
@@ -179,6 +189,7 @@ final readonly class PlacementSettings
             products: $this->products,
             abcClassMap: $this->abcClassMap,
             targetStockMap: $targetStockMap,
+            zoneMetricsMap: $this->zoneMetricsMap,
         );
     }
 
@@ -209,6 +220,7 @@ final readonly class PlacementSettings
             products: $this->products,
             abcClassMap: $this->abcClassMap,
             targetStockMap: $this->targetStockMap,
+            zoneMetricsMap: $this->zoneMetricsMap,
         );
     }
 
@@ -239,6 +251,41 @@ final readonly class PlacementSettings
             products: $products,
             abcClassMap: $this->abcClassMap,
             targetStockMap: $this->targetStockMap,
+            zoneMetricsMap: $this->zoneMetricsMap,
+        );
+    }
+
+    /**
+     * @param  array<string, array{giro: float, margem: float}>  $zoneMetricsMap
+     */
+    public function withZoneMetrics(array $zoneMetricsMap): self
+    {
+        return new self(
+            strategy: $this->strategy,
+            useExistingAnalysis: $this->useExistingAnalysis,
+            startDate: $this->startDate,
+            endDate: $this->endDate,
+            minFacings: $this->minFacings,
+            maxFacings: $this->maxFacings,
+            groupBySubcategory: $this->groupBySubcategory,
+            includeProductsWithoutSales: $this->includeProductsWithoutSales,
+            tableType: $this->tableType,
+            categoryId: $this->categoryId,
+            tenantId: $this->tenantId,
+            storeId: $this->storeId,
+            weights: $this->weights,
+            blockHierarchyLevel: $this->blockHierarchyLevel,
+            adjacencyHierarchyLevel: $this->adjacencyHierarchyLevel,
+            targetOccupancyRate: $this->targetOccupancyRate,
+            verticalBlockThreshold: $this->verticalBlockThreshold,
+            verticalBlockMinShelves: $this->verticalBlockMinShelves,
+            templateId: $this->templateId,
+            numModules: $this->numModules,
+            planogramId: $this->planogramId,
+            products: $this->products,
+            abcClassMap: $this->abcClassMap,
+            targetStockMap: $this->targetStockMap,
+            zoneMetricsMap: $zoneMetricsMap,
         );
     }
 

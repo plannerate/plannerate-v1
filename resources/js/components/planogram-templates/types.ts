@@ -1,3 +1,14 @@
+export type ZonePriority =
+    | 'none'
+    | 'maior_margem'
+    | 'maior_giro'
+    | 'maior_valor_vendido'
+    | 'curva_a'
+    | 'menor_margem'
+    | 'complementar_fria'
+    | 'maior_volume'
+    | 'menor_prioridade';
+
 export type SlotPriceOrder = 'asc' | 'desc' | 'none';
 export type SlotSizeOrder = 'asc' | 'desc' | 'none';
 export type SlotBrandExposure = 'vertical' | 'horizontal' | 'mixed';
@@ -51,6 +62,8 @@ export type PlanogramSubtemplate = {
     code: string;
     num_modules: number;
     slot_defaults?: PlanogramSlotDefaults | null;
+    hot_zone_priority?: ZonePriority | null;
+    cold_zone_priority?: ZonePriority | null;
     slots: PlanogramTemplateSlot[];
 };
 

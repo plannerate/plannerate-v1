@@ -322,7 +322,7 @@ function saveCurrentModuleDefaults(
         | 'flavor_exposure'
         | 'space_fallback'
         | 'use_target_stock'
-    >,
+    > & { hot_zone_priority?: string | null; cold_zone_priority?: string | null },
 ): void {
     const subtemplate = currentSubtemplate.value;
 
@@ -667,6 +667,8 @@ const breadcrumbs = [
         v-model:open="moduleDefaultsOpen"
         :module-number="currentModules"
         :slot-defaults="currentSlotDefaults"
+        :hot-zone-priority="currentSubtemplate?.hot_zone_priority ?? null"
+        :cold-zone-priority="currentSubtemplate?.cold_zone_priority ?? null"
         @save="saveCurrentModuleDefaults"
     />
 

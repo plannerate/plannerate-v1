@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ZonePriority;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -24,6 +25,8 @@ class PlanogramSubtemplate extends Model
         'description',
         'slot_defaults',
         'is_active',
+        'hot_zone_priority',
+        'cold_zone_priority',
     ];
 
     protected function casts(): array
@@ -32,6 +35,8 @@ class PlanogramSubtemplate extends Model
             'num_modules' => 'integer',
             'slot_defaults' => 'array',
             'is_active' => 'boolean',
+            'hot_zone_priority' => ZonePriority::class,
+            'cold_zone_priority' => ZonePriority::class,
         ];
     }
 

@@ -8,6 +8,7 @@ use App\Enums\PlacementFailureReason;
 use App\Enums\PriceOrder;
 use App\Enums\SizeOrder;
 use App\Enums\SpaceFallback;
+use App\Enums\ZonePriority;
 use App\Models\Category;
 use App\Models\Planogram;
 use App\Models\PlanogramSubtemplate;
@@ -20,6 +21,7 @@ use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\ProductSizeResolver;
 use App\Services\AutoPlanogram\ProductWidthResolver;
+use App\Services\AutoPlanogram\ShelfZoneResolver;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Illuminate\Support\Collection;
@@ -38,6 +40,15 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
     /** @var array<string, float> Mapa de estoque alvo [product_id => float] vindo de PlacementSettings */
     private array $targetStockMap = [];
+
+    /** @var array<string, array{giro: float, margem: float}> Métricas por produto para ordenação por zona */
+    private array $zoneMetricsMap = [];
+
+    /** Critério de priorização para zona quente (Eye + Hand) */
+    private ZonePriority $hotZonePriority = ZonePriority::None;
+
+    /** Critério de priorização para zona fria (High + Low) */
+    private ZonePriority $coldZonePriority = ZonePriority::None;
 
     public function __construct(
         private readonly ProductWidthResolver $widthResolver,
@@ -65,6 +76,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $this->globalPlacedProductIds = [];
         $this->abcClassMap = $settings->abcClassMap;
         $this->targetStockMap = $settings->targetStockMap;
+        $this->zoneMetricsMap = $settings->zoneMetricsMap;
 
         $subtemplate = $this->resolveSubtemplate($settings);
 
@@ -76,6 +88,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
             return $this->greedyPlacer->place($orderedBlocks, $sections, $settings, $reservedWidthPerShelf);
         }
+
+        $this->hotZonePriority = $subtemplate->hot_zone_priority ?? ZonePriority::None;
+        $this->coldZonePriority = $subtemplate->cold_zone_priority ?? ZonePriority::None;
 
         $placed = collect();
         $rejected = collect();
@@ -118,7 +133,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 continue;
             }
 
-            $ordered = $this->orderCandidates($candidates, $slot);
+            $ordered = $this->orderCandidates($candidates, $slot, $section, $shelf);
 
             // ReduceC: garante que produtos C ficam por último para serem rejeitados primeiro
             if ($slot->space_fallback === SpaceFallback::ReduceC && ! empty($this->abcClassMap)) {
@@ -274,7 +289,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             ??= Category::getDescendantIds($categoryId);
     }
 
-    private function orderCandidates(Collection $products, PlanogramTemplateSlot $slot): Collection
+    private function orderCandidates(Collection $products, PlanogramTemplateSlot $slot, ?Section $section = null, ?Shelf $shelf = null): Collection
     {
         $sorted = $products;
 
@@ -298,7 +313,78 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             $sorted = $sorted->groupBy(fn ($p) => $p->brand ?? 'SEM MARCA')->flatten(1);
         }
 
+        // Zona térmica — aplicado por último para ser critério primário (stable sort)
+        $sorted = $this->applyZoneOrdering($sorted, $section, $shelf);
+
         return $sorted->values();
+    }
+
+    /**
+     * Aplica critério de priorização por zona térmica.
+     * Resolve a zona da prateleira e ordena produtos conforme a configuração do subtemplate.
+     */
+    private function applyZoneOrdering(Collection $products, ?Section $section, ?Shelf $shelf): Collection
+    {
+        if ($shelf === null || $section === null) {
+            return $products;
+        }
+
+        $numShelves = $section->shelves->count();
+
+        if ($numShelves === 0) {
+            return $products;
+        }
+
+        $zone = ShelfZoneResolver::resolve((int) $shelf->shelf_position, $numShelves);
+
+        $priority = match ($zone) {
+            'hot' => $this->hotZonePriority,
+            'cold' => $this->coldZonePriority,
+            default => ZonePriority::None,
+        };
+
+        if ($priority === ZonePriority::None) {
+            return $products;
+        }
+
+        return match ($priority) {
+            ZonePriority::MaiorMargem => $products->sortByDesc(
+                fn ($p) => (float) ($this->zoneMetricsMap[$p->id]['margem'] ?? 0)
+            ),
+            ZonePriority::MaiorGiro => $products->sortByDesc(
+                fn ($p) => (float) ($this->zoneMetricsMap[$p->id]['giro'] ?? 0)
+            ),
+            ZonePriority::MaiorValorVendido => $products->sortByDesc(
+                fn ($p) => (float) ($this->zoneMetricsMap[$p->id]['giro'] ?? 0)
+                    * (float) ($p->price ?? 0)
+            ),
+            ZonePriority::CurvaA => $products->sortBy(
+                fn ($p) => match ($this->abcClassMap[$p->id] ?? 'C') {
+                    'A' => 0,
+                    'B' => 1,
+                    'C' => 2,
+                    default => 1,
+                }
+            ),
+            ZonePriority::MenorMargem => $products->sortBy(
+                fn ($p) => (float) ($this->zoneMetricsMap[$p->id]['margem'] ?? 0)
+            ),
+            ZonePriority::ComplementarFria => $products->sortBy(
+                fn ($p) => match ($this->abcClassMap[$p->id] ?? 'A') {
+                    'C' => 0,
+                    'B' => 1,
+                    'A' => 2,
+                    default => 1,
+                }
+            ),
+            ZonePriority::MaiorVolume => $products->sortByDesc(
+                fn ($p) => $this->sizeResolver->resolve($p)
+            ),
+            ZonePriority::MenorPrioridade => $products->sortBy(
+                fn ($p) => (float) ($this->zoneMetricsMap[$p->id]['giro'] ?? 0)
+            ),
+            default => $products,
+        };
     }
 
     /**
