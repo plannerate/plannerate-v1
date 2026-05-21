@@ -123,6 +123,61 @@
         </p>
       </div>
     </div>
+
+    <!-- Estoque alvo não atendido (apenas modo template) -->
+    <div
+      v-if="targetStockNotMetAlert"
+      class="rounded-lg border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-950"
+    >
+      <div class="flex items-start gap-3">
+        <svg class="mt-0.5 h-5 w-5 shrink-0 text-indigo-500 dark:text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+        </svg>
+        <p class="text-sm text-indigo-700 dark:text-indigo-300">
+          <strong>{{ targetStockNotMetAlert.count }} produto(s)</strong> com estoque alvo definido não
+          tiveram frentes expandidas — o espaço disponível não foi suficiente para atingir o alvo.
+          Considere ampliar a gôndola ou aumentar o limite de frentes do slot.
+        </p>
+      </div>
+    </div>
+
+    <!-- Resumo ABC da alocação (apenas modo template) -->
+    <div
+      v-if="report.explanation_report && allocationSummary.total > 0"
+      class="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900"
+    >
+      <details>
+        <summary class="cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900">
+          Resumo da alocação — {{ allocationSummary.total }} produto(s) posicionados
+        </summary>
+        <div class="mt-3 flex flex-wrap gap-4">
+          <div v-if="allocationSummary.mandatory > 0" class="flex items-center gap-1.5 text-sm">
+            <span class="inline-block h-2.5 w-2.5 rounded-full bg-red-500" />
+            <span class="text-slate-600 dark:text-slate-400">{{ allocationSummary.mandatory }} obrigatório(s)</span>
+          </div>
+          <div v-if="allocationSummary.a > 0" class="flex items-center gap-1.5 text-sm">
+            <span class="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            <span class="text-slate-600 dark:text-slate-400">{{ allocationSummary.a }} curva A</span>
+          </div>
+          <div v-if="allocationSummary.b > 0" class="flex items-center gap-1.5 text-sm">
+            <span class="inline-block h-2.5 w-2.5 rounded-full bg-yellow-500" />
+            <span class="text-slate-600 dark:text-slate-400">{{ allocationSummary.b }} curva B</span>
+          </div>
+          <div v-if="allocationSummary.c > 0" class="flex items-center gap-1.5 text-sm">
+            <span class="inline-block h-2.5 w-2.5 rounded-full bg-orange-400" />
+            <span class="text-slate-600 dark:text-slate-400">{{ allocationSummary.c }} curva C</span>
+          </div>
+          <div v-if="allocationSummary.neutral > 0" class="flex items-center gap-1.5 text-sm">
+            <span class="inline-block h-2.5 w-2.5 rounded-full bg-slate-400" />
+            <span class="text-slate-600 dark:text-slate-400">{{ allocationSummary.neutral }} sem dados de venda</span>
+          </div>
+          <div v-if="allocationSummary.expanded > 0" class="flex items-center gap-1.5 text-sm">
+            <span class="text-slate-500 dark:text-slate-400">·</span>
+            <span class="text-slate-600 dark:text-slate-400">{{ allocationSummary.expanded }} com frentes expandidas</span>
+          </div>
+        </div>
+      </details>
+    </div>
   </div>
 </template>
 
@@ -130,6 +185,7 @@
 import { computed, ref } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { cloneSubtemplate } from '@/actions/App/Http/Controllers/Tenant/TemplateSlotController'
+import type { ExplanationReport, ExplanationAlert } from '@/components/planogram-templates/types'
 
 interface RejectedProduct {
   id: string
@@ -154,6 +210,7 @@ interface CapacityReport {
   subtemplate_id?: string
   template_id?: string
   subdomain?: string
+  explanation_report?: ExplanationReport | null
 }
 
 const props = defineProps<{
@@ -161,6 +218,26 @@ const props = defineProps<{
 }>()
 
 const cloning = ref(false)
+
+/** Alerta de estoque alvo não atendido, derivado do relatório de explicação */
+const targetStockNotMetAlert = computed((): ExplanationAlert | null => {
+  const alerts = props.report?.explanation_report?.alerts ?? []
+  return alerts.find((a) => a.type === 'target_stock_not_met') ?? null
+})
+
+/** Resumo da curva ABC dos produtos alocados */
+const allocationSummary = computed(() => {
+  const allocated = props.report?.explanation_report?.allocated ?? []
+  return {
+    total: allocated.length,
+    a: allocated.filter((e) => e.abc_class === 'A').length,
+    b: allocated.filter((e) => e.abc_class === 'B').length,
+    c: allocated.filter((e) => e.abc_class === 'C').length,
+    neutral: allocated.filter((e) => e.abc_class === null).length,
+    mandatory: allocated.filter((e) => e.is_mandatory).length,
+    expanded: allocated.filter((e) => e.facings_expanded).length,
+  }
+})
 
 const cloneUrl = computed(() => {
   const r = props.report

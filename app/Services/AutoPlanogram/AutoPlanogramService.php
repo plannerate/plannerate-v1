@@ -205,6 +205,7 @@ final class AutoPlanogramService
             templateModules: $result->templateModules,
             gondolaModules: $result->gondolaModules,
             subtemplateId: $result->subtemplateId,
+            explanationReport: $result->explanationReport,
         );
 
         DB::transaction(function () use ($input, $allSegments, $templateOutput): void {

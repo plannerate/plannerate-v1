@@ -117,6 +117,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $rejected = collect();
         $groupingsSemProduto = 0;
         $slotAnalysis = [];
+        $allPlacedExplanations = [];
 
         $slots = $subtemplate->slots()
             ->withoutGlobalScope(TenantScope::class)
@@ -206,6 +207,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
             $placed = $placed->merge($slotResult['placed']);
             $rejected = $rejected->merge($slotRejected);
+            $allPlacedExplanations = array_merge($allPlacedExplanations, $slotResult['placed_explanations']);
 
             $occupied = round((float) $slotResult['placed']->sum('width'), 1);
             $livre = round(max(0.0, $available - $occupied), 1);
@@ -264,6 +266,8 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $gondolaModules = $sections->count();
         $templateModules = $subtemplate->num_modules;
 
+        $explanationReport = $this->buildExplanationReport($allPlacedExplanations, $rejected, $slotAnalysis);
+
         return new PlacementResult(
             placedSegments: $placed,
             rejectedProducts: $rejected,
@@ -272,6 +276,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             templateModules: $templateModules,
             gondolaModules: $gondolaModules,
             subtemplateId: $subtemplate->getKey(),
+            explanationReport: $explanationReport,
         );
     }
 
@@ -628,6 +633,11 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             [$placedItems, $occupied] = $this->expandFacings($placedItems, $slot, $available, $occupied);
         }
 
+        // Anotar explicações dos produtos posicionados (após expansão de frentes)
+        $minFacing = max($slot->min_facings, 1);
+        $zone = $this->resolveZoneForShelf($section, $shelf);
+        $placedExplanations = $this->buildPlacedExplanations($placedItems, $slot, $minFacing, $zone);
+
         // Build readonly PlacedSegment DTOs
         $placed = collect();
         $x = 0.0;
@@ -683,7 +693,11 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
         $missingDimRejected = $rejected->where('reason', PlacementFailureReason::MissingDimensions)->values();
 
-        return ['placed' => $placed, 'rejected' => $noSpaceRejected->merge($missingDimRejected)];
+        return [
+            'placed' => $placed,
+            'rejected' => $noSpaceRejected->merge($missingDimRejected),
+            'placed_explanations' => $placedExplanations,
+        ];
     }
 
     /**
@@ -913,5 +927,131 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     private function recordSubtemplateUsed(string $planogramId, string $subtemplateId): void
     {
         Planogram::withoutGlobalScopes()->where('id', $planogramId)->update(['subtemplate_id' => $subtemplateId]);
+    }
+
+    /**
+     * Resolve a zona térmica de uma prateleira para anotação de explicação.
+     */
+    private function resolveZoneForShelf(Section $section, Shelf $shelf): string
+    {
+        $numShelves = $section->shelves->count();
+
+        if ($numShelves === 0) {
+            return 'neutral';
+        }
+
+        return ShelfZoneResolver::resolve((int) $shelf->shelf_position, $numShelves);
+    }
+
+    /**
+     * Constrói a lista de explicações para produtos posicionados numa prateleira.
+     * Chamado após expandFacings para refletir o número final de frentes.
+     *
+     * @param  array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}>  $placedItems
+     * @return list<array<string, mixed>>
+     */
+    private function buildPlacedExplanations(
+        array $placedItems,
+        PlanogramTemplateSlot $slot,
+        int $minFacing,
+        string $zone,
+    ): array {
+        $explanations = [];
+
+        foreach ($placedItems as $item) {
+            $p = $item['product'];
+            $explanations[] = [
+                'product_id' => $p->id,
+                'product_name' => $p->name ?? '',
+                'slot_id' => $slot->id ?? null,
+                'category_name' => $slot->category?->name ?? $slot->category_id,
+                'abc_class' => $this->abcClassMap[$p->id] ?? null,
+                'is_mandatory' => isset($this->mandatoryProductIds[$p->id]),
+                'facings' => $item['facings'],
+                'facings_expanded' => $item['facings'] > $minFacing,
+                'zone' => $zone,
+                'role' => $slot->effectiveRole()?->value,
+                'has_target_stock' => isset($this->targetStockMap[$p->id]),
+            ];
+        }
+
+        return $explanations;
+    }
+
+    /**
+     * Consolida explicações e alertas da geração completa.
+     *
+     * @param  list<array<string, mixed>>  $allPlacedExplanations
+     * @param  Collection<int, array{product: mixed, reason: PlacementFailureReason, slot_id?: string}>  $rejected
+     * @param  list<array<string, mixed>>  $slotAnalysis
+     * @return array{allocated: list<array<string, mixed>>, rejected: list<array<string, mixed>>, alerts: list<array<string, mixed>>}
+     */
+    private function buildExplanationReport(
+        array $allPlacedExplanations,
+        Collection $rejected,
+        array $slotAnalysis,
+    ): array {
+        $slotCategoryMap = collect($slotAnalysis)->keyBy('slot_id')->map(fn ($s) => $s['category_name'])->all();
+
+        $rejectedExplanations = $rejected
+            ->filter(fn ($r) => $r['product'] !== null)
+            ->map(fn ($r) => [
+                'product_id' => $r['product']->id,
+                'product_name' => $r['product']->name ?? '',
+                'slot_id' => $r['slot_id'] ?? null,
+                'category_name' => isset($r['slot_id']) ? ($slotCategoryMap[$r['slot_id']] ?? null) : null,
+                'abc_class' => $this->abcClassMap[$r['product']->id] ?? null,
+                'motivo' => $r['reason']->value,
+                'motivo_label' => $r['reason']->label(),
+            ])
+            ->values()
+            ->all();
+
+        $alerts = [];
+
+        $missingDimCount = $rejected
+            ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::MissingDimensions && $r['product'] !== null)
+            ->count();
+
+        if ($missingDimCount > 0) {
+            $alerts[] = [
+                'type' => 'missing_dimensions',
+                'count' => $missingDimCount,
+                'message' => "{$missingDimCount} produto(s) sem dimensões (width/height) cadastradas",
+            ];
+        }
+
+        $noSpaceCount = $rejected
+            ->filter(fn ($r) => in_array($r['reason'], [
+                PlacementFailureReason::NoHorizontalSpace,
+                PlacementFailureReason::MandatoryNoSpace,
+            ]) && $r['product'] !== null)
+            ->count();
+
+        if ($noSpaceCount > 0) {
+            $alerts[] = [
+                'type' => 'mix_excede_gondola',
+                'count' => $noSpaceCount,
+                'message' => "{$noSpaceCount} produto(s) não couberam na gôndola por falta de espaço",
+            ];
+        }
+
+        $targetNotMet = collect($allPlacedExplanations)
+            ->filter(fn ($e) => $e['has_target_stock'] && ! $e['facings_expanded'])
+            ->count();
+
+        if ($targetNotMet > 0) {
+            $alerts[] = [
+                'type' => 'target_stock_not_met',
+                'count' => $targetNotMet,
+                'message' => "{$targetNotMet} produto(s) com estoque alvo definido não tiveram frentes expandidas",
+            ];
+        }
+
+        return [
+            'allocated' => $allPlacedExplanations,
+            'rejected' => $rejectedExplanations,
+            'alerts' => $alerts,
+        ];
     }
 }

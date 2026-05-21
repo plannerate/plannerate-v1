@@ -33,6 +33,8 @@ final readonly class PlanogramOutput
         public int $templateModules = 0,
         public int $gondolaModules = 0,
         public ?string $subtemplateId = null,
+        /** @var array{allocated: list<array<string, mixed>>, rejected: list<array<string, mixed>>, alerts: list<array<string, mixed>>} Justificativa por produto (template mode only) */
+        public array $explanationReport = [],
     ) {}
 
     public function totalAllocated(): int

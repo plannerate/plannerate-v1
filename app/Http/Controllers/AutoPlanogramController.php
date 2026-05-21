@@ -185,6 +185,7 @@ class AutoPlanogramController extends Controller
                 $capacityReport['template_modules'] = $output->templateModules;
                 $capacityReport['gondola_modules'] = $output->gondolaModules;
                 $capacityReport['subtemplate_id'] = $output->subtemplateId;
+                $capacityReport['explanation_report'] = $output->explanationReport;
             }
 
             Inertia::flash('capacity_report', $capacityReport);

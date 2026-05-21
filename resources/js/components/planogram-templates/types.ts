@@ -28,6 +28,48 @@ export type SlotFacingExpansion = 'none' | 'score' | 'current_stock' | 'target_s
 export type CategoryRole = 'destino' | 'rotina' | 'conveniencia' | 'impulso' | 'sazonal' | 'complementar';
 export type FlowDirection = 'left_to_right' | 'right_to_left';
 
+/** Tipo de alerta no relatório de explicação */
+export type ExplanationAlertType = 'missing_dimensions' | 'mix_excede_gondola' | 'target_stock_not_met';
+
+export type ExplanationAlert = {
+    type: ExplanationAlertType;
+    count: number;
+    message: string;
+};
+
+/** Justificativa de um produto alocado */
+export type AllocationEntry = {
+    product_id: string;
+    product_name: string;
+    slot_id: string | null;
+    category_name: string | null;
+    abc_class: 'A' | 'B' | 'C' | null;
+    is_mandatory: boolean;
+    facings: number;
+    facings_expanded: boolean;
+    zone: 'hot' | 'cold' | 'neutral';
+    role: string | null;
+    has_target_stock: boolean;
+};
+
+/** Justificativa de um produto rejeitado */
+export type RejectionEntry = {
+    product_id: string;
+    product_name: string;
+    slot_id: string | null;
+    category_name: string | null;
+    abc_class: 'A' | 'B' | 'C' | null;
+    motivo: string;
+    motivo_label: string;
+};
+
+/** Relatório de explicação gerado pelo motor de placement (modo template) */
+export type ExplanationReport = {
+    allocated: AllocationEntry[];
+    rejected: RejectionEntry[];
+    alerts: ExplanationAlert[];
+};
+
 export type PlanogramTemplateSlot = {
     id?: string;
     subtemplate_id?: string;
