@@ -13,7 +13,10 @@ import GondolaGrid from '@/components/planogram-templates/GondolaGrid.vue';
 import ModuleDefaultsModal from '@/components/planogram-templates/ModuleDefaultsModal.vue';
 import ModuleSelectorButtons from '@/components/planogram-templates/ModuleSelectorButtons.vue';
 import PlanogramConfirmDialog from '@/components/planogram-templates/PlanogramConfirmDialog.vue';
+import SlotCopyPromptDialog from '@/components/planogram-templates/SlotCopyPromptDialog.vue';
+import type { CopyPromptAction } from '@/components/planogram-templates/SlotCopyPromptDialog.vue';
 import SlotEditorModal from '@/components/planogram-templates/SlotEditorModal.vue';
+import type { SlotDraft } from '@/components/planogram-templates/slot-editor';
 import type {
     PlanogramSubtemplate,
     PlanogramTemplateSlot,
@@ -226,6 +229,250 @@ const editingModule = ref(1);
 const editingShelf = ref(1);
 const editingSlot = ref<PlanogramTemplateSlot | null>(null);
 
+// ── Cópia em cascata (prateleiras / módulos) ─────────────────────────────────────
+const copyPromptOpen = ref(false);
+const copyPromptKind = ref<'shelves' | 'module' | null>(null);
+const copyPromptModule = ref<number | null>(null);
+const copySourceDraft = ref<SlotDraft | null>(null);
+const cascadeActive = ref(false);
+const cascadeModule = ref<number | null>(null);
+const copyBusy = ref(false);
+/** distingue fechamento do editor por salvar (mantém cascata) de cancelar (encerra) */
+const slotSaveInFlight = ref(false);
+
+/** Conta quantos slots o módulo possui no subtemplate atual. */
+function moduleSlotCount(module: number): number {
+    return (
+        currentSubtemplate.value?.slots.filter(
+            (s) => s.module_number === module,
+        ).length ?? 0
+    );
+}
+
+/** Prateleiras (1..numShelves) ainda vazias no módulo. */
+function emptyShelvesInModule(module: number): number[] {
+    const occupied = new Set(
+        (currentSubtemplate.value?.slots ?? [])
+            .filter((s) => s.module_number === module)
+            .map((s) => s.shelf_order),
+    );
+
+    return Array.from({ length: numShelves.value }, (_, i) => i + 1).filter(
+        (shelf) => !occupied.has(shelf),
+    );
+}
+
+function nextEmptyShelf(module: number): number | null {
+    return emptyShelvesInModule(module)[0] ?? null;
+}
+
+/** Módulos (1..currentModules) totalmente vazios. */
+function emptyModules(): number[] {
+    return Array.from(
+        { length: currentModules.value },
+        (_, i) => i + 1,
+    ).filter((m) => moduleSlotCount(m) === 0);
+}
+
+function isModuleComplete(module: number): boolean {
+    return moduleSlotCount(module) >= numShelves.value && numShelves.value > 0;
+}
+
+/** Slots de configuração de um módulo, prontos para replicar em outro módulo. */
+function moduleSlotsConfig(module: number): PlanogramTemplateSlot[] {
+    return (currentSubtemplate.value?.slots ?? []).filter(
+        (s) => s.module_number === module,
+    );
+}
+
+const copyPromptContent = computed<{
+    title: string;
+    description: string;
+    actions: CopyPromptAction[];
+}>(() => {
+    const module = copyPromptModule.value;
+
+    if (copyPromptKind.value === 'shelves' && module !== null) {
+        const actions: CopyPromptAction[] = [
+            { key: 'shelves-all', label: 'Copiar e fechar' },
+        ];
+
+        if (nextEmptyShelf(module) !== null) {
+            actions.push({
+                key: 'shelves-next',
+                label: 'Copiar e editar a próxima',
+                variant: 'outline',
+            });
+        }
+
+        actions.push({ key: 'dismiss', label: 'Agora não', variant: 'ghost' });
+
+        return {
+            title: 'Copiar configuração para as outras prateleiras?',
+            description:
+                'A mesma configuração (incluindo a categoria) será aplicada às prateleiras vazias deste módulo. Você pode ajustar cada uma depois.',
+            actions,
+        };
+    }
+
+    return {
+        title: 'Copiar configuração deste módulo para os outros?',
+        description:
+            'Os slots deste módulo serão replicados para os módulos ainda vazios.',
+        actions: [
+            { key: 'module-next', label: 'Próximo módulo' },
+            {
+                key: 'module-all',
+                label: 'Todos os módulos vazios',
+                variant: 'outline',
+            },
+            { key: 'dismiss', label: 'Agora não', variant: 'ghost' },
+        ],
+    };
+});
+
+function endCascade(): void {
+    cascadeActive.value = false;
+    cascadeModule.value = null;
+}
+
+/** Após salvar um slot novo, decide qual aviso de cópia mostrar. */
+function maybePromptAfterSave(module: number, wasFirstSlot: boolean): void {
+    const inCascade = cascadeActive.value && cascadeModule.value === module;
+
+    if (
+        (wasFirstSlot || inCascade) &&
+        emptyShelvesInModule(module).length > 0
+    ) {
+        copyPromptKind.value = 'shelves';
+        copyPromptModule.value = module;
+        copyPromptOpen.value = true;
+
+        return;
+    }
+
+    endCascade();
+    maybePromptModule(module);
+}
+
+function maybePromptModule(module: number): void {
+    if (
+        currentModules.value > 1 &&
+        isModuleComplete(module) &&
+        emptyModules().length > 0
+    ) {
+        copyPromptKind.value = 'module';
+        copyPromptModule.value = module;
+        copyPromptOpen.value = true;
+    }
+}
+
+function bulkCopy(slots: SlotDraft[], onDone?: () => void): void {
+    const subtemplate = currentSubtemplate.value;
+
+    if (!subtemplate || slots.length === 0) {
+        return;
+    }
+
+    copyBusy.value = true;
+    router.post(
+        `${baseUrl.value}/subtemplates/${subtemplate.id}/slots/bulk`,
+        { slots },
+        {
+            preserveState: true,
+            only: ['subtemplates'],
+            onError: (errs) => {
+                const first = Object.values(errs)[0];
+                if (first) toast.error(first);
+            },
+            onSuccess: () => {
+                onDone?.();
+            },
+            onFinish: () => {
+                copyBusy.value = false;
+            },
+        },
+    );
+}
+
+function onCopyPromptAction(key: string): void {
+    const module = copyPromptModule.value;
+    const source = copySourceDraft.value;
+
+    if (key === 'dismiss' || module === null) {
+        copyPromptOpen.value = false;
+        endCascade();
+
+        return;
+    }
+
+    if (key === 'shelves-all' && source) {
+        const slots = emptyShelvesInModule(module).map((shelf) => ({
+            ...source,
+            module_number: module,
+            shelf_order: shelf,
+        }));
+        copyPromptOpen.value = false;
+        endCascade();
+        bulkCopy(slots, () => maybePromptModule(module));
+
+        return;
+    }
+
+    if (key === 'shelves-next' && source) {
+        const next = nextEmptyShelf(module);
+        if (next === null) {
+            copyPromptOpen.value = false;
+            endCascade();
+
+            return;
+        }
+
+        cascadeActive.value = true;
+        cascadeModule.value = module;
+        copyPromptOpen.value = false;
+        editingModule.value = module;
+        editingShelf.value = next;
+        editingSlot.value = {
+            ...source,
+            module_number: module,
+            shelf_order: next,
+        };
+        slotEditorOpen.value = true;
+
+        return;
+    }
+
+    if (key === 'module-next' || key === 'module-all') {
+        const targets =
+            key === 'module-next' ? emptyModules().slice(0, 1) : emptyModules();
+        const sourceSlots = moduleSlotsConfig(module);
+        const slots = targets.flatMap((target) =>
+            sourceSlots.map((slot) => ({
+                ...(slot as unknown as SlotDraft),
+                module_number: target,
+            })),
+        );
+        copyPromptOpen.value = false;
+        bulkCopy(slots);
+    }
+}
+
+// Encerra a cascata se o editor for fechado sem salvar (cancelar).
+watch(slotEditorOpen, (open) => {
+    if (open) {
+        return;
+    }
+
+    if (slotSaveInFlight.value) {
+        slotSaveInFlight.value = false;
+
+        return;
+    }
+
+    endCascade();
+});
+
 function openSlotEditor(
     module: number,
     shelf: number,
@@ -240,6 +487,11 @@ function openSlotEditor(
 function saveSlot(
     draft: Omit<PlanogramTemplateSlot, 'id' | 'subtemplate_id' | 'ordering'>,
 ): void {
+    slotSaveInFlight.value = true;
+
+    const module = draft.module_number;
+    const wasFirstSlot = moduleSlotCount(module) === 0;
+
     const existingSlot = currentSubtemplate.value?.slots.find(
         (s) =>
             s.module_number === draft.module_number &&
@@ -287,6 +539,10 @@ function saveSlot(
                     const first = Object.values(errs)[0];
                     if (first) toast.error(first);
                 },
+                onSuccess: () => {
+                    copySourceDraft.value = { ...draft } as SlotDraft;
+                    maybePromptAfterSave(module, wasFirstSlot);
+                },
             },
         );
     } else {
@@ -319,6 +575,10 @@ function saveSlot(
                             onError: (errs) => {
                                 const first = Object.values(errs)[0];
                                 if (first) toast.error(first);
+                            },
+                            onSuccess: () => {
+                                copySourceDraft.value = { ...draft } as SlotDraft;
+                                maybePromptAfterSave(module, wasFirstSlot);
                             },
                         },
                     );
@@ -699,5 +959,14 @@ const breadcrumbs = [
         :kind="confirmDialogContent.kind"
         :busy="confirmDialogBusy"
         @confirm="confirmSlotAction"
+    />
+
+    <SlotCopyPromptDialog
+        v-model:open="copyPromptOpen"
+        :title="copyPromptContent.title"
+        :description="copyPromptContent.description"
+        :actions="copyPromptContent.actions"
+        :busy="copyBusy"
+        @action="onCopyPromptAction"
     />
 </template>

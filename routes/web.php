@@ -331,6 +331,8 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
             ->name('planogram-templates.subtemplates.slot-defaults.update');
         Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots', [TemplateSlotController::class, 'storeSlot'])
             ->name('planogram-templates.slots.store');
+        Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots/bulk', [TemplateSlotController::class, 'bulkStoreSlots'])
+            ->name('planogram-templates.slots.bulk');
         Route::post('planogram-templates/{planogramTemplate}/slots/reorder', [TemplateSlotController::class, 'reorder'])
             ->name('planogram-templates.slots.reorder');
         Route::get('planogram-templates/{planogramTemplate}/slots/products', [TemplateSlotController::class, 'slotProducts'])

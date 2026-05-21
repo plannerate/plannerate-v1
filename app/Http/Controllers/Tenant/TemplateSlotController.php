@@ -188,6 +188,25 @@ class TemplateSlotController extends Controller
         ]);
     }
 
+    public function bulkStoreSlots(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
+    {
+        unset($subdomain);
+        $this->authorize('update', $planogramTemplate);
+
+        $validated = $this->service->validateBulkSlots($request);
+
+        $this->service->bulkStoreSlots($planogramSubtemplate, $validated['slots'], [
+            'tenant_id' => $this->tenantId(),
+        ]);
+
+        $planogramTemplate->load(['subtemplates.slots.category']);
+
+        return redirect()->route('tenant.planogram-templates.slots.index', [
+            'subdomain' => $this->tenantSubdomain(),
+            'planogramTemplate' => $planogramTemplate->id,
+        ]);
+    }
+
     public function updateSlot(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramTemplateSlot $planogramTemplateSlot): RedirectResponse
     {
         unset($subdomain);

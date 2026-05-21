@@ -666,7 +666,184 @@ test('clonar subtemplate para módulos já existente retorna erro de validação
     $response->assertSessionHasErrors(['target_modules']);
 });
 
+test('bulk endpoint copia configuração de um slot para várias prateleiras', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForTemplates('tpl-bulk-shelves');
+    assignTenantAdminRoleForTemplates($user, $tenant->id);
+
+    $template = PlanogramTemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'code' => 'BULK-SHELVES',
+        'name' => 'BULK-SHELVES',
+        'department' => 'TEST',
+        'is_active' => true,
+    ]);
+
+    $subtemplate = PlanogramSubtemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'template_id' => $template->id,
+        'code' => 'BULK-SHELVES-1M',
+        'num_modules' => 1,
+        'is_active' => true,
+    ]);
+
+    $base = bulkSlotPayload(1, 1);
+    $slots = [
+        $base,
+        [...$base, 'shelf_order' => 2],
+        [...$base, 'shelf_order' => 3],
+    ];
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-bulk-shelves.'.config('app.landlord_domain')])
+        ->post(
+            route('tenant.planogram-templates.slots.bulk', [
+                'subdomain' => 'tpl-bulk-shelves',
+                'planogramTemplate' => $template->id,
+                'planogramSubtemplate' => $subtemplate->id,
+            ], false),
+            ['slots' => $slots],
+        );
+
+    $response->assertRedirect(route('tenant.planogram-templates.slots.index', [
+        'subdomain' => 'tpl-bulk-shelves',
+        'planogramTemplate' => $template->id,
+    ], false));
+
+    expect(PlanogramTemplateSlot::withoutGlobalScopes()->where('subtemplate_id', $subtemplate->id)->count())->toBe(3);
+});
+
+test('bulk endpoint faz upsert — sobrescreve slot já existente na posição', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForTemplates('tpl-bulk-upsert');
+    assignTenantAdminRoleForTemplates($user, $tenant->id);
+
+    $template = PlanogramTemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'code' => 'BULK-UPSERT',
+        'name' => 'BULK-UPSERT',
+        'department' => 'TEST',
+        'is_active' => true,
+    ]);
+
+    $subtemplate = PlanogramSubtemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'template_id' => $template->id,
+        'code' => 'BULK-UPSERT-1M',
+        'num_modules' => 1,
+        'is_active' => true,
+    ]);
+
+    PlanogramTemplateSlot::query()->create([
+        'tenant_id' => $tenant->id,
+        'subtemplate_id' => $subtemplate->id,
+        'module_number' => 1,
+        'shelf_order' => 1,
+        'min_facings' => 1,
+        'priority' => 1,
+        'price_order' => 'none',
+        'size_order' => 'none',
+        'brand_exposure' => 'mixed',
+        'flavor_exposure' => 'mixed',
+        'space_fallback' => 'skip',
+        'use_target_stock' => false,
+        'ordering' => 1,
+    ]);
+
+    $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-bulk-upsert.'.config('app.landlord_domain')])
+        ->post(
+            route('tenant.planogram-templates.slots.bulk', [
+                'subdomain' => 'tpl-bulk-upsert',
+                'planogramTemplate' => $template->id,
+                'planogramSubtemplate' => $subtemplate->id,
+            ], false),
+            ['slots' => [[...bulkSlotPayload(1, 1), 'min_facings' => 4, 'max_facings' => 8]]],
+        );
+
+    $slots = PlanogramTemplateSlot::withoutGlobalScopes()->where('subtemplate_id', $subtemplate->id)->get();
+
+    expect($slots)->toHaveCount(1);
+    expect($slots->first()->min_facings)->toBe(4);
+});
+
+test('bulk endpoint replica todos os slots de um módulo para outro módulo', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForTemplates('tpl-bulk-module');
+    assignTenantAdminRoleForTemplates($user, $tenant->id);
+
+    $template = PlanogramTemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'code' => 'BULK-MODULE',
+        'name' => 'BULK-MODULE',
+        'department' => 'TEST',
+        'is_active' => true,
+    ]);
+
+    $subtemplate = PlanogramSubtemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'template_id' => $template->id,
+        'code' => 'BULK-MODULE-2M',
+        'num_modules' => 2,
+        'is_active' => true,
+    ]);
+
+    // Módulo 1 com 2 prateleiras
+    $slots = [
+        bulkSlotPayload(1, 1),
+        [...bulkSlotPayload(1, 2)],
+    ];
+    $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-bulk-module.'.config('app.landlord_domain')])
+        ->post(route('tenant.planogram-templates.slots.bulk', [
+            'subdomain' => 'tpl-bulk-module',
+            'planogramTemplate' => $template->id,
+            'planogramSubtemplate' => $subtemplate->id,
+        ], false), ['slots' => $slots]);
+
+    // Replica para o módulo 2
+    $moduleCopy = [
+        [...bulkSlotPayload(2, 1)],
+        [...bulkSlotPayload(2, 2)],
+    ];
+    $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-bulk-module.'.config('app.landlord_domain')])
+        ->post(route('tenant.planogram-templates.slots.bulk', [
+            'subdomain' => 'tpl-bulk-module',
+            'planogramTemplate' => $template->id,
+            'planogramSubtemplate' => $subtemplate->id,
+        ], false), ['slots' => $moduleCopy]);
+
+    expect(PlanogramTemplateSlot::withoutGlobalScopes()->where('subtemplate_id', $subtemplate->id)->where('module_number', 2)->count())->toBe(2);
+    expect(PlanogramTemplateSlot::withoutGlobalScopes()->where('subtemplate_id', $subtemplate->id)->count())->toBe(4);
+});
+
 // ── helpers ──────────────────────────────────────────────────────────────────
+
+function bulkSlotPayload(int $module, int $shelf): array
+{
+    return [
+        'module_number' => $module,
+        'shelf_order' => $shelf,
+        'category_id' => null,
+        'min_facings' => 1,
+        'max_facings' => 5,
+        'priority' => 1,
+        'price_order' => 'none',
+        'size_order' => 'none',
+        'brand_exposure' => 'horizontal',
+        'flavor_exposure' => 'horizontal',
+        'space_fallback' => 'reduce_c',
+        'use_target_stock' => false,
+        'facing_expansion' => 'none',
+    ];
+}
 
 function makeTenantForTemplates(string $subdomain): Tenant
 {

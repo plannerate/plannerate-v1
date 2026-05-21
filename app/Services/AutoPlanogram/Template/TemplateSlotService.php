@@ -7,42 +7,78 @@ use App\Enums\ZonePriority;
 use App\Models\PlanogramRejectedProduct;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 final class TemplateSlotService
 {
+    /**
+     * Regras de validação de um slot, com prefixo opcional para validação em lote.
+     *
+     * @return array<string, array<int, string>>
+     */
+    private function slotRules(string $prefix = ''): array
+    {
+        return [
+            "{$prefix}module_number" => ['required', 'integer', 'min:1', 'max:6'],
+            "{$prefix}shelf_order" => ['required', 'integer', 'min:1', 'max:10'],
+            "{$prefix}category_id" => ['nullable', 'string', 'max:26'],
+            "{$prefix}min_facings" => ['required', 'integer', 'min:1', 'max:20'],
+            "{$prefix}max_facings" => ['required', 'integer', 'min:1', 'max:20'],
+            "{$prefix}priority" => ['required', 'integer', 'min:1', 'max:10'],
+            "{$prefix}price_order" => ['required', 'string', 'in:asc,desc,none'],
+            "{$prefix}size_order" => ['required', 'string', 'in:asc,desc,none'],
+            "{$prefix}brand_exposure" => ['required', 'string', 'in:vertical,horizontal,mixed'],
+            "{$prefix}flavor_exposure" => ['required', 'string', 'in:vertical,horizontal,mixed'],
+            "{$prefix}space_fallback" => ['required', 'string', 'in:reduce_c,reduce_facings,skip'],
+            "{$prefix}use_target_stock" => ['boolean'],
+            "{$prefix}facing_expansion" => ['required', 'string', 'in:none,score,current_stock,target_stock,equal'],
+            "{$prefix}role_override" => ['nullable', 'string', 'in:destino,rotina,conveniencia,impulso,sazonal,complementar'],
+            "{$prefix}visual_criteria" => ['nullable', 'array'],
+            "{$prefix}visual_criteria.*.key" => ['required_with:'."{$prefix}visual_criteria", 'string', 'in:marca,preco,tamanho,score_abc,margem,embalagem'],
+            "{$prefix}visual_criteria.*.direction" => ['required_with:'."{$prefix}visual_criteria", 'string', 'in:asc,desc,none'],
+            "{$prefix}visual_criteria.*.packaging_order" => ['nullable', 'array'],
+            "{$prefix}visual_criteria.*.packaging_order.*" => ['string', 'max:100'],
+            "{$prefix}max_share_per_sku" => ['nullable', 'integer', 'min:1', 'max:100'],
+            "{$prefix}max_share_per_brand" => ['nullable', 'integer', 'min:1', 'max:100'],
+            "{$prefix}max_share_per_subcategory" => ['nullable', 'integer', 'min:1', 'max:100'],
+        ];
+    }
+
     /** @return array<string, mixed> */
     public function validateSlot(Request $request): array
     {
-        $validated = $request->validate([
-            'module_number' => ['required', 'integer', 'min:1', 'max:6'],
-            'shelf_order' => ['required', 'integer', 'min:1', 'max:10'],
-            'category_id' => ['nullable', 'string', 'max:26'],
-            'min_facings' => ['required', 'integer', 'min:1', 'max:20'],
-            'max_facings' => ['required', 'integer', 'min:1', 'max:20'],
-            'priority' => ['required', 'integer', 'min:1', 'max:10'],
-            'price_order' => ['required', 'string', 'in:asc,desc,none'],
-            'size_order' => ['required', 'string', 'in:asc,desc,none'],
-            'brand_exposure' => ['required', 'string', 'in:vertical,horizontal,mixed'],
-            'flavor_exposure' => ['required', 'string', 'in:vertical,horizontal,mixed'],
-            'space_fallback' => ['required', 'string', 'in:reduce_c,reduce_facings,skip'],
-            'use_target_stock' => ['boolean'],
-            'facing_expansion' => ['required', 'string', 'in:none,score,current_stock,target_stock,equal'],
-            'role_override' => ['nullable', 'string', 'in:destino,rotina,conveniencia,impulso,sazonal,complementar'],
-            'visual_criteria' => ['nullable', 'array'],
-            'visual_criteria.*.key' => ['required_with:visual_criteria', 'string', 'in:marca,preco,tamanho,score_abc,margem,embalagem'],
-            'visual_criteria.*.direction' => ['required_with:visual_criteria', 'string', 'in:asc,desc,none'],
-            'visual_criteria.*.packaging_order' => ['nullable', 'array'],
-            'visual_criteria.*.packaging_order.*' => ['string', 'max:100'],
-            'max_share_per_sku' => ['nullable', 'integer', 'min:1', 'max:100'],
-            'max_share_per_brand' => ['nullable', 'integer', 'min:1', 'max:100'],
-            'max_share_per_subcategory' => ['nullable', 'integer', 'min:1', 'max:100'],
-        ]);
+        $validated = $request->validate($this->slotRules());
 
         if ((int) ($validated['max_facings'] ?? 1) < (int) ($validated['min_facings'] ?? 1)) {
             throw ValidationException::withMessages([
                 'max_facings' => ['Frentes máximas deve ser maior ou igual às frentes mínimas.'],
             ]);
+        }
+
+        return $validated;
+    }
+
+    /**
+     * Valida a criação em lote de slots (cópia em cascata para prateleiras/módulos).
+     *
+     * @return array{slots: array<int, array<string, mixed>>}
+     */
+    public function validateBulkSlots(Request $request): array
+    {
+        $rules = [
+            'slots' => ['required', 'array', 'min:1', 'max:60'],
+            ...$this->slotRules('slots.*.'),
+        ];
+
+        $validated = $request->validate($rules);
+
+        foreach ($validated['slots'] as $index => $slot) {
+            if ((int) ($slot['max_facings'] ?? 1) < (int) ($slot['min_facings'] ?? 1)) {
+                throw ValidationException::withMessages([
+                    "slots.{$index}.max_facings" => ['Frentes máximas deve ser maior ou igual às frentes mínimas.'],
+                ]);
+            }
         }
 
         return $validated;
@@ -138,6 +174,40 @@ final class TemplateSlotService
         ]);
 
         $this->updateSubtemplateSlotDefaults($subtemplate, $validated);
+    }
+
+    /**
+     * Cria/sobrescreve vários slots de uma vez (cópia em cascata).
+     *
+     * @param  array<int, array<string, mixed>>  $slots
+     * @param  array<string, mixed>  $extra
+     */
+    public function bulkStoreSlots(Model $subtemplate, array $slots, array $extra = []): void
+    {
+        if ($slots === []) {
+            return;
+        }
+
+        DB::transaction(function () use ($subtemplate, $slots, $extra): void {
+            $nextOrdering = (int) ($subtemplate->slots()->max('ordering')) + 1;
+
+            foreach ($slots as $slot) {
+                $subtemplate->slots()
+                    ->where('module_number', $slot['module_number'])
+                    ->where('shelf_order', $slot['shelf_order'])
+                    ->delete();
+
+                $subtemplate->slots()->create([
+                    ...$slot,
+                    ...$extra,
+                    'ordering' => $nextOrdering,
+                ]);
+
+                $nextOrdering++;
+            }
+
+            $this->updateSubtemplateSlotDefaults($subtemplate, $slots[0]);
+        });
     }
 
     /** @param array<string, mixed> $validated */
