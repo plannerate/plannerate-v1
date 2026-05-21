@@ -2,6 +2,7 @@ import { onMounted, reactive, ref, watch  } from 'vue';
 import type {Ref} from 'vue';
 import { products as productsRoute } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
 import { useT } from '@/composables/useT';
+import { toast } from 'vue-sonner';
 import type { Category, Product } from '@/types/planogram';
 
 interface UseProductsPanelOptions {
@@ -89,6 +90,7 @@ throw new Error(t('plannerate.composables.products_panel.failed_load_products'))
             usedCount.value = data.used_count;
         } catch (error) {
             console.error('Error loading products:', error);
+            toast.error(t('plannerate.composables.products_panel.failed_load_products'));
         } finally {
             isLoading.value = false;
             isLoadingMore.value = false;

@@ -1,53 +1,3 @@
-    /**
-     * Inverte a ordem dos segments de uma shelf
-     */
-    function invertSegmentsOrder(
-        shelfId: string,
-        recordChange: (change: any) => void,
-    ): void {
-        const found = findShelfById(shelfId);
-
-        if (!found) {
-return;
-}
-
-        const { shelf, section } = found;
-
-        if (!shelf.segments || shelf.segments.length < 2) {
-return;
-}
-
-        // Filtra segmentos não deletados e inverte
-        const nonDeleted = shelf.segments.filter((s: any) => !s.deleted_at);
-        const reversed = [...nonDeleted].reverse();
-
-        // Atualiza ordering e posição no array
-        reversed.forEach((segment, idx) => {
-            segment.ordering = idx + 1;
-        });
-
-        // Substitui apenas os segmentos não deletados, mantendo os deletados nas mesmas posições
-        let revIdx = 0;
-        shelf.segments = shelf.segments.map((s) => {
-            if (!s.deleted_at) {
-                return reversed[revIdx++];
-            }
-
-            return s;
-        });
-        shelf.segments = [...shelf.segments];
-        section.shelves = [...section.shelves];
-
-        // Registra mudança para cada segmento
-        reversed.forEach((segment) => {
-            recordChange({
-                type: 'segment_update',
-                entityType: 'segment',
-                entityId: segment.id,
-                data: { ordering: segment.ordering },
-            });
-        });
-    }
 import { ulid } from 'ulid';
 import { toast } from 'vue-sonner';
 import type { Layer, Segment, Shelf } from '@/types/planogram';
@@ -566,6 +516,60 @@ targetSection.shelves = [];
         });
 
         return true;
+    }
+
+    /**
+     * Inverte a ordem dos segmentos de uma prateleira.
+     * Preserva segmentos deletados em suas posições; apenas os ativos são reordenados.
+     * @param shelfId - ID da prateleira a inverter
+     * @param recordChange - Função para registrar mudança no histórico
+     */
+    function invertSegmentsOrder(
+        shelfId: string,
+        recordChange: (change: any) => void,
+    ): void {
+        const found = findShelfById(shelfId);
+
+        if (!found) {
+            return;
+        }
+
+        const { shelf, section } = found;
+
+        if (!shelf.segments || shelf.segments.length < 2) {
+            return;
+        }
+
+        // Filtra segmentos não deletados e inverte
+        const nonDeleted = shelf.segments.filter((s: any) => !s.deleted_at);
+        const reversed = [...nonDeleted].reverse();
+
+        // Atualiza ordering de cada segmento invertido
+        reversed.forEach((segment, idx) => {
+            segment.ordering = idx + 1;
+        });
+
+        // Substitui apenas os segmentos não deletados, mantendo os deletados nas mesmas posições
+        let revIdx = 0;
+        shelf.segments = shelf.segments.map((s: any) => {
+            if (!s.deleted_at) {
+                return reversed[revIdx++];
+            }
+
+            return s;
+        });
+        shelf.segments = [...shelf.segments];
+        section.shelves = [...section.shelves];
+
+        // Registra mudança para cada segmento reordenado
+        reversed.forEach((segment) => {
+            recordChange({
+                type: 'segment_update',
+                entityType: 'segment',
+                entityId: segment.id,
+                data: { ordering: segment.ordering },
+            });
+        });
     }
 
     return {

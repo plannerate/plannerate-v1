@@ -48,6 +48,7 @@ import {
 } from './editor/useSegmentOperations';
 
 import { useShelfOperations } from './editor/useShelfOperations';
+import type { SnapshotState } from './editor/useSnapshotTypes';
 
 // ============================================================================
 // COMPOSABLE
@@ -74,7 +75,7 @@ export function usePlanogramEditor() {
     /**
      * Captura o estado ANTES da mudança para histórico
      */
-    function captureBeforeState(snapshot: OptimisticSnapshot): any {
+    function captureBeforeState(snapshot: OptimisticSnapshot): SnapshotState {
         if (!currentGondola.value) {
             return null;
         }
@@ -176,7 +177,7 @@ export function usePlanogramEditor() {
     /**
      * Captura o estado DEPOIS da mudança para histórico
      */
-    function captureAfterState(snapshot: OptimisticSnapshot, beforeState: any): any {
+    function captureAfterState(snapshot: OptimisticSnapshot, beforeState: SnapshotState): SnapshotState {
         if (!currentGondola.value || !beforeState) {
             return null;
         }
@@ -214,35 +215,51 @@ export function usePlanogramEditor() {
 
                     break;
 
-                case 'segment_transfer':
-                    // Para transfer, captura estado completo DEPOIS
-                    if (beforeState.sourceShelfId && beforeState.targetShelfId) {
-                        const sourceShelf = findShelfById(beforeState.sourceShelfId);
-                        const targetShelf = findShelfById(beforeState.targetShelfId);
+                case 'segment_transfer': {
+                    // Para transfer, captura estado completo DEPOIS.
+                    // beforeState precisa ter sourceShelfId/targetShelfId (SegmentTransferAfterState)
+                    if (
+                        beforeState !== null &&
+                        typeof beforeState === 'object' &&
+                        'sourceShelfId' in beforeState
+                    ) {
+                        // Asserção segura: o in-guard acima garante a forma correta
+                        const state = beforeState as import('./editor/useSnapshotTypes').SegmentTransferAfterState;
+                        const sourceShelf = findShelfById(state.sourceShelfId);
+                        const targetShelf = findShelfById(state.targetShelfId);
 
                         return {
-                            sourceShelfId: beforeState.sourceShelfId,
-                            targetShelfId: beforeState.targetShelfId,
-                            segmentId: beforeState.segmentId,
+                            sourceShelfId: state.sourceShelfId,
+                            targetShelfId: state.targetShelfId,
+                            segmentId: state.segmentId,
                             sourceShelfSegments: sourceShelf ? history.cloneState(sourceShelf.shelf.segments) : [],
                             targetShelfSegments: targetShelf ? history.cloneState(targetShelf.shelf.segments) : [],
                         };
                     }
 
                     break;
+                }
 
-                case 'segment_copy':
-                    // Para copy, captura estado DEPOIS da prateleira de destino
-                    if (beforeState.targetShelfId) {
-                        const targetShelf = findShelfById(beforeState.targetShelfId);
+                case 'segment_copy': {
+                    // Para copy, captura estado DEPOIS da prateleira de destino.
+                    // beforeState precisa ter targetShelfId (SegmentCopyAfterState ou SegmentTransferAfterState)
+                    if (
+                        beforeState !== null &&
+                        typeof beforeState === 'object' &&
+                        'targetShelfId' in beforeState
+                    ) {
+                        // Asserção segura: o in-guard acima garante a forma correta
+                        const state = beforeState as import('./editor/useSnapshotTypes').SegmentCopyAfterState;
+                        const targetShelf = findShelfById(state.targetShelfId);
 
                         return {
-                            targetShelfId: beforeState.targetShelfId,
+                            targetShelfId: state.targetShelfId,
                             targetShelfSegments: targetShelf ? history.cloneState(targetShelf.shelf.segments) : [],
                         };
                     }
 
                     break;
+                }
 
                 case 'section_update':
                     if (snapshot.sectionId) {
@@ -321,12 +338,12 @@ export function usePlanogramEditor() {
     }): T | null {
         try {
             // Captura estado ANTES
-            let beforeState: any = null;
+            let beforeState: SnapshotState = null;
 
             if (historySnapshot) {
                 // Se beforeState já foi passado manualmente, usa ele
                 if (historySnapshot.beforeState) {
-                    beforeState = historySnapshot.beforeState;
+                    beforeState = historySnapshot.beforeState as SnapshotState;
                 } else {
                     beforeState = captureBeforeState(historySnapshot);
                 }
@@ -338,7 +355,7 @@ export function usePlanogramEditor() {
             // Captura estado DEPOIS e registra no histórico
             if (historySnapshot && beforeState) {
                 // Se afterState já foi passado manualmente, usa ele
-                let afterState: any;
+                let afterState: SnapshotState;
 
                 if (historySnapshot.afterState) {
                     afterState = historySnapshot.afterState;
