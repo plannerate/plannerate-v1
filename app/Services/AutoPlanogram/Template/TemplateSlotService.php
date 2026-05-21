@@ -2,6 +2,7 @@
 
 namespace App\Services\AutoPlanogram\Template;
 
+use App\Enums\FlowDirection;
 use App\Enums\ZonePriority;
 use App\Models\PlanogramRejectedProduct;
 use Illuminate\Database\Eloquent\Model;
@@ -76,6 +77,7 @@ final class TemplateSlotService
             'facing_expansion' => ['required', 'string', 'in:none,score,current_stock,target_stock,equal'],
             'hot_zone_priority' => ['nullable', 'string', "in:{$zonePriorityValues}"],
             'cold_zone_priority' => ['nullable', 'string', "in:{$zonePriorityValues}"],
+            'flow_direction' => ['nullable', 'string', 'in:'.implode(',', array_column(FlowDirection::cases(), 'value'))],
         ]);
 
         if ((int) ($validated['max_facings'] ?? 1) < (int) ($validated['min_facings'] ?? 1)) {
@@ -176,10 +178,11 @@ final class TemplateSlotService
     {
         $this->updateSubtemplateSlotDefaults($subtemplate, $validated);
 
-        // Zone priorities are separate columns, not part of slot_defaults JSON
+        // Zone priorities and flow direction are separate columns, not part of slot_defaults JSON
         $subtemplate->update([
             'hot_zone_priority' => $validated['hot_zone_priority'] ?? null,
             'cold_zone_priority' => $validated['cold_zone_priority'] ?? null,
+            'flow_direction' => $validated['flow_direction'] ?? null,
         ]);
     }
 
@@ -252,6 +255,7 @@ final class TemplateSlotService
                 'slot_defaults' => $sub->slot_defaults,
                 'hot_zone_priority' => $sub->hot_zone_priority?->value,
                 'cold_zone_priority' => $sub->cold_zone_priority?->value,
+                'flow_direction' => $sub->flow_direction?->value,
                 'slots' => $sub->slots->map(function (Model $slot) use ($rejectedCounts): array {
                     $category = $slot->relationLoaded('category') ? $slot->getRelation('category') : null;
 

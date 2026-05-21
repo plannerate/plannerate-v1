@@ -340,7 +340,7 @@ function saveCurrentModuleDefaults(
         | 'flavor_exposure'
         | 'space_fallback'
         | 'use_target_stock'
-    > & { hot_zone_priority?: string | null; cold_zone_priority?: string | null },
+    > & { hot_zone_priority?: string | null; cold_zone_priority?: string | null; flow_direction?: string | null },
 ): void {
     const subtemplate = currentSubtemplate.value;
 
@@ -687,6 +687,7 @@ const breadcrumbs = [
         :slot-defaults="currentSlotDefaults"
         :hot-zone-priority="currentSubtemplate?.hot_zone_priority ?? null"
         :cold-zone-priority="currentSubtemplate?.cold_zone_priority ?? null"
+        :flow-direction="currentSubtemplate?.flow_direction ?? null"
         @save="saveCurrentModuleDefaults"
     />
 

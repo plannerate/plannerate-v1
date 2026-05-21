@@ -4,6 +4,7 @@ namespace App\Services\AutoPlanogram\Placement;
 
 use App\Enums\BrandExposure;
 use App\Enums\FacingExpansion;
+use App\Enums\FlowDirection;
 use App\Enums\PlacementFailureReason;
 use App\Enums\PriceOrder;
 use App\Enums\SizeOrder;
@@ -62,6 +63,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /** Critério de priorização para zona fria (High + Low) */
     private ZonePriority $coldZonePriority = ZonePriority::None;
 
+    /** Sentido de leitura do cliente — espelha posições físicas quando RightToLeft */
+    private FlowDirection $flowDirection = FlowDirection::LeftToRight;
+
     public function __construct(
         private readonly ProductWidthResolver $widthResolver,
         private readonly ProductSizeResolver $sizeResolver,
@@ -107,6 +111,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
         $this->hotZonePriority = $subtemplate->hot_zone_priority ?? ZonePriority::None;
         $this->coldZonePriority = $subtemplate->cold_zone_priority ?? ZonePriority::None;
+        $this->flowDirection = $subtemplate->flow_direction ?? FlowDirection::LeftToRight;
 
         $placed = collect();
         $rejected = collect();
@@ -629,6 +634,22 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 ]),
             ));
             $x += $width;
+        }
+
+        // Espelhar posições físicas quando o fluxo é direita → esquerda
+        if ($this->flowDirection === FlowDirection::RightToLeft && $placed->isNotEmpty()) {
+            $totalWidth = (int) round($x);
+            $placed = $placed->map(fn (PlacedSegment $seg): PlacedSegment => new PlacedSegment(
+                sectionId: $seg->sectionId,
+                shelfId: $seg->shelfId,
+                ordering: $seg->ordering,
+                position: $totalWidth - $seg->position - $seg->width,
+                width: $seg->width,
+                distributedWidth: $seg->distributedWidth,
+                layers: $seg->layers,
+                isVerticalBlock: $seg->isVerticalBlock,
+                shelfLevel: $seg->shelfLevel,
+            ));
         }
 
         // Fallback only for NoHorizontalSpace — MissingDimensions must not be retried

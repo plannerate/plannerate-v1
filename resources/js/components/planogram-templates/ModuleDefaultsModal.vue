@@ -13,7 +13,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useT } from '@/composables/useT';
-import type { PlanogramSlotDefaults, PlanogramTemplateSlot, ZonePriority } from './types';
+import type { FlowDirection, PlanogramSlotDefaults, PlanogramTemplateSlot, ZonePriority } from './types';
 
 type ModuleDefaultsDraft = {
     category_id: string | null;
@@ -29,6 +29,7 @@ type ModuleDefaultsDraft = {
     facing_expansion: PlanogramTemplateSlot['facing_expansion'];
     hot_zone_priority: ZonePriority | null;
     cold_zone_priority: ZonePriority | null;
+    flow_direction: FlowDirection | null;
 };
 
 const props = defineProps<{
@@ -37,6 +38,7 @@ const props = defineProps<{
     slotDefaults?: PlanogramSlotDefaults | null;
     hotZonePriority?: ZonePriority | null;
     coldZonePriority?: ZonePriority | null;
+    flowDirection?: FlowDirection | null;
 }>();
 
 const emit = defineEmits<{
@@ -58,6 +60,7 @@ const draft = reactive<ModuleDefaultsDraft>({
     facing_expansion: 'none',
     hot_zone_priority: null,
     cold_zone_priority: null,
+    flow_direction: null,
 });
 
 watch(
@@ -80,6 +83,7 @@ watch(
         draft.facing_expansion = defaults?.facing_expansion ?? 'none';
         draft.hot_zone_priority = hotPriority ?? null;
         draft.cold_zone_priority = coldPriority ?? null;
+        draft.flow_direction = props.flowDirection ?? null;
     },
     { immediate: true },
 );
@@ -247,6 +251,41 @@ function saveDefaults(): void {
                         name="use_target_stock"
                         :label="t('planogram-templates.slot_editor.target_stock_label')"
                     />
+                </div>
+
+                <!-- Sentido de leitura do cliente -->
+                <div class="rounded-md border border-border p-3">
+                    <p class="mb-3 text-sm font-medium">Sentido de leitura</p>
+                    <p class="mb-3 text-xs text-muted-foreground">
+                        Define a direção do fluxo do cliente na frente da gôndola. Afeta a posição física dos
+                        produtos: "preço crescente no fluxo" coloca o produto mais barato no início do fluxo.
+                    </p>
+                    <div class="flex gap-2">
+                        <button
+                            type="button"
+                            class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm transition-colors"
+                            :class="
+                                !draft.flow_direction || draft.flow_direction === 'left_to_right'
+                                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                                    : 'border-border text-muted-foreground hover:border-primary/50'
+                            "
+                            @click="draft.flow_direction = 'left_to_right'"
+                        >
+                            <span>→</span> Esquerda → Direita <span class="ml-1 text-xs opacity-60">(padrão)</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm transition-colors"
+                            :class="
+                                draft.flow_direction === 'right_to_left'
+                                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                                    : 'border-border text-muted-foreground hover:border-primary/50'
+                            "
+                            @click="draft.flow_direction = 'right_to_left'"
+                        >
+                            <span>←</span> Direita → Esquerda
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Priorização por zona térmica -->

@@ -24,6 +24,7 @@ export type SlotFlavorExposure = 'vertical' | 'horizontal' | 'mixed';
 export type SlotSpaceFallback = 'reduce_c' | 'reduce_facings' | 'skip';
 export type SlotFacingExpansion = 'none' | 'score' | 'current_stock' | 'target_stock' | 'equal';
 export type CategoryRole = 'destino' | 'rotina' | 'conveniencia' | 'impulso' | 'sazonal' | 'complementar';
+export type FlowDirection = 'left_to_right' | 'right_to_left';
 
 export type PlanogramTemplateSlot = {
     id?: string;
@@ -76,6 +77,7 @@ export type PlanogramSubtemplate = {
     slot_defaults?: PlanogramSlotDefaults | null;
     hot_zone_priority?: ZonePriority | null;
     cold_zone_priority?: ZonePriority | null;
+    flow_direction?: FlowDirection | null;
     slots: PlanogramTemplateSlot[];
 };
 

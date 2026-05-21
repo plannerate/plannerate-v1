@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FlowDirection;
 use App\Enums\ZonePriority;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
@@ -27,6 +28,7 @@ class PlanogramSubtemplate extends Model
         'is_active',
         'hot_zone_priority',
         'cold_zone_priority',
+        'flow_direction',
     ];
 
     protected function casts(): array
@@ -37,6 +39,7 @@ class PlanogramSubtemplate extends Model
             'is_active' => 'boolean',
             'hot_zone_priority' => ZonePriority::class,
             'cold_zone_priority' => ZonePriority::class,
+            'flow_direction' => FlowDirection::class,
         ];
     }
 
