@@ -268,6 +268,12 @@ function saveSlot(
     router.put(`${baseUrl.value}/slots/${slot.id}`, draft, {
         preserveState: true,
         only: ['subtemplates'],
+        onSuccess: () => {
+            const targetSlotId = selectedSlotId.value ?? slot.id;
+            if (targetSlotId) {
+                selectSlotForProducts(targetSlotId);
+            }
+        },
     });
 }
 
