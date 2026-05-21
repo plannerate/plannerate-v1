@@ -93,8 +93,6 @@ class PlanogramSubtemplate extends Model
             foreach ($this->slots as $slot) {
                 $newSlot = $slot->replicate();
                 $newSlot->subtemplate_id = $clone->getKey();
-                $newSlot->category = is_string($newSlot->category) ? $newSlot->category : '';
-                $newSlot->subcategory = is_string($newSlot->subcategory) ? $newSlot->subcategory : '';
                 $newSlot->save();
             }
 

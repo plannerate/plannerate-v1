@@ -25,8 +25,6 @@ class PlanogramTemplateSlot extends Model
         'category_id',
         'module_number',
         'shelf_order',
-        'category',
-        'subcategory',
         'min_facings',
         'priority',
         'price_order',

@@ -19,7 +19,7 @@ final class TemplateExportService
 {
     public function exportTemplate(PlanogramTemplate $template): StreamedResponse
     {
-        $template->loadMissing(['subtemplates.slots']);
+        $template->loadMissing(['subtemplates.slots.category']);
 
         $spreadsheet = $this->buildSpreadsheet(collect([$template]));
         $filename = 'template_'.$template->code.'_'.now()->format('Y-m-d').'.xlsx';
@@ -29,7 +29,7 @@ final class TemplateExportService
 
     public function exportAll(string $tenantId, string $search = ''): StreamedResponse
     {
-        $templates = PlanogramTemplate::with(['subtemplates.slots'])
+        $templates = PlanogramTemplate::with(['subtemplates.slots.category'])
             ->where('tenant_id', $tenantId)
             ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search): void {
                 $w->where('code', 'like', '%'.$search.'%')
@@ -59,9 +59,9 @@ final class TemplateExportService
             'D' => 'Quantidade de módulos',
             'E' => 'Módulo',
             'F' => 'Posição prateleira',
-            'G' => 'Categoria',
-            'H' => 'Subcategoria',
-            'I' => 'Agrupamento de exposição',
+            'G' => 'Categoria (caminho)',
+            'H' => '',
+            'I' => 'Categoria (nome)',
             'J' => 'Frentes por SKU',
             'K' => 'Ordem preço',
             'L' => 'Ordem tamanho',
@@ -99,6 +99,9 @@ final class TemplateExportService
                 }
 
                 foreach ($subtemplate->slots as $slot) {
+                    $catName = $slot->category?->name ?? '';
+                    $catPath = $slot->category?->full_path ?? $catName;
+
                     $sheet->fromArray([
                         $template->code,
                         $template->department,
@@ -106,9 +109,9 @@ final class TemplateExportService
                         $subtemplate->num_modules,
                         $slot->module_number,
                         $slot->shelf_order,
-                        $slot->category,
-                        $slot->subcategory,
-                        $slot->category?->name,
+                        $catPath,
+                        '',
+                        $catName,
                         $slot->min_facings,
                         $this->priceOrderLabel($slot->price_order),
                         $this->sizeOrderLabel($slot->size_order),

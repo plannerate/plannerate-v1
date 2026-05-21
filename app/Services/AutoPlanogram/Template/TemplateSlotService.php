@@ -15,8 +15,6 @@ final class TemplateSlotService
             'module_number' => ['required', 'integer', 'min:1', 'max:6'],
             'shelf_order' => ['required', 'integer', 'min:1', 'max:10'],
             'category_id' => ['nullable', 'string', 'max:26'],
-            'category' => ['nullable', 'string', 'max:255'],
-            'subcategory' => ['nullable', 'string', 'max:255'],
             'min_facings' => ['required', 'integer', 'min:1', 'max:20'],
             'max_facings' => ['required', 'integer', 'min:1', 'max:20'],
             'priority' => ['required', 'integer', 'min:1', 'max:10'],
@@ -129,14 +127,6 @@ final class TemplateSlotService
      */
     private function normalizeSlotPayload(array $payload): array
     {
-        $payload['category'] = is_string($payload['category'] ?? null)
-            ? trim((string) $payload['category'])
-            : '';
-
-        $payload['subcategory'] = is_string($payload['subcategory'] ?? null)
-            ? trim((string) $payload['subcategory'])
-            : '';
-
         return $payload;
     }
 

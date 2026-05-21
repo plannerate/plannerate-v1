@@ -19,10 +19,10 @@ final class TemplateImportReport
     public array $warnings = [];
 
     /**
-     * Slots cuja categoria não foi resolvida pelo nome do grouping.
+     * Slots cuja categoria não foi resolvida pelo nome informado na planilha.
      * Precisam de ajuste manual no wizard de template.
      *
-     * @var list<array{grouping: string, module: int, shelf_order: int, sugestao: string}>
+     * @var list<array{category_name: string, module: int, shelf_order: int, sugestao: string}>
      */
     public array $slotsWithoutCategory = [];
 

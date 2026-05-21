@@ -99,19 +99,19 @@ final class TemplateImportService
                 $slotsUpdatedForSub = 0;
 
                 foreach ($slots as $row) {
-                    $grouping = trim((string) ($row['I'] ?? ''));
-                    if ($grouping === '') {
+                    $categoryName = trim((string) ($row['I'] ?? ''));
+                    if ($categoryName === '') {
                         continue;
                     }
 
                     $moduleNumber = (int) ($row['E'] ?? 1);
                     $shelfOrder = (int) ($row['F'] ?? 1);
 
-                    $categoryId = $this->resolveSlotCategory($grouping, $tenantId);
+                    $categoryId = $this->resolveSlotCategory($categoryName, $tenantId);
 
                     if ($categoryId === null) {
                         $report->slotsWithoutCategory[] = [
-                            'grouping' => $grouping,
+                            'category_name' => $categoryName,
                             'module' => $moduleNumber,
                             'shelf_order' => $shelfOrder,
                             'sugestao' => 'Configure manualmente no wizard de template',
@@ -127,8 +127,6 @@ final class TemplateImportService
                         [
                             'tenant_id' => $tenantId,
                             'category_id' => $categoryId,
-                            'category' => trim((string) ($row['G'] ?? '')),
-                            'subcategory' => trim((string) ($row['H'] ?? '')),
                             'min_facings' => max(1, (int) ($row['J'] ?? 1)),
                             'price_order' => $this->parsePriceOrder((string) ($row['K'] ?? '')),
                             'size_order' => $this->parseSizeOrder((string) ($row['L'] ?? '')),
@@ -164,9 +162,9 @@ final class TemplateImportService
         }
     }
 
-    private function resolveSlotCategory(string $grouping, string $tenantId): ?string
+    private function resolveSlotCategory(string $categoryName, string $tenantId): ?string
     {
-        $parts = explode('|', $grouping);
+        $parts = explode('|', $categoryName);
         $lastName = mb_strtolower(trim((string) end($parts)), 'UTF-8');
 
         $category = Category::withoutGlobalScopes()
@@ -178,7 +176,7 @@ final class TemplateImportService
             return $category->id;
         }
 
-        $fullName = mb_strtolower(trim($grouping), 'UTF-8');
+        $fullName = mb_strtolower(trim($categoryName), 'UTF-8');
 
         $category = Category::withoutGlobalScopes()
             ->where('tenant_id', $tenantId)
