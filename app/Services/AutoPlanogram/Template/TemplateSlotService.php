@@ -63,14 +63,28 @@ final class TemplateSlotService
     /** @param array<string, mixed> $extra */
     public function createSubtemplate(Model $template, int $numModules, array $extra = []): void
     {
-        $template->subtemplates()->firstOrCreate(
-            ['num_modules' => $numModules],
-            [
+        $existing = $template->subtemplates()
+            ->withTrashed()
+            ->where('num_modules', $numModules)
+            ->first();
+
+        if ($existing !== null) {
+            $existing->restore();
+            $existing->update([
                 ...$extra,
                 'code' => $template->code.'-'.$numModules.'M',
                 'is_active' => true,
-            ],
-        );
+            ]);
+
+            return;
+        }
+
+        $template->subtemplates()->create([
+            'num_modules' => $numModules,
+            ...$extra,
+            'code' => $template->code.'-'.$numModules.'M',
+            'is_active' => true,
+        ]);
     }
 
     /**

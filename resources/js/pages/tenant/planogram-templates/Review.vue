@@ -10,11 +10,9 @@ import ReviewSlotsList from '@/components/planogram-templates/ReviewSlotsList.vu
 import type {
     SlotAnalysisData,
     PlanogramSubtemplate,
-    PlanogramTemplateSlot,
     WizardStep,
 } from '@/components/planogram-templates/types';
 import WizardProgress from '@/components/planogram-templates/WizardProgress.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -270,17 +268,12 @@ const breadcrumbs = [
                 <ReviewSlotsList :slots="allSlots" :selected-slot-id="selectedSlotId" @select="selectSlotForProducts">
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="text-sm font-medium text-muted-foreground">Módulos:</span>
-                        <ModuleSelectorButtons :current-module="currentModules" @select="changeCurrentModule" />
-                        <Badge :variant="props.subtemplates.some((item) => item.num_modules === currentModules)
-                                ? 'default'
-                                : 'secondary'
-                            ">
-                            {{
-                                props.subtemplates.some((item) => item.num_modules === currentModules)
-                                    ? 'Configurado'
-                                    : 'Novo'
-                            }}
-                        </Badge>
+                        <ModuleSelectorButtons
+                            :current-module="currentModules"
+                            :subtemplates="props.subtemplates"
+                            :readonly="true"
+                            @select="changeCurrentModule"
+                        />
                     </div>
                 </ReviewSlotsList>
                 <ReviewSlotProductsPanel :selected-slot="selectedSlot" :analysis="slotAnalysis"

@@ -542,21 +542,10 @@ const breadcrumbs = [
                 >
                 <ModuleSelectorButtons
                     :current-module="currentModules"
+                    :subtemplates="props.subtemplates"
                     @select="selectModules"
+                    @add="selectModules"
                 />
-                <Badge
-                    :variant="
-                        subtemplateExists(currentModules)
-                            ? 'default'
-                            : 'secondary'
-                    "
-                >
-                    {{
-                        subtemplateExists(currentModules)
-                            ? 'Configurado'
-                            : 'Novo'
-                    }}
-                </Badge>
                 <Button
                     v-if="subtemplateExists(currentModules)"
                     variant="ghost"
