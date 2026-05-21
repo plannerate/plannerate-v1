@@ -83,6 +83,7 @@ function handleCardClick(_event: MouseEvent, product: RejectedProduct) {
                 category_id: product.category_id,
                 module_number: product.module_number,
                 shelf_order: product.shelf_order,
+                rejected_shelf_orders: product.rejected_shelf_orders,
             },
         });
 

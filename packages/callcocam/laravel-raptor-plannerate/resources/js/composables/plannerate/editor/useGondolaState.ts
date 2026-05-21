@@ -56,6 +56,7 @@ export interface RejectedProduct {
     category_id: string | null;
     module_number: number | null;
     shelf_order: number | null;
+    rejected_shelf_orders: number[] | null;
 }
 
 export const rejectedProducts = ref<RejectedProduct[]>([]);

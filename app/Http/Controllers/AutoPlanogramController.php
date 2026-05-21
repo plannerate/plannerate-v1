@@ -236,6 +236,7 @@ class AutoPlanogramController extends Controller
                 'category_id' => $r->category_id,
                 'module_number' => $r->module_number,
                 'shelf_order' => $r->shelf_order,
+                'rejected_shelf_orders' => $r->rejected_shelf_orders ?? [],
             ]);
 
         return response()->json(['data' => $rejected]);

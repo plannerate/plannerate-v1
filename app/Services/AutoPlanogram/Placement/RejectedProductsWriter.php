@@ -25,14 +25,25 @@ final class RejectedProductsWriter
         $now = now();
         $slotAnalysisIndex = $this->buildSlotAnalysisIndex($output->slotAnalysis);
 
-        $records = $output->rejectedProducts
+        // Agrupa por product_id para coletar todos os shelf_orders onde foi rejeitado
+        $byProduct = $output->rejectedProducts
             ->filter(fn ($r) => $r['product'] !== null)
-            ->map(function ($rejected) use ($planogramId, $gondolaId, $tenantId, $now, $slotAnalysisIndex): array {
-                $product = $rejected['product'];
-                $slotId = $rejected['slot_id'] ?? null;
+            ->groupBy(fn ($r) => $r['product']->id);
+
+        $records = $byProduct
+            ->map(function ($rejections) use ($planogramId, $gondolaId, $tenantId, $now, $slotAnalysisIndex): array {
+                $first = $rejections->first();
+                $product = $first['product'];
+                $slotId = $first['slot_id'] ?? null;
                 $slotData = $slotId ? ($slotAnalysisIndex[$slotId] ?? []) : [];
-                $categoryName = $slotData['category_name'] ?? null;
-                $categoryId = $slotData['category_id'] ?? null;
+
+                $allShelfOrders = $rejections
+                    ->map(fn ($r) => isset($r['slot_id']) ? ($slotAnalysisIndex[$r['slot_id']]['shelf_order'] ?? null) : null)
+                    ->filter(fn ($v) => $v !== null)
+                    ->unique()
+                    ->sort()
+                    ->values()
+                    ->all();
 
                 return [
                     'id' => (string) Str::ulid(),
@@ -45,12 +56,13 @@ final class RejectedProductsWriter
                     'image_url' => $product->image_url ?? null,
                     'product_width' => $product->width ?? null,
                     'product_height' => $product->height ?? null,
-                    'rejection_reason' => $rejected['reason']->value,
+                    'rejection_reason' => $first['reason']->value,
                     'slot_id' => $slotId,
-                    'category_name' => $categoryName,
-                    'category_id' => $categoryId,
+                    'category_name' => $slotData['category_name'] ?? null,
+                    'category_id' => $slotData['category_id'] ?? null,
                     'module_number' => $slotData['module_number'] ?? null,
                     'shelf_order' => $slotData['shelf_order'] ?? null,
+                    'rejected_shelf_orders' => json_encode($allShelfOrders),
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];

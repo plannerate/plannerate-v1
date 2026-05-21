@@ -29,6 +29,7 @@ class PlanogramRejectedProduct extends Model
         'category_id',
         'module_number',
         'shelf_order',
+        'rejected_shelf_orders',
     ];
 
     protected function casts(): array
@@ -39,6 +40,7 @@ class PlanogramRejectedProduct extends Model
             'product_height' => 'float',
             'module_number' => 'integer',
             'shelf_order' => 'integer',
+            'rejected_shelf_orders' => 'array',
         ];
     }
 

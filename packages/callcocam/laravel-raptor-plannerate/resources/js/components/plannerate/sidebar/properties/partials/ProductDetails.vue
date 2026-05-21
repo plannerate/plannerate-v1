@@ -20,10 +20,16 @@
                     Motivo:
                     <span class="font-medium">{{ rejectionDetails.reasonLabel }}</span>
                 </p>
-                <p v-if="rejectionDetails.moduleNumber !== null || rejectionDetails.shelfOrder !== null">
+                <p v-if="rejectionDetails.moduleNumber !== null || rejectionDetails.shelfOrders.length > 0">
                     Slot:
                     <span class="font-medium">
-                        M{{ rejectionDetails.moduleNumber ?? '-' }} • P{{ rejectionDetails.shelfOrder ?? '-' }}
+                        M{{ rejectionDetails.moduleNumber ?? '-' }} •
+                        <template v-if="rejectionDetails.shelfOrders.length > 1">
+                            {{ rejectionDetails.shelfOrders.map(s => 'P' + s).join(', ') }}
+                        </template>
+                        <template v-else>
+                            P{{ rejectionDetails.shelfOrders[0] ?? rejectionDetails.shelfOrder ?? '-' }}
+                        </template>
                     </span>
                 </p>
                 <p v-if="rejectionDetails.categoryName">
@@ -105,6 +111,7 @@ const rejectionDetails = computed(() => {
                 category_id?: string | null;
                 module_number?: number | null;
                 shelf_order?: number | null;
+                rejected_shelf_orders?: number[] | null;
             };
         }
         | undefined;
@@ -113,6 +120,13 @@ const rejectionDetails = computed(() => {
         return null;
     }
 
+    const shelfOrders: number[] =
+        Array.isArray(context.rejection.rejected_shelf_orders) && context.rejection.rejected_shelf_orders.length > 0
+            ? context.rejection.rejected_shelf_orders
+            : context.rejection.shelf_order !== null && context.rejection.shelf_order !== undefined
+              ? [context.rejection.shelf_order]
+              : [];
+
     return {
         reason: context.rejection.reason ?? 'unknown',
         reasonLabel: context.rejection.reason_label ?? 'Sem motivo',
@@ -120,6 +134,7 @@ const rejectionDetails = computed(() => {
         categoryId: context.rejection.category_id ?? null,
         moduleNumber: context.rejection.module_number ?? null,
         shelfOrder: context.rejection.shelf_order ?? null,
+        shelfOrders,
     };
 });
 
