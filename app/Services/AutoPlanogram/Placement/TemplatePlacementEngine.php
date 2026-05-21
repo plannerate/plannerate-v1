@@ -17,6 +17,7 @@ use App\Services\AutoPlanogram\DTO\PlacedLayer;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
+use App\Services\AutoPlanogram\ProductSizeResolver;
 use App\Services\AutoPlanogram\ProductWidthResolver;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
@@ -37,6 +38,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
     public function __construct(
         private readonly ProductWidthResolver $widthResolver,
+        private readonly ProductSizeResolver $sizeResolver,
         private readonly GreedyShelfPlacer $greedyPlacer,
     ) {}
 
@@ -273,7 +275,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
         if ($slot->size_order !== SizeOrder::None) {
             $sorted = $sorted->sortBy(
-                fn ($p) => $this->resolveProductSize($p),
+                fn ($p) => $this->sizeResolver->resolve($p),
                 SORT_NUMERIC,
                 $slot->size_order === SizeOrder::Desc,
             );
@@ -512,35 +514,6 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $cremalheiraWidth = (float) ($section->cremalheira_width ?? 0.0);
 
         return max(0.0, $sectionWidth - $cremalheiraWidth);
-    }
-
-    /**
-     * Resolve o tamanho de um produto para fins de ordenação.
-     * Tenta packaging_content ("500ml", "1kg") e cai em weight (decimal) como fallback.
-     */
-    private function resolveProductSize(mixed $product): float
-    {
-        $content = trim((string) ($product->packaging_content ?? ''));
-
-        if ($content !== '' && $content !== '0') {
-            return $this->parseSize($content);
-        }
-
-        return (float) ($product->weight ?? 0.0);
-    }
-
-    private function parseSize(string $content): float
-    {
-        preg_match('/[\d.]+/', $content, $matches);
-        $value = (float) ($matches[0] ?? 0);
-        $unit = strtolower((string) preg_replace('/[\d. ]+/', '', $content));
-
-        return match ($unit) {
-            'ml' => $value / 1000,
-            'g' => $value / 1000,
-            'l', 'kg' => $value,
-            default => $value,
-        };
     }
 
     private function recordSubtemplateUsed(string $planogramId, string $subtemplateId): void

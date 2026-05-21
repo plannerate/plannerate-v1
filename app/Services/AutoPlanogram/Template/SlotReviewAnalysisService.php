@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\PlanogramTemplateSlot;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Services\AutoPlanogram\ProductSizeResolver;
 use App\Services\AutoPlanogram\ProductWidthResolver;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
@@ -17,7 +18,10 @@ use Illuminate\Support\Facades\Storage;
 
 final readonly class SlotReviewAnalysisService
 {
-    public function __construct(private ProductWidthResolver $widthResolver) {}
+    public function __construct(
+        private ProductWidthResolver $widthResolver,
+        private ProductSizeResolver $sizeResolver,
+    ) {}
 
     /**
      * Simulates the full sequential allocation for this slot's category.
@@ -70,6 +74,7 @@ final readonly class SlotReviewAnalysisService
             ->select([
                 'id', 'name', 'ean', 'codigo_erp', 'brand',
                 'category_id', 'status', 'packaging_content',
+                'weight',
                 'url', 'width', 'height', 'depth', 'unit',
             ])
             ->when(
@@ -302,7 +307,7 @@ final readonly class SlotReviewAnalysisService
 
         if ($slot->size_order !== SizeOrder::None) {
             $sorted = $sorted->sortBy(
-                fn (Product $product): float => $this->parseSize((string) ($product->package_content ?? '0')),
+                fn (Product $product): float => $this->sizeResolver->resolve($product),
                 SORT_NUMERIC,
                 $slot->size_order === SizeOrder::Desc,
             );
@@ -321,20 +326,6 @@ final readonly class SlotReviewAnalysisService
         }
 
         return $sorted->values();
-    }
-
-    private function parseSize(string $content): float
-    {
-        preg_match('/[\d.]+/', $content, $matches);
-        $value = (float) ($matches[0] ?? 0);
-        $unit = strtolower((string) preg_replace('/[\d. ]+/', '', $content));
-
-        return match ($unit) {
-            'ml' => $value / 1000,
-            'g' => $value / 1000,
-            'l', 'kg' => $value,
-            default => $value,
-        };
     }
 
     private function formatDimensions(Product $product): string

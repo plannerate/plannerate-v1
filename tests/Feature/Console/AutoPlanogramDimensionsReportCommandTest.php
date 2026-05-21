@@ -1,22 +1,22 @@
 <?php
 
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 beforeEach(function (): void {
-    config(['multitenancy.tenant_database_connection_name' => null]);
+    config(['app.key' => 'base64:'.base64_encode(random_bytes(32))]);
 
-    if (! Schema::connection('landlord')->hasTable('tenants')) {
-        Schema::connection('landlord')->create('tenants', function ($table): void {
-            $table->string('id')->primary();
-            $table->string('name');
-            $table->string('slug')->unique();
-            $table->string('database')->nullable();
-            $table->string('status')->default('active');
-            $table->timestamps();
-        });
-    }
+    Artisan::call('migrate:fresh', [
+        '--database' => 'landlord',
+        '--path' => 'database/migrations/landlord',
+        '--force' => true,
+        '--no-interaction' => true,
+    ]);
+
+    // Re-run default migrations — migrate:fresh on landlord resets the migrator's
+    // default connection, which can cause the in-memory sqlite tables to be lost.
+    Artisan::call('migrate', ['--force' => true]);
 });
 
 function insertDimTenant(string $name, string $slug): string
@@ -27,7 +27,7 @@ function insertDimTenant(string $name, string $slug): string
         'id' => $id,
         'name' => $name,
         'slug' => $slug,
-        'database' => null,
+        'database' => 'tenant_'.$slug,
         'status' => 'active',
         'created_at' => now(),
         'updated_at' => now(),
@@ -42,7 +42,6 @@ test('command reporta cobertura de dimensões por categoria', function (): void 
     $categoryId = (string) Str::ulid();
     $now = now();
 
-    // Produto com dimensões
     DB::table('products')->insert([
         'id' => (string) Str::ulid(),
         'tenant_id' => $tenantId,
@@ -57,7 +56,6 @@ test('command reporta cobertura de dimensões por categoria', function (): void 
         'updated_at' => $now,
     ]);
 
-    // Produto sem dimensões
     DB::table('products')->insert([
         'id' => (string) Str::ulid(),
         'tenant_id' => $tenantId,
