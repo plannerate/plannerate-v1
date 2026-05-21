@@ -46,7 +46,7 @@ class WorkflowGondolaExecution extends Model
 
     public function gondola(): BelongsTo
     {
-        return $this->belongsTo(Gondola::class);
+        return $this->belongsTo(Gondola::class)->withTrashed();
     }
 
     public function step(): BelongsTo

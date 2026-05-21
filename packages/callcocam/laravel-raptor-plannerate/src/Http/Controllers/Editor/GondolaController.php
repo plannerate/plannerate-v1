@@ -8,7 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
-use App\Enums\WorkflowExecutionStatus;
+use App\Enums\WorkflowExecutionStatus; 
 use App\Models\PlanogramTemplate;
 use App\Models\Tenant;
 use App\Models\WorkflowGondolaExecution;
@@ -33,14 +33,18 @@ use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\User;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\GondolaPayloadService;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\GondolaService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class GondolaController extends Controller
 {
-    protected function getBackRoute(Gondola $gondola): string
+    protected function getBackRoute(Gondola $gondola, ?string $subdomain = null): string
     {
+        if ($subdomain) {
+            return route('tenant.planograms.index', ['subdomain' => $subdomain, 'record' => $gondola->planogram_id], false);
+        }
         return route('tenant.planograms.index', ['record' => $gondola->planogram_id], false);
     }
 
@@ -88,7 +92,7 @@ class GondolaController extends Controller
             'aiModelOptions' => $this->getAiModelOptions(),
             'strategyOptions' => $this->getStrategyOptions(),
             'planogramTemplates' => $this->getPlanogramTemplates(),
-            'backRoute' => $this->getBackRoute($gondola),
+            'backRoute' => $this->getBackRoute($gondola, $subdomain),
             'saveChangesRoute' => $this->getSaveChangesRoute($subdomain, $gondola),
             'analysis' => [
                 'abc' => $abcAnalysis?->toAbcFormattedArray(),
@@ -128,7 +132,7 @@ class GondolaController extends Controller
             ->where('is_skipped', false)
             ->with('template:id,suggested_order')
             ->get()
-            ->sortBy(fn (WorkflowPlanogramStep $step): int => $step->template?->suggested_order ?? PHP_INT_MAX)
+            ->sortBy(fn(WorkflowPlanogramStep $step): int => $step->template?->suggested_order ?? PHP_INT_MAX)
             ->first();
 
         if ($firstStep === null) {
@@ -173,27 +177,14 @@ class GondolaController extends Controller
 
     public function destroy(string $subdomain, string $gondola)
     {
-        unset($subdomain);
-        $gondolaModel = Gondola::findOrFail($gondola);
-        $planogramId = $gondolaModel->planogram_id;
 
-        // Soft delete the gondola (cascade will handle sections, shelves, etc.)
+
+        $gondolaModel = Gondola::findOrFail($gondola);
+
         $gondolaModel->delete();
 
-        // Check if there are other gondolas in the planogram
-        $remainingGondola = Gondola::where('planogram_id', $planogramId)->first();
-
-        // If no more gondolas exist, redirect to planogram list
-        if (! $remainingGondola) {
-            return redirect($this->getBackRoute($gondolaModel))
-                ->with('success', 'Gôndola removida com sucesso! O planograma não possui mais gôndolas.');
-        }
-
-        // Otherwise, redirect to the first remaining gondola
-        return redirect()->route('tenant.planograms.gondolas.editor', [
-            'planogram' => $planogramId,
-            'record' => $remainingGondola->id,
-        ])->with('success', 'Gôndola removida com sucesso!');
+        return redirect($this->getBackRoute($gondolaModel, $subdomain))
+            ->with('success', 'Gôndola removida com sucesso!');
     }
 
     /**
@@ -237,7 +228,7 @@ class GondolaController extends Controller
             return User::select('id', 'name')
                 ->orderBy('name')
                 ->get()
-                ->map(static fn ($user): array => [
+                ->map(static fn($user): array => [
                     'id' => $user->id,
                     'name' => $user->name,
                 ])
@@ -246,7 +237,7 @@ class GondolaController extends Controller
         });
     }
 
-    public function products(string $subdomain, string $planogram, string $gondola)
+    public function products(Request $request, string $subdomain, string $planogram, string $gondola)
     {
         unset($subdomain, $planogram);
         $gondolaModel = Gondola::find($gondola);
@@ -258,12 +249,12 @@ class GondolaController extends Controller
         $gondolaModel->loadMissing(['planogram']);
 
         // Parâmetros de filtro e paginação
-        $page = request()->input('page', 1);
-        $perPage = request()->input('per_page', 15);
-        $search = request()->input('search', '');
-        $showUsed = request()->boolean('show_used', false);
-        $withDimensions = request()->boolean('with_dimensions', true);
-        $categoryId = request()->input('category', $gondolaModel->planogram->category_id);
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 15);
+        $search = $request->input('search', '');
+        $showUsed = $request->boolean('show_used', false);
+        $withDimensions = $request->boolean('with_dimensions', true);
+        $categoryId = $request->input('category', $gondolaModel->planogram->category_id);
 
         // Cache key único incluindo filtros
         // $cacheKey = sprintf(
@@ -467,7 +458,7 @@ class GondolaController extends Controller
 
         return redirect()->back()->with(
             'success',
-            'Atualização de imagens em segundo plano iniciada. '.count($eans).' produto(s) na fila.'
+            'Atualização de imagens em segundo plano iniciada. ' . count($eans) . ' produto(s) na fila.'
         );
     }
 
@@ -541,7 +532,7 @@ class GondolaController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'code', 'department'])
-            ->map(fn (PlanogramTemplate $t) => [
+            ->map(fn(PlanogramTemplate $t) => [
                 'value' => $t->id,
                 'label' => $t->name,
                 'description' => $t->department,

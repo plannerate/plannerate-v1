@@ -5,6 +5,11 @@ namespace App\Models;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola as EditorGondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\GondolaAnalysis;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Segment;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Database\Factories\GondolaFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +22,28 @@ class Gondola extends EditorGondola
 {
     /** @use HasFactory<GondolaFactory> */
     use BelongsToTenant, HasFactory, HasSlug, HasUlids, SoftDeletes, UsesTenantConnection;
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Gondola $gondola): void {
+            $sectionIds = Section::where('gondola_id', $gondola->id)->pluck('id');
+            $shelfIds = Shelf::whereIn('section_id', $sectionIds)->pluck('id');
+            $segmentIds = Segment::whereIn('shelf_id', $shelfIds)->pluck('id');
+
+            Layer::whereIn('segment_id', $segmentIds)->delete();
+            Segment::whereIn('shelf_id', $shelfIds)->delete();
+            Shelf::whereIn('section_id', $sectionIds)->delete();
+            Section::where('gondola_id', $gondola->id)->delete();
+
+            GondolaAnalysis::where('gondola_id', $gondola->id)->delete();
+
+            $executionIds = WorkflowGondolaExecution::where('gondola_id', $gondola->id)->pluck('id');
+            WorkflowHistory::whereIn('workflow_gondola_execution_id', $executionIds)->delete();
+            WorkflowGondolaExecution::where('gondola_id', $gondola->id)->delete();
+
+            PlanogramRejectedProduct::where('gondola_id', $gondola->id)->delete();
+        });
+    }
 
     /**
      * The attributes that are mass assignable.
