@@ -47,6 +47,7 @@ import { Switch } from '@/components/ui/switch';
 import {
     currentGondola,
     eanSearchQuery,
+    selectedTemplateGroupingNormalized,
     showPerformanceModal,
 } from '@/composables/plannerate/editor/useGondolaState';
 import { usePlanogramChanges } from '@/composables/plannerate/usePlanogramChanges';
@@ -286,6 +287,11 @@ const showAutoGenerateModal = ref(false);
  * Estado do modal de transferência de seção
  */
 const showTransferSectionDialog = ref(false);
+
+/**
+ * Indica se há um grouping selecionado no template
+ */
+const hasSelection = computed(() => !!selectedTemplateGroupingNormalized.value);
 
 /**
  * Seção selecionada (se houver)
@@ -612,6 +618,14 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     <ButtonWithTooltip variant="ghost" size="icon-sm" :disabled="!isMounted || (!canUndo && !canRedo)"
                         :tooltip="t('plannerate.toolbar.clear_history')" @click="editor.clearHistory()">
                         <Trash2 class="size-4" />
+                    </ButtonWithTooltip>
+
+                    <Separator orientation="vertical" class="h-5" />
+
+                    <ButtonWithTooltip variant="ghost" size="sm" :disabled="!isMounted || !hasSelection"
+                        tooltip="Limpar grouping selecionado" @click="selectedTemplateGroupingNormalized = null">
+                        <X class="mr-1.5 size-4" />
+                        Seleção
                     </ButtonWithTooltip>
                 </div>
 

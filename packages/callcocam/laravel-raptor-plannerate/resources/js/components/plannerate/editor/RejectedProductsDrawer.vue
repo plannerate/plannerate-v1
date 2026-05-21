@@ -21,6 +21,13 @@ const isOpen = ref(false);
 const isSwapping = ref(false);
 const draggingId = ref<string | null>(null);
 const swapSource = ref<RejectedProduct | null>(null);
+const cardsContainer = ref<HTMLElement | null>(null);
+
+function handleWheel(event: WheelEvent) {
+    if (!cardsContainer.value) return;
+    event.preventDefault();
+    cardsContainer.value.scrollLeft += event.deltaY;
+}
 
 const swapModeActive = computed(() => swapSource.value !== null);
 
@@ -235,10 +242,12 @@ defineExpose({
         :class="isOpen ? 'shadow-2xl' : ''"
     >
         <!-- Handle / Tab -->
-        <button
-            type="button"
-            class="flex w-full items-center justify-between border-t border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-muted/60"
+        <div
+            role="button"
+            tabindex="0"
+            class="flex w-full cursor-pointer items-center justify-between border-t border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-muted/60"
             @click="isOpen = !isOpen"
+            @keydown.enter.space.prevent="isOpen = !isOpen"
         >
             <div class="flex items-center gap-2">
                 <ArrowLeftRight class="size-4 text-muted-foreground" />
@@ -253,9 +262,33 @@ defineExpose({
                 </Badge>
                 <Loader2 v-if="editor.isLoadingRejectedProducts.value" class="size-3.5 animate-spin text-muted-foreground" />
             </div>
-            <ChevronUp v-if="isOpen" class="size-4 text-muted-foreground" />
-            <ChevronDown v-else class="size-4 text-muted-foreground" />
-        </button>
+            <div class="flex items-center gap-2">
+                <Button
+                    v-if="selectedTemplateGroupingNormalized"
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    class="h-6 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    @click.stop="selectedTemplateGroupingNormalized = null"
+                >
+                    <X class="size-3" />
+                    Limpar filtro
+                </Button>
+                <Button
+                    v-if="selection.selectedId.value"
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    class="h-6 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    @click.stop="selection.clearSelection()"
+                >
+                    <X class="size-3" />
+                    Limpar seleção
+                </Button>
+                <ChevronUp v-if="isOpen" class="size-4 text-muted-foreground" />
+                <ChevronDown v-else class="size-4 text-muted-foreground" />
+            </div>
+        </div>
 
         <!-- Drawer Body with Transition -->
         <Transition
@@ -296,7 +329,7 @@ defineExpose({
                 </div>
 
                 <!-- Product cards -->
-                <div v-else class="flex gap-3 overflow-x-auto p-3">
+                <div ref="cardsContainer" v-else class="flex gap-3 overflow-x-auto p-3" @wheel="handleWheel">
                     <div
                         v-for="product in filteredRejectedProducts"
                         :key="product.id"

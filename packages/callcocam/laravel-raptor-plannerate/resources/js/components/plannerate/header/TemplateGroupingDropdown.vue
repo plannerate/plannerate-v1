@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, ChevronsUpDown, Search, Tags } from 'lucide-vue-next';
+import { Check, ChevronsUpDown, Search, Tags, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -147,20 +147,32 @@ watch(groupings, (newGroupings) => {
 
 <template>
     <DropdownMenu>
-        <DropdownMenuTrigger as-child>
-            <Button variant="outline" size="sm" class="h-8 max-w-72 justify-between gap-2" :disabled="!hasTemplate">
-                <span class="flex min-w-0 items-center gap-2">
-                    <Tags class="size-4 shrink-0" />
-                    <span class="truncate">{{ buttonLabel }}</span>
-                </span>
-                <span class="flex items-center gap-1.5 shrink-0">
-                    <Badge v-if="groupings.length > 0" variant="secondary" class="h-5 px-1.5 text-[10px]">
-                        {{ groupings.length }}
-                    </Badge>
-                    <ChevronsUpDown class="size-3.5 text-muted-foreground" />
-                </span>
+        <div class="flex items-center gap-1">
+            <DropdownMenuTrigger as-child>
+                <Button variant="outline" size="sm" class="h-8 max-w-72 justify-between gap-2" :disabled="!hasTemplate">
+                    <span class="flex min-w-0 items-center gap-2">
+                        <Tags class="size-4 shrink-0" />
+                        <span class="truncate">{{ buttonLabel }}</span>
+                    </span>
+                    <span class="flex items-center gap-1.5 shrink-0">
+                        <Badge v-if="groupings.length > 0" variant="secondary" class="h-5 px-1.5 text-[10px]">
+                            {{ groupings.length }}
+                        </Badge>
+                        <ChevronsUpDown class="size-3.5 text-muted-foreground" />
+                    </span>
+                </Button>
+            </DropdownMenuTrigger>
+            <Button
+                v-if="selectedTemplateGroupingNormalized"
+                variant="ghost"
+                size="icon"
+                class="size-8 shrink-0"
+                title="Limpar seleção de grouping"
+                @click="selectedTemplateGroupingNormalized = null"
+            >
+                <X class="size-3.5" />
             </Button>
-        </DropdownMenuTrigger>
+        </div>
 
         <DropdownMenuContent align="start" class="z-9999 w-120">
 
