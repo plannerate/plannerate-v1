@@ -9,7 +9,7 @@ import { usePlanogramSelection } from './usePlanogramSelection';
 import { shouldShowDeleteConfirm } from './usePlanogramUtils';
 import { useSectionActions } from './useSectionActions';
 import { segmentsMoving, useSegmentActions } from './useSegmentActions';
-import { shelvesMovingBetweenSections, useShelfActions } from './useShelfActions';
+import { useShelfActions } from './useShelfActions';
 
 // ============================================================================
 // ESTADO GLOBAL (SINGLETON PATTERN)
@@ -401,74 +401,54 @@ return false;
         event.preventDefault();
         event.stopPropagation();
 
-        // Usa useShelfActions para ter a mesma lógica de snapping nos furos
-        const { moveUp, moveDown } = useShelfActions(
+        // Usa useShelfActions para toda a lógica de movimento (furos, seções adjacentes)
+        const { moveUp, moveDown, moveLeft, moveRight } = useShelfActions(
             () => shelf,
             () => targetSection,
         );
 
         switch (event.key) {
             case 'ArrowUp':
-                // Move shelf para cima usando a função que encaixa nos furos
+                // Move shelf para cima encaixando nos furos
                 moveUp();
 
                 return true;
 
             case 'ArrowDown':
-                // Move shelf para baixo usando a função que encaixa nos furos
+                // Move shelf para baixo encaixando nos furos
                 moveDown();
 
                 return true;
 
             case 'ArrowLeft': {
-                // Previne execução dupla usando Map global compartilhado
-                if (shelvesMovingBetweenSections.get(shelf.id)) {
-                    return true; // Já está em movimento, ignora
-                }
+                // Move shelf para seção anterior e atualiza seleção
+                const moved = moveLeft();
 
-                // Move shelf para seção anterior (esquerda = índice menor)
-                const result = moveShelfToAdjacentSection(
-                    shelf,
-                    targetSection,
-                    'left',
-                );
+                if (moved) {
+                    const updated = editor.findShelfById(shelf.id);
 
-                if (result) {
-                    selection.selectItem(
-                        'shelf',
-                        result.shelf.id,
-                        result.shelf,
-                        {
-                            section: result.section,
-                        },
-                    );
+                    if (updated) {
+                        selection.selectItem('shelf', shelf.id, updated.shelf, {
+                            section: updated.section,
+                        });
+                    }
                 }
 
                 return true;
             }
 
             case 'ArrowRight': {
-                // Previne execução dupla usando Map global compartilhado
-                if (shelvesMovingBetweenSections.get(shelf.id)) {
-                    return true; // Já está em movimento, ignora
-                }
+                // Move shelf para próxima seção e atualiza seleção
+                const moved = moveRight();
 
-                // Move shelf para próxima seção (direita = índice maior)
-                const result = moveShelfToAdjacentSection(
-                    shelf,
-                    targetSection,
-                    'right',
-                );
+                if (moved) {
+                    const updated = editor.findShelfById(shelf.id);
 
-                if (result) {
-                    selection.selectItem(
-                        'shelf',
-                        result.shelf.id,
-                        result.shelf,
-                        {
-                            section: result.section,
-                        },
-                    );
+                    if (updated) {
+                        selection.selectItem('shelf', shelf.id, updated.shelf, {
+                            section: updated.section,
+                        });
+                    }
                 }
 
                 return true;
@@ -547,78 +527,6 @@ return false;
     }
 
     // ==================== HELPER FUNCTIONS ====================
-
-    /**
-     * Move shelf para seção adjacente (esquerda ou direita)
-     * Mantém a posição Y e propriedades da shelf
-     */
-    function moveShelfToAdjacentSection(
-        shelf: Shelf,
-        currentSection: Section,
-        direction: 'left' | 'right',
-    ): { shelf: Shelf; section: Section } | null {
-        const gondola = editor.currentGondola.value;
-
-        if (!gondola?.sections) {
-return null;
-}
-
-        // Considera o fluxo visual da gôndola
-        const flow = gondola.flow || 'left_to_right';
-        const sortedSections = [...gondola.sections]
-            .filter((s: Section) => !s.deleted_at)
-            .sort(
-                (a: Section, b: Section) =>
-                    (a.ordering || 0) - (b.ordering || 0),
-            );
-
-        const displaySections =
-            flow === 'right_to_left'
-                ? [...sortedSections].reverse()
-                : sortedSections;
-
-        const currentIndex = displaySections.findIndex(
-            (s) => s.id === currentSection.id,
-        );
-
-        if (currentIndex === -1) {
-return null;
-}
-
-        const targetIndex =
-            direction === 'left' ? currentIndex - 1 : currentIndex + 1;
-        const targetSection = displaySections[targetIndex];
-
-        if (!targetSection || targetSection.deleted_at) {
-return null;
-} // Não há seção adjacente
-
-        // Busca shelf atualizada do estado reativo
-        const currentShelfData = editor.findShelfById(shelf.id);
-        const currentPosition =
-            currentShelfData?.shelf.shelf_position || shelf.shelf_position;
-
-        // Marca como em movimento para prevenir execução dupla
-        shelvesMovingBetweenSections.set(shelf.id, true);
-
-        try {
-            // Usa updateShelf que já manipula os arrays corretamente e registra mudança
-            editor.updateShelf(shelf.id, {
-                section_id: targetSection.id,
-                shelf_position: currentPosition, // Mantém posição Y
-            });
-
-            return {
-                shelf: { ...shelf, section_id: targetSection.id },
-                section: targetSection,
-            };
-        } finally {
-            // Libera o flag após um pequeno delay para garantir que a re-renderização aconteceu
-            setTimeout(() => {
-                shelvesMovingBetweenSections.delete(shelf.id);
-            }, 200);
-        }
-    }
 
     /**
      * Duplica uma shelf completa (com todos os segments, layers e products)

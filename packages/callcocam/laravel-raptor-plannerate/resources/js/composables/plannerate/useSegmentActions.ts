@@ -33,14 +33,14 @@ export function useSegmentActions(
           });
 
     /**
-     * Busca segmentos ordenados da prateleira
+     * Retorna os segmentos ativos da prateleira ordenados por ordering
      */
     function getOrderedSegments(): Segment[] {
         const currentShelf = shelfRef.value;
 
         if (!currentShelf?.segments) {
-return [];
-}
+            return [];
+        }
 
         return [...currentShelf.segments]
             .filter((s: Segment) => !s.deleted_at)
@@ -51,14 +51,14 @@ return [];
     }
 
     /**
-     * Verifica se pode mover para esquerda
+     * Verifica se o segmento atual pode ser movido para a esquerda
      */
     const canMoveLeft = computed(() => {
         const currentSegment = segmentRef.value;
 
         if (!currentSegment?.id) {
-return false;
-}
+            return false;
+        }
 
         const orderedSegments = getOrderedSegments();
         const currentIndex = orderedSegments.findIndex(
@@ -69,14 +69,14 @@ return false;
     });
 
     /**
-     * Verifica se pode mover para direita
+     * Verifica se o segmento atual pode ser movido para a direita
      */
     const canMoveRight = computed(() => {
         const currentSegment = segmentRef.value;
 
         if (!currentSegment?.id) {
-return false;
-}
+            return false;
+        }
 
         const orderedSegments = getOrderedSegments();
         const currentIndex = orderedSegments.findIndex(
@@ -86,144 +86,65 @@ return false;
         return currentIndex >= 0 && currentIndex < orderedSegments.length - 1;
     });
 
-    function swapSegment(offset: -1 | 1): boolean {
+    /**
+     * Encontra o ID do segmento adjacente ao atual na direção indicada.
+     * Retorna null se não houver segmento na posição.
+     * offset: -1 = esquerda, +1 = direita
+     */
+    function findAdjacentSegmentId(offset: -1 | 1): string | null {
         const currentSegment = segmentRef.value;
 
         if (!currentSegment?.id) {
-return false;
-}
+            return null;
+        }
 
-        const found = editor.findSegmentById(currentSegment.id);
-
-        if (!found || !found.shelf?.segments) {
-return false;
-}
-
-        // Busca todos os segmentos não deletados e ordena por ordering
-        const orderedSegments = [...found.shelf.segments]
-            .filter((s: Segment) => !s.deleted_at)
-            .sort((a: Segment, b: Segment) => {
-                const ordA = a.ordering ?? 0;
-                const ordB = b.ordering ?? 0;
-
-                if (ordA !== ordB) {
-return ordA - ordB;
-}
-
-                return 0;
-            });
-
+        const orderedSegments = getOrderedSegments();
         const currentIndex = orderedSegments.findIndex(
-            (seg) => seg.id === currentSegment.id,
+            (s) => s.id === currentSegment.id,
         );
 
         if (currentIndex < 0) {
-return false;
-}
+            return null;
+        }
 
         const targetIndex = currentIndex + offset;
 
         if (targetIndex < 0 || targetIndex >= orderedSegments.length) {
-return false;
-}
-
-        // Guarda os orderings originais antes da troca para comparação
-        const originalOrderings = new Map<string, number>();
-        orderedSegments.forEach((seg) => {
-            originalOrderings.set(seg.id, seg.ordering ?? 0);
-        });
-
-        // Troca as posições
-        const swapped = [...orderedSegments];
-        [swapped[currentIndex], swapped[targetIndex]] = [
-            swapped[targetIndex],
-            swapped[currentIndex],
-        ];
-
-        // Atualiza o ordering de todos os segmentos afetados e cria novos objetos para reatividade
-        const reorderedSegments: Segment[] = swapped.map((seg, idx) => {
-            const newOrdering = idx + 1;
-
-            // Cria novo objeto com ordering atualizado
-            return { ...seg, ordering: newOrdering };
-        });
-
-        // Registra mudanças para persistência (apenas para segmentos que mudaram de ordering)
-        reorderedSegments.forEach((seg) => {
-            const originalOrdering = originalOrderings.get(seg.id) ?? 0;
-            const newOrdering = seg.ordering ?? 0;
-
-            if (originalOrdering !== newOrdering) {
-                // Registra mudança para persistência
-                editor.recordChange({
-                    type: 'segment_update',
-                    entityType: 'segment',
-                    entityId: seg.id,
-                    data: { ordering: newOrdering },
-                });
-            }
-        });
-
-        // Força reatividade criando novos arrays/objetos em cada nível da hierarquia
-        // 1. Atualiza o array de segmentos da prateleira
-        const updatedSegments = [...reorderedSegments];
-        found.shelf.segments = updatedSegments;
-
-        // 2. Atualiza a prateleira na seção
-        const updatedShelves = [...found.section.shelves];
-        const shelfIndex = updatedShelves.findIndex(
-            (s: any) => s.id === found.shelf.id,
-        );
-
-        if (shelfIndex !== -1) {
-            updatedShelves[shelfIndex] = {
-                ...found.shelf,
-                segments: updatedSegments,
-            };
-            found.section.shelves = updatedShelves;
+            return null;
         }
 
-        // 3. Atualiza a seção na gôndola
-        if (editor.currentGondola.value?.sections) {
-            const updatedSections = [...editor.currentGondola.value.sections];
-            const sectionIndex = updatedSections.findIndex(
-                (s: any) => s.id === found.section.id,
-            );
-
-            if (sectionIndex !== -1) {
-                updatedSections[sectionIndex] = {
-                    ...found.section,
-                    shelves: updatedShelves,
-                };
-                editor.currentGondola.value.sections = updatedSections;
-            }
-        }
-
-        return true;
+        return orderedSegments[targetIndex].id;
     }
 
     /**
-     * Move segmento para esquerda (mesma lógica do Ctrl+ArrowLeft)
+     * Move segmento para a esquerda (Ctrl+ArrowLeft).
+     * Delega a editor.swapSegmentPositions para que a operação seja
+     * registrada no histórico e suporte undo/redo.
      */
     function moveLeft(): boolean {
         const currentSegment = segmentRef.value;
 
         if (!currentSegment?.id) {
-return false;
-}
+            return false;
+        }
 
         // Previne execução dupla usando Map global
         if (segmentsMoving.get(currentSegment.id)) {
             return false;
         }
 
-        // Marca como em movimento para prevenir execução dupla
         segmentsMoving.set(currentSegment.id, true);
 
         try {
-            return swapSegment(-1);
+            const targetId = findAdjacentSegmentId(-1);
+
+            if (!targetId) {
+                return false;
+            }
+
+            return editor.swapSegmentPositions(currentSegment.id, targetId);
         } finally {
-            // Libera o flag após um pequeno delay para garantir que a re-renderização aconteceu
+            // Libera o flag após um pequeno delay para garantir re-renderização
             setTimeout(() => {
                 segmentsMoving.delete(currentSegment.id);
             }, 200);
@@ -231,27 +152,34 @@ return false;
     }
 
     /**
-     * Move segmento para direita (mesma lógica do Ctrl+ArrowRight)
+     * Move segmento para a direita (Ctrl+ArrowRight).
+     * Delega a editor.swapSegmentPositions para que a operação seja
+     * registrada no histórico e suporte undo/redo.
      */
     function moveRight(): boolean {
         const currentSegment = segmentRef.value;
 
         if (!currentSegment?.id) {
-return false;
-}
+            return false;
+        }
 
         // Previne execução dupla usando Map global
         if (segmentsMoving.get(currentSegment.id)) {
             return false;
         }
 
-        // Marca como em movimento para prevenir execução dupla
         segmentsMoving.set(currentSegment.id, true);
 
         try {
-            return swapSegment(1);
+            const targetId = findAdjacentSegmentId(1);
+
+            if (!targetId) {
+                return false;
+            }
+
+            return editor.swapSegmentPositions(currentSegment.id, targetId);
         } finally {
-            // Libera o flag após um pequeno delay para garantir que a re-renderização aconteceu
+            // Libera o flag após um pequeno delay para garantir re-renderização
             setTimeout(() => {
                 segmentsMoving.delete(currentSegment.id);
             }, 200);

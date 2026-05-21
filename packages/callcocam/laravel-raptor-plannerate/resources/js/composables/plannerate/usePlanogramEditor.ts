@@ -49,6 +49,7 @@ import {
 
 import { useShelfOperations } from './editor/useShelfOperations';
 import type { SnapshotState } from './editor/useSnapshotTypes';
+import { captureElementAsCanvas } from './export/useCanvasCapture';
 
 // ============================================================================
 // COMPOSABLE
@@ -2126,15 +2127,15 @@ export function usePlanogramEditor() {
     /**
      * Exporta o planograma como imagem PNG
      */
+    /**
+     * Exporta o canvas do planograma como PNG para download.
+     * Usa html2canvas-pro (suporte nativo a oklch) via captureElementAsCanvas.
+     */
     async function exportAsImage() {
         try {
-            // Importa html2canvas dinamicamente
-            const html2canvas = (await import('html2canvas')).default;
-
-            // Busca a div que contém as seções
             const element = document.querySelector(
                 '[data-planogram-canvas]',
-            ) as HTMLElement;
+            ) as HTMLElement | null;
 
             if (!element) {
                 console.error('❌ Elemento do canvas não encontrado');
@@ -2142,114 +2143,26 @@ export function usePlanogramEditor() {
                 return;
             }
 
-            // Cria um wrapper temporário
-            const wrapper = document.createElement('div');
-            wrapper.style.position = 'absolute';
-            wrapper.style.left = '-9999px';
-            wrapper.style.top = '0';
-            wrapper.style.width = element.offsetWidth + 'px';
-            wrapper.style.height = element.offsetHeight + 'px';
+            const canvas = await captureElementAsCanvas(element, { scale: 2 });
 
-            // Clona o elemento
-            const clone = element.cloneNode(true) as HTMLElement;
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    console.error('❌ Erro ao gerar blob da imagem');
 
-            // Cria uma folha de estilo inline para sobrescrever oklch
-            const style = document.createElement('style');
-            style.textContent = `
-                * {
-                    color: inherit !important;
-                    background-color: inherit !important;
-                    border-color: inherit !important;
-                }
-            `;
-
-            wrapper.appendChild(style);
-            wrapper.appendChild(clone);
-            document.body.appendChild(wrapper);
-
-            // Processa todos os elementos recursivamente
-            function applyComputedStyles(original: Element, cloned: Element) {
-                if (!(original instanceof HTMLElement) || !(cloned instanceof HTMLElement)) {
                     return;
                 }
 
-                const computed = window.getComputedStyle(original);
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                const gondolaName = currentGondola.value?.name || 'planograma';
+                const timestamp = new Date().toISOString().split('T')[0];
 
-                // Aplica apenas as cores computadas
-                const colorProps = [
-                    'color',
-                    'background-color',
-                    'border-top-color',
-                    'border-right-color',
-                    'border-bottom-color',
-                    'border-left-color',
-                ];
+                link.href = url;
+                link.download = `${gondolaName}-${timestamp}.png`;
+                link.click();
 
-                colorProps.forEach((prop) => {
-                    const value = computed.getPropertyValue(prop);
-
-                    if (value && value !== 'rgba(0, 0, 0, 0)' && value !== 'transparent') {
-                        cloned.style.setProperty(prop, value, 'important');
-                    }
-                });
-
-                // Processa filhos
-                const originalChildren = Array.from(original.children);
-                const clonedChildren = Array.from(cloned.children);
-
-                originalChildren.forEach((origChild, index) => {
-                    if (clonedChildren[index]) {
-                        applyComputedStyles(origChild, clonedChildren[index]);
-                    }
-                });
-            }
-
-            // Aplica estilos computados
-            applyComputedStyles(element, clone);
-
-            try {
-                // Aguarda renderização
-                await new Promise((resolve) => setTimeout(resolve, 100));
-
-                // Gera o canvas a partir do clone
-                const canvas = await html2canvas(clone, {
-                    backgroundColor: '#ffffff',
-                    scale: 2,
-                    logging: true,
-                    useCORS: true,
-                    allowTaint: false,
-                });
-
-                // Remove o wrapper
-                document.body.removeChild(wrapper);
-
-                // Converte para blob e faz download
-                canvas.toBlob((blob) => {
-                    if (!blob) {
-                        console.error('❌ Erro ao gerar blob da imagem');
-
-                        return;
-                    }
-
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    const gondolaName =
-                        currentGondola.value?.name || 'planograma';
-                    const timestamp = new Date().toISOString().split('T')[0];
-
-                    link.href = url;
-                    link.download = `${gondolaName}-${timestamp}.png`;
-                    link.click();
-
-                    URL.revokeObjectURL(url);
-                });
-            } catch (canvasError) {
-                if (wrapper.parentNode) {
-                    document.body.removeChild(wrapper);
-                }
-
-                throw canvasError;
-            }
+                URL.revokeObjectURL(url);
+            });
         } catch (error) {
             console.error('❌ Erro ao exportar imagem:', error);
         }
