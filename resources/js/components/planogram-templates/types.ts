@@ -145,6 +145,9 @@ export type SlotAnalysisRow = {
     reason: string;
     facing_used: number;
     required_width_cm: number;
+    position_cm: number;
+    abc_class: 'A' | 'B' | 'C' | null;
+    is_mandatory: boolean;
     url: string;
 };
 
@@ -159,6 +162,8 @@ export type SlotAnalysisSummary = {
     placed_products: number;
     outro_slot_products: number;
     rejected_products: number;
+    zone?: 'hot' | 'cold' | 'neutral';
+    num_shelves?: number;
 };
 
 export type SlotAnalysisData = {

@@ -68,6 +68,7 @@ return new class extends Migration
             $table->boolean('has_dimensions')->default(false)->comment('True = Com dimensão (width, height, depth > 0); False = Sem dimensão');
             $table->enum('dimension_status', ['draft', 'published'])->default('published')->comment('Status da dimensão (de dimensions)');
             $table->float('current_stock')->nullable();
+            $table->decimal('price', 10, 2)->nullable()->comment('Preço de venda — usado para ordenação por preço no planograma');
             $table->date('last_purchase_date')->nullable();
 
             $table->timestamps();

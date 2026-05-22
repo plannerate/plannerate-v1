@@ -276,9 +276,16 @@ class TemplateSlotController extends Controller
             ->whereHas('subtemplate', fn ($query) => $query->where('template_id', $planogramTemplate->getKey()))
             ->firstOrFail();
 
+        $allCategorySlots = PlanogramTemplateSlot::query()
+            ->where('subtemplate_id', $slot->subtemplate_id)
+            ->where('category_id', $slot->category_id)
+            ->orderBy('shelf_order')
+            ->get();
+
         $analysis = $this->reviewAnalysisService->analyze(
             $slot,
             (float) ($validated['shelf_width_cm'] ?? 100.0),
+            $allCategorySlots->count() > 1 ? $allCategorySlots : null,
         );
 
         return response()->json([

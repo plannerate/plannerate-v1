@@ -81,11 +81,22 @@ const summaryColClass = computed(() => {
             </Button>
         </div>
         <p class="mb-3 text-xs text-muted-foreground">
-            {{
-                slotLabel
-                    ? `${slotLabel} (simulação parcial)`
-                    : 'Selecione um slot para iniciar a análise.'
-            }}
+            <template v-if="slotLabel">
+                {{ slotLabel }} ·
+                <span
+                    v-if="props.analysis?.summary.zone"
+                    class="font-medium"
+                    :class="{
+                        'text-amber-600': props.analysis.summary.zone === 'hot',
+                        'text-blue-500': props.analysis.summary.zone === 'cold',
+                        'text-muted-foreground': props.analysis.summary.zone === 'neutral',
+                    }"
+                >
+                    Zona {{ props.analysis.summary.zone === 'hot' ? 'quente' : props.analysis.summary.zone === 'cold' ? 'fria' : 'neutra' }}
+                </span>
+                <span v-else>simulação completa</span>
+            </template>
+            <template v-else>Selecione um slot para iniciar a análise.</template>
         </p>
 
         <div v-if="props.loading" class="text-sm text-muted-foreground">
@@ -157,10 +168,12 @@ const summaryColClass = computed(() => {
                             <th class="px-3 py-2 text-left">Produto</th>
                             <th class="px-3 py-2 text-left">Status</th>
                             <th class="px-3 py-2 text-left">Motivo</th>
+                            <th class="px-3 py-2 text-left">ABC</th>
                             <th class="px-3 py-2 text-left">Venda</th>
                             <th class="px-3 py-2 text-left">Dimensões</th>
                             <th class="px-3 py-2 text-left">Facing</th>
-                            <th class="px-3 py-2 text-left">Largura (cm)</th>
+                            <th class="px-3 py-2 text-left">Pos. (cm)</th>
+                            <th class="px-3 py-2 text-left">Larg. (cm)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -203,18 +216,41 @@ const summaryColClass = computed(() => {
                                 </div>
                             </td>
                             <td class="px-3 py-2 whitespace-nowrap">
-                                <span
-                                    :class="{
-                                        'text-emerald-600': row.status === 'entrou',
-                                        'text-blue-600': row.status === 'outro_slot',
-                                        'text-amber-600': row.status === 'fora',
-                                    }"
-                                >
-                                    {{ row.status === 'outro_slot' ? 'outro slot' : row.status }}
-                                </span>
+                                <div class="flex items-center gap-1">
+                                    <span
+                                        :class="{
+                                            'text-emerald-600': row.status === 'entrou',
+                                            'text-blue-600': row.status === 'outro_slot',
+                                            'text-amber-600': row.status === 'fora',
+                                        }"
+                                    >
+                                        {{ row.status === 'outro_slot' ? 'outro slot' : row.status }}
+                                    </span>
+                                    <span
+                                        v-if="row.is_mandatory"
+                                        class="rounded bg-violet-100 px-1 py-px text-[10px] font-semibold text-violet-700"
+                                        title="Produto obrigatório"
+                                    >
+                                        OBR
+                                    </span>
+                                </div>
                             </td>
                             <td class="px-3 py-2 text-muted-foreground">
                                 {{ row.reason }}
+                            </td>
+                            <td class="px-3 py-2">
+                                <span
+                                    v-if="row.abc_class"
+                                    class="inline-flex size-5 items-center justify-center rounded text-[10px] font-bold"
+                                    :class="{
+                                        'bg-emerald-100 text-emerald-700': row.abc_class === 'A',
+                                        'bg-blue-100 text-blue-700': row.abc_class === 'B',
+                                        'bg-gray-100 text-gray-600': row.abc_class === 'C',
+                                    }"
+                                >
+                                    {{ row.abc_class }}
+                                </span>
+                                <span v-else class="text-muted-foreground">—</span>
                             </td>
                             <td class="px-3 py-2">
                                 <span
@@ -224,15 +260,20 @@ const summaryColClass = computed(() => {
                                             : 'text-muted-foreground'
                                     "
                                 >
-                                    {{ row.has_sales ? 'Com venda' : 'Sem venda' }}
+                                    {{ row.has_sales ? 'Sim' : 'Não' }}
                                 </span>
                             </td>
                             <td class="px-3 py-2 text-muted-foreground">
                                 {{ row.dimensions }}
                             </td>
-                            <td class="px-3 py-2">{{ row.facing_used }}</td>
                             <td class="px-3 py-2">
-                                {{ row.required_width_cm }}
+                                {{ row.facing_used > 0 ? row.facing_used : '—' }}
+                            </td>
+                            <td class="px-3 py-2 text-muted-foreground">
+                                {{ row.status === 'entrou' ? row.position_cm : '—' }}
+                            </td>
+                            <td class="px-3 py-2">
+                                {{ row.required_width_cm > 0 ? row.required_width_cm : '—' }}
                             </td>
                         </tr>
                     </tbody>

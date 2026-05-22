@@ -75,6 +75,7 @@ class Product extends Model
         'dimensions_status',
         'dimensions_description',
         'current_stock',
+        'price',
     ];
 
     protected $appends = [
