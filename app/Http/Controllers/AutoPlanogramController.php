@@ -37,17 +37,12 @@ class AutoPlanogramController extends Controller
         private readonly ExposureRedistributeService $redistributeService,
     ) {}
 
-    public function generate(AutoGeneratePlanogramRequest $request,  string $gondola): RedirectResponse
+    public function generate(AutoGeneratePlanogramRequest $request, string $gondola): RedirectResponse
     {
         try {
             $config = AutoGenerateConfigDTO::fromArray($request->validated());
 
             $gondolaModel = Gondola::with(['sections.shelves'])->findOrFail($gondola);
-
-            if ($gondolaModel->template_id !== $request->input('template_id')) {
-                $gondolaModel->template_id = $request->input('template_id');
-                $gondolaModel->save();
-            }
 
             $planogram = Planogram::with(['category'])->find($gondolaModel->planogram_id);
 
@@ -57,8 +52,10 @@ class AutoPlanogramController extends Controller
 
             $templateId = $request->input('template_id');
 
+            // Atualiza template_id e backfill de generation_mode para gôndolas antigas
             $gondolaModel->forceFill([
                 'template_id' => $templateId,
+                'generation_mode' => $templateId ? 'template' : 'automatic',
             ])->save();
 
             // No modo template os slots definem as categorias — categoria do formulário é ignorada.
@@ -88,16 +85,16 @@ class AutoPlanogramController extends Controller
                 return back()->with('warning', __('app.messages.no_products_found'));
             }
 
-            $products = $rankedProducts->map(fn($dto) => $dto->product);
+            $products = $rankedProducts->map(fn ($dto) => $dto->product);
 
             $abcClassMap = $rankedProducts
-                ->filter(fn($dto) => $dto->abcClass !== null)
-                ->mapWithKeys(fn($dto) => [$dto->product->id => $dto->abcClass])
+                ->filter(fn ($dto) => $dto->abcClass !== null)
+                ->mapWithKeys(fn ($dto) => [$dto->product->id => $dto->abcClass])
                 ->all();
 
             $targetStockMap = $rankedProducts
-                ->filter(fn($dto) => $dto->targetStock !== null && $dto->targetStock > 0)
-                ->mapWithKeys(fn($dto) => [$dto->product->id => (float) $dto->targetStock])
+                ->filter(fn ($dto) => $dto->targetStock !== null && $dto->targetStock > 0)
+                ->mapWithKeys(fn ($dto) => [$dto->product->id => (float) $dto->targetStock])
                 ->all();
 
             $weightsModel = ScoringWeights::first();
@@ -135,13 +132,13 @@ class AutoPlanogramController extends Controller
             $report = $output->validationReport;
             $totalProducts = $input->products->count();
             $rejectedSpace = $output->rejectedProducts
-                ->filter(fn($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
+                ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
                 ->count();
             $rejectedHeight = $output->rejectedProducts
-                ->filter(fn($r) => $r['reason'] === PlacementFailureReason::HeightExceedsShelf)
+                ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::HeightExceedsShelf)
                 ->count();
             $rejectedMissingDimensions = $output->rejectedProducts
-                ->filter(fn($r) => $r['reason'] === PlacementFailureReason::MissingDimensions)
+                ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::MissingDimensions)
                 ->count();
 
             Inertia::flash('toast', [
@@ -166,8 +163,8 @@ class AutoPlanogramController extends Controller
                 'score_type' => $output->scoreType,
                 'has_sales_data' => $output->scoreType !== 'neutral',
                 'produtos_rejeitados_espaco' => $output->rejectedProducts
-                    ->filter(fn($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
-                    ->map(fn($r) => [
+                    ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
+                    ->map(fn ($r) => [
                         'id' => $r['product']->id,
                         'name' => $r['product']->name,
                         'category' => $r['product']->category?->name,
@@ -177,7 +174,7 @@ class AutoPlanogramController extends Controller
             if ($templateId !== null) {
                 $capacityReport['suggestions'] = $output->suggestions;
                 $capacityReport['slot_analysis'] = $output->slotAnalysis;
-                $capacityReport['has_space'] = collect($output->slotAnalysis)->some(fn($s) => $s['largura_livre'] > 10);
+                $capacityReport['has_space'] = collect($output->slotAnalysis)->some(fn ($s) => $s['largura_livre'] > 10);
                 $capacityReport['has_rejects'] = $rejectedSpace > 0;
                 $capacityReport['template_id'] = $templateId;
                 $capacityReport['modules_mismatch'] = $output->modulesMismatch;
@@ -225,7 +222,7 @@ class AutoPlanogramController extends Controller
             ->orderBy('category_name')
             ->orderBy('shelf_order')
             ->get()
-            ->map(fn($r) => [
+            ->map(fn ($r) => [
                 'id' => $r->id,
                 'product_id' => $r->product_id,
                 'product_name' => $r->product_name,
@@ -293,9 +290,9 @@ class AutoPlanogramController extends Controller
 
         $categories = $categoryIds !== []
             ? Category::withoutGlobalScopes()
-            ->whereIn('id', $categoryIds)
-            ->get(['id', 'name'])
-            ->keyBy('id')
+                ->whereIn('id', $categoryIds)
+                ->get(['id', 'name'])
+                ->keyBy('id')
             : collect();
 
         $groupings = $slots

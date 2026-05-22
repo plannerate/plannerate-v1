@@ -135,6 +135,10 @@ const isMounted = ref(false);
 
 onMounted(() => {
     isMounted.value = true;
+
+    if ((page.props.flash as any)?.auto_generate && autoGenerateEnabled.value) {
+        showAutoGenerateModal.value = true;
+    }
 });
 
 /**

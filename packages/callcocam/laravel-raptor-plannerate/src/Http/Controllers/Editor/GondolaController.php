@@ -117,6 +117,13 @@ class GondolaController extends Controller
             $this->createWorkflowExecution($gondola, $request);
         }
 
+        $mode = $request->input('mode', 'manual');
+
+        if (in_array($mode, ['template', 'automatic'], true)) {
+            return redirect(route('tenant.planograms.gondolas.editor', ['record' => $gondola->id], false))
+                ->with('auto_generate', true);
+        }
+
         return redirect()->back()->with('success', 'Gôndola criada com sucesso!');
     }
 
@@ -127,7 +134,7 @@ class GondolaController extends Controller
             ->where('is_skipped', false)
             ->with('template:id,suggested_order')
             ->get()
-            ->sortBy(fn(WorkflowPlanogramStep $step): int => $step->template?->suggested_order ?? PHP_INT_MAX)
+            ->sortBy(fn (WorkflowPlanogramStep $step): int => $step->template?->suggested_order ?? PHP_INT_MAX)
             ->first();
 
         if ($firstStep === null) {
@@ -171,7 +178,6 @@ class GondolaController extends Controller
 
     public function destroy(string $gondola)
     {
-
 
         $gondolaModel = Gondola::findOrFail($gondola);
 
@@ -221,7 +227,7 @@ class GondolaController extends Controller
             return User::select('id', 'name')
                 ->orderBy('name')
                 ->get()
-                ->map(static fn($user): array => [
+                ->map(static fn ($user): array => [
                     'id' => $user->id,
                     'name' => $user->name,
                 ])
@@ -230,7 +236,7 @@ class GondolaController extends Controller
         });
     }
 
-    public function products(Request $request,   string $planogram, string $gondola)
+    public function products(Request $request, string $planogram, string $gondola)
     {
         $gondolaModel = Gondola::find($gondola);
         if (! $gondolaModel) {
@@ -449,7 +455,7 @@ class GondolaController extends Controller
 
         return redirect()->back()->with(
             'success',
-            'Atualização de imagens em segundo plano iniciada. ' . count($eans) . ' produto(s) na fila.'
+            'Atualização de imagens em segundo plano iniciada. '.count($eans).' produto(s) na fila.'
         );
     }
 
@@ -523,7 +529,7 @@ class GondolaController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'code', 'department'])
-            ->map(fn(PlanogramTemplate $t) => [
+            ->map(fn (PlanogramTemplate $t) => [
                 'value' => $t->id,
                 'label' => $t->name,
                 'description' => $t->department,

@@ -27,6 +27,8 @@ return [
         'department' => 'Departamento',
         'description' => 'Descrição',
         'status' => 'Status',
+        'gondola_category' => 'Categoria da gôndola',
+        'gondola_category_hint' => 'Define a categoria principal que será trabalhada nos slots desta gôndola.',
     ],
 
     'status' => [
@@ -48,6 +50,7 @@ return [
         'finish_button' => 'Finalizar e sair',
         'next_slots_button' => 'Avançar — Slots →',
         'next_products_button' => 'Avançar — Produtos →',
+        'step_label' => 'Etapa',
     ],
 
     // Grid labels (GondolaGrid.vue)
@@ -55,6 +58,67 @@ return [
         'module_label' => 'Módulo #',
         'shelf_label' => 'Prat #',
         'add_button' => 'Adicionar',
+    ],
+
+    // Module selector buttons (ModuleSelectorButtons.vue)
+    'module_selector' => [
+        'add_tooltip' => 'Adicionar configuração para novo número de módulos',
+        'module_singular' => 'módulo',
+        'module_plural' => 'módulos',
+    ],
+
+    // Module defaults modal (ModuleDefaultsModal.vue)
+    'module_defaults' => [
+        'title' => 'Configuração padrão — Módulo',
+        'category_label' => 'Categoria padrão',
+        'category_hint' => 'Novos slots deste módulo já abrem com essa categoria selecionada.',
+        'max_facings_label' => 'Frentes máximas',
+        'max_facings_hint' => 'Teto de expansão por SKU',
+        'save_button' => 'Salvar padrão',
+    ],
+
+    // Facing expansion options (shared: ModuleDefaultsModal + SlotEditorFields)
+    'facing_expansion' => [
+        'label' => 'Expansão de frentes',
+        'hint_module' => 'Como usar espaço livre acima do mínimo',
+        'hint_slot' => 'Como usar espaço livre',
+        'none' => 'Não expandir',
+        'score' => 'Por score ABC / vendas',
+        'current_stock' => 'Por estoque atual',
+        'target_stock' => 'Por déficit de estoque',
+        'equal' => 'Distribuição igual',
+    ],
+
+    // Flow direction section (ModuleDefaultsModal.vue)
+    'flow_direction' => [
+        'title' => 'Sentido de leitura',
+        'description' => 'Define a direção do fluxo do cliente na frente da gôndola. Afeta a posição física dos produtos: "preço crescente no fluxo" coloca o produto mais barato no início do fluxo.',
+        'left_to_right' => 'Esquerda → Direita',
+        'left_to_right_default' => '(padrão)',
+        'right_to_left' => 'Direita → Esquerda',
+    ],
+
+    // Zone priority section (ModuleDefaultsModal.vue)
+    'zone_priority' => [
+        'title' => 'Priorização por zona térmica',
+        'description' => 'Define qual critério de ordenação é aplicado aos produtos em prateleiras quentes (olhos / mãos) e frias (alta / chão). Não filtra produtos — apenas reordena dentro do slot.',
+        'hot_zone_label' => 'Zona quente (olhos + mãos)',
+        'hot_zone_hint' => 'Eye + Hand: área nobre da gôndola',
+        'cold_zone_label' => 'Zona fria (alto + chão)',
+        'cold_zone_hint' => 'High + Low: área de menor visibilidade',
+        'no_criteria' => 'Sem critério (padrão)',
+        'hot' => [
+            'maior_margem' => 'Maior margem',
+            'maior_giro' => 'Maior giro (vendas)',
+            'maior_valor_vendido' => 'Maior valor vendido',
+            'curva_a' => 'Curva A primeiro',
+        ],
+        'cold' => [
+            'menor_margem' => 'Menor margem',
+            'complementar_fria' => 'Complementar / sazonais',
+            'maior_volume' => 'Maior volume físico',
+            'menor_prioridade' => 'Menor prioridade geral',
+        ],
     ],
 
     // Slot editor modal (SlotEditorModal.vue)
@@ -103,6 +167,49 @@ return [
         'save_button' => 'Salvar slot',
     ],
 
+    // Slot editor sections (SlotEditorFields.vue)
+    'slot_editor_fields' => [
+        'category' => [
+            'title' => 'Categoria',
+            'description' => 'Define quais produtos entram neste slot. Selecionar uma categoria pai inclui automaticamente todos os produtos das subcategorias filhas.',
+        ],
+        'role' => [
+            'label' => 'Papel da categoria',
+            'description' => 'Orienta a posição macro e a estratégia do bloco na gôndola. "Herdar" usa o papel configurado na própria categoria.',
+        ],
+        'facings' => [
+            'title' => 'Dimensionamento de frentes',
+            'description' => 'Controla quantas frentes cada SKU ocupa (mínimo e teto) e como o espaço livre é redistribuído quando a gôndola tem menos produtos do que o previsto.',
+            'max_label' => 'Frentes máx.',
+            'max_hint' => 'Teto por SKU',
+        ],
+        'ordering' => [
+            'title' => 'Ordenação e exposição visual',
+            'description' => 'Determina a sequência de exibição dos produtos dentro do slot e como grupos de marca ou fragrância se organizam fisicamente na prateleira.',
+        ],
+        'share_limits' => [
+            'title' => 'Limites de participação',
+            'description' => 'Tetos percentuais que evitam que um único SKU, marca ou subcategoria domine o slot durante a expansão de frentes. Deixe em branco para sem limite.',
+            'max_sku_label' => 'Máx. % por SKU',
+            'max_sku_hint' => '% do slot por produto',
+            'max_brand_label' => 'Máx. % por marca',
+            'max_brand_hint' => '% do slot por marca',
+            'max_subcat_label' => 'Máx. % subcat.',
+            'max_subcat_hint' => '% por subcategoria',
+        ],
+    ],
+
+    // Category role options (SlotEditorFields.vue)
+    'role_options' => [
+        'inherit' => 'Herdar da categoria',
+        'destino' => 'Destino — gera tráfego, área nobre',
+        'rotina' => 'Rotina — exposição equilibrada, centro',
+        'conveniencia' => 'Conveniência — leitura simples, acesso fácil',
+        'impulso' => 'Impulso — área quente, maior visibilidade',
+        'sazonal' => 'Sazonal — destaque temporário',
+        'complementar' => 'Complementar — zona fria, área de associação',
+    ],
+
     // Slot card (SlotCard.vue)
     'slot_card' => [
         'price_order' => [
@@ -112,6 +219,122 @@ return [
         'min_facings_label' => 'min',
         'facings_abbr' => 'f',
         'priority_prefix' => 'p',
+        'no_category' => 'Sem categoria',
+        'role_configured_here' => 'Papel configurado neste slot',
+        'role_from_category' => 'Papel da categoria',
+        'rejected_singular' => 'rejeitado',
+        'rejected_plural' => 'rejeitados',
+        'analyze_tooltip' => 'Analisar produtos do slot',
+        'roles' => [
+            'destino' => 'Destino',
+            'rotina' => 'Rotina',
+            'conveniencia' => 'Conv.',
+            'impulso' => 'Impulso',
+            'sazonal' => 'Sazonal',
+            'complementar' => 'Compl.',
+        ],
+        'expansion' => [
+            'score' => 'ABC',
+            'current_stock' => 'Estoque',
+            'target_stock' => 'Déficit',
+            'equal' => 'Igual',
+        ],
+    ],
+
+    // Slot category select (SlotCategorySelect.vue)
+    'category_select' => [
+        'base_template_hint' => 'categoria base do template',
+        'no_subcategories' => 'Sem subcategorias — o slot usará toda a categoria base.',
+        'level_placeholder' => 'Nível :n…',
+        'no_selection_hint' => 'Sem seleção abaixo → usa a categoria base (todos os produtos da gôndola neste slot).',
+    ],
+
+    // Review slots list (ReviewSlotsList.vue)
+    'review_list' => [
+        'title' => 'Slots criados',
+        'shelves_count' => ':count prateleiras',
+        'shelf_label' => 'Prateleira :n',
+        'edit_slot_tooltip' => 'Editar slot',
+        'empty_message' => 'Nenhum slot criado para este módulo.',
+        'no_category' => 'Sem categoria',
+    ],
+
+    // Review panel (ReviewSlotProductsPanel.vue)
+    'review_panel' => [
+        'title' => 'Análise de alocação',
+        'update_images_button' => 'Atualizar imagens',
+        'zone_hot' => 'quente',
+        'zone_cold' => 'fria',
+        'zone_neutral' => 'neutra',
+        'full_simulation' => 'simulação completa',
+        'select_slot_hint' => 'Selecione um slot para iniciar a análise.',
+        'analyzing' => 'Analisando produtos...',
+        'no_analysis' => 'Nenhum dado de análise para este slot.',
+        'filter_placeholder' => 'Filtrar por nome, EAN ou código ERP',
+        'summary' => [
+            'total_products' => 'Total na categoria',
+            'previous_slots' => 'Prateleiras anteriores',
+            'placed' => 'Entrou aqui',
+            'other_slot' => 'Outro slot',
+            'rejected' => 'Fora',
+            'free_width' => 'Livre (cm)',
+        ],
+        'columns' => [
+            'product' => 'Produto',
+            'status' => 'Status',
+            'reason' => 'Motivo',
+            'abc' => 'ABC',
+            'sales' => 'Venda',
+            'dimensions' => 'Dimensões',
+            'facing' => 'Facing',
+            'position_cm' => 'Pos. (cm)',
+            'width_cm' => 'Larg. (cm)',
+        ],
+        'no_image' => 'Sem imagem',
+        'ean_label' => 'EAN',
+        'brand_label' => 'Marca',
+        'erp_code_label' => 'Cód. ERP',
+        'has_sales_yes' => 'Sim',
+        'has_sales_no' => 'Não',
+        'status_other_slot' => 'outro slot',
+        'mandatory_badge' => 'OBR',
+        'mandatory_tooltip' => 'Produto obrigatório',
+    ],
+
+    // Slot review drawer (SlotReviewDrawer.vue)
+    'review_drawer' => [
+        'title' => 'Análise de slot',
+    ],
+
+    // Visual criteria editor (VisualCriteriaEditor.vue)
+    'visual_criteria' => [
+        'title' => 'Critérios de ordenação visual',
+        'description_legacy' => 'Usando ordenação padrão (preço / tamanho / marca).',
+        'description_custom' => 'Critérios ativos — arraste para reordenar. O mais à esquerda domina.',
+        'customize_button' => 'Personalizar',
+        'use_default_button' => 'Usar padrão',
+        'empty_message' => 'Nenhum critério ativo — adicione abaixo ou reverta para o padrão.',
+        'direction_asc' => 'Crescente — clique para inverter',
+        'direction_desc' => 'Decrescente — clique para inverter',
+        'direction_none' => 'Sem direção — clique para definir',
+        'remove_criterion_tooltip' => 'Remover critério',
+        'add_label' => 'Adicionar:',
+        'packaging_order' => [
+            'title' => 'Ordem dos tipos de embalagem',
+            'description' => 'Arraste para reordenar. Tipos não listados vão para o fim.',
+            'empty_message' => 'Nenhum tipo adicionado — todos os produtos ficam juntos sem distinção de embalagem.',
+            'remove_tooltip' => 'Remover tipo',
+            'add_placeholder' => 'Ex: caixa, sache, pet, lata…',
+            'add_button' => '+ Adicionar',
+        ],
+        'criteria_labels' => [
+            'marca' => 'Marca',
+            'preco' => 'Preço',
+            'tamanho' => 'Tamanho',
+            'score_abc' => 'Curva ABC',
+            'margem' => 'Margem',
+            'embalagem' => 'Embalagem',
+        ],
     ],
 
     // Product search panel (ProductSearchPanel.vue)

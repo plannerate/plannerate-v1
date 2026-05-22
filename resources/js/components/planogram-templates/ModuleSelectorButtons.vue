@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Check, Plus } from 'lucide-vue-next';
 import { ref } from 'vue';
+import { useT } from '@/composables/useT';
+
+const { t } = useT();
 
 const props = defineProps<{
     currentModule: number;
@@ -50,7 +53,7 @@ function cancelAdd(): void {
         "
         @click="emit('select', s.num_modules)"
     >
-        {{ s.num_modules }} módulo{{ s.num_modules > 1 ? 's' : '' }}
+        {{ s.num_modules }} {{ s.num_modules > 1 ? t('planogram-templates.module_selector.module_plural') : t('planogram-templates.module_selector.module_singular') }}
     </button>
 
     <!-- Inline add form -->
@@ -80,7 +83,7 @@ function cancelAdd(): void {
         <button
             v-else
             type="button"
-            title="Adicionar configuração para novo número de módulos"
+            :title="t('planogram-templates.module_selector.add_tooltip')"
             class="rounded-md border border-dashed border-border px-2 py-1.5 text-muted-foreground transition hover:border-primary hover:text-primary"
             @click="openAdd"
         >

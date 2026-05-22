@@ -125,15 +125,15 @@ function saveDefaults(): void {
         <DialogContent class="max-h-[90vh] max-w-2xl overflow-y-auto">
             <DialogHeader>
                 <DialogTitle>
-                    Configuração padrão — Módulo {{ moduleNumber }}
+                    {{ t('planogram-templates.module_defaults.title') }} {{ moduleNumber }}
                 </DialogTitle>
             </DialogHeader>
 
             <div class="grid gap-5 py-2">
                 <div class="flex flex-col gap-y-1.5">
-                    <span class="text-sm font-medium">Categoria padrão</span>
+                    <span class="text-sm font-medium">{{ t('planogram-templates.module_defaults.category_label') }}</span>
                     <p class="text-xs text-muted-foreground">
-                        Novos slots deste módulo já abrem com essa categoria selecionada.
+                        {{ t('planogram-templates.module_defaults.category_hint') }}
                     </p>
                     <CategoryCascadeSelect
                         v-model="draft.category_id"
@@ -157,8 +157,8 @@ function saveDefaults(): void {
                         v-model="maxFacingsModel"
                         name="max_facings"
                         type="number"
-                        label="Frentes máximas"
-                        hint="Teto de expansão por SKU"
+                        :label="t('planogram-templates.module_defaults.max_facings_label')"
+                        :hint="t('planogram-templates.module_defaults.max_facings_hint')"
                         :min="1"
                         :max="20"
                     />
@@ -224,14 +224,14 @@ function saveDefaults(): void {
                     id="module-default-facing-expansion"
                     v-model="draft.facing_expansion"
                     name="facing_expansion"
-                    label="Expansão de frentes"
-                    hint="Como usar espaço livre acima do mínimo"
+                    :label="t('planogram-templates.facing_expansion.label')"
+                    :hint="t('planogram-templates.facing_expansion.hint_module')"
                 >
-                    <option value="none">Não expandir</option>
-                    <option value="score">Por score ABC / vendas</option>
-                    <option value="current_stock">Por estoque atual</option>
-                    <option value="target_stock">Por déficit de estoque</option>
-                    <option value="equal">Distribuição igual</option>
+                    <option value="none">{{ t('planogram-templates.facing_expansion.none') }}</option>
+                    <option value="score">{{ t('planogram-templates.facing_expansion.score') }}</option>
+                    <option value="current_stock">{{ t('planogram-templates.facing_expansion.current_stock') }}</option>
+                    <option value="target_stock">{{ t('planogram-templates.facing_expansion.target_stock') }}</option>
+                    <option value="equal">{{ t('planogram-templates.facing_expansion.equal') }}</option>
                 </FormSelectField>
 
                 <div class="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
@@ -255,10 +255,9 @@ function saveDefaults(): void {
 
                 <!-- Sentido de leitura do cliente -->
                 <div class="rounded-md border border-border p-3">
-                    <p class="mb-3 text-sm font-medium">Sentido de leitura</p>
+                    <p class="mb-3 text-sm font-medium">{{ t('planogram-templates.flow_direction.title') }}</p>
                     <p class="mb-3 text-xs text-muted-foreground">
-                        Define a direção do fluxo do cliente na frente da gôndola. Afeta a posição física dos
-                        produtos: "preço crescente no fluxo" coloca o produto mais barato no início do fluxo.
+                        {{ t('planogram-templates.flow_direction.description') }}
                     </p>
                     <div class="flex gap-2">
                         <button
@@ -271,7 +270,7 @@ function saveDefaults(): void {
                             "
                             @click="draft.flow_direction = 'left_to_right'"
                         >
-                            <span>→</span> Esquerda → Direita <span class="ml-1 text-xs opacity-60">(padrão)</span>
+                            <span>→</span> {{ t('planogram-templates.flow_direction.left_to_right') }} <span class="ml-1 text-xs opacity-60">{{ t('planogram-templates.flow_direction.left_to_right_default') }}</span>
                         </button>
                         <button
                             type="button"
@@ -283,44 +282,43 @@ function saveDefaults(): void {
                             "
                             @click="draft.flow_direction = 'right_to_left'"
                         >
-                            <span>←</span> Direita → Esquerda
+                            <span>←</span> {{ t('planogram-templates.flow_direction.right_to_left') }}
                         </button>
                     </div>
                 </div>
 
                 <!-- Priorização por zona térmica -->
                 <div class="rounded-md border border-border p-3">
-                    <p class="mb-3 text-sm font-medium">Priorização por zona térmica</p>
+                    <p class="mb-3 text-sm font-medium">{{ t('planogram-templates.zone_priority.title') }}</p>
                     <p class="mb-3 text-xs text-muted-foreground">
-                        Define qual critério de ordenação é aplicado aos produtos em prateleiras quentes (olhos / mãos)
-                        e frias (alta / chão). Não filtra produtos — apenas reordena dentro do slot.
+                        {{ t('planogram-templates.zone_priority.description') }}
                     </p>
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <FormSelectField
                             id="module-default-hot-zone-priority"
                             v-model="draft.hot_zone_priority"
                             name="hot_zone_priority"
-                            label="Zona quente (olhos + mãos)"
-                            hint="Eye + Hand: área nobre da gôndola"
+                            :label="t('planogram-templates.zone_priority.hot_zone_label')"
+                            :hint="t('planogram-templates.zone_priority.hot_zone_hint')"
                         >
-                            <option :value="null">Sem critério (padrão)</option>
-                            <option value="maior_margem">Maior margem</option>
-                            <option value="maior_giro">Maior giro (vendas)</option>
-                            <option value="maior_valor_vendido">Maior valor vendido</option>
-                            <option value="curva_a">Curva A primeiro</option>
+                            <option :value="null">{{ t('planogram-templates.zone_priority.no_criteria') }}</option>
+                            <option value="maior_margem">{{ t('planogram-templates.zone_priority.hot.maior_margem') }}</option>
+                            <option value="maior_giro">{{ t('planogram-templates.zone_priority.hot.maior_giro') }}</option>
+                            <option value="maior_valor_vendido">{{ t('planogram-templates.zone_priority.hot.maior_valor_vendido') }}</option>
+                            <option value="curva_a">{{ t('planogram-templates.zone_priority.hot.curva_a') }}</option>
                         </FormSelectField>
                         <FormSelectField
                             id="module-default-cold-zone-priority"
                             v-model="draft.cold_zone_priority"
                             name="cold_zone_priority"
-                            label="Zona fria (alto + chão)"
-                            hint="High + Low: área de menor visibilidade"
+                            :label="t('planogram-templates.zone_priority.cold_zone_label')"
+                            :hint="t('planogram-templates.zone_priority.cold_zone_hint')"
                         >
-                            <option :value="null">Sem critério (padrão)</option>
-                            <option value="menor_margem">Menor margem</option>
-                            <option value="complementar_fria">Complementar / sazonais</option>
-                            <option value="maior_volume">Maior volume físico</option>
-                            <option value="menor_prioridade">Menor prioridade geral</option>
+                            <option :value="null">{{ t('planogram-templates.zone_priority.no_criteria') }}</option>
+                            <option value="menor_margem">{{ t('planogram-templates.zone_priority.cold.menor_margem') }}</option>
+                            <option value="complementar_fria">{{ t('planogram-templates.zone_priority.cold.complementar_fria') }}</option>
+                            <option value="maior_volume">{{ t('planogram-templates.zone_priority.cold.maior_volume') }}</option>
+                            <option value="menor_prioridade">{{ t('planogram-templates.zone_priority.cold.menor_prioridade') }}</option>
                         </FormSelectField>
                     </div>
                 </div>
@@ -330,7 +328,7 @@ function saveDefaults(): void {
                 <Button variant="ghost" @click="emit('update:open', false)">{{
                     t('planogram-templates.slot_editor.cancel_button')
                 }}</Button>
-                <Button @click="saveDefaults">Salvar padrão</Button>
+                <Button @click="saveDefaults">{{ t('planogram-templates.module_defaults.save_button') }}</Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>
