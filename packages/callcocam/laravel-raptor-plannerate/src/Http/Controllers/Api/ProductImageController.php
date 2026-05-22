@@ -21,7 +21,7 @@ use Throwable;
 
 class ProductImageController extends Controller
 {
-    public function update(Request $request, ProductRepositoryImageResolver $imageResolver, string $subdomain)
+    public function update(Request $request, ProductRepositoryImageResolver $imageResolver)
     {
         $request->validate([
             'product_id' => 'required|string',
@@ -43,7 +43,7 @@ class ProductImageController extends Controller
     /**
      * Upload manual de imagem do produto
      */
-    public function uploadImage(UploadProductImageRequest $request, string $subdomain, string $product)
+    public function uploadImage(UploadProductImageRequest $request, string $product)
     {
         $productModel = Product::query()->whereKey($product)->first();
 

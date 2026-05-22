@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Log;
 
 class GondolaAnalysisController extends Controller
 {
-    public function calculateAbcApi(Request $request, string $subdomain, string $gondola)
+    public function calculateAbcApi(Request $request, string $gondola)
     {
         $gondolaModel = Gondola::with('planogram.category')->find($gondola);
 
@@ -77,7 +77,7 @@ class GondolaAnalysisController extends Controller
         return redirect()->back();
     }
 
-    public function calculateTargetStockApi(Request $request, string $subdomain, string $gondola)
+    public function calculateTargetStockApi(Request $request, string $gondola)
     {
         $gondolaModel = Gondola::find($gondola);
 
@@ -140,7 +140,7 @@ class GondolaAnalysisController extends Controller
         return redirect()->back();
     }
 
-    public function clearAnalysisApi(Request $request, string $subdomain, string $gondola)
+    public function clearAnalysisApi(Request $request, string $gondola)
     {
         GondolaAnalysis::where('gondola_id', $gondola)->delete();
 

@@ -8,7 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
-use App\Enums\WorkflowExecutionStatus; 
+use App\Enums\WorkflowExecutionStatus;
 use App\Models\PlanogramTemplate;
 use App\Models\Tenant;
 use App\Models\WorkflowGondolaExecution;
@@ -40,23 +40,19 @@ use Inertia\Inertia;
 
 class GondolaController extends Controller
 {
-    protected function getBackRoute(Gondola $gondola, ?string $subdomain = null): string
+    protected function getBackRoute(Gondola $gondola): string
     {
-        if ($subdomain) {
-            return route('tenant.planograms.index', ['subdomain' => $subdomain, 'record' => $gondola->planogram_id], false);
-        }
         return route('tenant.planograms.index', ['record' => $gondola->planogram_id], false);
     }
 
-    protected function getSaveChangesRoute(string $subdomain, Gondola $gondola): string
+    protected function getSaveChangesRoute(Gondola $gondola): string
     {
         return route('api.editor.gondolas.save-changes', [
-            'subdomain' => $subdomain,
             'gondola' => $gondola->id,
         ], false);
     }
 
-    public function edit(string $subdomain, string $record)
+    public function edit(string $record)
     {
         $gondola = $this->findGondolaOrFail($record);
         $this->authorize('view', $gondola);
@@ -92,8 +88,8 @@ class GondolaController extends Controller
             'aiModelOptions' => $this->getAiModelOptions(),
             'strategyOptions' => $this->getStrategyOptions(),
             'planogramTemplates' => $this->getPlanogramTemplates(),
-            'backRoute' => $this->getBackRoute($gondola, $subdomain),
-            'saveChangesRoute' => $this->getSaveChangesRoute($subdomain, $gondola),
+            'backRoute' => $this->getBackRoute($gondola),
+            'saveChangesRoute' => $this->getSaveChangesRoute($gondola),
             'analysis' => [
                 'abc' => $abcAnalysis?->toAbcFormattedArray(),
                 'stock' => $stockAnalysis?->toStockFormattedArray(),
@@ -108,9 +104,8 @@ class GondolaController extends Controller
         ]);
     }
 
-    public function store(StoreGondolaRequest $request, string $subdomain, string $planogram)
+    public function store(StoreGondolaRequest $request, string $planogram)
     {
-        unset($subdomain);
         $planogramModel = Planogram::findOrFail($planogram);
 
         $gondola = app(GondolaService::class)->createGondolaWithStructure($planogramModel, $request->validated());
@@ -158,9 +153,8 @@ class GondolaController extends Controller
         ]);
     }
 
-    public function update(string $subdomain, string $gondola, UpdateGondolaRequest $request)
+    public function update(string $gondola, UpdateGondolaRequest $request)
     {
-        unset($subdomain);
         $gondolaModel = Gondola::findOrFail($gondola);
 
         $gondolaModel->update([
@@ -175,7 +169,7 @@ class GondolaController extends Controller
         return redirect()->back()->with('success', 'Gôndola atualizada com sucesso!');
     }
 
-    public function destroy(string $subdomain, string $gondola)
+    public function destroy(string $gondola)
     {
 
 
@@ -183,16 +177,15 @@ class GondolaController extends Controller
 
         $gondolaModel->delete();
 
-        return redirect($this->getBackRoute($gondolaModel, $subdomain))
+        return redirect($this->getBackRoute($gondolaModel))
             ->with('success', 'Gôndola removida com sucesso!');
     }
 
     /**
      * Retorna as seções de uma gôndola (apenas não deletadas)
      */
-    public function sections(string $subdomain, string $gondola)
+    public function sections(string $gondola)
     {
-        unset($subdomain);
         $gondolaModel = Gondola::find($gondola);
 
         if (! $gondolaModel) {
@@ -237,9 +230,8 @@ class GondolaController extends Controller
         });
     }
 
-    public function products(Request $request, string $subdomain, string $planogram, string $gondola)
+    public function products(Request $request,   string $planogram, string $gondola)
     {
-        unset($subdomain, $planogram);
         $gondolaModel = Gondola::find($gondola);
         if (! $gondolaModel) {
             return response()->json(['error' => 'Gondola not found'], 404);
@@ -404,9 +396,8 @@ class GondolaController extends Controller
         ]);
     }
 
-    public function updateImages(string $subdomain, string $gondola)
+    public function updateImages(string $gondola)
     {
-        unset($subdomain);
         $gondolaModel = Gondola::with('planogram')->find($gondola);
         if (! $gondolaModel) {
             return redirect()->back()->with('error', 'Gôndola não encontrada.');

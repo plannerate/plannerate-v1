@@ -24,7 +24,7 @@ class LayerController extends Controller
         return 'tenant';
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, ?string $id)
     {
         $validated = $request->validate([
             'quantity' => 'nullable|integer|min:1',
@@ -42,7 +42,7 @@ class LayerController extends Controller
         ]);
     }
 
-    public function destroy($id)
+    public function destroy(?string $id)
     {
         $layer = Layer::findOrFail($id);
         $segmentId = $layer->segment_id;

@@ -25,7 +25,7 @@ class ShelfController extends Controller
         return 'tenant';
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, ?string $id)
     {
         $validated = $request->validate([
             'code' => 'nullable|string|max:255',
@@ -45,7 +45,7 @@ class ShelfController extends Controller
         ]);
     }
 
-    public function store(Request $request, $sectionId)
+    public function store(Request $request, ?string $sectionId)
     {
         $validated = $request->validate([
             'y_position' => 'required|numeric|min:0',
@@ -78,7 +78,7 @@ class ShelfController extends Controller
         ]);
     }
 
-    public function destroy($id)
+    public function destroy(?string $id)
     {
         $shelf = Shelf::findOrFail($id);
         $sectionId = $shelf->section_id;

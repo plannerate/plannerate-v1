@@ -24,7 +24,7 @@ class SegmentController extends Controller
         return 'tenant';
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, ?string $id)
     {
         $validated = $request->validate([
             'width' => 'nullable|numeric|min:0',

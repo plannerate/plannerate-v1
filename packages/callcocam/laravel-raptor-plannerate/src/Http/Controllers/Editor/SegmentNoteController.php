@@ -16,15 +16,14 @@ use Illuminate\Support\Collection;
 
 class SegmentNoteController extends Controller
 {
-    public function index(string $subdomain, string $segment): JsonResponse
+    public function index(?string $segment): JsonResponse
     {
-        unset($subdomain);
 
         $notes = SegmentNote::where('segment_id', $segment)
             ->with('user:id,name')
             ->latest()
             ->get()
-            ->map(fn (SegmentNote $note) => [
+            ->map(fn(SegmentNote $note) => [
                 'id' => $note->id,
                 'content' => $note->content,
                 'author' => $note->user?->name ?? 'Usuário',
@@ -34,7 +33,7 @@ class SegmentNoteController extends Controller
         return response()->json(['data' => $notes]);
     }
 
-    public function store(Request $request, string $subdomain, string $segment): JsonResponse
+    public function store(Request $request, string $segment): JsonResponse
     {
         $validated = $request->validate([
             'content' => 'required|string|max:1000',
@@ -52,7 +51,7 @@ class SegmentNoteController extends Controller
             'content' => $validated['content'],
         ]);
 
-        $this->notifyResponsibleUsers($gondolaId, $tenantId, $subdomain, $note, $request->user()?->name ?? 'Alguém');
+        $this->notifyResponsibleUsers($gondolaId, $tenantId,   $note, $request->user()?->name ?? 'Alguém');
 
         return response()->json([
             'data' => [
@@ -64,7 +63,7 @@ class SegmentNoteController extends Controller
         ], 201);
     }
 
-    private function notifyResponsibleUsers(?string $gondolaId, ?string $tenantId, string $subdomain, SegmentNote $note, string $authorName): void
+    private function notifyResponsibleUsers(?string $gondolaId, ?string $tenantId, SegmentNote $note, string $authorName): void
     {
         if (! $gondolaId) {
             return;
@@ -77,7 +76,9 @@ class SegmentNoteController extends Controller
             return;
         }
 
-        $routeParameters = ['subdomain' => $subdomain];
+        $routeParameters = [
+            'gondola_id' => $gondolaId,
+        ];
         if ($planogramId !== null) {
             $routeParameters['planogram_id'] = $planogramId;
         }
@@ -92,7 +93,7 @@ class SegmentNoteController extends Controller
 
         User::whereIn('id', $recipientIds)
             ->get()
-            ->each(fn ($user) => $user->notifyNow($notification));
+            ->each(fn($user) => $user->notifyNow($notification));
     }
 
     private function resolveRecipientIds(string $gondolaId, ?string $planogramId, ?string $excludeUserId): Collection
@@ -101,7 +102,7 @@ class SegmentNoteController extends Controller
             ->whereNotNull('current_responsible_id')
             ->pluck('current_responsible_id')
             ->unique()
-            ->filter(fn ($id) => $id !== $excludeUserId)
+            ->filter(fn($id) => $id !== $excludeUserId)
             ->values();
 
         if ($responsibleIds->isNotEmpty()) {
@@ -115,9 +116,9 @@ class SegmentNoteController extends Controller
         return WorkflowPlanogramStep::where('planogram_id', $planogramId)
             ->with('availableUsers:id')
             ->get()
-            ->flatMap(fn ($step) => $step->availableUsers->pluck('id'))
+            ->flatMap(fn($step) => $step->availableUsers->pluck('id'))
             ->unique()
-            ->filter(fn ($id) => $id !== $excludeUserId)
+            ->filter(fn($id) => $id !== $excludeUserId)
             ->values();
     }
 }
