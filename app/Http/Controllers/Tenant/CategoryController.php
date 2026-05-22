@@ -208,9 +208,8 @@ class CategoryController extends Controller
         return $this->toTenantRoute('tenant.categories.index');
     }
 
-    public function edit(string $subdomain, Category $category): Response
+    public function edit(Category $category): Response
     {
-        unset($subdomain);
         $this->authorize('update', $category);
 
         return Inertia::render('tenant/categories/Form', [
@@ -233,9 +232,8 @@ class CategoryController extends Controller
         ]);
     }
 
-    public function update(UpdateCategoryRequest $request, string $subdomain, Category $category): RedirectResponse
+    public function update(UpdateCategoryRequest $request, Category $category): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $category);
 
         $validated = $request->validated();
@@ -253,9 +251,8 @@ class CategoryController extends Controller
         return $this->toTenantRoute('tenant.categories.index');
     }
 
-    public function destroy(string $subdomain, Category $category): RedirectResponse
+    public function destroy(Category $category): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('delete', $category);
 
         $category->delete();

@@ -12,9 +12,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class NotificationController extends Controller
 {
-    public function markRead(Request $request, string $subdomain, string $id): RedirectResponse
+    public function markRead(Request $request, string $id): RedirectResponse
     {
-        unset($subdomain); // não é necessário, mas evita warnings de variável não usada
         $tenantId = (string) (Tenant::current()?->getKey() ?? '');
         $notification = $request->user()
             ->notifications()
@@ -26,9 +25,8 @@ class NotificationController extends Controller
         return back();
     }
 
-    public function markAllRead(Request $request, string $subdomain): RedirectResponse
+    public function markAllRead(Request $request): RedirectResponse
     {
-        unset($subdomain); // não é necessário, mas evita warnings de variável não usada
         $tenantId = (string) (Tenant::current()?->getKey() ?? '');
         $request->user()->unreadNotifications()
             ->where('tenant_id', $tenantId)
@@ -37,9 +35,8 @@ class NotificationController extends Controller
         return back();
     }
 
-    public function destroyAll(Request $request, string $subdomain): RedirectResponse
+    public function destroyAll(Request $request): RedirectResponse
     {
-        unset($subdomain); // não é necessário, mas evita warnings de variável não usada
         $tenantId = (string) (Tenant::current()?->getKey() ?? '');
         $request->user()->notifications()
             ->where('tenant_id', $tenantId)
@@ -48,9 +45,9 @@ class NotificationController extends Controller
         return back();
     }
 
-    public function destroy(Request $request, string $subdomain, string $id): RedirectResponse
+    public function destroy(Request $request, string $id): RedirectResponse
     {
-        unset($subdomain); // não é necessário, mas evita warnings de variável não usada
+        $tenantId = (string) (Tenant::current()?->getKey() ?? '');
         $tenantId = (string) (Tenant::current()?->getKey() ?? '');
         $request->user()
             ->notifications()
@@ -61,9 +58,8 @@ class NotificationController extends Controller
         return back();
     }
 
-    public function download(Request $request, string $subdomain, string $id): BinaryFileResponse|Response
+    public function download(Request $request, string $id): BinaryFileResponse|Response
     {
-        unset($subdomain); // não é necessário, mas evita warnings de variável não usada
         $tenantId = (string) (Tenant::current()?->getKey() ?? '');
         $notification = $request->user()
             ->notifications()

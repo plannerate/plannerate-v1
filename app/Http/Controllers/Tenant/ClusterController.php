@@ -114,9 +114,9 @@ class ClusterController extends Controller
         return $this->toTenantRoute('tenant.clusters.index');
     }
 
-    public function edit(string $subdomain, Cluster $cluster): Response
+    public function edit(Cluster $cluster): Response
     {
-        unset($subdomain);
+
         $this->authorize('update', $cluster);
 
         return Inertia::render('tenant/clusters/Form', [
@@ -135,9 +135,8 @@ class ClusterController extends Controller
         ]);
     }
 
-    public function update(ClusterUpdateRequest $request, string $subdomain, Cluster $cluster): RedirectResponse
+    public function update(ClusterUpdateRequest $request, Cluster $cluster): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $cluster);
 
         $cluster->update($request->validated());
@@ -150,9 +149,8 @@ class ClusterController extends Controller
         return $this->toTenantRoute('tenant.clusters.index');
     }
 
-    public function destroy(string $subdomain, Cluster $cluster): RedirectResponse
+    public function destroy(Cluster $cluster): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('delete', $cluster);
 
         $cluster->delete();

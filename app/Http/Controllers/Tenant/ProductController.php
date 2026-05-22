@@ -250,7 +250,6 @@ class ProductController extends Controller
 
     public function edit(string $product): Response
     {
-        unset($subdomain);
         $product = Product::query()->whereKey($product)->firstOrFail();
         $this->authorize('update', $product);
 
@@ -260,9 +259,8 @@ class ProductController extends Controller
         ]);
     }
 
-    public function update(UpdateProductRequest $request, string $subdomain, string $product): RedirectResponse
+    public function update(UpdateProductRequest $request, string $product): RedirectResponse
     {
-        unset($subdomain);
         $product = Product::query()->whereKey($product)->firstOrFail();
         $this->authorize('update', $product);
 
@@ -302,9 +300,8 @@ class ProductController extends Controller
         return $this->toTenantRoute('tenant.products.index');
     }
 
-    public function destroy(string $subdomain, string $product): RedirectResponse
+    public function destroy(string $product): RedirectResponse
     {
-        unset($subdomain);
         $product = Product::query()->whereKey($product)->firstOrFail();
         $this->authorize('delete', $product);
 

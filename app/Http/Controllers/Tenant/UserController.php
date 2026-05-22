@@ -92,9 +92,8 @@ class UserController extends Controller
         return $this->toTenantRoute('tenant.users.index');
     }
 
-    public function edit(string $subdomain, User $user): Response
+    public function edit(User $user): Response
     {
-        unset($subdomain);
         $this->authorize('update', $user);
 
         $user->load(['roles' => fn ($query) => $query
@@ -116,9 +115,8 @@ class UserController extends Controller
         ]);
     }
 
-    public function update(UpdateUserRequest $request, string $subdomain, User $user): RedirectResponse
+    public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $user);
 
         $validated = $request->validated();
@@ -151,9 +149,8 @@ class UserController extends Controller
         return $this->toTenantRoute('tenant.users.index');
     }
 
-    public function destroy(string $subdomain, User $user): RedirectResponse
+    public function destroy(User $user): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('delete', $user);
 
         $user->delete();

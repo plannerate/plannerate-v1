@@ -18,9 +18,8 @@ class WorkflowPlanogramStepController extends Controller
 
     public function __construct(private readonly WorkflowPlanogramStepService $stepService) {}
 
-    public function index(string $subdomain, Planogram $planogram): JsonResponse
+    public function index(Planogram $planogram): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('update', $planogram);
 
         $steps = $this->stepService->syncForPlanogram($planogram);
@@ -31,9 +30,8 @@ class WorkflowPlanogramStepController extends Controller
         ]);
     }
 
-    public function update(WorkflowPlanogramSettingsUpdateRequest $request, string $subdomain, Planogram $planogram): JsonResponse
+    public function update(WorkflowPlanogramSettingsUpdateRequest $request, Planogram $planogram): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('update', $planogram);
 
         $steps = $this->stepService->updateSettings($planogram, $request->validated('steps', []));
@@ -44,9 +42,8 @@ class WorkflowPlanogramStepController extends Controller
         ]);
     }
 
-    public function loadDefaults(string $subdomain, Planogram $planogram): JsonResponse
+    public function loadDefaults(Planogram $planogram): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('update', $planogram);
 
         $steps = $this->stepService->loadDefaultSettingsForPlanogram($planogram);

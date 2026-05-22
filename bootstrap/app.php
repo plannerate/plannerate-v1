@@ -59,7 +59,7 @@ return Application::configure(basePath: dirname(__DIR__))
          */
         $middleware->web(append: [
             HandleAppearance::class,
-            // InjectTenantUrlDefaults::class,
+            InjectTenantUrlDefaults::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
             AuthenticateSession::class,

@@ -25,9 +25,8 @@ class GondolaController extends Controller
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
 
-    public function index(Request $request, string $subdomain, Planogram $planogram): Response
+    public function index(Request $request, Planogram $planogram): Response
     {
-        unset($subdomain);
         $this->authorize('viewAny', Gondola::class);
         $this->authorize('view', $planogram);
         $search = $this->requestString($request, 'search');
@@ -88,9 +87,8 @@ class GondolaController extends Controller
             ]);
     }
 
-    public function create(string $subdomain, Planogram $planogram): Response
+    public function create(Planogram $planogram): Response
     {
-        unset($subdomain);
         $this->authorize('create', Gondola::class);
         $this->authorize('view', $planogram);
 
@@ -103,9 +101,8 @@ class GondolaController extends Controller
         ]);
     }
 
-    public function store(GondolaStoreRequest $request, string $subdomain, Planogram $planogram): RedirectResponse
+    public function store(GondolaStoreRequest $request, Planogram $planogram): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('create', Gondola::class);
         $this->authorize('view', $planogram);
 
@@ -127,9 +124,8 @@ class GondolaController extends Controller
         ]);
     }
 
-    public function edit(string $subdomain, Planogram $planogram, Gondola $gondola): Response
+    public function edit(Planogram $planogram, Gondola $gondola): Response
     {
-        unset($subdomain);
         $this->authorize('update', $gondola);
         $this->abortIfGondolaDoesNotBelongToPlanogram($gondola, $planogram);
         $this->authorize('view', $planogram);
@@ -157,9 +153,8 @@ class GondolaController extends Controller
         ]);
     }
 
-    public function update(GondolaUpdateRequest $request, string $subdomain, Planogram $planogram, Gondola $gondola): RedirectResponse
+    public function update(GondolaUpdateRequest $request, Planogram $planogram, Gondola $gondola): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $gondola);
         $this->abortIfGondolaDoesNotBelongToPlanogram($gondola, $planogram);
         $this->authorize('view', $planogram);
@@ -181,9 +176,8 @@ class GondolaController extends Controller
         ]);
     }
 
-    public function destroy(string $subdomain, Planogram $planogram, Gondola $gondola): RedirectResponse
+    public function destroy(Planogram $planogram, Gondola $gondola): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('delete', $gondola);
         $this->abortIfGondolaDoesNotBelongToPlanogram($gondola, $planogram);
         $this->authorize('view', $planogram);

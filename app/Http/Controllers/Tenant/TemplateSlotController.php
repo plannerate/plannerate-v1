@@ -28,9 +28,8 @@ class TemplateSlotController extends Controller
         private readonly SlotReviewAnalysisService $reviewAnalysisService,
     ) {}
 
-    public function index(string $subdomain, PlanogramTemplate $planogramTemplate): Response
+    public function index(PlanogramTemplate $planogramTemplate): Response
     {
-        unset($subdomain);
         $this->authorize('view', $planogramTemplate);
 
         $planogramTemplate->load(['category', 'subtemplates.slots.category']);
@@ -41,9 +40,8 @@ class TemplateSlotController extends Controller
         ]);
     }
 
-    public function review(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): Response
+    public function review(Request $request, PlanogramTemplate $planogramTemplate): Response
     {
-        unset($subdomain);
         $this->authorize('view', $planogramTemplate);
         $this->authorize('viewAny', Product::class);
 
@@ -95,9 +93,8 @@ class TemplateSlotController extends Controller
         ]);
     }
 
-    public function createSubtemplate(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): RedirectResponse
+    public function createSubtemplate(Request $request, PlanogramTemplate $planogramTemplate): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $planogramTemplate);
 
         $validated = $request->validate([
@@ -115,9 +112,8 @@ class TemplateSlotController extends Controller
         ]);
     }
 
-    public function cloneSubtemplate(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
+    public function cloneSubtemplate(Request $request, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $planogramTemplate);
 
         $validated = $request->validate([
@@ -135,9 +131,8 @@ class TemplateSlotController extends Controller
         ]);
     }
 
-    public function destroySubtemplate(string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
+    public function destroySubtemplate(PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $planogramTemplate);
 
         $planogramSubtemplate->slots()->delete();
@@ -150,9 +145,8 @@ class TemplateSlotController extends Controller
         ]);
     }
 
-    public function updateSubtemplateSlotDefaults(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
+    public function updateSubtemplateSlotDefaults(Request $request, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $planogramTemplate);
 
         $validated = $this->service->validateSlotDefaults($request);
@@ -163,9 +157,8 @@ class TemplateSlotController extends Controller
         ]);
     }
 
-    public function storeSlot(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
+    public function storeSlot(Request $request, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $planogramTemplate);
 
         $validated = $this->service->validateSlot($request);
@@ -181,9 +174,8 @@ class TemplateSlotController extends Controller
         ]);
     }
 
-    public function bulkStoreSlots(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
+    public function bulkStoreSlots(Request $request, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $planogramTemplate);
 
         $validated = $this->service->validateBulkSlots($request);
@@ -199,9 +191,8 @@ class TemplateSlotController extends Controller
         ]);
     }
 
-    public function updateSlot(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramTemplateSlot $planogramTemplateSlot): RedirectResponse
+    public function updateSlot(Request $request, PlanogramTemplate $planogramTemplate, PlanogramTemplateSlot $planogramTemplateSlot): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $planogramTemplate);
 
         $validated = $this->service->validateSlot($request);
@@ -213,9 +204,8 @@ class TemplateSlotController extends Controller
         return back();
     }
 
-    public function destroySlot(string $subdomain, PlanogramTemplate $planogramTemplate, PlanogramTemplateSlot $planogramTemplateSlot): RedirectResponse
+    public function destroySlot(PlanogramTemplate $planogramTemplate, PlanogramTemplateSlot $planogramTemplateSlot): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $planogramTemplate);
 
         $this->service->destroySlot($planogramTemplateSlot);
@@ -227,9 +217,8 @@ class TemplateSlotController extends Controller
         ]);
     }
 
-    public function reorder(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): RedirectResponse
+    public function reorder(Request $request, PlanogramTemplate $planogramTemplate): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $planogramTemplate);
 
         $validated = $this->service->validateReorder($request);
@@ -243,9 +232,8 @@ class TemplateSlotController extends Controller
         ]);
     }
 
-    public function slotProducts(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): JsonResponse
+    public function slotProducts(Request $request, PlanogramTemplate $planogramTemplate): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('view', $planogramTemplate);
         $this->authorize('viewAny', Product::class);
 
@@ -273,9 +261,8 @@ class TemplateSlotController extends Controller
         ]);
     }
 
-    public function slotAnalysis(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): JsonResponse
+    public function slotAnalysis(Request $request, PlanogramTemplate $planogramTemplate): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('view', $planogramTemplate);
         $this->authorize('viewAny', Product::class);
 
@@ -299,9 +286,8 @@ class TemplateSlotController extends Controller
         ]);
     }
 
-    public function syncImages(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): RedirectResponse
+    public function syncImages(Request $request, PlanogramTemplate $planogramTemplate): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('view', $planogramTemplate);
 
         return $this->updateImages($request);

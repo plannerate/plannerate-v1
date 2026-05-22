@@ -372,9 +372,8 @@ class PlanogramController extends Controller
         return $this->toTenantRoute('tenant.planograms.index');
     }
 
-    public function edit(string $subdomain, Planogram $planogram): Response
+    public function edit(Planogram $planogram): Response
     {
-        unset($subdomain);
         $this->authorize('update', $planogram);
 
         return Inertia::render('tenant/planograms/Form', [
@@ -398,9 +397,8 @@ class PlanogramController extends Controller
         ]);
     }
 
-    public function update(PlanogramUpdateRequest $request, string $subdomain, Planogram $planogram): RedirectResponse
+    public function update(PlanogramUpdateRequest $request, Planogram $planogram): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $planogram);
 
         $planogram->update($request->validated());
@@ -413,9 +411,8 @@ class PlanogramController extends Controller
         return $this->toTenantRoute('tenant.planograms.index');
     }
 
-    public function destroy(string $subdomain, Planogram $planogram): RedirectResponse
+    public function destroy(Planogram $planogram): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('delete', $planogram);
 
         $planogram->delete();

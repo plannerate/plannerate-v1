@@ -21,14 +21,13 @@ class PlanogramTemplateController extends Controller
     use InteractsWithDeferredIndex;
     use InteractsWithTenantContext;
 
-    public function index(Request $request, string $subdomain): Response
+    public function index(Request $request): Response
     {
-        unset($subdomain);
         $this->authorize('viewAny', PlanogramTemplate::class);
 
         $search = $this->requestString($request, 'search');
 
-        return $this->renderDeferredIndex('tenant/planogram-templates/Index', 'templates', fn (): LengthAwarePaginator => $this->templatesPaginator(
+        return $this->renderDeferredIndex('tenant/planogram-templates/Index', 'templates', fn(): LengthAwarePaginator => $this->templatesPaginator(
             $search,
             $this->resolvePerPage($request, 15),
         ), [
@@ -38,18 +37,15 @@ class PlanogramTemplateController extends Controller
         ]);
     }
 
-    public function create(string $subdomain): Response
+    public function create(): Response
     {
-        unset($subdomain);
         $this->authorize('create', PlanogramTemplate::class);
 
-        return Inertia::render('tenant/planogram-templates/Form', [
-        ]);
+        return Inertia::render('tenant/planogram-templates/Form', []);
     }
 
-    public function store(Request $request, string $subdomain): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('create', PlanogramTemplate::class);
 
         $validated = $request->validate([
@@ -74,18 +70,15 @@ class PlanogramTemplateController extends Controller
         return $this->toTenantRoute('tenant.planogram-templates.index');
     }
 
-    public function importPage(string $subdomain): Response
+    public function importPage(): Response
     {
-        unset($subdomain);
         $this->authorize('create', PlanogramTemplate::class);
 
-        return Inertia::render('tenant/planogram-templates/Import', [
-        ]);
+        return Inertia::render('tenant/planogram-templates/Import', []);
     }
 
-    public function import(Request $request, string $subdomain, TemplateImportService $importService): RedirectResponse
+    public function import(Request $request, TemplateImportService $importService): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('create', PlanogramTemplate::class);
 
         $request->validate([
@@ -94,7 +87,7 @@ class PlanogramTemplateController extends Controller
 
         $file = $request->file('file');
         $filePath = $file->store('template-imports', 'public');
-        $absolutePath = storage_path('app/public/'.$filePath);
+        $absolutePath = storage_path('app/public/' . $filePath);
 
         $tenantId = $this->tenantId();
         $report = $importService->import($absolutePath, $tenantId);
@@ -115,9 +108,8 @@ class PlanogramTemplateController extends Controller
         return $this->toTenantRoute('tenant.planogram-templates.index');
     }
 
-    public function edit(string $subdomain, PlanogramTemplate $planogramTemplate): Response
+    public function edit(PlanogramTemplate $planogramTemplate): Response
     {
-        unset($subdomain);
         $this->authorize('update', $planogramTemplate);
 
         $planogramTemplate->load('category');
@@ -136,9 +128,8 @@ class PlanogramTemplateController extends Controller
         ]);
     }
 
-    public function update(Request $request, string $subdomain, PlanogramTemplate $planogramTemplate): RedirectResponse
+    public function update(Request $request, PlanogramTemplate $planogramTemplate): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $planogramTemplate);
 
         $validated = $request->validate([
@@ -160,9 +151,8 @@ class PlanogramTemplateController extends Controller
         return $this->toTenantRoute('tenant.planogram-templates.index');
     }
 
-    public function show(string $subdomain, PlanogramTemplate $planogramTemplate): Response
+    public function show(PlanogramTemplate $planogramTemplate): Response
     {
-        unset($subdomain);
         $this->authorize('view', $planogramTemplate);
 
         $planogramTemplate->load(['subtemplates.slots']);
@@ -176,7 +166,7 @@ class PlanogramTemplateController extends Controller
                 'description' => $planogramTemplate->description,
                 'is_active' => $planogramTemplate->is_active,
                 'subtemplates_count' => $planogramTemplate->subtemplates->count(),
-                'subtemplates' => $planogramTemplate->subtemplates->map(fn ($sub) => [
+                'subtemplates' => $planogramTemplate->subtemplates->map(fn($sub) => [
                     'id' => $sub->id,
                     'code' => $sub->code,
                     'num_modules' => $sub->num_modules,
@@ -187,25 +177,23 @@ class PlanogramTemplateController extends Controller
         ]);
     }
 
-    public function export(string $subdomain, PlanogramTemplate $planogramTemplate, TemplateExportService $exportService): StreamedResponse
+    public function export(PlanogramTemplate $planogramTemplate, TemplateExportService $exportService): StreamedResponse
     {
-        unset($subdomain);
         $this->authorize('view', $planogramTemplate);
 
         return $exportService->exportTemplate($planogramTemplate);
     }
 
-    public function exportAll(Request $request, string $subdomain, TemplateExportService $exportService): StreamedResponse
+    public function exportAll(Request $request, TemplateExportService $exportService): StreamedResponse
     {
-        unset($subdomain);
+        $this->authorize('viewAny', PlanogramTemplate::class);
         $this->authorize('viewAny', PlanogramTemplate::class);
 
         return $exportService->exportAll($this->tenantId(), $this->requestString($request, 'search'));
     }
 
-    public function destroy(string $subdomain, PlanogramTemplate $planogramTemplate): RedirectResponse
+    public function destroy(PlanogramTemplate $planogramTemplate): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('delete', $planogramTemplate);
 
         $planogramTemplate->delete();
@@ -221,15 +209,15 @@ class PlanogramTemplateController extends Controller
     private function templatesPaginator(string $search, int $perPage): LengthAwarePaginator
     {
         return PlanogramTemplate::withCount(['subtemplates'])
-            ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search): void {
-                $w->where('code', 'like', '%'.$search.'%')
-                    ->orWhere('name', 'like', '%'.$search.'%')
-                    ->orWhere('department', 'like', '%'.$search.'%');
+            ->when($search !== '', fn($q) => $q->where(function ($w) use ($search): void {
+                $w->where('code', 'like', '%' . $search . '%')
+                    ->orWhere('name', 'like', '%' . $search . '%')
+                    ->orWhere('department', 'like', '%' . $search . '%');
             }))
             ->latest()
             ->paginate($perPage)
             ->withQueryString()
-            ->through(fn (PlanogramTemplate $t): array => [
+            ->through(fn(PlanogramTemplate $t): array => [
                 'id' => $t->id,
                 'code' => $t->code,
                 'name' => $t->name,

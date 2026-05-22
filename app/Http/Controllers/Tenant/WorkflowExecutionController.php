@@ -26,9 +26,8 @@ class WorkflowExecutionController extends Controller
         private readonly WorkflowPlanogramStepService $stepService,
     ) {}
 
-    public function store(Request $request, string $subdomain, Planogram $planogram): JsonResponse
+    public function store(Request $request, Planogram $planogram): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('start', WorkflowGondolaExecution::class);
 
         $request->validate([
@@ -54,9 +53,8 @@ class WorkflowExecutionController extends Controller
         return response()->json(['execution' => $execution->toArray()], 201);
     }
 
-    public function move(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    public function move(Request $request, WorkflowGondolaExecution $execution): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('move', $execution);
 
         $request->validate([
@@ -120,9 +118,8 @@ class WorkflowExecutionController extends Controller
         return $mappedStep;
     }
 
-    public function start(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    public function start(Request $request, WorkflowGondolaExecution $execution): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('start', $execution);
 
         $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
@@ -136,9 +133,8 @@ class WorkflowExecutionController extends Controller
         return response()->json(['execution' => $execution->toArray()]);
     }
 
-    public function pause(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    public function pause(Request $request, WorkflowGondolaExecution $execution): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('pause', $execution);
 
         $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
@@ -152,9 +148,8 @@ class WorkflowExecutionController extends Controller
         return response()->json(['execution' => $execution->toArray()]);
     }
 
-    public function abandon(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    public function abandon(Request $request, WorkflowGondolaExecution $execution): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('abandon', $execution);
 
         $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
@@ -168,9 +163,8 @@ class WorkflowExecutionController extends Controller
         return response()->json(['execution' => $execution->toArray()]);
     }
 
-    public function requestAbandonment(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    public function requestAbandonment(Request $request, WorkflowGondolaExecution $execution): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('requestAbandonment', $execution);
 
         $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
@@ -188,9 +182,8 @@ class WorkflowExecutionController extends Controller
         return response()->json(['message' => 'Solicitação de abandono enviada.']);
     }
 
-    public function resume(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    public function resume(Request $request, WorkflowGondolaExecution $execution): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('resume', $execution);
 
         $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
@@ -204,9 +197,8 @@ class WorkflowExecutionController extends Controller
         return response()->json(['execution' => $execution->toArray()]);
     }
 
-    public function complete(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    public function complete(Request $request, WorkflowGondolaExecution $execution): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('complete', $execution);
 
         $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
@@ -220,9 +212,8 @@ class WorkflowExecutionController extends Controller
         return response()->json(['execution' => $execution->toArray()]);
     }
 
-    public function assign(WorkflowExecutionAssignRequest $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    public function assign(WorkflowExecutionAssignRequest $request, WorkflowGondolaExecution $execution): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('manage', $execution);
 
         $validated = $request->validated();
@@ -242,9 +233,8 @@ class WorkflowExecutionController extends Controller
         return response()->json(['execution' => $execution->toArray()]);
     }
 
-    public function details(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    public function details(Request $request, WorkflowGondolaExecution $execution): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('viewAny', WorkflowGondolaExecution::class);
 
         $execution->load([
@@ -298,9 +288,8 @@ class WorkflowExecutionController extends Controller
         ]);
     }
 
-    public function history(string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
+    public function history(WorkflowGondolaExecution $execution): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('viewAny', WorkflowGondolaExecution::class);
 
         $histories = $execution->histories()
@@ -326,9 +315,8 @@ class WorkflowExecutionController extends Controller
         return response()->json(['histories' => $histories]);
     }
 
-    public function restore(Request $request, string $subdomain, WorkflowHistory $history): JsonResponse
+    public function restore(Request $request, WorkflowHistory $history): JsonResponse
     {
-        unset($subdomain);
         $this->authorize('restore', $history->execution);
 
         abort_if(! $history->can_restore, 422, 'Este histórico não pode ser restaurado.');

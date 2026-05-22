@@ -18,6 +18,7 @@ type CategoryPayload = {
     id: string;
     category_id: string | null;
     name: string;
+    slug: string;
     level_name: string | null;
     codigo: number | null;
     status: 'draft' | 'published' | 'importer';

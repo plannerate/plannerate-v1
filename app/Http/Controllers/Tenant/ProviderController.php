@@ -112,9 +112,8 @@ class ProviderController extends Controller
         return $this->toTenantRoute('tenant.providers.index');
     }
 
-    public function edit(string $subdomain, Provider $provider): Response
+    public function edit(Provider $provider): Response
     {
-        unset($subdomain);
         $this->authorize('update', $provider);
 
         $address = $provider->addresses()->orderByDesc('is_default')->latest()->first();
@@ -134,9 +133,8 @@ class ProviderController extends Controller
         ]);
     }
 
-    public function update(ProviderUpdateRequest $request, string $subdomain, Provider $provider): RedirectResponse
+    public function update(ProviderUpdateRequest $request, Provider $provider): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $provider);
 
         $validated = $request->validated();
@@ -156,9 +154,8 @@ class ProviderController extends Controller
         return $this->toTenantRoute('tenant.providers.index');
     }
 
-    public function destroy(string $subdomain, Provider $provider): RedirectResponse
+    public function destroy(Provider $provider): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('delete', $provider);
 
         $provider->delete();

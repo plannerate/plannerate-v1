@@ -195,285 +195,279 @@ Route::middleware(['web', NeedsTenant::class])
             ->name('tenant.auth.socialite.callback');
     });
 
-$tenant = Tenant::current();
-if ($domain = $tenant?->domain) {
-    // ── TENANT (rotas que exigem tenant ativo) ────────────────────
-    Route::domain($domain->host)
-        ->middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
-        ->name('tenant.')
-        ->group(function (): void {
+// ── TENANT (rotas que exigem tenant ativo) ────────────────────
+Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
+    ->name('tenant.')
+    ->group(function (): void {
 
-            Route::get('editor/planograms', [ClientPlanogramController::class, 'index'])
-                ->name('editor.planograms.index');
+        Route::get('editor/planograms', [ClientPlanogramController::class, 'index'])
+            ->name('editor.planograms.index');
 
-            Route::get('editor/planograms/{planogram}/gondolas', [ClientPlanogramController::class, 'gondolas'])
-                ->name('editor.planograms.gondolas');
+        Route::get('editor/planograms/{planogram}/gondolas', [ClientPlanogramController::class, 'gondolas'])
+            ->name('editor.planograms.gondolas');
 
-            Route::get('editor/planograms/{record}/gondolas/editor', [EditorPlanogramController::class, 'edit'])
-                ->name('planograms.gondolas.editor');
+        Route::get('editor/planograms/{record}/gondolas/editor', [EditorPlanogramController::class, 'edit'])
+            ->name('planograms.gondolas.editor');
 
-            Route::prefix('api')->name('api.')->group(function (): void {
-                Route::post('gondolas/{gondola}/auto-generate', [AutoPlanogramController::class, 'generate'])
-                    ->name('gondolas.auto-generate');
-                Route::get('gondolas/{gondola}/rejected-products', [AutoPlanogramController::class, 'rejectedProducts'])
-                    ->name('gondolas.rejected-products');
-                Route::get('gondolas/{gondola}/template-groupings', [AutoPlanogramController::class, 'templateGroupings'])
-                    ->name('gondolas.template-groupings');
-                Route::delete('gondolas/{gondola}/rejected-products/{rejected}', [AutoPlanogramController::class, 'destroyRejectedProduct'])
-                    ->name('gondolas.rejected-products.destroy');
-                Route::post('gondolas/{gondola}/swap-product', [AutoPlanogramController::class, 'swapProduct'])
-                    ->name('gondolas.swap-product');
-                Route::post('gondolas/{gondola}/reorder-visual', [AutoPlanogramController::class, 'reorderVisual'])
-                    ->name('gondolas.reorder-visual');
-                Route::post('gondolas/{gondola}/redistribute', [AutoPlanogramController::class, 'redistributeExposure'])
-                    ->name('gondolas.redistribute');
-            });
+        Route::prefix('api')->name('api.')->group(function (): void {
+            Route::post('gondolas/{gondola}/auto-generate', [AutoPlanogramController::class, 'generate'])
+                ->name('gondolas.auto-generate');
+            Route::get('gondolas/{gondola}/rejected-products', [AutoPlanogramController::class, 'rejectedProducts'])
+                ->name('gondolas.rejected-products');
+            Route::get('gondolas/{gondola}/template-groupings', [AutoPlanogramController::class, 'templateGroupings'])
+                ->name('gondolas.template-groupings');
+            Route::delete('gondolas/{gondola}/rejected-products/{rejected}', [AutoPlanogramController::class, 'destroyRejectedProduct'])
+                ->name('gondolas.rejected-products.destroy');
+            Route::post('gondolas/{gondola}/swap-product', [AutoPlanogramController::class, 'swapProduct'])
+                ->name('gondolas.swap-product');
+            Route::post('gondolas/{gondola}/reorder-visual', [AutoPlanogramController::class, 'reorderVisual'])
+                ->name('gondolas.reorder-visual');
+            Route::post('gondolas/{gondola}/redistribute', [AutoPlanogramController::class, 'redistributeExposure'])
+                ->name('gondolas.redistribute');
         });
+    });
 
-    Route::domain($domain->host)
-        ->middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class, 'tenant.client.redirect'])
-        ->name('tenant.')
-        ->group(function (): void {
-            Route::get('/', [TenantDashboardController::class, 'index'])->name('dashboard');
+Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class, 'tenant.client.redirect'])
+    ->name('tenant.')
+    ->group(function (): void {
+        Route::get('/', [TenantDashboardController::class, 'index'])->name('dashboard');
 
-            Route::get('categories/cascade/children', [CategoryController::class, 'cascadeChildren'])
-                ->name('categories.cascade.children');
-            Route::get('categories/cascade/path', [CategoryController::class, 'cascadePath'])
-                ->name('categories.cascade.path');
-            Route::post('categories/import', [CategoryController::class, 'import'])
-                ->name('categories.import');
-            Route::get('categories/export/template', [CategoryController::class, 'exportTemplate'])
-                ->name('categories.export.template');
-            Route::get('categories/export/data', [CategoryController::class, 'exportData'])
-                ->name('categories.export.data');
+        Route::get('categories/cascade/children', [CategoryController::class, 'cascadeChildren'])
+            ->name('categories.cascade.children');
+        Route::get('categories/cascade/path', [CategoryController::class, 'cascadePath'])
+            ->name('categories.cascade.path');
+        Route::post('categories/import', [CategoryController::class, 'import'])
+            ->name('categories.import');
+        Route::get('categories/export/template', [CategoryController::class, 'exportTemplate'])
+            ->name('categories.export.template');
+        Route::get('categories/export/data', [CategoryController::class, 'exportData'])
+            ->name('categories.export.data');
 
-            Route::resource('categories', CategoryController::class)
-                ->except(['show'])
-                ->names('categories');
+        Route::resource('categories', CategoryController::class)
+            ->except(['show'])
+            ->names('categories');
 
-            Route::resource('products', ProductController::class)
-                ->except(['show'])
-                ->names('products');
-            Route::get('products/sortiment-attributes', [ProductController::class, 'sortimentAttributes'])
-                ->name('products.sortiment-attributes');
-            Route::post('products/sync-single', [ProductController::class, 'syncSingle'])
-                ->name('products.sync-single');
-            Route::post('products/update-images', [ProductController::class, 'updateImages'])
-                ->name('products.update-images');
+        Route::resource('products', ProductController::class)
+            ->except(['show'])
+            ->names('products');
+        Route::get('products/sortiment-attributes', [ProductController::class, 'sortimentAttributes'])
+            ->name('products.sortiment-attributes');
+        Route::post('products/sync-single', [ProductController::class, 'syncSingle'])
+            ->name('products.sync-single');
+        Route::post('products/update-images', [ProductController::class, 'updateImages'])
+            ->name('products.update-images');
 
-            Route::get('dimensions', [ProductDimensionController::class, 'index'])
-                ->name('dimensions.index');
-            Route::post('dimensions/sync-from-reference-page', [ProductDimensionController::class, 'syncPageFromReference'])
-                ->name('dimensions.sync-from-reference-page');
-            Route::post('dimensions/{product}/sync-from-reference', [ProductDimensionController::class, 'syncFromReference'])
-                ->name('dimensions.sync-from-reference');
-            Route::patch('dimensions/{product}', [ProductDimensionController::class, 'update'])
-                ->name('dimensions.update');
+        Route::get('dimensions', [ProductDimensionController::class, 'index'])
+            ->name('dimensions.index');
+        Route::post('dimensions/sync-from-reference-page', [ProductDimensionController::class, 'syncPageFromReference'])
+            ->name('dimensions.sync-from-reference-page');
+        Route::post('dimensions/{product}/sync-from-reference', [ProductDimensionController::class, 'syncFromReference'])
+            ->name('dimensions.sync-from-reference');
+        Route::patch('dimensions/{product}', [ProductDimensionController::class, 'update'])
+            ->name('dimensions.update');
 
-            Route::get('similar-groups/products/search', [SimilarGroupController::class, 'productSearch'])
-                ->name('similar-groups.products.search');
-            Route::resource('similar-groups', SimilarGroupController::class)
-                ->except(['show'])
-                ->names('similar-groups');
-            Route::get('system-logs', [SystemLogController::class, 'index'])
-                ->name('system-logs.index');
-            Route::delete('system-logs', [SystemLogController::class, 'clear'])
-                ->name('system-logs.clear');
+        Route::get('similar-groups/products/search', [SimilarGroupController::class, 'productSearch'])
+            ->name('similar-groups.products.search');
+        Route::resource('similar-groups', SimilarGroupController::class)
+            ->except(['show'])
+            ->names('similar-groups');
+        Route::get('system-logs', [SystemLogController::class, 'index'])
+            ->name('system-logs.index');
+        Route::delete('system-logs', [SystemLogController::class, 'clear'])
+            ->name('system-logs.clear');
 
-            Route::resource('stores', StoreController::class)
-                ->except(['show'])
-                ->names('stores');
+        Route::resource('stores', StoreController::class)
+            ->except(['show'])
+            ->names('stores');
 
-            Route::resource('sales', SaleController::class)
-                ->except(['show'])
-                ->names('sales');
+        Route::resource('sales', SaleController::class)
+            ->except(['show'])
+            ->names('sales');
 
-            Route::resource('clusters', ClusterController::class)
-                ->except(['show'])
-                ->names('clusters');
+        Route::resource('clusters', ClusterController::class)
+            ->except(['show'])
+            ->names('clusters');
 
-            Route::resource('providers', ProviderController::class)
-                ->except(['show'])
-                ->names('providers');
+        Route::resource('providers', ProviderController::class)
+            ->except(['show'])
+            ->names('providers');
 
-            Route::get('planogram-templates', [PlanogramTemplateController::class, 'index'])
-                ->name('planogram-templates.index');
-            Route::get('planogram-templates/create', [PlanogramTemplateController::class, 'create'])
-                ->name('planogram-templates.create');
-            Route::post('planogram-templates', [PlanogramTemplateController::class, 'store'])
-                ->name('planogram-templates.store');
-            Route::get('planogram-templates/{planogramTemplate}/edit', [PlanogramTemplateController::class, 'edit'])
-                ->name('planogram-templates.edit');
-            Route::put('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'update'])
-                ->name('planogram-templates.update');
-            Route::get('planogram-templates/import', [PlanogramTemplateController::class, 'importPage'])
-                ->name('planogram-templates.import-page');
-            Route::post('planogram-templates/import', [PlanogramTemplateController::class, 'import'])
-                ->name('planogram-templates.import');
-            Route::get('planogram-templates/export', [PlanogramTemplateController::class, 'exportAll'])
-                ->name('planogram-templates.export-all');
-            Route::get('planogram-templates/{planogramTemplate}/export', [PlanogramTemplateController::class, 'export'])
-                ->name('planogram-templates.export');
-            Route::get('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'show'])
-                ->name('planogram-templates.show');
-            Route::delete('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'destroy'])
-                ->name('planogram-templates.destroy');
+        Route::get('planogram-templates', [PlanogramTemplateController::class, 'index'])
+            ->name('planogram-templates.index');
+        Route::get('planogram-templates/create', [PlanogramTemplateController::class, 'create'])
+            ->name('planogram-templates.create');
+        Route::post('planogram-templates', [PlanogramTemplateController::class, 'store'])
+            ->name('planogram-templates.store');
+        Route::get('planogram-templates/{planogramTemplate}/edit', [PlanogramTemplateController::class, 'edit'])
+            ->name('planogram-templates.edit');
+        Route::put('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'update'])
+            ->name('planogram-templates.update');
+        Route::get('planogram-templates/import', [PlanogramTemplateController::class, 'importPage'])
+            ->name('planogram-templates.import-page');
+        Route::post('planogram-templates/import', [PlanogramTemplateController::class, 'import'])
+            ->name('planogram-templates.import');
+        Route::get('planogram-templates/export', [PlanogramTemplateController::class, 'exportAll'])
+            ->name('planogram-templates.export-all');
+        Route::get('planogram-templates/{planogramTemplate}/export', [PlanogramTemplateController::class, 'export'])
+            ->name('planogram-templates.export');
+        Route::get('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'show'])
+            ->name('planogram-templates.show');
+        Route::delete('planogram-templates/{planogramTemplate}', [PlanogramTemplateController::class, 'destroy'])
+            ->name('planogram-templates.destroy');
 
-            // Wizard etapa 2 — Slots (tenant)
-            Route::get('planogram-templates/{planogramTemplate}/slots', [TemplateSlotController::class, 'index'])
-                ->name('planogram-templates.slots.index');
-            Route::get('planogram-templates/{planogramTemplate}/review', [TemplateSlotController::class, 'review'])
-                ->name('planogram-templates.slots.review');
-            Route::post('planogram-templates/{planogramTemplate}/subtemplates', [TemplateSlotController::class, 'createSubtemplate'])
-                ->name('planogram-templates.subtemplates.store');
-            Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/clone', [TemplateSlotController::class, 'cloneSubtemplate'])
-                ->name('planogram-templates.subtemplates.clone');
-            Route::delete('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}', [TemplateSlotController::class, 'destroySubtemplate'])
-                ->name('planogram-templates.subtemplates.destroy');
-            Route::put('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slot-defaults', [TemplateSlotController::class, 'updateSubtemplateSlotDefaults'])
-                ->name('planogram-templates.subtemplates.slot-defaults.update');
-            Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots', [TemplateSlotController::class, 'storeSlot'])
-                ->name('planogram-templates.slots.store');
-            Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots/bulk', [TemplateSlotController::class, 'bulkStoreSlots'])
-                ->name('planogram-templates.slots.bulk');
-            Route::post('planogram-templates/{planogramTemplate}/slots/reorder', [TemplateSlotController::class, 'reorder'])
-                ->name('planogram-templates.slots.reorder');
-            Route::get('planogram-templates/{planogramTemplate}/slots/products', [TemplateSlotController::class, 'slotProducts'])
-                ->name('planogram-templates.slots.products');
-            Route::post('planogram-templates/{planogramTemplate}/slots/sync-images', [TemplateSlotController::class, 'syncImages'])
-                ->name('planogram-templates.slots.sync-images');
+        // Wizard etapa 2 — Slots (tenant)
+        Route::get('planogram-templates/{planogramTemplate}/slots', [TemplateSlotController::class, 'index'])
+            ->name('planogram-templates.slots.index');
+        Route::get('planogram-templates/{planogramTemplate}/review', [TemplateSlotController::class, 'review'])
+            ->name('planogram-templates.slots.review');
+        Route::post('planogram-templates/{planogramTemplate}/subtemplates', [TemplateSlotController::class, 'createSubtemplate'])
+            ->name('planogram-templates.subtemplates.store');
+        Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/clone', [TemplateSlotController::class, 'cloneSubtemplate'])
+            ->name('planogram-templates.subtemplates.clone');
+        Route::delete('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}', [TemplateSlotController::class, 'destroySubtemplate'])
+            ->name('planogram-templates.subtemplates.destroy');
+        Route::put('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slot-defaults', [TemplateSlotController::class, 'updateSubtemplateSlotDefaults'])
+            ->name('planogram-templates.subtemplates.slot-defaults.update');
+        Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots', [TemplateSlotController::class, 'storeSlot'])
+            ->name('planogram-templates.slots.store');
+        Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots/bulk', [TemplateSlotController::class, 'bulkStoreSlots'])
+            ->name('planogram-templates.slots.bulk');
+        Route::post('planogram-templates/{planogramTemplate}/slots/reorder', [TemplateSlotController::class, 'reorder'])
+            ->name('planogram-templates.slots.reorder');
+        Route::get('planogram-templates/{planogramTemplate}/slots/products', [TemplateSlotController::class, 'slotProducts'])
+            ->name('planogram-templates.slots.products');
+        Route::post('planogram-templates/{planogramTemplate}/slots/sync-images', [TemplateSlotController::class, 'syncImages'])
+            ->name('planogram-templates.slots.sync-images');
 
-            Route::get('planogram-templates/{planogramTemplate}/slots/analysis', [TemplateSlotController::class, 'slotAnalysis'])
-                ->name('planogram-templates.slots.analysis');
-            Route::put('planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}', [TemplateSlotController::class, 'updateSlot'])
-                ->name('planogram-templates.slots.update');
-            Route::delete('planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}', [TemplateSlotController::class, 'destroySlot'])
-                ->name('planogram-templates.slots.destroy');
+        Route::get('planogram-templates/{planogramTemplate}/slots/analysis', [TemplateSlotController::class, 'slotAnalysis'])
+            ->name('planogram-templates.slots.analysis');
+        Route::put('planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}', [TemplateSlotController::class, 'updateSlot'])
+            ->name('planogram-templates.slots.update');
+        Route::delete('planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}', [TemplateSlotController::class, 'destroySlot'])
+            ->name('planogram-templates.slots.destroy');
 
-            Route::get('planogram-product-rules', [PlanogramProductRuleController::class, 'index'])
-                ->name('planogram-product-rules.index');
-            Route::post('planogram-product-rules', [PlanogramProductRuleController::class, 'store'])
-                ->name('planogram-product-rules.store');
-            Route::delete('planogram-product-rules/{planogramProductRule}', [PlanogramProductRuleController::class, 'destroy'])
-                ->name('planogram-product-rules.destroy');
+        Route::get('planogram-product-rules', [PlanogramProductRuleController::class, 'index'])
+            ->name('planogram-product-rules.index');
+        Route::post('planogram-product-rules', [PlanogramProductRuleController::class, 'store'])
+            ->name('planogram-product-rules.store');
+        Route::delete('planogram-product-rules/{planogramProductRule}', [PlanogramProductRuleController::class, 'destroy'])
+            ->name('planogram-product-rules.destroy');
 
-            Route::resource('users', TenantUserController::class)
-                ->except(['show'])
-                ->names('users');
+        Route::resource('users', TenantUserController::class)
+            ->except(['show'])
+            ->names('users');
 
-            Route::resource('planograms', PlanogramController::class)
-                ->except(['show'])
-                ->names('planograms');
+        Route::resource('planograms', PlanogramController::class)
+            ->except(['show'])
+            ->names('planograms');
 
-            Route::middleware('tenant.module.active:' . ModuleSlug::KANBAN)
-                ->get('planograms/kanban', [PlanogramController::class, 'kanban'])
-                ->name('planograms.kanban');
+        Route::middleware('tenant.module.active:' . ModuleSlug::KANBAN)
+            ->get('planograms/kanban', [PlanogramController::class, 'kanban'])
+            ->name('planograms.kanban');
 
-            Route::get('planograms/maps', [PlanogramController::class, 'maps'])
-                ->name('planograms.maps');
-            Route::get('planograms/orphan-layers', [PlanogramController::class, 'orphanLayers'])
-                ->name('planograms.orphan-layers');
+        Route::get('planograms/maps', [PlanogramController::class, 'maps'])
+            ->name('planograms.maps');
+        Route::get('planograms/orphan-layers', [PlanogramController::class, 'orphanLayers'])
+            ->name('planograms.orphan-layers');
 
-            Route::resource('planograms/{planogram}/gondolas', GondolaController::class)
-                ->except(['show'])
-                ->names('gondolas');
+        Route::resource('planograms/{planogram}/gondolas', GondolaController::class)
+            ->except(['show'])
+            ->names('gondolas');
 
-            Route::post('products/image/upload', [ProductImageController::class, 'upload'])
-                ->name('products.image.upload');
-            Route::delete('products/image/{product}', [ProductImageController::class, 'destroy'])
-                ->name('products.image.destroy');
-            Route::post('products/image/ai/process', [ProductImageController::class, 'process'])
-                ->name('products.image.ai.process');
-            Route::get('products/image/ai/operations/{operation}', [ProductImageController::class, 'status'])
-                ->name('products.image.ai.status');
-            Route::post('products/image/repository/fetch', [ProductImageController::class, 'fetchFromRepository'])
-                ->name('products.image.repository.fetch');
+        Route::post('products/image/upload', [ProductImageController::class, 'upload'])
+            ->name('products.image.upload');
+        Route::delete('products/image/{product}', [ProductImageController::class, 'destroy'])
+            ->name('products.image.destroy');
+        Route::post('products/image/ai/process', [ProductImageController::class, 'process'])
+            ->name('products.image.ai.process');
+        Route::get('products/image/ai/operations/{operation}', [ProductImageController::class, 'status'])
+            ->name('products.image.ai.status');
+        Route::post('products/image/repository/fetch', [ProductImageController::class, 'fetchFromRepository'])
+            ->name('products.image.repository.fetch');
 
-            Route::get('reverb-test', [ReverbTestController::class, 'index'])->name('reverb-test.index');
-            Route::post('reverb-test/notify', [ReverbTestController::class, 'notify'])->name('reverb-test.notify');
+        Route::get('reverb-test', [ReverbTestController::class, 'index'])->name('reverb-test.index');
+        Route::post('reverb-test/notify', [ReverbTestController::class, 'notify'])->name('reverb-test.notify');
 
-            Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])
-                ->name('notifications.read-all');
-            Route::delete('notifications', [NotificationController::class, 'destroyAll'])
-                ->name('notifications.destroy-all');
-            Route::patch('notifications/{id}/read', [NotificationController::class, 'markRead'])
-                ->name('notifications.read');
-            Route::get('notifications/{id}/download', [NotificationController::class, 'download'])
-                ->name('notifications.download');
-            Route::delete('notifications/{id}', [NotificationController::class, 'destroy'])
-                ->name('notifications.destroy');
+        Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])
+            ->name('notifications.read-all');
+        Route::delete('notifications', [NotificationController::class, 'destroyAll'])
+            ->name('notifications.destroy-all');
+        Route::patch('notifications/{id}/read', [NotificationController::class, 'markRead'])
+            ->name('notifications.read');
+        Route::get('notifications/{id}/download', [NotificationController::class, 'download'])
+            ->name('notifications.download');
+        Route::delete('notifications/{id}', [NotificationController::class, 'destroy'])
+            ->name('notifications.destroy');
 
-            Route::get('settings/scoring-weights', [ScoringWeightsController::class, 'edit'])
-                ->name('scoring-weights.edit');
-            Route::put('settings/scoring-weights', [ScoringWeightsController::class, 'update'])
-                ->name('scoring-weights.update');
+        Route::get('settings/scoring-weights', [ScoringWeightsController::class, 'edit'])
+            ->name('scoring-weights.edit');
+        Route::put('settings/scoring-weights', [ScoringWeightsController::class, 'update'])
+            ->name('scoring-weights.update');
 
-            Route::get('settings/adjacency-matrix', [AdjacencyMatrixController::class, 'edit'])
-                ->name('adjacency-matrix.edit');
-            Route::post('settings/adjacency-matrix', [AdjacencyMatrixController::class, 'store'])
-                ->name('adjacency-matrix.store');
-            Route::put('settings/adjacency-matrix/{adjacencyRule}', [AdjacencyMatrixController::class, 'update'])
-                ->name('adjacency-matrix.update');
-            Route::delete('settings/adjacency-matrix/{adjacencyRule}', [AdjacencyMatrixController::class, 'destroy'])
-                ->name('adjacency-matrix.destroy');
+        Route::get('settings/adjacency-matrix', [AdjacencyMatrixController::class, 'edit'])
+            ->name('adjacency-matrix.edit');
+        Route::post('settings/adjacency-matrix', [AdjacencyMatrixController::class, 'store'])
+            ->name('adjacency-matrix.store');
+        Route::put('settings/adjacency-matrix/{adjacencyRule}', [AdjacencyMatrixController::class, 'update'])
+            ->name('adjacency-matrix.update');
+        Route::delete('settings/adjacency-matrix/{adjacencyRule}', [AdjacencyMatrixController::class, 'destroy'])
+            ->name('adjacency-matrix.destroy');
 
-            Route::get('settings/planogram', [PlanogramSettingsController::class, 'edit'])
-                ->name('planogram-settings.edit');
-            Route::put('settings/planogram', [PlanogramSettingsController::class, 'update'])
-                ->name('planogram-settings.update');
+        Route::get('settings/planogram', [PlanogramSettingsController::class, 'edit'])
+            ->name('planogram-settings.edit');
+        Route::put('settings/planogram', [PlanogramSettingsController::class, 'update'])
+            ->name('planogram-settings.update');
 
-            Route::get('settings/shelf-level-preferences', [ShelfLevelPreferencesController::class, 'edit'])
-                ->name('shelf-level-preferences.edit');
-            Route::post('settings/shelf-level-preferences', [ShelfLevelPreferencesController::class, 'store'])
-                ->name('shelf-level-preferences.store');
-            Route::put('settings/shelf-level-preferences/{preference}', [ShelfLevelPreferencesController::class, 'update'])
-                ->name('shelf-level-preferences.update');
-            Route::delete('settings/shelf-level-preferences/{preference}', [ShelfLevelPreferencesController::class, 'destroy'])
-                ->name('shelf-level-preferences.destroy');
+        Route::get('settings/shelf-level-preferences', [ShelfLevelPreferencesController::class, 'edit'])
+            ->name('shelf-level-preferences.edit');
+        Route::post('settings/shelf-level-preferences', [ShelfLevelPreferencesController::class, 'store'])
+            ->name('shelf-level-preferences.store');
+        Route::put('settings/shelf-level-preferences/{preference}', [ShelfLevelPreferencesController::class, 'update'])
+            ->name('shelf-level-preferences.update');
+        Route::delete('settings/shelf-level-preferences/{preference}', [ShelfLevelPreferencesController::class, 'destroy'])
+            ->name('shelf-level-preferences.destroy');
 
-            Route::middleware('tenant.module.active:' . ModuleSlug::KANBAN)->group(function (): void {
-                // ── KANBAN ────────────────────────────────────────────────
-                Route::get('kanban', [WorkflowKanbanController::class, 'index'])->name('kanban.index');
+        Route::middleware('tenant.module.active:' . ModuleSlug::KANBAN)->group(function (): void {
+            // ── KANBAN ────────────────────────────────────────────────
+            Route::get('kanban', [WorkflowKanbanController::class, 'index'])->name('kanban.index');
 
-                Route::post('kanban/{planogram}/executions', [WorkflowExecutionController::class, 'store'])
-                    ->name('kanban.executions.store');
-                Route::get('kanban/executions/{execution}/details', [WorkflowExecutionController::class, 'details'])
-                    ->name('kanban.executions.details');
-                Route::patch('kanban/executions/{execution}/start', [WorkflowExecutionController::class, 'start'])
-                    ->name('kanban.executions.start');
-                Route::patch('kanban/executions/{execution}/move', [WorkflowExecutionController::class, 'move'])
-                    ->name('kanban.executions.move');
-                Route::patch('kanban/executions/{execution}/pause', [WorkflowExecutionController::class, 'pause'])
-                    ->name('kanban.executions.pause');
-                Route::patch('kanban/executions/{execution}/resume', [WorkflowExecutionController::class, 'resume'])
-                    ->name('kanban.executions.resume');
-                Route::patch('kanban/executions/{execution}/complete', [WorkflowExecutionController::class, 'complete'])
-                    ->name('kanban.executions.complete');
-                Route::patch('kanban/executions/{execution}/abandon', [WorkflowExecutionController::class, 'abandon'])
-                    ->name('kanban.executions.abandon');
-                Route::post('kanban/executions/{execution}/request-abandonment', [WorkflowExecutionController::class, 'requestAbandonment'])
-                    ->name('kanban.executions.request-abandonment');
-                Route::patch('kanban/executions/{execution}/assign', [WorkflowExecutionController::class, 'assign'])
-                    ->name('kanban.executions.assign');
-                Route::get('kanban/executions/{execution}/history', [WorkflowExecutionController::class, 'history'])
-                    ->name('kanban.executions.history');
-                Route::post('kanban/histories/{history}/restore', [WorkflowExecutionController::class, 'restore'])
-                    ->name('kanban.histories.restore');
+            Route::post('kanban/{planogram}/executions', [WorkflowExecutionController::class, 'store'])
+                ->name('kanban.executions.store');
+            Route::get('kanban/executions/{execution}/details', [WorkflowExecutionController::class, 'details'])
+                ->name('kanban.executions.details');
+            Route::patch('kanban/executions/{execution}/start', [WorkflowExecutionController::class, 'start'])
+                ->name('kanban.executions.start');
+            Route::patch('kanban/executions/{execution}/move', [WorkflowExecutionController::class, 'move'])
+                ->name('kanban.executions.move');
+            Route::patch('kanban/executions/{execution}/pause', [WorkflowExecutionController::class, 'pause'])
+                ->name('kanban.executions.pause');
+            Route::patch('kanban/executions/{execution}/resume', [WorkflowExecutionController::class, 'resume'])
+                ->name('kanban.executions.resume');
+            Route::patch('kanban/executions/{execution}/complete', [WorkflowExecutionController::class, 'complete'])
+                ->name('kanban.executions.complete');
+            Route::patch('kanban/executions/{execution}/abandon', [WorkflowExecutionController::class, 'abandon'])
+                ->name('kanban.executions.abandon');
+            Route::post('kanban/executions/{execution}/request-abandonment', [WorkflowExecutionController::class, 'requestAbandonment'])
+                ->name('kanban.executions.request-abandonment');
+            Route::patch('kanban/executions/{execution}/assign', [WorkflowExecutionController::class, 'assign'])
+                ->name('kanban.executions.assign');
+            Route::get('kanban/executions/{execution}/history', [WorkflowExecutionController::class, 'history'])
+                ->name('kanban.executions.history');
+            Route::post('kanban/histories/{history}/restore', [WorkflowExecutionController::class, 'restore'])
+                ->name('kanban.histories.restore');
 
-                Route::get('planograms/{planogram}/workflow-settings', [WorkflowPlanogramStepController::class, 'index'])
-                    ->name('planograms.workflow-settings.index');
-                Route::put('planograms/{planogram}/workflow-settings', [WorkflowPlanogramStepController::class, 'update'])
-                    ->name('planograms.workflow-settings.update');
-                Route::post('planograms/{planogram}/workflow-settings/load-defaults', [WorkflowPlanogramStepController::class, 'loadDefaults'])
-                    ->name('planograms.workflow-settings.load-defaults');
-            });
+            Route::get('planograms/{planogram}/workflow-settings', [WorkflowPlanogramStepController::class, 'index'])
+                ->name('planograms.workflow-settings.index');
+            Route::put('planograms/{planogram}/workflow-settings', [WorkflowPlanogramStepController::class, 'update'])
+                ->name('planograms.workflow-settings.update');
+            Route::post('planograms/{planogram}/workflow-settings/load-defaults', [WorkflowPlanogramStepController::class, 'loadDefaults'])
+                ->name('planograms.workflow-settings.load-defaults');
         });
+    });
 
-    // Broadcasting auth precisa rodar no contexto do tenant para autenticar canais privados
-    Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
-        ->middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
-        ->group(function (): void {
-            Broadcast::routes();
-        });
-}
+// Broadcasting auth precisa rodar no contexto do tenant para autenticar canais privados
+Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
+    ->group(function (): void {
+        Broadcast::routes();
+    });
 require __DIR__ . '/settings.php';

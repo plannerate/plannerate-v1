@@ -129,9 +129,8 @@ class SimilarGroupController extends Controller
         return $this->toTenantRoute('tenant.similar-groups.index');
     }
 
-    public function edit(string $subdomain, SimilarGroup $similarGroup): Response
+    public function edit(SimilarGroup $similarGroup): Response
     {
-        unset($subdomain);
         $this->authorize('update', $similarGroup);
         $similarGroup->load('products');
 
@@ -152,9 +151,8 @@ class SimilarGroupController extends Controller
         ]);
     }
 
-    public function update(SimilarGroupUpdateRequest $request, string $subdomain, SimilarGroup $similarGroup): RedirectResponse
+    public function update(SimilarGroupUpdateRequest $request, SimilarGroup $similarGroup): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $similarGroup);
 
         $validated = $request->validated();
@@ -177,9 +175,8 @@ class SimilarGroupController extends Controller
         return $this->toTenantRoute('tenant.similar-groups.index');
     }
 
-    public function destroy(string $subdomain, SimilarGroup $similarGroup): RedirectResponse
+    public function destroy(SimilarGroup $similarGroup): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('delete', $similarGroup);
 
         $this->eanReferenceSimilarSyncService->remove($similarGroup);

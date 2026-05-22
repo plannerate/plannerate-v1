@@ -114,9 +114,8 @@ class StoreController extends Controller
         return $this->toTenantRoute('tenant.stores.index');
     }
 
-    public function edit(string $subdomain, Store $store): Response
+    public function edit(Store $store): Response
     {
-        unset($subdomain);
         $this->authorize('update', $store);
 
         $address = $store->addresses()->orderByDesc('is_default')->latest()->first();
@@ -138,9 +137,8 @@ class StoreController extends Controller
         ]);
     }
 
-    public function update(StoreUpdateRequest $request, string $subdomain, Store $store): RedirectResponse
+    public function update(StoreUpdateRequest $request, Store $store): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('update', $store);
 
         $validated = $request->validated();
@@ -276,9 +274,8 @@ class StoreController extends Controller
         return $value === '' ? null : $value;
     }
 
-    public function destroy(string $subdomain, Store $store): RedirectResponse
+    public function destroy(Store $store): RedirectResponse
     {
-        unset($subdomain);
         $this->authorize('delete', $store);
 
         $store->delete();

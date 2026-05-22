@@ -49,9 +49,8 @@ class ProductDimensionController extends Controller
         ]);
     }
 
-    public function update(UpdateProductDimensionsRequest $request, string $subdomain, string $product): RedirectResponse
+    public function update(UpdateProductDimensionsRequest $request, string $product): RedirectResponse
     {
-        unset($subdomain);
         $product = Product::query()->whereKey($product)->firstOrFail();
         $this->authorize('update', $product);
 
@@ -65,10 +64,8 @@ class ProductDimensionController extends Controller
         return $this->toTenantRoute('tenant.dimensions.index');
     }
 
-    public function syncFromReference(string $subdomain, string $product): RedirectResponse
+    public function syncFromReference(string $product): RedirectResponse
     {
-        unset($subdomain);
-
         $product = Product::query()->whereKey($product)->firstOrFail();
         $this->authorize('update', $product);
 
@@ -87,9 +84,8 @@ class ProductDimensionController extends Controller
         return back();
     }
 
-    public function syncPageFromReference(Request $request, string $subdomain): RedirectResponse
+    public function syncPageFromReference(Request $request): RedirectResponse
     {
-        unset($subdomain);
 
         $this->authorize('viewAny', Product::class);
 
