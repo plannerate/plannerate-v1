@@ -21,13 +21,6 @@ beforeEach(function (): void {
         '--no-interaction' => true,
     ]);
 
-    Artisan::call('migrate:fresh', [
-        '--database' => 'tenant',
-        '--path' => 'database/migrations',
-        '--force' => true,
-        '--no-interaction' => true,
-    ]);
-
     Artisan::call('db:seed', [
         '--class' => LandlordRbacSeeder::class,
         '--force' => true,

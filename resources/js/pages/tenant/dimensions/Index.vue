@@ -1,6 +1,17 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
-import { Check, ChevronDown, Loader2, Pencil, RefreshCcw, SlidersHorizontal, X } from 'lucide-vue-next';
+import { Head, Link, router } from '@inertiajs/vue3';
+import {
+    AlertTriangle,
+    Check,
+    ChevronDown,
+    ExternalLink,
+    Info,
+    Loader2,
+    Pencil,
+    RefreshCcw,
+    SlidersHorizontal,
+    X,
+} from 'lucide-vue-next';
 import { computed, nextTick, ref, watch } from 'vue';
 import ListPage from '@/components/ListPage.vue';
 import ColumnHeader from '@/components/table/columns/ColumnHeader.vue';
@@ -12,8 +23,13 @@ import { useCrudPageMeta } from '@/composables/useCrudPageMeta';
 import { useDeferredPaginator } from '@/composables/useDeferredPaginator';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';
+import * as DimensionApprovalController from '@/actions/App/Http/Controllers/Tenant/Products/DimensionApprovalController';
 import { dashboard } from '@/routes';
 import type { Paginator } from '@/types';
+
+type AiStatus = 'pending' | 'researching' | 'awaiting_approval' | 'approved' | 'not_found' | 'rejected' | null;
+type AiSource = 'local_similarity' | 'cosmos' | 'web_search' | 'not_found' | null;
+type AiConfidence = 'high' | 'medium' | 'low' | null;
 
 type DimensionRow = {
     id: string;
@@ -25,7 +41,17 @@ type DimensionRow = {
     depth: string | number | null;
     weight: string | number | null;
     unit: string | null;
-    dimension_status: 'draft' | 'published' | null;
+    dimension_publish_status: 'draft' | 'published' | null;
+    // Campos do pipeline AI
+    ai_status: AiStatus;
+    ai_status_label: string | null;
+    ai_status_color: string | null;
+    ai_source: AiSource;
+    ai_source_url: string | null;
+    ai_confidence: AiConfidence;
+    ai_reasoning: string | null;
+    ai_warnings: string[];
+    ai_researched_at: string | null;
 };
 
 type EditingRow = {
@@ -34,7 +60,7 @@ type EditingRow = {
     depth: string;
     weight: string;
     unit: string;
-    dimension_status: 'draft' | 'published';
+    dimension_publish_status: 'draft' | 'published';
 };
 
 const props = defineProps<{
@@ -42,7 +68,7 @@ const props = defineProps<{
     filters: {
         search: string;
         category_id: string;
-        dimension_status: string;
+        dimension_publish_status: string;
     };
 }>();
 
@@ -86,7 +112,7 @@ function startEdit(row: DimensionRow): void {
         depth: row.depth !== null ? String(row.depth) : '',
         weight: row.weight !== null ? String(row.weight) : '',
         unit: row.unit ?? 'cm',
-        dimension_status: row.dimension_status ?? 'draft',
+        dimension_publish_status: row.dimension_publish_status ?? 'draft',
     };
 }
 
@@ -164,6 +190,37 @@ function syncCurrentPageFromReference(): void {
     );
 }
 
+/** Retorna classes CSS Tailwind para o badge de confiança da pesquisa AI. */
+function confidenceClass(confidence: AiConfidence): string {
+    return {
+        high: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+        medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+        low: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    }[confidence ?? 'low'] ?? '';
+}
+
+/** Rótulo legível para a fonte da pesquisa AI. */
+function sourceLabel(source: AiSource): string {
+    return {
+        local_similarity: 'Banco local',
+        cosmos: 'Cosmos',
+        web_search: 'Web',
+        not_found: '—',
+    }[source ?? 'not_found'] ?? '—';
+}
+
+/** Retorna classes CSS para o badge de status do pipeline AI. */
+function aiStatusClass(color: string | null): string {
+    return {
+        gray: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+        blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+        yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+        green: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+        orange: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+        red: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    }[color ?? 'gray'] ?? 'bg-gray-100 text-gray-700';
+}
+
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.dimensions.title'),
     title: t('app.tenant.dimensions.title'),
@@ -178,6 +235,11 @@ const pageMeta = useCrudPageMeta({
 <template>
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <template #header-actions>
+            <Link :href="DimensionApprovalController.index.url()"
+                class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted">
+                <Check class="size-3.5 shrink-0" />
+                {{ t('app.tenant.dimensions.actions.pending_approval') }}
+            </Link>
             <button type="button" :disabled="syncingPage || loading || rows.length === 0"
                 class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                 @click="syncCurrentPageFromReference">
@@ -227,7 +289,7 @@ const pageMeta = useCrudPageMeta({
                     </PopoverContent>
                 </Popover>
 
-                <select name="dimension_status" :value="filters.dimension_status"
+                <select name="dimension_publish_status" :value="filters.dimension_publish_status"
                     class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20">
                     <option value="">{{ t('app.tenant.common.all') }}</option>
                     <option value="draft">{{ t('app.tenant.products.dimensions_status_options.draft') }}</option>
@@ -239,31 +301,40 @@ const pageMeta = useCrudPageMeta({
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
+                        <ColumnHeader field="name">{{ t('app.tenant.products.fields.name') }}</ColumnHeader>
                         <ColumnHeader field="codigo_erp">{{ t('app.tenant.products.fields.codigo_erp') }}</ColumnHeader>
                         <ColumnHeader field="ean">{{ t('app.tenant.products.fields.ean') }}</ColumnHeader>
                         <ColumnHeader field="height">{{ t('app.tenant.products.fields.height') }}</ColumnHeader>
                         <ColumnHeader field="width">{{ t('app.tenant.products.fields.width') }}</ColumnHeader>
                         <ColumnHeader field="depth">{{ t('app.tenant.products.fields.depth') }}</ColumnHeader>
-                        <!-- <th class="px-4 py-3 font-medium">Peso</th> -->
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.products.fields.unit') }}</th>
-                        <ColumnHeader field="dimension_status">{{ t('app.tenant.common.status') }}</ColumnHeader>
+                        <ColumnHeader field="dimension_publish_status">{{ t('app.tenant.common.status') }}</ColumnHeader>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.dimensions.ai_research_label') }}</th>
                         <th class="w-28 px-4 py-3 text-center font-medium">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <template v-if="loading">
-                        <TableLoadingSkeleton :columns="9" :rows="8" />
+                        <TableLoadingSkeleton :columns="10" :rows="8" />
                     </template>
                     <tr v-else-if="rows.length === 0">
-                        <td class="px-4 py-6 text-muted-foreground" colspan="9">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="10">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
                     <tr v-for="row in rows" :key="row.id"
                         class="border-t border-sidebar-border/60 transition-colors odd:bg-transparent even:bg-muted/30 hover:bg-muted/50 dark:border-sidebar-border"
                         :class="{ 'bg-primary/5 even:bg-primary/5': editingId === row.id }">
-                        <td class="px-4 py-2">{{ row.codigo_erp ?? '-' }}</td>
-                        <td class="px-4 py-2">{{ row.ean ?? '-' }}</td>
+
+                        <!-- Nome do produto -->
+                        <td class="max-w-48 px-4 py-2">
+                            <span class="block truncate" :title="row.name ?? ''">{{ row.name ?? '—' }}</span>
+                        </td>
+
+                        <td class="px-4 py-2">{{ row.codigo_erp ?? '—' }}</td>
+                        <td class="px-4 py-2 font-mono text-xs">{{ row.ean ?? '—' }}</td>
+
+                        <!-- Dimensões (editável ou somente leitura) -->
                         <template v-if="editingId === row.id && editingData">
                             <td class="px-2 py-1">
                                 <input v-model="editingData.height" type="number" min="0" step="0.01"
@@ -283,11 +354,6 @@ const pageMeta = useCrudPageMeta({
                                     :placeholder="t('app.tenant.dimensions.placeholders.depth_short')"
                                     @keydown="handleKeydown($event, row.id)" />
                             </td>
-                            <!-- <td class="px-2 py-1">
-                                <input v-model="editingData.weight" type="number" min="0" step="0.01"
-                                    class="h-8 w-20 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
-                                    placeholder="Peso" @keydown="handleKeydown($event, row.id)" />
-                            </td> -->
                             <td class="px-2 py-1">
                                 <input v-model="editingData.unit"
                                     class="h-8 w-16 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20"
@@ -295,7 +361,7 @@ const pageMeta = useCrudPageMeta({
                                     @keydown="handleKeydown($event, row.id)" />
                             </td>
                             <td class="px-2 py-1">
-                                <select v-model="editingData.dimension_status"
+                                <select v-model="editingData.dimension_publish_status"
                                     class="h-8 rounded border border-border bg-background px-2 text-sm focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/20">
                                     <option value="draft">{{ t('app.tenant.products.dimensions_status_options.draft') }}
                                     </option>
@@ -306,16 +372,68 @@ const pageMeta = useCrudPageMeta({
                         </template>
 
                         <template v-else>
-                            <td class="px-4 py-2">{{ row.height ?? '-' }}</td>
-                            <td class="px-4 py-2">{{ row.width ?? '-' }}</td>
-                            <td class="px-4 py-2">{{ row.depth ?? '-' }}</td>
-                            <!-- <td class="px-4 py-2">{{ row.weight ?? '-' }}</td> -->
-                            <td class="px-4 py-2">{{ row.unit ?? '-' }}</td>
+                            <td class="px-4 py-2">{{ row.height ?? '—' }}</td>
+                            <td class="px-4 py-2">{{ row.width ?? '—' }}</td>
+                            <td class="px-4 py-2">{{ row.depth ?? '—' }}</td>
+                            <td class="px-4 py-2">{{ row.unit ?? '—' }}</td>
                             <td class="px-4 py-2">
-                                <ColumnStatusBadge :status="row.dimension_status ?? 'draft'" />
+                                <ColumnStatusBadge :status="row.dimension_publish_status ?? 'draft'" />
                             </td>
                         </template>
 
+                        <!-- Coluna de Pesquisa AI -->
+                        <td class="px-4 py-2">
+                            <div v-if="!row.ai_status" class="text-muted-foreground">—</div>
+                            <div v-else class="flex flex-col gap-1">
+                                <!-- Badge de status do pipeline AI -->
+                                <div class="flex items-center gap-1.5">
+                                    <Loader2 v-if="row.ai_status === 'researching'"
+                                        class="size-3 shrink-0 animate-spin text-blue-500" />
+                                    <span class="rounded px-1.5 py-0.5 text-xs font-medium"
+                                        :class="aiStatusClass(row.ai_status_color)">
+                                        {{ row.ai_status_label }}
+                                    </span>
+                                    <!-- Ícone de aviso quando há warnings -->
+                                    <span v-if="row.ai_warnings.length > 0"
+                                        :title="row.ai_warnings.join(' | ')"
+                                        class="cursor-help text-amber-500">
+                                        <AlertTriangle class="size-3.5" />
+                                    </span>
+                                </div>
+
+                                <!-- Fonte e confiança (quando pesquisa concluída) -->
+                                <div v-if="row.ai_source && row.ai_source !== 'not_found'"
+                                    class="flex items-center gap-1">
+                                    <span class="text-xs text-muted-foreground">{{ sourceLabel(row.ai_source) }}</span>
+                                    <span v-if="row.ai_confidence"
+                                        class="rounded px-1 py-px text-xs font-medium"
+                                        :class="confidenceClass(row.ai_confidence)">
+                                        {{ row.ai_confidence }}
+                                    </span>
+                                    <a v-if="row.ai_source_url" :href="row.ai_source_url" target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="text-muted-foreground transition hover:text-foreground"
+                                        :title="row.ai_source_url">
+                                        <ExternalLink class="size-3" />
+                                    </a>
+                                </div>
+
+                                <!-- Raciocínio da IA (tooltip) -->
+                                <div v-if="row.ai_reasoning" class="flex items-center gap-1">
+                                    <button type="button"
+                                        class="cursor-help text-muted-foreground hover:text-foreground"
+                                        :title="row.ai_reasoning">
+                                        <Info class="size-3.5" />
+                                    </button>
+                                    <span class="max-w-40 truncate text-xs text-muted-foreground"
+                                        :title="row.ai_reasoning">
+                                        {{ row.ai_reasoning }}
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Ações -->
                         <td class="px-4 py-2 text-center">
                             <template v-if="editingId === row.id">
                                 <div class="flex items-center justify-center gap-1">

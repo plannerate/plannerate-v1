@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { useEcho } from '@laravel/echo-vue';
 import {
     AlertTriangle,
@@ -16,6 +16,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import DimensionApprovalController from '@/actions/App/Http/Controllers/Tenant/Products/DimensionApprovalController';
+import ProductDimensionController from '@/actions/App/Http/Controllers/Tenant/ProductDimensionController';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -285,9 +286,16 @@ const pageMeta = useCrudPageMeta({
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <Head :title="pageMeta.headTitle" />
 
-        <!-- Batch approval bar -->
-        <template v-if="highConfidenceProducts.length > 0" #header-actions>
-            <div class="flex items-center gap-2">
+        <template #header-actions>
+            <Link
+                :href="tenantWayfinderPath(ProductDimensionController.index.url())"
+                class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted"
+            >
+                <ChevronDown class="size-3.5 shrink-0 -rotate-90" />
+                Voltar para dimensões
+            </Link>
+
+            <template v-if="highConfidenceProducts.length > 0">
                 <span class="text-sm text-muted-foreground">
                     {{ selectedIds.size }} / {{ highConfidenceProducts.length }} selecionados
                 </span>
@@ -308,7 +316,7 @@ const pageMeta = useCrudPageMeta({
                     <CheckCircle2 v-else class="mr-1.5 size-4" />
                     Aprovar {{ selectedIds.size }} em lote
                 </Button>
-            </div>
+            </template>
         </template>
 
         <div class="flex flex-col gap-4 p-4">

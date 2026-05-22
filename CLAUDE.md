@@ -217,72 +217,125 @@ Vue components must have a single root element.
 
 </laravel-boost-guidelines>
 
-# Plannerate Project Rules
+# Plannerate — Regras do Projeto
 
-## Session Startup (REQUIRED)
+## O Projeto
 
-At the start of every session, read these two files before doing any work:
+SaaS multi-tenant de gestão de planogramas para supermercados. Laravel + Inertia v3 + Vue 3 + TypeScript + TailwindCSS + Spatie multi-tenancy (single-database). PKs ULID, SoftDeletes em toda a entidade de negócio.
 
-1. `storage/app/private/prompts/auto-planogram/Resumo sessao plannerate.md`
-2. `storage/app/private/prompts/auto-planogram/25 changelog grouping para category id.md`
+Hierarquia física: `gondolas → sections → shelves → segments → layers → products`
 
-The full session prerequisite guide is at:
-`storage/app/private/prompts/auto-planogram/00 prerequisitos.md`
+## Ambiente Docker (TODOS OS COMANDOS)
 
-## Environment: Docker Compose (REQUIRED)
-
-This project runs inside Docker. Never run commands directly — always prefix with `docker compose exec`.
-
-### PHP / Artisan
+Nunca rodar PHP/Artisan diretamente. Sempre via Docker:
 
 ```bash
 docker compose exec php php artisan <command>
 docker compose exec php vendor/bin/pint --dirty --format agent
+docker compose exec php php artisan test --compact
+docker compose exec php php artisan test --compact --filter=NomeDoTeste
 ```
 
-### Frontend Build (CRITICAL)
+### Frontend build (CRÍTICO)
 
-**NEVER** run `npm run build` directly — it does not work in this project.
-
-Always use one of the Docker commands below:
+**NUNCA** rodar `npm run build` diretamente — não funciona neste projeto.
 
 ```bash
-# Generate TypeScript actions only (sem rebuild)
+# Só gerar actions TypeScript (sem rebuild)
 docker compose exec -u root php php artisan wayfinder:generate --with-form
 
-# Generate + rebuild frontend (use este quando precisar que as mudanças apareçam no browser)
+# Gerar actions + rebuild (para mudanças aparecerem no browser)
 docker compose exec -u root php php artisan wayfinder:generate --with-form && VITE_ENABLE_WAYFINDER=false npm run build
 ```
 
-**Never** run `php artisan wayfinder:generate` without the `docker compose exec -u root php` prefix.
-
-### Tests
+### Migrations
 
 ```bash
-docker compose exec php php artisan test --compact
-docker compose exec php php artisan test --compact --filter=TestName
-```
-
-### Migrations (multi-tenant Spatie)
-
-```bash
-# Roda em TODOS os tenants (obrigatório para tabelas de tenant)
+# Tabelas tenant-scoped (OBRIGATÓRIO para tabelas de tenant)
 docker compose exec php php artisan tenants:artisan "migrate --database=tenant"
 
-# Migrations do schema central (tabelas não-tenant)
+# Schema central (tabelas não-tenant: landlord, cache, etc.)
 docker compose exec php php artisan migrate
 ```
 
-> Migrations com SQL raw (`DB::statement`) devem checar o driver:
-> `if (DB::connection($this->connection)->getDriverName() !== 'pgsql') return;`
-> para não quebrar os testes que usam SQLite em memória.
+**NUNCA** rodar `migrate:fresh` — nem `--database=tenant` nem `--database=landlord`. Destrói dados reais.
 
-## Key Architecture Conventions
+## Multi-tenancy (Spatie)
 
-- Slot → product binding: `category_id` FK (NOT `grouping_normalized` — field removed)
-- `shelf_order 1` = floor; physical index: `num_shelves - shelf_order`
-- Test tenant: `albert` (tenant_id: `01jym02qk8n1cwdq2hd5drpgsz`)
+**Modelos tenant** usam: `BelongsToTenant`, `UsesTenantConnection`, `HasUlids`, `SoftDeletes`
 
-## Veja tambe
+**Modelos landlord** usam: `$connection = 'landlord'` — sem traits de tenant
 
-  /.claude/dimension-research.md
+**Nunca passar `tenant_id` manualmente** no controller — `BelongsToTenant` preenche no evento `creating`. Passar `null` explicitamente causa NOT NULL violation no UPDATE.
+
+**Migrations com SQL raw** devem checar o driver (SQLite nos testes não suporta pgvector/índices especiais):
+
+```php
+if (DB::connection($this->connection)->getDriverName() !== 'pgsql') {
+    return;
+}
+```
+
+Tenant de teste: `albert` (tenant_id: `01jym02qk8n1cwdq2hd5drpgsz`)
+
+## Traduções (PT-BR)
+
+**Nunca escrever texto diretamente** em Vue ou PHP — sempre usar chaves de tradução PT-BR.
+
+No Vue, usar o composable `useT()` (não `useI18n` diretamente):
+
+```typescript
+import { useT } from '@/composables/useT';
+const { t } = useT();
+// t('app.tenant.gondolas.title')
+```
+
+Arquivos em `lang/pt_BR/*.php`. Estrutura de chaves: `app.{contexto}.{recurso}.{campo}`.
+
+## Padrões de Código
+
+### Controllers (tenant)
+
+- Retornam `Inertia::render('tenant/recurso/Index', $data)` para páginas
+- Retornam `back()` para operações de API/mutação (overrides, geração, etc.)
+- Usam Form Requests para validação e autorização
+- Trait `InteractsWithTenantContext` expõe `tenantId()` e `tenantTable()`
+
+### Models (tenant)
+
+- Traits obrigatórios: `BelongsToTenant`, `UsesTenantConnection`, `HasUlids`, `SoftDeletes`
+- `$table` explícito quando o nome não é derivável diretamente do nome da classe
+
+### Vue Pages (`resources/js/pages/tenant/`)
+
+- `defineProps<{ ... }>()` com interfaces TypeScript explícitas
+- `useT()` para todas as strings visíveis ao usuário — sem texto hardcoded
+- `AppLayout` como wrapper com breadcrumbs e page header
+- Dados via props Inertia — nunca fetch client-side para dados de página
+
+### Wayfinder (TypeScript actions)
+
+- Importar de `@/actions/` (controllers) ou `@/routes/` (rotas nomeadas)
+- Para controllers que o gerador não rastreia: escrever o arquivo de actions manualmente
+- Nunca hardcodar URLs — usar `.url()`, `.get()`, `.post()`, `.form()`
+- `wayfinder:generate` apaga arquivos de actions manuais: usar helpers de URL locais para controllers não-registrados no gerador
+
+## Arquitetura-chave
+
+- Vínculo slot → produto: `category_id` FK — **NÃO** `grouping_normalized` (campo removido)
+- `shelf_order 1` = chão (mais baixo); índice físico: `num_shelves - shelf_order`
+- Produto com `status = draft` nunca entra em planograma
+- `generation_mode` em gondolas: `manual | template | automatic | null` (`null` = legado = manual)
+
+## Início de Sessão (OBRIGATÓRIO)
+
+Antes de qualquer trabalho, ler:
+
+1. `storage/app/private/prompts/auto-planogram/Resumo sessao plannerate.md`
+2. `storage/app/private/prompts/auto-planogram/25 changelog grouping para category id.md`
+
+Guia completo: `storage/app/private/prompts/auto-planogram/00 prerequisitos.md`
+
+## Ver Também
+
+- `.claude/dimension-research.md` — pipeline AI de pesquisa de dimensões de produto
