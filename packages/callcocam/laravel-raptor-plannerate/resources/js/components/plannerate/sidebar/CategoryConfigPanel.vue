@@ -172,8 +172,8 @@ const savedOverrides = ref<Record<string, GondolaSlotOverride>>(
 /** Estado local em edição, por category_id */
 const localEdits = ref<Record<string, Partial<GondolaSlotOverride>>>({});
 
-/** Categorias com accordion aberto */
-const openCategories = ref<Set<string>>(new Set());
+/** Categoria com accordion aberto (só uma por vez) */
+const openCategoryId = ref<string | null>(null);
 
 const savingCategory = ref<string | null>(null);
 const applyingCategory = ref<string | null>(null);
@@ -184,14 +184,11 @@ function templateDefaults(categoryId: string): Partial<GondolaSlotOverride> {
 }
 
 function toggleCategory(categoryId: string) {
-    if (openCategories.value.has(categoryId)) {
-        openCategories.value.delete(categoryId);
-
-        if (selectedTemplateCategoryId.value === categoryId) {
-            selectedTemplateCategoryId.value = null;
-        }
+    if (openCategoryId.value === categoryId) {
+        openCategoryId.value = null;
+        selectedTemplateCategoryId.value = null;
     } else {
-        openCategories.value.add(categoryId);
+        openCategoryId.value = categoryId;
         selectedTemplateCategoryId.value = categoryId;
 
         if (!localEdits.value[categoryId]) {
@@ -201,6 +198,40 @@ function toggleCategory(categoryId: string) {
                 : { category_id: categoryId, ...templateDefaults(categoryId) };
         }
     }
+}
+
+function onAccordionEnter(el: Element) {
+    const htmlEl = el as HTMLElement;
+    htmlEl.style.height = '0';
+    htmlEl.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+        htmlEl.style.height = htmlEl.scrollHeight + 'px';
+        htmlEl.style.transition = 'height 220ms ease';
+    });
+}
+
+function onAccordionAfterEnter(el: Element) {
+    const htmlEl = el as HTMLElement;
+    htmlEl.style.height = '';
+    htmlEl.style.overflow = '';
+    htmlEl.style.transition = '';
+}
+
+function onAccordionLeave(el: Element) {
+    const htmlEl = el as HTMLElement;
+    htmlEl.style.height = htmlEl.scrollHeight + 'px';
+    htmlEl.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+        htmlEl.style.transition = 'height 220ms ease';
+        htmlEl.style.height = '0';
+    });
+}
+
+function onAccordionAfterLeave(el: Element) {
+    const htmlEl = el as HTMLElement;
+    htmlEl.style.height = '';
+    htmlEl.style.overflow = '';
+    htmlEl.style.transition = '';
 }
 
 function getEdit(categoryId: string): Partial<GondolaSlotOverride> {
@@ -235,11 +266,11 @@ watch(
                 .map((o) => [o.category_id as string, o]),
         );
 
-        for (const categoryId of openCategories.value) {
-            const saved = savedOverrides.value[categoryId];
-            localEdits.value[categoryId] = saved
+        if (openCategoryId.value) {
+            const saved = savedOverrides.value[openCategoryId.value];
+            localEdits.value[openCategoryId.value] = saved
                 ? { ...saved }
-                : { category_id: categoryId, ...templateDefaults(categoryId) };
+                : { category_id: openCategoryId.value, ...templateDefaults(openCategoryId.value) };
         }
     },
     { deep: true },
@@ -322,13 +353,13 @@ function handleReset(categoryId: string) {
                 <button
                     type="button"
                     class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors cursor-pointer hover:bg-muted/50"
-                    :class="selectedTemplateCategoryId === cat.category_id ? 'bg-primary/5' : ''"
+                    :class="openCategoryId === cat.category_id ? 'bg-primary/5' : ''"
                     @click="toggleCategory(cat.category_id)"
                 >
                     <div class="flex min-w-0 items-center gap-2">
                         <component
-                            :is="openCategories.has(cat.category_id) ? ChevronDown : ChevronRight"
-                            class="size-3.5 shrink-0 text-muted-foreground"
+                            :is="openCategoryId === cat.category_id ? ChevronDown : ChevronRight"
+                            class="size-3.5 shrink-0 text-muted-foreground transition-transform duration-200"
                         />
                         <div class="min-w-0 flex-1">
                             <!-- Nome + ID curto quando há duplicatas -->
@@ -344,7 +375,7 @@ function handleReset(categoryId: string) {
                                 </span>
                             </div>
                             <!-- Caminho completo da categoria (hierarquia) -->
-                            <p v-if="cat.category_full_path" class="truncate text-[10px] text-muted-foreground/80" :title="cat.category_full_path">
+                            <p v-if="cat.category_full_path" class="truncate text-[8px] text-muted-foreground/80" :title="cat.category_full_path">
                                 {{ cat.category_full_path }}
                             </p>
                             <!-- Subcategoria (fallback quando não há full_path) -->
@@ -370,8 +401,14 @@ function handleReset(categoryId: string) {
                 </button>
 
                 <!-- Corpo do accordion -->
+                <Transition
+                    @enter="onAccordionEnter"
+                    @after-enter="onAccordionAfterEnter"
+                    @leave="onAccordionLeave"
+                    @after-leave="onAccordionAfterLeave"
+                >
                 <div
-                    v-if="openCategories.has(cat.category_id)"
+                    v-if="openCategoryId === cat.category_id"
                     class="space-y-3 border-t border-border px-3 pb-3 pt-2.5"
                 >
                     <!-- Frentes mín / máx -->
@@ -529,6 +566,7 @@ function handleReset(categoryId: string) {
                         </Button>
                     </div>
                 </div>
+                </Transition>
             </div>
         </div>
 
