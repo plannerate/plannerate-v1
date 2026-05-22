@@ -87,9 +87,9 @@ const highlightNewModule = ref<number | undefined>(undefined);
 const confirmDialogContent = computed(() => {
     if (pendingSlotAction.value?.type === 'remove') {
         return {
-            title: 'Remover slot?',
-            description: 'Este slot será removido desta posição do template.',
-            confirmLabel: 'Remover',
+            title: t('planogram-templates.slots_page.confirm_remove_slot_title'),
+            description: t('planogram-templates.slots_page.confirm_remove_slot_description'),
+            confirmLabel: t('planogram-templates.slots_page.confirm_remove'),
             kind: 'delete' as const,
         };
     }
@@ -97,18 +97,21 @@ const confirmDialogContent = computed(() => {
     if (pendingSlotAction.value?.type === 'remove-subtemplate') {
         const n = pendingSlotAction.value.numModules;
         return {
-            title: `Remover ${n} módulo${n > 1 ? 's' : ''}?`,
-            description: `Todos os ${pendingSlotAction.value.numModules === 1 ? 'slot deste módulo será removido' : `slots dos ${n} módulos serão removidos`} permanentemente. Esta ação não pode ser desfeita.`,
-            confirmLabel: 'Remover',
+            title: n === 1
+                ? t('planogram-templates.slots_page.confirm_remove_subtemplate_title_singular')
+                : t('planogram-templates.slots_page.confirm_remove_subtemplate_title_plural', { count: String(n) }),
+            description: n === 1
+                ? t('planogram-templates.slots_page.confirm_remove_subtemplate_description_singular')
+                : t('planogram-templates.slots_page.confirm_remove_subtemplate_description_plural', { count: String(n) }),
+            confirmLabel: t('planogram-templates.slots_page.confirm_remove'),
             kind: 'delete' as const,
         };
     }
 
     return {
-        title: 'Trocar slots?',
-        description:
-            'A posição de destino já está ocupada. Os dois slots serão trocados.',
-        confirmLabel: 'Trocar',
+        title: t('planogram-templates.slots_page.confirm_swap_title'),
+        description: t('planogram-templates.slots_page.confirm_swap_description'),
+        confirmLabel: t('planogram-templates.slots_page.confirm_swap'),
         kind: 'move' as const,
     };
 });
@@ -127,8 +130,8 @@ const wizardSteps: WizardStep[] = [
     },
     {
         step: 3,
-        label: 'Revisar slots',
-        description: 'Selecione um slot e veja os produtos relacionados',
+        label: t('planogram-templates.wizard.step3_slots_label'),
+        description: t('planogram-templates.wizard.step3_slots_description'),
     },
 ];
 
@@ -303,39 +306,37 @@ const copyPromptContent = computed<{
 
     if (copyPromptKind.value === 'shelves' && module !== null) {
         const actions: CopyPromptAction[] = [
-            { key: 'shelves-all', label: 'Copiar e fechar' },
+            { key: 'shelves-all', label: t('planogram-templates.slots_page.copy_action_all') },
         ];
 
         if (nextEmptyShelf(module) !== null) {
             actions.push({
                 key: 'shelves-next',
-                label: 'Copiar e editar a próxima',
+                label: t('planogram-templates.slots_page.copy_action_next_shelf'),
                 variant: 'outline',
             });
         }
 
-        actions.push({ key: 'dismiss', label: 'Agora não', variant: 'ghost' });
+        actions.push({ key: 'dismiss', label: t('planogram-templates.slots_page.copy_action_dismiss'), variant: 'ghost' });
 
         return {
-            title: 'Copiar configuração para as outras prateleiras?',
-            description:
-                'A mesma configuração (incluindo a categoria) será aplicada às prateleiras vazias deste módulo. Você pode ajustar cada uma depois.',
+            title: t('planogram-templates.slots_page.copy_shelves_title'),
+            description: t('planogram-templates.slots_page.copy_shelves_description'),
             actions,
         };
     }
 
     return {
-        title: 'Copiar configuração deste módulo para os outros?',
-        description:
-            'Os slots deste módulo serão replicados para os módulos ainda vazios.',
+        title: t('planogram-templates.slots_page.copy_module_title'),
+        description: t('planogram-templates.slots_page.copy_module_description'),
         actions: [
-            { key: 'module-next', label: 'Próximo módulo' },
+            { key: 'module-next', label: t('planogram-templates.slots_page.copy_action_next_module') },
             {
                 key: 'module-all',
-                label: 'Todos os módulos vazios',
+                label: t('planogram-templates.slots_page.copy_action_all_modules'),
                 variant: 'outline',
             },
-            { key: 'dismiss', label: 'Agora não', variant: 'ghost' },
+            { key: 'dismiss', label: t('planogram-templates.slots_page.copy_action_dismiss'), variant: 'ghost' },
         ],
     };
 });
@@ -521,7 +522,7 @@ function saveSlot(
             onSuccess: () => {
                 if (level) {
                     toast.info(
-                        `Slot atualizado — planogramas gerados precisam de: ${ALTERATION_LEVEL_LABELS[level]}`,
+                        t('planogram-templates.slots_page.alteration_toast', { level: ALTERATION_LEVEL_LABELS[level] }),
                     );
                 }
             },
@@ -794,12 +795,12 @@ const breadcrumbs = [
     },
     { title: t('app.tenant.planogram_templates.navigation'), href: indexPath },
     { title: props.template.code, href: editPath.value },
-    { title: 'Slots', href: '#' },
+    { title: t('planogram-templates.slots_page.breadcrumb'), href: '#' },
 ];
 </script>
 
 <template>
-    <Head :title="`Slots — ${template.code}`" />
+    <Head :title="t('planogram-templates.slots_page.head_title', { code: template.code })" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 p-6">
             <!-- Wizard progress -->
@@ -816,21 +817,21 @@ const breadcrumbs = [
                 <div>
                     <h1 class="text-xl font-semibold">{{ template.name }}</h1>
                     <p class="text-sm text-muted-foreground">
-                        Etapa 2 — configure as categorias por módulo e prateleira
+                        {{ t('planogram-templates.slots_page.step2_description') }}
                     </p>
                     <p v-if="template.category_name" class="mt-1 text-sm font-medium text-primary">
-                        Categoria: {{ template.category_name }}
+                        {{ t('planogram-templates.slots_page.category_label', { name: template.category_name }) }}
                     </p>
                 </div>
                 <div class="flex gap-2">
                     <Button variant="outline" size="sm" @click="exportTemplate">
                         <Download class="size-3.5" />
-                        Exportar planilha
+                        {{ t('planogram-templates.slots_page.export_button') }}
                     </Button>
                     <label>
                         <Button variant="outline" size="sm" as="span">
                             <Upload class="size-3.5" />
-                            Importar planilha
+                            {{ t('planogram-templates.slots_page.import_button') }}
                         </Button>
                         <input
                             type="file"
@@ -844,9 +845,7 @@ const breadcrumbs = [
 
             <!-- Subtemplate selector -->
             <div class="flex flex-wrap items-center gap-2">
-                <span class="text-sm font-medium text-muted-foreground"
-                    >Módulos:</span
-                >
+                <span class="text-sm font-medium text-muted-foreground">{{ t('planogram-templates.slots_page.modules_label') }}</span>
                 <ModuleSelectorButtons
                     :current-module="currentModules"
                     :subtemplates="props.subtemplates"
@@ -858,7 +857,7 @@ const breadcrumbs = [
                     variant="ghost"
                     size="sm"
                     class="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    title="Remover este subtemplate"
+                    :title="t('planogram-templates.slots_page.remove_subtemplate_tooltip')"
                     @click="requestRemoveSubtemplate"
                 >
                     <Trash2 class="size-3.5" />
@@ -870,13 +869,13 @@ const breadcrumbs = [
                     @click="openModuleDefaultsModal"
                 >
                     <Settings2 class="size-3.5" />
-                    Configuração padrão do módulo
+                    {{ t('planogram-templates.slots_page.module_defaults_button') }}
                 </Button>
             </div>
 
             <!-- Shelf count control -->
             <div class="flex items-center gap-3">
-                <Label for="num-shelves" class="text-sm">Prateleiras:</Label>
+                <Label for="num-shelves" class="text-sm">{{ t('planogram-templates.slots_page.shelves_label') }}</Label>
                 <Input
                     id="num-shelves"
                     v-model.number="numShelves"
@@ -893,9 +892,9 @@ const breadcrumbs = [
                 class="rounded-lg border border-dashed border-border bg-muted/30 p-6"
             >
                 <p class="mb-4 text-sm text-muted-foreground">
-                    Nenhum subtemplate configurado para
-                    <strong>{{ currentModules }} módulo{{ currentModules > 1 ? 's' : '' }}</strong>.
-                    Como deseja criar?
+                    {{ currentModules > 1
+                        ? t('planogram-templates.slots_page.no_subtemplate_message_plural', { count: String(currentModules) })
+                        : t('planogram-templates.slots_page.no_subtemplate_message', { count: String(currentModules) }) }}
                 </p>
                 <div class="flex flex-wrap gap-3">
                     <Button
@@ -903,7 +902,7 @@ const breadcrumbs = [
                         size="sm"
                         @click="createEmptySubtemplate(currentModules)"
                     >
-                        Criar do zero
+                        {{ t('planogram-templates.slots_page.create_empty_button') }}
                     </Button>
                     <Button
                         v-if="largestSubtemplateBelow(currentModules)"
@@ -911,7 +910,7 @@ const breadcrumbs = [
                         :disabled="cloneInProgress"
                         @click="cloneSubtemplate(largestSubtemplateBelow(currentModules)!, currentModules)"
                     >
-                        Copiar de {{ largestSubtemplateBelow(currentModules)!.num_modules }} módulos
+                        {{ t('planogram-templates.slots_page.clone_from_button', { count: String(largestSubtemplateBelow(currentModules)!.num_modules) }) }}
                         <span class="ml-1 opacity-70 text-xs">
                             ({{ largestSubtemplateBelow(currentModules)!.slots.length }} slots)
                         </span>
@@ -938,7 +937,7 @@ const breadcrumbs = [
                     {{ t('planogram-templates.wizard.back_to_basics_button') }}
                 </Button>
                 <Button :as="'a'" :href="reviewPath">
-                    Próximo — Revisão de slots
+                    {{ t('planogram-templates.slots_page.next_button') }}
                     <ChevronRight class="size-4" />
                 </Button>
             </div>

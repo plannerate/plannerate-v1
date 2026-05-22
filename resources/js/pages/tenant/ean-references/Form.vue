@@ -210,11 +210,11 @@ const pageMeta = useCrudPageMeta({
 
                     <div class="mt-2 border-t border-border pt-4">
                         <p class="mb-3 text-sm font-semibold text-foreground">
-                            Dimensoes
+                            {{ t('app.tenant.ean_references.fields.dimensions_section') }}
                         </p>
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="grid gap-2">
-                                <Label for="width">Largura</Label>
+                                <Label for="width">{{ t('app.tenant.ean_references.fields.width') }}</Label>
                                 <Input
                                     id="width"
                                     name="width"
@@ -228,7 +228,7 @@ const pageMeta = useCrudPageMeta({
                                 <InputError :message="errors.width" />
                             </div>
                             <div class="grid gap-2">
-                                <Label for="height">Altura</Label>
+                                <Label for="height">{{ t('app.tenant.ean_references.fields.height') }}</Label>
                                 <Input
                                     id="height"
                                     name="height"
@@ -242,7 +242,7 @@ const pageMeta = useCrudPageMeta({
                                 <InputError :message="errors.height" />
                             </div>
                             <div class="grid gap-2">
-                                <Label for="depth">Profundidade</Label>
+                                <Label for="depth">{{ t('app.tenant.ean_references.fields.depth') }}</Label>
                                 <Input
                                     id="depth"
                                     name="depth"
@@ -256,7 +256,7 @@ const pageMeta = useCrudPageMeta({
                                 <InputError :message="errors.depth" />
                             </div>
                             <div class="grid gap-2">
-                                <Label for="weight">Peso</Label>
+                                <Label for="weight">{{ t('app.tenant.ean_references.fields.weight') }}</Label>
                                 <Input
                                     id="weight"
                                     name="weight"
@@ -270,7 +270,7 @@ const pageMeta = useCrudPageMeta({
                                 <InputError :message="errors.weight" />
                             </div>
                             <div class="grid gap-2">
-                                <Label for="unit">Unidade</Label>
+                                <Label for="unit">{{ t('app.tenant.ean_references.fields.unit') }}</Label>
                                 <Input
                                     id="unit"
                                     name="unit"

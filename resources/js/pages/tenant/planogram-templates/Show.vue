@@ -72,7 +72,7 @@ function deleteTemplate(): void {
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <Head :title="`Template ${template.code}`" />
+        <Head :title="t('planogram-templates.show_page.head_title', { code: template.code })" />
 
         <div class="mx-auto max-w-4xl space-y-6 py-8">
             <!-- Header -->
@@ -199,7 +199,7 @@ function deleteTemplate(): void {
                 name: props.template.name,
             })
         "
-        description="Esta ação não pode ser desfeita."
+        :description="t('planogram-templates.show_page.cannot_undo')"
         :confirm-label="t('app.tenant.planogram_templates.actions.delete')"
         kind="delete"
         :busy="deleteDialogBusy"

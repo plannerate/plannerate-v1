@@ -104,7 +104,7 @@ function formatDimensions(reference: EanReferenceRow): string {
                         <ColumnHeader field="reference_description">{{ t('app.tenant.ean_references.fields.reference_description') }}</ColumnHeader>
                         <ColumnHeader field="brand">{{ t('app.tenant.ean_references.fields.brand') }}</ColumnHeader>
                         <ColumnHeader field="packaging_type">{{ t('app.tenant.ean_references.fields.packaging_type') }}</ColumnHeader>
-                        <ColumnHeader field="width">Medidas</ColumnHeader>
+                        <ColumnHeader field="width">{{ t('app.tenant.ean_references.fields.dimensions_column') }}</ColumnHeader>
                         <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>

@@ -194,7 +194,7 @@ const wizardSteps: WizardStep[] = [
                                 variant="outline"
                                 type="button"
                                 disabled
-                                :title="'Selecione uma categoria antes de configurar os slots'"
+                                :title="t('planogram-templates.form_page.category_required_tooltip')"
                             >
                                 <Layers class="size-4" />
                                 {{

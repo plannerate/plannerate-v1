@@ -283,11 +283,11 @@ onBeforeUnmount(() => {
                 :class="statusFilter === 'all' ? 'border-primary/60 ring-2 ring-primary/20' : ''"
                 @click="selectStatusFilter('all')"
             >
-                <p class="text-xs text-muted-foreground">Lojas com mapa</p>
+                <p class="text-xs text-muted-foreground">{{ t('app.tenant.planograms.maps.stores_with_map') }}</p>
                 <p class="text-lg font-semibold text-foreground">{{ totals.stores }}</p>
             </button>
             <div class="rounded-lg border border-border bg-card p-3">
-                <p class="text-xs text-muted-foreground">Regiões no total</p>
+                <p class="text-xs text-muted-foreground">{{ t('app.tenant.planograms.maps.total_regions') }}</p>
                 <p class="text-lg font-semibold text-foreground">{{ totals.regions }}</p>
             </div>
             <button
@@ -296,7 +296,7 @@ onBeforeUnmount(() => {
                 :class="statusFilter === 'clickable' ? 'border-primary/60 ring-2 ring-primary/20' : ''"
                 @click="selectStatusFilter('clickable')"
             >
-                <p class="text-xs text-muted-foreground">Regiões clicáveis</p>
+                <p class="text-xs text-muted-foreground">{{ t('app.tenant.planograms.maps.clickable_regions') }}</p>
                 <p class="text-lg font-semibold text-primary">{{ totals.clickableRegions }}</p>
             </button>
             <button
@@ -305,7 +305,7 @@ onBeforeUnmount(() => {
                 :class="statusFilter === 'pending' ? 'border-primary/60 ring-2 ring-primary/20' : ''"
                 @click="selectStatusFilter('pending')"
             >
-                <p class="text-xs text-muted-foreground">Execução não iniciada</p>
+                <p class="text-xs text-muted-foreground">{{ t('app.tenant.planograms.maps.pending_execution') }}</p>
                 <p class="text-lg font-semibold text-amber-600">{{ totals.pendingRegions }}</p>
             </button>
         </div>
@@ -314,7 +314,7 @@ onBeforeUnmount(() => {
             <input
                 v-model="search"
                 type="text"
-                placeholder="Buscar loja..."
+                :placeholder="t('app.tenant.planograms.maps.search_store')"
                 class="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 lg:max-w-xs"
                 @keydown.enter.prevent="submitFilters"
             >
@@ -323,7 +323,7 @@ onBeforeUnmount(() => {
                 class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                 @change="submitFilters"
             >
-                <option value="">Todas as lojas</option>
+                <option value="">{{ t('app.tenant.planograms.maps.all_stores') }}</option>
                 <option v-for="store in storeOptions" :key="store.id" :value="store.id">
                     {{ store.name }}
                 </option>
@@ -333,44 +333,44 @@ onBeforeUnmount(() => {
                 class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                 @change="submitFilters"
             >
-                <option value="all">Todas as lojas</option>
-                <option value="clickable">Com regiões clicáveis</option>
-                <option value="pending">Com execução não iniciada</option>
-                <option value="blocked">Com restrição de permissão</option>
+                <option value="all">{{ t('app.tenant.planograms.maps.all_stores') }}</option>
+                <option value="clickable">{{ t('app.tenant.planograms.maps.with_clickable') }}</option>
+                <option value="pending">{{ t('app.tenant.planograms.maps.with_pending') }}</option>
+                <option value="blocked">{{ t('app.tenant.planograms.maps.with_restricted') }}</option>
             </select>
             <label class="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm text-foreground">
                 <input v-model="onlyEditableStores" type="checkbox" class="size-4 rounded border-border" @change="submitFilters" />
-                Somente lojas editáveis
+                {{ t('app.tenant.planograms.maps.only_editable') }}
             </label>
             <button
                 type="button"
                 class="h-9 rounded-lg bg-primary px-3 text-sm text-primary-foreground transition hover:bg-primary/90"
                 @click="submitFilters"
             >
-                Aplicar filtros
+                {{ t('app.tenant.planograms.maps.apply_filters') }}
             </button>
             <button
                 type="button"
                 class="h-9 rounded-lg border border-border px-3 text-sm text-foreground transition hover:bg-muted lg:ml-auto"
                 @click="clearFilters"
             >
-                Limpar filtros
+                {{ t('app.tenant.planograms.maps.clear_filters') }}
             </button>
         </div>
 
         <div class="mb-4 flex flex-wrap items-center gap-3 text-xs px-4">
             <div class="inline-flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 text-foreground">
                 <span class="inline-block h-3 w-3 rounded-sm border border-primary bg-primary/40 shadow-[0_0_0_2px_rgba(59,130,246,0.35)]" />
-                <span>Com link</span>
+                <span>{{ t('app.tenant.planograms.maps.legend_with_link') }}</span>
             </div>
             <div class="inline-flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 text-muted-foreground">
                 <span class="inline-block h-3 w-3 rounded-sm border border-muted-foreground/40 bg-muted/60" />
-                <span>Sem link</span>
+                <span>{{ t('app.tenant.planograms.maps.legend_without_link') }}</span>
             </div>
         </div>
 
         <div v-if="props.store_maps.length === 0" class="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
-            Nenhum mapa de loja disponível.
+            {{ t('app.tenant.planograms.maps.no_maps') }}
         </div>
         <div v-else class="grid grid-cols-1 gap-4 xl:grid-cols-2 px-4">
             <article

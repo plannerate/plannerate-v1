@@ -83,8 +83,8 @@ const wizardSteps: WizardStep[] = [
     },
     {
         step: 3,
-        label: 'Revisão',
-        description: 'Visualize slots e produtos relacionados',
+        label: t('planogram-templates.wizard.step3_review_label'),
+        description: t('planogram-templates.wizard.step3_review_description'),
     },
 ];
 
@@ -276,13 +276,13 @@ const breadcrumbs = [
     },
     { title: t('app.tenant.planogram_templates.navigation'), href: indexPath },
     { title: props.template.code, href: editPath.value },
-    { title: 'Revisão', href: '#' },
+    { title: t('planogram-templates.review_page.breadcrumb'), href: '#' },
 ];
 </script>
 
 <template>
 
-    <Head :title="`Revisão — ${template.code}`" />
+    <Head :title="t('planogram-templates.review_page.head_title', { code: template.code })" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 p-6">
             <div class="mx-auto max-w-3xl">
@@ -293,7 +293,7 @@ const breadcrumbs = [
                 <div>
                     <h1 class="text-xl font-semibold">{{ template.name }}</h1>
                     <p class="text-sm text-muted-foreground">
-                        Etapa 3 — revise os slots e os produtos relacionados
+                        {{ t('planogram-templates.review_page.step3_description') }}
                     </p>
                 </div>
             </div>
@@ -308,7 +308,7 @@ const breadcrumbs = [
                     @edit="openSlotEditor"
                 >
                     <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-sm font-medium text-muted-foreground">Módulos:</span>
+                        <span class="text-sm font-medium text-muted-foreground">{{ t('planogram-templates.review_page.modules_label') }}</span>
                         <ModuleSelectorButtons
                             :current-module="currentModules"
                             :subtemplates="props.subtemplates"
@@ -324,10 +324,10 @@ const breadcrumbs = [
             <div class="flex justify-between pt-2">
                 <Button variant="outline" :as="'a'" :href="slotsPath">
                     <ChevronLeft class="size-4" />
-                    Voltar — Slots
+                    {{ t('planogram-templates.review_page.back_button') }}
                 </Button>
                 <Button :as="'a'" :href="productsPath">
-                    Próximo — Produtos
+                    {{ t('planogram-templates.review_page.next_button') }}
                     <ChevronRight class="size-4" />
                 </Button>
             </div>

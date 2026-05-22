@@ -299,10 +299,7 @@ function clearDimensionSource(): void {
                                     <div
                                         class="flex items-center justify-between gap-2 text-xs"
                                     >
-                                        <span class="text-muted-foreground"
-                                            >Sugestão única:
-                                            {{ suggestedGrouperCode }}</span
-                                        >
+                                        <span class="text-muted-foreground">{{ t('app.tenant.similar-groups.fields.suggestion_single') }} {{ suggestedGrouperCode }}</span>
                                         <button
                                             type="button"
                                             class="font-medium text-primary hover:underline"

@@ -84,18 +84,18 @@ const pageMeta = useCrudPageMeta({
                     class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                 >
                     <option value="">{{ t('app.tenant.common.all') }}</option>
-                    <option value="draft">Rascunho</option>
-                    <option value="published">Publicado</option>
+                    <option value="draft">{{ t('app.tenant.similar-groups.status_draft') }}</option>
+                    <option value="published">{{ t('app.tenant.similar-groups.status_published') }}</option>
                 </select>
             </template>
 
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">Cód. Agrupador</th>
-                        <th class="px-4 py-3 font-medium">Nome do Grupo</th>
-                        <th class="px-4 py-3 font-medium">Cód. Produtos</th>
-                        <th class="px-4 py-3 font-medium">Status</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.similar-groups.fields.grouper_code') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.similar-groups.fields.name') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.similar-groups.fields.product_codes') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.similar-groups.fields.status') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>

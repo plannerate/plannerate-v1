@@ -56,14 +56,14 @@ setLayoutProps({
 
 const statusLabel = (status: string): string => {
     if (status === 'published') {
-        return 'Publicado';
+        return t('app.tenant.dashboard.status_published');
     }
 
     if (status === 'archived') {
-        return 'Arquivado';
+        return t('app.tenant.dashboard.status_archived');
     }
 
-    return 'Rascunho';
+    return t('app.tenant.dashboard.status_draft');
 };
 
 const statusBadgeClass = (status: string): string => {
@@ -104,21 +104,21 @@ const maxStatusTotal = computed(() => {
             <section class="grid gap-4 md:grid-cols-3">
                 <article class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
                     <div class="flex items-center justify-between text-muted-foreground">
-                        <span class="text-sm">Planogramas</span>
+                        <span class="text-sm">{{ t('app.tenant.dashboard.planograms') }}</span>
                         <LayoutTemplate class="size-4" />
                     </div>
                     <p class="mt-3 text-2xl font-semibold">{{ props.totals.planograms }}</p>
                 </article>
                 <article class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
                     <div class="flex items-center justify-between text-muted-foreground">
-                        <span class="text-sm">Categorias</span>
+                        <span class="text-sm">{{ t('app.tenant.dashboard.categories') }}</span>
                         <Shapes class="size-4" />
                     </div>
                     <p class="mt-3 text-2xl font-semibold">{{ props.totals.categories }}</p>
                 </article>
                 <article class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
                     <div class="flex items-center justify-between text-muted-foreground">
-                        <span class="text-sm">Produtos</span>
+                        <span class="text-sm">{{ t('app.tenant.dashboard.products') }}</span>
                         <Package class="size-4" />
                     </div>
                     <p class="mt-3 text-2xl font-semibold">{{ props.totals.products }}</p>
@@ -128,8 +128,8 @@ const maxStatusTotal = computed(() => {
             <section class="grid gap-4 xl:grid-cols-3">
                 <article class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
                     <header class="mb-4 flex items-center justify-between gap-2">
-                        <h2 class="text-base font-semibold">Status de planogramas</h2>
-                        <Link :href="PlanogramController.index.url()" class="text-xs text-primary underline-offset-2 hover:underline">Ver lista</Link>
+                        <h2 class="text-base font-semibold">{{ t('app.tenant.dashboard.planogram_status') }}</h2>
+                        <Link :href="PlanogramController.index.url()" class="text-xs text-primary underline-offset-2 hover:underline">{{ t('app.tenant.dashboard.view_list') }}</Link>
                     </header>
                     <div class="space-y-3">
                         <div v-for="item in props.status_chart.planograms" :key="`plan-${item.status}`" class="grid grid-cols-[90px_1fr_auto] items-center gap-3">
@@ -144,8 +144,8 @@ const maxStatusTotal = computed(() => {
 
                 <article class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
                     <header class="mb-4 flex items-center justify-between gap-2">
-                        <h2 class="text-base font-semibold">Status de categorias</h2>
-                        <Link :href="CategoryController.index.url()" class="text-xs text-primary underline-offset-2 hover:underline">Ver lista</Link>
+                        <h2 class="text-base font-semibold">{{ t('app.tenant.dashboard.category_status') }}</h2>
+                        <Link :href="CategoryController.index.url()" class="text-xs text-primary underline-offset-2 hover:underline">{{ t('app.tenant.dashboard.view_list') }}</Link>
                     </header>
                     <div class="space-y-3">
                         <div v-for="item in props.status_chart.categories" :key="`cat-${item.status}`" class="grid grid-cols-[90px_1fr_auto] items-center gap-3">
@@ -160,8 +160,8 @@ const maxStatusTotal = computed(() => {
 
                 <article class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
                     <header class="mb-4 flex items-center justify-between gap-2">
-                        <h2 class="text-base font-semibold">Status de produtos</h2>
-                        <Link :href="ProductController.index.url()" class="text-xs text-primary underline-offset-2 hover:underline">Ver lista</Link>
+                        <h2 class="text-base font-semibold">{{ t('app.tenant.dashboard.product_status') }}</h2>
+                        <Link :href="ProductController.index.url()" class="text-xs text-primary underline-offset-2 hover:underline">{{ t('app.tenant.dashboard.view_list') }}</Link>
                     </header>
                     <div class="space-y-3">
                         <div v-for="item in props.status_chart.products" :key="`prod-${item.status}`" class="grid grid-cols-[90px_1fr_auto] items-center gap-3">
@@ -177,9 +177,9 @@ const maxStatusTotal = computed(() => {
 
             <section class="grid gap-4 xl:grid-cols-3">
                 <article class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
-                    <header class="mb-3 text-sm font-semibold">Planogramas recentes</header>
+                    <header class="mb-3 text-sm font-semibold">{{ t('app.tenant.dashboard.recent_planograms') }}</header>
                     <div class="space-y-2">
-                        <div v-if="props.recent.planograms.length === 0" class="text-xs text-muted-foreground">Nenhum planograma recente.</div>
+                        <div v-if="props.recent.planograms.length === 0" class="text-xs text-muted-foreground">{{ t('app.tenant.dashboard.no_recent_planograms') }}</div>
                         <div v-for="item in props.recent.planograms" :key="item.id" class="rounded-md border border-border/70 p-2">
                             <div class="text-sm font-medium">{{ item.name ?? '-' }}</div>
                             <div class="text-xs text-muted-foreground">{{ item.slug ?? '-' }}</div>
@@ -189,9 +189,9 @@ const maxStatusTotal = computed(() => {
                 </article>
 
                 <article class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
-                    <header class="mb-3 text-sm font-semibold">Categorias recentes</header>
+                    <header class="mb-3 text-sm font-semibold">{{ t('app.tenant.dashboard.recent_categories') }}</header>
                     <div class="space-y-2">
-                        <div v-if="props.recent.categories.length === 0" class="text-xs text-muted-foreground">Nenhuma categoria recente.</div>
+                        <div v-if="props.recent.categories.length === 0" class="text-xs text-muted-foreground">{{ t('app.tenant.dashboard.no_recent_categories') }}</div>
                         <div v-for="item in props.recent.categories" :key="item.id" class="rounded-md border border-border/70 p-2">
                             <div class="text-sm font-medium">{{ item.name ?? '-' }}</div>
                             <div class="text-xs text-muted-foreground">{{ item.slug ?? '-' }}</div>
@@ -201,9 +201,9 @@ const maxStatusTotal = computed(() => {
                 </article>
 
                 <article class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
-                    <header class="mb-3 text-sm font-semibold">Produtos recentes</header>
+                    <header class="mb-3 text-sm font-semibold">{{ t('app.tenant.dashboard.recent_products') }}</header>
                     <div class="space-y-2">
-                        <div v-if="props.recent.products.length === 0" class="text-xs text-muted-foreground">Nenhum produto recente.</div>
+                        <div v-if="props.recent.products.length === 0" class="text-xs text-muted-foreground">{{ t('app.tenant.dashboard.no_recent_products') }}</div>
                         <div v-for="item in props.recent.products" :key="item.id" class="rounded-md border border-border/70 p-2">
                             <div class="text-sm font-medium">{{ item.name ?? '-' }}</div>
                             <div class="text-xs text-muted-foreground">{{ item.slug ?? '-' }}</div>
@@ -215,10 +215,10 @@ const maxStatusTotal = computed(() => {
 
             <section class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
                 <header class="mb-4">
-                    <h2 class="text-base font-semibold">Links úteis</h2>
+                    <h2 class="text-base font-semibold">{{ t('app.tenant.dashboard.useful_links') }}</h2>
                 </header>
                 <div v-if="props.useful_links.length === 0" class="text-xs text-muted-foreground">
-                    Nenhum link disponível no momento.
+                    {{ t('app.tenant.dashboard.no_links') }}
                 </div>
                 <div v-else class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     <a

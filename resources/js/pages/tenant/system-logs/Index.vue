@@ -114,12 +114,12 @@ onMounted(() => {
 });
 
 const pageMeta = useCrudPageMeta({
-    headTitle: 'Logs do sistema',
-    title: 'Logs do sistema',
-    description: 'Visualize eventos críticos e limpe o arquivo de log do sistema.',
+    headTitle: t('app.tenant.system-logs.title'),
+    title: t('app.tenant.system-logs.title'),
+    description: t('app.tenant.system-logs.description'),
     breadcrumbs: [
         { title: t('app.navigation.dashboard'), href: dashboard.url().replace(/^\/\/[^/]+/, '') },
-        { title: 'Logs do sistema', href: indexPath },
+        { title: t('app.tenant.system-logs.navigation'), href: indexPath },
     ],
 });
 </script>
@@ -131,24 +131,24 @@ const pageMeta = useCrudPageMeta({
         <div class="mx-auto w-full max-w-7xl space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline">Total: {{ summary.total }}</Badge>
-                    <Badge variant="secondary">Exibidos: {{ summary.filtered }}</Badge>
+                    <Badge variant="outline">{{ t('app.tenant.system-logs.summary_total', { total: String(summary.total) }) }}</Badge>
+                    <Badge variant="secondary">{{ t('app.tenant.system-logs.summary_filtered', { filtered: String(summary.filtered) }) }}</Badge>
                 </div>
                 <DeleteButton :href="clearHref" :label="props.filters.file" :require-confirm-word="true">
-                    Limpar logs
+                    {{ t('app.tenant.system-logs.clear_button') }}
                 </DeleteButton>
             </div>
 
             <form @submit.prevent="applyFilters" class="rounded-xl border border-sidebar-border/70 bg-background p-4 dark:border-sidebar-border">
                 <div v-if="isMounted" class="mb-3 flex flex-wrap gap-2">
                     <button type="button" class="rounded-md border border-border px-2.5 py-1 text-xs text-foreground transition hover:bg-muted/50" @click="applyPreset(24)">
-                        Últimas 24h
+                        {{ t('app.tenant.system-logs.preset_24h') }}
                     </button>
                     <button type="button" class="rounded-md border border-border px-2.5 py-1 text-xs text-foreground transition hover:bg-muted/50" @click="applyPreset(24 * 7)">
-                        Últimos 7 dias
+                        {{ t('app.tenant.system-logs.preset_7d') }}
                     </button>
                     <button type="button" class="rounded-md border border-border px-2.5 py-1 text-xs text-foreground transition hover:bg-muted/50" @click="applyPreset(24 * 30)">
-                        Últimos 30 dias
+                        {{ t('app.tenant.system-logs.preset_30d') }}
                     </button>
                 </div>
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
@@ -156,7 +156,7 @@ const pageMeta = useCrudPageMeta({
                         type="text"
                         name="search"
                         v-model="form.search"
-                        placeholder="Buscar por termo (SQLSTATE, sync, exception...)"
+                        :placeholder="t('app.tenant.system-logs.search_placeholder')"
                         class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 md:col-span-6"
                     />
                     <select
@@ -173,7 +173,7 @@ const pageMeta = useCrudPageMeta({
                         v-model="form.level"
                         class="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 md:col-span-2"
                     >
-                        <option value="">Todos os níveis</option>
+                        <option value="">{{ t('app.tenant.system-logs.level_all') }}</option>
                         <option v-for="level in levels" :key="level" :value="level">
                             {{ level.toUpperCase() }}
                         </option>
@@ -192,13 +192,13 @@ const pageMeta = useCrudPageMeta({
                     />
                     <label class="flex items-center gap-2 rounded-lg border border-border px-3 text-sm md:col-span-2">
                         <input v-model="form.key_only" type="checkbox" name="key_only" value="1" class="accent-primary" />
-                        Só pontos-chave
+                        {{ t('app.tenant.system-logs.key_only_label') }}
                     </label>
                     <button
                         type="submit"
                         class="h-9 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 md:col-span-1"
                     >
-                        Filtrar
+                        {{ t('app.tenant.system-logs.filters.submit') }}
                     </button>
                 </div>
             </form>
@@ -207,16 +207,16 @@ const pageMeta = useCrudPageMeta({
                 <table class="w-full text-sm">
                     <thead class="bg-muted/30 text-left text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">Data</th>
-                            <th class="px-4 py-3 font-medium">Nível</th>
-                            <th class="px-4 py-3 font-medium">Ambiente</th>
-                            <th class="px-4 py-3 font-medium">Mensagem</th>
+                            <th class="px-4 py-3 font-medium">{{ t('app.tenant.system-logs.table.date') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('app.tenant.system-logs.table.level') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('app.tenant.system-logs.table.environment') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('app.tenant.system-logs.table.message') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="entries.length === 0">
                             <td colspan="4" class="px-4 py-8 text-center text-muted-foreground">
-                                Nenhum log encontrado para os filtros aplicados.
+                                {{ t('app.tenant.system-logs.messages.no_logs') }}
                             </td>
                         </tr>
                         <tr
