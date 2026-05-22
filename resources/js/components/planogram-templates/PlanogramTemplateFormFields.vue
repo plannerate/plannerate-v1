@@ -50,9 +50,9 @@ const categoryId = ref<string | null>(props.template?.category_id ?? null);
 
         <!-- Categoria da gôndola — obrigatória antes de configurar slots -->
         <div class="grid gap-2">
-            <Label>Categoria da gôndola <span class="text-destructive">*</span></Label>
+            <Label>{{ t(`${props.translationScope}.fields.gondola_category`) }} <span class="text-destructive">*</span></Label>
             <p class="text-xs text-muted-foreground">
-                Define a categoria principal que será trabalhada nos slots desta gôndola.
+                {{ t(`${props.translationScope}.fields.gondola_category_hint`) }}
             </p>
             <CategoryCascadeSelect
                 v-model="categoryId"

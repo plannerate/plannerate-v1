@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Check } from 'lucide-vue-next';
+import { useT } from '@/composables/useT';
 import type { WizardStep } from './types';
+
+const { t } = useT();
 
 const props = defineProps<{
     currentStep: 1 | 2 | 3;
@@ -63,7 +66,7 @@ function isCurrent(step: number): boolean {
                 <span
                     class="block text-[11px] leading-none font-medium tracking-wide text-muted-foreground uppercase"
                 >
-                    Etapa {{ step.step }}
+                    {{ t('planogram-templates.wizard.step_label') }} {{ step.step }}
                 </span>
                 <span class="mt-1 block truncate text-sm font-semibold">
                     {{ step.label }}

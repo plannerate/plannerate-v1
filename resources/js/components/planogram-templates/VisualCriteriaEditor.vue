@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useT } from '@/composables/useT';
 import { visualCriterionMeta } from './slot-editor';
 import type { VisualCriterionDirection, VisualCriterionItem, VisualCriterionKey } from './types';
 
@@ -10,6 +11,8 @@ import type { VisualCriterionDirection, VisualCriterionItem, VisualCriterionKey 
  */
 
 const modelValue = defineModel<VisualCriterionItem[] | null>({ required: true });
+
+const { t } = useT();
 
 const ALL_KEYS = Object.keys(visualCriterionMeta) as VisualCriterionKey[];
 
@@ -129,7 +132,11 @@ function directionTitle(item: VisualCriterionItem): string {
         return '';
     }
 
-    return item.direction === 'asc' ? 'Crescente — clique para inverter' : item.direction === 'desc' ? 'Decrescente — clique para inverter' : 'Sem direção — clique para definir';
+    return item.direction === 'asc'
+        ? t('planogram-templates.visual_criteria.direction_asc')
+        : item.direction === 'desc'
+            ? t('planogram-templates.visual_criteria.direction_desc')
+            : t('planogram-templates.visual_criteria.direction_none');
 }
 
 /** Atualiza o packaging_order do critério embalagem preservando os demais campos */
@@ -199,9 +206,9 @@ function onPackagingDragEnd(): void {
         <!-- Cabeçalho com toggle de modo -->
         <div class="flex items-center justify-between">
             <div class="flex flex-col gap-y-0.5">
-                <span class="text-sm font-medium">Critérios de ordenação visual</span>
+                <span class="text-sm font-medium">{{ t('planogram-templates.visual_criteria.title') }}</span>
                 <span class="text-xs text-muted-foreground">
-                    {{ isLegacyMode ? 'Usando ordenação padrão (preço / tamanho / marca).' : 'Critérios ativos — arraste para reordenar. O mais à esquerda domina.' }}
+                    {{ isLegacyMode ? t('planogram-templates.visual_criteria.description_legacy') : t('planogram-templates.visual_criteria.description_custom') }}
                 </span>
             </div>
             <button
@@ -209,7 +216,7 @@ function onPackagingDragEnd(): void {
                 class="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
                 @click="isLegacyMode ? enableCustomMode() : revertToLegacy()"
             >
-                {{ isLegacyMode ? 'Personalizar' : 'Usar padrão' }}
+                {{ isLegacyMode ? t('planogram-templates.visual_criteria.customize_button') : t('planogram-templates.visual_criteria.use_default_button') }}
             </button>
         </div>
 
@@ -234,7 +241,7 @@ function onPackagingDragEnd(): void {
                             : 'border-border bg-muted',
                         dragIndex === index ? 'opacity-40' : '',
                     ]"
-                    :aria-label="`${visualCriterionMeta[item.key].label}, prioridade ${index + 1}`"
+                    :aria-label="`${t('planogram-templates.visual_criteria.criteria_labels.' + item.key)}, prioridade ${index + 1}`"
                     @dragstart="onDragStart(index, $event)"
                     @dragover="onDragOver(index, $event)"
                     @drop="onDrop(index)"
@@ -244,7 +251,7 @@ function onPackagingDragEnd(): void {
                     <span class="text-xs font-mono text-muted-foreground">{{ index + 1 }}</span>
 
                     <!-- Nome do critério -->
-                    <span class="font-medium">{{ visualCriterionMeta[item.key].label }}</span>
+                    <span class="font-medium">{{ t('planogram-templates.visual_criteria.criteria_labels.' + item.key) }}</span>
 
                     <!-- Botão de direção -->
                     <button
@@ -261,7 +268,7 @@ function onPackagingDragEnd(): void {
                     <button
                         type="button"
                         class="ml-1 rounded-full text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-                        title="Remover critério"
+                        :title="t('planogram-templates.visual_criteria.remove_criterion_tooltip')"
                         @click="removeCriterion(index)"
                     >
                         ×
@@ -270,13 +277,13 @@ function onPackagingDragEnd(): void {
             </div>
 
             <p v-else class="text-xs text-muted-foreground italic">
-                Nenhum critério ativo — adicione abaixo ou reverta para o padrão.
+                {{ t('planogram-templates.visual_criteria.empty_message') }}
             </p>
 
             <!-- Sub-editor de ordem de tipos de embalagem -->
             <div v-if="packagingCriterionIndex !== -1" class="rounded-md border border-border p-3 flex flex-col gap-y-2">
-                <span class="text-xs font-medium text-foreground">Ordem dos tipos de embalagem</span>
-                <span class="text-xs text-muted-foreground">Arraste para reordenar. Tipos não listados vão para o fim.</span>
+                <span class="text-xs font-medium text-foreground">{{ t('planogram-templates.visual_criteria.packaging_order.title') }}</span>
+                <span class="text-xs text-muted-foreground">{{ t('planogram-templates.visual_criteria.packaging_order.description') }}</span>
 
                 <!-- Lista reordenável de tipos -->
                 <div v-if="packagingOrder.length > 0" class="flex flex-wrap gap-2">
@@ -301,14 +308,14 @@ function onPackagingDragEnd(): void {
                         <button
                             type="button"
                             class="ml-1 rounded-full text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-                            title="Remover tipo"
+                            :title="t('planogram-templates.visual_criteria.packaging_order.remove_tooltip')"
                             @click="removePackagingType(pIdx)"
                         >×</button>
                     </div>
                 </div>
 
                 <p v-else class="text-xs text-muted-foreground italic">
-                    Nenhum tipo adicionado — todos os produtos ficam juntos sem distinção de embalagem.
+                    {{ t('planogram-templates.visual_criteria.packaging_order.empty_message') }}
                 </p>
 
                 <!-- Input para adicionar novo tipo -->
@@ -316,7 +323,7 @@ function onPackagingDragEnd(): void {
                     <input
                         v-model="newPackagingType"
                         type="text"
-                        placeholder="Ex: caixa, sache, pet, lata…"
+                        :placeholder="t('planogram-templates.visual_criteria.packaging_order.add_placeholder')"
                         class="flex h-7 flex-1 rounded-md border border-border bg-background px-2 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
                         @keydown.enter.prevent="addPackagingType"
                     />
@@ -325,14 +332,14 @@ function onPackagingDragEnd(): void {
                         class="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
                         @click="addPackagingType"
                     >
-                        + Adicionar
+                        {{ t('planogram-templates.visual_criteria.packaging_order.add_button') }}
                     </button>
                 </div>
             </div>
 
             <!-- Critérios disponíveis para adicionar -->
             <div v-if="available.length > 0" class="flex flex-wrap gap-2">
-                <span class="self-center text-xs text-muted-foreground">Adicionar:</span>
+                <span class="self-center text-xs text-muted-foreground">{{ t('planogram-templates.visual_criteria.add_label') }}</span>
                 <button
                     v-for="key in available"
                     :key="key"
@@ -340,7 +347,7 @@ function onPackagingDragEnd(): void {
                     class="flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1 text-xs text-muted-foreground hover:border-primary hover:text-foreground"
                     @click="addCriterion(key)"
                 >
-                    + {{ visualCriterionMeta[key].label }}
+                    + {{ t('planogram-templates.visual_criteria.criteria_labels.' + key) }}
                 </button>
             </div>
         </template>

@@ -2,6 +2,7 @@
 import { useHttp } from '@inertiajs/vue3';
 import { X } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
+import { useT } from '@/composables/useT';
 
 type Option = { id: string; name: string; level_name: string | null; nivel: number | null };
 
@@ -25,6 +26,8 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{ 'update:modelValue': [value: string | null] }>();
+
+const { t } = useT();
 
 const selections = ref<string[]>(Array.from({ length: props.cascadeLevels }, () => ''));
 const options = ref<Option[][]>(Array.from({ length: props.cascadeLevels }, () => []));
@@ -156,12 +159,12 @@ watch(
             >
                 {{ templateCategoryName }}
             </span>
-            <span class="text-xs text-muted-foreground">categoria base do template</span>
+            <span class="text-xs text-muted-foreground">{{ t('planogram-templates.category_select.base_template_hint') }}</span>
         </div>
 
         <!-- Sem filhos: apenas a categoria base está disponível -->
         <p v-if="!loading && options[0].length === 0" class="text-xs text-muted-foreground italic">
-            Sem subcategorias — o slot usará toda a categoria base.
+            {{ t('planogram-templates.category_select.no_subcategories') }}
         </p>
 
         <!-- Cascade de subcategorias -->
@@ -181,7 +184,7 @@ watch(
                     class="flex h-9 min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-2 pr-8 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
                     @change="onLevelChange(level - 1, ($event.target as HTMLSelectElement).value)"
                 >
-                    <option value="">Nível {{ level }}…</option>
+                    <option value="">{{ t('planogram-templates.category_select.level_placeholder', { n: String(level) }) }}</option>
                     <option v-for="opt in options[level - 1]" :key="opt.id" :value="opt.id">
                         {{ opt.name }}
                     </option>
@@ -198,7 +201,7 @@ watch(
         </div>
 
         <p class="text-xs text-muted-foreground">
-            Sem seleção abaixo → usa a categoria base (todos os produtos da gôndola neste slot).
+            {{ t('planogram-templates.category_select.no_selection_hint') }}
         </p>
     </div>
 </template>

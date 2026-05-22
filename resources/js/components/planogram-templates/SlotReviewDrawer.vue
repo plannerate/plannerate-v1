@@ -3,6 +3,7 @@ import { useHttp } from '@inertiajs/vue3';
 import { router } from '@inertiajs/vue3';
 import { BarChart2 } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
+import { useT } from '@/composables/useT';
 import TemplateSlotController from '@/actions/App/Http/Controllers/Tenant/TemplateSlotController';
 import {
     Sheet,
@@ -22,6 +23,8 @@ const props = defineProps<{
 const emit = defineEmits<{
     'update:open': [value: boolean];
 }>();
+
+const { t } = useT();
 
 const analysisHttp = useHttp<Record<string, string>, { data: SlotAnalysisData }>();
 const analysis = ref<SlotAnalysisData | null>(null);
@@ -97,7 +100,7 @@ function syncImages(): void {
             <SheetHeader class="shrink-0">
                 <SheetTitle class="flex items-center gap-2">
                     <BarChart2 class="size-4" />
-                    Análise de slot
+                    {{ t('planogram-templates.review_drawer.title') }}
                 </SheetTitle>
             </SheetHeader>
 

@@ -39,6 +39,10 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
                 ->name('gondolas.reorder-visual');
             Route::post('gondolas/{gondola}/redistribute', [AutoPlanogramController::class, 'redistributeExposure'])
                 ->name('gondolas.redistribute');
+            Route::post('gondolas/{gondola}/reorder-all', [AutoPlanogramController::class, 'reorderGondola'])
+                ->name('gondolas.reorder-all');
+            Route::post('gondolas/{gondola}/redistribute-all', [AutoPlanogramController::class, 'redistributeGondola'])
+                ->name('gondolas.redistribute-all');
         });
     });
 

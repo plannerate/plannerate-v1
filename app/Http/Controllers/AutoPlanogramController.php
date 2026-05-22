@@ -23,6 +23,7 @@ use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -372,6 +373,78 @@ class AutoPlanogramController extends Controller
             'redistributed' => $count,
             'level' => 'redistribute',
         ]);
+    }
+
+    /**
+     * Reordena visualmente TODOS os slots da gôndola de uma vez.
+     * Usa o motor de critérios visuais de cada slot; mesmos produtos/frentes antes e depois.
+     */
+    public function reorderGondola(string $gondola): JsonResponse
+    {
+        $gondolaModel = Gondola::with(['sections.shelves'])->findOrFail($gondola);
+        $slots = $this->resolveGondolaSlots($gondolaModel);
+        $total = 0;
+
+        foreach ($slots as $slot) {
+            $total += $this->reorderService->reorder($gondolaModel, $slot);
+        }
+
+        return response()->json([
+            'success' => true,
+            'reordered' => $total,
+            'slots_processed' => $slots->count(),
+            'level' => 'reorder',
+        ]);
+    }
+
+    /**
+     * Redistribui segmentos de TODOS os slots da gôndola de uma vez.
+     * Mantém {produto: frentes} — recalcula apenas posições físicas por exposição.
+     */
+    public function redistributeGondola(string $gondola): JsonResponse
+    {
+        $gondolaModel = Gondola::with(['sections.shelves'])->findOrFail($gondola);
+        $slots = $this->resolveGondolaSlots($gondolaModel);
+        $total = 0;
+
+        foreach ($slots as $slot) {
+            $total += $this->redistributeService->redistribute($gondolaModel, $slot);
+        }
+
+        return response()->json([
+            'success' => true,
+            'redistributed' => $total,
+            'slots_processed' => $slots->count(),
+            'level' => 'redistribute',
+        ]);
+    }
+
+    /**
+     * Resolve todos os slots do subtemplate que corresponde ao número de seções da gôndola.
+     *
+     * @return Collection<int, PlanogramTemplateSlot>
+     */
+    private function resolveGondolaSlots(Gondola $gondola): Collection
+    {
+        if (! $gondola->template_id) {
+            return collect();
+        }
+
+        $numModules = $gondola->sections->count();
+
+        $subtemplate = PlanogramSubtemplate::query()
+            ->where('template_id', $gondola->template_id)
+            ->where('num_modules', '<=', $numModules)
+            ->orderByDesc('num_modules')
+            ->first();
+
+        if (! $subtemplate) {
+            return collect();
+        }
+
+        return PlanogramTemplateSlot::query()
+            ->where('subtemplate_id', $subtemplate->id)
+            ->get();
     }
 
     public function swapProduct(Request $request, string $gondola): JsonResponse

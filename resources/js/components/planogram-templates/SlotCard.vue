@@ -27,10 +27,10 @@ const priceOrderLabel: Record<SlotPriceOrder, string> = {
 
 const expansionLabel: Record<SlotFacingExpansion, string> = {
     none: '',
-    score: 'ABC',
-    current_stock: 'Estoque',
-    target_stock: 'Déficit',
-    equal: 'Igual',
+    score: t('planogram-templates.slot_card.expansion.score'),
+    current_stock: t('planogram-templates.slot_card.expansion.current_stock'),
+    target_stock: t('planogram-templates.slot_card.expansion.target_stock'),
+    equal: t('planogram-templates.slot_card.expansion.equal'),
 };
 
 const facingsRange = computed(() => {
@@ -40,12 +40,12 @@ const facingsRange = computed(() => {
 });
 
 const roleLabels: Record<CategoryRole, string> = {
-    destino: 'Destino',
-    rotina: 'Rotina',
-    conveniencia: 'Conv.',
-    impulso: 'Impulso',
-    sazonal: 'Sazonal',
-    complementar: 'Compl.',
+    destino: t('planogram-templates.slot_card.roles.destino'),
+    rotina: t('planogram-templates.slot_card.roles.rotina'),
+    conveniencia: t('planogram-templates.slot_card.roles.conveniencia'),
+    impulso: t('planogram-templates.slot_card.roles.impulso'),
+    sazonal: t('planogram-templates.slot_card.roles.sazonal'),
+    complementar: t('planogram-templates.slot_card.roles.complementar'),
 };
 
 const effectiveRole = computed<CategoryRole | null>(
@@ -73,7 +73,7 @@ function onDragStart(event: DragEvent): void {
     >
         <!-- Category name -->
         <span class="line-clamp-2 pr-10 font-semibold leading-tight">
-            {{ slot.category_name ?? 'Sem categoria' }}
+            {{ slot.category_name ?? t('planogram-templates.slot_card.no_category') }}
         </span>
 
         <!-- Category breadcrumb path -->
@@ -86,7 +86,7 @@ function onDragStart(event: DragEvent): void {
             v-if="effectiveRole"
             class="w-fit rounded px-1 py-px text-[9px] font-semibold uppercase tracking-wide"
             style="background-color: rgba(0,0,0,0.10)"
-            :title="slot.role_override ? 'Papel configurado neste slot' : 'Papel da categoria'"
+            :title="slot.role_override ? t('planogram-templates.slot_card.role_configured_here') : t('planogram-templates.slot_card.role_from_category')"
         >
             {{ roleLabels[effectiveRole] }}
         </span>
@@ -110,10 +110,10 @@ function onDragStart(event: DragEvent): void {
             v-if="slot.rejected_count && slot.rejected_count > 0"
             class="mt-auto flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-medium"
             style="background-color: rgba(0,0,0,0.12)"
-            :title="`${slot.rejected_count} produto(s) rejeitado(s) no histórico de geração`"
+            :title="`${slot.rejected_count} ${slot.rejected_count !== 1 ? t('planogram-templates.slot_card.rejected_plural') : t('planogram-templates.slot_card.rejected_singular')} no histórico de geração`"
         >
             <AlertTriangle class="size-2.5 shrink-0" />
-            <span>{{ slot.rejected_count }} rejeitado{{ slot.rejected_count !== 1 ? 's' : '' }}</span>
+            <span>{{ slot.rejected_count }} {{ slot.rejected_count !== 1 ? t('planogram-templates.slot_card.rejected_plural') : t('planogram-templates.slot_card.rejected_singular') }}</span>
         </div>
 
         <!-- Action buttons -->
@@ -121,7 +121,7 @@ function onDragStart(event: DragEvent): void {
             <button
                 type="button"
                 class="rounded p-1 transition hover:bg-black/10"
-                title="Analisar produtos do slot"
+                :title="t('planogram-templates.slot_card.analyze_tooltip')"
                 @click.stop="emit('analyze')"
             >
                 <BarChart2 class="size-4" />

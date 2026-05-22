@@ -7,6 +7,7 @@ import type {
 } from '@/components/planogram-templates/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useT } from '@/composables/useT';
 
 const props = defineProps<{
     selectedSlot: PlanogramTemplateSlot | null;
@@ -17,6 +18,8 @@ const props = defineProps<{
 const emit = defineEmits<{
     syncImages: [];
 }>();
+
+const { t } = useT();
 
 const localFilter = ref('');
 
@@ -68,7 +71,7 @@ const summaryColClass = computed(() => {
 <template>
     <div class="rounded-lg border bg-card p-4 col-end-12 md:col-span-9 lg:col-span-8">
         <div class="mb-2 flex items-center justify-between gap-2">
-            <p class="text-sm font-semibold">Análise de alocação</p>
+            <p class="text-sm font-semibold">{{ t('planogram-templates.review_panel.title') }}</p>
             <Button
                 v-if="props.analysis && props.analysis.rows.length > 0"
                 type="button"
@@ -77,7 +80,7 @@ const summaryColClass = computed(() => {
                 @click="emit('syncImages')"
             >
                 <ImageDown class="size-4" />
-                Atualizar imagens
+                {{ t('planogram-templates.review_panel.update_images_button') }}
             </Button>
         </div>
         <p class="mb-3 text-xs text-muted-foreground">
@@ -92,28 +95,28 @@ const summaryColClass = computed(() => {
                         'text-muted-foreground': props.analysis.summary.zone === 'neutral',
                     }"
                 >
-                    Zona {{ props.analysis.summary.zone === 'hot' ? 'quente' : props.analysis.summary.zone === 'cold' ? 'fria' : 'neutra' }}
+                    Zona {{ props.analysis.summary.zone === 'hot' ? t('planogram-templates.review_panel.zone_hot') : props.analysis.summary.zone === 'cold' ? t('planogram-templates.review_panel.zone_cold') : t('planogram-templates.review_panel.zone_neutral') }}
                 </span>
-                <span v-else>simulação completa</span>
+                <span v-else>{{ t('planogram-templates.review_panel.full_simulation') }}</span>
             </template>
-            <template v-else>Selecione um slot para iniciar a análise.</template>
+            <template v-else>{{ t('planogram-templates.review_panel.select_slot_hint') }}</template>
         </p>
 
         <div v-if="props.loading" class="text-sm text-muted-foreground">
-            Analisando produtos...
+            {{ t('planogram-templates.review_panel.analyzing') }}
         </div>
         <div
             v-else-if="props.selectedSlot && !props.analysis"
             class="text-sm text-muted-foreground"
         >
-            Nenhum dado de análise para este slot.
+            {{ t('planogram-templates.review_panel.no_analysis') }}
         </div>
         <div v-else-if="props.analysis" class="space-y-3">
             <div class="flex items-center justify-between gap-3">
                 <Input
                     v-model="localFilter"
                     type="text"
-                    placeholder="Filtrar por nome, EAN ou código ERP"
+                    :placeholder="t('planogram-templates.review_panel.filter_placeholder')"
                     class="max-w-md"
                 />
                 <p class="text-xs text-muted-foreground">
@@ -124,37 +127,37 @@ const summaryColClass = computed(() => {
             <!-- Summary cards -->
             <div class="grid grid-cols-2 gap-2" :class="summaryColClass">
                 <div class="rounded-md border px-3 py-2">
-                    <p class="text-xs text-muted-foreground">Total na categoria</p>
+                    <p class="text-xs text-muted-foreground">{{ t('planogram-templates.review_panel.summary.total_products') }}</p>
                     <p class="text-sm font-semibold">
                         {{ props.analysis.summary.total_products }}
                     </p>
                 </div>
                 <div v-if="hasPreviousSlots" class="rounded-md border px-3 py-2">
-                    <p class="text-xs text-muted-foreground">Prateleiras anteriores</p>
+                    <p class="text-xs text-muted-foreground">{{ t('planogram-templates.review_panel.summary.previous_slots') }}</p>
                     <p class="text-sm font-semibold text-muted-foreground">
                         {{ props.analysis.summary.previous_slots_placed }}
                     </p>
                 </div>
                 <div class="rounded-md border px-3 py-2">
-                    <p class="text-xs text-muted-foreground">Entrou aqui</p>
+                    <p class="text-xs text-muted-foreground">{{ t('planogram-templates.review_panel.summary.placed') }}</p>
                     <p class="text-sm font-semibold text-emerald-600">
                         {{ props.analysis.summary.placed_products }}
                     </p>
                 </div>
                 <div v-if="hasOutroSlot" class="rounded-md border px-3 py-2">
-                    <p class="text-xs text-muted-foreground">Outro slot</p>
+                    <p class="text-xs text-muted-foreground">{{ t('planogram-templates.review_panel.summary.other_slot') }}</p>
                     <p class="text-sm font-semibold text-blue-600">
                         {{ props.analysis.summary.outro_slot_products }}
                     </p>
                 </div>
                 <div class="rounded-md border px-3 py-2">
-                    <p class="text-xs text-muted-foreground">Fora</p>
+                    <p class="text-xs text-muted-foreground">{{ t('planogram-templates.review_panel.summary.rejected') }}</p>
                     <p class="text-sm font-semibold text-amber-600">
                         {{ props.analysis.summary.rejected_products }}
                     </p>
                 </div>
                 <div class="rounded-md border px-3 py-2">
-                    <p class="text-xs text-muted-foreground">Livre (cm)</p>
+                    <p class="text-xs text-muted-foreground">{{ t('planogram-templates.review_panel.summary.free_width') }}</p>
                     <p class="text-sm font-semibold">
                         {{ props.analysis.summary.free_width_cm }}
                     </p>
@@ -165,15 +168,15 @@ const summaryColClass = computed(() => {
                 <table class="min-w-full text-sm">
                     <thead class="sticky top-0 z-10 bg-muted/40">
                         <tr>
-                            <th class="px-3 py-2 text-left">Produto</th>
-                            <th class="px-3 py-2 text-left">Status</th>
-                            <th class="px-3 py-2 text-left">Motivo</th>
-                            <th class="px-3 py-2 text-left">ABC</th>
-                            <th class="px-3 py-2 text-left">Venda</th>
-                            <th class="px-3 py-2 text-left">Dimensões</th>
-                            <th class="px-3 py-2 text-left">Facing</th>
-                            <th class="px-3 py-2 text-left">Pos. (cm)</th>
-                            <th class="px-3 py-2 text-left">Larg. (cm)</th>
+                            <th class="px-3 py-2 text-left">{{ t('planogram-templates.review_panel.columns.product') }}</th>
+                            <th class="px-3 py-2 text-left">{{ t('planogram-templates.review_panel.columns.status') }}</th>
+                            <th class="px-3 py-2 text-left">{{ t('planogram-templates.review_panel.columns.reason') }}</th>
+                            <th class="px-3 py-2 text-left">{{ t('planogram-templates.review_panel.columns.abc') }}</th>
+                            <th class="px-3 py-2 text-left">{{ t('planogram-templates.review_panel.columns.sales') }}</th>
+                            <th class="px-3 py-2 text-left">{{ t('planogram-templates.review_panel.columns.dimensions') }}</th>
+                            <th class="px-3 py-2 text-left">{{ t('planogram-templates.review_panel.columns.facing') }}</th>
+                            <th class="px-3 py-2 text-left">{{ t('planogram-templates.review_panel.columns.position_cm') }}</th>
+                            <th class="px-3 py-2 text-left">{{ t('planogram-templates.review_panel.columns.width_cm') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -198,7 +201,7 @@ const summaryColClass = computed(() => {
                                             v-else
                                             class="text-[10px] text-muted-foreground"
                                         >
-                                            Sem imagem
+                                            {{ t('planogram-templates.review_panel.no_image') }}
                                         </span>
                                     </div>
                                     <div class="min-w-0">
@@ -206,11 +209,10 @@ const summaryColClass = computed(() => {
                                             {{ row.name }}
                                         </p>
                                         <p class="text-xs text-muted-foreground">
-                                            EAN: {{ row.ean || '-' }} · Marca:
-                                            {{ row.brand || '-' }}
+                                            {{ t('planogram-templates.review_panel.ean_label') }}: {{ row.ean || '-' }} · {{ t('planogram-templates.review_panel.brand_label') }}: {{ row.brand || '-' }}
                                         </p>
                                         <p class="text-xs text-muted-foreground">
-                                            Cód. ERP: {{ row.codigo_erp || '-' }}
+                                            {{ t('planogram-templates.review_panel.erp_code_label') }}: {{ row.codigo_erp || '-' }}
                                         </p>
                                     </div>
                                 </div>
@@ -224,14 +226,14 @@ const summaryColClass = computed(() => {
                                             'text-amber-600': row.status === 'fora',
                                         }"
                                     >
-                                        {{ row.status === 'outro_slot' ? 'outro slot' : row.status }}
+                                        {{ row.status === 'outro_slot' ? t('planogram-templates.review_panel.status_other_slot') : row.status }}
                                     </span>
                                     <span
                                         v-if="row.is_mandatory"
                                         class="rounded bg-violet-100 px-1 py-px text-[10px] font-semibold text-violet-700"
-                                        title="Produto obrigatório"
+                                        :title="t('planogram-templates.review_panel.mandatory_tooltip')"
                                     >
-                                        OBR
+                                        {{ t('planogram-templates.review_panel.mandatory_badge') }}
                                     </span>
                                 </div>
                             </td>
@@ -260,7 +262,7 @@ const summaryColClass = computed(() => {
                                             : 'text-muted-foreground'
                                     "
                                 >
-                                    {{ row.has_sales ? 'Sim' : 'Não' }}
+                                    {{ row.has_sales ? t('planogram-templates.review_panel.has_sales_yes') : t('planogram-templates.review_panel.has_sales_no') }}
                                 </span>
                             </td>
                             <td class="px-3 py-2 text-muted-foreground">

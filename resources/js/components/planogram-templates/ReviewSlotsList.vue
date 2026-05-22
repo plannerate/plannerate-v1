@@ -2,6 +2,9 @@
 import { AlertCircle, Pencil } from 'lucide-vue-next';
 import { computed } from 'vue';
 import type { PlanogramTemplateSlot } from '@/components/planogram-templates/types';
+import { useT } from '@/composables/useT';
+
+const { t } = useT();
 
 const props = defineProps<{
     slots: PlanogramTemplateSlot[];
@@ -26,10 +29,11 @@ const groupedSlots = computed((): SlotGroup[] => {
     for (const slot of props.slots) {
         const key = slot.category_id ?? '__no_category__';
         if (!map.has(key)) {
+            const noCategory = t('planogram-templates.review_list.no_category');
             map.set(key, {
                 categoryId: slot.category_id,
-                categoryName: slot.category_name ?? slot.category_id ?? 'Sem categoria',
-                categoryPath: slot.category_path ?? slot.category_name ?? slot.category_id ?? 'Sem categoria',
+                categoryName: slot.category_name ?? slot.category_id ?? noCategory,
+                categoryPath: slot.category_path ?? slot.category_name ?? slot.category_id ?? noCategory,
                 slots: [],
             });
         }
@@ -45,7 +49,7 @@ const groupedSlots = computed((): SlotGroup[] => {
         <div>
             <slot />
         </div>
-        <p class="mb-3 text-sm font-semibold">Slots criados</p>
+        <p class="mb-3 text-sm font-semibold">{{ t('planogram-templates.review_list.title') }}</p>
 
         <div class="space-y-3">
             <template v-for="group in groupedSlots" :key="group.categoryId ?? '__no_category__'">
@@ -54,7 +58,7 @@ const groupedSlots = computed((): SlotGroup[] => {
                     <p class="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                         <AlertCircle v-if="!group.categoryId" class="size-3 text-amber-500 shrink-0" />
                         {{ group.categoryPath }}
-                        <span class="font-normal">({{ group.slots.length }} prateleiras)</span>
+                        <span class="font-normal">({{ t('planogram-templates.review_list.shelves_count', { count: String(group.slots.length) }) }})</span>
                     </p>
                     <div class="space-y-1 pl-2 border-l-2 border-border">
                         <div
@@ -72,13 +76,13 @@ const groupedSlots = computed((): SlotGroup[] => {
                                         : 'border-border hover:border-primary/50 hover:bg-muted/30'"
                                 @click="slot.id ? emit('select', slot.id) : null"
                             >
-                                Prateleira {{ slot.shelf_order }}
+                                {{ t('planogram-templates.review_list.shelf_label', { n: String(slot.shelf_order) }) }}
                             </button>
                             <button
                                 type="button"
                                 class="shrink-0 rounded-md border p-2 text-muted-foreground transition hover:border-primary/50 hover:text-foreground cursor-pointer"
                                 :class="!slot.category_id ? 'border-amber-300 dark:border-amber-700' : 'border-border'"
-                                title="Editar slot"
+                                :title="t('planogram-templates.review_list.edit_slot_tooltip')"
                                 @click="emit('edit', slot)"
                             >
                                 <Pencil class="size-3.5" />
@@ -105,14 +109,14 @@ const groupedSlots = computed((): SlotGroup[] => {
                     >
                         <span class="flex items-center gap-1.5">
                             <AlertCircle v-if="!group.slots[0].category_id" class="size-3.5 text-amber-500 shrink-0" />
-                            Prateleira {{ group.slots[0].shelf_order }} — {{ group.categoryPath }}
+                            {{ t('planogram-templates.review_list.shelf_label', { n: String(group.slots[0].shelf_order) }) }} — {{ group.categoryPath }}
                         </span>
                     </button>
                     <button
                         type="button"
                         class="shrink-0 rounded-md border p-2 text-muted-foreground transition hover:border-primary/50 hover:text-foreground cursor-pointer"
                         :class="!group.slots[0].category_id ? 'border-amber-300 dark:border-amber-700' : 'border-border'"
-                        title="Editar slot"
+                        :title="t('planogram-templates.review_list.edit_slot_tooltip')"
                         @click="emit('edit', group.slots[0])"
                     >
                         <Pencil class="size-3.5" />
@@ -121,7 +125,7 @@ const groupedSlots = computed((): SlotGroup[] => {
             </template>
 
             <p v-if="props.slots.length === 0" class="text-sm text-muted-foreground">
-                Nenhum slot criado para este módulo.
+                {{ t('planogram-templates.review_list.empty_message') }}
             </p>
         </div>
     </div>

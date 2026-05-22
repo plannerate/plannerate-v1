@@ -80,12 +80,11 @@ const maxSharePerSubcategoryModel = computed({
         <div class="flex flex-col gap-y-3 py-4 pt-1">
             <div>
                 <h4 class="text-sm font-semibold">
-                    Categoria
+                    {{ t('planogram-templates.slot_editor_fields.category.title') }}
                     <span class="text-destructive">*</span>
                 </h4>
                 <p class="mt-0.5 text-xs text-muted-foreground">
-                    Define quais produtos entram neste slot. Selecionar uma categoria pai inclui automaticamente todos
-                    os produtos das subcategorias filhas.
+                    {{ t('planogram-templates.slot_editor_fields.category.description') }}
                 </p>
             </div>
 
@@ -111,15 +110,14 @@ const maxSharePerSubcategoryModel = computed({
             </div>
 
             <div class="flex flex-col gap-y-1">
-                <Label for="slot-role-override" class="text-sm font-medium">Papel da categoria</Label>
+                <Label for="slot-role-override" class="text-sm font-medium">{{ t('planogram-templates.slot_editor_fields.role.label') }}</Label>
                 <p class="text-xs text-muted-foreground">
-                    Orienta a posição macro e a estratégia do bloco na gôndola. "Herdar" usa o papel configurado na
-                    própria categoria.
+                    {{ t('planogram-templates.slot_editor_fields.role.description') }}
                 </p>
                 <select id="slot-role-override" v-model="draft.role_override"
                     class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                     <option v-for="opt in categoryRoleOptions" :key="opt.value" :value="opt.value || null">
-                        {{ opt.label }}
+                        {{ t(`planogram-templates.role_options.${opt.value || 'inherit'}`) }}
                     </option>
                 </select>
             </div>
@@ -131,10 +129,9 @@ const maxSharePerSubcategoryModel = computed({
         ─────────────────────────────────────────────────────────────── -->
         <div class="flex flex-col gap-y-3 py-4">
             <div>
-                <h4 class="text-sm font-semibold">Dimensionamento de frentes</h4>
+                <h4 class="text-sm font-semibold">{{ t('planogram-templates.slot_editor_fields.facings.title') }}</h4>
                 <p class="mt-0.5 text-xs text-muted-foreground">
-                    Controla quantas frentes cada SKU ocupa (mínimo e teto) e como o espaço livre é redistribuído quando
-                    a gôndola tem menos produtos do que o previsto.
+                    {{ t('planogram-templates.slot_editor_fields.facings.description') }}
                 </p>
             </div>
 
@@ -147,7 +144,8 @@ const maxSharePerSubcategoryModel = computed({
                 </div>
                 <div class="flex flex-col gap-y-1">
                     <FormTextField id="slot-max-facings" v-model="maxFacingsModel" name="max_facings" type="number"
-                        label="Frentes máx." hint="Teto por SKU" :min="1" :max="20" />
+                        :label="t('planogram-templates.slot_editor_fields.facings.max_label')"
+                        :hint="t('planogram-templates.slot_editor_fields.facings.max_hint')" :min="1" :max="20" />
                     <p v-if="errors.max_facings" class="text-xs text-destructive">{{ errors.max_facings }}</p>
                 </div>
                 <div class="flex flex-col gap-y-1">
@@ -159,12 +157,13 @@ const maxSharePerSubcategoryModel = computed({
                 <!-- Expansão / Fallback / Estoque -->
                 <div class="flex flex-col gap-y-1">
                     <FormSelectField id="slot-facing-expansion" v-model="draft.facing_expansion" name="facing_expansion"
-                    label="Expansão de frentes" hint="Como usar espaço livre">
-                    <option value="none">Não expandir</option>
-                    <option value="score">Por score ABC / vendas</option>
-                    <option value="current_stock">Por estoque atual</option>
-                    <option value="target_stock">Por déficit de estoque</option>
-                    <option value="equal">Distribuição igual</option>
+                    :label="t('planogram-templates.facing_expansion.label')"
+                    :hint="t('planogram-templates.facing_expansion.hint_slot')">
+                    <option value="none">{{ t('planogram-templates.facing_expansion.none') }}</option>
+                    <option value="score">{{ t('planogram-templates.facing_expansion.score') }}</option>
+                    <option value="current_stock">{{ t('planogram-templates.facing_expansion.current_stock') }}</option>
+                    <option value="target_stock">{{ t('planogram-templates.facing_expansion.target_stock') }}</option>
+                    <option value="equal">{{ t('planogram-templates.facing_expansion.equal') }}</option>
                 </FormSelectField>
                 </div>
                 <FormSelectField id="slot-space-fallback" v-model="draft.space_fallback" name="space_fallback"
@@ -186,10 +185,9 @@ const maxSharePerSubcategoryModel = computed({
         ─────────────────────────────────────────────────────────────── -->
         <div class="flex flex-col gap-y-3 py-4">
             <div>
-                <h4 class="text-sm font-semibold">Ordenação e exposição visual</h4>
+                <h4 class="text-sm font-semibold">{{ t('planogram-templates.slot_editor_fields.ordering.title') }}</h4>
                 <p class="mt-0.5 text-xs text-muted-foreground">
-                    Determina a sequência de exibição dos produtos dentro do slot e como grupos de marca ou fragrância
-                    se organizam fisicamente na prateleira.
+                    {{ t('planogram-templates.slot_editor_fields.ordering.description') }}
                 </p>
             </div>
 
@@ -243,30 +241,36 @@ const maxSharePerSubcategoryModel = computed({
         ─────────────────────────────────────────────────────────────── -->
         <div class="flex flex-col gap-y-3 py-4 pb-1">
             <div>
-                <h4 class="text-sm font-semibold">Limites de participação</h4>
+                <h4 class="text-sm font-semibold">{{ t('planogram-templates.slot_editor_fields.share_limits.title') }}</h4>
                 <p class="mt-0.5 text-xs text-muted-foreground">
-                    Tetos percentuais que evitam que um único SKU, marca ou subcategoria domine o slot durante a
-                    expansão de frentes. Deixe em branco para sem limite.
+                    {{ t('planogram-templates.slot_editor_fields.share_limits.description') }}
                 </p>
             </div>
 
             <div class="grid grid-cols-3 gap-3">
                 <div class="flex flex-col gap-y-1">
                     <FormTextField id="slot-max-share-per-sku" v-model="maxSharePerSkuModel" name="max_share_per_sku"
-                        type="number" label="Máx. % por SKU" hint="% do slot por produto" :min="1" :max="100" />
+                        type="number"
+                        :label="t('planogram-templates.slot_editor_fields.share_limits.max_sku_label')"
+                        :hint="t('planogram-templates.slot_editor_fields.share_limits.max_sku_hint')"
+                        :min="1" :max="100" />
                     <p v-if="errors.max_share_per_sku" class="text-xs text-destructive">{{ errors.max_share_per_sku }}
                     </p>
                 </div>
                 <div class="flex flex-col gap-y-1">
                     <FormTextField id="slot-max-share-per-brand" v-model="maxSharePerBrandModel"
-                        name="max_share_per_brand" type="number" label="Máx. % por marca" hint="% do slot por marca"
+                        name="max_share_per_brand" type="number"
+                        :label="t('planogram-templates.slot_editor_fields.share_limits.max_brand_label')"
+                        :hint="t('planogram-templates.slot_editor_fields.share_limits.max_brand_hint')"
                         :min="1" :max="100" />
                     <p v-if="errors.max_share_per_brand" class="text-xs text-destructive">{{ errors.max_share_per_brand
                         }}</p>
                 </div>
                 <div class="flex flex-col gap-y-1">
                     <FormTextField id="slot-max-share-per-subcategory" v-model="maxSharePerSubcategoryModel"
-                        name="max_share_per_subcategory" type="number" label="Máx. % subcat." hint="% por subcategoria"
+                        name="max_share_per_subcategory" type="number"
+                        :label="t('planogram-templates.slot_editor_fields.share_limits.max_subcat_label')"
+                        :hint="t('planogram-templates.slot_editor_fields.share_limits.max_subcat_hint')"
                         :min="1" :max="100" />
                     <p v-if="errors.max_share_per_subcategory" class="text-xs text-destructive">{{
                         errors.max_share_per_subcategory }}</p>
