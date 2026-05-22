@@ -261,10 +261,14 @@ return [
             'redistribute' => [
                 'title' => 'Redistribuir',
                 'description' => 'Mantém produtos e frentes, mas recalcula a posicao fisica ao mudar tipo de exposicao ou agrupamento.',
+                'success' => 'Exposicao redistribuida com sucesso.',
+                'error' => 'Erro ao redistribuir a exposicao.',
             ],
             'reorder' => [
                 'title' => 'Reordenar',
                 'description' => 'Reposiciona visualmente os produtos sem alterar quais estao ou quantas frentes têm.',
+                'success' => 'Ordem visual aplicada com sucesso.',
+                'error' => 'Erro ao reordenar visualmente.',
             ],
         ],
         'products' => [

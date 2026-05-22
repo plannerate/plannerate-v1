@@ -1,5 +1,10 @@
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
+import axios from 'axios';
 import { ArrowUpDown, LayoutGrid, RefreshCw, X } from 'lucide-vue-next';
+import { ref } from 'vue';
+import { toast } from 'vue-sonner';
+import { reorderGondola, redistributeGondola } from '@/actions/App/Http/Controllers/AutoPlanogramController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -32,6 +37,34 @@ const modeVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
 };
 
 const currentMode = props.gondola.generation_mode ?? 'manual';
+const isReordering = ref(false);
+const isRedistributing = ref(false);
+
+async function handleReorder() {
+    isReordering.value = true;
+    try {
+        await axios.post(reorderGondola.url(props.gondola.id));
+        toast.success(t('plannerate.sidebar.generation.reorder.success'));
+        router.reload({ only: ['record'] });
+    } catch {
+        toast.error(t('plannerate.sidebar.generation.reorder.error'));
+    } finally {
+        isReordering.value = false;
+    }
+}
+
+async function handleRedistribute() {
+    isRedistributing.value = true;
+    try {
+        await axios.post(redistributeGondola.url(props.gondola.id));
+        toast.success(t('plannerate.sidebar.generation.redistribute.success'));
+        router.reload({ only: ['record'] });
+    } catch {
+        toast.error(t('plannerate.sidebar.generation.redistribute.error'));
+    } finally {
+        isRedistributing.value = false;
+    }
+}
 </script>
 
 <template>
@@ -89,37 +122,55 @@ const currentMode = props.gondola.generation_mode ?? 'manual';
                 <Separator />
 
                 <!-- Redistribuir -->
-                <div class="rounded-lg border border-border bg-background p-4 shadow-sm opacity-60">
+                <div class="rounded-lg border border-border bg-background p-4 shadow-sm">
                     <div class="flex items-start gap-3">
                         <div class="mt-0.5 rounded-md bg-amber-500/10 p-2">
                             <LayoutGrid class="size-4 text-amber-600" />
                         </div>
                         <div class="flex-1">
-                            <div class="flex items-center gap-2">
-                                <p class="text-sm font-medium">{{ t('plannerate.sidebar.generation.redistribute.title') }}</p>
-                                <Badge variant="outline" class="text-[10px]">{{ t('plannerate.sidebar.generation.coming_soon') }}</Badge>
-                            </div>
+                            <p class="text-sm font-medium">{{ t('plannerate.sidebar.generation.redistribute.title') }}</p>
                             <p class="mt-1 text-xs text-muted-foreground">
                                 {{ t('plannerate.sidebar.generation.redistribute.description') }}
                             </p>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="mt-3 w-full"
+                                :disabled="isRedistributing"
+                                @click="handleRedistribute"
+                                type="button"
+                            >
+                                <LayoutGrid v-if="!isRedistributing" class="mr-2 size-3.5" />
+                                <span v-if="isRedistributing" class="mr-2 size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                {{ t('plannerate.sidebar.generation.redistribute.title') }}
+                            </Button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Reordenar -->
-                <div class="rounded-lg border border-border bg-background p-4 shadow-sm opacity-60">
+                <div class="rounded-lg border border-border bg-background p-4 shadow-sm">
                     <div class="flex items-start gap-3">
                         <div class="mt-0.5 rounded-md bg-blue-500/10 p-2">
                             <ArrowUpDown class="size-4 text-blue-600" />
                         </div>
                         <div class="flex-1">
-                            <div class="flex items-center gap-2">
-                                <p class="text-sm font-medium">{{ t('plannerate.sidebar.generation.reorder.title') }}</p>
-                                <Badge variant="outline" class="text-[10px]">{{ t('plannerate.sidebar.generation.coming_soon') }}</Badge>
-                            </div>
+                            <p class="text-sm font-medium">{{ t('plannerate.sidebar.generation.reorder.title') }}</p>
                             <p class="mt-1 text-xs text-muted-foreground">
                                 {{ t('plannerate.sidebar.generation.reorder.description') }}
                             </p>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="mt-3 w-full"
+                                :disabled="isReordering"
+                                @click="handleReorder"
+                                type="button"
+                            >
+                                <ArrowUpDown v-if="!isReordering" class="mr-2 size-3.5" />
+                                <span v-if="isReordering" class="mr-2 size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                {{ t('plannerate.sidebar.generation.reorder.title') }}
+                            </Button>
                         </div>
                     </div>
                 </div>
