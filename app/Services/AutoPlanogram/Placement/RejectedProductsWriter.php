@@ -22,12 +22,20 @@ final class RejectedProductsWriter
             return;
         }
 
+        // Produto que entrou em qualquer prateleira não é rejeitado — pode ter sido
+        // descartado de um slot e alocado em outro da mesma gôndola.
+        $placedProductIds = $output->placedSegments
+            ->flatMap(fn ($seg) => $seg->layers->map(fn ($layer) => $layer->productId))
+            ->flip()
+            ->all();
+
         $now = now();
         $slotAnalysisIndex = $this->buildSlotAnalysisIndex($output->slotAnalysis);
 
-        // Agrupa por product_id para coletar todos os shelf_orders onde foi rejeitado
+        // Agrupa por product_id para coletar todos os shelf_orders onde foi rejeitado,
+        // excluindo produtos que foram alocados em outra prateleira.
         $byProduct = $output->rejectedProducts
-            ->filter(fn ($r) => $r['product'] !== null)
+            ->filter(fn ($r) => $r['product'] !== null && ! isset($placedProductIds[$r['product']->id]))
             ->groupBy(fn ($r) => $r['product']->id);
 
         $records = $byProduct

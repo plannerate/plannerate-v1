@@ -118,9 +118,8 @@ const {
     reloadCurrentPage,
 } = useProductsPanel({
     gondolaId: props.gondolaId,
-    planogramId: props.planogramId,
-    subdomain: props.subdomain,
-    category: props.category,
+    planogramId: props.planogramId, 
+    category: props.category || null,
     scrollContainer,
 });
 

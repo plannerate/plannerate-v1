@@ -62,8 +62,7 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
          * Estas rotas são consumidas no subdomínio do tenant (ex.: franciosi.app.test).
          * Registrá-las apenas no domínio "central" faz o host do tenant retornar 404.
          */
-        Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
-            ->middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
+        Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
             ->group($editorRouteFile);
     }
 

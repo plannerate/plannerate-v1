@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\PlacementFailureReason;
+use App\Services\AutoPlanogram\DTO\PlacedLayer;
+use App\Services\AutoPlanogram\DTO\PlacedSegment;
 use App\Services\AutoPlanogram\Placement\RejectedProductsWriter;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 
@@ -48,6 +50,40 @@ it('keeps products with different product_ids as separate rejected records', fun
         ->values();
 
     expect($unique)->toHaveCount(2);
+});
+
+it('excludes products from rejected list when they were placed in another shelf', function () {
+    $placed = writerTestProduct('prod-placed');
+    $trueRejected = writerTestProduct('prod-rejected');
+
+    $layer = new PlacedLayer(productId: 'prod-placed', ean: '0000000000001', quantity: 2, height: 1);
+    $segment = new PlacedSegment(
+        sectionId: 'sec-1',
+        shelfId: 'shelf-2',
+        ordering: 0,
+        position: 0,
+        width: 40,
+        distributedWidth: 40,
+        layers: collect([$layer]),
+    );
+
+    $placedSegments = collect([$segment]);
+    $rejectedProducts = collect([
+        ['product' => $placed, 'reason' => PlacementFailureReason::NoHorizontalSpace, 'slot_id' => 'slot-1'],
+        ['product' => $trueRejected, 'reason' => PlacementFailureReason::NoHorizontalSpace, 'slot_id' => 'slot-1'],
+    ]);
+
+    $placedProductIds = $placedSegments
+        ->flatMap(fn ($seg) => $seg->layers->map(fn ($l) => $l->productId))
+        ->flip()
+        ->all();
+
+    $filtered = $rejectedProducts
+        ->filter(fn ($r) => $r['product'] !== null && ! isset($placedProductIds[$r['product']->id]))
+        ->groupBy(fn ($r) => $r['product']->id);
+
+    expect($filtered)->toHaveCount(1)
+        ->and($filtered->keys()->first())->toBe('prod-rejected');
 });
 
 it('buildSlotAnalysisIndex indexes by slot_id', function () {

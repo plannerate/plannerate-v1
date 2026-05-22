@@ -1,5 +1,5 @@
-import { onMounted, reactive, ref, watch  } from 'vue';
-import type {Ref} from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
+import type { Ref } from 'vue';
 import { products as productsRoute } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/GondolaController';
 import { useT } from '@/composables/useT';
 import { toast } from 'vue-sonner';
@@ -7,9 +7,8 @@ import type { Category, Product } from '@/types/planogram';
 
 interface UseProductsPanelOptions {
     gondolaId: string;
-    category?: Category;
-    planogramId: string;
-    subdomain: string;
+    category?: Category | null;
+    planogramId: string; 
     scrollContainer: Ref<HTMLElement | null>;
 }
 
@@ -33,7 +32,7 @@ export function useProductsPanel(options: UseProductsPanelOptions) {
         showUsed: false,
         hasDimensions: true,
         category: options?.category?.id || '',
-    }); 
+    });
     const isLoading = ref(false);
     const isLoadingMore = ref(false);
     const currentPage = ref(1);
@@ -43,8 +42,8 @@ export function useProductsPanel(options: UseProductsPanelOptions) {
 
     const loadProducts = async () => {
         if (isLoading.value || isLoadingMore.value) {
-return;
-}
+            return;
+        }
 
         if (currentPage.value === 1) {
             isLoading.value = true;
@@ -62,9 +61,10 @@ return;
                 category: filters.category.toString(),
             });
 
-            const url = productsRoute.url({ subdomain: options.subdomain, planogram: options.planogramId, gondola: options.gondolaId });
-            const response = await fetch(
-                `${url}?${params}`,
+            const url = productsRoute.url({ planogram: options.planogramId, gondola: options.gondolaId }, {
+                query: Object.fromEntries(params),
+            });
+            const response = await fetch(url,
                 {
                     headers: {
                         Accept: 'application/json',
@@ -74,8 +74,8 @@ return;
             );
 
             if (!response.ok) {
-throw new Error(t('plannerate.composables.products_panel.failed_load_products'));
-}
+                throw new Error(t('plannerate.composables.products_panel.failed_load_products'));
+            }
 
             const data = await response.json();
 
@@ -111,7 +111,7 @@ throw new Error(t('plannerate.composables.products_panel.failed_load_products'))
         const savedPage = currentPage.value;
         currentPage.value = 1;
         products.value = [];
-        
+
         // Recarrega até a página atual
         for (let page = 1; page <= savedPage; page++) {
             currentPage.value = page;
