@@ -44,12 +44,17 @@ return [
         'step2_description' => 'Grade de gôndola',
         'step3_label' => 'Produtos',
         'step3_description' => 'Mix do template',
+        'step3_slots_label' => 'Revisar slots',
+        'step3_slots_description' => 'Selecione um slot e veja os produtos relacionados',
+        'step3_review_label' => 'Revisão',
+        'step3_review_description' => 'Visualize slots e produtos relacionados',
         'configure_slots_button' => 'Configurar Slots →',
         'back_to_basics_button' => 'Voltar — Dados básicos',
         'back_to_slots_button' => 'Voltar — Slots',
         'finish_button' => 'Finalizar e sair',
         'next_slots_button' => 'Avançar — Slots →',
         'next_products_button' => 'Avançar — Produtos →',
+        'next_to_review_button' => 'Próximo — Revisão de slots',
         'step_label' => 'Etapa',
     ],
 
@@ -373,6 +378,66 @@ return [
         'empty_value' => '—',
         'status_in_mix' => 'No mix',
         'status_out_of_mix' => 'Fora do mix',
+    ],
+
+    // Slots page (Slots.vue)
+    'slots_page' => [
+        'head_title' => 'Slots — :code',
+        'breadcrumb' => 'Slots',
+        'step2_description' => 'Etapa 2 — configure as categorias por módulo e prateleira',
+        'category_label' => 'Categoria: :name',
+        'export_button' => 'Exportar planilha',
+        'import_button' => 'Importar planilha',
+        'modules_label' => 'Módulos:',
+        'remove_subtemplate_tooltip' => 'Remover este subtemplate',
+        'module_defaults_button' => 'Configuração padrão do módulo',
+        'shelves_label' => 'Prateleiras:',
+        'no_subtemplate_message' => 'Nenhum subtemplate configurado para :count módulo(s). Como deseja criar?',
+        'no_subtemplate_message_plural' => 'Nenhum subtemplate configurado para :count módulos. Como deseja criar?',
+        'create_empty_button' => 'Criar do zero',
+        'clone_from_button' => 'Copiar de :count módulos',
+        'next_button' => 'Próximo — Revisão de slots',
+        'confirm_remove_slot_title' => 'Remover slot?',
+        'confirm_remove_slot_description' => 'Este slot será removido desta posição do template.',
+        'confirm_remove' => 'Remover',
+        'confirm_remove_subtemplate_title_singular' => 'Remover 1 módulo?',
+        'confirm_remove_subtemplate_title_plural' => 'Remover :count módulos?',
+        'confirm_remove_subtemplate_description_singular' => 'Todos os slot deste módulo será removido permanentemente. Esta ação não pode ser desfeita.',
+        'confirm_remove_subtemplate_description_plural' => 'Todos os slots dos :count módulos serão removidos permanentemente. Esta ação não pode ser desfeita.',
+        'confirm_swap_title' => 'Trocar slots?',
+        'confirm_swap_description' => 'A posição de destino já está ocupada. Os dois slots serão trocados.',
+        'confirm_swap' => 'Trocar',
+        'copy_shelves_title' => 'Copiar configuração para as outras prateleiras?',
+        'copy_shelves_description' => 'A mesma configuração (incluindo a categoria) será aplicada às prateleiras vazias deste módulo. Você pode ajustar cada uma depois.',
+        'copy_module_title' => 'Copiar configuração deste módulo para os outros?',
+        'copy_module_description' => 'Os slots deste módulo serão replicados para os módulos ainda vazios.',
+        'copy_action_all' => 'Copiar e fechar',
+        'copy_action_next_shelf' => 'Copiar e editar a próxima',
+        'copy_action_dismiss' => 'Agora não',
+        'copy_action_next_module' => 'Próximo módulo',
+        'copy_action_all_modules' => 'Todos os módulos vazios',
+        'alteration_toast' => 'Slot atualizado — planogramas gerados precisam de: :level',
+    ],
+
+    // Review page (Review.vue)
+    'review_page' => [
+        'head_title' => 'Revisão — :code',
+        'breadcrumb' => 'Revisão',
+        'step3_description' => 'Etapa 3 — revise os slots e os produtos relacionados',
+        'modules_label' => 'Módulos:',
+        'back_button' => 'Voltar — Slots',
+        'next_button' => 'Próximo — Produtos',
+    ],
+
+    // Show page (Show.vue)
+    'show_page' => [
+        'head_title' => 'Template :code',
+        'cannot_undo' => 'Esta ação não pode ser desfeita.',
+    ],
+
+    // Form page (Form.vue)
+    'form_page' => [
+        'category_required_tooltip' => 'Selecione uma categoria antes de configurar os slots',
     ],
 
     // Messages

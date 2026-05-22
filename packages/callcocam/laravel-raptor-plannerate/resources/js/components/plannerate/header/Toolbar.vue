@@ -627,7 +627,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     <Separator orientation="vertical" class="h-5" />
 
                     <ButtonWithTooltip variant="ghost" size="sm" :disabled="!isMounted || !hasSelection"
-                        tooltip="Limpar grouping selecionado" @click="selectedTemplateCategoryId = null">
+                        tooltip="Limpar categoria selecionada" @click="selectedTemplateCategoryId = null">
                         <X class="mr-1.5 size-4" />
                         Seleção
                     </ButtonWithTooltip>

@@ -18,8 +18,7 @@ import {
 
 interface TemplateGrouping {
     category_id: string;
-    grouping: string;
-    grouping_normalized: string;
+    name: string;
     slots_count: number;
     modules: number[];
     shelves: number[];
@@ -64,13 +63,12 @@ const groupings = computed<TemplateGrouping[]>(() => {
     return [...byCategory.entries()]
         .map(([categoryId, data]) => ({
             category_id: categoryId,
-            grouping: data.name,
-            grouping_normalized: categoryId,
+            name: data.name,
             slots_count: data.count,
             modules: [...data.modules].sort((a, b) => a - b),
             shelves: [...data.shelves].sort((a, b) => a - b),
         }))
-        .sort((a, b) => a.grouping.localeCompare(b.grouping, 'pt-BR'));
+        .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 });
 
 const selectedGrouping = computed(() => {
@@ -89,39 +87,16 @@ const filteredGroupings = computed(() => {
     }
 
     return groupings.value.filter((item) => {
-        const haystack = item.grouping.toLocaleLowerCase('pt-BR');
-        return haystack.includes(normalizedSearch);
+        return item.name.toLocaleLowerCase('pt-BR').includes(normalizedSearch);
     });
 });
 
-function groupingTail(grouping: string): string {
-    const parts = grouping
-        .split('|')
-        .map((part) => part.trim())
-        .filter(Boolean);
-
-    return parts[parts.length - 1] ?? grouping;
-}
-
-function groupingHead(grouping: string): string {
-    const parts = grouping
-        .split('|')
-        .map((part) => part.trim())
-        .filter(Boolean);
-
-    if (parts.length <= 1) {
-        return '';
-    }
-
-    return parts.slice(0, -1).join(' | ');
-}
-
 const buttonLabel = computed(() => {
     if (!hasTemplate.value) {
-        return 'Groupings';
+        return 'Categorias';
     }
 
-    return selectedGrouping.value ? groupingTail(selectedGrouping.value.grouping) : 'Selecionar grouping';
+    return selectedGrouping.value ? selectedGrouping.value.name : 'Selecionar categoria';
 });
 
 watch(
@@ -167,7 +142,7 @@ watch(groupings, (newGroupings) => {
                 variant="ghost"
                 size="icon"
                 class="size-8 shrink-0"
-                title="Limpar seleção de grouping"
+                title="Limpar seleção de categoria"
                 @click="selectedTemplateCategoryId = null"
             >
                 <X class="size-3.5" />
@@ -180,7 +155,7 @@ watch(groupings, (newGroupings) => {
                 <div class="relative">
                     <Search
                         class="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                    <Input v-model="searchQuery" placeholder="Buscar grouping..." class="h-8 pl-9" />
+                    <Input v-model="searchQuery" placeholder="Buscar categoria..." class="h-8 pl-9" />
                 </div>
             </div>
 
@@ -194,13 +169,7 @@ watch(groupings, (newGroupings) => {
                 @click="selectedTemplateCategoryId = grouping.category_id">
                 <div class="flex w-full items-start justify-between gap-2">
                     <div class="min-w-0">
-                        <div class="flex items-end space-x-1">
-                            <p class="truncate text-sm font-medium">{{ groupingTail(grouping.grouping) }}</p>
-                            <p v-if="groupingHead(grouping.grouping)"
-                                class="truncate text-[11px] text-muted-foreground">
-                                {{ groupingHead(grouping.grouping) }}
-                            </p>
-                        </div>
+                        <p class="truncate text-sm font-medium">{{ grouping.name }}</p>
                         <p class="text-[11px] text-muted-foreground">
                             Módulos: {{ grouping.modules.join(', ') }}
                         </p>
@@ -216,7 +185,7 @@ watch(groupings, (newGroupings) => {
             </DropdownMenuItem>
 
             <DropdownMenuItem v-if="filteredGroupings.length === 0" disabled>
-                Nenhum grouping encontrado
+                Nenhuma categoria encontrada
             </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
