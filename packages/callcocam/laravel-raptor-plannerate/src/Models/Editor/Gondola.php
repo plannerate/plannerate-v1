@@ -47,12 +47,14 @@ class Gondola extends Model
             PlanogramRejectedProduct::where('gondola_id', $gondola->id)->delete();
         });
     }
+
     // Não em $appends para evitar execução automática em cada instância carregada
     // O accessor ainda funciona ao ser acessado explicitamente
     protected $fillable = [
         'tenant_id',
         'planogram_id',
         'template_id',
+        'generation_mode',
         'user_id',
         'name',
         'slug',
@@ -95,6 +97,7 @@ class Gondola extends Model
             if ($tenant = Tenant::current()) {
                 return str($tenant->domain->host)->before('.')->toString() ?? null;
             }
+
             return null;
         });
 

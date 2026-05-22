@@ -6,9 +6,16 @@ export const validate = (data: {
     scaleFactor: number;
     flow: 'left_to_right' | 'right_to_left';
     status: string;
+    mode?: 'manual' | 'template' | 'automatic';
+    template_id?: string | null;
 }): boolean => {
+    // Modo template exige um template selecionado
+    if (data.mode === 'template' && !data.template_id) {
+        return false;
+    }
+
     // Usa validação do composable
-    return validateGondolaFields(data);
+    return validateGondolaFields(data as any);
 };
 </script>
 
@@ -29,6 +36,13 @@ import {
 import { validateGondolaFields } from '@/composables/plannerate/fields/useGondolaFields';
 import { useT } from '@/composables/useT';
 
+interface TemplateOption {
+    value: string;
+    label: string;
+    description?: string | null;
+    subtemplates?: Array<{ id: string; num_modules: number; code?: string }>;
+}
+
 interface Props {
     modelValue: {
         gondolaName: string;
@@ -37,15 +51,20 @@ interface Props {
         scaleFactor: number;
         flow: 'left_to_right' | 'right_to_left';
         status: string;
+        mode: 'manual' | 'template' | 'automatic';
+        template_id: string | null;
     };
     errors?: Record<string, string>;
+    templates?: TemplateOption[];
 }
 
 interface Emits {
     (e: 'update:modelValue', value: Props['modelValue']): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    templates: () => [],
+});
 const emit = defineEmits<Emits>();
 const { t } = useT();
 
@@ -61,6 +80,15 @@ function updateField<K extends keyof Props['modelValue']>(
 
 const setFlow = (flowValue: 'left_to_right' | 'right_to_left') => {
     updateField('flow', flowValue);
+};
+
+const setMode = (modeValue: 'manual' | 'template' | 'automatic') => {
+    emit('update:modelValue', {
+        ...props.modelValue,
+        mode: modeValue,
+        // Limpa o template ao sair do modo template
+        template_id: modeValue === 'template' ? props.modelValue.template_id : null,
+    });
 };
 </script>
 
@@ -150,7 +178,7 @@ const setFlow = (flowValue: 'left_to_right' | 'right_to_left') => {
                     :model-value="props.modelValue.status"
                     @update:model-value="(val) => updateField('status', String(val ?? 'draft'))"
                 >
-                    <SelectTrigger>
+                    <SelectTrigger class="w-full">
                         <SelectValue :placeholder="t('plannerate.form.step1.select_status')" />
                     </SelectTrigger>
                     <SelectContent>
@@ -161,6 +189,65 @@ const setFlow = (flowValue: 'left_to_right' | 'right_to_left') => {
                         </SelectGroup>
                     </SelectContent>
                 </Select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="space-y-2" :class="{ 'md:col-span-2': props.modelValue.mode !== 'template' }">
+                <Label for="mode">{{ t('plannerate.form.step1.mode.label') }}</Label>
+                <Select
+                    :model-value="props.modelValue.mode"
+                    @update:model-value="(val) => setMode((String(val ?? 'manual')) as 'manual' | 'template' | 'automatic')"
+                >
+                    <SelectTrigger id="mode" class="w-full">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            <SelectLabel>{{ t('plannerate.form.step1.mode.label') }}</SelectLabel>
+                            <SelectItem value="manual">{{ t('plannerate.form.step1.mode.manual') }}</SelectItem>
+                            <SelectItem value="template">{{ t('plannerate.form.step1.mode.template') }}</SelectItem>
+                            <SelectItem value="automatic">{{ t('plannerate.form.step1.mode.automatic') }}</SelectItem>
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+                <p class="text-xs text-muted-foreground">
+                    {{ t('plannerate.form.step1.mode.hint') }}
+                </p>
+            </div>
+
+            <div v-if="props.modelValue.mode === 'template'" class="space-y-2">
+                <Label for="template_id">{{ t('plannerate.form.step1.mode.template_label') }} *</Label>
+                <Select
+                    :model-value="props.modelValue.template_id ?? ''"
+                    @update:model-value="(val) => updateField('template_id', val ? String(val) : null)"
+                >
+                    <SelectTrigger
+                        id="template_id"
+                        class="w-full"
+                        :class="{ 'border-red-500': errors?.template_id }"
+                    >
+                        <SelectValue :placeholder="t('plannerate.form.step1.mode.select_template')" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            <SelectLabel>{{ t('plannerate.form.step1.mode.template_label') }}</SelectLabel>
+                            <SelectItem
+                                v-for="template in props.templates"
+                                :key="template.value"
+                                :value="template.value"
+                            >
+                                {{ template.label }}
+                            </SelectItem>
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+                <p v-if="errors?.template_id" class="text-xs text-red-500">
+                    {{ errors.template_id }}
+                </p>
+                <p v-else-if="props.templates.length === 0" class="text-xs text-amber-600">
+                    {{ t('plannerate.form.step1.mode.no_templates') }}
+                </p>
             </div>
         </div>
 

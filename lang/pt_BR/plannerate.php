@@ -532,6 +532,16 @@ return [
             'flow_position' => 'Posicao do Fluxo',
             'flow_left_to_right' => 'Esquerda para Direita',
             'flow_right_to_left' => 'Direita para Esquerda',
+            'mode' => [
+                'label' => 'Modo de Geracao',
+                'hint' => 'Como os produtos serao posicionados nesta gondola.',
+                'manual' => 'Manual',
+                'template' => 'Por Template',
+                'automatic' => 'Automatico',
+                'select_template' => 'Selecione um template',
+                'template_label' => 'Template',
+                'no_templates' => 'Nenhum template ativo disponivel.',
+            ],
         ],
         'add_module' => [
             'title' => 'Adicionar Novo Modulo',

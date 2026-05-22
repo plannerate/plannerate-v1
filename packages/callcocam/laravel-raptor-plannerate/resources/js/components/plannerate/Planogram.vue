@@ -154,8 +154,8 @@ const saveChangesAndReloadEditorRecord = async () => {
 
 const handleProductImagesUpdated = (payload: ProductImagesUpdatedPayload) => {
     if (payload.gondola_id !== props.record?.id) {
-return;
-}
+        return;
+    }
 
     if (!editor.hasChanges.value) {
         toast.success(t('plannerate.planogram.toast.images_updated_count', { count: String(payload.processed_count) }));
@@ -185,7 +185,7 @@ const handleUpdateGondolaImages = () => {
     }
 
     router.post(
-        wayfinderPath(updateImages.url({ subdomain, gondola: gondolaId })),
+        wayfinderPath(updateImages.url({ gondola: gondolaId })),
         {},
         {
             preserveScroll: true,
@@ -197,8 +197,8 @@ watch(
     () => props.record,
     (record) => {
         if (!record) {
-return;
-}
+            return;
+        }
 
         editor.initializeEditor(record);
         editor.setSaveChangesRoute(props.saveChangesRoute || '');
@@ -313,100 +313,54 @@ const category = computed(() => {
 <template>
     <div class="h-screen overflow-hidden bg-background">
         <div ref="headerAndToolbar" class="flex flex-col">
-            <Header
-                :title="record.planogram?.name || t('plannerate.planogram.editor_fallback_title')"
-                :status="record.planogram?.status || 'draft'"
-                :tenant="record.tenant"
-                :planogram-id="record.planogram_id"
-                :available-users="availableUsers || []"
-                :back-route="props.backRoute" 
-                @update-gondola-images="handleUpdateGondolaImages"
-                :permissions="permissions"
-            />
-            <Toolbar :analysis="analysis" :permissions="permissions"/>
+            <Header :title="record.planogram?.name || t('plannerate.planogram.editor_fallback_title')"
+                :status="record.planogram?.status || 'draft'" :tenant="record.tenant"
+                :planogram-id="record.planogram_id" :available-users="availableUsers || []"
+                :back-route="props.backRoute" @update-gondola-images="handleUpdateGondolaImages"
+                :permissions="permissions" />
+            <Toolbar :analysis="analysis" :permissions="permissions" />
         </div>
-        <div
-            class="relative flex overflow-hidden"
-            :style="{ height: `${containerHeight}px` }"
-        >
-            <PanelLeft
-                :open="storedProductsPanel"
-                :gondola-id="record.id"
-                :planogram-id="record.planogram_id"
-                :subdomain="resolvedSubdomain"
-                :category="category"
-                @close="closeProducts"
-                @reload-function="setReloadFunction"
-                @remove-used-product="setRemoveUsedProductFunction"
-            />
-            <Canvas
-                :record="record"
-                :containerHeight="containerHeight"
-                :openProperties="storedPropertiesPanel"
-                :openProducts="storedProductsPanel"
-                :saveChangesRoute="saveChangesRoute"
-                @openProperties="openProperties"
-                @closeProperties="closeProperties"
-                @openProducts="openProducts"
-                @closeProducts="closeProducts"
-            />
-            <PanelRight
-                :open="storedPropertiesPanel"
-                @close="closeProperties"
-            />
+        <div class="relative flex overflow-hidden" :style="{ height: `${containerHeight}px` }">
+            <PanelLeft :open="storedProductsPanel" :gondola-id="record.id" :planogram-id="record.planogram_id"
+                :subdomain="resolvedSubdomain" :category="category" @close="closeProducts"
+                @reload-function="setReloadFunction" @remove-used-product="setRemoveUsedProductFunction" />
+            <Canvas :record="record" :containerHeight="containerHeight" :openProperties="storedPropertiesPanel"
+                :openProducts="storedProductsPanel" :saveChangesRoute="saveChangesRoute"
+                @openProperties="openProperties" @closeProperties="closeProperties" @openProducts="openProducts"
+                @closeProducts="closeProducts" />
+            <PanelRight :open="storedPropertiesPanel" @close="closeProperties" />
 
             <button
                 class="group absolute top-10 left-0 z-10 flex items-center rounded-r border-t border-r border-b border-border bg-background p-1 shadow-sm transition-colors hover:bg-accent"
-                type="button"
-                @click="toggleProducts"
-                v-if="!storedProductsPanel"
-            >
-                <PanelLeftOpen
-                    class="size-4 shrink-0 text-foreground transition-all duration-300 group-hover:mr-2"
-                />
+                type="button" @click="toggleProducts" v-if="!storedProductsPanel">
+                <PanelLeftOpen class="size-4 shrink-0 text-foreground transition-all duration-300 group-hover:mr-2" />
                 <span
-                    class="max-w-0 overflow-hidden whitespace-nowrap text-foreground transition-all duration-300 group-hover:ml-1 group-hover:max-w-xs"
-                >
+                    class="max-w-0 overflow-hidden whitespace-nowrap text-foreground transition-all duration-300 group-hover:ml-1 group-hover:max-w-xs">
                     {{ t('plannerate.planogram.open_products') }}
                 </span>
             </button>
 
             <button
                 class="group absolute top-10 right-0 z-10 flex items-center rounded-l border-t border-b border-l border-border bg-background p-1 shadow-sm transition-colors hover:bg-accent"
-                type="button"
-                @click="toggleProperties"
-                v-if="!storedPropertiesPanel"
-            >
+                type="button" @click="toggleProperties" v-if="!storedPropertiesPanel">
                 <span
-                    class="max-w-0 overflow-hidden whitespace-nowrap text-foreground transition-all duration-300 group-hover:mr-1 group-hover:max-w-xs"
-                >
+                    class="max-w-0 overflow-hidden whitespace-nowrap text-foreground transition-all duration-300 group-hover:mr-1 group-hover:max-w-xs">
                     {{ t('plannerate.planogram.open_properties') }}
                 </span>
-                <PanelRightOpen
-                    class="size-4 shrink-0 text-foreground transition-all duration-300 group-hover:ml-2"
-                />
+                <PanelRightOpen class="size-4 shrink-0 text-foreground transition-all duration-300 group-hover:ml-2" />
             </button>
         </div>
 
         <!-- Modal de duplicação de seção -->
-        <DuplicateSectionDialog
-            :open="keyboard.showDuplicateSectionDialog.value"
-            :section="keyboard.sectionToDuplicate.value || undefined"
-            @update:open="
+        <DuplicateSectionDialog :open="keyboard.showDuplicateSectionDialog.value"
+            :section="keyboard.sectionToDuplicate.value || undefined" @update:open="
                 (val) => (keyboard.showDuplicateSectionDialog.value = val)
-            "
-            @confirm="keyboard.handleDuplicateSectionConfirm"
-        />
+            " @confirm="keyboard.handleDuplicateSectionConfirm" />
 
         <!-- Modal de confirmação de exclusão -->
-        <ConfirmDeleteDialog
-            :open="keyboard.showDeleteConfirmDialog.value"
-            :type="keyboard.itemToDelete.value?.type"
-            :item="keyboard.itemToDelete.value?.item"
-            @update:open="
+        <ConfirmDeleteDialog :open="keyboard.showDeleteConfirmDialog.value" :type="keyboard.itemToDelete.value?.type"
+            :item="keyboard.itemToDelete.value?.item" @update:open="
                 (val) => (keyboard.showDeleteConfirmDialog.value = val)
-            "
-            @confirm="keyboard.handleDeleteConfirm"
-        />
+            " @confirm="keyboard.handleDeleteConfirm" />
     </div>
 </template>

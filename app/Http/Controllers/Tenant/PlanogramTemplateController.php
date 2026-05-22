@@ -10,6 +10,7 @@ use App\Services\AutoPlanogram\Template\TemplateExportService;
 use App\Services\AutoPlanogram\Template\TemplateImportService;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -27,7 +28,7 @@ class PlanogramTemplateController extends Controller
 
         $search = $this->requestString($request, 'search');
 
-        return $this->renderDeferredIndex('tenant/planogram-templates/Index', 'templates', fn(): LengthAwarePaginator => $this->templatesPaginator(
+        return $this->renderDeferredIndex('tenant/planogram-templates/Index', 'templates', fn (): LengthAwarePaginator => $this->templatesPaginator(
             $search,
             $this->resolvePerPage($request, 15),
         ), [
@@ -42,6 +43,41 @@ class PlanogramTemplateController extends Controller
         $this->authorize('create', PlanogramTemplate::class);
 
         return Inertia::render('tenant/planogram-templates/Form', []);
+    }
+
+    /**
+     * Lista templates ativos do tenant com seus subtemplates (num_modules)
+     * para popular o seletor de modo no GondolaCreateStepper.
+     */
+    public function options(): JsonResponse
+    {
+        $this->authorize('viewAny', PlanogramTemplate::class);
+
+        $templates = PlanogramTemplate::query()
+            ->where('tenant_id', $this->tenantId())
+            ->where('is_active', true)
+            ->with(['subtemplates' => function ($query): void {
+                $query->where('is_active', true)->orderBy('num_modules');
+            }])
+            ->orderBy('name')
+            ->get(['id', 'name', 'code', 'department'])
+            ->map(fn (PlanogramTemplate $template): array => [
+                'value' => $template->id,
+                'label' => $template->name,
+                'description' => $template->department,
+                'subtemplates' => $template->subtemplates
+                    ->map(fn ($subtemplate): array => [
+                        'id' => $subtemplate->id,
+                        'num_modules' => (int) $subtemplate->num_modules,
+                        'code' => $subtemplate->code,
+                    ])
+                    ->values()
+                    ->all(),
+            ])
+            ->values()
+            ->all();
+
+        return response()->json(['templates' => $templates]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -87,7 +123,7 @@ class PlanogramTemplateController extends Controller
 
         $file = $request->file('file');
         $filePath = $file->store('template-imports', 'public');
-        $absolutePath = storage_path('app/public/' . $filePath);
+        $absolutePath = storage_path('app/public/'.$filePath);
 
         $tenantId = $this->tenantId();
         $report = $importService->import($absolutePath, $tenantId);
@@ -166,7 +202,7 @@ class PlanogramTemplateController extends Controller
                 'description' => $planogramTemplate->description,
                 'is_active' => $planogramTemplate->is_active,
                 'subtemplates_count' => $planogramTemplate->subtemplates->count(),
-                'subtemplates' => $planogramTemplate->subtemplates->map(fn($sub) => [
+                'subtemplates' => $planogramTemplate->subtemplates->map(fn ($sub) => [
                     'id' => $sub->id,
                     'code' => $sub->code,
                     'num_modules' => $sub->num_modules,
@@ -209,15 +245,15 @@ class PlanogramTemplateController extends Controller
     private function templatesPaginator(string $search, int $perPage): LengthAwarePaginator
     {
         return PlanogramTemplate::withCount(['subtemplates'])
-            ->when($search !== '', fn($q) => $q->where(function ($w) use ($search): void {
-                $w->where('code', 'like', '%' . $search . '%')
-                    ->orWhere('name', 'like', '%' . $search . '%')
-                    ->orWhere('department', 'like', '%' . $search . '%');
+            ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search): void {
+                $w->where('code', 'like', '%'.$search.'%')
+                    ->orWhere('name', 'like', '%'.$search.'%')
+                    ->orWhere('department', 'like', '%'.$search.'%');
             }))
             ->latest()
             ->paginate($perPage)
             ->withQueryString()
-            ->through(fn(PlanogramTemplate $t): array => [
+            ->through(fn (PlanogramTemplate $t): array => [
                 'id' => $t->id,
                 'code' => $t->code,
                 'name' => $t->name,

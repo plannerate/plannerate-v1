@@ -48,6 +48,8 @@ class GondolaService
      */
     protected function createGondola(Planogram $planogram, array $data): Gondola
     {
+        $mode = $data['mode'] ?? 'manual';
+
         return Gondola::create([
             'planogram_id' => $planogram->id,
             'tenant_id' => $planogram->tenant_id,
@@ -57,6 +59,8 @@ class GondolaService
             'scale_factor' => $data['scaleFactor'] ?? 1,
             'flow' => $data['flow'] ?? 'left_to_right',
             'status' => $data['status'] ?? 'draft',
+            'generation_mode' => $mode,
+            'template_id' => $mode === 'template' ? ($data['template_id'] ?? null) : null,
         ]);
     }
 

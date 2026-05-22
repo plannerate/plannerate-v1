@@ -22,6 +22,10 @@ class StoreGondolaRequest extends FormRequest
             'flow' => ['required', 'in:left_to_right,right_to_left'],
             'status' => ['required', 'in:published,draft'],
 
+            // Step 1: Generation mode (manual = blank/null)
+            'mode' => ['nullable', 'in:manual,template,automatic'],
+            'template_id' => ['nullable', 'string', 'required_if:mode,template'],
+
             // Step 2: Module Configuration
             'height' => ['required', 'numeric', 'min:1'],
             'width' => ['required', 'numeric', 'min:1'],
@@ -63,6 +67,8 @@ class StoreGondolaRequest extends FormRequest
             'scaleFactor.min' => 'O fator de escala deve ser no mínimo 1.',
             'flow.required' => 'A posição do fluxo é obrigatória.',
             'flow.in' => 'A posição do fluxo deve ser esquerda para direita ou direita para esquerda.',
+
+            'template_id.required_if' => 'Selecione um template para o modo de geração por template.',
 
             'height.required' => 'A altura do módulo é obrigatória.',
             'height.min' => 'A altura do módulo deve ser no mínimo 1 cm.',

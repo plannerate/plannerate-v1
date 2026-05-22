@@ -163,6 +163,10 @@ const getInitialFormData = () => {
         flow: gondolaFields.flow || DEFAULT_GONDOLA_FIELDS.flow,
         status: gondolaFields.status || DEFAULT_GONDOLA_FIELDS.status,
 
+        // Step 1: Modo de geração (manual por padrão)
+        mode: 'manual' as 'manual' | 'template' | 'automatic',
+        template_id: null as string | null,
+
         // Step 2: Module Configuration (dimensões do módulo/seção)
         height: DEFAULT_SECTION_FIELDS.height,
         width: DEFAULT_SECTION_FIELDS.width,
@@ -218,6 +222,82 @@ watch(
     },
 );
 
+// Opções de template para o modo de geração "template"
+interface TemplateOption {
+    value: string;
+    label: string;
+    description?: string | null;
+    subtemplates?: Array<{ id: string; num_modules: number; code?: string }>;
+}
+
+const templateOptions = ref<TemplateOption[]>([]);
+const templatesLoaded = ref(false);
+
+const loadTemplateOptions = async () => {
+    if (templatesLoaded.value || !isBrowser) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/planogram-templates/options', {
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin',
+        });
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+        templateOptions.value = Array.isArray(data?.templates)
+            ? data.templates
+            : [];
+        templatesLoaded.value = true;
+    } catch (error) {
+        console.error('Erro ao carregar templates:', error);
+    }
+};
+
+// Carrega os templates ao abrir o stepper
+watch(
+    () => props.open,
+    (isOpen) => {
+        if (isOpen) {
+            loadTemplateOptions();
+        }
+    },
+    { immediate: true },
+);
+
+// Pré-preenche numModules a partir do subtemplate ao escolher um template
+watch(
+    () => form.template_id,
+    (templateId) => {
+        if (form.mode !== 'template' || !templateId) {
+            return;
+        }
+
+        const selected = templateOptions.value.find(
+            (option) => option.value === templateId,
+        );
+        const subtemplates = selected?.subtemplates ?? [];
+
+        if (subtemplates.length === 0) {
+            return;
+        }
+
+        // O engine casa o subtemplate cujo num_modules <= nº de seções;
+        // usar o maior garante match exato com o maior subtemplate.
+        const maxModules = Math.max(
+            ...subtemplates.map((subtemplate) => subtemplate.num_modules),
+        );
+
+        if (maxModules >= 1) {
+            form.numModules = maxModules;
+        }
+    },
+);
+
 // Form data split by steps usando WritableComputedRef para garantir reatividade bidirecional
 const step1Data = computed({
     get: () => ({
@@ -227,6 +307,8 @@ const step1Data = computed({
         scaleFactor: form.scaleFactor,
         flow: form.flow,
         status: form.status,
+        mode: form.mode,
+        template_id: form.template_id,
     }),
     set: (value) => {
         Object.assign(form, value);
@@ -396,7 +478,7 @@ const handleSubmit = () => {
         return;
     }
  
-    form.post(storeGondolaRoute.url({ subdomain, planogram: planogramId }), {
+    form.post(storeGondolaRoute.url({ planogram: planogramId }), {
         preserveScroll: true,
         preserveState: false,
         onSuccess: () => {
@@ -485,6 +567,7 @@ const handleSubmit = () => {
                     <Step1BasicInfo
                         v-if="currentStep === 1"
                         v-model="step1Data"
+                        :templates="templateOptions"
                         :errors="form.errors"
                     />
 

@@ -11,7 +11,6 @@ use App\Support\Modules\ModuleSlug;
 use Illuminate\Support\Facades\Route;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
-
 Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
     ->name('tenant.')
     ->group(function (): void {
@@ -110,6 +109,8 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
 
         Route::get('planogram-templates', [Tenant\PlanogramTemplateController::class, 'index'])
             ->name('planogram-templates.index');
+        Route::get('planogram-templates/options', [Tenant\PlanogramTemplateController::class, 'options'])
+            ->name('planogram-templates.options');
         Route::get('planogram-templates/create', [Tenant\PlanogramTemplateController::class, 'create'])
             ->name('planogram-templates.create');
         Route::post('planogram-templates', [Tenant\PlanogramTemplateController::class, 'store'])
@@ -177,7 +178,7 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
             ->except(['show'])
             ->names('planograms');
 
-        Route::middleware('tenant.module.active:' . ModuleSlug::KANBAN)
+        Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)
             ->get('planograms/kanban', [Tenant\PlanogramController::class, 'kanban'])
             ->name('planograms.kanban');
 
@@ -243,7 +244,7 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
         Route::delete('settings/shelf-level-preferences/{preference}', [Settings\ShelfLevelPreferencesController::class, 'destroy'])
             ->name('shelf-level-preferences.destroy');
 
-        Route::middleware('tenant.module.active:' . ModuleSlug::KANBAN)->group(function (): void {
+        Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
             // ── KANBAN ────────────────────────────────────────────────
             Route::get('kanban', [Tenant\WorkflowKanbanController::class, 'index'])->name('kanban.index');
 
