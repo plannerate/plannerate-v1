@@ -166,6 +166,7 @@ final class AutoPlanogramService
         ])->all();
 
         $productRules = $this->loadProductRules($input->settings->tenantId ?? '');
+        $slotOverrides = $this->loadGondolaSlotOverrides($input->gondolaId);
 
         $settings = $input->settings
             ->withExtras($input->settings->tenantId, $input->settings->weights)
@@ -176,7 +177,8 @@ final class AutoPlanogramService
                 $productRules['blockedProductIds'],
                 $productRules['blockedBrands'],
                 $productRules['blockedSubcategoryIds'],
-            );
+            )
+            ->withSlotOverrides($slotOverrides);
 
         $result = $this->templatePlacement->place(
             collect(),
@@ -189,7 +191,10 @@ final class AutoPlanogramService
 
         $report = $this->validator->validate($allSegments, $input, $fullResult);
 
-        $this->logCapacityAnalysis($input, $fullResult);
+        // Denominador real: apenas produtos que chegaram a algum slot (colocados + rejeitados com produto)
+        $reachableCount = $allSegments->count()
+            + $fullResult->rejectedProducts->filter(fn ($r) => $r['product'] !== null)->count();
+        $this->logCapacityAnalysis($input, $fullResult, $reachableCount);
 
         $suggestions = $this->suggestionGenerator->generate($result->slotAnalysis);
 
@@ -330,6 +335,57 @@ final class AutoPlanogramService
         return compact('mandatoryProductIds', 'blockedProductIds', 'blockedBrands', 'blockedSubcategoryIds');
     }
 
+    /**
+     * Carrega overrides de geração por categoria da gôndola, indexados por category_id.
+     * Campos null são excluídos — apenas valores explícitos sobrepõem o template slot.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function loadGondolaSlotOverrides(string $gondolaId): array
+    {
+        if ($gondolaId === '') {
+            return [];
+        }
+
+        $fields = [
+            'category_id',
+            'min_facings',
+            'max_facings',
+            'price_order',
+            'size_order',
+            'brand_exposure',
+            'flavor_exposure',
+            'space_fallback',
+            'facing_expansion',
+            'use_target_stock',
+            'role_override',
+            'max_share_per_sku',
+            'max_share_per_brand',
+            'max_share_per_subcategory',
+        ];
+
+        $rows = DB::connection('tenant')
+            ->table('planogram_gondola_slot_overrides')
+            ->where('gondola_id', $gondolaId)
+            ->whereNull('deleted_at')
+            ->get($fields);
+
+        $result = [];
+
+        foreach ($rows as $row) {
+            if ($row->category_id === null) {
+                continue;
+            }
+
+            $values = (array) $row;
+            unset($values['category_id']);
+
+            $result[$row->category_id] = array_filter($values, fn ($v) => $v !== null);
+        }
+
+        return $result;
+    }
+
     private function renumberOrderings(Collection $segments): Collection
     {
         return $segments
@@ -368,9 +424,10 @@ final class AutoPlanogramService
         ]);
     }
 
-    private function logCapacityAnalysis(PlanogramInput $input, PlacementResult $result): void
+    private function logCapacityAnalysis(PlanogramInput $input, PlacementResult $result, ?int $reachableCount = null): void
     {
-        $totalProducts = $input->products->count();
+        // Modo template: denominar só pelos produtos que alcançaram algum slot; modo auto: pool completo
+        $totalProducts = $reachableCount ?? $input->products->count();
         $placed = $result->placedSegments->count();
         $rejectedSpace = $result->rejectedProducts
             ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)

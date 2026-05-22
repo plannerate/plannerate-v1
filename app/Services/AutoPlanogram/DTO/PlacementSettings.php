@@ -120,6 +120,14 @@ final readonly class PlacementSettings
          * @var array<string, true>
          */
         public array $blockedSubcategoryIds = [],
+
+        /**
+         * Overrides de configuração de geração por categoria desta gôndola específica.
+         * Indexado por category_id; apenas campos não-nulos sobrepõem o valor do template slot.
+         *
+         * @var array<string, array<string, mixed>>
+         */
+        public array $gondolaSlotOverrides = [],
     ) {}
 
     public function usesTemplate(): bool
@@ -159,6 +167,7 @@ final readonly class PlacementSettings
             blockedProductIds: $this->blockedProductIds,
             blockedBrands: $this->blockedBrands,
             blockedSubcategoryIds: $this->blockedSubcategoryIds,
+            gondolaSlotOverrides: $this->gondolaSlotOverrides,
         );
     }
 
@@ -194,6 +203,7 @@ final readonly class PlacementSettings
             blockedProductIds: $this->blockedProductIds,
             blockedBrands: $this->blockedBrands,
             blockedSubcategoryIds: $this->blockedSubcategoryIds,
+            gondolaSlotOverrides: $this->gondolaSlotOverrides,
         );
     }
 
@@ -230,6 +240,7 @@ final readonly class PlacementSettings
             blockedProductIds: $this->blockedProductIds,
             blockedBrands: $this->blockedBrands,
             blockedSubcategoryIds: $this->blockedSubcategoryIds,
+            gondolaSlotOverrides: $this->gondolaSlotOverrides,
         );
     }
 
@@ -265,6 +276,7 @@ final readonly class PlacementSettings
             blockedProductIds: $this->blockedProductIds,
             blockedBrands: $this->blockedBrands,
             blockedSubcategoryIds: $this->blockedSubcategoryIds,
+            gondolaSlotOverrides: $this->gondolaSlotOverrides,
         );
     }
 
@@ -300,6 +312,7 @@ final readonly class PlacementSettings
             blockedProductIds: $this->blockedProductIds,
             blockedBrands: $this->blockedBrands,
             blockedSubcategoryIds: $this->blockedSubcategoryIds,
+            gondolaSlotOverrides: $this->gondolaSlotOverrides,
         );
     }
 
@@ -338,6 +351,7 @@ final readonly class PlacementSettings
             blockedProductIds: $this->blockedProductIds,
             blockedBrands: $this->blockedBrands,
             blockedSubcategoryIds: $this->blockedSubcategoryIds,
+            gondolaSlotOverrides: $this->gondolaSlotOverrides,
         );
     }
 
@@ -383,6 +397,46 @@ final readonly class PlacementSettings
             blockedProductIds: $blockedProductIds,
             blockedBrands: $blockedBrands,
             blockedSubcategoryIds: $blockedSubcategoryIds,
+            gondolaSlotOverrides: $this->gondolaSlotOverrides,
+        );
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $gondolaSlotOverrides
+     */
+    public function withSlotOverrides(array $gondolaSlotOverrides): self
+    {
+        return new self(
+            strategy: $this->strategy,
+            useExistingAnalysis: $this->useExistingAnalysis,
+            startDate: $this->startDate,
+            endDate: $this->endDate,
+            minFacings: $this->minFacings,
+            maxFacings: $this->maxFacings,
+            groupBySubcategory: $this->groupBySubcategory,
+            includeProductsWithoutSales: $this->includeProductsWithoutSales,
+            tableType: $this->tableType,
+            categoryId: $this->categoryId,
+            tenantId: $this->tenantId,
+            storeId: $this->storeId,
+            weights: $this->weights,
+            blockHierarchyLevel: $this->blockHierarchyLevel,
+            adjacencyHierarchyLevel: $this->adjacencyHierarchyLevel,
+            targetOccupancyRate: $this->targetOccupancyRate,
+            verticalBlockThreshold: $this->verticalBlockThreshold,
+            verticalBlockMinShelves: $this->verticalBlockMinShelves,
+            templateId: $this->templateId,
+            numModules: $this->numModules,
+            planogramId: $this->planogramId,
+            products: $this->products,
+            abcClassMap: $this->abcClassMap,
+            targetStockMap: $this->targetStockMap,
+            zoneMetricsMap: $this->zoneMetricsMap,
+            mandatoryProductIds: $this->mandatoryProductIds,
+            blockedProductIds: $this->blockedProductIds,
+            blockedBrands: $this->blockedBrands,
+            blockedSubcategoryIds: $this->blockedSubcategoryIds,
+            gondolaSlotOverrides: $gondolaSlotOverrides,
         );
     }
 

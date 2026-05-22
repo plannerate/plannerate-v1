@@ -332,7 +332,6 @@ Arquivos em `lang/pt_BR/*.php`. Estrutura de chaves: `app.{contexto}.{recurso}.{
 Antes de qualquer trabalho, ler:
 
 1. `storage/app/private/prompts/auto-planogram/Resumo sessao plannerate.md`
-2. `storage/app/private/prompts/auto-planogram/25 changelog grouping para category id.md`
 
 Guia completo: `storage/app/private/prompts/auto-planogram/00 prerequisitos.md`
 

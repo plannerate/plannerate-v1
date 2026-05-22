@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { ChevronDown, ChevronRight, RotateCcw, Search, Send } from 'lucide-vue-next';
+import { Pencil, RotateCcw, Search, Send } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import FormSelectField from '@/components/form/FormSelectField.vue';
@@ -183,10 +183,17 @@ function templateDefaults(categoryId: string): Partial<GondolaSlotOverride> {
     return categories.value.find((c) => c.category_id === categoryId)?.templateDefaults ?? {};
 }
 
-function toggleCategory(categoryId: string) {
+function selectCategory(categoryId: string) {
+    if (selectedTemplateCategoryId.value === categoryId) {
+        selectedTemplateCategoryId.value = null;
+    } else {
+        selectedTemplateCategoryId.value = categoryId;
+    }
+}
+
+function toggleAccordion(categoryId: string) {
     if (openCategoryId.value === categoryId) {
         openCategoryId.value = null;
-        selectedTemplateCategoryId.value = null;
     } else {
         openCategoryId.value = categoryId;
         selectedTemplateCategoryId.value = categoryId;
@@ -353,50 +360,53 @@ function handleReset(categoryId: string) {
                 <button
                     type="button"
                     class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors cursor-pointer hover:bg-muted/50"
-                    :class="openCategoryId === cat.category_id ? 'bg-primary/5' : ''"
-                    @click="toggleCategory(cat.category_id)"
+                    :class="selectedTemplateCategoryId === cat.category_id ? 'bg-primary/5' : ''"
+                    @click="selectCategory(cat.category_id)"
                 >
-                    <div class="flex min-w-0 items-center gap-2">
-                        <component
-                            :is="openCategoryId === cat.category_id ? ChevronDown : ChevronRight"
-                            class="size-3.5 shrink-0 text-muted-foreground transition-transform duration-200"
-                        />
-                        <div class="min-w-0 flex-1">
-                            <!-- Nome + ID curto quando há duplicatas -->
-                            <div class="flex min-w-0 items-center gap-1.5">
-                                <span class="truncate text-sm font-medium">{{ cat.category_name }}</span>
-                                <span
-                                    v-if="duplicateNames.has(cat.category_name)"
-                                    class="shrink-0 rounded px-1 font-mono text-[9px] font-semibold"
-                                    :style="{ color: idColor(cat.category_id), backgroundColor: idColor(cat.category_id) + '1a' }"
-                                    :title="cat.category_id"
-                                >
-                                    #{{ cat.category_id.slice(-8) }}
-                                </span>
-                            </div>
-                            <!-- Caminho completo da categoria (hierarquia) -->
-                            <p v-if="cat.category_full_path" class="truncate text-[8px] text-muted-foreground/80" :title="cat.category_full_path">
-                                {{ cat.category_full_path }}
-                            </p>
-                            <!-- Subcategoria (fallback quando não há full_path) -->
-                            <p v-else-if="cat.subcategory" class="truncate text-[10px] text-muted-foreground/80">
-                                {{ cat.subcategory }}
-                            </p>
-                            <!-- Módulos · Prateleiras -->
-                            <p class="text-[10px] text-muted-foreground">
-                                <span v-if="cat.modules.length > 0">Mód. {{ cat.modules.join(', ') }}</span>
-                                <span v-if="cat.modules.length > 0 && cat.shelves.length > 0"> · </span>
-                                <span v-if="cat.shelves.length > 0">Prat. {{ cat.shelves.join(', ') }}</span>
-                            </p>
+                    <div class="min-w-0 flex-1">
+                        <!-- Nome + ID curto quando há duplicatas -->
+                        <div class="flex min-w-0 items-center gap-1.5">
+                            <span class="truncate text-sm font-medium">{{ cat.category_name }}</span>
+                            <span
+                                v-if="duplicateNames.has(cat.category_name)"
+                                class="shrink-0 rounded px-1 font-mono text-[9px] font-semibold"
+                                :style="{ color: idColor(cat.category_id), backgroundColor: idColor(cat.category_id) + '1a' }"
+                                :title="cat.category_id"
+                            >
+                                #{{ cat.category_id.slice(-8) }}
+                            </span>
                         </div>
+                        <!-- Caminho completo da categoria (hierarquia) -->
+                        <p v-if="cat.category_full_path" class="truncate text-[8px] text-muted-foreground/80" :title="cat.category_full_path">
+                            {{ cat.category_full_path }}
+                        </p>
+                        <!-- Subcategoria (fallback quando não há full_path) -->
+                        <p v-else-if="cat.subcategory" class="truncate text-[10px] text-muted-foreground/80">
+                            {{ cat.subcategory }}
+                        </p>
+                        <!-- Módulos · Prateleiras -->
+                        <p class="text-[10px] text-muted-foreground">
+                            <span v-if="cat.modules.length > 0">Mód. {{ cat.modules.join(', ') }}</span>
+                            <span v-if="cat.modules.length > 0 && cat.shelves.length > 0"> · </span>
+                            <span v-if="cat.shelves.length > 0">Prat. {{ cat.shelves.join(', ') }}</span>
+                        </p>
                     </div>
-                    <div class="ml-2 flex shrink-0 flex-col items-end gap-0.5">
+                    <div class="ml-2 flex shrink-0 items-center gap-1.5">
                         <span
                             v-if="hasOverride(cat.category_id)"
                             class="size-2 rounded-full bg-amber-500"
                             title="Override local ativo"
                         />
                         <span class="text-[10px] text-muted-foreground">{{ cat.slot_count }} slots</span>
+                        <button
+                            type="button"
+                            class="cursor-pointer rounded-md p-1 transition-colors hover:bg-primary/10 hover:text-primary"
+                            :class="openCategoryId === cat.category_id ? 'bg-primary/10 text-primary' : 'text-muted-foreground'"
+                            title="Editar configurações"
+                            @click.stop="toggleAccordion(cat.category_id)"
+                        >
+                            <Pencil class="size-3.5" />
+                        </button>
                     </div>
                 </button>
 

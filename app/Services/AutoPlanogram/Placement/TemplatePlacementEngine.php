@@ -66,6 +66,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /** Sentido de leitura do cliente — espelha posições físicas quando RightToLeft */
     private FlowDirection $flowDirection = FlowDirection::LeftToRight;
 
+    /** @var array<string, array<string, mixed>> Overrides por category_id desta gôndola [category_id => [campo => valor_raw]] */
+    private array $gondolaSlotOverrides = [];
+
     public function __construct(
         private readonly ProductWidthResolver $widthResolver,
         private readonly ProductSizeResolver $sizeResolver,
@@ -97,6 +100,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $this->blockedProductIds = $settings->blockedProductIds;
         $this->blockedBrands = $settings->blockedBrands;
         $this->blockedSubcategoryIds = $settings->blockedSubcategoryIds;
+        $this->gondolaSlotOverrides = $settings->gondolaSlotOverrides;
 
         $subtemplate = $this->resolveSubtemplate($settings);
 
@@ -128,6 +132,8 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             ->get();
 
         foreach ($slots as $slot) {
+            $this->applySlotOverride($slot);
+
             $section = $this->resolveSection($sections, $slot->module_number);
             $shelf = $section ? $this->resolveShelf($section, $slot->shelf_order) : null;
 
@@ -347,6 +353,23 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         }
 
         return false;
+    }
+
+    /**
+     * Sobrepõe os atributos do slot com os valores do override da gôndola (apenas campos não-nulos).
+     * Chamado antes de qualquer uso dos atributos do slot na geração.
+     */
+    private function applySlotOverride(PlanogramTemplateSlot $slot): void
+    {
+        if ($slot->category_id === null) {
+            return;
+        }
+
+        $override = $this->gondolaSlotOverrides[$slot->category_id] ?? [];
+
+        if ($override !== []) {
+            $slot->forceFill($override);
+        }
     }
 
     private function findCandidates(PlanogramTemplateSlot $slot, PlacementSettings $settings): Collection
