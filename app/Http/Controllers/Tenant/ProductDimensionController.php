@@ -63,7 +63,7 @@ class ProductDimensionController extends Controller
             'message' => 'Dimensões atualizadas com sucesso.',
         ]);
 
-        return to_route('tenant.dimensions.index');
+        return $this->toTenantRoute('tenant.dimensions.index');
     }
 
     public function syncFromReference(string $subdomain, string $product): RedirectResponse

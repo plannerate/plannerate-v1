@@ -112,7 +112,7 @@ class EanReferenceController extends Controller
             'message' => __('app.landlord.ean_references.messages.created'),
         ]);
 
-        return to_route('landlord.ean-references.index');
+        return $this->toLandlordRoute('landlord.ean-references.index');
     }
 
     public function edit(EanReference $eanReference): Response
@@ -157,7 +157,7 @@ class EanReferenceController extends Controller
             'message' => __('app.landlord.ean_references.messages.updated'),
         ]);
 
-        return to_route('landlord.ean-references.index');
+        return $this->toLandlordRoute('landlord.ean-references.index');
     }
 
     public function fetchImage(string $eanReference): JsonResponse
@@ -205,6 +205,6 @@ class EanReferenceController extends Controller
             'message' => __('app.landlord.ean_references.messages.deleted'),
         ]);
 
-        return to_route('landlord.ean-references.index');
+        return $this->toLandlordRoute('landlord.ean-references.index');
     }
 }

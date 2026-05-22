@@ -52,6 +52,6 @@ class ScoringWeightsController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.scoring_weights_updated')]);
 
-        return to_route('tenant.scoring-weights.edit');
+        return $this->toTenantRoute('tenant.scoring-weights.edit');
     }
 }

@@ -148,7 +148,7 @@ class SaleController extends Controller
             'message' => __('app.tenant.sales.messages.created'),
         ]);
 
-        return to_route('tenant.sales.index');
+        return $this->toTenantRoute('tenant.sales.index');
     }
 
     public function edit(string $subdomain, string $sale): Response
@@ -192,7 +192,7 @@ class SaleController extends Controller
             'message' => __('app.tenant.sales.messages.updated'),
         ]);
 
-        return to_route('tenant.sales.index');
+        return $this->toTenantRoute('tenant.sales.index');
     }
 
     public function destroy(string $subdomain, string $sale): RedirectResponse
@@ -208,7 +208,7 @@ class SaleController extends Controller
             'message' => __('app.tenant.sales.messages.deleted'),
         ]);
 
-        return to_route('tenant.sales.index');
+        return $this->toTenantRoute('tenant.sales.index');
     }
 
     /**

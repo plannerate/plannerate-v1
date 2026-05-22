@@ -41,7 +41,7 @@ class TenantSocialiteProviderController extends Controller
             'message' => __('app.landlord.socialite_providers.messages.updated'),
         ]);
 
-        return to_route('landlord.tenants.index');
+        return $this->toLandlordRoute('landlord.tenants.index');
     }
 
     public function destroy(Tenant $tenant): RedirectResponse
@@ -55,6 +55,6 @@ class TenantSocialiteProviderController extends Controller
             'message' => __('app.landlord.socialite_providers.messages.deleted'),
         ]);
 
-        return to_route('landlord.tenants.index');
+        return $this->toLandlordRoute('landlord.tenants.index');
     }
 }

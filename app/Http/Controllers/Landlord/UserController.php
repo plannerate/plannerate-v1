@@ -121,7 +121,7 @@ class UserController extends Controller
             'message' => __('app.landlord.users.messages.created'),
         ]);
 
-        return to_route('landlord.users.index');
+        return $this->toLandlordRoute('landlord.users.index');
     }
 
     /**
@@ -173,7 +173,7 @@ class UserController extends Controller
             'message' => __('app.landlord.users.messages.updated'),
         ]);
 
-        return to_route('landlord.users.index');
+        return $this->toLandlordRoute('landlord.users.index');
     }
 
     /**
@@ -190,7 +190,7 @@ class UserController extends Controller
             'message' => __('app.landlord.users.messages.deleted'),
         ]);
 
-        return to_route('landlord.users.index');
+        return $this->toLandlordRoute('landlord.users.index');
     }
 
     /**

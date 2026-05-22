@@ -62,7 +62,7 @@ class IntegrationApiController extends Controller
             'message' => __('app.landlord.integration_apis.messages.created'),
         ]);
 
-        return to_route('landlord.integration-apis.edit', $integrationApi);
+        return $this->toLandlordRoute('landlord.integration-apis.edit', $integrationApi);
     }
 
     public function edit(IntegrationApi $integrationApi): Response
@@ -87,7 +87,7 @@ class IntegrationApiController extends Controller
             'message' => __('app.landlord.integration_apis.messages.updated'),
         ]);
 
-        return to_route('landlord.integration-apis.edit', $integrationApi);
+        return $this->toLandlordRoute('landlord.integration-apis.edit', $integrationApi);
     }
 
     public function destroy(IntegrationApi $integrationApi): RedirectResponse
@@ -101,7 +101,7 @@ class IntegrationApiController extends Controller
             'message' => __('app.landlord.integration_apis.messages.deleted'),
         ]);
 
-        return to_route('landlord.integration-apis.index');
+        return $this->toLandlordRoute('landlord.integration-apis.index');
     }
 
     public function exportConfigurations(): StreamedResponse
@@ -144,7 +144,7 @@ class IntegrationApiController extends Controller
         $uploadedFile = $request->file('spreadsheet');
 
         if (! $uploadedFile instanceof UploadedFile) {
-            return to_route('landlord.integration-apis.index');
+            return $this->toLandlordRoute('landlord.integration-apis.index');
         }
 
         $decoded = json_decode((string) $uploadedFile->get(), true);
@@ -213,7 +213,7 @@ class IntegrationApiController extends Controller
             ]),
         ]);
 
-        return to_route('landlord.integration-apis.index');
+        return $this->toLandlordRoute('landlord.integration-apis.index');
     }
 
     private function integrationApisPaginator(string $search, string $isActive, int $perPage): LengthAwarePaginator

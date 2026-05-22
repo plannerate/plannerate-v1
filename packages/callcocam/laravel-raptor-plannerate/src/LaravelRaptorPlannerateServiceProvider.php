@@ -2,7 +2,6 @@
 
 namespace Callcocam\LaravelRaptorPlannerate;
 
-use App\Http\Middleware\InjectTenantUrlDefaults;
 use App\Http\Middleware\SetPermissionTeamContext;
 use Callcocam\LaravelRaptorPlannerate\Commands\SyncPlannerateMigrationsCommand;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
@@ -64,7 +63,7 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
          * Registrá-las apenas no domínio "central" faz o host do tenant retornar 404.
          */
         Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
-            ->middleware(['web', 'auth', NeedsTenant::class, InjectTenantUrlDefaults::class, SetPermissionTeamContext::class])
+            ->middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
             ->group($editorRouteFile);
     }
 

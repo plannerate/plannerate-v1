@@ -63,7 +63,7 @@ class AdjacencyMatrixController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.adjacency_rule_created')]);
 
-        return to_route('tenant.adjacency-matrix.edit');
+        return $this->toTenantRoute('tenant.adjacency-matrix.edit');
     }
 
     public function update(AdjacencyRuleRequest $request, string $subdomain, AdjacencyRule $adjacencyRule): RedirectResponse
@@ -74,7 +74,7 @@ class AdjacencyMatrixController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.adjacency_rule_updated')]);
 
-        return to_route('tenant.adjacency-matrix.edit');
+        return $this->toTenantRoute('tenant.adjacency-matrix.edit');
     }
 
     public function destroy(string $subdomain, AdjacencyRule $adjacencyRule): RedirectResponse
@@ -85,6 +85,6 @@ class AdjacencyMatrixController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.adjacency_rule_deleted')]);
 
-        return to_route('tenant.adjacency-matrix.edit');
+        return $this->toTenantRoute('tenant.adjacency-matrix.edit');
     }
 }

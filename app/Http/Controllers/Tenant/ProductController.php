@@ -247,7 +247,7 @@ class ProductController extends Controller
             'message' => __('app.tenant.products.messages.created'),
         ]);
 
-        return to_route('tenant.products.index');
+        return $this->toTenantRoute('tenant.products.index');
     }
 
     public function edit(string $subdomain, string $product): Response
@@ -302,7 +302,7 @@ class ProductController extends Controller
             'message' => __('app.tenant.products.messages.updated'),
         ]);
 
-        return to_route('tenant.products.index');
+        return $this->toTenantRoute('tenant.products.index');
     }
 
     public function destroy(string $subdomain, string $product): RedirectResponse
@@ -318,7 +318,7 @@ class ProductController extends Controller
             'message' => __('app.tenant.products.messages.deleted'),
         ]);
 
-        return to_route('tenant.products.index');
+        return $this->toTenantRoute('tenant.products.index');
     }
 
     /**

@@ -103,7 +103,7 @@ class PlanController extends Controller
             'message' => __('app.landlord.plans.messages.created'),
         ]);
 
-        return to_route('landlord.plans.index');
+        return $this->toLandlordRoute('landlord.plans.index');
     }
 
     /**
@@ -161,7 +161,7 @@ class PlanController extends Controller
             'message' => __('app.landlord.plans.messages.updated'),
         ]);
 
-        return to_route('landlord.plans.index');
+        return $this->toLandlordRoute('landlord.plans.index');
     }
 
     /**
@@ -213,6 +213,6 @@ class PlanController extends Controller
             'message' => __('app.landlord.plans.messages.deleted'),
         ]);
 
-        return to_route('landlord.plans.index');
+        return $this->toLandlordRoute('landlord.plans.index');
     }
 }

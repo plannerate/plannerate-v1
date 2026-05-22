@@ -73,7 +73,7 @@ class SystemLogController extends Controller
             'message' => sprintf('Log "%s" limpo com sucesso.', $selectedFile),
         ]);
 
-        return to_route('tenant.system-logs.index', [
+        return $this->toTenantRoute('tenant.system-logs.index', [
             'file' => $selectedFile,
         ]);
     }

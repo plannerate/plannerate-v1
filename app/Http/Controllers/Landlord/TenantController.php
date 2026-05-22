@@ -185,7 +185,7 @@ class TenantController extends Controller
 
         $createdTenant = Tenant::query()->where('slug', $validated['slug'])->first();
 
-        return to_route('landlord.tenants.setup', $createdTenant);
+        return $this->toLandlordRoute('landlord.tenants.setup', $createdTenant);
     }
 
     /**
@@ -287,7 +287,7 @@ class TenantController extends Controller
             'message' => __('app.landlord.tenants.messages.updated'),
         ]);
 
-        return to_route('landlord.tenants.index');
+        return $this->toLandlordRoute('landlord.tenants.index');
     }
 
     public function exportConfigurations(Request $request): StreamedResponse
@@ -370,7 +370,7 @@ class TenantController extends Controller
         $uploadedFile = $request->file('spreadsheet');
 
         if (! $uploadedFile instanceof UploadedFile) {
-            return to_route('landlord.tenants.index');
+            return $this->toLandlordRoute('landlord.tenants.index');
         }
 
         $decoded = json_decode((string) $uploadedFile->get(), true);
@@ -526,7 +526,7 @@ class TenantController extends Controller
             ]),
         ]);
 
-        return to_route('landlord.tenants.index');
+        return $this->toLandlordRoute('landlord.tenants.index');
     }
 
     /**
@@ -576,7 +576,7 @@ class TenantController extends Controller
             'message' => __('app.landlord.tenants.messages.provisioning_started'),
         ]);
 
-        return to_route('landlord.tenants.setup', $tenant);
+        return $this->toLandlordRoute('landlord.tenants.setup', $tenant);
     }
 
     /**
@@ -593,7 +593,7 @@ class TenantController extends Controller
             'message' => __('app.landlord.tenants.messages.deleted'),
         ]);
 
-        return to_route('landlord.tenants.index');
+        return $this->toLandlordRoute('landlord.tenants.index');
     }
 
     /**

@@ -112,7 +112,7 @@ class PermissionController extends Controller
             'message' => __('app.landlord.permissions.messages.created'),
         ]);
 
-        return to_route('landlord.permissions.index');
+        return $this->toLandlordRoute('landlord.permissions.index');
     }
 
     /**
@@ -159,7 +159,7 @@ class PermissionController extends Controller
             'message' => __('app.landlord.permissions.messages.updated'),
         ]);
 
-        return to_route('landlord.permissions.index');
+        return $this->toLandlordRoute('landlord.permissions.index');
     }
 
     /**
@@ -182,7 +182,7 @@ class PermissionController extends Controller
                 'message' => 'Todas as permissões já estão registradas.',
             ]);
 
-            return to_route('landlord.permissions.index');
+            return $this->toLandlordRoute('landlord.permissions.index');
         }
 
         $currentTeamId = getPermissionsTeamId();
@@ -223,7 +223,7 @@ class PermissionController extends Controller
             'message' => "{$count} nova(s) permissão(ões) cadastrada(s) e atribuída(s) com sucesso.",
         ]);
 
-        return to_route('landlord.permissions.index');
+        return $this->toLandlordRoute('landlord.permissions.index');
     }
 
     /**
@@ -249,7 +249,7 @@ class PermissionController extends Controller
             'message' => __('app.landlord.permissions.messages.deleted'),
         ]);
 
-        return to_route('landlord.permissions.index');
+        return $this->toLandlordRoute('landlord.permissions.index');
     }
 
     /**

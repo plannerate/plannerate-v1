@@ -111,7 +111,7 @@ class TenantIntegrationController extends Controller
             'message' => __('app.landlord.tenant_integrations.messages.updated'),
         ]);
 
-        return to_route('landlord.tenants.integration.edit', $tenant);
+        return $this->toLandlordRoute('landlord.tenants.integration.edit', $tenant);
     }
 
     /**
@@ -134,7 +134,7 @@ class TenantIntegrationController extends Controller
             'message' => __('app.landlord.tenant_integrations.messages.deleted'),
         ]);
 
-        return to_route('landlord.tenants.integration.edit', $tenant);
+        return $this->toLandlordRoute('landlord.tenants.integration.edit', $tenant);
     }
 
     public function toggleStatus(Tenant $tenant): RedirectResponse
@@ -149,7 +149,7 @@ class TenantIntegrationController extends Controller
                 'message' => __('app.landlord.tenant_integrations.messages.missing_configuration'),
             ]);
 
-            return to_route('landlord.tenants.integration.edit', $tenant);
+            return $this->toLandlordRoute('landlord.tenants.integration.edit', $tenant);
         }
 
         $integration->update(['is_active' => ! $integration->is_active]);
@@ -161,7 +161,7 @@ class TenantIntegrationController extends Controller
                 : __('app.landlord.tenant_integrations.messages.deactivated'),
         ]);
 
-        return to_route('landlord.tenants.integration.edit', $tenant);
+        return $this->toLandlordRoute('landlord.tenants.integration.edit', $tenant);
     }
 
     public function testConnection(Request $request, Tenant $tenant): RedirectResponse
@@ -177,7 +177,7 @@ class TenantIntegrationController extends Controller
                 'meta' => [],
             ]);
 
-            return to_route('landlord.tenants.integration.edit', $tenant);
+            return $this->toLandlordRoute('landlord.tenants.integration.edit', $tenant);
         }
 
         $config = is_array($integration->config) ? $integration->config : [];
@@ -219,7 +219,7 @@ class TenantIntegrationController extends Controller
             ]);
         }
 
-        return to_route('landlord.tenants.integration.edit', $tenant);
+        return $this->toLandlordRoute('landlord.tenants.integration.edit', $tenant);
     }
 
     /**

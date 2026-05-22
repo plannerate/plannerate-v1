@@ -107,7 +107,7 @@ class RoleController extends Controller
             'message' => __('app.landlord.roles.messages.created'),
         ]);
 
-        return to_route('landlord.roles.index');
+        return $this->toLandlordRoute('landlord.roles.index');
     }
 
     /**
@@ -168,7 +168,7 @@ class RoleController extends Controller
             'message' => __('app.landlord.roles.messages.updated'),
         ]);
 
-        return to_route('landlord.roles.index');
+        return $this->toLandlordRoute('landlord.roles.index');
     }
 
     /**
@@ -210,7 +210,7 @@ class RoleController extends Controller
             'message' => __('app.landlord.roles.messages.deleted'),
         ]);
 
-        return to_route('landlord.roles.index');
+        return $this->toLandlordRoute('landlord.roles.index');
     }
 
     /**

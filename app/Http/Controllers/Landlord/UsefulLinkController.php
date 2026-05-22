@@ -85,7 +85,7 @@ class UsefulLinkController extends Controller
             'message' => __('app.landlord.useful_links.messages.created'),
         ]);
 
-        return to_route('landlord.useful-links.index');
+        return $this->toLandlordRoute('landlord.useful-links.index');
     }
 
     public function edit(UsefulLink $usefulLink): Response
@@ -118,7 +118,7 @@ class UsefulLinkController extends Controller
             'message' => __('app.landlord.useful_links.messages.updated'),
         ]);
 
-        return to_route('landlord.useful-links.index');
+        return $this->toLandlordRoute('landlord.useful-links.index');
     }
 
     public function destroy(UsefulLink $usefulLink): RedirectResponse
@@ -132,6 +132,6 @@ class UsefulLinkController extends Controller
             'message' => __('app.landlord.useful_links.messages.deleted'),
         ]);
 
-        return to_route('landlord.useful-links.index');
+        return $this->toLandlordRoute('landlord.useful-links.index');
     }
 }

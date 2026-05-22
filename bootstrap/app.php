@@ -50,8 +50,16 @@ return Application::configure(basePath: dirname(__DIR__))
             prepend: SetPermissionTeamContext::class,
         );
 
+        /*
+         * InjectTenantUrlDefaults extrai o subdomain do host e chama URL::defaults() para que
+         * route('tenant.xxx') funcione sem passar o parâmetro subdomain manualmente.
+         * É adicionado ao web group antes de HandleInertiaRequests, que constrói a navegação
+         * usando route() e precisa que os defaults já estejam definidos.
+         * É seguro rodar em todas as requests: no-op quando não é uma rota de tenant.
+         */
         $middleware->web(append: [
             HandleAppearance::class,
+            InjectTenantUrlDefaults::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
             AuthenticateSession::class,

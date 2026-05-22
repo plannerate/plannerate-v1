@@ -136,7 +136,7 @@ class WorkflowTemplateController extends Controller
             'message' => __('app.landlord.kanban.templates.messages.created'),
         ]);
 
-        return to_route('landlord.tenants.kanban.templates.index', $tenant);
+        return $this->toLandlordRoute('landlord.tenants.kanban.templates.index', $tenant);
     }
 
     public function edit(Tenant $tenant, string $template): Response
@@ -198,7 +198,7 @@ class WorkflowTemplateController extends Controller
             'message' => __('app.landlord.kanban.templates.messages.updated'),
         ]);
 
-        return to_route('landlord.tenants.kanban.templates.index', $tenant);
+        return $this->toLandlordRoute('landlord.tenants.kanban.templates.index', $tenant);
     }
 
     public function syncUsers(Request $request, Tenant $tenant, string $template): RedirectResponse
@@ -238,7 +238,7 @@ class WorkflowTemplateController extends Controller
             'message' => __('app.landlord.kanban.templates.messages.deleted'),
         ]);
 
-        return to_route('landlord.tenants.kanban.templates.index', $tenant);
+        return $this->toLandlordRoute('landlord.tenants.kanban.templates.index', $tenant);
     }
 
     public function seedDefaultTemplates(Tenant $tenant): RedirectResponse
@@ -282,7 +282,7 @@ class WorkflowTemplateController extends Controller
             'message' => __('app.landlord.kanban.templates.messages.seeded'),
         ]);
 
-        return to_route('landlord.tenants.kanban.templates.index', $tenant);
+        return $this->toLandlordRoute('landlord.tenants.kanban.templates.index', $tenant);
     }
 
     /**

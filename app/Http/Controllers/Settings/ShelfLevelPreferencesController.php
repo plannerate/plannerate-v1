@@ -51,7 +51,7 @@ class ShelfLevelPreferencesController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.shelf_level_preference_created')]);
 
-        return to_route('tenant.shelf-level-preferences.edit');
+        return $this->toTenantRoute('tenant.shelf-level-preferences.edit');
     }
 
     public function update(ShelfLevelPreferenceRequest $request, string $subdomain, ShelfLevelPreference $preference): RedirectResponse
@@ -62,7 +62,7 @@ class ShelfLevelPreferencesController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.shelf_level_preference_updated')]);
 
-        return to_route('tenant.shelf-level-preferences.edit');
+        return $this->toTenantRoute('tenant.shelf-level-preferences.edit');
     }
 
     public function destroy(string $subdomain, ShelfLevelPreference $preference): RedirectResponse
@@ -73,6 +73,6 @@ class ShelfLevelPreferencesController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.shelf_level_preference_deleted')]);
 
-        return to_route('tenant.shelf-level-preferences.edit');
+        return $this->toTenantRoute('tenant.shelf-level-preferences.edit');
     }
 }

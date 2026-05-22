@@ -94,7 +94,7 @@ class ModuleController extends Controller
             'message' => __('app.landlord.modules.messages.created'),
         ]);
 
-        return to_route('landlord.modules.index');
+        return $this->toLandlordRoute('landlord.modules.index');
     }
 
     /**
@@ -132,7 +132,7 @@ class ModuleController extends Controller
             'message' => __('app.landlord.modules.messages.updated'),
         ]);
 
-        return to_route('landlord.modules.index');
+        return $this->toLandlordRoute('landlord.modules.index');
     }
 
     /**
@@ -158,6 +158,6 @@ class ModuleController extends Controller
             'message' => __('app.landlord.modules.messages.deleted'),
         ]);
 
-        return to_route('landlord.modules.index');
+        return $this->toLandlordRoute('landlord.modules.index');
     }
 }

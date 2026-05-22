@@ -78,7 +78,7 @@ final class PlanogramSettingsController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.planogram_settings_updated')]);
 
-        return to_route('tenant.planogram-settings.edit');
+        return $this->toTenantRoute('tenant.planogram-settings.edit');
     }
 
     /** @return array<int, array{value: int, label: string, note: string}> */

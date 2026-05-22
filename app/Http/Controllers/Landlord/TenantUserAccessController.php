@@ -167,7 +167,7 @@ class TenantUserAccessController extends Controller
             'message' => __('app.landlord.tenant_access.messages.created'),
         ]);
 
-        return to_route('landlord.tenants.access.edit', $tenant);
+        return $this->toLandlordRoute('landlord.tenants.access.edit', $tenant);
     }
 
     /**

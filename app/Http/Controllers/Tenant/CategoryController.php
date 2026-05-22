@@ -207,7 +207,7 @@ class CategoryController extends Controller
             'message' => __('app.tenant.categories.messages.created'),
         ]);
 
-        return to_route('tenant.categories.index');
+        return $this->toTenantRoute('tenant.categories.index');
     }
 
     public function edit(string $subdomain, Category $category): Response
@@ -253,7 +253,7 @@ class CategoryController extends Controller
             'message' => __('app.tenant.categories.messages.updated'),
         ]);
 
-        return to_route('tenant.categories.index');
+        return $this->toTenantRoute('tenant.categories.index');
     }
 
     public function destroy(string $subdomain, Category $category): RedirectResponse
@@ -268,7 +268,7 @@ class CategoryController extends Controller
             'message' => __('app.tenant.categories.messages.deleted'),
         ]);
 
-        return to_route('tenant.categories.index');
+        return $this->toTenantRoute('tenant.categories.index');
     }
 
     public function import(ImportCategorySpreadsheetRequest $request): RedirectResponse
@@ -277,7 +277,7 @@ class CategoryController extends Controller
 
         $uploadedFile = $request->file('spreadsheet');
         if ($uploadedFile === null) {
-            return to_route('tenant.categories.index');
+            return $this->toTenantRoute('tenant.categories.index');
         }
 
         $disk = 'local';
@@ -296,7 +296,7 @@ class CategoryController extends Controller
             'message' => __('app.tenant.categories.messages.import_queued'),
         ]);
 
-        return to_route('tenant.categories.index');
+        return $this->toTenantRoute('tenant.categories.index');
     }
 
     public function exportTemplate(CategoryExportService $service): BinaryFileResponse

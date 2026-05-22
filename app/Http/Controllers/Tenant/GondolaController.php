@@ -124,7 +124,7 @@ class GondolaController extends Controller
             'message' => __('app.tenant.gondolas.messages.created'),
         ]);
 
-        return to_route('tenant.catalog.gondolas.index', [
+        return $this->toTenantRoute('tenant.catalog.gondolas.index', [
             'planogram' => $planogram->getKey(),
         ]);
     }
@@ -179,7 +179,7 @@ class GondolaController extends Controller
             'message' => __('app.tenant.gondolas.messages.updated'),
         ]);
 
-        return to_route('tenant.catalog.gondolas.index', [
+        return $this->toTenantRoute('tenant.catalog.gondolas.index', [
             'planogram' => $planogram->getKey(),
         ]);
     }
@@ -198,7 +198,7 @@ class GondolaController extends Controller
             'message' => __('app.tenant.gondolas.messages.deleted'),
         ]);
 
-        return to_route('tenant.catalog.gondolas.index', [
+        return $this->toTenantRoute('tenant.catalog.gondolas.index', [
             'planogram' => $planogram->getKey(),
         ]);
     }
