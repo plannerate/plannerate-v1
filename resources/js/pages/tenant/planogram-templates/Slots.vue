@@ -36,6 +36,8 @@ type TemplateBasic = {
     code: string;
     name: string;
     department: string;
+    category_id: string | null;
+    category_name: string | null;
     is_active: boolean;
 };
 
@@ -808,6 +810,9 @@ const breadcrumbs = [
                     <h1 class="text-xl font-semibold">{{ template.name }}</h1>
                     <p class="text-sm text-muted-foreground">
                         Etapa 2 — configure as categorias por módulo e prateleira
+                    </p>
+                    <p v-if="template.category_name" class="mt-1 text-sm font-medium text-primary">
+                        Categoria: {{ template.category_name }}
                     </p>
                 </div>
                 <div class="flex gap-2">

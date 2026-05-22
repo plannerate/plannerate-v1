@@ -33,7 +33,7 @@ class TemplateSlotController extends Controller
         unset($subdomain);
         $this->authorize('view', $planogramTemplate);
 
-        $planogramTemplate->load(['subtemplates.slots.category']);
+        $planogramTemplate->load(['category', 'subtemplates.slots.category']);
 
         return Inertia::render('tenant/planogram-templates/Slots', [
             'subdomain' => $this->tenantSubdomain(),

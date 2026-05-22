@@ -6,6 +6,7 @@ use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -18,6 +19,7 @@ class PlanogramTemplate extends Model
         'code',
         'name',
         'department',
+        'category_id',
         'description',
         'is_active',
         'created_by',
@@ -28,6 +30,11 @@ class PlanogramTemplate extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 
     public function subtemplates(): HasMany

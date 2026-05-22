@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +11,8 @@ type TemplatePayload = {
     code: string;
     name: string;
     department: string;
+    category_id: string | null;
+    category_name?: string | null;
     description: string | null;
     is_active: boolean;
 };
@@ -20,6 +24,8 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
+
+const categoryId = ref<string | null>(props.template?.category_id ?? null);
 </script>
 
 <template>
@@ -40,6 +46,21 @@ const { t } = useT();
             <Label for="department">{{ t(`${props.translationScope}.fields.department`) }}</Label>
             <Input id="department" name="department" :default-value="props.template?.department ?? ''" required />
             <InputError :message="props.errors.department" />
+        </div>
+
+        <!-- Categoria da gôndola — obrigatória antes de configurar slots -->
+        <div class="grid gap-2">
+            <Label>Categoria da gôndola <span class="text-destructive">*</span></Label>
+            <p class="text-xs text-muted-foreground">
+                Define a categoria principal que será trabalhada nos slots desta gôndola.
+            </p>
+            <CategoryCascadeSelect
+                v-model="categoryId"
+                input-name="category_id"
+                :cascade-levels="5"
+                :cols="3"
+            />
+            <InputError :message="props.errors.category_id" />
         </div>
 
         <div class="grid gap-2">

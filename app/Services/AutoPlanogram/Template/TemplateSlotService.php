@@ -301,6 +301,8 @@ final class TemplateSlotService
             'code' => $template->code,
             'name' => $template->name,
             'department' => $template->department,
+            'category_id' => $template->category_id ?? null,
+            'category_name' => $template->category?->name ?? null,
             'is_active' => $template->is_active,
         ];
     }

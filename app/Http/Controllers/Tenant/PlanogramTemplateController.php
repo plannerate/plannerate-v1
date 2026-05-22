@@ -58,6 +58,7 @@ class PlanogramTemplateController extends Controller
             'code' => ['required', 'string', 'max:50'],
             'name' => ['required', 'string', 'max:255'],
             'department' => ['required', 'string', 'max:255'],
+            'category_id' => ['nullable', 'string', 'max:26'],
             'description' => ['nullable', 'string'],
             'is_active' => ['boolean'],
         ]);
@@ -122,6 +123,8 @@ class PlanogramTemplateController extends Controller
         unset($subdomain);
         $this->authorize('update', $planogramTemplate);
 
+        $planogramTemplate->load('category');
+
         return Inertia::render('tenant/planogram-templates/Form', [
             'subdomain' => $this->tenantSubdomain(),
             'template' => [
@@ -129,6 +132,8 @@ class PlanogramTemplateController extends Controller
                 'code' => $planogramTemplate->code,
                 'name' => $planogramTemplate->name,
                 'department' => $planogramTemplate->department,
+                'category_id' => $planogramTemplate->category_id,
+                'category_name' => $planogramTemplate->category?->name,
                 'description' => $planogramTemplate->description,
                 'is_active' => $planogramTemplate->is_active,
             ],
@@ -144,6 +149,7 @@ class PlanogramTemplateController extends Controller
             'code' => ['required', 'string', 'max:50'],
             'name' => ['required', 'string', 'max:255'],
             'department' => ['required', 'string', 'max:255'],
+            'category_id' => ['nullable', 'string', 'max:26'],
             'description' => ['nullable', 'string'],
             'is_active' => ['boolean'],
         ]);

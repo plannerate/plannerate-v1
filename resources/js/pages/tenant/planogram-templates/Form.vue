@@ -20,6 +20,8 @@ const props = defineProps<{
         code: string;
         name: string;
         department: string;
+        category_id: string | null;
+        category_name?: string | null;
         description: string | null;
         is_active: boolean;
     } | null;
@@ -177,21 +179,37 @@ const wizardSteps: WizardStep[] = [
                                 }}
                             </a>
                         </Button>
-                        <Button
-                            v-if="isEdit && slotsPath"
-                            variant="outline"
-                            type="button"
-                            as-child
-                        >
-                            <Link :href="slotsPath">
+                        <template v-if="isEdit && slotsPath">
+                            <Button
+                                v-if="props.template?.category_id"
+                                variant="outline"
+                                type="button"
+                                as-child
+                            >
+                                <Link :href="slotsPath">
+                                    <Layers class="size-4" />
+                                    {{
+                                        t(
+                                            'planogram-templates.wizard.configure_slots_button',
+                                        )
+                                    }}
+                                </Link>
+                            </Button>
+                            <Button
+                                v-else
+                                variant="outline"
+                                type="button"
+                                disabled
+                                :title="'Selecione uma categoria antes de configurar os slots'"
+                            >
                                 <Layers class="size-4" />
                                 {{
                                     t(
                                         'planogram-templates.wizard.configure_slots_button',
                                     )
                                 }}
-                            </Link>
-                        </Button>
+                            </Button>
+                        </template>
                     </template>
                 </FormCard>
             </Form>
