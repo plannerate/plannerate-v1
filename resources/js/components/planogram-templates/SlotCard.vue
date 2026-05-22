@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AlertTriangle, Pencil, X } from 'lucide-vue-next';
+import { AlertTriangle, BarChart2, Pencil, X } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useT } from '@/composables/useT';
 import { slotColor } from './types';
@@ -12,6 +12,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     edit: [];
     remove: [];
+    analyze: [];
 }>();
 
 const { t } = useT();
@@ -117,6 +118,14 @@ function onDragStart(event: DragEvent): void {
 
         <!-- Action buttons -->
         <div class="absolute right-1 top-1 flex gap-1">
+            <button
+                type="button"
+                class="rounded p-1 transition hover:bg-black/10"
+                title="Analisar produtos do slot"
+                @click.stop="emit('analyze')"
+            >
+                <BarChart2 class="size-4" />
+            </button>
             <button
                 type="button"
                 class="rounded p-1 transition hover:bg-black/10"

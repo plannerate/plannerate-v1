@@ -14,9 +14,7 @@ class RedirectClientRole
     public function handle(Request $request, Closure $next): Response
     {
         if ($request->user()?->hasRole('client')) {
-            return redirect()->route('tenant.editor.planograms.index', [
-                'subdomain' => $request->route('subdomain'),
-            ]);
+            return redirect()->route('tenant.editor.planograms.index');
         }
 
         return $next($request);

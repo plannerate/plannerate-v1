@@ -19,6 +19,7 @@ const emit = defineEmits<{
     'cell-click': [module: number, shelf: number, slot: PlanogramTemplateSlot | null];
     'slot-remove': [module: number, shelf: number];
     'slot-drop': [from: DragPosition, to: DragPosition];
+    'slot-analyze': [slot: PlanogramTemplateSlot];
 }>();
 
 const { t } = useT();
@@ -131,6 +132,7 @@ function isDragOver(module: number, shelf: number): boolean {
                         :slot="getSlot(m, shelf)!"
                         @edit="emit('cell-click', m, shelf, getSlot(m, shelf))"
                         @remove="emit('slot-remove', m, shelf)"
+                        @analyze="emit('slot-analyze', getSlot(m, shelf)!)"
                     />
 
                     <!-- Empty cell — click to add -->

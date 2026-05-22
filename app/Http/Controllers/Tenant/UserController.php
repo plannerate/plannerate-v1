@@ -91,7 +91,7 @@ class UserController extends Controller
             'message' => __('app.tenant.users.messages.created'),
         ]);
 
-        return to_route('tenant.users.index', $this->tenantRouteParameters());
+        return to_route('tenant.users.index');
     }
 
     public function edit(string $subdomain, User $user): Response
@@ -151,7 +151,7 @@ class UserController extends Controller
             'message' => __('app.tenant.users.messages.updated'),
         ]);
 
-        return to_route('tenant.users.index', $this->tenantRouteParameters());
+        return to_route('tenant.users.index');
     }
 
     public function destroy(string $subdomain, User $user): RedirectResponse
@@ -166,7 +166,7 @@ class UserController extends Controller
             'message' => __('app.tenant.users.messages.deleted'),
         ]);
 
-        return to_route('tenant.users.index', $this->tenantRouteParameters());
+        return to_route('tenant.users.index');
     }
 
     private function usersPaginator(string $search, string $isActive, string $trashed, int $perPage): LengthAwarePaginator

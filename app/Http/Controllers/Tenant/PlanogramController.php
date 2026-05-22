@@ -25,11 +25,11 @@ use Inertia\Response;
 
 class PlanogramController extends Controller
 {
+    use InteractsWithCategoryFilter;
     use InteractsWithDeferredIndex;
     use InteractsWithPlanLimits;
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
-    use InteractsWithCategoryFilter;
 
     public function index(Request $request): Response
     {
@@ -94,7 +94,7 @@ class PlanogramController extends Controller
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($type !== '', fn ($query) => $query->where('type', $type))
             ->when($storeId !== '', fn ($query) => $query->where('store_id', $storeId))
-            ->when(!empty($categoryIds), fn ($query) => $query->whereIn('category_id', $categoryIds))
+            ->when(! empty($categoryIds), fn ($query) => $query->whereIn('category_id', $categoryIds))
             ->latest()
             ->paginate($perPage)
             ->withQueryString()
@@ -127,7 +127,7 @@ class PlanogramController extends Controller
 
     public function kanban(): RedirectResponse
     {
-        return to_route('tenant.kanban.index', $this->tenantRouteParameters());
+        return to_route('tenant.kanban.index');
     }
 
     public function maps(Request $request): Response
@@ -373,7 +373,7 @@ class PlanogramController extends Controller
             'message' => __('app.tenant.planograms.messages.created'),
         ]);
 
-        return to_route('tenant.planograms.index', $this->tenantRouteParameters());
+        return to_route('tenant.planograms.index');
     }
 
     public function edit(string $subdomain, Planogram $planogram): Response
@@ -415,7 +415,7 @@ class PlanogramController extends Controller
             'message' => __('app.tenant.planograms.messages.updated'),
         ]);
 
-        return to_route('tenant.planograms.index', $this->tenantRouteParameters());
+        return to_route('tenant.planograms.index');
     }
 
     public function destroy(string $subdomain, Planogram $planogram): RedirectResponse
@@ -430,7 +430,7 @@ class PlanogramController extends Controller
             'message' => __('app.tenant.planograms.messages.deleted'),
         ]);
 
-        return to_route('tenant.planograms.index', $this->tenantRouteParameters());
+        return to_route('tenant.planograms.index');
     }
 
     /**

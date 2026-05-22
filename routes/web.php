@@ -3,7 +3,7 @@
 use App\Http\Controllers\Auth\TenantSocialiteController;
 use App\Http\Controllers\AutoPlanogramController;
 use App\Http\Controllers\Landlord\DashboardController as LandlordDashboardController;
-use App\Http\Controllers\Landlord\EanReferenceController as LandlordEanReferenceController;
+use App\Http\Controllers\Landlord\EanReferenceController;
 use App\Http\Controllers\Landlord\IntegrationApiController;
 use App\Http\Controllers\Landlord\ModuleController;
 use App\Http\Controllers\Landlord\NotificationController as LandlordNotificationController;
@@ -46,6 +46,7 @@ use App\Http\Controllers\Tenant\UserController as TenantUserController;
 use App\Http\Controllers\Tenant\WorkflowExecutionController;
 use App\Http\Controllers\Tenant\WorkflowKanbanController;
 use App\Http\Controllers\Tenant\WorkflowPlanogramStepController;
+use App\Http\Middleware\InjectTenantUrlDefaults;
 use App\Http\Middleware\SetPermissionTeamContext;
 use App\Support\Modules\ModuleSlug;
 use Illuminate\Support\Facades\Broadcast;
@@ -101,7 +102,7 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
         ->except(['show'])
         ->names('landlord.permissions');
 
-    Route::resource('ean-references', LandlordEanReferenceController::class)
+    Route::resource('ean-references', EanReferenceController::class)
         ->except(['show'])
         ->names('landlord.ean-references');
 
@@ -120,9 +121,9 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::delete('notifications/{id}', [LandlordNotificationController::class, 'destroy'])
         ->name('landlord.notifications.destroy');
 
-    Route::post('ean-references/image/upload', [LandlordEanReferenceController::class, 'uploadImage'])
+    Route::post('ean-references/image/upload', [EanReferenceController::class, 'uploadImage'])
         ->name('landlord.ean-references.image.upload');
-    Route::post('ean-references/{ean_reference}/fetch-image', [LandlordEanReferenceController::class, 'fetchImage'])
+    Route::post('ean-references/{ean_reference}/fetch-image', [EanReferenceController::class, 'fetchImage'])
         ->name('landlord.ean-references.fetch-image');
 
     Route::get('tenants/{tenant}/setup', [LandlordTenantController::class, 'setup'])
@@ -196,7 +197,7 @@ Route::middleware(['web', NeedsTenant::class])
 
 // ── TENANT (rotas que exigem tenant ativo) ────────────────────
 Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
-    ->middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
+    ->middleware(['web', 'auth', NeedsTenant::class, InjectTenantUrlDefaults::class, SetPermissionTeamContext::class])
     ->name('tenant.')
     ->group(function (): void {
 
@@ -228,7 +229,7 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
     });
 
 Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
-    ->middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class, 'tenant.client.redirect'])
+    ->middleware(['web', 'auth', NeedsTenant::class, InjectTenantUrlDefaults::class, SetPermissionTeamContext::class, 'tenant.client.redirect'])
     ->name('tenant.')
     ->group(function (): void {
         Route::get('/', [TenantDashboardController::class, 'index'])->name('dashboard');
@@ -468,7 +469,7 @@ Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
 
 // Broadcasting auth precisa rodar no contexto do tenant para autenticar canais privados
 Route::domain(sprintf('{subdomain}.%s', config('app.landlord_domain')))
-    ->middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
+    ->middleware(['web', 'auth', NeedsTenant::class, InjectTenantUrlDefaults::class, SetPermissionTeamContext::class])
     ->group(function (): void {
         Broadcast::routes();
     });

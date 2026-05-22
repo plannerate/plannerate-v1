@@ -111,7 +111,7 @@ class ProviderController extends Controller
             'message' => __('app.tenant.providers.messages.created'),
         ]);
 
-        return to_route('tenant.providers.index', $this->tenantRouteParameters());
+        return to_route('tenant.providers.index');
     }
 
     public function edit(string $subdomain, Provider $provider): Response
@@ -156,7 +156,7 @@ class ProviderController extends Controller
             'message' => __('app.tenant.providers.messages.updated'),
         ]);
 
-        return to_route('tenant.providers.index', $this->tenantRouteParameters());
+        return to_route('tenant.providers.index');
     }
 
     public function destroy(string $subdomain, Provider $provider): RedirectResponse
@@ -171,6 +171,6 @@ class ProviderController extends Controller
             'message' => __('app.tenant.providers.messages.deleted'),
         ]);
 
-        return to_route('tenant.providers.index', $this->tenantRouteParameters());
+        return to_route('tenant.providers.index');
     }
 }

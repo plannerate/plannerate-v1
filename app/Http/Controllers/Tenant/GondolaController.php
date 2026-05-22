@@ -125,7 +125,6 @@ class GondolaController extends Controller
         ]);
 
         return to_route('tenant.catalog.gondolas.index', [
-            ...$this->tenantRouteParameters(),
             'planogram' => $planogram->getKey(),
         ]);
     }
@@ -181,7 +180,6 @@ class GondolaController extends Controller
         ]);
 
         return to_route('tenant.catalog.gondolas.index', [
-            ...$this->tenantRouteParameters(),
             'planogram' => $planogram->getKey(),
         ]);
     }
@@ -201,7 +199,6 @@ class GondolaController extends Controller
         ]);
 
         return to_route('tenant.catalog.gondolas.index', [
-            ...$this->tenantRouteParameters(),
             'planogram' => $planogram->getKey(),
         ]);
     }

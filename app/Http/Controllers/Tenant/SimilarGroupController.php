@@ -128,7 +128,7 @@ class SimilarGroupController extends Controller
             'message' => 'Grupo de similares criado com sucesso.',
         ]);
 
-        return to_route('tenant.similar-groups.index', $this->tenantRouteParameters());
+        return to_route('tenant.similar-groups.index');
     }
 
     public function edit(string $subdomain, SimilarGroup $similarGroup): Response
@@ -177,7 +177,7 @@ class SimilarGroupController extends Controller
             'message' => 'Grupo de similares atualizado com sucesso.',
         ]);
 
-        return to_route('tenant.similar-groups.index', $this->tenantRouteParameters());
+        return to_route('tenant.similar-groups.index');
     }
 
     public function destroy(string $subdomain, SimilarGroup $similarGroup): RedirectResponse
@@ -193,7 +193,7 @@ class SimilarGroupController extends Controller
             'message' => 'Grupo de similares excluído com sucesso.',
         ]);
 
-        return to_route('tenant.similar-groups.index', $this->tenantRouteParameters());
+        return to_route('tenant.similar-groups.index');
     }
 
     /**

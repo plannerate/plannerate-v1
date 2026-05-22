@@ -113,7 +113,7 @@ class ClusterController extends Controller
             'message' => __('app.tenant.clusters.messages.created'),
         ]);
 
-        return to_route('tenant.clusters.index', $this->tenantRouteParameters());
+        return to_route('tenant.clusters.index');
     }
 
     public function edit(string $subdomain, Cluster $cluster): Response
@@ -150,7 +150,7 @@ class ClusterController extends Controller
             'message' => __('app.tenant.clusters.messages.updated'),
         ]);
 
-        return to_route('tenant.clusters.index', $this->tenantRouteParameters());
+        return to_route('tenant.clusters.index');
     }
 
     public function destroy(string $subdomain, Cluster $cluster): RedirectResponse
@@ -165,7 +165,7 @@ class ClusterController extends Controller
             'message' => __('app.tenant.clusters.messages.deleted'),
         ]);
 
-        return to_route('tenant.clusters.index', $this->tenantRouteParameters());
+        return to_route('tenant.clusters.index');
     }
 
     /**

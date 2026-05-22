@@ -16,6 +16,7 @@ import PlanogramConfirmDialog from '@/components/planogram-templates/PlanogramCo
 import SlotCopyPromptDialog from '@/components/planogram-templates/SlotCopyPromptDialog.vue';
 import type { CopyPromptAction } from '@/components/planogram-templates/SlotCopyPromptDialog.vue';
 import SlotEditorModal from '@/components/planogram-templates/SlotEditorModal.vue';
+import SlotReviewDrawer from '@/components/planogram-templates/SlotReviewDrawer.vue';
 import type { SlotDraft } from '@/components/planogram-templates/slot-editor';
 import type {
     PlanogramSubtemplate,
@@ -230,6 +231,15 @@ const moduleDefaultsOpen = ref(false);
 const editingModule = ref(1);
 const editingShelf = ref(1);
 const editingSlot = ref<PlanogramTemplateSlot | null>(null);
+
+// ── Slot review drawer ─────────────────────────────────────────────────────────
+const reviewDrawerOpen = ref(false);
+const reviewDrawerSlot = ref<PlanogramTemplateSlot | null>(null);
+
+function openReviewDrawer(slot: PlanogramTemplateSlot): void {
+    reviewDrawerSlot.value = slot;
+    reviewDrawerOpen.value = true;
+}
 
 // ── Cópia em cascata (prateleiras / módulos) ─────────────────────────────────────
 const copyPromptOpen = ref(false);
@@ -921,6 +931,7 @@ const breadcrumbs = [
                 @cell-click="openSlotEditor"
                 @slot-remove="removeSlot"
                 @slot-drop="handleSlotDrop"
+                @slot-analyze="openReviewDrawer"
             />
 
             <!-- Navigation buttons -->
@@ -975,5 +986,12 @@ const breadcrumbs = [
         :actions="copyPromptContent.actions"
         :busy="copyBusy"
         @action="onCopyPromptAction"
+    />
+
+    <SlotReviewDrawer
+        v-model:open="reviewDrawerOpen"
+        :slot="reviewDrawerSlot"
+        :subdomain="subdomain"
+        :template-id="template.id"
     />
 </template>

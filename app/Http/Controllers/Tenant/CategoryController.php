@@ -24,11 +24,11 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CategoryController extends Controller
 {
+    use InteractsWithCategoryFilter;
     use InteractsWithDeferredIndex;
     use InteractsWithPlanLimits;
     use InteractsWithTenantContext;
     use InteractsWithTrashedFilter;
-    use InteractsWithCategoryFilter;
 
     private const MERCADOLOGICO_UI_LEVELS = 7;
 
@@ -61,7 +61,7 @@ class CategoryController extends Controller
         }
 
         return response()->json(
-            $query->get(['id', 'name', 'level_name', 'nivel'])->map(fn(Category $category): array => [
+            $query->get(['id', 'name', 'level_name', 'nivel'])->map(fn (Category $category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
                 'level_name' => $category->level_name,
@@ -85,7 +85,7 @@ class CategoryController extends Controller
             return response()->json(['path' => []]);
         }
 
-        $path = $category->getFullHierarchy()->map(fn(Category $node): array => [
+        $path = $category->getFullHierarchy()->map(fn (Category $node): array => [
             'id' => $node->id,
             'name' => $node->name,
             'level_name' => $node->level_name,
@@ -109,7 +109,7 @@ class CategoryController extends Controller
         $requestedDirection = strtolower((string) $request->query('direction', 'asc'));
         $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'asc';
 
-        return $this->renderDeferredIndex('tenant/categories/Index', 'categories', fn(): LengthAwarePaginator => $this->categoriesPaginator(
+        return $this->renderDeferredIndex('tenant/categories/Index', 'categories', fn (): LengthAwarePaginator => $this->categoriesPaginator(
             $search,
             $status,
             $levelName,
@@ -152,21 +152,21 @@ class CategoryController extends Controller
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
-                        ->where('name', 'like', '%' . $search . '%')
-                        ->orWhere('slug', 'like', '%' . $search . '%');
+                        ->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('slug', 'like', '%'.$search.'%');
                 });
             })
-            ->when($status !== '', fn($query) => $query->where('status', $status))
-            ->when($levelName !== '', fn($query) => $query->where('level_name', $levelName))
-            ->when(!empty($categoriesIds), fn($query) => $query->whereIn('id', $categoriesIds))
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($levelName !== '', fn ($query) => $query->where('level_name', $levelName))
+            ->when(! empty($categoriesIds), fn ($query) => $query->whereIn('id', $categoriesIds))
             ->when(
                 $sort !== null,
-                fn($query) => $query->orderBy($sort, $direction),
-                fn($query) => $query->latest(),
+                fn ($query) => $query->orderBy($sort, $direction),
+                fn ($query) => $query->latest(),
             )
             ->paginate($perPage)
             ->withQueryString()
-            ->through(fn(Category $category): array => [
+            ->through(fn (Category $category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
                 'slug' => $category->slug,
@@ -207,7 +207,7 @@ class CategoryController extends Controller
             'message' => __('app.tenant.categories.messages.created'),
         ]);
 
-        return to_route('tenant.categories.index', $this->tenantRouteParameters());
+        return to_route('tenant.categories.index');
     }
 
     public function edit(string $subdomain, Category $category): Response
@@ -253,7 +253,7 @@ class CategoryController extends Controller
             'message' => __('app.tenant.categories.messages.updated'),
         ]);
 
-        return to_route('tenant.categories.index', $this->tenantRouteParameters());
+        return to_route('tenant.categories.index');
     }
 
     public function destroy(string $subdomain, Category $category): RedirectResponse
@@ -268,7 +268,7 @@ class CategoryController extends Controller
             'message' => __('app.tenant.categories.messages.deleted'),
         ]);
 
-        return to_route('tenant.categories.index', $this->tenantRouteParameters());
+        return to_route('tenant.categories.index');
     }
 
     public function import(ImportCategorySpreadsheetRequest $request): RedirectResponse
@@ -277,7 +277,7 @@ class CategoryController extends Controller
 
         $uploadedFile = $request->file('spreadsheet');
         if ($uploadedFile === null) {
-            return to_route('tenant.categories.index', $this->tenantRouteParameters());
+            return to_route('tenant.categories.index');
         }
 
         $disk = 'local';
@@ -296,7 +296,7 @@ class CategoryController extends Controller
             'message' => __('app.tenant.categories.messages.import_queued'),
         ]);
 
-        return to_route('tenant.categories.index', $this->tenantRouteParameters());
+        return to_route('tenant.categories.index');
     }
 
     public function exportTemplate(CategoryExportService $service): BinaryFileResponse
@@ -332,10 +332,10 @@ class CategoryController extends Controller
     private function parentCategoriesForSelect(?string $ignoreId = null): array
     {
         return Category::query()
-            ->when($ignoreId !== null, fn($query) => $query->where('id', '!=', $ignoreId))
+            ->when($ignoreId !== null, fn ($query) => $query->where('id', '!=', $ignoreId))
             ->orderBy('name')
             ->get(['id', 'name'])
-            ->map(fn(Category $category): array => [
+            ->map(fn (Category $category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
             ])

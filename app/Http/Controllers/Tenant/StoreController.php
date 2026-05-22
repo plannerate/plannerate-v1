@@ -113,7 +113,7 @@ class StoreController extends Controller
             'message' => __('app.tenant.stores.messages.created'),
         ]);
 
-        return to_route('tenant.stores.index', $this->tenantRouteParameters());
+        return to_route('tenant.stores.index');
     }
 
     public function edit(string $subdomain, Store $store): Response
@@ -160,7 +160,7 @@ class StoreController extends Controller
             'message' => __('app.tenant.stores.messages.updated'),
         ]);
 
-        return to_route('tenant.stores.index', $this->tenantRouteParameters());
+        return to_route('tenant.stores.index');
     }
 
     /**
@@ -291,6 +291,6 @@ class StoreController extends Controller
             'message' => __('app.tenant.stores.messages.deleted'),
         ]);
 
-        return to_route('tenant.stores.index', $this->tenantRouteParameters());
+        return to_route('tenant.stores.index');
     }
 }

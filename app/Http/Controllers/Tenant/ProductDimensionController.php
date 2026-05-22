@@ -63,7 +63,7 @@ class ProductDimensionController extends Controller
             'message' => 'Dimensões atualizadas com sucesso.',
         ]);
 
-        return to_route('tenant.dimensions.index', $this->tenantRouteParameters());
+        return to_route('tenant.dimensions.index');
     }
 
     public function syncFromReference(string $subdomain, string $product): RedirectResponse
@@ -92,18 +92,16 @@ class ProductDimensionController extends Controller
     {
         unset($subdomain);
 
-        
         $this->authorize('viewAny', Product::class);
 
         $validated = $request->validate([
             'product_ids' => ['required', 'array', 'min:1'],
-            'product_ids.*' => ['required' ],
+            'product_ids.*' => ['required'],
         ]);
 
         $productIds = collect($validated['product_ids'])
             ->filter(fn (mixed $id): bool => is_string($id) && $id !== '')
             ->values();
- 
 
         $products = Product::query()
             ->whereIn('id', $productIds->all())

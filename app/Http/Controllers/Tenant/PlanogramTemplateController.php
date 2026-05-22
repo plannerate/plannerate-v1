@@ -73,7 +73,7 @@ class PlanogramTemplateController extends Controller
             'message' => __('app.tenant.planogram_templates.messages.created'),
         ]);
 
-        return to_route('tenant.planogram-templates.index', $this->tenantRouteParameters());
+        return to_route('tenant.planogram-templates.index');
     }
 
     public function importPage(string $subdomain): Response
@@ -115,7 +115,7 @@ class PlanogramTemplateController extends Controller
             ]),
         ]);
 
-        return to_route('tenant.planogram-templates.index', $this->tenantRouteParameters());
+        return to_route('tenant.planogram-templates.index');
     }
 
     public function edit(string $subdomain, PlanogramTemplate $planogramTemplate): Response
@@ -161,7 +161,7 @@ class PlanogramTemplateController extends Controller
             'message' => __('app.tenant.planogram_templates.messages.updated'),
         ]);
 
-        return to_route('tenant.planogram-templates.index', $this->tenantRouteParameters());
+        return to_route('tenant.planogram-templates.index');
     }
 
     public function show(string $subdomain, PlanogramTemplate $planogramTemplate): Response
@@ -220,7 +220,7 @@ class PlanogramTemplateController extends Controller
             'message' => __('app.tenant.planogram-templates.messages.deleted'),
         ]);
 
-        return to_route('tenant.planogram-templates.index', $this->tenantRouteParameters());
+        return to_route('tenant.planogram-templates.index');
     }
 
     private function templatesPaginator(string $search, int $perPage): LengthAwarePaginator

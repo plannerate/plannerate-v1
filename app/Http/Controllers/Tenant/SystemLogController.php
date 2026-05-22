@@ -74,7 +74,6 @@ class SystemLogController extends Controller
         ]);
 
         return to_route('tenant.system-logs.index', [
-            ...$this->tenantRouteParameters(),
             'file' => $selectedFile,
         ]);
     }

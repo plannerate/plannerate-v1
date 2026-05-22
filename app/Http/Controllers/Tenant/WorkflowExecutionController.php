@@ -170,16 +170,13 @@ class WorkflowExecutionController extends Controller
 
     public function requestAbandonment(Request $request, string $subdomain, WorkflowGondolaExecution $execution): JsonResponse
     {
+        unset($subdomain);
         $this->authorize('requestAbandonment', $execution);
 
         $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
 
         $planogramId = $execution->gondola()->value('planogram_id');
-        $routeParameters = ['subdomain' => $subdomain];
-
-        if ($planogramId !== null) {
-            $routeParameters['planogram_id'] = $planogramId;
-        }
+        $routeParameters = $planogramId !== null ? ['planogram_id' => $planogramId] : [];
 
         $this->kanbanService->requestAbandonment(
             $execution,
