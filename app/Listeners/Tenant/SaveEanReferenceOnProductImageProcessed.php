@@ -88,8 +88,8 @@ class SaveEanReferenceOnProductImageProcessed
             $attributes['unit'] = $product->unit;
         }
 
-        if ($this->filled($product->dimensions_status)) {
-            $attributes['dimension_status'] = $product->dimensions_status;
+        if ($this->filled($product->dimension_publish_status)) {
+            $attributes['dimension_publish_status'] = $product->dimension_publish_status;
         }
 
         // Brand / packaging

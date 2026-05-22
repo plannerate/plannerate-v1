@@ -39,4 +39,9 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
     ],
 
+    'cosmos' => [
+        'token' => env('COSMOS_TOKEN'),
+        'url' => env('COSMOS_URL', 'https://api.cosmos.bluesoft.com.br'),
+    ],
+
 ];

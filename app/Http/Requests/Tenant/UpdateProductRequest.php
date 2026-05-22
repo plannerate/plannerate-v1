@@ -73,7 +73,7 @@ class UpdateProductRequest extends FormRequest
             'depth' => ['nullable', 'numeric', 'min:0'],
             'weight' => ['nullable', 'numeric', 'min:0'],
             'unit' => ['nullable', 'string', 'max:255'],
-            'dimensions_status' => ['required', Rule::in(['draft', 'published'])],
+            'dimension_publish_status' => ['required', Rule::in(['draft', 'published'])],
             'dimensions_description' => ['nullable', 'string', 'max:255'],
             'store_ids' => ['nullable', 'array'],
             'store_ids.*' => ['ulid', Rule::exists($storesTable, 'id')->where('tenant_id', $tenantId)],

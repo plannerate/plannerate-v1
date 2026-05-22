@@ -23,6 +23,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Models\WorkflowGondolaExecution;
 use App\Models\WorkflowTemplate;
+use App\Observers\ProductDescriptionEmbeddingObserver;
 use App\Observers\TenantObserver;
 use App\Policies\CategoryPolicy;
 use App\Policies\ClusterPolicy;
@@ -74,6 +75,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->ensureRuntimeDirectories();
         Tenant::observe(TenantObserver::class);
+        Product::observe(ProductDescriptionEmbeddingObserver::class);
         Event::listen(NotificationSent::class, UpdateNotificationTenantId::class);
         $this->registerPolicies();
         $this->configureDefaults();

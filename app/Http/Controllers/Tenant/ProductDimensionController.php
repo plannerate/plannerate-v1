@@ -27,9 +27,9 @@ class ProductDimensionController extends Controller
 
         $search = $this->requestString($request, 'search');
         $categoryId = $this->requestString($request, 'category_id');
-        $dimensionStatus = $this->requestEnum($request, 'dimension_status', ['draft', 'published']);
+        $dimensionStatus = $this->requestEnum($request, 'dimension_publish_status', ['draft', 'published']);
         $requestedSort = trim((string) $request->query('sort', ''));
-        $sort = in_array($requestedSort, ['name', 'ean', 'codigo_erp', 'dimension_status', 'width', 'height', 'depth'], true) ? $requestedSort : null;
+        $sort = in_array($requestedSort, ['name', 'ean', 'codigo_erp', 'dimension_publish_status', 'width', 'height', 'depth'], true) ? $requestedSort : null;
         $requestedDirection = strtolower((string) $request->query('direction', 'asc'));
         $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'asc';
 
@@ -44,7 +44,7 @@ class ProductDimensionController extends Controller
             'filters' => [
                 'search' => $search,
                 'category_id' => $categoryId,
-                'dimension_status' => $dimensionStatus,
+                'dimension_publish_status' => $dimensionStatus,
             ],
         ]);
     }
@@ -177,7 +177,7 @@ class ProductDimensionController extends Controller
             $updates['unit'] = $reference->unit;
         }
 
-        $updates['dimension_status'] = 'published';
+        $updates['dimension_publish_status'] = 'published';
         $updates['status'] = 'published';
         $updates['has_dimensions'] = true;
 
@@ -210,8 +210,8 @@ class ProductDimensionController extends Controller
             $updates['status'] = 'published';
         }
 
-        if ($product->dimension_status !== 'published') {
-            $updates['dimension_status'] = 'published';
+        if ($product->dimension_publish_status !== 'published') {
+            $updates['dimension_publish_status'] = 'published';
         }
 
         if (! $product->has_dimensions) {
@@ -247,7 +247,7 @@ class ProductDimensionController extends Controller
                 });
             })
             ->when($categoryIds !== [], fn ($query) => $query->whereIn('category_id', $categoryIds))
-            ->when($dimensionStatus !== '', fn ($query) => $query->where('dimension_status', $dimensionStatus))
+            ->when($dimensionStatus !== '', fn ($query) => $query->where('dimension_publish_status', $dimensionStatus))
             ->when(
                 $sort !== null,
                 fn ($query) => $query->orderBy($sort, $direction),
@@ -265,7 +265,7 @@ class ProductDimensionController extends Controller
                 'depth' => $product->depth,
                 'weight' => $product->weight,
                 'unit' => $product->unit,
-                'dimension_status' => $product->dimension_status,
+                'dimension_publish_status' => $product->dimension_publish_status,
             ]);
     }
 }

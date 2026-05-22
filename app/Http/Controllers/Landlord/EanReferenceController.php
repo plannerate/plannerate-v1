@@ -135,7 +135,7 @@ class EanReferenceController extends Controller
                 'weight' => $eanReference->weight,
                 'unit' => $eanReference->unit,
                 'has_dimensions' => $eanReference->has_dimensions,
-                'dimension_status' => $eanReference->dimension_status,
+                'dimension_status' => $eanReference->dimension_publish_status,
                 'image_front_url' => $eanReference->image_front_url,
                 'image_side_url' => $eanReference->image_side_url,
                 'image_top_url' => $eanReference->image_top_url,

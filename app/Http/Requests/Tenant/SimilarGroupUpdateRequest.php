@@ -47,7 +47,7 @@ class SimilarGroupUpdateRequest extends FormRequest
             'depth' => ['nullable', 'numeric', 'min:0'],
             'weight' => ['nullable', 'numeric', 'min:0'],
             'unit' => ['nullable', 'string', 'max:20'],
-            'dimension_status' => ['nullable', Rule::in(['draft', 'published'])],
+            'dimension_publish_status' => ['nullable', Rule::in(['draft', 'published'])],
         ];
     }
 }

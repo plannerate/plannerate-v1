@@ -24,6 +24,8 @@ class GondolaPayloadService
         $templateSlotMap = $this->resolveTemplateSlotMap($gondola);
         $sectionModuleMap = $this->resolveSectionModuleMap($gondola);
 
+        $gondola->loadMissing('generationOverrides');
+
         $recordData = [
             'id' => $gondola->id,
             'name' => $gondola->name,
@@ -47,6 +49,25 @@ class GondolaPayloadService
             'created_at' => $gondola->created_at?->toISOString(),
             'updated_at' => $gondola->updated_at?->toISOString(),
             'deleted_at' => $gondola->deleted_at?->toISOString(),
+            'generation_overrides' => $gondola->relationLoaded('generationOverrides')
+                ? $gondola->generationOverrides->map(fn ($override) => [
+                    'id' => (string) $override->id,
+                    'category_id' => $override->category_id,
+                    'min_facings' => $override->min_facings,
+                    'max_facings' => $override->max_facings,
+                    'price_order' => $override->price_order?->value,
+                    'size_order' => $override->size_order?->value,
+                    'brand_exposure' => $override->brand_exposure?->value,
+                    'flavor_exposure' => $override->flavor_exposure?->value,
+                    'space_fallback' => $override->space_fallback?->value,
+                    'facing_expansion' => $override->facing_expansion?->value,
+                    'use_target_stock' => $override->use_target_stock,
+                    'role_override' => $override->role_override?->value,
+                    'max_share_per_sku' => $override->max_share_per_sku,
+                    'max_share_per_brand' => $override->max_share_per_brand,
+                    'max_share_per_subcategory' => $override->max_share_per_subcategory,
+                ])->values()->all()
+                : [],
         ];
 
         if ($gondola->relationLoaded('sections')) {

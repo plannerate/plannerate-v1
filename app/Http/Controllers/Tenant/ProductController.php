@@ -402,7 +402,7 @@ class ProductController extends Controller
             'depth' => $product->depth,
             'weight' => $product->weight,
             'unit' => $product->unit,
-            'dimensions_status' => $product->dimensions_status,
+            'dimensions_status' => $product->dimension_publish_status,
             'dimensions_description' => $product->dimensions_description,
             'image_url' => $product->image_url,
             'store_ids' => $product->stores()->pluck('stores.id')->all(),

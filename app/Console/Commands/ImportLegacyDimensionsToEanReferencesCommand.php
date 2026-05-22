@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -98,7 +97,7 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
                     'weight' => $weight,
                     'unit' => $unit,
                     'has_dimensions' => $hasDimensions,
-                    'dimension_status' => $dimensionStatus,
+                    'dimension_publish_status' => $dimensionStatus,
                     'updated_at' => $now,
                     'created_at' => $now,
                     'deleted_at' => null,
@@ -111,7 +110,7 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
                     ->upsert(
                         array_values($payload),
                         ['ean'],
-                        ['width', 'height', 'depth', 'weight', 'unit', 'has_dimensions', 'dimension_status', 'updated_at', 'deleted_at']
+                        ['width', 'height', 'depth', 'weight', 'unit', 'has_dimensions', 'dimension_publish_status', 'updated_at', 'deleted_at']
                     );
 
                 $upserted += count($payload);
@@ -124,7 +123,6 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
     }
 
     /**
-     * @param  string $ean
      * @return string Apenas os dígitos do EAN, sem espaços ou caracteres especiais
      */
     private function normalizeEan(string $ean): string

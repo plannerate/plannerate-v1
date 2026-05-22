@@ -196,7 +196,7 @@ class SimilarGroupController extends Controller
     private function productOptions(string $search, int $limit): array
     {
         return Product::query()
-            ->select(['id', 'name', 'ean', 'codigo_erp', 'brand', 'width', 'height', 'depth', 'weight', 'unit', 'dimension_status'])
+            ->select(['id', 'name', 'ean', 'codigo_erp', 'brand', 'width', 'height', 'depth', 'weight', 'unit', 'dimension_publish_status'])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($where) use ($search): void {
                     $where
@@ -230,7 +230,7 @@ class SimilarGroupController extends Controller
                 'depth' => $product->depth,
                 'weight' => $product->weight,
                 'unit' => $product->unit,
-                'dimension_status' => $product->dimension_status,
+                'dimension_publish_status' => $product->dimension_publish_status,
             ],
         ];
     }
@@ -345,7 +345,7 @@ class SimilarGroupController extends Controller
             'depth' => $validated['depth'] ?? null,
             'weight' => $validated['weight'] ?? null,
             'unit' => $validated['unit'] ?? 'cm',
-            'dimension_status' => $validated['dimension_status'] ?? 'published',
+            'dimension_publish_status' => $validated['dimension_publish_status'] ?? 'published',
         ];
         $attributes['has_dimensions'] = $this->hasDimensions($attributes);
 
@@ -397,7 +397,7 @@ class SimilarGroupController extends Controller
             'depth' => $this->sharedProductValue($products, 'depth'),
             'weight' => $this->sharedProductValue($products, 'weight'),
             'unit' => $this->sharedProductValue($products, 'unit') ?: 'cm',
-            'dimension_status' => $this->sharedProductValue($products, 'dimension_status') ?: 'published',
+            'dimension_publish_status' => $this->sharedProductValue($products, 'dimension_publish_status') ?: 'published',
         ];
     }
 

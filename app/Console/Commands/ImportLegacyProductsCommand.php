@@ -361,7 +361,7 @@ class ImportLegacyProductsCommand extends Command
                 // O raw INSERT não aciona defaults do banco quando o valor é passado explicitamente como null.
                 $row['unit'] = (isset($row['unit']) && is_string($row['unit']) && $row['unit'] !== '') ? $row['unit'] : 'cm';
                 $row['status'] = (isset($row['status']) && $row['status'] !== '') ? $row['status'] : 'draft';
-                $row['dimension_status'] = (isset($row['dimension_status']) && $row['dimension_status'] !== '') ? $row['dimension_status'] : 'published';
+                $row['dimension_publish_status'] = (isset($row['dimension_publish_status']) && $row['dimension_publish_status'] !== '') ? $row['dimension_publish_status'] : 'published';
                 $row['has_dimensions'] = isset($row['has_dimensions']) ? (bool) $row['has_dimensions'] : false;
                 $row['stackable'] = isset($row['stackable']) ? (bool) $row['stackable'] : false;
                 $row['perishable'] = isset($row['perishable']) ? (bool) $row['perishable'] : false;

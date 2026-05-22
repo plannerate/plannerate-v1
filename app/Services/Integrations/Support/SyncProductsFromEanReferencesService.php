@@ -187,7 +187,7 @@ class SyncProductsFromEanReferencesService
             'packaging_size' => $reference->packaging_size,
             'measurement_unit' => $reference->measurement_unit,
             'unit' => $reference->unit,
-            'dimension_status' => $reference->dimension_status,
+            'dimension_publish_status' => $reference->dimension_publish_status,
         ] as $column => $value) {
             if (($product->{$column} === null || $product->{$column} === '') && is_string($value) && $value !== '') {
                 $updates[$column] = $value;

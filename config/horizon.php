@@ -263,6 +263,18 @@ return [
             'memory' => 512,
             'nice' => 10,
         ],
+        // Fila dedicada para pesquisa de dimensões com Gemini — respeita rate limit 15 req/min
+        'supervisor-ai-research' => [
+            'connection' => 'redis',
+            'queue' => ['ai-research'],
+            'balance' => 'simple',
+            'minProcesses' => 1,
+            'maxProcesses' => env('AI_RESEARCH_MAX_PROCESSES', 3),
+            'tries' => 3,
+            'timeout' => 150,
+            'memory' => 256,
+            'nice' => 5,
+        ],
     ],
 
     'environments' => [

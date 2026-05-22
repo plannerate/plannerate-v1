@@ -34,7 +34,7 @@ class EanReference extends Model
         'weight',
         'unit',
         'has_dimensions',
-        'dimension_status',
+        'dimension_publish_status',
         'image_front_url',
         'image_side_url',
         'image_top_url',

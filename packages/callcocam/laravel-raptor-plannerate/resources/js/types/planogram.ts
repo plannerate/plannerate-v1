@@ -143,6 +143,24 @@ export interface Hole {
     position: number;
 }
 
+export interface GondolaSlotOverride {
+    id: string;
+    category_id: string | null;
+    min_facings: number | null;
+    max_facings: number | null;
+    price_order: string | null;
+    size_order: string | null;
+    brand_exposure: string | null;
+    flavor_exposure: string | null;
+    space_fallback: string | null;
+    facing_expansion: string | null;
+    use_target_stock: boolean | null;
+    role_override: string | null;
+    max_share_per_sku: number | null;
+    max_share_per_brand: number | null;
+    max_share_per_subcategory: number | null;
+}
+
 export interface Gondola {
     id: string;
     name?: string;
@@ -162,6 +180,7 @@ export interface Gondola {
     planogram_id?: string;
     template_id?: string | null;
     generation_mode?: 'manual' | 'template' | 'automatic' | null;
+    generation_overrides?: GondolaSlotOverride[];
     linked_map_gondola_id?: string | null;
     linked_map_gondola_category?: string | null;
     created_at?: string;
