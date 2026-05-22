@@ -429,8 +429,18 @@ final class AutoPlanogramService
         // Modo template: denominar só pelos produtos que alcançaram algum slot; modo auto: pool completo
         $totalProducts = $reachableCount ?? $input->products->count();
         $placed = $result->placedSegments->count();
+
+        // Produtos únicos definitivamente sem espaço: exclui os que foram rejeitados de um slot
+        // mas colocados em outro da mesma categoria (contagem por eventos seria enganosa).
+        $placedProductIds = $result->placedSegments
+            ->flatMap(fn ($seg) => $seg->layers->map(fn ($l) => $l->productId))
+            ->flip()
+            ->all();
         $rejectedSpace = $result->rejectedProducts
-            ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
+            ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace
+                && $r['product'] !== null
+                && ! isset($placedProductIds[$r['product']->id]))
+            ->unique(fn ($r) => $r['product']->id)
             ->count();
         $rejectedHeight = $result->rejectedProducts
             ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::HeightExceedsShelf)

@@ -244,6 +244,21 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             $this->recordSubtemplateUsed($settings->planogramId, $subtemplate->getKey());
         }
 
+        $placedProductIds = $placed
+            ->flatMap(fn ($seg) => $seg->layers->map(fn ($l) => $l->productId))
+            ->flip()
+            ->all();
+
+        // Tentativas = eventos por slot (mesmo produto pode aparecer N vezes).
+        // Definitivos = produtos únicos que não couberam em nenhum slot da sua categoria.
+        $tentativasSemEspaco = $rejected->whereNotNull('product')->where('reason', PlacementFailureReason::NoHorizontalSpace)->count();
+        $definitivosSemEspaco = $rejected
+            ->filter(fn ($r) => $r['product'] !== null
+                && $r['reason'] === PlacementFailureReason::NoHorizontalSpace
+                && ! isset($placedProductIds[$r['product']->id]))
+            ->unique(fn ($r) => $r['product']->id)
+            ->count();
+
         Log::info('TemplatePlacementEngine: resultado', [
             'template_id' => $settings->templateId,
             'subtemplate_code' => $subtemplate->code,
@@ -254,7 +269,8 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             'slots_sem_matching' => $groupingsSemProduto,
             'slots_sem_prateleira' => $rejected->whereNull('product')->count(),
             'segmentos_criados' => $placed->count(),
-            'rejeitados_sem_espaco' => $rejected->whereNotNull('product')->where('reason', PlacementFailureReason::NoHorizontalSpace)->count(),
+            'tentativas_sem_espaco' => $tentativasSemEspaco,
+            'rejeitados_sem_espaco' => $definitivosSemEspaco,
             'rejeitados_sem_dimensao' => $rejected->whereNotNull('product')->where('reason', PlacementFailureReason::MissingDimensions)->count(),
         ]);
 
