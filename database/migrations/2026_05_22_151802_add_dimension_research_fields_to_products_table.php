@@ -11,20 +11,20 @@ return new class extends Migration
 
     public function up(): void
     {
-        if (DB::connection($this->connection)->getDriverName() !== 'pgsql') {
-            return;
-        }
+        $isPgsql = DB::connection($this->connection)->getDriverName() === 'pgsql';
 
+        // Renomeia coluna legacy (enum draft/published) → dimension_publish_status
         Schema::connection($this->connection)->table('products', function (Blueprint $table): void {
             $table->renameColumn('dimension_status', 'dimension_publish_status');
         });
 
+        // Adiciona os novos campos do pipeline AI (funciona em qualquer driver)
         Schema::connection($this->connection)->table('products', function (Blueprint $table): void {
             $table->string('dimension_status')->default('pending')
                 ->comment('Pipeline AI: pending|researching|awaiting_approval|approved|not_found|rejected')
                 ->after('has_dimensions');
 
-            $table->ulid('similar_to_product_id')->nullable()
+            $table->string('similar_to_product_id')->nullable()
                 ->comment('Produto referência usado na similaridade local')
                 ->after('dimension_status');
 
@@ -59,19 +59,21 @@ return new class extends Migration
                 ->after('dimension_approved_at');
         });
 
-        // Coluna vector(768) — requer pgvector instalado
+        if (! $isPgsql) {
+            return;
+        }
+
+        // Coluna vector(768) e índice HNSW — exclusivos do pgsql + pgvector
         DB::connection($this->connection)->statement(
             'ALTER TABLE products ADD COLUMN IF NOT EXISTS description_embedding vector(768)'
         );
 
-        // Produtos que já têm dimensões completas ficam como approved
         DB::connection($this->connection)->statement(
             "UPDATE products SET dimension_status = 'approved'
              WHERE width IS NOT NULL AND height IS NOT NULL AND depth IS NOT NULL
                AND width > 0 AND height > 0 AND depth > 0"
         );
 
-        // Índice HNSW para busca por similaridade cosine
         DB::connection($this->connection)->statement(
             'CREATE INDEX IF NOT EXISTS products_description_embedding_idx
              ON products USING hnsw (description_embedding vector_cosine_ops)'
@@ -87,17 +89,21 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (DB::connection($this->connection)->getDriverName() !== 'pgsql') {
-            return;
+        $isPgsql = DB::connection($this->connection)->getDriverName() === 'pgsql';
+
+        if ($isPgsql) {
+            Schema::connection($this->connection)->table('products', function (Blueprint $table): void {
+                $table->dropForeign(['similar_to_product_id']);
+            });
+
+            DB::connection($this->connection)->statement(
+                'DROP INDEX IF EXISTS products_description_embedding_idx'
+            );
+
+            DB::connection($this->connection)->statement(
+                'ALTER TABLE products DROP COLUMN IF EXISTS description_embedding'
+            );
         }
-
-        Schema::connection($this->connection)->table('products', function (Blueprint $table): void {
-            $table->dropForeign(['similar_to_product_id']);
-        });
-
-        DB::connection($this->connection)->statement(
-            'DROP INDEX IF EXISTS products_description_embedding_idx'
-        );
 
         Schema::connection($this->connection)->table('products', function (Blueprint $table): void {
             $table->dropColumn([
@@ -107,10 +113,6 @@ return new class extends Migration
                 'dimension_approved_at', 'net_content',
             ]);
         });
-
-        DB::connection($this->connection)->statement(
-            'ALTER TABLE products DROP COLUMN IF EXISTS description_embedding'
-        );
 
         Schema::connection($this->connection)->table('products', function (Blueprint $table): void {
             $table->renameColumn('dimension_publish_status', 'dimension_status');

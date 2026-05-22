@@ -27,6 +27,11 @@ class ProvisionTenantDatabaseJob implements NotTenantAware, ShouldQueue
 
     public function handle(): void
     {
+        // In testing, the database is managed by the test suite itself
+        if (app()->environment('testing')) {
+            return;
+        }
+
         $connectionName = (string) (config('multitenancy.tenant_database_connection_name') ?: 'tenant');
         $originalDatabase = config("database.connections.{$connectionName}.database");
         $landlordConnection = DB::connection('landlord');

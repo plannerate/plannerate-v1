@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function (): void {
-    config(['permission.rbac_enabled' => true]);
+    config()->set('permission.rbac_enabled', true);
 
     Artisan::call('migrate:fresh', [
         '--database' => 'landlord',
@@ -22,6 +22,7 @@ beforeEach(function (): void {
     ]);
 
     Artisan::call('migrate:fresh', [
+        '--database' => 'tenant',
         '--path' => 'database/migrations',
         '--force' => true,
         '--no-interaction' => true,
@@ -241,10 +242,12 @@ test('approve-all aprova em lote apenas produtos com confidence high e awaiting_
 if (! function_exists('makeTenantForDimApproval')) {
     function makeTenantForDimApproval(string $subdomain): Tenant
     {
+        $databaseAttributes = (array) config('database.connections.'.config('database.default'));
+
         $tenant = Tenant::query()->create([
             'name' => strtoupper($subdomain),
             'slug' => $subdomain,
-            'database' => ':memory:',
+            'database' => (string) ($databaseAttributes['database'] ?? ':memory:'),
             'status' => 'active',
         ]);
 

@@ -6,11 +6,15 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\ProductDimensionService;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 
 beforeEach(function (): void {
-    // Migrate tenant connection (separate from the default RefreshDatabase transaction)
+    // Purge cached :memory: connections so each test gets a fresh database
+    DB::purge('tenant');
+    DB::purge('landlord');
+
     Artisan::call('migrate', [
         '--database' => 'tenant',
         '--path' => 'database/migrations',
@@ -31,6 +35,7 @@ test('research define status pending e enfileira job', function (): void {
 
     $product = new Product;
     $product->id = (string) Str::ulid();
+    $product->tenant_id = (string) Str::ulid();
     $product->name = 'Produto Teste';
     $product->ean = '7890000000099';
     $product->status = 'published';
@@ -40,7 +45,10 @@ test('research define status pending e enfileira job', function (): void {
     $service = new ProductDimensionService;
     $service->research($product);
 
-    Queue::assertPushed(ResearchProductDimensionsJob::class, fn ($job) => $job->product->id === $product->id);
+    Queue::assertPushed(
+        ResearchProductDimensionsJob::class,
+        fn ($job) => $job->productId === $product->id,
+    );
 
     $product->refresh();
     expect($product->dimension_status)->toBe(DimensionStatus::Pending);
@@ -55,7 +63,6 @@ test('approve define status approved e registra aprovador', function (): void {
     $product->dimension_status = DimensionStatus::AwaitingApproval;
     Product::withoutEvents(fn () => $product->save());
 
-    // Usa User sem persistir no banco para evitar complexidade do multi-tenant
     $user = new User;
     $user->id = (string) Str::ulid();
 
@@ -69,7 +76,7 @@ test('approve define status approved e registra aprovador', function (): void {
         ->and($product->dimension_approved_at)->not->toBeNull();
 });
 
-test('reject define status rejected e adiciona warning', function (): void {
+test('reject define status rejected e adiciona warning com motivo', function (): void {
     $product = new Product;
     $product->id = (string) Str::ulid();
     $product->name = 'Produto Rejeição';
@@ -81,6 +88,7 @@ test('reject define status rejected e adiciona warning', function (): void {
 
     $user = new User;
     $user->id = (string) Str::ulid();
+    $user->name = 'João Revisor';
 
     $service = new ProductDimensionService;
     $service->reject($product, $user, 'Dimensões muito diferentes do físico.');
@@ -88,27 +96,32 @@ test('reject define status rejected e adiciona warning', function (): void {
     $product->refresh();
 
     expect($product->dimension_status)->toBe(DimensionStatus::Rejected)
-        ->and($product->dimension_warnings)->toContain('Dimensões muito diferentes do físico.');
+        ->and($product->dimension_warnings)->toHaveCount(1)
+        ->and($product->dimension_warnings[0])->toContain('Dimensões muito diferentes do físico.');
 });
 
-test('dispatchPendingBatch enfileira apenas produtos com ean e status pending', function (): void {
+test('dispatchPendingBatch enfileira apenas produtos com tenant_id e status pending', function (): void {
     Queue::fake();
 
-    $withEan = new Product;
-    $withEan->id = (string) Str::ulid();
-    $withEan->name = 'Com EAN';
-    $withEan->ean = '7890000000096';
-    $withEan->status = 'published';
-    $withEan->dimension_status = DimensionStatus::Pending;
-    Product::withoutEvents(fn () => $withEan->save());
+    $tenantId = (string) Str::ulid();
 
-    $withoutEan = new Product;
-    $withoutEan->id = (string) Str::ulid();
-    $withoutEan->name = 'Sem EAN';
-    $withoutEan->ean = null;
-    $withoutEan->status = 'published';
-    $withoutEan->dimension_status = DimensionStatus::Pending;
-    Product::withoutEvents(fn () => $withoutEan->save());
+    $withTenant = new Product;
+    $withTenant->id = (string) Str::ulid();
+    $withTenant->tenant_id = $tenantId;
+    $withTenant->name = 'Com Tenant';
+    $withTenant->ean = '7890000000096';
+    $withTenant->status = 'published';
+    $withTenant->dimension_status = DimensionStatus::Pending;
+    Product::withoutEvents(fn () => $withTenant->save());
+
+    $withoutTenant = new Product;
+    $withoutTenant->id = (string) Str::ulid();
+    $withoutTenant->tenant_id = null;
+    $withoutTenant->name = 'Sem Tenant';
+    $withoutTenant->ean = '7890000000095';
+    $withoutTenant->status = 'published';
+    $withoutTenant->dimension_status = DimensionStatus::Pending;
+    Product::withoutEvents(fn () => $withoutTenant->save());
 
     $service = new ProductDimensionService;
     $dispatched = $service->dispatchPendingBatch(10);

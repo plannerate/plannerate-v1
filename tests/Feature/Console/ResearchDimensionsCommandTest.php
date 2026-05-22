@@ -3,8 +3,21 @@
 use App\Enums\DimensionStatus;
 use App\Jobs\ResearchProductDimensionsJob;
 use App\Models\Product;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+
+beforeEach(function (): void {
+    DB::purge('tenant');
+
+    Artisan::call('migrate', [
+        '--database' => 'tenant',
+        '--path' => 'database/migrations',
+        '--force' => true,
+        '--no-interaction' => true,
+    ]);
+});
 
 test('command enfileira jobs para produtos com status pending e ean', function (): void {
     Queue::fake();

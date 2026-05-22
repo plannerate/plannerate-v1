@@ -68,7 +68,6 @@ import DropdownPerformance from '../DropdownPerformance.vue';
 import AutoGenerateModal from './AutoGenerateModal.vue';
 import ConfirmDeleteGondolaDialog from './ConfirmDeleteGondolaDialog.vue';
 import MapRegionSelectorModal from './MapRegionSelectorModal.vue';
-import TemplateGroupingDropdown from './TemplateGroupingDropdown.vue';
 import TransferSectionDialog from './partials/TransferSectionDialog.vue';
 import Performance from './Performance.vue';
 
@@ -514,8 +513,6 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-
-                <TemplateGroupingDropdown />
 
 
 

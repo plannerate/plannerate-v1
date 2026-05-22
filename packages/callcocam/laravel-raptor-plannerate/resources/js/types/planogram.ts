@@ -95,6 +95,7 @@ export interface Shelf {
         subtemplate_id: string;
         category_id?: string | null;
         category_name?: string | null;
+        category_full_path?: string | null;
         subcategory?: string | null;
         module_number: number;
         shelf_order: number;

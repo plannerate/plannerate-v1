@@ -325,7 +325,7 @@ class GondolaPayloadService
         }
 
         return $slotsQuery
-            ->with(['category:id,name'])
+            ->with(['category:id,name,full_path'])
             ->get()
             ->mapWithKeys(fn (PlanogramTemplateSlot $slot): array => [
                 "{$slot->module_number}:{$slot->shelf_order}" => [
@@ -333,6 +333,7 @@ class GondolaPayloadService
                     'subtemplate_id' => (string) $slot->subtemplate_id,
                     'category_id' => is_string($slot->category_id) ? $slot->category_id : null,
                     'category_name' => $this->resolveSlotCategoryName($slot),
+                    'category_full_path' => is_string($slot->category?->full_path) && $slot->category->full_path !== '' ? $slot->category->full_path : null,
                     'subcategory' => is_string($slot->subcategory) ? $slot->subcategory : null,
                     'module_number' => $slot->module_number,
                     'shelf_order' => $slot->shelf_order,
