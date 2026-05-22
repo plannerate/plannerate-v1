@@ -38,7 +38,6 @@ const props = defineProps<{
 
 const isBrowser = typeof window !== 'undefined';
 const isEchoConfigured = isBrowser && window.__plannerateEchoConfigured === true;
-const subdomain = isBrowser ? window.location.hostname.split('.')[0] : '';
 
 const connectionStatus = isEchoConfigured ? useConnectionStatus() : ref<ConnectionStatus>('disconnected');
 
@@ -75,7 +74,7 @@ const form = useForm({
 });
 
 function sendNotification() {
-    form.post(tenantWayfinderPath(ReverbTestController.notify.url(subdomain)), {
+    form.post(tenantWayfinderPath(ReverbTestController.notify.url()), {
         preserveScroll: true,
         onSuccess: () => form.reset(),
     });
@@ -111,7 +110,7 @@ const typeColorMap = {
 <template>
     <Head title="Teste Reverb" />
     <AppLayout
-        :breadcrumbs="[{ title: 'Dashboard', href: '/' }, { title: 'Teste Reverb', href: ReverbTestController.index.url(subdomain) }]"
+        :breadcrumbs="[{ title: 'Dashboard', href: '/' }, { title: 'Teste Reverb', href: ReverbTestController.index.url() }]"
         :page-header="{ title: 'Teste Reverb / WebSocket', description: 'Verifique a conexão e dispare notificações em tempo real' }"
     >
         <div class="flex flex-col gap-6 p-4">

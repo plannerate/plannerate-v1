@@ -7,7 +7,6 @@ import { useT } from '@/composables/useT';
 
 const props = defineProps<{
     column: BoardColumn;
-    subdomain: string;
     currentUserId: string | null;
     isDragOver: boolean;
     draggingExecutionId: string | null;
@@ -88,7 +87,6 @@ const topColor = computed(() => props.column.step.color ?? '#64748b');
                     v-for="execution in visibleExecutions"
                     :key="execution.id"
                     :execution="execution"
-                    :subdomain="subdomain"
                     :current-user-id="currentUserId"
                     :is-dragging="draggingExecutionId === execution.id"
                     :is-busy="busyExecutionId === execution.id"

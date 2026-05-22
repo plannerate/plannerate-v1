@@ -18,13 +18,11 @@ type ClusterRow = {
     store_id: string;
     store: string | null;
     name: string;
-    slug: string | null;
     specification_1: string | null;
     status: 'draft' | 'published';
 };
 
 const props = defineProps<{
-    subdomain: string;
     clusters?: Paginator<ClusterRow>;
     filters: {
         search: string;
@@ -44,7 +42,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
-const clustersIndexPath = ClusterController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const clustersIndexPath = ClusterController.index.url().replace(/^\/\/[^/]+/, '');
 const { meta: clustersMeta, rows: clustersRows, loading: clustersLoading } = useDeferredPaginator(() => props.clusters, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.clusters.title'),
@@ -62,7 +60,7 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton v-if="can.create" :href="ClusterController.create.url(props.subdomain)">
+                <NewActionButton v-if="can.create" :href="ClusterController.create.url()">
                     {{ t('app.tenant.clusters.actions.new') }}
                 </NewActionButton>
             </div>
@@ -130,8 +128,8 @@ const pageMeta = useCrudPageMeta({
                         </td>
                         <td class="px-4 py-3 ">
                             <ColumnActions
-                                :edit-href="ClusterController.edit.url({ subdomain: props.subdomain, cluster: cluster.id })"
-                                :delete-href="ClusterController.destroy.url({ subdomain: props.subdomain, cluster: cluster.id })"
+                                :edit-href="ClusterController.edit.url({ cluster: cluster.id })"
+                                :delete-href="ClusterController.destroy.url({ cluster: cluster.id })"
                                 :delete-label="cluster.name"
                                 :require-confirm-word="true"
                             />

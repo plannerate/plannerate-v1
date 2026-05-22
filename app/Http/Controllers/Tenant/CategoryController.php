@@ -119,7 +119,6 @@ class CategoryController extends Controller
             $direction,
             $this->resolvePerPage($request, 10),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -184,7 +183,6 @@ class CategoryController extends Controller
         $this->authorize('create', Category::class);
 
         return Inertia::render('tenant/categories/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'category' => null,
             'parent_categories' => $this->parentCategoriesForSelect(),
         ]);
@@ -216,7 +214,6 @@ class CategoryController extends Controller
         $this->authorize('update', $category);
 
         return Inertia::render('tenant/categories/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'category' => [
                 'id' => $category->id,
                 'category_id' => $category->category_id,

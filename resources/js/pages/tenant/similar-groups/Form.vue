@@ -61,7 +61,6 @@ type SimilarGroupPayload = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     similarGroup: SimilarGroupPayload | null;
     productOptions: ProductOption[];
     suggestedGrouperCode: string;
@@ -92,16 +91,15 @@ const dimensionStatus = ref(
 );
 
 const indexPath = tenantWayfinderPath(
-    SimilarGroupController.index.url(props.subdomain),
+    SimilarGroupController.index.url(),
 );
 const createPath = tenantWayfinderPath(
-    SimilarGroupController.create.url(props.subdomain),
+    SimilarGroupController.create.url(),
 );
 const editPath = computed(() =>
     isEdit.value
         ? tenantWayfinderPath(
               SimilarGroupController.edit.url({
-                  subdomain: props.subdomain,
                   similar_group: props.similarGroup!.id,
               }),
           )
@@ -111,10 +109,9 @@ const editPath = computed(() =>
 const formAction = computed(() => {
     const definition = isEdit.value
         ? SimilarGroupController.update.form({
-              subdomain: props.subdomain,
               similar_group: props.similarGroup!.id,
           })
-        : SimilarGroupController.store.form(props.subdomain);
+        : SimilarGroupController.store.form();
 
     return { ...definition, action: tenantWayfinderPath(definition.action) };
 });
@@ -184,7 +181,7 @@ async function searchProducts(query: string): Promise<void> {
 
     try {
         const url = tenantWayfinderPath(
-            productSearch.url(props.subdomain, { query: { search: query } }),
+            productSearch.url({ query: { search: query } }),
         );
         const response = await fetch(url, {
             headers: {

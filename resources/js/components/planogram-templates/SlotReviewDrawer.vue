@@ -16,7 +16,6 @@ import type { PlanogramTemplateSlot, SlotAnalysisData } from './types';
 const props = defineProps<{
     open: boolean;
     slot: PlanogramTemplateSlot | null;
-    subdomain: string;
     templateId: string;
 }>();
 
@@ -30,7 +29,7 @@ const analysis = ref<SlotAnalysisData | null>(null);
 async function loadAnalysis(slot: PlanogramTemplateSlot): Promise<void> {
     analysis.value = null;
     const url = TemplateSlotController.slotAnalysis.url(
-        { subdomain: props.subdomain, planogramTemplate: props.templateId },
+        { planogramTemplate: props.templateId },
         { query: { slot_id: slot.id } },
     );
     await analysisHttp.get(url);
@@ -76,7 +75,6 @@ function syncImages(): void {
 
     router.post(
         TemplateSlotController.syncImages.url({
-            subdomain: props.subdomain,
             planogramTemplate: props.templateId,
         }),
         { eans },

@@ -50,7 +50,6 @@ type PendingSlotAction =
     | { type: 'remove-subtemplate'; subtemplateId: string; numModules: number };
 
 const props = defineProps<{
-    subdomain: string;
     template: TemplateBasic;
     subtemplates: PlanogramSubtemplate[];
 }>();
@@ -61,18 +60,16 @@ const { t } = useT();
 const baseUrl = computed(() =>
     PlanogramTemplateController.show
         .url({
-            subdomain: props.subdomain,
             planogramTemplate: props.template.id,
         })
         .replace(/^\/\/[^/]+/, ''),
 );
 const indexPath = PlanogramTemplateController.index
-    .url(props.subdomain)
+    .url()
     .replace(/^\/\/[^/]+/, '');
 const editPath = computed(() =>
     PlanogramTemplateController.edit
         .url({
-            subdomain: props.subdomain,
             planogramTemplate: props.template.id,
         })
         .replace(/^\/\/[^/]+/, ''),
@@ -991,7 +988,6 @@ const breadcrumbs = [
     <SlotReviewDrawer
         v-model:open="reviewDrawerOpen"
         :slot="reviewDrawerSlot"
-        :subdomain="subdomain"
         :template-id="template.id"
     />
 </template>

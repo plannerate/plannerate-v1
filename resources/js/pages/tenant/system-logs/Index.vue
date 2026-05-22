@@ -18,7 +18,6 @@ type LogEntry = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     entries: LogEntry[];
     filters: {
         search: string;
@@ -37,8 +36,8 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
-const indexPath = SystemLogController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
-const clearPath = SystemLogController.clear.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const indexPath = SystemLogController.index.url().replace(/^\/\/[^/]+/, '');
+const clearPath = SystemLogController.clear.url().replace(/^\/\/[^/]+/, '');
 const form = ref({
     search: props.filters.search,
     file: props.filters.file,

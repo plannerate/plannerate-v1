@@ -45,7 +45,6 @@ type WorkflowSettingsSaveStepPayload = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     planogram: PlanogramPayload;
 }>();
 
@@ -122,7 +121,6 @@ async function loadSettings(): Promise<void> {
     try {
         const payload = await http.submit(
             WorkflowPlanogramStepController.index({
-                subdomain: props.subdomain,
                 planogram: props.planogram.id,
             }),
         ) as WorkflowSettingsResponse;
@@ -153,7 +151,6 @@ async function saveSettings(): Promise<void> {
 
         const payload = await saveHttp.submit(
             WorkflowPlanogramStepController.update({
-                subdomain: props.subdomain,
                 planogram: props.planogram.id,
             }),
         ) as WorkflowSettingsResponse;
@@ -178,7 +175,6 @@ async function loadDefaultSettings(): Promise<void> {
     try {
         const payload = await http.submit(
             WorkflowPlanogramStepController.loadDefaults({
-                subdomain: props.subdomain,
                 planogram: props.planogram.id,
             }),
         ) as WorkflowSettingsResponse;

@@ -21,7 +21,6 @@ import type { Paginator } from '@/types';
 type GondolaRow = {
     id: string;
     name: string;
-    slug: string | null;
     num_modulos: number;
     location: string | null;
     side: string | null;
@@ -32,7 +31,6 @@ type GondolaRow = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     planogram: {
         id: string;
         name: string | null;
@@ -54,10 +52,9 @@ const props = defineProps<{
 const { t } = useT();
 const { meta: gondolasMeta, rows: gondolasRows, loading: gondolasLoading } = useDeferredPaginator(() => props.gondolas, 10);
 const gondolasIndexPath = GondolaController.index.url({
-    subdomain: props.subdomain,
     planogram: props.planogram.id,
 }).replace(/^\/\/[^/]+/, '');
-const planogramsIndexPath = PlanogramController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const planogramsIndexPath = PlanogramController.index.url().replace(/^\/\/[^/]+/, '');
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.gondolas.title'),
     title: t('app.tenant.gondolas.title'),
@@ -82,7 +79,6 @@ const pageMeta = useCrudPageMeta({
                 <NewActionButton
                     v-if="can.create"
                     :href="GondolaController.create.url({
-                        subdomain: props.subdomain,
                         planogram: props.planogram.id,
                     })"
                 >
@@ -151,15 +147,15 @@ const pageMeta = useCrudPageMeta({
                         </td>
                         <td class="px-4 py-3 ">
                             <ColumnActions
-                                :edit-href="GondolaController.edit.url({ subdomain: props.subdomain, planogram: props.planogram.id, gondola: gondola.id })"
-                                :delete-href="GondolaController.destroy.url({ subdomain: props.subdomain, planogram: props.planogram.id, gondola: gondola.id })"
+                                :edit-href="GondolaController.edit.url({ planogram: props.planogram.id, gondola: gondola.id })"
+                                :delete-href="GondolaController.destroy.url({ planogram: props.planogram.id, gondola: gondola.id })"
                                 :delete-label="gondola.name"
                                 :require-confirm-word="true"
                             >
                                 <Button variant="outline" size="sm" as-child>
                                     <a
                                         target="_blank"
-                                        :href="tenantEditorPlanogramGondolas.url({ subdomain: props.subdomain, record: gondola.id })"
+                                        :href="tenantEditorPlanogramGondolas.url({ record: gondola.id })"
                                     >
                                         {{ t('app.tenant.planograms.actions.view_gondolas') }}
                                     </a>

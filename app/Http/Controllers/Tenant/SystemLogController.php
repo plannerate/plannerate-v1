@@ -37,7 +37,6 @@ class SystemLogController extends Controller
         $filteredEntries = $systemLogService->filterEntries($entries, $search, $level, $keyOnly, $from, $to);
 
         return Inertia::render('tenant/system-logs/Index', [
-            'subdomain' => $this->tenantSubdomain(),
             'entries' => $filteredEntries,
             'filters' => [
                 'search' => $search,

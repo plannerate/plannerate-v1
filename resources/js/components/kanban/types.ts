@@ -78,7 +78,6 @@ export type WorkflowHistory = {
 };
 
 export type KanbanPageProps = {
-    subdomain: string;
     planograms: Array<{ id: string; name: string; store: string | null; store_id: string | null }>;
     stores: Array<{ id: string; name: string }>;
     users: Array<{ id: string; name: string }>;

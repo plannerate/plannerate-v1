@@ -20,13 +20,11 @@ type ClusterPayload = {
     specification_1: string | null;
     specification_2: string | null;
     specification_3: string | null;
-    slug: string | null;
     status: 'draft' | 'published';
     description: string | null;
 };
 
 const props = defineProps<{
-    subdomain: string;
     cluster: ClusterPayload | null;
     stores: Array<{ id: string; name: string }>;
 }>();
@@ -34,7 +32,7 @@ const props = defineProps<{
 const { t } = useT();
 const isEdit = computed(() => props.cluster !== null);
 const clustersIndexPath = ClusterController.index
-    .url(props.subdomain)
+    .url()
     .replace(/^\/\/[^/]+/, '');
 const pageMeta = useCrudPageMeta({
     headTitle: isEdit.value
@@ -56,10 +54,9 @@ const pageMeta = useCrudPageMeta({
                 : t('app.tenant.clusters.actions.new'),
             href: isEdit.value
                 ? ClusterController.edit.url({
-                      subdomain: props.subdomain,
                       cluster: props.cluster!.id,
                   })
-                : ClusterController.create.url(props.subdomain),
+                : ClusterController.create.url(),
         },
     ],
 });
@@ -73,10 +70,9 @@ const pageMeta = useCrudPageMeta({
                 v-bind="
                     isEdit
                         ? ClusterController.update.form({
-                              subdomain: props.subdomain,
                               cluster: props.cluster!.id,
                           })
-                        : ClusterController.store.form(props.subdomain)
+                        : ClusterController.store.form()
                 "
                 v-slot="{ errors, processing }"
             >

@@ -68,7 +68,6 @@ type Preference = {
 };
 
 type Props = {
-    subdomain: string;
     weights: WeightsProps;
     hierarchy_levels: HierarchyLevel[];
     shelf_levels: ShelfLevelOption[];
@@ -79,7 +78,7 @@ const props = defineProps<Props>();
 const { t } = useT();
 
 const planogramEditUrl = computed(() =>
-    ScoringWeightsController.edit.url(props.subdomain).replace('/settings/scoring-weights', '/settings/planogram'),
+    ScoringWeightsController.edit.url().replace('/settings/scoring-weights', '/settings/planogram'),
 );
 
 setLayoutProps({
@@ -178,17 +177,17 @@ function submitPref() {
 
     if (editingPreferenceId.value) {
         prefForm.put(
-            ShelfLevelPreferencesController.update.url({ subdomain: props.subdomain, preference: editingPreferenceId.value }),
+            ShelfLevelPreferencesController.update.url({ preference: editingPreferenceId.value }),
             options,
         );
         return;
     }
 
-    prefForm.post(ShelfLevelPreferencesController.store.url(props.subdomain), options);
+    prefForm.post(ShelfLevelPreferencesController.store.url(), options);
 }
 
 function destroyPref(pref: Preference) {
-    router.delete(ShelfLevelPreferencesController.destroy.url({ subdomain: props.subdomain, preference: pref.id }));
+    router.delete(ShelfLevelPreferencesController.destroy.url({ preference: pref.id }));
 }
 
 function badgeVariant(color: string): 'default' | 'secondary' | 'destructive' | 'outline' {

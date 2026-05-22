@@ -37,7 +37,6 @@ class WorkflowKanbanController extends Controller
         }
 
         return Inertia::render('tenant/planograms/Kanban', [
-            'subdomain' => $this->tenantSubdomain(),
             'planograms' => $this->planograms($request),
             'stores' => $this->stores(),
             'users' => $this->users(),

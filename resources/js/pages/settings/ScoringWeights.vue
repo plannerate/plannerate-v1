@@ -20,7 +20,6 @@ type WeightsProps = {
 };
 
 type Props = {
-    subdomain: string;
     weights: WeightsProps;
 };
 
@@ -31,7 +30,7 @@ setLayoutProps({
     breadcrumbs: [
         {
             title: t('app.scoring_weights_settings'),
-            href: ScoringWeightsController.edit.url(props.subdomain),
+            href: ScoringWeightsController.edit.url(),
         },
     ],
 });
@@ -51,7 +50,7 @@ const weightSum = computed(() =>
 );
 
 function submit() {
-    form.put(ScoringWeightsController.update.url(props.subdomain));
+    form.put(ScoringWeightsController.update.url());
 }
 
 function resetToDefault() {

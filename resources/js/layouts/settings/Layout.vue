@@ -17,7 +17,7 @@ import type { NavItem } from '@/types';
 
 const { t } = useT();
 const page = usePage();
-const subdomain = computed(() => (page.props.tenant as any)?.slug as string | undefined);
+const isTenantContext = computed(() => !!(page.props.tenant as any)?.slug);
 
 const sidebarNavItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [
@@ -35,23 +35,23 @@ const sidebarNavItems = computed<NavItem[]>(() => {
         },
     ];
 
-    if (subdomain.value) {
+    if (isTenantContext.value) {
         items.push(
             {
                 title: t('app.settings_nav.planogram_settings'),
-                href: ScoringWeightsController.edit.url(subdomain.value).replace('/settings/scoring-weights', '/settings/planogram'),
+                href: ScoringWeightsController.edit.url().replace('/settings/scoring-weights', '/settings/planogram'),
             },
             {
                 title: t('app.settings_nav.scoring_weights'),
-                href: ScoringWeightsController.edit.url(subdomain.value),
+                href: ScoringWeightsController.edit.url(),
             },
             {
                 title: t('app.settings_nav.adjacency_matrix'),
-                href: AdjacencyMatrixController.edit.url(subdomain.value),
+                href: AdjacencyMatrixController.edit.url(),
             },
             {
                 title: t('app.settings_nav.shelf_level_preferences'),
-                href: ShelfLevelPreferencesController.edit.url(subdomain.value),
+                href: ShelfLevelPreferencesController.edit.url(),
             },
         );
     }

@@ -27,7 +27,6 @@ type RoleOption = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     user: UserPayload | null;
     roles: RoleOption[];
     tenant: {
@@ -49,7 +48,7 @@ const rolesForField = computed(() =>
         isAdmin: role.is_admin,
     })),
 );
-const usersIndexPath = TenantUserController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const usersIndexPath = TenantUserController.index.url().replace(/^\/\/[^/]+/, '');
 const pageMeta = useCrudPageMeta({
     headTitle: isEdit.value ? t('app.tenant.users.actions.edit') : t('app.tenant.users.actions.new'),
     title: isEdit.value ? t('app.tenant.users.actions.edit') : t('app.tenant.users.actions.new'),
@@ -62,21 +61,20 @@ const pageMeta = useCrudPageMeta({
         {
             title: isEdit.value ? t('app.tenant.users.actions.edit') : t('app.tenant.users.actions.new'),
             href: isEdit.value
-                ? TenantUserController.edit.url({ subdomain: props.subdomain, user: props.user!.id })
-                : TenantUserController.create.url(props.subdomain),
+                ? TenantUserController.edit.url({ user: props.user!.id })
+                : TenantUserController.create.url(),
         },
     ],
 });
 
 const storeFormAttrs = computed(() => {
-    const def = TenantUserController.store.form(props.subdomain);
+    const def = TenantUserController.store.form();
 
     return { ...def, action: def.action.replace(/^\/\/[^/]+/, '') };
 });
 
 const updateFormAttrs = computed(() => {
     const def = TenantUserController.update.form({
-        subdomain: props.subdomain,
         user: props.user!.id,
     });
 

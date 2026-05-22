@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { ChevronDown, ChevronUp } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
@@ -28,13 +28,15 @@ interface Suggestion {
 const props = defineProps<{
     suggestions: Suggestion[];
     templateId: string;
-    subdomain: string;
 }>();
 
+const page = usePage();
 const expanded = ref(true);
 
 function slotsUrl(query: Record<string, string | number> = {}): string {
-    const base = `//${props.subdomain}.plannerate.localhost/planogram-templates/${props.templateId}/slots`;
+    const tenant = page.props.tenant as { slug?: string } | undefined;
+    const subdomain = tenant?.slug || (typeof window !== 'undefined' ? window.location.hostname.split('.')[0] : '');
+    const base = `//${subdomain}.plannerate.localhost/planogram-templates/${props.templateId}/slots`;
     const params = new URLSearchParams();
     for (const [key, val] of Object.entries(query)) {
         params.set(key, String(val));

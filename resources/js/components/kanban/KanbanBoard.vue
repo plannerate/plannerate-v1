@@ -4,7 +4,6 @@ import type { BoardColumn, Execution } from '@/components/kanban/types';
 
 defineProps<{
     board: BoardColumn[];
-    subdomain: string;
     currentUserId: string | null;
     draggingExecutionId: string | null;
     dragOverStepId: string | null;
@@ -37,7 +36,6 @@ const emit = defineEmits<{
                 v-for="column in board"
                 :key="column.step.id"
                 :column="column"
-                :subdomain="subdomain"
                 :current-user-id="currentUserId"
                 :is-drag-over="dragOverStepId === column.step.id"
                 :dragging-execution-id="draggingExecutionId"

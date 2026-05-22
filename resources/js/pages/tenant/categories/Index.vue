@@ -25,14 +25,12 @@ type CategoryRow = {
     name: string;
     full_path: string | null;
     level_name: string | null;
-    slug: string | null;
     status: 'draft' | 'published' | 'importer';
     codigo: number | null;
     is_placeholder: boolean;
 };
 
 const props = defineProps<{
-    subdomain: string;
     categories?: Paginator<CategoryRow>;
     filters: {
         search: string;
@@ -56,7 +54,7 @@ const { t } = useT();
 const { meta: categoriesMeta, rows: categoriesRows, loading: categoriesLoading } = useDeferredPaginator(() => props.categories, 10);
 const listPageRef = ref<InstanceType<typeof ListPage> | null>(null);
 const categoriesIndexPath = CategoryController.index
-    .url(props.subdomain)
+    .url()
     .replace(/^\/\/[^/]+/, '');
 const categoryId = ref<string | null>(props.filters.category_id ?? null);
 const categoryPopoverOpen = ref(false);
@@ -99,17 +97,17 @@ const pageMeta = useCrudPageMeta({
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
                 <Button variant="outline" size="pill-sm" as-child>
-                    <a :href="CategoryController.exportTemplate.url(props.subdomain)">
+                    <a :href="CategoryController.exportTemplate.url()">
                         {{ t('app.tenant.categories.actions.download_template') }}
                     </a>
                 </Button>
                 <Button variant="outline" size="pill-sm" as-child>
-                    <a :href="CategoryController.exportData.url(props.subdomain)">
+                    <a :href="CategoryController.exportData.url()">
                         {{ t('app.tenant.categories.actions.export_data') }}
                     </a>
                 </Button>
                 <ImportFileButton
-                    :action="CategoryController.importMethod.url(props.subdomain)"
+                    :action="CategoryController.importMethod.url()"
                     :button-label="t('app.tenant.categories.actions.import')"
                     :title="t('app.tenant.categories.import.title')"
                     :description="t('app.tenant.categories.import.description')"
@@ -121,7 +119,7 @@ const pageMeta = useCrudPageMeta({
                     :truncate-label="t('app.tenant.categories.import.truncate_label')"
                     :truncate-warning="t('app.tenant.categories.import.truncate_warning')"
                 />
-                <NewActionButton v-if="can.create" :href="CategoryController.create.url(props.subdomain)">
+                <NewActionButton v-if="can.create" :href="CategoryController.create.url()">
                     {{ t('app.tenant.categories.actions.new') }}
                 </NewActionButton>
             </div>
@@ -247,8 +245,8 @@ const pageMeta = useCrudPageMeta({
                         </td>
                         <td class="px-4 py-3 ">
                             <ColumnActions
-                                :edit-href="CategoryController.edit.url({ subdomain: props.subdomain, category: category.id })"
-                                :delete-href="CategoryController.destroy.url({ subdomain: props.subdomain, category: category.id })"
+                                :edit-href="CategoryController.edit.url({ category: category.id })"
+                                :delete-href="CategoryController.destroy.url({ category: category.id })"
                                 :delete-label="category.name"
                                 :require-confirm-word="true"
                             />

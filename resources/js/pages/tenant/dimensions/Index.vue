@@ -38,7 +38,6 @@ type EditingRow = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     products?: Paginator<DimensionRow>;
     filters: {
         search: string;

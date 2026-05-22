@@ -23,7 +23,6 @@ type UserRow = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     users?: Paginator<UserRow>;
     filters: {
         search: string;
@@ -42,7 +41,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
-const usersIndexPath = TenantUserController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const usersIndexPath = TenantUserController.index.url().replace(/^\/\/[^/]+/, '');
 const { meta: usersMeta, rows: usersRows, loading: usersLoading } = useDeferredPaginator(() => props.users, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.users.title'),
@@ -67,7 +66,7 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton v-if="props.can.create" :href="TenantUserController.create.url(props.subdomain)">
+                <NewActionButton v-if="props.can.create" :href="TenantUserController.create.url()">
                     {{ t('app.tenant.users.actions.new') }}
                 </NewActionButton>
             </div>
@@ -124,13 +123,13 @@ const pageMeta = useCrudPageMeta({
                                 <div class="inline-flex items-center gap-2">
                                     <Button variant="outline" size="sm" as-child>
                                         <WayfinderLink
-                                            :href="TenantUserController.edit.url({ subdomain: props.subdomain, user: user.id })">
+                                            :href="TenantUserController.edit.url({ user: user.id })">
                                             {{ t('app.tenant.common.edit') }}
                                         </WayfinderLink>
                                     </Button>
                                     <Button variant="destructive" size="sm" as-child>
                                         <WayfinderLink
-                                            :href="TenantUserController.destroy.url({ subdomain: props.subdomain, user: user.id })"
+                                            :href="TenantUserController.destroy.url({ user: user.id })"
                                             method="delete" as="button">
                                             {{ t('app.tenant.common.delete') }}
                                         </WayfinderLink>

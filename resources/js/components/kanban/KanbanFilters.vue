@@ -5,7 +5,6 @@ import ListFiltersBar from '@/components/ListFiltersBar.vue';
 import { useT } from '@/composables/useT';
 
 const props = defineProps<{
-    subdomain: string;
     planograms: Array<{ id: string; name: string; store: string | null; store_id: string | null }>;
     stores: Array<{ id: string; name: string }>;
     users: Array<{ id: string; name: string }>;
@@ -28,7 +27,7 @@ const emit = defineEmits<{
 const { t } = useT();
 
 const kanbanUrl = computed(() =>
-    WorkflowKanbanController.index.url(props.subdomain).replace(/^\/\/[^/]+/, ''),
+    WorkflowKanbanController.index.url().replace(/^\/\/[^/]+/, ''),
 );
 
 const filteredPlanograms = computed(() => {

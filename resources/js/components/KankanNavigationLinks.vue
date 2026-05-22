@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import planograms from '@/routes/tenant/planograms';
 
 const props = withDefaults(defineProps<{
-    subdomain: string;
     class?: string;
 }>(), {
     class: 'mx-2 mb-3 inline-flex items-center rounded-xl bg-muted p-1 ',
@@ -35,11 +34,11 @@ const isListActive = computed(() => currentPath.value === '/planograms');
 const isKanbanActive = computed(() => currentPath.value.startsWith('/kanban'));
 const isMapsActive = computed(() => currentPath.value === '/planograms/maps');
 
-const listPath = computed(() => planograms.index.url(props.subdomain).replace(/^\/\/[^/]+/, ''));
+const listPath = computed(() => planograms.index.url().replace(/^\/\/[^/]+/, ''));
 const kanbanPath = computed(() =>
-    WorkflowKanbanController.index.url(props.subdomain).replace(/^\/\/[^/]+/, ''),
+    WorkflowKanbanController.index.url().replace(/^\/\/[^/]+/, ''),
 );
-const mapsPath = computed(() => planograms.maps.url(props.subdomain).replace(/^\/\/[^/]+/, ''));
+const mapsPath = computed(() => planograms.maps.url().replace(/^\/\/[^/]+/, ''));
 
 function linkClasses(isActive: boolean): string {
     return [

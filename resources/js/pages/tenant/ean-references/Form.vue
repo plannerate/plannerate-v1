@@ -33,14 +33,13 @@ type EanReferencePayload = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     ean_reference: EanReferencePayload | null;
 }>();
 
 const { t } = useT();
 const isEdit = computed(() => props.ean_reference !== null);
 const eanReferencesIndexPath = tenantWayfinderPath(
-    EanReferenceController.index.url(props.subdomain),
+    EanReferenceController.index.url(),
 );
 
 const pageMeta = useCrudPageMeta({
@@ -73,24 +72,18 @@ const pageMeta = useCrudPageMeta({
                     isEdit
                         ? {
                               ...EanReferenceController.update.form({
-                                  subdomain: props.subdomain,
                                   ean_reference: props.ean_reference!.id,
                               }),
                               action: tenantWayfinderPath(
                                   EanReferenceController.update.form({
-                                      subdomain: props.subdomain,
                                       ean_reference: props.ean_reference!.id,
                                   }).action,
                               ),
                           }
                         : {
-                              ...EanReferenceController.store.form(
-                                  props.subdomain,
-                              ),
+                              ...EanReferenceController.store.form(),
                               action: tenantWayfinderPath(
-                                  EanReferenceController.store.form(
-                                      props.subdomain,
-                                  ).action,
+                                  EanReferenceController.store.form().action,
                               ),
                           }
                 "

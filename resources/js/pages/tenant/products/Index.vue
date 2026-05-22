@@ -27,7 +27,6 @@ type ProductRow = {
     id: string;
     name: string | null;
     image_url: string | null;
-    slug: string | null;
     ean: string | null;
     codigo_erp: string | null;
     status: 'draft' | 'published' | 'synced' | 'error';
@@ -47,7 +46,6 @@ type ProductRow = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     products?: Paginator<ProductRow>;
     filters: {
         search: string;
@@ -71,7 +69,7 @@ const props = defineProps<{
 const { t } = useT();
 const { meta: productsMeta, rows: productsRows, loading: productsLoading } = useDeferredPaginator(() => props.products, 10);
 const productsIndexPath = ProductController.index
-    .url(props.subdomain)
+    .url()
     .replace(/^\/\/[^/]+/, '');
 const listPageRef = ref<InstanceType<typeof ListPage> | null>(null);
 const categoryId = ref<string | null>(props.filters.category_id ?? null);
@@ -137,7 +135,7 @@ function updateImages(): void {
 
     isUpdatingImages.value = true;
     router.visit(
-        ProductController.updateImages.url(props.subdomain),
+        ProductController.updateImages.url(),
         {
             method: 'post',
             data: { eans: pageEans.value },
@@ -174,7 +172,7 @@ const pageMeta = useCrudPageMeta({
                     <ImageDown class="size-3.5 shrink-0" :class="{ 'animate-pulse': isUpdatingImages }" />
                     {{ isUpdatingImages ? 'Enviando...' : 'Atualizar imagens' }}
                 </button>
-                <NewActionButton v-if="can.create" :href="ProductController.create.url(props.subdomain)">
+                <NewActionButton v-if="can.create" :href="ProductController.create.url()">
                     {{ t('app.tenant.products.actions.new') }}
                 </NewActionButton>
             </div>
@@ -300,11 +298,9 @@ const pageMeta = useCrudPageMeta({
                         </td>
                         <td class="px-4 py-3 ">
                             <ColumnActions :edit-href="ProductController.edit.url({
-                                subdomain: props.subdomain,
                                 product: product.id,
                             })
                                 " :delete-href="ProductController.destroy.url({
-                                    subdomain: props.subdomain,
                                     product: product.id,
                                 })
                                     " :delete-label="product.name ?? undefined" :require-confirm-word="true" />

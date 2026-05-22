@@ -30,13 +30,12 @@ type Template = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     template: Template;
 }>();
 
 const { t } = useT();
 const indexPath = PlanogramTemplateController.index
-    .url(props.subdomain)
+    .url()
     .replace(/^\/\/[^/]+/, '');
 const deleteDialogOpen = ref(false);
 const deleteDialogBusy = ref(false);
@@ -59,7 +58,6 @@ function deleteTemplate(): void {
 
     router.delete(
         PlanogramTemplateController.destroy.url({
-            subdomain: props.subdomain,
             planogramTemplate: props.template.id,
         }),
         {

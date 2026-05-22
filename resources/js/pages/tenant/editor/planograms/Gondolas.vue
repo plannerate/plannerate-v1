@@ -16,7 +16,6 @@ import type { Paginator } from '@/types';
 type GondolaRow = {
     id: string;
     name: string;
-    slug: string | null;
     num_modulos: number;
     location: string | null;
     side: string | null;
@@ -27,7 +26,6 @@ type GondolaRow = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     planogram: {
         id: string;
         name: string | null;
@@ -43,11 +41,10 @@ const { t } = useT();
 const { meta: gondolasMeta, rows: gondolasRows, loading: gondolasLoading } = useDeferredPaginator(() => props.gondolas, 10);
 
 const gondolasIndexPath = ClientPlanogramController.gondolas.url({
-    subdomain: props.subdomain,
     planogram: props.planogram.id,
 }).replace(/^\/\/[^/]+/, '');
 
-const planogramsIndexPath = ClientPlanogramController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const planogramsIndexPath = ClientPlanogramController.index.url().replace(/^\/\/[^/]+/, '');
 
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.gondolas.title'),

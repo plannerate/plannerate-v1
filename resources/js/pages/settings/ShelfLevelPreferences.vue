@@ -49,7 +49,6 @@ type ShelfLevelOption = {
 };
 
 type Props = {
-    subdomain: string;
     preferences: Preference[];
     shelfLevels: ShelfLevelOption[];
 };
@@ -61,7 +60,7 @@ setLayoutProps({
     breadcrumbs: [
         {
             title: t('app.shelf_level_preferences_settings'),
-            href: ShelfLevelPreferencesController.edit.url(props.subdomain),
+            href: ShelfLevelPreferencesController.edit.url(),
         },
     ],
 });
@@ -103,18 +102,16 @@ function submit() {
 
     if (editingPreferenceId.value) {
         form.put(ShelfLevelPreferencesController.update.url({
-            subdomain: props.subdomain,
             preference: editingPreferenceId.value,
         }), options);
         return;
     }
 
-    form.post(ShelfLevelPreferencesController.store.url(props.subdomain), options);
+    form.post(ShelfLevelPreferencesController.store.url(), options);
 }
 
 function destroy(preference: Preference) {
     router.delete(ShelfLevelPreferencesController.destroy.url({
-        subdomain: props.subdomain,
         preference: preference.id,
     }));
 }

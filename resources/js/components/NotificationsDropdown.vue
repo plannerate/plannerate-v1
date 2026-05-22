@@ -41,13 +41,7 @@ const tenantId = computed(() => {
 
     return tenant?.id ?? null;
 });
-const subdomain = computed(() => {
-    if (!isBrowser || tenantId.value === null) {
-        return '';
-    }
 
-    return window.location.hostname.split('.')[0] ?? '';
-});
 const isTenantContext = computed(
     () => tenantId.value !== null && tenantId.value !== '',
 );
@@ -99,25 +93,25 @@ function routeUrl(
     if (isTenantContext.value) {
         if (action === 'markAllRead') {
             return tenantWayfinderPath(
-                markAllReadTenantRoute.url(subdomain.value),
+                markAllReadTenantRoute.url(),
             );
         }
 
         if (action === 'destroyAll') {
             return tenantWayfinderPath(
-                destroyAllTenantRoute.url(subdomain.value),
+                destroyAllTenantRoute.url(),
             );
         }
 
         if (action === 'destroy' && id !== undefined) {
             return tenantWayfinderPath(
-                destroyTenantRoute.url({ subdomain: subdomain.value, id }),
+                destroyTenantRoute.url({ id }),
             );
         }
 
         if (action === 'download' && id !== undefined) {
             return tenantWayfinderPath(
-                downloadTenantRoute.url({ subdomain: subdomain.value, id }),
+                downloadTenantRoute.url({ id }),
             );
         }
     }

@@ -13,7 +13,6 @@ type ErrorPayload = {
 
 const props = withDefaults(
     defineProps<{
-        subdomain: string;
         ean: string | null | undefined;
         storeIds?: string[];
         label?: string;
@@ -49,7 +48,7 @@ function sync(): void {
     const safeStoreIds = props.storeIds.filter((id) => id.trim() !== '');
 
     router.post(
-        tenantWayfinderPath(ProductController.syncSingle.url(props.subdomain)),
+        tenantWayfinderPath(ProductController.syncSingle.url()),
         {
             produto: normalizedEan.value,
             store_ids: safeStoreIds,

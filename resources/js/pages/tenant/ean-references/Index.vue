@@ -32,7 +32,6 @@ type EanReferenceRow = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     ean_references?: Paginator<EanReferenceRow>;
     filters: {
         search: string;
@@ -40,7 +39,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
-const eanReferencesIndexPath = tenantWayfinderPath(EanReferenceController.index.url(props.subdomain));
+const eanReferencesIndexPath = tenantWayfinderPath(EanReferenceController.index.url());
 const { meta: eanReferencesMeta, rows: eanReferencesRows, loading: eanReferencesLoading } = useDeferredPaginator(() => props.ean_references, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.ean_references.title'),
@@ -81,7 +80,7 @@ function formatDimensions(reference: EanReferenceRow): string {
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton :href="tenantWayfinderPath(EanReferenceController.create.url(props.subdomain))">
+                <NewActionButton :href="tenantWayfinderPath(EanReferenceController.create.url())">
                     {{ t('app.tenant.ean_references.actions.new') }}
                 </NewActionButton>
             </div>
@@ -131,13 +130,13 @@ function formatDimensions(reference: EanReferenceRow): string {
                         <td class="px-4 py-3 ">
                             <div class="inline-flex items-center gap-2">
                                 <Button variant="outline" size="sm" as-child>
-                                    <WayfinderLink :href="tenantWayfinderPath(EanReferenceController.edit.url({ subdomain: props.subdomain, ean_reference: eanReference.id }))">
+                                    <WayfinderLink :href="tenantWayfinderPath(EanReferenceController.edit.url({ ean_reference: eanReference.id }))">
                                         {{ t('app.tenant.common.edit') }}
                                     </WayfinderLink>
                                 </Button>
                                 <Button variant="destructive" size="sm" as-child>
                                     <WayfinderLink
-                                        :href="tenantWayfinderPath(EanReferenceController.destroy.url({ subdomain: props.subdomain, ean_reference: eanReference.id }))"
+                                        :href="tenantWayfinderPath(EanReferenceController.destroy.url({ ean_reference: eanReference.id }))"
                                         method="delete"
                                         as="button"
                                     >

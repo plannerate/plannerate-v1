@@ -12,7 +12,6 @@ import { dashboard } from '@/routes';
 type DashboardEntity = {
     id: string;
     name: string | null;
-    slug: string | null;
     status: string;
     created_at: string | null;
 };
@@ -45,11 +44,6 @@ const props = defineProps<{
 const { t } = useT();
 const page = usePage();
 const dashboardPath = dashboard.url().replace(/^\/\/[^/]+/, '');
-const subdomain = computed(() => {
-    const tenant = page.props.tenant as { slug?: string } | undefined;
-
-    return tenant?.slug ?? '';
-});
 
 setLayoutProps({
     breadcrumbs: [
@@ -135,7 +129,7 @@ const maxStatusTotal = computed(() => {
                 <article class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
                     <header class="mb-4 flex items-center justify-between gap-2">
                         <h2 class="text-base font-semibold">Status de planogramas</h2>
-                        <Link :href="PlanogramController.index.url(subdomain)" class="text-xs text-primary underline-offset-2 hover:underline">Ver lista</Link>
+                        <Link :href="PlanogramController.index.url()" class="text-xs text-primary underline-offset-2 hover:underline">Ver lista</Link>
                     </header>
                     <div class="space-y-3">
                         <div v-for="item in props.status_chart.planograms" :key="`plan-${item.status}`" class="grid grid-cols-[90px_1fr_auto] items-center gap-3">
@@ -151,7 +145,7 @@ const maxStatusTotal = computed(() => {
                 <article class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
                     <header class="mb-4 flex items-center justify-between gap-2">
                         <h2 class="text-base font-semibold">Status de categorias</h2>
-                        <Link :href="CategoryController.index.url(subdomain)" class="text-xs text-primary underline-offset-2 hover:underline">Ver lista</Link>
+                        <Link :href="CategoryController.index.url()" class="text-xs text-primary underline-offset-2 hover:underline">Ver lista</Link>
                     </header>
                     <div class="space-y-3">
                         <div v-for="item in props.status_chart.categories" :key="`cat-${item.status}`" class="grid grid-cols-[90px_1fr_auto] items-center gap-3">
@@ -167,7 +161,7 @@ const maxStatusTotal = computed(() => {
                 <article class="rounded-xl border border-sidebar-border/70 bg-card p-4 dark:border-sidebar-border">
                     <header class="mb-4 flex items-center justify-between gap-2">
                         <h2 class="text-base font-semibold">Status de produtos</h2>
-                        <Link :href="ProductController.index.url(subdomain)" class="text-xs text-primary underline-offset-2 hover:underline">Ver lista</Link>
+                        <Link :href="ProductController.index.url()" class="text-xs text-primary underline-offset-2 hover:underline">Ver lista</Link>
                     </header>
                     <div class="space-y-3">
                         <div v-for="item in props.status_chart.products" :key="`prod-${item.status}`" class="grid grid-cols-[90px_1fr_auto] items-center gap-3">

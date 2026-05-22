@@ -75,7 +75,7 @@ const {
     onDragOver,
     onDragLeave,
     onDrop,
-} = useKanban(() => props.board, () => props.subdomain);
+} = useKanban(() => props.board);
 
 function statusClass(status: string): string {
     return statusColors[status] ?? 'bg-muted text-muted-foreground';
@@ -205,17 +205,16 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
                     {{ t('app.tenant.gondolas.actions.new') }}
                 </button>
 
-                <NewActionButton :href="PlanogramController.create.url(props.subdomain)">
+                <NewActionButton :href="PlanogramController.create.url()">
                     {{ t('app.tenant.planograms.actions.new') }}
                 </NewActionButton>
             </div>
         </template>
-        <KankanNavigationLinks :subdomain="props.subdomain" />
+        <KankanNavigationLinks />
 
         <div class="flex h-full min-h-0 flex-col overflow-hidden">
             <div class="border-b border-border bg-background px-4 py-3">
                 <KanbanFilters
-                    :subdomain="props.subdomain"
                     :planograms="props.planograms"
                     :stores="props.stores"
                     :users="props.users"
@@ -244,7 +243,6 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
                     v-else
                     class="h-full min-h-0"
                     :board="filteredBoard"
-                    :subdomain="props.subdomain"
                     :current-user-id="currentUserId"
                     :dragging-execution-id="draggingExecutionId"
                     :drag-over-step-id="dragOverStepId"
@@ -277,7 +275,6 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
             :action-notes="actionNotes"
             :busy="busyExecutionId === detailPayload?.execution.id"
             :steps="filteredBoard.map((column) => column.step)"
-            :subdomain="props.subdomain"
             :current-user-id="currentUserId"
             @update:action-notes="actionNotes = $event"
             @start="requestDetailAction('start')"

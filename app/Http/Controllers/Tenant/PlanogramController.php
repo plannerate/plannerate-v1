@@ -51,7 +51,6 @@ class PlanogramController extends Controller
             $trashed,
             $this->resolvePerPage($request, 10),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -118,7 +117,6 @@ class PlanogramController extends Controller
         $this->authorize('create', Planogram::class);
 
         return Inertia::render('tenant/planograms/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'planogram' => null,
             'stores' => $this->storesForSelect(),
             'clusters' => $this->clustersForSelect(),
@@ -140,7 +138,6 @@ class PlanogramController extends Controller
         $onlyEditable = $request->boolean('only_editable');
 
         return Inertia::render('tenant/planograms/Maps', [
-            'subdomain' => $this->tenantSubdomain(),
             'store_maps' => $this->storeMaps($search, $storeId, $status, $onlyEditable),
             'filters' => [
                 'search' => $search,
@@ -205,7 +202,6 @@ class PlanogramController extends Controller
             ]);
 
         return Inertia::render('tenant/planograms/OrphanLayers', [
-            'subdomain' => $this->tenantSubdomain(),
             'orphans' => $orphans,
             'filters' => [
                 'search' => $search,
@@ -382,7 +378,6 @@ class PlanogramController extends Controller
         $this->authorize('update', $planogram);
 
         return Inertia::render('tenant/planograms/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'planogram' => [
                 'id' => $planogram->id,
                 'template_id' => $planogram->template_id,

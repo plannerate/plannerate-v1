@@ -50,7 +50,6 @@ class ClientPlanogramController extends Controller
             $categoryId,
             $this->resolvePerPage($request, 10),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'store_id' => $storeId,
@@ -66,7 +65,7 @@ class ClientPlanogramController extends Controller
     public function gondolas(Request $request, string $subdomain, Planogram $planogram): Response
     {
         unset($subdomain);
-        Gate::authorize(PermissionName::TENANT_EDITOR_PLANOGRAMS_VIEW_ANY); 
+        Gate::authorize(PermissionName::TENANT_EDITOR_PLANOGRAMS_VIEW_ANY);
 
         $search = $this->requestString($request, 'search');
         $status = $this->requestEnum($request, 'status', ['draft', 'published']);
@@ -77,7 +76,6 @@ class ClientPlanogramController extends Controller
             $status,
             $this->resolvePerPage($request, 10),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'planogram' => [
                 'id' => $planogram->id,
                 'name' => $planogram->name,

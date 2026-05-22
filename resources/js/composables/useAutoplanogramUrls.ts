@@ -6,10 +6,10 @@ function stripDomain(url: string): string {
 }
 
 export function useAutoplanogramUrls(gondolaId: string) {
-    const page = usePage<{ subdomain?: string }>();
+    const page = usePage<{ tenant?: { slug?: string } }>();
 
     const subdomain = computed(() => {
-        const s = page.props.subdomain?.toString().trim();
+        const s = (page.props.tenant as { slug?: string } | undefined)?.slug?.trim();
 
         if (s) return s;
 

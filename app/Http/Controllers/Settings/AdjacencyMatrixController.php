@@ -24,7 +24,6 @@ class AdjacencyMatrixController extends Controller
         $adjacencyLevel = (int) ($model?->adjacency_hierarchy_level ?? $defaults->adjacencyHierarchyLevel);
 
         return Inertia::render('settings/AdjacencyMatrix', [
-            'subdomain' => $subdomain,
             'adjacencyHierarchyLevel' => $adjacencyLevel,
             'rules' => AdjacencyRule::query()
                 ->with(['source:id,name,full_path', 'target:id,name,full_path'])

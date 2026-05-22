@@ -22,7 +22,6 @@ type SimilarGroupRow = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     similarGroups?: Paginator<SimilarGroupRow>;
     filters: {
         search: string;

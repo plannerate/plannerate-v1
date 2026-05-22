@@ -180,7 +180,6 @@ class AutoPlanogramController extends Controller
                 $capacityReport['has_space'] = collect($output->slotAnalysis)->some(fn ($s) => $s['largura_livre'] > 10);
                 $capacityReport['has_rejects'] = $rejectedSpace > 0;
                 $capacityReport['template_id'] = $templateId;
-                $capacityReport['subdomain'] = $subdomain;
                 $capacityReport['modules_mismatch'] = $output->modulesMismatch;
                 $capacityReport['template_modules'] = $output->templateModules;
                 $capacityReport['gondola_modules'] = $output->gondolaModules;

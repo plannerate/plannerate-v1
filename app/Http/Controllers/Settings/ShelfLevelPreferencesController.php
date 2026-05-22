@@ -18,7 +18,6 @@ class ShelfLevelPreferencesController extends Controller
     public function edit(string $subdomain): Response
     {
         return Inertia::render('settings/ShelfLevelPreferences', [
-            'subdomain' => $subdomain,
             'preferences' => ShelfLevelPreference::query()
                 ->with('category:id,name,full_path')
                 ->orderByRaw('category_id IS NOT NULL')

@@ -24,7 +24,6 @@ const props = defineProps<{
     actionNotes: string;
     busy: boolean;
     steps: BoardStep[];
-    subdomain: string;
     currentUserId: string | null;
 }>();
 
@@ -73,7 +72,6 @@ const executionLinkHref = computed(() => {
 
     if (wasStartedByCurrentUser.value) {
         return tenantEditorPlanogramGondolas.url({
-            subdomain: props.subdomain,
             record: gondolaId,
         });
     }

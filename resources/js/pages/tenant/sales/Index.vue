@@ -34,7 +34,6 @@ type SaleRow = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     sales?: Paginator<SaleRow>;
     filters: {
         search: string;
@@ -57,10 +56,10 @@ const props = defineProps<{
 const { t } = useT();
 const listPageRef = ref<InstanceType<typeof ListPage> | null>(null);
 const salesIndexPath = SaleController.index
-    .url(props.subdomain)
+    .url()
     .replace(/^\/\/[^/]+/, '');
 const salesCreatePath = SaleController.create
-    .url(props.subdomain)
+    .url()
     .replace(/^\/\/[^/]+/, '');
 const loadingSalesMeta: Omit<Paginator<SaleRow>, 'data'> = {
     links: [],
@@ -285,7 +284,6 @@ const pageMeta = useCrudPageMeta({
                                 :edit-href="
                                     SaleController.edit
                                         .url({
-                                            subdomain: props.subdomain,
                                             sale: sale.id,
                                         })
                                         .replace(/^\/\/[^/]+/, '')
@@ -293,7 +291,6 @@ const pageMeta = useCrudPageMeta({
                                 :delete-href="
                                     SaleController.destroy
                                         .url({
-                                            subdomain: props.subdomain,
                                             sale: sale.id,
                                         })
                                         .replace(/^\/\/[^/]+/, '')

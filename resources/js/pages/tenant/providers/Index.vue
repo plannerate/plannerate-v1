@@ -24,7 +24,6 @@ type ProviderRow = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     providers?: Paginator<ProviderRow>;
     filters: {
         search: string;
@@ -40,7 +39,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
-const providersIndexPath = ProviderController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const providersIndexPath = ProviderController.index.url().replace(/^\/\/[^/]+/, '');
 const { meta: providersMeta, rows: providersRows, loading: providersLoading } = useDeferredPaginator(() => props.providers, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.providers.title'),
@@ -58,7 +57,7 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton v-if="can.create" :href="ProviderController.create.url(props.subdomain)">
+                <NewActionButton v-if="can.create" :href="ProviderController.create.url()">
                     {{ t('app.tenant.providers.actions.new') }}
                 </NewActionButton>
             </div>
@@ -117,8 +116,8 @@ const pageMeta = useCrudPageMeta({
                         <td class="px-4 py-3">{{ provider.is_default ? t('app.tenant.common.yes') : t('app.tenant.common.no') }}</td>
                         <td class="px-4 py-3 ">
                             <ColumnActions
-                                :edit-href="ProviderController.edit.url({ subdomain: props.subdomain, provider: provider.id })"
-                                :delete-href="ProviderController.destroy.url({ subdomain: props.subdomain, provider: provider.id })"
+                                :edit-href="ProviderController.edit.url({ provider: provider.id })"
+                                :delete-href="ProviderController.destroy.url({ provider: provider.id })"
                                 :delete-label="provider.name ?? undefined"
                                 :require-confirm-word="true"
                             />

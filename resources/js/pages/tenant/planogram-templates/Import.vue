@@ -9,11 +9,10 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 
 const props = defineProps<{
-    subdomain: string;
 }>();
 
 const { t } = useT();
-const indexPath = PlanogramTemplateController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const indexPath = PlanogramTemplateController.index.url().replace(/^\/\/[^/]+/, '');
 const fileName = ref<string | null>(null);
 
 const form = useForm({
@@ -28,7 +27,7 @@ function onFileChange(event: Event): void {
 }
 
 function submit(): void {
-    form.post(PlanogramTemplateController.import.url(props.subdomain), {
+    form.post(PlanogramTemplateController.import.url(), {
         forceFormData: true,
     });
 }

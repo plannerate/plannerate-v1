@@ -56,7 +56,6 @@ type RuleTypeOption = {
 };
 
 type Props = {
-    subdomain: string;
     adjacencyHierarchyLevel: number;
     rules: Rule[];
     ruleTypes: RuleTypeOption[];
@@ -69,7 +68,7 @@ setLayoutProps({
     breadcrumbs: [
         {
             title: t('app.adjacency_matrix_settings'),
-            href: AdjacencyMatrixController.edit.url(props.subdomain),
+            href: AdjacencyMatrixController.edit.url(),
         },
     ],
 });
@@ -135,18 +134,16 @@ function submit() {
 
     if (editingRuleId.value) {
         form.put(AdjacencyMatrixController.update.url({
-            subdomain: props.subdomain,
             adjacencyRule: editingRuleId.value,
         }), options);
         return;
     }
 
-    form.post(AdjacencyMatrixController.store.url(props.subdomain), options);
+    form.post(AdjacencyMatrixController.store.url(), options);
 }
 
 function destroy(rule: Rule) {
     router.delete(AdjacencyMatrixController.destroy.url({
-        subdomain: props.subdomain,
         adjacencyRule: rule.id,
     }));
 }

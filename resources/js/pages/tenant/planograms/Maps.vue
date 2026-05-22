@@ -41,7 +41,6 @@ type StoreMapCard = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     store_maps: StoreMapCard[];
     filters: {
         search: string;
@@ -55,8 +54,8 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
-const planogramsIndexPath = PlanogramController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
-const mapsPath = PlanogramController.maps.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const planogramsIndexPath = PlanogramController.index.url().replace(/^\/\/[^/]+/, '');
+const mapsPath = PlanogramController.maps.url().replace(/^\/\/[^/]+/, '');
 const search = ref(props.filters.search ?? '');
 const selectedStoreId = ref<string>(props.filters.store_id ?? '');
 const statusFilter = ref<'all' | 'clickable' | 'pending' | 'blocked'>(props.filters.status ?? 'all');
@@ -133,7 +132,6 @@ function regionHref(region: StoreMapRegion): string | null {
 
     if (region.gondola.can_open_editor) {
         return tenantEditorPlanogramGondolas.url({
-            subdomain: props.subdomain,
             record: region.gondola.id,
         });
     }
@@ -270,13 +268,13 @@ onBeforeUnmount(() => {
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton :href="PlanogramController.create.url(props.subdomain)">
+                <NewActionButton :href="PlanogramController.create.url()">
                     {{ t('app.tenant.planograms.actions.new') }}
                 </NewActionButton>
             </div>
         </template>
         <div class="px-4">
-            <KankanNavigationLinks :subdomain="props.subdomain" />
+            <KankanNavigationLinks />
         </div>
         <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4 px-4">
             <button
@@ -412,7 +410,7 @@ onBeforeUnmount(() => {
                         </button>
                         <WayfinderLink
                             v-if="storeMap.can_edit_store"
-                            :href="StoreController.edit.url({ subdomain: props.subdomain, store: storeMap.id })"
+                            :href="StoreController.edit.url({ store: storeMap.id })"
                             class="inline-flex h-8 items-center rounded-md border border-border px-3 text-xs font-medium text-foreground transition hover:bg-muted"
                         >
                             Editar loja

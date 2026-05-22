@@ -32,7 +32,6 @@ class PlanogramTemplateController extends Controller
             $search,
             $this->resolvePerPage($request, 15),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
             ],
@@ -45,7 +44,6 @@ class PlanogramTemplateController extends Controller
         $this->authorize('create', PlanogramTemplate::class);
 
         return Inertia::render('tenant/planogram-templates/Form', [
-            'subdomain' => $this->tenantSubdomain(),
         ]);
     }
 
@@ -82,7 +80,6 @@ class PlanogramTemplateController extends Controller
         $this->authorize('create', PlanogramTemplate::class);
 
         return Inertia::render('tenant/planogram-templates/Import', [
-            'subdomain' => $this->tenantSubdomain(),
         ]);
     }
 
@@ -126,7 +123,6 @@ class PlanogramTemplateController extends Controller
         $planogramTemplate->load('category');
 
         return Inertia::render('tenant/planogram-templates/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'template' => [
                 'id' => $planogramTemplate->id,
                 'code' => $planogramTemplate->code,
@@ -172,7 +168,6 @@ class PlanogramTemplateController extends Controller
         $planogramTemplate->load(['subtemplates.slots']);
 
         return Inertia::render('tenant/planogram-templates/Show', [
-            'subdomain' => $this->tenantSubdomain(),
             'template' => [
                 'id' => $planogramTemplate->id,
                 'code' => $planogramTemplate->code,

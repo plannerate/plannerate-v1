@@ -7,7 +7,7 @@ import type { BoardColumn, Execution, ExecutionDetails, WorkflowHistory } from '
 import { useKanbanMove } from '@/composables/useKanbanMove';
 import { useT } from '@/composables/useT';
 
-export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdomain: MaybeRefOrGetter<string>) {
+export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>) {
     const { t } = useT();
     const onlyOverdue = ref(false);
     const showCompleted = ref(true);
@@ -121,7 +121,6 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
 
         try {
             const route = WorkflowExecutionController[action]({
-                subdomain: toValue(subdomain),
                 execution: execution.id,
             });
 
@@ -248,11 +247,9 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
 
         try {
             const detailsRoute = WorkflowExecutionController.details({
-                subdomain: toValue(subdomain),
                 execution: executionId,
             });
             const historyRoute = WorkflowExecutionController.history({
-                subdomain: toValue(subdomain),
                 execution: executionId,
             });
 
@@ -297,7 +294,6 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>, subdoma
 
         try {
             const route = WorkflowExecutionController.move({
-                subdomain: toValue(subdomain),
                 execution: executionId,
             });
 

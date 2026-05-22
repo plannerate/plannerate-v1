@@ -43,7 +43,6 @@ class StoreController extends Controller
             $trashed,
             $this->resolvePerPage($request, 10),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -88,7 +87,6 @@ class StoreController extends Controller
         $this->authorize('create', Store::class);
 
         return Inertia::render('tenant/stores/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'store' => null,
             'address' => null,
         ]);
@@ -124,7 +122,6 @@ class StoreController extends Controller
         $address = $store->addresses()->orderByDesc('is_default')->latest()->first();
 
         return Inertia::render('tenant/stores/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'store' => [
                 'id' => $store->id,
                 'name' => $store->name,

@@ -23,7 +23,6 @@ final class PlanogramSettingsController extends Controller
         $defaults = ScoringWeightsValue::default();
 
         return Inertia::render('settings/PlanogramSettings', [
-            'subdomain' => $subdomain,
             'weights' => [
                 'w_giro' => $model?->w_giro ?? $defaults->giro,
                 'w_margem' => $model?->w_margem ?? $defaults->margem,

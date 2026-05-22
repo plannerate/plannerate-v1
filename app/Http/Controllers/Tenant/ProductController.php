@@ -74,7 +74,6 @@ class ProductController extends Controller
             $direction,
             $this->resolvePerPage($request, 10),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -201,7 +200,6 @@ class ProductController extends Controller
         $this->authorize('create', Product::class);
 
         return Inertia::render('tenant/products/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'product' => null,
             'stores' => $this->storesForSelect(),
         ]);
@@ -250,14 +248,13 @@ class ProductController extends Controller
         return $this->toTenantRoute('tenant.products.index');
     }
 
-    public function edit(string $subdomain, string $product): Response
+    public function edit(string $product): Response
     {
         unset($subdomain);
         $product = Product::query()->whereKey($product)->firstOrFail();
         $this->authorize('update', $product);
 
         return Inertia::render('tenant/products/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'stores' => $this->storesForSelect(),
             'product' => $this->productFormPayload($product),
         ]);

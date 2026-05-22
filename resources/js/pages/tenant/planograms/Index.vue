@@ -29,7 +29,6 @@ import type { Paginator } from '@/types';
 type PlanogramRow = {
     id: string;
     name: string | null;
-    slug: string | null;
     type: 'realograma' | 'planograma';
     store: string | null;
     cluster: string | null;
@@ -40,7 +39,6 @@ type PlanogramRow = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     planograms?: Paginator<PlanogramRow>;
     filters: {
         search: string;
@@ -97,16 +95,16 @@ const categoryLabel = computed(() => {
 
     return t('app.tenant.products.fields.category') + ' ✓';
 });
-const planogramsIndexPath = PlanogramController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const planogramsIndexPath = PlanogramController.index.url().replace(/^\/\/[^/]+/, '');
 
 function planogramWorkflowHref(planogramId: string): string {
     if (canUseKanban.value) {
-        return WorkflowKanbanController.index.url(props.subdomain, {
+        return WorkflowKanbanController.index.url({
             query: { planogram_id: planogramId },
         }).replace(/^\/\/[^/]+/, '');
     }
 
-    return GondolaController.index.url({ subdomain: props.subdomain, planogram: planogramId });
+    return GondolaController.index.url({ planogram: planogramId });
 }
 
 const pageMeta = useCrudPageMeta({
@@ -123,15 +121,15 @@ const pageMeta = useCrudPageMeta({
 <template>
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <Head :title="pageMeta.headTitle" />
-        <KankanNavigationLinks :subdomain="props.subdomain" />
+        <KankanNavigationLinks />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
                 <Button variant="outline" as-child>
-                    <WayfinderLink :href="PlanogramController.orphanLayers.url(props.subdomain)">
+                    <WayfinderLink :href="PlanogramController.orphanLayers.url()">
                         Layers órfãs
                     </WayfinderLink>
                 </Button>
-                <NewActionButton v-if="can.create" :href="PlanogramController.create.url(props.subdomain)">
+                <NewActionButton v-if="can.create" :href="PlanogramController.create.url()">
                     {{ t('app.tenant.planograms.actions.new') }}
                 </NewActionButton>
             </div>
@@ -279,8 +277,8 @@ const pageMeta = useCrudPageMeta({
                         <!-- Ações -->
                         <td class="px-4 py-3 ">
                             <ColumnActions
-                                :edit-href="PlanogramController.edit.url({ subdomain: props.subdomain, planogram: planogram.id })"
-                                :delete-href="PlanogramController.destroy.url({ subdomain: props.subdomain, planogram: planogram.id })"
+                                :edit-href="PlanogramController.edit.url({ planogram: planogram.id })"
+                                :delete-href="PlanogramController.destroy.url({ planogram: planogram.id })"
                                 :delete-label="planogram.name ?? undefined"
                                 :require-confirm-word="true"
                             >

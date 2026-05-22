@@ -5,7 +5,6 @@ import ProductEanSyncButton from '@/components/form/ProductEanSyncButton.vue';
 
 const props = withDefaults(
     defineProps<{
-        subdomain: string;
         ean: string;
         codigoErp: string;
         storeIds?: string[];
@@ -65,7 +64,6 @@ const codigoErpModel = computed({
             />
             <div class="md:col-span-3 md:pt-4.5">
                 <ProductEanSyncButton
-                    :subdomain="subdomain"
                     :ean="eanModel"
                     :store-ids="storeIds"
                     @sync-error="(payload) => emit('sync-error', payload)"

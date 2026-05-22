@@ -25,7 +25,6 @@ type ProductPayload = {
     category_id: string | null;
     name: string | null;
     grouping: string | null;
-    slug: string | null;
     ean: string | null;
     codigo_erp: string | null;
     stackable: boolean;
@@ -72,7 +71,6 @@ type ProductPayload = {
 type TabKey = 'identification' | 'market' | 'dimensions' | 'additional';
 
 const props = defineProps<{
-    subdomain: string;
     product: ProductPayload | null;
     stores: Array<{ id: string; name: string; document: string | null }>;
 }>();
@@ -81,18 +79,17 @@ const { t } = useT();
 const page = usePage<{ errors: Record<string, string> }>();
 const isEdit = computed(() => props.product !== null);
 const productsIndexPath = tenantWayfinderPath(
-    ProductController.index.url(props.subdomain),
+    ProductController.index.url(),
 );
 
 const storeFormAttrs = computed(() => {
-    const def = ProductController.store.form(props.subdomain);
+    const def = ProductController.store.form();
 
     return { ...def, action: tenantWayfinderPath(def.action) };
 });
 
 const updateFormAttrs = computed(() => {
     const def = ProductController.update.form({
-        subdomain: props.subdomain,
         product: props.product!.id,
     });
 
@@ -340,12 +337,11 @@ const pageMeta = useCrudPageMeta({
             href: isEdit.value
                 ? tenantWayfinderPath(
                       ProductController.edit.url({
-                          subdomain: props.subdomain,
                           product: props.product!.id,
                       }),
                   )
                 : tenantWayfinderPath(
-                      ProductController.create.url(props.subdomain),
+                      ProductController.create.url(),
                   ),
         },
     ],
@@ -383,7 +379,6 @@ const pageMeta = useCrudPageMeta({
                     >
                         <div class="space-y-4 lg:col-span-8">
                             <ProductIdentitySyncFieldset
-                                :subdomain="props.subdomain"
                                 v-model:ean="ean"
                                 v-model:codigo-erp="codigoErp"
                                 :store-ids="selectedStoreIds"
@@ -511,7 +506,6 @@ const pageMeta = useCrudPageMeta({
 
                         <div class="space-y-4 lg:col-span-4">
                             <ImageUploadField
-                                :subdomain="subdomain"
                                 name="url"
                                 :label="
                                     t('app.tenant.products.form.sections.image')

@@ -36,7 +36,6 @@ class TemplateSlotController extends Controller
         $planogramTemplate->load(['category', 'subtemplates.slots.category']);
 
         return Inertia::render('tenant/planogram-templates/Slots', [
-            'subdomain' => $this->tenantSubdomain(),
             'template' => $this->service->templateData($planogramTemplate),
             'subtemplates' => $this->service->subtemplatesData($planogramTemplate),
         ]);
@@ -88,7 +87,6 @@ class TemplateSlotController extends Controller
         }
 
         return Inertia::render('tenant/planogram-templates/Review', [
-            'subdomain' => $this->tenantSubdomain(),
             'template' => $this->service->templateData($planogramTemplate),
             'subtemplates' => $this->service->subtemplatesData($planogramTemplate),
             'current_module' => $currentModule,
@@ -113,7 +111,6 @@ class TemplateSlotController extends Controller
         $planogramTemplate->load(['subtemplates.slots.category']);
 
         return redirect()->route('tenant.planogram-templates.slots.index', [
-            'subdomain' => $this->tenantSubdomain(),
             'planogramTemplate' => $planogramTemplate->id,
         ]);
     }
@@ -134,7 +131,6 @@ class TemplateSlotController extends Controller
         $planogramSubtemplate->cloneWithSlots($validated['target_modules']);
 
         return redirect()->route('tenant.planogram-templates.slots.index', [
-            'subdomain' => $this->tenantSubdomain(),
             'planogramTemplate' => $planogramTemplate->id,
         ]);
     }
@@ -150,7 +146,6 @@ class TemplateSlotController extends Controller
         $planogramTemplate->load(['subtemplates.slots.category']);
 
         return redirect()->route('tenant.planogram-templates.slots.index', [
-            'subdomain' => $this->tenantSubdomain(),
             'planogramTemplate' => $planogramTemplate->id,
         ]);
     }
@@ -164,7 +159,6 @@ class TemplateSlotController extends Controller
         $this->service->updateSlotDefaults($planogramSubtemplate, $validated);
 
         return redirect()->route('tenant.planogram-templates.slots.index', [
-            'subdomain' => $this->tenantSubdomain(),
             'planogramTemplate' => $planogramTemplate->id,
         ]);
     }
@@ -183,7 +177,6 @@ class TemplateSlotController extends Controller
         $planogramTemplate->load(['subtemplates.slots.category']);
 
         return redirect()->route('tenant.planogram-templates.slots.index', [
-            'subdomain' => $this->tenantSubdomain(),
             'planogramTemplate' => $planogramTemplate->id,
         ]);
     }
@@ -202,7 +195,6 @@ class TemplateSlotController extends Controller
         $planogramTemplate->load(['subtemplates.slots.category']);
 
         return redirect()->route('tenant.planogram-templates.slots.index', [
-            'subdomain' => $this->tenantSubdomain(),
             'planogramTemplate' => $planogramTemplate->id,
         ]);
     }
@@ -231,7 +223,6 @@ class TemplateSlotController extends Controller
         $planogramTemplate->load(['subtemplates.slots.category']);
 
         return redirect()->route('tenant.planogram-templates.slots.index', [
-            'subdomain' => $this->tenantSubdomain(),
             'planogramTemplate' => $planogramTemplate->id,
         ]);
     }
@@ -248,7 +239,6 @@ class TemplateSlotController extends Controller
         $planogramTemplate->load(['subtemplates.slots.category']);
 
         return redirect()->route('tenant.planogram-templates.slots.index', [
-            'subdomain' => $this->tenantSubdomain(),
             'planogramTemplate' => $planogramTemplate->id,
         ]);
     }

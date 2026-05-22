@@ -18,7 +18,6 @@ type GondolaPayload = {
     linked_map_gondola_id: string | null;
     linked_map_gondola_category: string | null;
     name: string;
-    slug: string | null;
     num_modulos: number;
     location: string | null;
     side: string | null;
@@ -29,7 +28,6 @@ type GondolaPayload = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     planogram: {
         id: string;
         name: string | null;
@@ -41,7 +39,6 @@ const { t } = useT();
 const isEdit = computed(() => props.gondola !== null);
 const gondolasIndexPath = GondolaController.index
     .url({
-        subdomain: props.subdomain,
         planogram: props.planogram.id,
     })
     .replace(/^\/\/[^/]+/, '');
@@ -65,12 +62,10 @@ const pageMeta = useCrudPageMeta({
                 : t('app.tenant.gondolas.actions.new'),
             href: isEdit.value
                 ? GondolaController.edit.url({
-                      subdomain: props.subdomain,
                       planogram: props.planogram.id,
                       gondola: props.gondola!.id,
                   })
                 : GondolaController.create.url({
-                      subdomain: props.subdomain,
                       planogram: props.planogram.id,
                   }),
         },
@@ -86,12 +81,10 @@ const pageMeta = useCrudPageMeta({
                 v-bind="
                     isEdit
                         ? GondolaController.update.form({
-                              subdomain: props.subdomain,
                               planogram: props.planogram.id,
                               gondola: props.gondola!.id,
                           })
                         : GondolaController.store.form({
-                              subdomain: props.subdomain,
                               planogram: props.planogram.id,
                           })
                 "

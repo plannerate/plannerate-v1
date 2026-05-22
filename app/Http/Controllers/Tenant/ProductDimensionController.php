@@ -41,7 +41,6 @@ class ProductDimensionController extends Controller
             $direction,
             $this->resolvePerPage($request, 20),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'category_id' => $categoryId,

@@ -31,25 +31,24 @@ type SalePayload = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     sale: SalePayload | null;
     stores: Array<{ id: string; name: string }>;
 }>();
 
 const { t } = useT();
 const isEdit = computed(() => props.sale !== null);
-const salesIndexPath = SaleController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
-const salesCreatePath = SaleController.create.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const salesIndexPath = SaleController.index.url().replace(/^\/\/[^/]+/, '');
+const salesCreatePath = SaleController.create.url().replace(/^\/\/[^/]+/, '');
 const salesEditPath = computed(() => {
     if (! props.sale) {
         return salesCreatePath;
     }
 
-    return SaleController.edit.url({ subdomain: props.subdomain, sale: props.sale.id }).replace(/^\/\/[^/]+/, '');
+    return SaleController.edit.url({ sale: props.sale.id }).replace(/^\/\/[^/]+/, '');
 });
 const salesFormPayload = computed(() => {
     if (isEdit.value && props.sale) {
-        const form = SaleController.update.form({ subdomain: props.subdomain, sale: props.sale.id });
+        const form = SaleController.update.form({ sale: props.sale.id });
 
         return {
             ...form,
@@ -57,7 +56,7 @@ const salesFormPayload = computed(() => {
         };
     }
 
-    const form = SaleController.store.form(props.subdomain);
+    const form = SaleController.store.form();
 
     return {
         ...form,

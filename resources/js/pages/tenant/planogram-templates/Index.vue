@@ -27,7 +27,6 @@ type TemplateRow = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     templates?: Paginator<TemplateRow>;
     filters: {
         search: string;
@@ -35,11 +34,11 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
-const indexPath = PlanogramTemplateController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const indexPath = PlanogramTemplateController.index.url().replace(/^\/\/[^/]+/, '');
 const exportPath = computed(() => {
     const search = props.filters.search;
     return PlanogramTemplateController.exportAll
-        .url(props.subdomain, search ? { query: { search } } : undefined)
+        .url(search ? { query: { search } } : undefined)
         .replace(/^\/\/[^/]+/, '');
 });
 const { meta: templatesMeta, rows: templatesRows, loading: templatesLoading } = useDeferredPaginator(() => props.templates, 10);
@@ -54,7 +53,7 @@ const pageMeta = useCrudPageMeta({
 });
 
 function handleDelete(id: string): void {
-    router.delete(PlanogramTemplateController.destroy.url({ subdomain: props.subdomain, planogramTemplate: id }));
+    router.delete(PlanogramTemplateController.destroy.url({ planogramTemplate: id }));
 }
 </script>
 
@@ -63,11 +62,11 @@ function handleDelete(id: string): void {
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center gap-2">
-                <NewActionButton :href="PlanogramTemplateController.create.url(props.subdomain)">
+                <NewActionButton :href="PlanogramTemplateController.create.url()">
                     <Plus class="size-4" />
                     {{ t('app.tenant.planogram_templates.actions.create') }}
                 </NewActionButton>
-                <Button variant="outline" :as="'a'" :href="PlanogramTemplateController.importPage.url(props.subdomain)">
+                <Button variant="outline" :as="'a'" :href="PlanogramTemplateController.importPage.url()">
                     <Upload class="size-4" />
                     {{ t('app.tenant.planogram_templates.actions.import') }}
                 </Button>
@@ -106,7 +105,7 @@ function handleDelete(id: string): void {
                     <tr v-else-if="templatesRows.length === 0">
                         <td class="px-4 py-8 text-center text-muted-foreground" colspan="6">
                             {{ t('app.tenant.planogram_templates.empty') }}
-                            <a :href="PlanogramTemplateController.create.url(props.subdomain)" class="ml-1 text-primary underline">
+                            <a :href="PlanogramTemplateController.create.url()" class="ml-1 text-primary underline">
                                 {{ t('app.tenant.planogram_templates.empty_action') }}
                             </a>
                         </td>
@@ -131,8 +130,8 @@ function handleDelete(id: string): void {
                         </td>
                         <td class="px-4 py-3 ">
                             <ColumnActions
-                                :edit-href="PlanogramTemplateController.edit.url({ subdomain: props.subdomain, planogramTemplate: template.id })"
-                                :delete-href="PlanogramTemplateController.destroy.url({ subdomain: props.subdomain, planogramTemplate: template.id })"
+                                :edit-href="PlanogramTemplateController.edit.url({ planogramTemplate: template.id })"
+                                :delete-href="PlanogramTemplateController.destroy.url({ planogramTemplate: template.id })"
                                 :delete-label="template.name"
                                 :require-confirm-word="true"
                             />

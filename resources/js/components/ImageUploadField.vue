@@ -9,7 +9,6 @@ import imageRoutes from '@/routes/tenant/products/image';
 import { tenantWayfinderPath } from '@/support/tenantWayfinderPath';
 
 const props = withDefaults(defineProps<{
-    subdomain: string;
     name: string;
     label: string;
     ean?: string | null;
@@ -223,7 +222,7 @@ async function uploadSelectedFile(): Promise<void> {
         uploadHttp.file = selectedFile.value;
 
         const payload = await uploadHttp.submit(
-            toHttpRoute(imageRoutes.upload(props.subdomain))
+            toHttpRoute(imageRoutes.upload())
         );
 
         if (typeof payload.path !== 'string') {
@@ -256,7 +255,7 @@ async function processWithAi(): Promise<boolean> {
         aiProcessHttp.path = storedPath.value;
 
         const payload = await aiProcessHttp.submit(
-            toHttpRoute(imageRoutes.ai.process(props.subdomain))
+            toHttpRoute(imageRoutes.ai.process())
         );
 
         if (typeof payload.id !== 'string') {
@@ -297,7 +296,7 @@ async function fetchFromRepository(): Promise<boolean> {
         repositoryHttp.process_with_ai = props.aiEnabled;
 
         const payload = await repositoryHttp.submit(
-            toHttpRoute(imageRoutes.repository.fetch(props.subdomain))
+            toHttpRoute(imageRoutes.repository.fetch())
         );
 
         if (typeof payload.path !== 'string') {
@@ -322,7 +321,7 @@ async function fetchFromRepository(): Promise<boolean> {
     } catch (error) {
         debugHttpError(error, 'repository.fetch');
 
-        const repositoryRoute = imageRoutes.repository.fetch(props.subdomain);
+        const repositoryRoute = imageRoutes.repository.fetch();
         const typedError = error as {
             response?: {
                 status?: number;
@@ -337,7 +336,6 @@ async function fetchFromRepository(): Promise<boolean> {
             expectedAbsoluteUrl: repositoryRoute.url,
             currentHost: typeof window !== 'undefined' ? window.location.host : null,
             currentPath: typeof window !== 'undefined' ? window.location.pathname : null,
-            subdomain: props.subdomain,
             message: typedError.response?.data?.message ?? null,
             errors: typedError.response?.data?.errors ?? null,
             backendDebug: typedError.response?.data?.debug ?? null,
@@ -369,7 +367,6 @@ async function pollAiStatus(operationId: string): Promise<void> {
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
         const statusRoute = imageRoutes.ai.status({
-            subdomain: props.subdomain,
             operation: operationId
         });
         const payload = await statusHttp.submit(toHttpRoute(statusRoute));

@@ -12,8 +12,9 @@ class EditorPlanogramController extends GondolaController
 
     protected function getBackRoute(Gondola $gondola, ?string $subdomain = null): string
     {
+        unset($subdomain);
+
         return route('tenant.planograms.index', [
-            'subdomain' => $subdomain ?? $this->tenantSubdomain(),
             'record' => $gondola->planogram_id,
         ], false);
     }

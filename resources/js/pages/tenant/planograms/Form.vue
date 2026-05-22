@@ -23,7 +23,6 @@ type PlanogramPayload = {
     store_id: string | null;
     cluster_id: string | null;
     name: string | null;
-    slug: string | null;
     type: 'realograma' | 'planograma';
     category_id: string | null;
     start_date: string | null;
@@ -36,7 +35,6 @@ type PlanogramPayload = {
 type TabKey = 'identificacao' | 'mercadologico' | 'workflow';
 
 const props = defineProps<{
-    subdomain: string;
     planogram: PlanogramPayload | null;
     stores: Array<{ id: string; name: string }>;
     clusters: Array<{ id: string; name: string }>;
@@ -45,7 +43,7 @@ const props = defineProps<{
 const { t } = useT();
 const isEdit = computed(() => props.planogram !== null);
 const planogramsIndexPath = PlanogramController.index
-    .url(props.subdomain)
+    .url()
     .replace(/^\/\/[^/]+/, '');
 const categoryId = ref<string | null>(props.planogram?.category_id ?? null);
 const activeTab = ref<TabKey>('identificacao');
@@ -88,10 +86,9 @@ const pageMeta = useCrudPageMeta({
                 : t('app.tenant.planograms.actions.new'),
             href: isEdit.value
                 ? PlanogramController.edit.url({
-                      subdomain: props.subdomain,
                       planogram: props.planogram!.id,
                   })
-                : PlanogramController.create.url(props.subdomain),
+                : PlanogramController.create.url(),
         },
     ],
 });
@@ -105,10 +102,9 @@ const pageMeta = useCrudPageMeta({
                 v-bind="
                     isEdit
                         ? PlanogramController.update?.form({
-                              subdomain: props.subdomain,
                               planogram: props.planogram!.id,
                           })
-                        : PlanogramController.store?.form(props.subdomain)
+                        : PlanogramController.store?.form()
                 "
                 v-slot="{ errors, processing }"
             >
@@ -250,7 +246,6 @@ const pageMeta = useCrudPageMeta({
                     >
                         <FormKanbanSettings
                             v-if="props.planogram"
-                            :subdomain="props.subdomain"
                             :planogram="props.planogram"
                         />
                     </div>

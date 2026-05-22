@@ -21,7 +21,6 @@ type OrphanLayerRow = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     orphans?: Paginator<OrphanLayerRow>;
     filters: {
         search: string;
@@ -31,8 +30,8 @@ const props = defineProps<{
 const { t } = useT();
 const listPageRef = ref<InstanceType<typeof ListPage> | null>(null);
 const { meta: orphansMeta, rows: orphanRows, loading: orphanLoading } = useDeferredPaginator(() => props.orphans, 10);
-const indexPath = PlanogramController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
-const orphanLayersPath = PlanogramController.orphanLayers.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const indexPath = PlanogramController.index.url().replace(/^\/\/[^/]+/, '');
+const orphanLayersPath = PlanogramController.orphanLayers.url().replace(/^\/\/[^/]+/, '');
 
 const pageMeta = useCrudPageMeta({
     headTitle: 'Layers sem produto válido',

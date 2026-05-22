@@ -18,7 +18,6 @@ type CategoryPayload = {
     id: string;
     category_id: string | null;
     name: string;
-    slug: string | null;
     level_name: string | null;
     codigo: number | null;
     status: 'draft' | 'published' | 'importer';
@@ -31,14 +30,13 @@ type CategoryPayload = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     category: CategoryPayload | null;
     parent_categories: Array<{ id: string; name: string }>;
 }>();
 
 const { t } = useT();
 const isEdit = computed(() => props.category !== null);
-const categoriesIndexPath = CategoryController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const categoriesIndexPath = CategoryController.index.url().replace(/^\/\/[^/]+/, '');
 
 const pageMeta = useCrudPageMeta({
     headTitle: isEdit.value ? t('app.tenant.categories.actions.edit') : t('app.tenant.categories.actions.new'),
@@ -50,8 +48,8 @@ const pageMeta = useCrudPageMeta({
         {
             title: isEdit.value ? t('app.tenant.categories.actions.edit') : t('app.tenant.categories.actions.new'),
             href: isEdit.value
-                ? CategoryController.edit.url({ subdomain: props.subdomain, category: props.category!.id })
-                : CategoryController.create.url(props.subdomain),
+                ? CategoryController.edit.url({ category: props.category!.id })
+                : CategoryController.create.url(),
         },
     ],
 });
@@ -70,8 +68,8 @@ const statusOptions = computed(() => [
     <div class="px-6 py-6">
         <Form
             v-bind="isEdit
-                ? CategoryController.update.form({ subdomain: props.subdomain, category: props.category!.id })
-                : CategoryController.store.form(props.subdomain)"
+                ? CategoryController.update.form({ category: props.category!.id })
+                : CategoryController.store.form()"
             v-slot="{ errors, processing }"
         >
             <FormCard

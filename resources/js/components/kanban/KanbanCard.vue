@@ -10,7 +10,6 @@ import { editor as tenantEditorPlanogramGondolas } from '@/routes/tenant/planogr
 
 const props = defineProps<{
     execution: Execution;
-    subdomain: string;
     currentUserId: string | null;
     isDragging: boolean;
     statusClass: string;
@@ -51,7 +50,6 @@ const executionLinkHref = computed(() => {
 
     if (wasStartedByCurrentUser.value) {
         return tenantEditorPlanogramGondolas.url({
-            subdomain: props.subdomain,
             record: props.execution.gondola_id,
         });
     }

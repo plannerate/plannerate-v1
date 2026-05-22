@@ -40,7 +40,6 @@ class ProviderController extends Controller
             $trashed,
             $this->resolvePerPage($request, 10),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'is_default' => $isDefault,
@@ -86,7 +85,6 @@ class ProviderController extends Controller
         $this->authorize('create', Provider::class);
 
         return Inertia::render('tenant/providers/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'provider' => null,
             'address' => null,
         ]);
@@ -122,7 +120,6 @@ class ProviderController extends Controller
         $address = $provider->addresses()->orderByDesc('is_default')->latest()->first();
 
         return Inertia::render('tenant/providers/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'provider' => [
                 'id' => $provider->id,
                 'code' => $provider->code,

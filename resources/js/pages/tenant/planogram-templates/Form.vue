@@ -14,7 +14,6 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 
 const props = defineProps<{
-    subdomain: string;
     template?: {
         id: string;
         code: string;
@@ -32,19 +31,18 @@ const isEdit = computed(
     () => props.template !== null && props.template !== undefined,
 );
 const indexPath = PlanogramTemplateController.index
-    .url(props.subdomain)
+    .url()
     .replace(/^\/\/[^/]+/, '');
 const importPath = PlanogramTemplateController.importPage
-    .url(props.subdomain)
+    .url()
     .replace(/^\/\/[^/]+/, '');
 const exportAllPath = PlanogramTemplateController.exportAll
-    ?.url(props.subdomain)
+    ?.url()
     ?.replace(/^\/\/[^/]+/, '') ?? null;
 const exportTemplatePath = computed(() => {
     if (!isEdit.value) return null;
     return PlanogramTemplateController.export
         .url({
-            subdomain: props.subdomain,
             planogramTemplate: props.template!.id,
         })
         .replace(/^\/\/[^/]+/, '');
@@ -53,7 +51,6 @@ const slotsPath = computed(() =>
     isEdit.value
         ? PlanogramTemplateController.show
               .url({
-                  subdomain: props.subdomain,
                   planogramTemplate: props.template!.id,
               })
               .replace(/^\/\/[^/]+/, '') + '/slots'
@@ -112,12 +109,9 @@ const wizardSteps: WizardStep[] = [
                 v-bind="
                     isEdit
                         ? PlanogramTemplateController.update.form({
-                              subdomain: props.subdomain,
                               planogramTemplate: props.template!.id,
                           })
-                        : PlanogramTemplateController.store.form(
-                              props.subdomain,
-                          )
+                        : PlanogramTemplateController.store.form()
                 "
                 v-slot="{ errors, processing }"
             >

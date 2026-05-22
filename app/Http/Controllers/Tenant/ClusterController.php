@@ -40,7 +40,6 @@ class ClusterController extends Controller
             $trashed,
             $this->resolvePerPage($request, 10),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -93,7 +92,6 @@ class ClusterController extends Controller
         $this->authorize('create', Cluster::class);
 
         return Inertia::render('tenant/clusters/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'cluster' => null,
             'stores' => $this->storesForSelect(),
         ]);
@@ -122,7 +120,6 @@ class ClusterController extends Controller
         $this->authorize('update', $cluster);
 
         return Inertia::render('tenant/clusters/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'cluster' => [
                 'id' => $cluster->id,
                 'store_id' => $cluster->store_id,

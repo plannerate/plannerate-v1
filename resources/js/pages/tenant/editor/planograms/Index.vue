@@ -17,7 +17,6 @@ import { ref } from 'vue';
 type PlanogramRow = {
     id: string;
     name: string | null;
-    slug: string | null;
     type: 'realograma' | 'planograma';
     store_id: string | null;
     store: string | null;
@@ -28,7 +27,6 @@ type PlanogramRow = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     planograms?: Paginator<PlanogramRow>;
     filters: {
         search: string;
@@ -48,7 +46,7 @@ const props = defineProps<{
 const listPageRef = ref<InstanceType<typeof ListPage> | null>(null);
 const { meta: planogramsMeta, rows: planogramsRows, loading: planogramsLoading } = useDeferredPaginator(() => props.planograms, 10);
 
-const indexPath = ClientPlanogramController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const indexPath = ClientPlanogramController.index.url().replace(/^\/\/[^/]+/, '');
 </script>
 
 <template>
@@ -170,7 +168,7 @@ const indexPath = ClientPlanogramController.index.url(props.subdomain).replace(/
                             <td class="px-4 py-3 ">
                                 <Button variant="outline" size="sm" as-child>
                                     <WayfinderLink
-                                        :href="ClientPlanogramController.gondolas.url({ subdomain: props.subdomain, planogram: planogram.id })"
+                                        :href="ClientPlanogramController.gondolas.url({ planogram: planogram.id })"
                                         class="inline-flex items-center gap-1.5"
                                     >
                                         <BookOpen class="size-3.5" />

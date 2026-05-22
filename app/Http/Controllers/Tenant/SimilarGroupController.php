@@ -44,7 +44,6 @@ class SimilarGroupController extends Controller
             $trashed,
             $this->resolvePerPage($request, 10),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -100,7 +99,6 @@ class SimilarGroupController extends Controller
         $this->authorize('create', SimilarGroup::class);
 
         return Inertia::render('tenant/similar-groups/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'similarGroup' => null,
             'productOptions' => $this->productOptions('', 12),
             'suggestedGrouperCode' => $this->suggestedGrouperCode(),
@@ -138,7 +136,6 @@ class SimilarGroupController extends Controller
         $similarGroup->load('products');
 
         return Inertia::render('tenant/similar-groups/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'similarGroup' => [
                 'id' => $similarGroup->id,
                 'grouper_code' => $similarGroup->grouper_code,

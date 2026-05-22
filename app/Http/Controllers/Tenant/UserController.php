@@ -40,7 +40,6 @@ class UserController extends Controller
             $trashed,
             $this->resolvePerPage($request, 10),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'is_active' => $isActive,
@@ -61,7 +60,6 @@ class UserController extends Controller
         $this->authorize('create', User::class);
 
         return Inertia::render('tenant/users/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'user' => null,
             'roles' => $this->rolesForSelect(),
             'tenant' => $this->tenantLimitPayload(),
@@ -106,7 +104,6 @@ class UserController extends Controller
             ->orderBy('roles.name')]);
 
         return Inertia::render('tenant/users/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,

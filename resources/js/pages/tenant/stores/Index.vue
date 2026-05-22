@@ -16,14 +16,12 @@ import type { Paginator } from '@/types';
 type StoreRow = {
     id: string;
     name: string | null;
-    slug: string | null;
     code: string | null;
     document: string | null;
     status: 'draft' | 'published';
 };
 
 const props = defineProps<{
-    subdomain: string;
     stores?: Paginator<StoreRow>;
     filters: {
         search: string;
@@ -39,7 +37,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useT();
-const storesIndexPath = StoreController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const storesIndexPath = StoreController.index.url().replace(/^\/\/[^/]+/, '');
 const { meta: storesMeta, rows: storesRows, loading: storesLoading } = useDeferredPaginator(() => props.stores, 10);
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.stores.title'),
@@ -57,7 +55,7 @@ const pageMeta = useCrudPageMeta({
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
             <div class="flex items-center justify-end gap-2">
-                <NewActionButton v-if="can.create" :href="StoreController.create.url(props.subdomain)">
+                <NewActionButton v-if="can.create" :href="StoreController.create.url()">
                     {{ t('app.tenant.stores.actions.new') }}
                 </NewActionButton>
             </div>
@@ -118,8 +116,8 @@ const pageMeta = useCrudPageMeta({
                         </td>
                         <td class="px-4 py-3 ">
                             <ColumnActions
-                                :edit-href="StoreController.edit.url({ subdomain: props.subdomain, store: store.id })"
-                                :delete-href="StoreController.destroy.url({ subdomain: props.subdomain, store: store.id })"
+                                :edit-href="StoreController.edit.url({ store: store.id })"
+                                :delete-href="StoreController.destroy.url({ store: store.id })"
                                 :delete-label="store.name ?? undefined"
                                 :require-confirm-word="true"
                             />

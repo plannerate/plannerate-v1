@@ -50,7 +50,6 @@ class SaleController extends Controller
             $direction,
             $this->resolvePerPage($request, 10),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'filters' => [
                 'search' => $search,
                 'store_id' => $storeId,
@@ -131,7 +130,6 @@ class SaleController extends Controller
         $this->authorize('create', Sale::class);
 
         return Inertia::render('tenant/sales/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'sale' => null,
             'stores' => $this->storesForSelect(),
         ]);
@@ -158,7 +156,6 @@ class SaleController extends Controller
         $this->authorize('update', $sale);
 
         return Inertia::render('tenant/sales/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'sale' => [
                 'id' => $sale->id,
                 'store_id' => $sale->store_id,

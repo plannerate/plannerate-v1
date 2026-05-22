@@ -97,7 +97,6 @@ const suggestionsReport = computed(() => {
             v-if="suggestionsReport"
             :suggestions="suggestionsReport.suggestions"
             :template-id="suggestionsReport.template_id"
-            :subdomain="suggestionsReport.subdomain"
             class="mx-4 mb-2"
         />
         <PlanogramValidationReport

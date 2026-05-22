@@ -41,7 +41,6 @@ class GondolaController extends Controller
             $trashed,
             $this->resolvePerPage($request, 10),
         ), [
-            'subdomain' => $this->tenantSubdomain(),
             'planogram' => [
                 'id' => $planogram->id,
                 'name' => $planogram->name,
@@ -96,7 +95,6 @@ class GondolaController extends Controller
         $this->authorize('view', $planogram);
 
         return Inertia::render('tenant/gondolas/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'planogram' => [
                 'id' => $planogram->id,
                 'name' => $planogram->name,
@@ -137,7 +135,6 @@ class GondolaController extends Controller
         $this->authorize('view', $planogram);
 
         return Inertia::render('tenant/gondolas/Form', [
-            'subdomain' => $this->tenantSubdomain(),
             'planogram' => [
                 'id' => $planogram->id,
                 'name' => $planogram->name,

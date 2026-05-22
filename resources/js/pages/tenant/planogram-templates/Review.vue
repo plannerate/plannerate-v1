@@ -29,7 +29,6 @@ type TemplateBasic = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     template: TemplateBasic;
     subtemplates: PlanogramSubtemplate[];
     current_module: number;
@@ -40,12 +39,11 @@ const props = defineProps<{
 const { t } = useT();
 
 const indexPath = PlanogramTemplateController.index
-    .url(props.subdomain)
+    .url()
     .replace(/^\/\/[^/]+/, '');
 const editPath = computed(() =>
     PlanogramTemplateController.edit
         .url({
-            subdomain: props.subdomain,
             planogramTemplate: props.template.id,
         })
         .replace(/^\/\/[^/]+/, ''),
@@ -53,7 +51,6 @@ const editPath = computed(() =>
 const slotsPath = computed(() =>
     TemplateSlotController.index
         .url({
-            subdomain: props.subdomain,
             planogramTemplate: props.template.id,
         })
         .replace(/^\/\/[^/]+/, ''),
@@ -61,7 +58,6 @@ const slotsPath = computed(() =>
 const productsPath = computed(() =>
     PlanogramTemplateController.show
         .url({
-            subdomain: props.subdomain,
             planogramTemplate: props.template.id,
         })
         .replace(/^\/\/[^/]+/, '') + '#products',
@@ -69,7 +65,6 @@ const productsPath = computed(() =>
 const baseUrl = computed(() =>
     PlanogramTemplateController.show
         .url({
-            subdomain: props.subdomain,
             planogramTemplate: props.template.id,
         })
         .replace(/^\/\/[^/]+/, ''),
@@ -163,7 +158,6 @@ function selectSlotForProducts(slotId: string): void {
     router.get(
         TemplateSlotController.review.url(
             {
-                subdomain: props.subdomain,
                 planogramTemplate: props.template.id,
             },
             {
@@ -203,7 +197,6 @@ function syncCurrentAnalysisImages(): void {
 
     router.post(
         TemplateSlotController.syncImages.url({
-            subdomain: props.subdomain,
             planogramTemplate: props.template.id,
         }),
         { eans },
@@ -223,7 +216,6 @@ function changeCurrentModule(moduleNumber: number): void {
     router.get(
         TemplateSlotController.review.url(
             {
-                subdomain: props.subdomain,
                 planogramTemplate: props.template.id,
             },
             {

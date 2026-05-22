@@ -18,7 +18,6 @@ type StorePayload = {
     id: string;
     name: string | null;
     document: string | null;
-    slug: string | null;
     code: string | null;
     phone: string | null;
     email: string | null;
@@ -66,7 +65,6 @@ type MapData = {
 type TabKey = 'identificacao' | 'mapa_da_loja';
 
 const props = defineProps<{
-    subdomain: string;
     store: (StorePayload & { map: MapData | null }) | null;
     address: AddressPayload | null;
 }>();
@@ -74,7 +72,7 @@ const props = defineProps<{
 const { t } = useT();
 const isEdit = computed(() => props.store !== null);
 const storesIndexPath = StoreController.index
-    .url(props.subdomain)
+    .url()
     .replace(/^\/\/[^/]+/, '');
 const activeTab = ref<TabKey>('identificacao');
 const storeMap = ref<MapData | null>(props.store?.map ?? null);
@@ -141,10 +139,9 @@ const pageMeta = useCrudPageMeta({
                 : t('app.tenant.stores.actions.new'),
             href: isEdit.value
                 ? StoreController.edit.url({
-                      subdomain: props.subdomain,
                       store: props.store!.id,
                   })
-                : StoreController.create.url(props.subdomain),
+                : StoreController.create.url(),
         },
     ],
 });
@@ -158,10 +155,9 @@ const pageMeta = useCrudPageMeta({
                 v-bind="
                     isEdit
                         ? StoreController.update.form({
-                              subdomain: props.subdomain,
                               store: props.store!.id,
                           })
-                        : StoreController.store.form(props.subdomain)
+                        : StoreController.store.form()
                 "
                 v-slot="{ errors, processing }"
             >

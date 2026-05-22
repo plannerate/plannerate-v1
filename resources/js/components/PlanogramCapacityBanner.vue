@@ -17,7 +17,7 @@
             Clone o subtemplate para <strong>{{ report.gondola_modules }} módulos</strong> e configure os slots extras no wizard.
           </p>
           <form
-            v-if="report.subtemplate_id && report.template_id && report.subdomain"
+            v-if="report.subtemplate_id && report.template_id"
             :action="cloneUrl"
             method="POST"
             class="mt-3"
@@ -209,7 +209,6 @@ interface CapacityReport {
   gondola_modules?: number
   subtemplate_id?: string
   template_id?: string
-  subdomain?: string
   explanation_report?: ExplanationReport | null
 }
 
@@ -241,9 +240,8 @@ const allocationSummary = computed(() => {
 
 const cloneUrl = computed(() => {
   const r = props.report
-  if (!r?.subtemplate_id || !r.template_id || !r.subdomain) return ''
+  if (!r?.subtemplate_id || !r.template_id) return ''
   return cloneSubtemplate.url({
-    subdomain: r.subdomain,
     planogramTemplate: r.template_id,
     planogramSubtemplate: r.subtemplate_id,
   })
@@ -251,7 +249,7 @@ const cloneUrl = computed(() => {
 
 function submitClone(): void {
   const r = props.report
-  if (!r?.subtemplate_id || !r.template_id || !r.subdomain || !r.gondola_modules) return
+  if (!r?.subtemplate_id || !r.template_id || !r.gondola_modules) return
   cloning.value = true
   router.post(
     cloneUrl.value,

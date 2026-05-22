@@ -41,14 +41,13 @@ type AddressPayload = {
 };
 
 const props = defineProps<{
-    subdomain: string;
     provider: ProviderPayload | null;
     address: AddressPayload | null;
 }>();
 
 const { t } = useT();
 const isEdit = computed(() => props.provider !== null);
-const providersIndexPath = ProviderController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const providersIndexPath = ProviderController.index.url().replace(/^\/\/[^/]+/, '');
 const pageMeta = useCrudPageMeta({
     headTitle: isEdit.value ? t('app.tenant.providers.actions.edit') : t('app.tenant.providers.actions.new'),
     title: isEdit.value ? t('app.tenant.providers.actions.edit') : t('app.tenant.providers.actions.new'),
@@ -59,8 +58,8 @@ const pageMeta = useCrudPageMeta({
         {
             title: isEdit.value ? t('app.tenant.providers.actions.edit') : t('app.tenant.providers.actions.new'),
             href: isEdit.value
-                ? ProviderController.edit.url({ subdomain: props.subdomain, provider: props.provider!.id })
-                : ProviderController.create.url(props.subdomain),
+                ? ProviderController.edit.url({ provider: props.provider!.id })
+                : ProviderController.create.url(),
         },
     ],
 });
@@ -72,8 +71,8 @@ const pageMeta = useCrudPageMeta({
         <div class="p-4">
         <Form
             v-bind="isEdit
-                ? ProviderController.update.form({ subdomain: props.subdomain, provider: props.provider!.id })
-                : ProviderController.store.form(props.subdomain)"
+                ? ProviderController.update.form({ provider: props.provider!.id })
+                : ProviderController.store.form()"
             v-slot="{ errors, processing }"
         >
             <FormCard
