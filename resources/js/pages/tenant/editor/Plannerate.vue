@@ -5,6 +5,7 @@ import PlanogramCapacityBanner from '@/components/PlanogramCapacityBanner.vue';
 import PlanogramSuggestions from '@/components/PlanogramSuggestions.vue';
 import PlanogramValidationReport from '@/components/PlanogramValidationReport.vue';
 import Planogram from '@/components/plannerate/Planogram.vue';
+import PlanogramAuto from '@/components/plannerate/PlanogramAuto.vue';
 // @ts-expect-error - BackendBreadcrumb type definition may not be available
 import SimpleLayout from '@/layouts/SimpleLayout.vue';
 import type {BackendBreadcrumb} from '@/composables/useBreadcrumbs';
@@ -76,11 +77,18 @@ const suggestionsReport = computed(() => {
     if (!report?.suggestions?.length || !report?.template_id) return null;
     return report;
 });
+
+const editorComponent = computed(() =>
+    props.record?.generation_mode && props.record.generation_mode !== 'manual'
+        ? PlanogramAuto
+        : Planogram,
+);
 </script>
 
 <template>
     <SimpleLayout :maxWidth="props.maxWidth">
-        <Planogram
+        <component
+            :is="editorComponent"
             :record="record"
             :products="products"
             :available-users="availableUsers"

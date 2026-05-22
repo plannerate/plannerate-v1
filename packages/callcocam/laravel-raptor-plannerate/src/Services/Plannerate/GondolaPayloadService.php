@@ -41,6 +41,7 @@ class GondolaPayloadService
             'depth' => $gondola->depth,
             'planogram_id' => $gondola->planogram_id,
             'template_id' => $gondola->template_id,
+            'generation_mode' => $gondola->generation_mode,
             'linked_map_gondola_id' => $gondola->linked_map_gondola_id,
             'linked_map_gondola_category' => $gondola->linked_map_gondola_category,
             'created_at' => $gondola->created_at?->toISOString(),

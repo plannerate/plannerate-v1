@@ -249,6 +249,24 @@ return [
         'auto_generate' => 'Gerar Automaticamente',
     ],
     'sidebar' => [
+        'generation' => [
+            'title' => 'Acoes de Planograma',
+            'template_in_use' => 'Template em uso',
+            'coming_soon' => 'Em breve',
+            'regenerate' => [
+                'title' => 'Regerar',
+                'description' => 'Recalcula produtos, frentes e rejeitados com base nas regras comerciais e operacionais.',
+                'hint' => 'Use o botao "Gerar Planograma" na barra de ferramentas acima.',
+            ],
+            'redistribute' => [
+                'title' => 'Redistribuir',
+                'description' => 'Mantém produtos e frentes, mas recalcula a posicao fisica ao mudar tipo de exposicao ou agrupamento.',
+            ],
+            'reorder' => [
+                'title' => 'Reordenar',
+                'description' => 'Reposiciona visualmente os produtos sem alterar quais estao ou quantas frentes têm.',
+            ],
+        ],
         'products' => [
             'filters_and_search' => 'Filtros e Pesquisa',
             'filters' => 'Filtros',
