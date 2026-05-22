@@ -4,6 +4,7 @@ import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormSwitchField from '@/components/form/FormSwitchField.vue';
 import FormTextField from '@/components/form/FormTextField.vue';
 import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue';
+import SlotCategorySelect from './SlotCategorySelect.vue';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
 import { categoryRoleOptions } from './slot-editor';
@@ -15,6 +16,10 @@ const draft = defineModel<SlotDraft>('draft', { required: true });
 
 defineProps<{
     errors: SlotValidationErrors;
+    /** ID da categoria base definida no template (quando disponível) */
+    templateCategoryId?: string | null;
+    /** Nome legível da categoria base */
+    templateCategoryName?: string | null;
 }>();
 
 const { t } = useT();
@@ -85,7 +90,21 @@ const maxSharePerSubcategoryModel = computed({
             </div>
 
             <div class="flex flex-col gap-y-1">
-                <CategoryCascadeSelect v-model="draft.category_id" :cascade-levels="5" :cols="2" />
+                <!-- Quando o template tem categoria base: cascade restrito + cache -->
+                <SlotCategorySelect
+                    v-if="templateCategoryId && templateCategoryName"
+                    v-model="draft.category_id"
+                    :template-category-id="templateCategoryId"
+                    :template-category-name="templateCategoryName"
+                    :cascade-levels="3"
+                />
+                <!-- Fallback: template sem categoria base → cascade completo -->
+                <CategoryCascadeSelect
+                    v-else
+                    v-model="draft.category_id"
+                    :cascade-levels="5"
+                    :cols="2"
+                />
                 <p v-if="errors.category_id" class="text-xs text-destructive">
                     {{ errors.category_id }}
                 </p>

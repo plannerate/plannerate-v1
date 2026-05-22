@@ -22,6 +22,8 @@ const props = defineProps<{
     shelfOrder: number;
     templateSlot?: PlanogramTemplateSlot | null;
     slotDefaults?: PlanogramSlotDefaults | null;
+    templateCategoryId?: string | null;
+    templateCategoryName?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -68,7 +70,7 @@ watch(
         errors.value = {};
         draft.module_number = module;
         draft.shelf_order = shelf;
-        draft.category_id = slot?.category_id ?? props.slotDefaults?.category_id ?? null;
+        draft.category_id = slot?.category_id ?? props.slotDefaults?.category_id ?? props.templateCategoryId ?? null;
         draft.min_facings = slot?.min_facings ?? props.slotDefaults?.min_facings ?? 1;
         draft.max_facings = slot?.max_facings ?? props.slotDefaults?.max_facings ?? 5;
         draft.priority = slot?.priority ?? props.slotDefaults?.priority ?? 1;
@@ -118,7 +120,12 @@ function saveSlot(): void {
                 >
             </DialogHeader>
 
-            <SlotEditorFields v-model:draft="draft" :errors="errors" />
+            <SlotEditorFields
+                v-model:draft="draft"
+                :errors="errors"
+                :template-category-id="templateCategoryId"
+                :template-category-name="templateCategoryName"
+            />
 
             <DialogFooter>
                 <Button variant="ghost" @click="emit('update:open', false)">{{

@@ -944,6 +944,8 @@ const breadcrumbs = [
         :shelf-order="editingShelf"
         :template-slot="editingSlot"
         :slot-defaults="currentSlotDefaults"
+        :template-category-id="template.category_id"
+        :template-category-name="template.category_name"
         @save="saveSlot"
     />
     <ModuleDefaultsModal
