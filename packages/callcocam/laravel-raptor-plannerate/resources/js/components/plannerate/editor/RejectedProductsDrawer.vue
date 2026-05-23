@@ -239,7 +239,7 @@ defineExpose({
 
 <template>
     <div
-        class="absolute bottom-0 left-0 right-0 z-50 flex flex-col"
+        class="z-50 flex flex-col"
         :class="isOpen ? 'shadow-2xl' : ''"
     >
         <!-- Handle / Tab -->
