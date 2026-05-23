@@ -1197,6 +1197,8 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'created' => 'Template criado com sucesso.',
                 'updated' => 'Template atualizado com sucesso.',
                 'deleted' => 'Template removido com sucesso.',
+                'promoted' => 'Template promovido com sucesso. Agora está disponível para reuso em outras gôndolas.',
+                'not_auto_origin' => 'Apenas templates gerados automaticamente podem ser promovidos.',
             ],
         ],
         'gondolas' => [

@@ -34,5 +34,10 @@ final readonly class PlanogramInput
          */
         public Collection $sections,
         public PlacementSettings $settings,
+        /**
+         * Categoria-base do planograma (âncora do escopo para validação no modo automático).
+         * Null em contextos legados ou de teste onde o planograma não está disponível.
+         */
+        public ?string $planogramCategoryId = null,
     ) {}
 }

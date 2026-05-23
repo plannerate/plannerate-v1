@@ -42,9 +42,14 @@ class AutoGeneratePlanogramRequest extends FormRequest
             'group_by_subcategory' => ['required', 'boolean'],
             'include_products_without_sales' => ['required', 'boolean'],
             'table_type' => ['required', 'string', 'in:sales,monthly_summaries'],
-            'use_ai' => ['nullable', 'boolean'],
             'category_id' => ['nullable', 'string', Rule::exists('tenant.categories', 'id')],
             'template_id' => ['nullable', 'string'],
+            'facing_expansion' => ['nullable', 'string', 'in:none,score,current_stock,target_stock,equal'],
+            'use_target_stock' => ['nullable', 'boolean'],
+            'space_fallback' => ['nullable', 'string', 'in:reduce_c,reduce_facings,skip'],
+            'max_share_per_sku' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'max_share_per_brand' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'max_share_per_subcategory' => ['nullable', 'integer', 'min:1', 'max:100'],
         ];
     }
 
@@ -94,8 +99,13 @@ class AutoGeneratePlanogramRequest extends FormRequest
             'group_by_subcategory' => 'agrupar por subcategoria',
             'include_products_without_sales' => 'incluir produtos sem vendas',
             'table_type' => 'tipo de dados',
-            'use_ai' => 'usar IA por section',
             'category_id' => 'categoria',
+            'facing_expansion' => 'expansão de frentes',
+            'use_target_stock' => 'usar estoque alvo',
+            'space_fallback' => 'comportamento por falta de espaço',
+            'max_share_per_sku' => 'limite por SKU',
+            'max_share_per_brand' => 'limite por marca',
+            'max_share_per_subcategory' => 'limite por subcategoria',
         ];
     }
 }

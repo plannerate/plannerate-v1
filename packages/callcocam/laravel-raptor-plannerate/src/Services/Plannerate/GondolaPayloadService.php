@@ -2,6 +2,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
+use App\Models\PlanogramTemplate;
 use App\Models\PlanogramTemplateSlot;
 use App\Models\Tenant;
 use App\Models\WorkflowGondolaExecution;
@@ -26,6 +27,14 @@ class GondolaPayloadService
 
         $gondola->loadMissing('generationOverrides');
 
+        // Expõe a origem do template (auto/manual/import) para o frontend decidir
+        // se deve exibir os botões de promoção e "Regerar do zero"
+        $templateOrigin = null;
+        if (is_string($gondola->template_id) && trim($gondola->template_id) !== '') {
+            $templateOrigin = PlanogramTemplate::where('id', $gondola->template_id)
+                ->value('origin');
+        }
+
         $recordData = [
             'id' => $gondola->id,
             'name' => $gondola->name,
@@ -43,6 +52,7 @@ class GondolaPayloadService
             'depth' => $gondola->depth,
             'planogram_id' => $gondola->planogram_id,
             'template_id' => $gondola->template_id,
+            'template_origin' => $templateOrigin,
             'generation_mode' => $gondola->generation_mode,
             'linked_map_gondola_id' => $gondola->linked_map_gondola_id,
             'linked_map_gondola_category' => $gondola->linked_map_gondola_category,

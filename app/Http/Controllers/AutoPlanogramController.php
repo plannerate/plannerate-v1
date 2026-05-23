@@ -126,9 +126,24 @@ class AutoPlanogramController extends Controller
                 products: $products,
                 sections: $gondolaModel->sections,
                 settings: $settings,
+                planogramCategoryId: $planogram->category_id,
             );
 
             $output = $this->service->generate($input);
+
+            // No modo automático: vincular gôndola ao template sintetizado e mudar para template-mode.
+            // A origem auto é preservada no template.origin; o generation_mode deixa de ser 'automatic'.
+            $synthTemplateId = null;
+            if ($templateId === null && $output->subtemplateId !== null) {
+                $synth = PlanogramSubtemplate::find($output->subtemplateId);
+                if ($synth) {
+                    $synthTemplateId = $synth->template_id;
+                    $gondolaModel->forceFill([
+                        'template_id' => $synthTemplateId,
+                        'generation_mode' => 'template',
+                    ])->save();
+                }
+            }
 
             $report = $output->validationReport;
             $totalProducts = $input->products->count();
@@ -172,17 +187,25 @@ class AutoPlanogramController extends Controller
                     ])->values(),
             ];
 
-            if ($templateId !== null) {
+            // Modo template (incluindo template sintetizado pelo automático)
+            $effectiveTemplateId = $templateId ?? $synthTemplateId;
+            if ($effectiveTemplateId !== null) {
                 $capacityReport['suggestions'] = $output->suggestions;
                 $capacityReport['slot_analysis'] = $output->slotAnalysis;
                 $capacityReport['has_space'] = collect($output->slotAnalysis)->some(fn ($s) => $s['largura_livre'] > 10);
                 $capacityReport['has_rejects'] = $rejectedSpace > 0;
-                $capacityReport['template_id'] = $templateId;
+                $capacityReport['template_id'] = $effectiveTemplateId;
                 $capacityReport['modules_mismatch'] = $output->modulesMismatch;
                 $capacityReport['template_modules'] = $output->templateModules;
                 $capacityReport['gondola_modules'] = $output->gondolaModules;
                 $capacityReport['subtemplate_id'] = $output->subtemplateId;
                 $capacityReport['explanation_report'] = $output->explanationReport;
+            }
+
+            // Informa o frontend que a gôndola foi promovida de automático para template-mode
+            if ($synthTemplateId !== null) {
+                $capacityReport['is_auto_generated'] = true;
+                $capacityReport['synth_template_id'] = $synthTemplateId;
             }
 
             Inertia::flash('capacity_report', $capacityReport);
@@ -445,6 +468,119 @@ class AutoPlanogramController extends Controller
         return PlanogramTemplateSlot::query()
             ->where('subtemplate_id', $subtemplate->id)
             ->get();
+    }
+
+    /**
+     * Re-sintetiza o template automático da gôndola do zero, sem parâmetros de formulário.
+     * Usa configuração padrão (strategy=abc, análise existente) e é idempotente via source_gondola_id.
+     * Disponível somente enquanto template.origin === 'auto'.
+     */
+    public function regenerateAuto(string $gondola): RedirectResponse
+    {
+        try {
+            $gondolaModel = Gondola::with(['sections.shelves'])->findOrFail($gondola);
+            $planogram = Planogram::with(['category'])->find($gondolaModel->planogram_id);
+
+            if (! $planogram) {
+                return back()->with('warning', __('app.messages.planogram_not_found'));
+            }
+
+            // Força modo automático: o synthesizer reutiliza o mesmo template por source_gondola_id
+            $gondolaModel->forceFill([
+                'template_id' => null,
+                'generation_mode' => 'automatic',
+            ])->save();
+
+            $config = new AutoGenerateConfigDTO(
+                strategy: 'abc',
+                useExistingAnalysis: true,
+                startDate: null,
+                endDate: null,
+                minFacings: 1,
+                maxFacings: 10,
+                groupBySubcategory: true,
+                includeProductsWithoutSales: true,
+                tableType: 'monthly_summaries',
+                categoryId: null,
+            );
+
+            $rankedProducts = $this->productSelection->selectAndRankProducts(
+                $planogram,
+                $config,
+                requireDimensions: false,
+            );
+
+            if ($rankedProducts->isEmpty()) {
+                return back()->with('warning', __('app.messages.no_products_found'));
+            }
+
+            $products = $rankedProducts->map(fn ($dto) => $dto->product);
+
+            $abcClassMap = $rankedProducts
+                ->filter(fn ($dto) => $dto->abcClass !== null)
+                ->mapWithKeys(fn ($dto) => [$dto->product->id => $dto->abcClass])
+                ->all();
+
+            $targetStockMap = $rankedProducts
+                ->filter(fn ($dto) => $dto->targetStock !== null && $dto->targetStock > 0)
+                ->mapWithKeys(fn ($dto) => [$dto->product->id => (float) $dto->targetStock])
+                ->all();
+
+            $weightsModel = ScoringWeights::first();
+            $weights = $weightsModel
+                ? ScoringWeightsValue::fromModel($weightsModel)
+                : ScoringWeightsValue::default();
+
+            $tenantId = app('currentTenant')?->getKey();
+
+            $settings = PlacementSettings::fromConfigDto($config)
+                ->withExtras(tenantId: $tenantId, weights: $weights)
+                ->withAbcMap($abcClassMap)
+                ->withTargetStockMap($targetStockMap);
+
+            $input = new PlanogramInput(
+                planogramId: $planogram->id,
+                gondolaId: $gondola,
+                tenantId: $tenantId ?? '',
+                products: $products,
+                sections: $gondolaModel->sections,
+                settings: $settings,
+                planogramCategoryId: $planogram->category_id,
+            );
+
+            $output = $this->service->generate($input);
+
+            // Vincular gôndola ao template re-sintetizado e mudar para template-mode
+            if ($output->subtemplateId !== null) {
+                $synth = PlanogramSubtemplate::find($output->subtemplateId);
+                if ($synth) {
+                    $gondolaModel->forceFill([
+                        'template_id' => $synth->template_id,
+                        'generation_mode' => 'template',
+                    ])->save();
+                }
+            }
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => trans_choice(
+                    'app.messages.planogram_generated',
+                    $output->totalAllocated(),
+                    ['count' => $output->totalAllocated()]
+                ),
+            ]);
+
+            return back();
+        } catch (\RuntimeException $e) {
+            return back()->with('warning', $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error('AutoPlanogramController: regenerateAuto erro', [
+                'gondola_id' => $gondola,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function swapProduct(Request $request, string $gondola): JsonResponse

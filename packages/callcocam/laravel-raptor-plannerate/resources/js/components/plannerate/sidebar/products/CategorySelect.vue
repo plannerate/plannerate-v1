@@ -11,6 +11,17 @@
             </div>
         </div>
 
+        <!-- Indicador de categoria-base travada (só no modo ancorado) -->
+        <div v-if="rootCategoryId && rootLevelIndex >= 0 && rootBreadcrumb"
+            class="mb-3 flex items-start gap-2 rounded border border-amber-200 bg-amber-50 p-2 text-xs dark:border-amber-800 dark:bg-amber-950">
+            <Lock class="mt-0.5 size-3 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div>
+                <span class="text-amber-700 dark:text-amber-300">{{ t('plannerate.sidebar.products.root_locked') }}: </span>
+                <span class="font-semibold text-amber-800 dark:text-amber-200">{{ rootBreadcrumb }}</span>
+                <p class="mt-0.5 text-amber-600 dark:text-amber-400">{{ t('plannerate.sidebar.products.root_locked_hint') }}</p>
+            </div>
+        </div>
+
         <div v-if="breadcrumbPath"
             class="text-xs p-2 mb-3 bg-gray-50 dark:bg-white/10 rounded border border-dashed border-gray-300 dark:border-gray-700">
             <span class="font-medium text-gray-600 dark:text-gray-400">{{ t('plannerate.sidebar.products.selection')
@@ -19,42 +30,45 @@
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-            <div v-for="(level, index) in levels" :key="level.key" class="flex flex-col gap-1">
-                <div class="flex items-center justify-between gap-2">
-                    <Label :for="`category-${level.key}`" class="text-xs font-medium text-gray-700 dark:text-gray-300">
-                        {{ t(`plannerate.sidebar.products.levels.${level.key}`) }}
-                        <span v-if="required && index === 0" class="text-red-500">*</span>
-                    </Label>
-                    <button v-if="selections[level.key]" type="button"
-                        class="text-[11px] text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
-                        :disabled="disabled || levelLoading[level.key]" @click="clearSelection(index)">
-                        {{ t('plannerate.sidebar.products.clear') }}
-                    </button>
+            <template v-for="(level, index) in levels" :key="level.key">
+                <div v-if="!rootCategoryId || rootLevelIndex < 0 || index > rootLevelIndex" class="flex flex-col gap-1">
+                    <div class="flex items-center justify-between gap-2">
+                        <Label :for="`category-${level.key}`" class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                            {{ t(`plannerate.sidebar.products.levels.${level.key}`) }}
+                            <span v-if="required && index === 0" class="text-red-500">*</span>
+                        </Label>
+                        <button v-if="selections[level.key]" type="button"
+                            class="text-[11px] text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
+                            :disabled="disabled || levelLoading[level.key]" @click="clearSelection(index)">
+                            {{ t('plannerate.sidebar.products.clear') }}
+                        </button>
+                    </div>
+                    <Select :modelValue="selections[level.key]"
+                        @update:modelValue="(val: any) => handleSelection(index, val)"
+                        :disabled="disabled || levelLoading[level.key] || (index > 0 && !selections[levels[index - 1].key])"
+                        class="z-1200">
+                        <SelectTrigger
+                            class="h-8 text-xs border border-gray-300 dark:border-gray-600 rounded px-2 w-full dark:bg-input/30">
+                            <SelectValue
+                                :placeholder="t('plannerate.sidebar.products.select_level', { level: t(`plannerate.sidebar.products.levels.${level.key}`).toLowerCase() })" />
+                        </SelectTrigger>
+                        <SelectContent class="z-1200">
+                            <SelectItem v-for="option in levelOptions[level.key]" :key="option.id" :value="option.id">
+                                {{ option.name }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <span v-if="levelErrors[level.key]" class="text-xs text-red-500 dark:text-red-400">{{
+                        levelErrors[level.key] }}</span>
                 </div>
-                <Select :modelValue="selections[level.key]"
-                    @update:modelValue="(val: any) => handleSelection(index, val)"
-                    :disabled="disabled || levelLoading[level.key] || (index > 0 && !selections[levels[index - 1].key])"
-                    class="z-[1200]">
-                    <SelectTrigger
-                        class="h-8 text-xs border border-gray-300 dark:border-gray-600 rounded px-2 w-full dark:bg-input/30">
-                        <SelectValue
-                            :placeholder="t('plannerate.sidebar.products.select_level', { level: t(`plannerate.sidebar.products.levels.${level.key}`).toLowerCase() })" />
-                    </SelectTrigger>
-                    <SelectContent class="z-[1200]">
-                        <SelectItem v-for="option in levelOptions[level.key]" :key="option.id" :value="option.id">
-                            {{ option.name }}
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
-                <span v-if="levelErrors[level.key]" class="text-xs text-red-500 dark:text-red-400">{{
-                    levelErrors[level.key] }}</span>
-            </div>
+            </template>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { Lock } from 'lucide-vue-next'
 import editorCategories from '@/routes/api/editor/categories'
 import { Label } from '@/components/ui/label'
 import {
@@ -82,12 +96,15 @@ interface Props {
     modelValue?: string | null
     required?: boolean
     disabled?: boolean
+    /** Quando definido, ancora a cascata nesta categoria: só é possível navegar para descendentes. */
+    rootCategoryId?: string | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
     modelValue: null,
     required: false,
-    disabled: false
+    disabled: false,
+    rootCategoryId: null,
 })
 const { t } = useT()
 
@@ -126,6 +143,12 @@ const levelErrors = ref<Record<LevelKey, string>>(
 const optionsCache = ref<Map<string, Category[]>>(new Map())
 const hierarchyCache = ref<Map<string, any[]>>(new Map())
 
+/** Índice do nível onde rootCategoryId está fixado. -1 = não ancorado ou não carregado ainda. */
+const rootLevelIndex = ref<number>(-1)
+
+/** Hierarquia completa da categoria-base (do topo até rootCategoryId), para exibir o breadcrumb travado. */
+const storedRootHierarchy = ref<Category[]>([])
+
 const subdomain = computed(() => window.location.hostname.split('.')[0] || '')
 
 function getCategoriesUrl(categoryId: string | null = null): string {
@@ -138,7 +161,7 @@ function getCategoriesUrl(categoryId: string | null = null): string {
     return wayfinderPath(editorCategories.index.url(subdomain.value))
 }
 
-async function fetchCategories(url: string): Promise<Response> { 
+async function fetchCategories(url: string): Promise<Response> {
     return fetch(url, {
         credentials: 'same-origin',
         headers: {
@@ -169,19 +192,72 @@ const breadcrumbPath = computed(() => {
         .join(' / ')
 })
 
-onMounted(() => {
-    loadOptions(0)
+/** Texto do caminho travado (do topo até rootCategoryId). */
+const rootBreadcrumb = computed((): string | null => {
+    if (!props.rootCategoryId || rootLevelIndex.value === -1) return null
+    return storedRootHierarchy.value
+        .map(item => item.name)
+        .filter(Boolean)
+        .join(' / ')
 })
 
-watch(() => props.modelValue, (newVal) => {
-    if (newVal && newVal !== getDeepestSelection()) {
-        resetSelections()
-
-        if (newVal) {
-            loadCascadeForValue(newVal)
+onMounted(() => {
+    if (props.rootCategoryId) {
+        initWithRoot()
+    } else {
+        loadOptions(0)
+        if (props.modelValue) {
+            loadCascadeForValue(props.modelValue)
         }
     }
-}, { immediate: true })
+})
+
+/**
+ * Inicializa a cascata ancorada na rootCategoryId.
+ * Carrega a hierarquia da raiz, determina o nível dela e pré-carrega os filhos imediatos.
+ * Se modelValue aponta para uma subcategoria abaixo da raiz, carrega também essa cascata.
+ */
+async function initWithRoot(): Promise<void> {
+    if (!props.rootCategoryId) return
+
+    await loadCascadeForValue(props.rootCategoryId)
+
+    // Detecta em qual nível a rootCategoryId ficou após o carregamento
+    for (let i = levels.length - 1; i >= 0; i--) {
+        if (selections.value[levels[i].key] === props.rootCategoryId) {
+            rootLevelIndex.value = i
+            break
+        }
+    }
+
+    // Se modelValue aponta para uma subcategoria diferente da raiz, carrega sua cascata
+    const initialValue = props.modelValue
+    if (initialValue && initialValue !== props.rootCategoryId) {
+        await loadCascadeForValue(initialValue)
+    }
+}
+
+watch(() => props.modelValue, async (newVal, oldVal) => {
+    if (newVal === oldVal || newVal === getDeepestSelection()) return
+
+    if (props.rootCategoryId && rootLevelIndex.value >= 0) {
+        // Modo ancorado: só reseta abaixo da raiz
+        resetBelowRoot()
+        if (newVal && newVal !== props.rootCategoryId) {
+            await loadCascadeForValue(newVal)
+        }
+        return
+    }
+
+    if (!props.rootCategoryId) {
+        // Modo normal: reset completo
+        resetSelections()
+        if (newVal) {
+            await loadCascadeForValue(newVal)
+        }
+    }
+    // Se rootCategoryId está definido mas initWithRoot ainda não terminou: ignorar (o initWithRoot cuidará)
+})
 
 watch(() => getDeepestSelection(), (newVal) => {
     emit('update:modelValue', newVal)
@@ -204,6 +280,18 @@ function resetSelections() {
         selections.value[level.key] = null
         levelOptions.value[level.key] = []
     })
+}
+
+/**
+ * Reseta apenas os níveis abaixo da rootCategoryId, preservando os níveis travados.
+ */
+function resetBelowRoot(): void {
+    const startFrom = rootLevelIndex.value + 1
+    for (let i = startFrom; i < levels.length; i++) {
+        selections.value[levels[i].key] = null
+        levelOptions.value[levels[i].key] = []
+        levelErrors.value[levels[i].key] = ''
+    }
 }
 
 async function handleSelection(levelIndex: number, value: string | null): Promise<void> {
@@ -324,6 +412,11 @@ async function loadCascadeForValue(categoryId: string): Promise<void> {
             hierarchyCache.value.set(categoryId, [...normalizedHierarchy])
         }
 
+        // Armazena a hierarquia da categoria-base para exibir o breadcrumb travado
+        if (props.rootCategoryId && categoryId === props.rootCategoryId) {
+            storedRootHierarchy.value = [...(hierarchy as Category[])]
+        }
+
         if (Array.isArray(hierarchy) && hierarchy.length > 0) {
             const cascade = hierarchy.map((cat: any) => cat.id)
 
@@ -336,7 +429,6 @@ async function loadCascadeForValue(categoryId: string): Promise<void> {
             }
 
             // Precarrega também o próximo nível após o último item selecionado
-            // para evitar o usuário ter que "selecionar de novo" apenas para abrir opções.
             const deepestSelectedIndex = Math.min(cascade.length - 1, levels.length - 1)
             const nextLevelIndex = deepestSelectedIndex + 1
 
@@ -350,6 +442,9 @@ async function loadCascadeForValue(categoryId: string): Promise<void> {
 }
 
 function clearSelection(levelIndex: number): void {
+    // Não permitir limpar níveis travados pela raiz
+    if (props.rootCategoryId && levelIndex <= rootLevelIndex.value) return
+
     const currentLevel = levels[levelIndex]
     selections.value[currentLevel.key] = null
 

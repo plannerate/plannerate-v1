@@ -3,22 +3,32 @@
 use App\Enums\BrandExposure;
 use App\Enums\PriceOrder;
 use App\Enums\SizeOrder;
+use App\Enums\ZonePriority;
 use App\Models\PlanogramTemplateSlot;
 use App\Models\Product;
 use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
 use App\Services\AutoPlanogram\Placement\TemplatePlacementEngine;
+use App\Services\AutoPlanogram\ProductOrderingService;
 use App\Services\AutoPlanogram\ProductSizeResolver;
 use App\Services\AutoPlanogram\ProductWidthResolver;
 use App\Services\AutoPlanogram\Template\SlotReviewAnalysisService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
-function invokeOrderCandidates(object $service, Collection $products, PlanogramTemplateSlot $slot): Collection
+function invokeEngineOrderCandidates(TemplatePlacementEngine $engine, Collection $products, PlanogramTemplateSlot $slot): Collection
 {
-    $method = new ReflectionMethod($service, 'orderCandidates');
+    $method = new ReflectionMethod($engine, 'orderCandidates');
     $method->setAccessible(true);
 
-    return $method->invoke($service, $products, $slot);
+    return $method->invoke($engine, $products, $slot);
+}
+
+function invokeReviewOrderCandidates(SlotReviewAnalysisService $review, Collection $products, PlanogramTemplateSlot $slot): Collection
+{
+    $method = new ReflectionMethod($review, 'orderCandidates');
+    $method->setAccessible(true);
+
+    return $method->invoke($review, $slot, $products, [], [], [], 4, ZonePriority::None, ZonePriority::None);
 }
 
 function makeSizeSlot(SizeOrder $sizeOrder): PlanogramTemplateSlot
@@ -50,7 +60,7 @@ test('engine and slot review produce the same ordering by size', function (): vo
         $sizeResolver,
         new GreedyShelfPlacer(new ProductWidthResolver),
     );
-    $review = new SlotReviewAnalysisService(new ProductWidthResolver, $sizeResolver);
+    $review = new SlotReviewAnalysisService(new ProductWidthResolver, $sizeResolver, new ProductOrderingService($sizeResolver));
 
     $products = collect([
         makeSizedProduct('500ml', 1.0),
@@ -60,12 +70,12 @@ test('engine and slot review produce the same ordering by size', function (): vo
     ]);
 
     $ascSlot = makeSizeSlot(SizeOrder::Asc);
-    $engineAsc = invokeOrderCandidates($engine, $products, $ascSlot)->pluck('id')->values()->all();
-    $reviewAsc = invokeOrderCandidates($review, $products, $ascSlot)->pluck('id')->values()->all();
+    $engineAsc = invokeEngineOrderCandidates($engine, $products, $ascSlot)->pluck('id')->values()->all();
+    $reviewAsc = invokeReviewOrderCandidates($review, $products, $ascSlot)->pluck('id')->values()->all();
 
     $descSlot = makeSizeSlot(SizeOrder::Desc);
-    $engineDesc = invokeOrderCandidates($engine, $products, $descSlot)->pluck('id')->values()->all();
-    $reviewDesc = invokeOrderCandidates($review, $products, $descSlot)->pluck('id')->values()->all();
+    $engineDesc = invokeEngineOrderCandidates($engine, $products, $descSlot)->pluck('id')->values()->all();
+    $reviewDesc = invokeReviewOrderCandidates($review, $products, $descSlot)->pluck('id')->values()->all();
 
     expect($engineAsc)->toBe($reviewAsc)
         ->and($engineDesc)->toBe($reviewDesc);

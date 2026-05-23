@@ -3,18 +3,14 @@
 namespace App\Services\AutoPlanogram;
 
 use App\Enums\PlacementFailureReason;
-use App\Services\AutoPlanogram\Adjacency\AdjacencyResolverInterface;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\DTO\PlanogramOutput;
-use App\Services\AutoPlanogram\DTO\ScoredProduct;
-use App\Services\AutoPlanogram\Grouping\BlockGrouperInterface;
-use App\Services\AutoPlanogram\Placement\PlacementEngineInterface;
 use App\Services\AutoPlanogram\Placement\PlanogramWriterInterface;
 use App\Services\AutoPlanogram\Placement\RejectedProductsWriter;
 use App\Services\AutoPlanogram\Placement\TemplatePlacementEngine;
-use App\Services\AutoPlanogram\Placement\VerticalBlockPlacer;
 use App\Services\AutoPlanogram\Scoring\ProductScorerInterface;
+use App\Services\AutoPlanogram\Synthesis\AutoTemplateSynthesisOrchestrator;
 use App\Services\AutoPlanogram\Template\SlotSuggestionGenerator;
 use App\Services\AutoPlanogram\Validation\PlanogramValidator;
 use Illuminate\Support\Collection;
@@ -30,30 +26,23 @@ use Illuminate\Support\Facades\Log;
  * 3. Validation — verifica integridade do resultado
  * 4. Write — persiste no banco em transação
  *
- * Modo automático (fallback, sem template):
+ * Modo automático (sem template):
  * 1. Score — pontua produtos por importância
- * 2. FacingCalculator — calcula facings ideais
- * 3. VerticalBlockPlacer — reserva colunas verticais para top N% de score
- * 4. Group — agrupa o restante em blocos coesos por categoria
- * 5. Adjacency — ordena blocos respeitando regras de adjacência
- * 6. GreedyShelfPlacer — distribui blocos pelo espaço restante
- * 7. Validation — verifica integridade do resultado
- * 8. Write — persiste no banco em transação
+ * 2. AutoTemplateSynthesisOrchestrator — sintetiza template a partir do mix
+ * 3. TemplatePlacementEngine — distribui produtos pelos slots sintetizados
+ * 4. Validation — verifica integridade do resultado
+ * 5. Write — persiste no banco em transação
  */
 final class AutoPlanogramService
 {
     public function __construct(
         private readonly ProductScorerInterface $scorer,
-        private readonly FacingCalculatorService $facingCalculator,
-        private readonly BlockGrouperInterface $grouper,
-        private readonly AdjacencyResolverInterface $adjacency,
-        private readonly PlacementEngineInterface $placement,
         private readonly TemplatePlacementEngine $templatePlacement,
-        private readonly VerticalBlockPlacer $verticalPlacer,
         private readonly PlanogramValidator $validator,
         private readonly PlanogramWriterInterface $writer,
         private readonly SlotSuggestionGenerator $suggestionGenerator,
         private readonly RejectedProductsWriter $rejectedProductsWriter,
+        private readonly AutoTemplateSynthesisOrchestrator $synthesisOrchestrator,
     ) {}
 
     public function generate(PlanogramInput $input): PlanogramOutput
@@ -68,12 +57,7 @@ final class AutoPlanogramService
             'score_mode' => $input->settings->usesTemplate() ? 'optional' : 'required',
         ]);
 
-        if ($input->settings->usesTemplate()) {
-            $scored = $this->scorer->scoreOrNeutral($input->products, $input->settings);
-        } else {
-            $this->logWidthQuality($input);
-            $scored = $this->scorer->score($input->products, $input->settings);
-        }
+        $scored = $this->scorer->scoreOrNeutral($input->products, $input->settings);
 
         $scoreType = $scored->first()?->metadata['score_type'] ?? 'composite';
         Log::info('AutoPlanogramService: scoring concluído', [
@@ -86,78 +70,52 @@ final class AutoPlanogramService
             return $this->generateWithTemplate($input, $scored, $scoreType);
         }
 
-        Log::info('AutoPlanogramService: produtos pontuados', ['count' => $scored->count()]);
-
-        $withFacings = $this->facingCalculator->calculateIdealFacings($scored, $input->settings);
-
-        // Marcar top N% por score como candidatos a bloco vertical
-        $verticalCandidates = $this->identifyVerticalBlockCandidates(
-            $withFacings,
-            $input->settings->verticalBlockThreshold,
-        );
-        $withFacings = $this->markVerticalCandidates($withFacings, $verticalCandidates);
-
-        $blocks = $this->grouper->group($withFacings, $input->settings);
-        $ordered = $this->adjacency->resolve($blocks, $input->settings);
-
-        // Bloco vertical primeiro — reserva posições X nas shelves
-        $verticalResult = $this->verticalPlacer->place(
-            $ordered,
-            $input->sections,
-            $input->settings,
-            $input->settings->verticalBlockMinShelves,
-        );
-
-        // GreedyShelfPlacer processa o restante, respeitando o espaço reservado
-        $greedyResult = $this->placement->place(
-            $verticalResult->remainingBlocks,
-            $input->sections,
-            $input->settings,
-            $verticalResult->reservedWidthPerShelf,
-        );
-
-        // Mesclar e renumerar orderings por shelf
-        $allSegments = $verticalResult->verticalSegments->merge($greedyResult->placedSegments);
-        $allSegments = $this->renumberOrderings($allSegments);
-        $allRejected = $greedyResult->rejectedProducts;
-
-        $fullResult = new PlacementResult($allSegments, $allRejected);
-
-        Log::info('AutoPlanogramService: segmentos posicionados', [
-            'verticais' => $verticalResult->verticalSegments->count(),
-            'greedy' => $greedyResult->placedSegments->count(),
-            'total' => $allSegments->count(),
-        ]);
-
-        $report = $this->validator->validate($allSegments, $input, $fullResult);
-
-        $this->logCapacityAnalysis($input, $fullResult);
-
-        $output = new PlanogramOutput($input->gondolaId, $allSegments, $allRejected, $report, $scoreType);
-
-        DB::transaction(function () use ($input, $allSegments, $output): void {
-            $this->writer->write($input->gondolaId, $input->sections, $allSegments);
-            $this->rejectedProductsWriter->write($input->planogramId, $input->gondolaId, $input->tenantId, $output);
-        });
-
-        Log::info('AutoPlanogramService: geração concluída', [
+        Log::info('AutoPlanogramService: modo automático — iniciando síntese de template', [
             'gondola_id' => $input->gondolaId,
-            'segments_placed' => $allSegments->count(),
-            'validation_passed' => $report->passed,
+            'category_id' => $input->settings->categoryId,
+            'planogram_base_category_id' => $input->planogramCategoryId,
         ]);
 
-        return $output;
+        $planogramBaseCategoryId = $input->planogramCategoryId
+            ?? $input->settings->categoryId
+            ?? '';
+
+        $subtemplate = $this->synthesisOrchestrator->orchestrate($input, $scored, $planogramBaseCategoryId);
+
+        $numModules = max($input->sections->count(), 1);
+        $updatedSettings = $input->settings->withTemplate(
+            templateId: $subtemplate->template_id,
+            numModules: $numModules,
+            planogramId: $input->planogramId,
+            products: $input->products,
+        );
+
+        $updatedInput = new PlanogramInput(
+            planogramId: $input->planogramId,
+            gondolaId: $input->gondolaId,
+            tenantId: $input->tenantId,
+            products: $input->products,
+            sections: $input->sections,
+            settings: $updatedSettings,
+            planogramCategoryId: $input->planogramCategoryId,
+        );
+
+        Log::info('AutoPlanogramService: template sintetizado — delegando ao TemplatePlacementEngine', [
+            'template_id' => $subtemplate->template_id,
+            'subtemplate_id' => $subtemplate->getKey(),
+            'num_modules' => $numModules,
+        ]);
+
+        return $this->generateWithTemplate($updatedInput, $scored, $scoreType);
     }
 
     private function generateWithTemplate(PlanogramInput $input, Collection $scored, string $scoreType): PlanogramOutput
     {
-        // Re-ordenar pool por score para que produtos mais relevantes ocupem slots primeiro
         $scoreOrder = $scored->pluck('product.id')->flip();
         $sortedProducts = $input->settings->products
             ->sortBy(fn ($p) => $scoreOrder->get($p->id, PHP_INT_MAX))
             ->values();
 
-        // Extrair métricas brutas do scored para priorização por zona térmica
         $zoneMetricsMap = $scored->mapWithKeys(fn ($sp) => [
             $sp->product->id => [
                 'giro' => (float) ($sp->metadata['raw_quantity'] ?? 0),
@@ -226,63 +184,6 @@ final class AutoPlanogramService
     }
 
     /**
-     * Retorna um set de product_id dos top N% de score.
-     *
-     * @param  Collection<int, ScoredProduct>  $scoredProducts
-     * @return Collection<string, true> product_id => true (para lookup O(1))
-     */
-    private function identifyVerticalBlockCandidates(Collection $scoredProducts, float $threshold): Collection
-    {
-        $total = $scoredProducts->count();
-
-        if ($total === 0 || $threshold <= 0.0) {
-            return collect();
-        }
-
-        $topN = (int) ceil($total * $threshold);
-
-        $candidates = $scoredProducts
-            ->sortByDesc('score')
-            ->take($topN)
-            ->pluck('product.id')
-            ->flip();
-
-        Log::info('AutoPlanogramService: candidatos a bloco vertical', [
-            'total_produtos' => $total,
-            'threshold' => $threshold,
-            'candidatos' => $candidates->count(),
-        ]);
-
-        return $candidates;
-    }
-
-    /**
-     * @param  Collection<int, ScoredProduct>  $scoredProducts
-     * @param  Collection<string, true>  $candidates
-     * @return Collection<int, ScoredProduct>
-     */
-    private function markVerticalCandidates(Collection $scoredProducts, Collection $candidates): Collection
-    {
-        return $scoredProducts->map(function (ScoredProduct $sp) use ($candidates): ScoredProduct {
-            return new ScoredProduct(
-                productId: $sp->productId,
-                ean: $sp->ean,
-                score: $sp->score,
-                product: $sp->product,
-                metadata: array_merge($sp->metadata, [
-                    'is_vertical_block' => $candidates->has($sp->product->id),
-                ]),
-            );
-        })->values();
-    }
-
-    /**
-     * Renumera orderings dentro de cada shelf, ordenando por position.
-     *
-     * @param  Collection<int, PlacedSegment>  $segments
-     * @return Collection<int, PlacedSegment>
-     */
-    /**
      * Carrega regras mandatory/blocked do banco do tenant para injetar no engine.
      *
      * @return array{mandatoryProductIds: array<string,true>, blockedProductIds: array<string,true>, blockedBrands: array<string,true>, blockedSubcategoryIds: array<string,true>}
@@ -330,6 +231,12 @@ final class AutoPlanogramService
         return compact('mandatoryProductIds', 'blockedProductIds', 'blockedBrands', 'blockedSubcategoryIds');
     }
 
+    /**
+     * Renumera orderings dentro de cada shelf, ordenando por position.
+     *
+     * @param  Collection<int, DTO\PlacedSegment>  $segments
+     * @return Collection<int, DTO\PlacedSegment>
+     */
     private function renumberOrderings(Collection $segments): Collection
     {
         return $segments
@@ -352,20 +259,6 @@ final class AutoPlanogramService
                     });
             })
             ->values();
-    }
-
-    private function logWidthQuality(PlanogramInput $input): void
-    {
-        $widths = $input->products->map(fn ($p) => (float) ($p->width ?? 0));
-
-        Log::info('AutoPlanogramService: qualidade de dados de width', [
-            'total_produtos' => $widths->count(),
-            'sem_width' => $input->products->whereNull('width')->count(),
-            'width_zero' => $widths->filter(fn ($w) => $w <= 0)->count(),
-            'width_suspeito' => $widths->filter(fn ($w) => $w > 60)->count(),
-            'width_valido' => $widths->filter(fn ($w) => $w > 0 && $w <= 60)->count(),
-            'largura_media_cm' => round($widths->filter(fn ($w) => $w > 0 && $w <= 60)->avg() ?? 0, 2),
-        ]);
     }
 
     private function logCapacityAnalysis(PlanogramInput $input, PlacementResult $result): void

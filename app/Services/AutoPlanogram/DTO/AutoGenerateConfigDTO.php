@@ -49,6 +49,24 @@ class AutoGenerateConfigDTO
 
         /** Categoria de produtos (opcional) */
         public readonly ?string $categoryId = null,
+
+        /** Tipo de expansão de frentes aplicado a todos os slots sintetizados */
+        public readonly ?string $facingExpansion = null,
+
+        /** Usar estoque alvo para expandir frentes nos slots sintetizados */
+        public readonly bool $useTargetStock = false,
+
+        /** Comportamento por falta de espaço aplicado a todos os slots sintetizados */
+        public readonly ?string $spaceFallback = null,
+
+        /** Limite de participação por SKU (%) — null = sem limite */
+        public readonly ?int $maxSharePerSku = null,
+
+        /** Limite de participação por marca (%) — null = sem limite */
+        public readonly ?int $maxSharePerBrand = null,
+
+        /** Limite de participação por subcategoria (%) — null = sem limite */
+        public readonly ?int $maxSharePerSubcategory = null,
     ) {}
 
     /**
@@ -67,6 +85,12 @@ class AutoGenerateConfigDTO
             includeProductsWithoutSales: $data['include_products_without_sales'] ?? false,
             tableType: $data['table_type'] ?? 'monthly_summaries',
             categoryId: $data['category_id'] ?? null,
+            facingExpansion: $data['facing_expansion'] ?? null,
+            useTargetStock: (bool) ($data['use_target_stock'] ?? false),
+            spaceFallback: $data['space_fallback'] ?? null,
+            maxSharePerSku: isset($data['max_share_per_sku']) ? (int) $data['max_share_per_sku'] : null,
+            maxSharePerBrand: isset($data['max_share_per_brand']) ? (int) $data['max_share_per_brand'] : null,
+            maxSharePerSubcategory: isset($data['max_share_per_subcategory']) ? (int) $data['max_share_per_subcategory'] : null,
         );
     }
 
@@ -86,6 +110,12 @@ class AutoGenerateConfigDTO
             'include_products_without_sales' => $this->includeProductsWithoutSales,
             'table_type' => $this->tableType,
             'category_id' => $this->categoryId,
+            'facing_expansion' => $this->facingExpansion,
+            'use_target_stock' => $this->useTargetStock,
+            'space_fallback' => $this->spaceFallback,
+            'max_share_per_sku' => $this->maxSharePerSku,
+            'max_share_per_brand' => $this->maxSharePerBrand,
+            'max_share_per_subcategory' => $this->maxSharePerSubcategory,
         ];
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,6 +24,8 @@ class PlanogramTemplate extends Model
         'description',
         'is_active',
         'created_by',
+        'origin',
+        'source_gondola_id',
     ];
 
     protected function casts(): array
@@ -30,6 +33,23 @@ class PlanogramTemplate extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Templates visíveis nas listagens públicas: ativos e não-auto.
+     * Templates auto (origin = 'auto', is_active = false) ficam ocultos até serem promovidos.
+     */
+    public function scopeVisible(Builder $query): void
+    {
+        $query->where('is_active', true)->where(function ($q): void {
+            $q->whereNull('origin')->orWhere('origin', '!=', 'auto');
+        });
+    }
+
+    /** Templates sintetizados pelo modo automático. */
+    public function scopeAuto(Builder $query): void
+    {
+        $query->where('origin', 'auto');
     }
 
     public function category(): BelongsTo

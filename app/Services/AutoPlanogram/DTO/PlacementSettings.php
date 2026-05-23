@@ -120,6 +120,24 @@ final readonly class PlacementSettings
          * @var array<string, true>
          */
         public array $blockedSubcategoryIds = [],
+
+        /** Tipo de expansão de frentes (defaults globais para slots sintetizados) */
+        public ?string $facingExpansion = null,
+
+        /** Usar estoque alvo para expandir frentes */
+        public bool $useTargetStock = false,
+
+        /** Comportamento por falta de espaço */
+        public ?string $spaceFallback = null,
+
+        /** Limite de participação por SKU (%) */
+        public ?int $maxSharePerSku = null,
+
+        /** Limite de participação por marca (%) */
+        public ?int $maxSharePerBrand = null,
+
+        /** Limite de participação por subcategoria (%) */
+        public ?int $maxSharePerSubcategory = null,
     ) {}
 
     public function usesTemplate(): bool
@@ -159,6 +177,12 @@ final readonly class PlacementSettings
             blockedProductIds: $this->blockedProductIds,
             blockedBrands: $this->blockedBrands,
             blockedSubcategoryIds: $this->blockedSubcategoryIds,
+            facingExpansion: $this->facingExpansion,
+            useTargetStock: $this->useTargetStock,
+            spaceFallback: $this->spaceFallback,
+            maxSharePerSku: $this->maxSharePerSku,
+            maxSharePerBrand: $this->maxSharePerBrand,
+            maxSharePerSubcategory: $this->maxSharePerSubcategory,
         );
     }
 
@@ -194,6 +218,12 @@ final readonly class PlacementSettings
             blockedProductIds: $this->blockedProductIds,
             blockedBrands: $this->blockedBrands,
             blockedSubcategoryIds: $this->blockedSubcategoryIds,
+            facingExpansion: $this->facingExpansion,
+            useTargetStock: $this->useTargetStock,
+            spaceFallback: $this->spaceFallback,
+            maxSharePerSku: $this->maxSharePerSku,
+            maxSharePerBrand: $this->maxSharePerBrand,
+            maxSharePerSubcategory: $this->maxSharePerSubcategory,
         );
     }
 
@@ -230,6 +260,12 @@ final readonly class PlacementSettings
             blockedProductIds: $this->blockedProductIds,
             blockedBrands: $this->blockedBrands,
             blockedSubcategoryIds: $this->blockedSubcategoryIds,
+            facingExpansion: $this->facingExpansion,
+            useTargetStock: $this->useTargetStock,
+            spaceFallback: $this->spaceFallback,
+            maxSharePerSku: $this->maxSharePerSku,
+            maxSharePerBrand: $this->maxSharePerBrand,
+            maxSharePerSubcategory: $this->maxSharePerSubcategory,
         );
     }
 
@@ -265,6 +301,12 @@ final readonly class PlacementSettings
             blockedProductIds: $this->blockedProductIds,
             blockedBrands: $this->blockedBrands,
             blockedSubcategoryIds: $this->blockedSubcategoryIds,
+            facingExpansion: $this->facingExpansion,
+            useTargetStock: $this->useTargetStock,
+            spaceFallback: $this->spaceFallback,
+            maxSharePerSku: $this->maxSharePerSku,
+            maxSharePerBrand: $this->maxSharePerBrand,
+            maxSharePerSubcategory: $this->maxSharePerSubcategory,
         );
     }
 
@@ -300,6 +342,12 @@ final readonly class PlacementSettings
             blockedProductIds: $this->blockedProductIds,
             blockedBrands: $this->blockedBrands,
             blockedSubcategoryIds: $this->blockedSubcategoryIds,
+            facingExpansion: $this->facingExpansion,
+            useTargetStock: $this->useTargetStock,
+            spaceFallback: $this->spaceFallback,
+            maxSharePerSku: $this->maxSharePerSku,
+            maxSharePerBrand: $this->maxSharePerBrand,
+            maxSharePerSubcategory: $this->maxSharePerSubcategory,
         );
     }
 
@@ -338,6 +386,12 @@ final readonly class PlacementSettings
             blockedProductIds: $this->blockedProductIds,
             blockedBrands: $this->blockedBrands,
             blockedSubcategoryIds: $this->blockedSubcategoryIds,
+            facingExpansion: $this->facingExpansion,
+            useTargetStock: $this->useTargetStock,
+            spaceFallback: $this->spaceFallback,
+            maxSharePerSku: $this->maxSharePerSku,
+            maxSharePerBrand: $this->maxSharePerBrand,
+            maxSharePerSubcategory: $this->maxSharePerSubcategory,
         );
     }
 
@@ -383,6 +437,12 @@ final readonly class PlacementSettings
             blockedProductIds: $blockedProductIds,
             blockedBrands: $blockedBrands,
             blockedSubcategoryIds: $blockedSubcategoryIds,
+            facingExpansion: $this->facingExpansion,
+            useTargetStock: $this->useTargetStock,
+            spaceFallback: $this->spaceFallback,
+            maxSharePerSku: $this->maxSharePerSku,
+            maxSharePerBrand: $this->maxSharePerBrand,
+            maxSharePerSubcategory: $this->maxSharePerSubcategory,
         );
     }
 
@@ -400,6 +460,12 @@ final readonly class PlacementSettings
             tableType: $dto->tableType,
             categoryId: $dto->categoryId,
             targetOccupancyRate: 0.90,
+            facingExpansion: $dto->facingExpansion,
+            useTargetStock: $dto->useTargetStock,
+            spaceFallback: $dto->spaceFallback,
+            maxSharePerSku: $dto->maxSharePerSku,
+            maxSharePerBrand: $dto->maxSharePerBrand,
+            maxSharePerSubcategory: $dto->maxSharePerSubcategory,
         );
     }
 
@@ -416,6 +482,12 @@ final readonly class PlacementSettings
             includeProductsWithoutSales: $this->includeProductsWithoutSales,
             tableType: $this->tableType,
             categoryId: $this->categoryId,
+            facingExpansion: $this->facingExpansion,
+            useTargetStock: $this->useTargetStock,
+            spaceFallback: $this->spaceFallback,
+            maxSharePerSku: $this->maxSharePerSku,
+            maxSharePerBrand: $this->maxSharePerBrand,
+            maxSharePerSubcategory: $this->maxSharePerSubcategory,
         );
     }
 

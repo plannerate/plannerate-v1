@@ -65,9 +65,11 @@ import { useT } from '@/composables/useT';
 import type { Gondola } from '@/types/planogram';
 import DropdownActions from '../DropdownActions.vue';
 import DropdownPerformance from '../DropdownPerformance.vue';
-import AutoGenerateModal from './AutoGenerateModal.vue';
+import AutomaticGenerateModal from './AutomaticGenerateModal.vue';
 import ConfirmDeleteGondolaDialog from './ConfirmDeleteGondolaDialog.vue';
+import GenerateModeChooserDialog from './GenerateModeChooserDialog.vue';
 import MapRegionSelectorModal from './MapRegionSelectorModal.vue';
+import TemplateGenerateModal from './TemplateGenerateModal.vue';
 import TransferSectionDialog from './partials/TransferSectionDialog.vue';
 import Performance from './Performance.vue';
 
@@ -136,9 +138,42 @@ onMounted(() => {
     isMounted.value = true;
 
     if ((page.props.flash as any)?.auto_generate && autoGenerateEnabled.value) {
-        showAutoGenerateModal.value = true;
+        openGenerateFlow();
     }
 });
+
+function openGenerateFlow(): void {
+    const gondola = currentGondola.value as Gondola | undefined;
+
+    if (!gondola) {
+        return;
+    }
+
+    // Gôndola já gerada → vai direto para template
+    if (gondola.template_id) {
+        showTemplateModal.value = true;
+
+        return;
+    }
+
+    // Sem templates disponíveis → vai direto para automático
+    if ((planogramTemplates.value as any[]).length === 0) {
+        showAutomaticModal.value = true;
+
+        return;
+    }
+
+    // Caso geral → exibe o chooser
+    showChooserDialog.value = true;
+}
+
+function handleChooserChoice(mode: 'template' | 'automatic'): void {
+    if (mode === 'template') {
+        showTemplateModal.value = true;
+    } else {
+        showAutomaticModal.value = true;
+    }
+}
 
 /**
  * Display formatado da escala (ex: "2.5x")
@@ -277,9 +312,11 @@ const permissions = computed(
 );
 
 /**
- * Estado do modal de geração automática
+ * Estados dos modais de geração
  */
-const showAutoGenerateModal = ref(false);
+const showChooserDialog = ref(false);
+const showTemplateModal = ref(false);
+const showAutomaticModal = ref(false);
 
 /**
  * Estado do modal de compartilhamento/QR code
@@ -677,7 +714,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
 
                 <!-- Geração Automática (Feature Flag) -->
                 <ButtonWithTooltip v-if="autoGenerateEnabled" variant="default" size="sm"
-                    :tooltip="t('plannerate.toolbar.auto_generate_tooltip')" @click="showAutoGenerateModal = true">
+                    :tooltip="t('plannerate.toolbar.auto_generate_tooltip')" @click="openGenerateFlow()">
                     <Sparkles class="mr-2 size-4" />
                     <span class="max-w-24 truncate">
                         {{ t('plannerate.toolbar.auto_generate') }}</span>
@@ -693,16 +730,35 @@ const handleMapRegionSelect = (regionId: string | null) => {
             </div>
         </div>
 
-        <!-- ============================================================
-         MODAL DE GERAÇÃO AUTOMÁTICA
-         ============================================================ -->
-        <AutoGenerateModal v-if="autoGenerateEnabled && permissions.can_autogenate_gondola"
-            :open="showAutoGenerateModal" :gondola="currentGondola as Gondola"
+        <!-- Chooser de modo de geração -->
+        <GenerateModeChooserDialog
+            v-if="autoGenerateEnabled && permissions.can_autogenate_gondola"
+            :open="showChooserDialog"
+            @update:open="(v: boolean) => (showChooserDialog = v)"
+            @choose="handleChooserChoice"
+        />
+
+        <!-- Modal de geração por template -->
+        <TemplateGenerateModal
+            v-if="autoGenerateEnabled && permissions.can_autogenate_gondola"
+            :open="showTemplateModal"
+            :gondola="currentGondola as Gondola"
+            :start-date="(currentGondola?.planogram as any)?.start_date"
+            :end-date="(currentGondola?.planogram as any)?.end_date"
+            :planogram-templates="planogramTemplates"
+            @update:open="(v: boolean) => (showTemplateModal = v)"
+        />
+
+        <!-- Modal de geração automática -->
+        <AutomaticGenerateModal
+            v-if="autoGenerateEnabled && permissions.can_autogenate_gondola"
+            :open="showAutomaticModal"
+            :gondola="currentGondola as Gondola"
             :category-id="(currentGondola?.planogram as any)?.category_id"
             :start-date="(currentGondola?.planogram as any)?.start_date"
-            :end-date="(currentGondola?.planogram as any)?.end_date" :strategy-options="strategyOptions"
-            :planogram-templates="planogramTemplates"
-            @update:open="(value: boolean) => (showAutoGenerateModal = value)" />
+            :end-date="(currentGondola?.planogram as any)?.end_date"
+            @update:open="(v: boolean) => (showAutomaticModal = v)"
+        />
         <!-- ============================================================
          MODAL DE CONFIRMAÇÃO DE REMOÇÃO DE GÔNDOLA
          ============================================================ -->

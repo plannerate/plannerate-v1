@@ -719,7 +719,8 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             return [$placedItems, $occupied];
         }
 
-        $expansionOrder = $this->expansionOrder($placedItems, $slot->facing_expansion);
+        $expansion = $slot->facing_expansion ?? FacingExpansion::Score;
+        $expansionOrder = $this->expansionOrder($placedItems, $expansion);
 
         // Round-robin: give +1 facing per pass until space runs out or all hit max_facings
         $changed = true;
@@ -877,7 +878,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $placed = collect();
         $remaining = $rejected;
 
-        if ($slot->space_fallback->value === 'reduce_facings') {
+        if ($slot->space_fallback?->value === 'reduce_facings') {
             $occupied = 0.0;
             $ordering = $orderingOffset;
             $stillRejected = collect();

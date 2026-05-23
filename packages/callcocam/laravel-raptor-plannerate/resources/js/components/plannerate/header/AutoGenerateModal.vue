@@ -65,7 +65,20 @@ const form = useForm({
 });
 
 const hasTemplates = computed(() => (props.planogramTemplates?.length ?? 0) > 0);
-const mode = ref<'automatic' | 'template'>(hasTemplates.value ? 'template' : 'automatic');
+
+/**
+ * Inicializa em modo template quando a gôndola já tem template_id (gerada ao menos uma vez),
+ * ou quando há templates disponíveis. Caso contrário, modo automático.
+ */
+const mode = ref<'automatic' | 'template'>(
+    props.gondola.template_id ? 'template' : hasTemplates.value ? 'template' : 'automatic',
+);
+
+/** True quando a gôndola já foi gerada pelo automático e agora segue o fluxo de template. */
+const isAutoTemplateMode = computed(
+    () => props.gondola.generation_mode === 'template' && props.gondola.template_origin === 'auto',
+);
+
 const templateComboboxOpen = ref(false);
 const templateSearch = ref('');
 const normalizedTemplates = computed(() =>
@@ -124,6 +137,8 @@ watch(hasTemplates, (templatesAvailable) => {
 watch(mode, (newMode) => {
     if (newMode === 'automatic') {
         form.template_id = null;
+        // Restaura a categoria-base do planograma ao voltar para o modo automático
+        form.category_id = props.categoryId ?? null;
     } else {
         form.category_id = null;
     }
@@ -146,7 +161,7 @@ function handleClose() {
     form.reset();
     templateComboboxOpen.value = false;
     templateSearch.value = '';
-    mode.value = hasTemplates.value ? 'template' : 'automatic';
+    mode.value = props.gondola.template_id ? 'template' : hasTemplates.value ? 'template' : 'automatic';
 }
 
 function handleGenerate() {
@@ -190,6 +205,16 @@ function selectTemplate(templateId: string): void {
             </DialogHeader>
 
             <div class="flex-1 space-y-6 overflow-x-hidden overflow-y-auto py-4">
+
+                <!-- Aviso de transição automático → template (gôndola já gerada pelo automático) -->
+                <div v-if="isAutoTemplateMode"
+                    class="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
+                    <Info class="mt-0.5 size-4 shrink-0 text-blue-600 dark:text-blue-400" />
+                    <p class="text-sm text-blue-800 dark:text-blue-200">
+                        {{ t('plannerate.header.auto_generate.auto_template_notice') }}
+                    </p>
+                </div>
+
                 <!-- Seleção de modo -->
                 <div v-if="hasTemplates" class="flex gap-2 rounded-lg border bg-muted/30 p-1">
                     <button
@@ -302,13 +327,15 @@ function selectTemplate(templateId: string): void {
                     <div class="border-t" />
 
                     <div class="space-y-4 rounded-lg border border-purple-200 p-4">
+                        <!-- Categoria ancorada na base do planograma -->
                         <CategorySelect
                             v-model="form.category_id"
                             :disabled="false"
                             :required="false"
+                            :root-category-id="categoryId ?? undefined"
                         />
                         <div class="pt-2 text-xs text-muted-foreground">
-                            {{ t('plannerate.header.auto_generate.category_hint') }}
+                            {{ t('plannerate.header.auto_generate.category_scope_hint') }}
                         </div>
                     </div>
 

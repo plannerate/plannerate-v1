@@ -48,6 +48,8 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
                 ->name('gondolas.reorder-all');
             Route::post('gondolas/{gondola}/redistribute-all', [AutoPlanogramController::class, 'redistributeGondola'])
                 ->name('gondolas.redistribute-all');
+            Route::post('gondolas/{gondola}/regenerate-auto', [AutoPlanogramController::class, 'regenerateAuto'])
+                ->name('gondolas.regenerate-auto');
 
             // ── Overrides de geração por categoria ───────────────
             Route::put('gondolas/{gondola}/generation-overrides', [GondolaSlotOverrideController::class, 'upsert'])
@@ -178,6 +180,8 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
             ->name('planogram-templates.destroy');
         Route::get('planogram-templates/{planogramTemplate}/export', [Tenant\PlanogramTemplateController::class, 'export'])
             ->name('planogram-templates.export');
+        Route::post('planogram-templates/{planogramTemplate}/promote', [Tenant\PlanogramTemplateController::class, 'promote'])
+            ->name('planogram-templates.promote');
 
         // ── Template Slots (wizard etapa 2) ───────────────────
         Route::get('planogram-templates/{planogramTemplate}/slots', [Tenant\TemplateSlotController::class, 'index'])

@@ -2,10 +2,6 @@
 
 namespace App\Providers;
 
-use App\Services\AutoPlanogram\Adjacency\AdjacencyResolverInterface;
-use App\Services\AutoPlanogram\Adjacency\RuleBasedResolver;
-use App\Services\AutoPlanogram\Grouping\BlockGrouperInterface;
-use App\Services\AutoPlanogram\Grouping\HierarchicalBlockGrouper;
 use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
 use App\Services\AutoPlanogram\Placement\PlacementEngineInterface;
 use App\Services\AutoPlanogram\Placement\PlanogramWriter;
@@ -33,8 +29,6 @@ class AutoPlanogramServiceProvider extends ServiceProvider
         ));
 
         $this->app->bind(ProductScorerInterface::class, CompositeScorer::class);
-        $this->app->bind(BlockGrouperInterface::class, HierarchicalBlockGrouper::class);
-        $this->app->bind(AdjacencyResolverInterface::class, RuleBasedResolver::class);
         $this->app->bind(PlacementEngineInterface::class, GreedyShelfPlacer::class);
         $this->app->bind(PlanogramWriterInterface::class, PlanogramWriter::class);
 

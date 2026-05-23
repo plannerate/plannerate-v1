@@ -7,12 +7,11 @@ use App\Services\AutoPlanogram\DTO\ScoredProduct;
 
 /**
  * Converte ScoredProduct → RankedProductDTO.
- * Fonte única para FacingCalculatorService e GreedyShelfPlacer.
  */
 final class ScoredProductMapper
 {
     /**
-     * Conversão básica sem facings — usada pelo FacingCalculatorService.
+     * Conversão básica sem facings.
      */
     public static function toRanked(ScoredProduct $sp): RankedProductDTO
     {
@@ -29,7 +28,7 @@ final class ScoredProductMapper
     }
 
     /**
-     * Conversão com facings pré-calculados — usada pelo GreedyShelfPlacer.
+     * Conversão com facings pré-calculados.
      */
     public static function toRankedWithFacings(ScoredProduct $sp): RankedProductDTO
     {

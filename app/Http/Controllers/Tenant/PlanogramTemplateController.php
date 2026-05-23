@@ -53,9 +53,8 @@ class PlanogramTemplateController extends Controller
     {
         $this->authorize('viewAny', PlanogramTemplate::class);
 
-        $templates = PlanogramTemplate::query()
+        $templates = PlanogramTemplate::visible()
             ->where('tenant_id', $this->tenantId())
-            ->where('is_active', true)
             ->with(['subtemplates' => function ($query): void {
                 $query->where('is_active', true)->orderBy('num_modules');
             }])
@@ -228,6 +227,29 @@ class PlanogramTemplateController extends Controller
         return $exportService->exportAll($this->tenantId(), $this->requestString($request, 'search'));
     }
 
+    /**
+     * Promove um template auto (origin='auto') tornando-o visível para reuso.
+     * Seta is_active=true no template e em todos os seus subtemplates.
+     */
+    public function promote(PlanogramTemplate $planogramTemplate): RedirectResponse
+    {
+        $this->authorize('update', $planogramTemplate);
+
+        if ($planogramTemplate->origin !== 'auto') {
+            return back()->with('warning', __('app.tenant.planogram_templates.messages.not_auto_origin'));
+        }
+
+        $planogramTemplate->update(['is_active' => true]);
+        $planogramTemplate->subtemplates()->update(['is_active' => true]);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('app.tenant.planogram_templates.messages.promoted'),
+        ]);
+
+        return back();
+    }
+
     public function destroy(PlanogramTemplate $planogramTemplate): RedirectResponse
     {
         $this->authorize('delete', $planogramTemplate);
@@ -245,6 +267,9 @@ class PlanogramTemplateController extends Controller
     private function templatesPaginator(string $search, int $perPage): LengthAwarePaginator
     {
         return PlanogramTemplate::withCount(['subtemplates'])
+            ->where(function ($q): void {
+                $q->whereNull('origin')->orWhere('origin', '!=', 'auto');
+            })
             ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search): void {
                 $w->where('code', 'like', '%'.$search.'%')
                     ->orWhere('name', 'like', '%'.$search.'%')
