@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Spatie\Multitenancy\Models\Tenant;
 
 class ResearchProductDimensionsJob implements ShouldQueue
 {
@@ -31,7 +32,8 @@ class ResearchProductDimensionsJob implements ShouldQueue
 
     public function handle(): void
     {
-        $lock = Cache::lock('gemini-rate-limit', 5);
+        // TTL de 150s garante que a lock sobrevive à chamada do Gemini mesmo se o job travar
+        $lock = Cache::lock('gemini-rate-limit', 150);
         if (! $lock->get()) {
             $this->release(60);
 
@@ -48,9 +50,10 @@ class ResearchProductDimensionsJob implements ShouldQueue
             $product->update(['dimension_status' => DimensionStatus::Researching]);
 
             $prompt = $this->buildPrompt($product);
-            $response = (new ProductDimensionResearcher($product))->prompt($prompt);
+            $rawResponse = (new ProductDimensionResearcher($product))->prompt($prompt);
+            $response = $this->parseJsonResponse($rawResponse->text);
 
-            if (! $response['found']) {
+            if (! ($response['found'] ?? false)) {
                 $product->update([
                     'dimension_status' => DimensionStatus::NotFound,
                     'dimension_researched_at' => now(),
@@ -85,19 +88,50 @@ class ResearchProductDimensionsJob implements ShouldQueue
         ]);
     }
 
+    /**
+     * Extrai o objeto JSON da resposta em texto do modelo.
+     * Remove blocos markdown (```json ... ```) se presentes e faz decode seguro.
+     *
+     * @return array<string, mixed>
+     */
+    private function parseJsonResponse(string $text): array
+    {
+        $text = trim($text);
+
+        // Remove blocos markdown: ```json ... ``` ou ``` ... ```
+        $text = preg_replace('/^```(?:json)?\s*/i', '', $text) ?? $text;
+        $text = preg_replace('/\s*```$/i', '', $text) ?? $text;
+        $text = trim($text);
+
+        $decoded = json_decode($text, true);
+
+        if (! is_array($decoded)) {
+            Log::warning('ResearchProductDimensionsJob: JSON inválido na resposta do modelo', [
+                'product_id' => $this->productId,
+                'raw' => mb_substr($text, 0, 300),
+            ]);
+
+            return ['found' => false, 'source' => 'not_found', 'confidence' => 'low'];
+        }
+
+        return $decoded;
+    }
+
     private function buildPrompt(Product $product): string
     {
         $templatePath = base_path('resources/ai/user-prompt-template.txt');
         $template = file_exists($templatePath) ? file_get_contents($templatePath) : '';
 
         $vars = [
-            '{{EAN}}' => (string) ($product->ean ?? 'não informado'),
-            '{{DESCRIPTION}}' => (string) ($product->name ?? ''),
-            '{{BRAND}}' => (string) ($product->brand ?? 'não informada'),
-            '{{CATEGORY}}' => (string) ($product->category?->name ?? 'não informada'),
-            '{{NET_CONTENT}}' => (string) ($product->packaging_content ?? ''),
-            '{{MEASUREMENT_UNIT}}' => (string) ($product->measurement_unit ?? ''),
-            '{{PACKAGING_TYPE}}' => (string) ($product->packaging_type ?? 'não informado'),
+            '{ean}' => (string) ($product->ean ?? 'não informado'),
+            '{description}' => (string) ($product->name ?? ''),
+            '{brand}' => (string) ($product->brand ?? 'não informada'),
+            '{category_id}' => (string) ($product->category_id ?? ''),
+            '{category_path}' => (string) ($product->category?->name ?? 'não informada'),
+            '{net_content}' => (string) ($product->packaging_content ?? ''),
+            '{measurement_unit}' => (string) ($product->measurement_unit ?? ''),
+            '{packaging_type}' => (string) ($product->packaging_type ?? 'não informado'),
+            '{tenant_name}' => (string) (Tenant::current()?->name ?? ''),
         ];
 
         return $template !== '' ? strtr($template, $vars) : $this->defaultPrompt($product);

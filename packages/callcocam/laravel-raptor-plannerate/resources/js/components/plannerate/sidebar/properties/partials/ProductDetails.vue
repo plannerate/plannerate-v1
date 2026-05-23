@@ -13,6 +13,7 @@
 
             <Separator />
 
+            <!-- Card de rejeição -->
             <div v-if="rejectionDetails"
                 class="space-y-2 rounded-lg border border-amber-300/70 bg-amber-50/70 p-3 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/20 dark:text-amber-200">
                 <p class="text-sm font-semibold">Detalhes da rejeição</p>
@@ -37,7 +38,48 @@
                 </p>
             </div>
 
-            <Separator v-if="rejectionDetails" />
+            <!-- Card de alocação (gerado pelo auto-planograma) -->
+            <div v-if="allocationEntry && !rejectionDetails"
+                class="space-y-2 rounded-lg border border-emerald-300/70 bg-emerald-50/70 p-3 text-xs text-emerald-900 dark:border-emerald-700/60 dark:bg-emerald-950/20 dark:text-emerald-200">
+                <div class="flex items-center justify-between">
+                    <p class="text-sm font-semibold">Detalhes da alocação</p>
+                    <div class="flex gap-1">
+                        <span v-if="allocationEntry.is_mandatory"
+                            class="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
+                            Obrigatório
+                        </span>
+                        <span v-if="allocationEntry.facings_expanded"
+                            class="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                            Expandido
+                        </span>
+                        <span v-if="allocationEntry.has_target_stock"
+                            class="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
+                            Est. alvo
+                        </span>
+                    </div>
+                </div>
+                <p v-if="allocationEntry.category_name">
+                    Categoria: <span class="font-medium">{{ allocationEntry.category_name }}</span>
+                </p>
+                <div class="flex items-center gap-4">
+                    <p>
+                        Frentes: <span class="font-medium">{{ allocationEntry.facings }}</span>
+                    </p>
+                    <p v-if="allocationEntry.abc_class">
+                        Curva: <span class="font-medium">{{ allocationEntry.abc_class }}</span>
+                    </p>
+                </div>
+                <p class="flex items-center gap-1.5">
+                    Zona:
+                    <span :class="zoneDotClass[allocationEntry.zone]" class="inline-block h-2 w-2 rounded-full" />
+                    <span class="font-medium">{{ zoneLabelMap[allocationEntry.zone] }}</span>
+                </p>
+                <p v-if="allocationEntry.role">
+                    Papel: <span class="font-medium capitalize">{{ allocationEntry.role }}</span>
+                </p>
+            </div>
+
+            <Separator v-if="rejectionDetails || allocationEntry" />
 
             <!-- Badge de edição múltipla -->
             <div v-if="hasMultipleSelections"
@@ -73,6 +115,7 @@
 </template>
 
 <script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
 import { Package, Users } from 'lucide-vue-next';
 import { computed, inject, ref } from 'vue';
 import { toast } from 'vue-sonner';
@@ -88,6 +131,7 @@ import ProductSalesSummary from './ProductSalesSummary.vue';
 
 const editor = usePlanogramEditor();
 const selection = usePlanogramSelection();
+const page = usePage();
 const { t } = useT();
 
 // Injeta função para recarregar lista de produtos após edição
@@ -137,6 +181,39 @@ const rejectionDetails = computed(() => {
         shelfOrders,
     };
 });
+
+/**
+ * Entrada de alocação do último relatório de geração — lida do flash Inertia
+ * ou do localStorage (persistido pelo PanelLeftGeneration após cada geração).
+ */
+const allocationEntry = computed(() => {
+    if (!product.value?.id) return null;
+
+    // Flash tem prioridade (acaba de ser gerado)
+    const flashAllocated: any[] = (page.props.flash as any)?.capacity_report?.explanation_report?.allocated ?? [];
+    if (flashAllocated.length) {
+        return flashAllocated.find((e: any) => e.product_id === product.value!.id) ?? null;
+    }
+
+    // Fallback: localStorage (persiste entre navegações)
+    try {
+        const gondolaId = (page.props as any)?.record?.id;
+        if (!gondolaId) return null;
+        const raw = localStorage.getItem(`plannerate_gen_report_${gondolaId}`);
+        if (!raw) return null;
+        const report = JSON.parse(raw);
+        return (report?.allocated ?? []).find((e: any) => e.product_id === product.value!.id) ?? null;
+    } catch {
+        return null;
+    }
+});
+
+const zoneLabelMap: Record<string, string> = { hot: 'Quente', cold: 'Fria', neutral: 'Neutra' };
+const zoneDotClass: Record<string, string> = {
+    hot: 'bg-orange-400',
+    cold: 'bg-blue-400',
+    neutral: 'bg-slate-300 dark:bg-slate-600',
+};
 
 // Estado do upload de imagem
 const showImageUploadDialog = ref(false);

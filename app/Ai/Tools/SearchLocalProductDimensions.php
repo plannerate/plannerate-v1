@@ -86,8 +86,7 @@ class SearchLocalProductDimensions implements Tool
                 ->description('Descrição completa do produto: nome, marca, embalagem, conteúdo')
                 ->required(),
             'category_id' => $schema->string()
-                ->description('ID da categoria do produto (ULID)')
-                ->required(),
+                ->description('ID da categoria do produto (ULID) — use o valor do campo "Categoria ID" no prompt'),
             'measurement_unit' => $schema->string()
                 ->description('Unidade de medida: KG, G, L, ML, UN, etc.')
                 ->required(),
