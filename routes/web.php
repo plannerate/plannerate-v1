@@ -6,9 +6,7 @@ use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
-Route::get('/health', function () {
-    return response()->json(['status' => 'ok']);
-})->name('home');
+Route::inertia('/',  'Welcome')->name('home');
 
 include __DIR__.'/landlord.php';
 

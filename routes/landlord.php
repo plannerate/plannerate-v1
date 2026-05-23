@@ -10,7 +10,7 @@ use App\Support\Modules\ModuleSlug;
 Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPermissionTeamContext::class])->group(function (): void {
     Broadcast::routes();
 
-    Route::get('/', [Landlord\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [Landlord\DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('plans', Landlord\PlanController::class)
         ->except(['show'])
