@@ -21,7 +21,7 @@ export const validate = (data: {
 </script>
 
 <script setup lang="ts">
-import { InfoIcon } from 'lucide-vue-next';
+import { InfoIcon, LayoutTemplate, PenLine, Zap } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -237,63 +237,114 @@ const setSubtemplate = (subtemplateId: string | null) => {
             </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div class="space-y-2" :class="{ 'md:col-span-2': props.modelValue.mode !== 'template' }">
-                <Label for="mode">{{ t('plannerate.form.step1.mode.label') }}</Label>
-                <Select
-                    :model-value="props.modelValue.mode"
-                    @update:model-value="(val) => setMode((String(val ?? 'manual')) as 'manual' | 'template' | 'automatic')"
+        <!-- Seleção de modo por cards -->
+        <div class="space-y-2">
+            <Label>{{ t('plannerate.form.step1.mode.label') }}</Label>
+            <div
+                class="grid gap-3"
+                :class="props.templates.length > 0 ? 'grid-cols-3' : 'grid-cols-2'"
+            >
+                <!-- Manual -->
+                <button
+                    type="button"
+                    class="flex flex-col gap-2 rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    :class="
+                        props.modelValue.mode === 'manual'
+                            ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
+                            : 'border-border hover:bg-muted/40'
+                    "
+                    @click="setMode('manual')"
                 >
-                    <SelectTrigger id="mode" class="w-full">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectGroup>
-                            <SelectLabel>{{ t('plannerate.form.step1.mode.label') }}</SelectLabel>
-                            <SelectItem value="manual">{{ t('plannerate.form.step1.mode.manual') }}</SelectItem>
-                            <SelectItem value="template">{{ t('plannerate.form.step1.mode.template') }}</SelectItem>
-                            <SelectItem value="automatic">{{ t('plannerate.form.step1.mode.automatic') }}</SelectItem>
-                        </SelectGroup>
-                    </SelectContent>
-                </Select>
-                <p class="text-xs text-muted-foreground">
-                    {{ t('plannerate.form.step1.mode.hint') }}
-                </p>
-            </div>
-
-            <div v-if="props.modelValue.mode === 'template'" class="space-y-2">
-                <Label for="template_id">{{ t('plannerate.form.step1.mode.template_label') }} *</Label>
-                <Select
-                    :model-value="props.modelValue.template_id ?? ''"
-                    @update:model-value="(val) => setTemplate(val ? String(val) : null)"
-                >
-                    <SelectTrigger
-                        id="template_id"
-                        class="w-full"
-                        :class="{ 'border-red-500': errors?.template_id }"
+                    <div
+                        class="flex size-9 items-center justify-center rounded-md"
+                        :class="props.modelValue.mode === 'manual' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'"
                     >
-                        <SelectValue :placeholder="t('plannerate.form.step1.mode.select_template')" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectGroup>
-                            <SelectLabel>{{ t('plannerate.form.step1.mode.template_label') }}</SelectLabel>
-                            <SelectItem
-                                v-for="template in props.templates"
-                                :key="template.value"
-                                :value="template.value"
-                            >
-                                {{ template.label }}
-                            </SelectItem>
-                        </SelectGroup>
-                    </SelectContent>
-                </Select>
-                <p v-if="errors?.template_id" class="text-xs text-red-500">
-                    {{ errors.template_id }}
-                </p>
-                <p v-else-if="props.templates.length === 0" class="text-xs text-amber-600">
-                    {{ t('plannerate.form.step1.mode.no_templates') }}
-                </p>
+                        <PenLine class="size-5" />
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium leading-none">{{ t('plannerate.form.step1.mode.manual') }}</p>
+                        <p class="mt-1 text-xs text-muted-foreground">{{ t('plannerate.form.step1.mode.manual_desc') }}</p>
+                    </div>
+                </button>
+
+                <!-- Por Template — só aparece se houver templates cadastrados -->
+                <button
+                    v-if="props.templates.length > 0"
+                    type="button"
+                    class="flex flex-col gap-2 rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    :class="
+                        props.modelValue.mode === 'template'
+                            ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
+                            : 'border-border hover:bg-muted/40'
+                    "
+                    @click="setMode('template')"
+                >
+                    <div
+                        class="flex size-9 items-center justify-center rounded-md"
+                        :class="props.modelValue.mode === 'template' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'"
+                    >
+                        <LayoutTemplate class="size-5" />
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium leading-none">{{ t('plannerate.form.step1.mode.template') }}</p>
+                        <p class="mt-1 text-xs text-muted-foreground">{{ t('plannerate.form.step1.mode.template_desc') }}</p>
+                    </div>
+                </button>
+
+                <!-- Automático -->
+                <button
+                    type="button"
+                    class="flex flex-col gap-2 rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    :class="
+                        props.modelValue.mode === 'automatic'
+                            ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
+                            : 'border-border hover:bg-muted/40'
+                    "
+                    @click="setMode('automatic')"
+                >
+                    <div
+                        class="flex size-9 items-center justify-center rounded-md"
+                        :class="props.modelValue.mode === 'automatic' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'"
+                    >
+                        <Zap class="size-5" />
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium leading-none">{{ t('plannerate.form.step1.mode.automatic') }}</p>
+                        <p class="mt-1 text-xs text-muted-foreground">{{ t('plannerate.form.step1.mode.automatic_desc') }}</p>
+                    </div>
+                </button>
             </div>
+        </div>
+
+        <div v-if="props.modelValue.mode === 'template'" class="space-y-2">
+            <Label for="template_id">{{ t('plannerate.form.step1.mode.template_label') }} *</Label>
+            <Select
+                :model-value="props.modelValue.template_id ?? ''"
+                @update:model-value="(val) => setTemplate(val ? String(val) : null)"
+            >
+                <SelectTrigger
+                    id="template_id"
+                    class="w-full"
+                    :class="{ 'border-red-500': errors?.template_id }"
+                >
+                    <SelectValue :placeholder="t('plannerate.form.step1.mode.select_template')" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectGroup>
+                        <SelectLabel>{{ t('plannerate.form.step1.mode.template_label') }}</SelectLabel>
+                        <SelectItem
+                            v-for="template in props.templates"
+                            :key="template.value"
+                            :value="template.value"
+                        >
+                            {{ template.label }}
+                        </SelectItem>
+                    </SelectGroup>
+                </SelectContent>
+            </Select>
+            <p v-if="errors?.template_id" class="text-xs text-red-500">
+                {{ errors.template_id }}
+            </p>
         </div>
 
         <!-- Seleção explícita do modelo (subtemplate) — obrigatória no modo template -->
