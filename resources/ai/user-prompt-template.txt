@@ -5,6 +5,7 @@ DADOS DO PRODUTO
 EAN: {ean}
 Descrição: {description}
 Marca: {brand}
+Categoria ID: {category_id}
 Categoria: {category_path}
 Peso/Volume líquido: {net_content} {measurement_unit}
 Tipo de embalagem: {packaging_type}
@@ -13,12 +14,11 @@ Tenant: {tenant_name}
 INSTRUÇÕES
 ─────────────────────────────────────────
 1. Execute o pipeline obrigatório em cascata:
-   a) Etapa 1 — search_local_product_dimensions
+   a) Etapa 1 — search_local_product_dimensions (use o category_id acima)
    b) Etapa 2 — fetch_cosmos_bluesoft (só se 1 falhou)
-   c) Etapa 3 — web_search (só se 2 falhou)
 
 2. Pare na primeira etapa que retornar dados válidos.
 
-3. Retorne resultado estruturado conforme o schema definido.
+3. Retorne APENAS um objeto JSON válido conforme o formato nas instruções do sistema.
 
 4. Se nada for encontrado, retorne found=false sem inventar valores.

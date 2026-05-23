@@ -3,13 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Multitenancy\Models\Concerns\UsesTenantConnection;
 
 /**
- * Cache central de dimensões por EAN.
- * Compartilhado entre todos os tenants — o mesmo EAN tem as mesmas dimensões físicas.
+ * Cache central de dimensões por EAN, armazenado por tenant.
  */
 class DimensionResearchCache extends Model
 {
+    use UsesTenantConnection;
+
+    protected $table = 'dimension_research_cache';
+
     protected $fillable = [
         'ean',
         'dimensions',

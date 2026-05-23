@@ -181,6 +181,7 @@ export interface Gondola {
     planogram_id?: string;
     template_id?: string | null;
     template_origin?: 'manual' | 'import' | 'auto' | null;
+    template_name?: string | null;
     generation_mode?: 'manual' | 'template' | 'automatic' | null;
     generation_overrides?: GondolaSlotOverride[];
     linked_map_gondola_id?: string | null;

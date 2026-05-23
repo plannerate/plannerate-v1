@@ -147,14 +147,25 @@ class AutoPlanogramController extends Controller
 
             $report = $output->validationReport;
             $totalProducts = $input->products->count();
-            $rejectedSpace = $output->rejectedProducts
-                ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
-                ->count();
+
+            // Produtos únicos definitivamente sem espaço: exclui rejeitados de um slot
+            // que acabaram colocados em outro slot da mesma categoria.
+            $placedProductIds = $output->placedSegments
+                ->flatMap(fn ($seg) => $seg->layers->map(fn ($l) => $l->productId))
+                ->flip()
+                ->all();
+            $trulyRejectedNoSpace = $output->rejectedProducts
+                ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace
+                    && $r['product'] !== null
+                    && ! isset($placedProductIds[$r['product']->id]))
+                ->unique(fn ($r) => $r['product']->id);
+            $rejectedSpace = $trulyRejectedNoSpace->count();
             $rejectedHeight = $output->rejectedProducts
                 ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::HeightExceedsShelf)
                 ->count();
             $rejectedMissingDimensions = $output->rejectedProducts
                 ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::MissingDimensions)
+                ->unique(fn ($r) => $r['product']?->id)
                 ->count();
 
             Inertia::flash('toast', [
@@ -178,8 +189,7 @@ class AutoPlanogramController extends Controller
                 'taxa_cobertura' => round($output->totalAllocated() / max($totalProducts, 1), 3),
                 'score_type' => $output->scoreType,
                 'has_sales_data' => $output->scoreType !== 'neutral',
-                'produtos_rejeitados_espaco' => $output->rejectedProducts
-                    ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
+                'produtos_rejeitados_espaco' => $trulyRejectedNoSpace
                     ->map(fn ($r) => [
                         'id' => $r['product']->id,
                         'name' => $r['product']->name,

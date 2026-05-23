@@ -141,39 +141,86 @@
       </div>
     </div>
 
-    <!-- Resumo ABC da alocação (apenas modo template) -->
+    <!-- Resumo ABC + detalhes individuais da alocação (apenas modo template) -->
     <div
       v-if="report.explanation_report && allocationSummary.total > 0"
-      class="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900"
+      class="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950"
     >
       <details>
-        <summary class="cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900">
-          Resumo da alocação — {{ allocationSummary.total }} produto(s) posicionados
+        <summary class="cursor-pointer text-sm font-medium text-emerald-800 hover:text-emerald-900 dark:text-emerald-200 dark:hover:text-emerald-100">
+          Produtos alocados — {{ allocationSummary.total }} posicionado(s)
         </summary>
+
+        <!-- Chips de resumo ABC -->
         <div class="mt-3 flex flex-wrap gap-4">
           <div v-if="allocationSummary.mandatory > 0" class="flex items-center gap-1.5 text-sm">
             <span class="inline-block h-2.5 w-2.5 rounded-full bg-red-500" />
-            <span class="text-slate-600 dark:text-slate-400">{{ allocationSummary.mandatory }} obrigatório(s)</span>
+            <span class="text-emerald-700 dark:text-emerald-300">{{ allocationSummary.mandatory }} obrigatório(s)</span>
           </div>
           <div v-if="allocationSummary.a > 0" class="flex items-center gap-1.5 text-sm">
             <span class="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" />
-            <span class="text-slate-600 dark:text-slate-400">{{ allocationSummary.a }} curva A</span>
+            <span class="text-emerald-700 dark:text-emerald-300">{{ allocationSummary.a }} curva A</span>
           </div>
           <div v-if="allocationSummary.b > 0" class="flex items-center gap-1.5 text-sm">
             <span class="inline-block h-2.5 w-2.5 rounded-full bg-yellow-500" />
-            <span class="text-slate-600 dark:text-slate-400">{{ allocationSummary.b }} curva B</span>
+            <span class="text-emerald-700 dark:text-emerald-300">{{ allocationSummary.b }} curva B</span>
           </div>
           <div v-if="allocationSummary.c > 0" class="flex items-center gap-1.5 text-sm">
             <span class="inline-block h-2.5 w-2.5 rounded-full bg-orange-400" />
-            <span class="text-slate-600 dark:text-slate-400">{{ allocationSummary.c }} curva C</span>
+            <span class="text-emerald-700 dark:text-emerald-300">{{ allocationSummary.c }} curva C</span>
           </div>
           <div v-if="allocationSummary.neutral > 0" class="flex items-center gap-1.5 text-sm">
             <span class="inline-block h-2.5 w-2.5 rounded-full bg-slate-400" />
-            <span class="text-slate-600 dark:text-slate-400">{{ allocationSummary.neutral }} sem dados de venda</span>
+            <span class="text-emerald-700 dark:text-emerald-300">{{ allocationSummary.neutral }} sem dados de venda</span>
           </div>
           <div v-if="allocationSummary.expanded > 0" class="flex items-center gap-1.5 text-sm">
-            <span class="text-slate-500 dark:text-slate-400">·</span>
-            <span class="text-slate-600 dark:text-slate-400">{{ allocationSummary.expanded }} com frentes expandidas</span>
+            <span class="text-emerald-500 dark:text-emerald-400">·</span>
+            <span class="text-emerald-700 dark:text-emerald-300">{{ allocationSummary.expanded }} com frentes expandidas</span>
+          </div>
+        </div>
+
+        <!-- Lista detalhada de produtos alocados -->
+        <div class="mt-3 max-h-72 overflow-y-auto rounded border border-emerald-100 dark:border-emerald-900">
+          <div
+            v-for="entry in allocatedProducts"
+            :key="entry.product_id"
+            class="flex items-start gap-2 border-b border-emerald-100 px-2 py-2 text-xs last:border-0 dark:border-emerald-900"
+          >
+            <!-- Badge ABC -->
+            <span
+              class="mt-0.5 inline-flex h-5 w-6 shrink-0 items-center justify-center rounded font-bold text-[10px]"
+              :class="abcBadgeClass(entry.abc_class)"
+            >
+              {{ entry.abc_class ?? '—' }}
+            </span>
+
+            <!-- Nome + categoria -->
+            <div class="min-w-0 flex-1">
+              <p class="truncate font-medium text-emerald-900 dark:text-emerald-100">{{ entry.product_name }}</p>
+              <p v-if="entry.category_name" class="truncate text-emerald-600 dark:text-emerald-400">{{ entry.category_name }}</p>
+            </div>
+
+            <!-- Zona + frentes + badges -->
+            <div class="flex shrink-0 flex-col items-end gap-1">
+              <div class="flex items-center gap-1.5">
+                <span :class="zoneDotClass(entry.zone)" class="inline-block h-2 w-2 rounded-full" />
+                <span class="text-emerald-700 dark:text-emerald-300">{{ entry.facings }}F</span>
+              </div>
+              <div class="flex flex-wrap justify-end gap-1">
+                <span
+                  v-if="entry.facings_expanded"
+                  class="rounded bg-blue-100 px-1 text-[9px] font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                >Expandido</span>
+                <span
+                  v-if="entry.is_mandatory"
+                  class="rounded bg-red-100 px-1 text-[9px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300"
+                >Obrigatório</span>
+                <span
+                  v-if="entry.has_target_stock"
+                  class="rounded bg-indigo-100 px-1 text-[9px] font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300"
+                >Est. alvo</span>
+              </div>
+            </div>
           </div>
         </div>
       </details>
@@ -185,7 +232,7 @@
 import { computed, ref } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { cloneSubtemplate } from '@/actions/App/Http/Controllers/Tenant/TemplateSlotController'
-import type { ExplanationReport, ExplanationAlert } from '@/components/planogram-templates/types'
+import type { AllocationEntry, ExplanationReport, ExplanationAlert } from '@/components/planogram-templates/types'
 
 interface RejectedProduct {
   id: string
@@ -224,9 +271,12 @@ const targetStockNotMetAlert = computed((): ExplanationAlert | null => {
   return alerts.find((a) => a.type === 'target_stock_not_met') ?? null
 })
 
+/** Lista completa de produtos alocados */
+const allocatedProducts = computed((): AllocationEntry[] => props.report?.explanation_report?.allocated ?? [])
+
 /** Resumo da curva ABC dos produtos alocados */
 const allocationSummary = computed(() => {
-  const allocated = props.report?.explanation_report?.allocated ?? []
+  const allocated = allocatedProducts.value
   return {
     total: allocated.length,
     a: allocated.filter((e) => e.abc_class === 'A').length,
@@ -237,6 +287,21 @@ const allocationSummary = computed(() => {
     expanded: allocated.filter((e) => e.facings_expanded).length,
   }
 })
+
+/** Classes Tailwind para o badge ABC de cada produto */
+function abcBadgeClass(abc: 'A' | 'B' | 'C' | null): string {
+  if (abc === 'A') return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200'
+  if (abc === 'B') return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+  if (abc === 'C') return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+  return 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+}
+
+/** Cor do ponto de zona térmica */
+function zoneDotClass(zone: string): string {
+  if (zone === 'hot') return 'bg-orange-400'
+  if (zone === 'cold') return 'bg-blue-400'
+  return 'bg-slate-300 dark:bg-slate-600'
+}
 
 const cloneUrl = computed(() => {
   const r = props.report

@@ -32,9 +32,10 @@ final class UnplacedProductsRule implements ValidationRuleInterface
             if ($product === null) {
                 continue;
             }
-            $severity = $reason->isPhysical()
-                ? ValidationSeverity::Warning
-                : ValidationSeverity::Error;
+            // Apenas regras explícitas (blocked/mandatory) são Error; espaço e dimensão são Warning
+            $severity = $reason->isHardRule()
+                ? ValidationSeverity::Error
+                : ValidationSeverity::Warning;
 
             $results[] = new ValidationResult(
                 ruleName: $this->name(),

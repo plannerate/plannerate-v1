@@ -27,12 +27,15 @@ class GondolaPayloadService
 
         $gondola->loadMissing('generationOverrides');
 
-        // Expõe a origem do template (auto/manual/import) para o frontend decidir
-        // se deve exibir os botões de promoção e "Regerar do zero"
+        // Expõe origem e nome do template para o frontend
         $templateOrigin = null;
+        $templateName = null;
         if (is_string($gondola->template_id) && trim($gondola->template_id) !== '') {
-            $templateOrigin = PlanogramTemplate::where('id', $gondola->template_id)
-                ->value('origin');
+            $tpl = PlanogramTemplate::where('id', $gondola->template_id)
+                ->select(['origin', 'name'])
+                ->first();
+            $templateOrigin = $tpl?->origin;
+            $templateName = $tpl?->name;
         }
 
         $recordData = [
@@ -53,6 +56,7 @@ class GondolaPayloadService
             'planogram_id' => $gondola->planogram_id,
             'template_id' => $gondola->template_id,
             'template_origin' => $templateOrigin,
+            'template_name' => $templateName,
             'generation_mode' => $gondola->generation_mode,
             'linked_map_gondola_id' => $gondola->linked_map_gondola_id,
             'linked_map_gondola_category' => $gondola->linked_map_gondola_category,

@@ -294,6 +294,9 @@ return [
             'supervisor-maintenance' => [
                 'maxProcesses' => 1,
             ],
+            'supervisor-ai-research' => [
+                'maxProcesses' => 3,
+            ],
         ],
 
         'staging' => [
@@ -312,6 +315,9 @@ return [
             'supervisor-maintenance' => [
                 'maxProcesses' => 1,
             ],
+            'supervisor-ai-research' => [
+                'maxProcesses' => 2,
+            ],
         ],
 
         'local' => [
@@ -328,6 +334,9 @@ return [
                 'maxProcesses' => 1,
             ],
             'supervisor-maintenance' => [
+                'maxProcesses' => 1,
+            ],
+            'supervisor-ai-research' => [
                 'maxProcesses' => 1,
             ],
         ],
