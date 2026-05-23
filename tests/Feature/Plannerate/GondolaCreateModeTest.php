@@ -130,15 +130,30 @@ test('descarta template_id quando o modo não é template', function (): void {
     expect($row->template_id)->toBeNull();
 });
 
-test('validação exige template_id quando o modo é template', function (): void {
+test('validação exige template_id e subtemplate_id quando o modo é template', function (): void {
     $rules = (new StoreGondolaRequest)->rules();
 
+    // Sem template_id nem subtemplate_id → ambos obrigatórios
     $invalid = Validator::make(gondolaCreateData(['mode' => 'template']), $rules);
     expect($invalid->fails())->toBeTrue();
     expect($invalid->errors()->has('template_id'))->toBeTrue();
+    expect($invalid->errors()->has('subtemplate_id'))->toBeTrue();
 
-    $valid = Validator::make(
+    // Com template_id mas sem o modelo (subtemplate_id) → ainda inválido
+    $missingSubtemplate = Validator::make(
         gondolaCreateData(['mode' => 'template', 'template_id' => (string) Str::ulid()]),
+        $rules,
+    );
+    expect($missingSubtemplate->fails())->toBeTrue();
+    expect($missingSubtemplate->errors()->has('subtemplate_id'))->toBeTrue();
+
+    // Template + modelo selecionados → válido
+    $valid = Validator::make(
+        gondolaCreateData([
+            'mode' => 'template',
+            'template_id' => (string) Str::ulid(),
+            'subtemplate_id' => (string) Str::ulid(),
+        ]),
         $rules,
     );
     expect($valid->fails())->toBeFalse();

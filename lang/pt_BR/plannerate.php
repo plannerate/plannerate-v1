@@ -610,6 +610,10 @@ return [
                 'select_template' => 'Selecione um template',
                 'template_label' => 'Template',
                 'no_templates' => 'Nenhum template ativo disponivel.',
+                'subtemplate_label' => 'Modelo',
+                'select_subtemplate' => 'Selecione o modelo',
+                'subtemplate_hint' => 'O numero de modulos da gondola sera definido pelo modelo escolhido.',
+                'modules_suffix' => 'modulos',
             ],
         ],
         'add_module' => [
@@ -643,6 +647,7 @@ return [
             'next' => 'Proximo',
             'creating' => 'Criando...',
             'create' => 'Criar Gondola',
+            'create_and_generate' => 'Criar e Gerar',
             'steps' => [
                 'basic_info' => [
                     'title' => 'Informacoes Basicas',
@@ -663,6 +668,10 @@ return [
                 'shelves' => [
                     'title' => 'Prateleiras',
                     'description' => 'Configuracao padrao das prateleiras',
+                ],
+                'generation' => [
+                    'title' => 'Geracao',
+                    'description' => 'Categoria e parametros de geracao automatica',
                 ],
                 'workflow' => [
                     'title' => 'Workflow',

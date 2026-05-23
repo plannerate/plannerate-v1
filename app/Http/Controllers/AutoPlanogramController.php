@@ -7,15 +7,10 @@ use App\Models\Category;
 use App\Models\PlanogramRejectedProduct;
 use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplateSlot;
-use App\Models\ScoringWeights;
-use App\Services\AutoPlanogram\AutoPlanogramService;
+use App\Services\AutoPlanogram\AutoGenerationRunner;
 use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
-use App\Services\AutoPlanogram\DTO\PlacementSettings;
-use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\Placement\ExposureRedistributeService;
 use App\Services\AutoPlanogram\Placement\VisualReorderService;
-use App\Services\AutoPlanogram\ProductSelectionService;
-use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\AutoGeneratePlanogramRequest;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
@@ -32,8 +27,7 @@ use Inertia\Inertia;
 class AutoPlanogramController extends Controller
 {
     public function __construct(
-        private readonly AutoPlanogramService $service,
-        private readonly ProductSelectionService $productSelection,
+        private readonly AutoGenerationRunner $generationRunner,
         private readonly VisualReorderService $reorderService,
         private readonly ExposureRedistributeService $redistributeService,
     ) {}
@@ -53,97 +47,10 @@ class AutoPlanogramController extends Controller
 
             $templateId = $request->input('template_id');
 
-            // Atualiza template_id e backfill de generation_mode para gôndolas antigas
-            $gondolaModel->forceFill([
-                'template_id' => $templateId,
-                'generation_mode' => $templateId ? 'template' : 'automatic',
-            ])->save();
+            $result = $this->generationRunner->run($gondolaModel, $planogram, $config, $templateId);
 
-            // No modo template os slots definem as categorias — categoria do formulário é ignorada.
-            // includeProductsWithoutSales=true para produtos sem histórico chegarem ao placer.
-            $effectiveConfig = $templateId
-                ? new AutoGenerateConfigDTO(
-                    strategy: $config->strategy,
-                    useExistingAnalysis: $config->useExistingAnalysis,
-                    startDate: $config->startDate,
-                    endDate: $config->endDate,
-                    minFacings: $config->minFacings,
-                    maxFacings: $config->maxFacings,
-                    groupBySubcategory: $config->groupBySubcategory,
-                    includeProductsWithoutSales: true,
-                    tableType: $config->tableType,
-                    categoryId: null,
-                )
-                : $config;
-
-            $rankedProducts = $this->productSelection->selectAndRankProducts(
-                $planogram,
-                $effectiveConfig,
-                requireDimensions: $templateId === null,
-            );
-
-            if ($rankedProducts->isEmpty()) {
-                return back()->with('warning', __('app.messages.no_products_found'));
-            }
-
-            $products = $rankedProducts->map(fn ($dto) => $dto->product);
-
-            $abcClassMap = $rankedProducts
-                ->filter(fn ($dto) => $dto->abcClass !== null)
-                ->mapWithKeys(fn ($dto) => [$dto->product->id => $dto->abcClass])
-                ->all();
-
-            $targetStockMap = $rankedProducts
-                ->filter(fn ($dto) => $dto->targetStock !== null && $dto->targetStock > 0)
-                ->mapWithKeys(fn ($dto) => [$dto->product->id => (float) $dto->targetStock])
-                ->all();
-
-            $weightsModel = ScoringWeights::first();
-            $weights = $weightsModel
-                ? ScoringWeightsValue::fromModel($weightsModel)
-                : ScoringWeightsValue::default();
-
-            $tenantId = app('currentTenant')?->getKey();
-
-            $settings = PlacementSettings::fromConfigDto($config)
-                ->withExtras(tenantId: $tenantId, weights: $weights)
-                ->withAbcMap($abcClassMap)
-                ->withTargetStockMap($targetStockMap);
-
-            if ($templateId) {
-                $settings = $settings->withTemplate(
-                    templateId: $templateId,
-                    numModules: $gondolaModel->sections->count(),
-                    planogramId: $planogram->id,
-                    products: $products,
-                );
-            }
-
-            $input = new PlanogramInput(
-                planogramId: $planogram->id,
-                gondolaId: $gondola,
-                tenantId: $tenantId ?? '',
-                products: $products,
-                sections: $gondolaModel->sections,
-                settings: $settings,
-                planogramCategoryId: $planogram->category_id,
-            );
-
-            $output = $this->service->generate($input);
-
-            // No modo automático: vincular gôndola ao template sintetizado e mudar para template-mode.
-            // A origem auto é preservada no template.origin; o generation_mode deixa de ser 'automatic'.
-            $synthTemplateId = null;
-            if ($templateId === null && $output->subtemplateId !== null) {
-                $synth = PlanogramSubtemplate::find($output->subtemplateId);
-                if ($synth) {
-                    $synthTemplateId = $synth->template_id;
-                    $gondolaModel->forceFill([
-                        'template_id' => $synthTemplateId,
-                        'generation_mode' => 'template',
-                    ])->save();
-                }
-            }
+            $output = $result->output;
+            $synthTemplateId = $result->synthTemplateId;
 
             $report = $output->validationReport;
             $totalProducts = $input->products->count();
@@ -496,11 +403,6 @@ class AutoPlanogramController extends Controller
             }
 
             // Força modo automático: o synthesizer reutiliza o mesmo template por source_gondola_id
-            $gondolaModel->forceFill([
-                'template_id' => null,
-                'generation_mode' => 'automatic',
-            ])->save();
-
             $config = new AutoGenerateConfigDTO(
                 strategy: 'abc',
                 useExistingAnalysis: true,
@@ -514,62 +416,7 @@ class AutoPlanogramController extends Controller
                 categoryId: null,
             );
 
-            $rankedProducts = $this->productSelection->selectAndRankProducts(
-                $planogram,
-                $config,
-                requireDimensions: false,
-            );
-
-            if ($rankedProducts->isEmpty()) {
-                return back()->with('warning', __('app.messages.no_products_found'));
-            }
-
-            $products = $rankedProducts->map(fn ($dto) => $dto->product);
-
-            $abcClassMap = $rankedProducts
-                ->filter(fn ($dto) => $dto->abcClass !== null)
-                ->mapWithKeys(fn ($dto) => [$dto->product->id => $dto->abcClass])
-                ->all();
-
-            $targetStockMap = $rankedProducts
-                ->filter(fn ($dto) => $dto->targetStock !== null && $dto->targetStock > 0)
-                ->mapWithKeys(fn ($dto) => [$dto->product->id => (float) $dto->targetStock])
-                ->all();
-
-            $weightsModel = ScoringWeights::first();
-            $weights = $weightsModel
-                ? ScoringWeightsValue::fromModel($weightsModel)
-                : ScoringWeightsValue::default();
-
-            $tenantId = app('currentTenant')?->getKey();
-
-            $settings = PlacementSettings::fromConfigDto($config)
-                ->withExtras(tenantId: $tenantId, weights: $weights)
-                ->withAbcMap($abcClassMap)
-                ->withTargetStockMap($targetStockMap);
-
-            $input = new PlanogramInput(
-                planogramId: $planogram->id,
-                gondolaId: $gondola,
-                tenantId: $tenantId ?? '',
-                products: $products,
-                sections: $gondolaModel->sections,
-                settings: $settings,
-                planogramCategoryId: $planogram->category_id,
-            );
-
-            $output = $this->service->generate($input);
-
-            // Vincular gôndola ao template re-sintetizado e mudar para template-mode
-            if ($output->subtemplateId !== null) {
-                $synth = PlanogramSubtemplate::find($output->subtemplateId);
-                if ($synth) {
-                    $gondolaModel->forceFill([
-                        'template_id' => $synth->template_id,
-                        'generation_mode' => 'template',
-                    ])->save();
-                }
-            }
+            $output = $this->generationRunner->run($gondolaModel, $planogram, $config, templateId: null)->output;
 
             Inertia::flash('toast', [
                 'type' => 'success',

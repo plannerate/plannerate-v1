@@ -41,12 +41,21 @@ import Step5Shelves, {
 import Step6Workflow, {
     validate as validateStep6,
 } from './steps/Step6Workflow.vue';
+import StepGeneration, {
+    validate as validateGeneration,
+} from './steps/StepGeneration.vue';
 
 interface Props {
     open?: boolean;
     planogramId?: string;
     availableUsers?: Array<{ id: string; name: string }>;
     gondolaSettings?: any;
+    /** Data de início do planograma — pré-preenche o campo start_date na etapa de geração */
+    planogramStartDate?: string | null;
+    /** Data de fim do planograma — pré-preenche o campo end_date na etapa de geração */
+    planogramEndDate?: string | null;
+    /** Categoria-base do planograma — pode ser fornecida pelo componente pai (Index, Kanban) */
+    planogramCategoryId?: string | null;
 }
 
 interface Emits {
@@ -63,12 +72,16 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 const { t } = useT();
 const isBrowser = typeof window !== 'undefined';
-const page = usePage<{ 
+const page = usePage<{
     subdomain?: string;
     record?: {
         planogram_id?: string;
+        category_id?: string;
         planogram?: {
             id?: string;
+            category_id?: string;
+            start_date?: string | null;
+            end_date?: string | null;
         };
     };
 }>();
@@ -89,6 +102,40 @@ const resolvedPlanogramId = computed(() => {
     return page.props.record?.planogram?.id?.toString().trim() || '';
 });
 
+/**
+ * Categoria-base do planograma — trava a cascata de seleção no passo de geração.
+ * Prioridade: prop explícita (Index/Kanban) > record do editor > null.
+ */
+const resolvedPlanogramCategoryId = computed<string | null>(
+    () =>
+        props.planogramCategoryId ??
+        page.props.record?.category_id ??
+        page.props.record?.planogram?.category_id ??
+        null,
+);
+
+/**
+ * Data de início do planograma para pré-preenchimento do passo de geração.
+ * Prioridade: prop explícita (Index/Kanban) > record do editor > null.
+ */
+const resolvedPlanogramStartDate = computed<string | null>(
+    () =>
+        props.planogramStartDate ??
+        page.props.record?.planogram?.start_date ??
+        null,
+);
+
+/**
+ * Data de fim do planograma para pré-preenchimento do passo de geração.
+ * Prioridade: prop explícita (Index/Kanban) > record do editor > null.
+ */
+const resolvedPlanogramEndDate = computed<string | null>(
+    () =>
+        props.planogramEndDate ??
+        page.props.record?.planogram?.end_date ??
+        null,
+);
+
 const resolvedSubdomain = computed(() => {
     const subdomainFromPage = page.props.subdomain?.toString().trim();
 
@@ -103,7 +150,7 @@ const resolvedSubdomain = computed(() => {
     return window.location.hostname.split('.')[0] || '';
 });
 
-// Current step
+// Current step (1-based index dentro dos passos ativos do modo)
 const currentStep = ref(1);
 
 // Helper functions for localStorage
@@ -145,16 +192,14 @@ const saveScaleToLocalStorage = (scale: number) => {
 const getInitialFormData = () => {
     const savedScale = loadScaleFromLocalStorage();
 
-    // Usa composable para campos de gôndola
     const gondolaFields = getInitialGondolaFields(null, props.gondolaSettings);
 
-    // Ajusta scaleFactor com valor do localStorage se existir
     if (savedScale) {
         gondolaFields.scaleFactor = savedScale;
     }
 
     return {
-        // Step 1: Gondola Basic Info (do composable)
+        // Step 1: Gondola Basic Info
         gondolaName: gondolaFields.gondolaName || generateGondolaCode(),
         location: gondolaFields.location || DEFAULT_GONDOLA_FIELDS.location,
         side: gondolaFields.side || DEFAULT_GONDOLA_FIELDS.side,
@@ -166,24 +211,25 @@ const getInitialFormData = () => {
         // Step 1: Modo de geração (manual por padrão)
         mode: 'manual' as 'manual' | 'template' | 'automatic',
         template_id: null as string | null,
+        subtemplate_id: null as string | null,
 
-        // Step 2: Module Configuration (dimensões do módulo/seção)
+        // Step 2: Module Configuration
         height: DEFAULT_SECTION_FIELDS.height,
         width: DEFAULT_SECTION_FIELDS.width,
         numModules: DEFAULT_GONDOLA_FIELDS.numModules,
 
-        // Step 3: Base Configuration (do composable de seção)
+        // Step 3: Base Configuration
         baseHeight: DEFAULT_SECTION_FIELDS.baseHeight,
         baseWidth: DEFAULT_SECTION_FIELDS.baseWidth,
         baseDepth: DEFAULT_SECTION_FIELDS.baseDepth,
 
-        // Step 4: Cremalheira Configuration (do composable de seção)
+        // Step 4: Cremalheira Configuration
         rackWidth: DEFAULT_SECTION_FIELDS.rackWidth,
         holeHeight: DEFAULT_SECTION_FIELDS.holeHeight,
         holeWidth: DEFAULT_SECTION_FIELDS.holeWidth,
         holeSpacing: DEFAULT_SECTION_FIELDS.holeSpacing,
 
-        // Step 5: Shelves Default Configuration (do composable de prateleira)
+        // Step 5: Shelves Default Configuration
         shelfHeight: DEFAULT_SHELF_FIELDS.shelfHeight,
         shelfWidth: DEFAULT_SHELF_FIELDS.shelfWidth,
         shelfDepth: DEFAULT_SHELF_FIELDS.shelfDepth,
@@ -194,12 +240,62 @@ const getInitialFormData = () => {
         autoStartWorkflow: true,
         assignToCurrentUser: true,
         assignedUserId: null as string | null,
-        startDate: new Date().toISOString().slice(0, 16) as string | null, // Format: YYYY-MM-DDTHH:mm
+        startDate: new Date().toISOString().slice(0, 16) as string | null,
         notes: '',
+
+        // Geração automática (campos flat — reaproveitam os partials do modal)
+        strategy: 'abc' as 'abc' | 'sales' | 'margin' | 'mix',
+        use_existing_analysis: false,
+        start_date: '',
+        end_date: '',
+        min_facings: 1,
+        max_facings: 10,
+        group_by_subcategory: true,
+        include_products_without_sales: false,
+        table_type: 'monthly_summaries' as 'sales' | 'monthly_summaries',
+        category_id: null as string | null,
+        facing_expansion: null as string | null,
+        use_target_stock: false,
+        space_fallback: null as string | null,
+        max_share_per_sku: null as number | null,
+        max_share_per_brand: null as number | null,
+        max_share_per_subcategory: null as number | null,
     };
 };
 
 const form = useForm(getInitialFormData());
+
+// Pré-preenche a categoria de geração com a categoria-base do planograma
+watch(
+    resolvedPlanogramCategoryId,
+    (categoryId) => {
+        if (categoryId && !form.category_id) {
+            form.category_id = categoryId;
+        }
+    },
+    { immediate: true },
+);
+
+// Pré-preenche as datas de vigência do planograma no passo de geração
+watch(
+    resolvedPlanogramStartDate,
+    (startDate) => {
+        if (startDate && !form.start_date) {
+            form.start_date = startDate;
+        }
+    },
+    { immediate: true },
+);
+
+watch(
+    resolvedPlanogramEndDate,
+    (endDate) => {
+        if (endDate && !form.end_date) {
+            form.end_date = endDate;
+        }
+    },
+    { immediate: true },
+);
 
 // Watch scale changes to save to localStorage
 watch(
@@ -269,36 +365,28 @@ watch(
     { immediate: true },
 );
 
-// Pré-preenche numModules a partir do subtemplate ao escolher um template
+// Deriva numModules a partir do modelo (subtemplate) escolhido explicitamente
 watch(
-    () => form.template_id,
-    (templateId) => {
-        if (form.mode !== 'template' || !templateId) {
+    () => form.subtemplate_id,
+    (subtemplateId) => {
+        if (form.mode !== 'template' || !subtemplateId) {
             return;
         }
 
         const selected = templateOptions.value.find(
-            (option) => option.value === templateId,
+            (option) => option.value === form.template_id,
         );
-        const subtemplates = selected?.subtemplates ?? [];
-
-        if (subtemplates.length === 0) {
-            return;
-        }
-
-        // O engine casa o subtemplate cujo num_modules <= nº de seções;
-        // usar o maior garante match exato com o maior subtemplate.
-        const maxModules = Math.max(
-            ...subtemplates.map((subtemplate) => subtemplate.num_modules),
+        const subtemplate = (selected?.subtemplates ?? []).find(
+            (item) => item.id === subtemplateId,
         );
 
-        if (maxModules >= 1) {
-            form.numModules = maxModules;
+        if (subtemplate && subtemplate.num_modules >= 1) {
+            form.numModules = subtemplate.num_modules;
         }
     },
 );
 
-// Form data split by steps usando WritableComputedRef para garantir reatividade bidirecional
+// ── Form slices por passo ───────────────────────────────────────────────────
 const step1Data = computed({
     get: () => ({
         gondolaName: form.gondolaName,
@@ -309,6 +397,7 @@ const step1Data = computed({
         status: form.status,
         mode: form.mode,
         template_id: form.template_id,
+        subtemplate_id: form.subtemplate_id,
     }),
     set: (value) => {
         Object.assign(form, value);
@@ -321,8 +410,8 @@ const step2Data = computed({
         width: form.width,
         numModules: form.numModules,
     }),
-    set: (value) => { 
-        Object.assign(form, value); 
+    set: (value) => {
+        Object.assign(form, value);
     },
 });
 
@@ -357,12 +446,11 @@ const step5Data = computed({
         numShelves: form.numShelves,
         productType: form.productType,
     }),
-    set: (value) => { 
-        Object.assign(form, value); 
+    set: (value) => {
+        Object.assign(form, value);
     },
 });
 
-// Module data for step 5 calculations
 const moduleData = computed(() => ({
     height: form.height,
     baseHeight: form.baseHeight,
@@ -386,68 +474,91 @@ const step6Data = computed({
     },
 });
 
-// Steps configuration
-const steps = [
-    {
-        step: 1,
-        title: t('plannerate.form.gondola_create.steps.basic_info.title'),
-        description: t(
-            'plannerate.form.gondola_create.steps.basic_info.description',
-        ),
-    },
-    {
-        step: 2,
-        title: t('plannerate.form.gondola_create.steps.modules.title'),
-        description: t('plannerate.form.gondola_create.steps.modules.description'),
-    },
-    {
-        step: 3,
-        title: t('plannerate.form.gondola_create.steps.base.title'),
-        description: t('plannerate.form.gondola_create.steps.base.description'),
-    },
-    {
-        step: 4,
-        title: t('plannerate.form.gondola_create.steps.rack.title'),
-        description: t('plannerate.form.gondola_create.steps.rack.description'),
-    },
-    {
-        step: 5,
-        title: t('plannerate.form.gondola_create.steps.shelves.title'),
-        description: t(
-            'plannerate.form.gondola_create.steps.shelves.description',
-        ),
-    },
-    {
-        step: 6,
-        title: t('plannerate.form.gondola_create.steps.workflow.title'),
-        description: t(
-            'plannerate.form.gondola_create.steps.workflow.description',
-        ),
-    },
-];
+// ── Passos dinâmicos por modo ────────────────────────────────────────────────
+type StepKey =
+    | 'basic'
+    | 'modules'
+    | 'base'
+    | 'rack'
+    | 'shelves'
+    | 'generation'
+    | 'workflow';
 
-// Navigation with validation
-const canGoNext = computed(() => {
-    switch (currentStep.value) {
-        case 1:
-            return validateStep1(step1Data.value);
-        case 2:
-            return validateStep2(step2Data.value);
-        case 3:
-            return validateStep3(step3Data.value);
-        case 4:
-            return validateStep4(step4Data.value);
-        case 5:
-            return validateStep5(step5Data.value);
-        case 6:
-            return validateStep6();
-        default:
-            return false;
-    }
-});
+const stepTitle: Record<StepKey, () => string> = {
+    basic: () => t('plannerate.form.gondola_create.steps.basic_info.title'),
+    modules: () => t('plannerate.form.gondola_create.steps.modules.title'),
+    base: () => t('plannerate.form.gondola_create.steps.base.title'),
+    rack: () => t('plannerate.form.gondola_create.steps.rack.title'),
+    shelves: () => t('plannerate.form.gondola_create.steps.shelves.title'),
+    generation: () => t('plannerate.form.gondola_create.steps.generation.title'),
+    workflow: () => t('plannerate.form.gondola_create.steps.workflow.title'),
+};
+
+const stepDescription: Record<StepKey, () => string> = {
+    basic: () => t('plannerate.form.gondola_create.steps.basic_info.description'),
+    modules: () => t('plannerate.form.gondola_create.steps.modules.description'),
+    base: () => t('plannerate.form.gondola_create.steps.base.description'),
+    rack: () => t('plannerate.form.gondola_create.steps.rack.description'),
+    shelves: () => t('plannerate.form.gondola_create.steps.shelves.description'),
+    generation: () =>
+        t('plannerate.form.gondola_create.steps.generation.description'),
+    workflow: () => t('plannerate.form.gondola_create.steps.workflow.description'),
+};
+
+// Manual e template: estrutura física completa.
+// Automático: motor cria as prateleiras → troca o passo "shelves" pelo passo de geração.
+const stepKeysByMode: Record<'manual' | 'template' | 'automatic', StepKey[]> = {
+    manual: ['basic', 'modules', 'base', 'rack', 'shelves', 'workflow'],
+    template: ['basic', 'modules', 'base', 'rack', 'shelves', 'workflow'],
+    automatic: ['basic', 'modules', 'base', 'rack', 'generation', 'workflow'],
+};
+
+const activeStepKeys = computed<StepKey[]>(
+    () => stepKeysByMode[form.mode] ?? stepKeysByMode.manual,
+);
+
+const steps = computed(() =>
+    activeStepKeys.value.map((key, index) => ({
+        step: index + 1,
+        key,
+        title: stepTitle[key](),
+        description: stepDescription[key](),
+    })),
+);
+
+const totalSteps = computed(() => activeStepKeys.value.length);
+const currentStepKey = computed<StepKey>(
+    () => activeStepKeys.value[currentStep.value - 1] ?? 'basic',
+);
+const isLastStep = computed(() => currentStep.value >= totalSteps.value);
+
+// Validação do passo ativo
+const validateByKey: Record<StepKey, () => boolean> = {
+    basic: () => validateStep1(step1Data.value),
+    modules: () => validateStep2(step2Data.value),
+    base: () => validateStep3(step3Data.value),
+    rack: () => validateStep4(step4Data.value),
+    shelves: () => validateStep5(step5Data.value),
+    generation: () =>
+        validateGeneration({
+            strategy: form.strategy,
+            use_existing_analysis: form.use_existing_analysis,
+            start_date: form.start_date,
+            end_date: form.end_date,
+            min_facings: form.min_facings,
+            max_facings: form.max_facings,
+            group_by_subcategory: form.group_by_subcategory,
+            include_products_without_sales: form.include_products_without_sales,
+            table_type: form.table_type,
+            category_id: form.category_id,
+        }),
+    workflow: () => validateStep6(),
+};
+
+const canGoNext = computed(() => validateByKey[currentStepKey.value]?.() ?? false);
 
 const nextStep = () => {
-    if (canGoNext.value && currentStep.value < 6) {
+    if (canGoNext.value && currentStep.value < totalSteps.value) {
         currentStep.value++;
     }
 };
@@ -457,6 +568,12 @@ const prevStep = () => {
         currentStep.value--;
     }
 };
+
+const submitLabel = computed(() =>
+    form.mode === 'automatic'
+        ? t('plannerate.form.gondola_create.create_and_generate')
+        : t('plannerate.form.gondola_create.create'),
+);
 
 const handleClose = () => {
     emit('update:open', false);
@@ -469,15 +586,20 @@ const handleSubmit = () => {
     const subdomain = resolvedSubdomain.value;
 
     if (!planogramId || !subdomain) {
-        console.error('Não foi possível resolver subdomínio/planograma para criar gôndola.', {
-            planogramId,
-            subdomain,
-            propsPlanogramId: props.planogramId,
-        });
+        console.error(
+            'Não foi possível resolver subdomínio/planograma para criar gôndola.',
+            { planogramId, subdomain, propsPlanogramId: props.planogramId },
+        );
 
         return;
     }
- 
+
+    // No automático o motor dirige a estrutura: a gôndola nasce sem prateleiras (numShelves=0)
+    // e o motor as cria conforme a categoria.
+    if (form.mode === 'automatic') {
+        form.numShelves = 0;
+    }
+
     form.post(storeGondolaRoute.url({ planogram: planogramId }), {
         preserveScroll: true,
         preserveState: false,
@@ -511,7 +633,7 @@ const handleSubmit = () => {
                     >
                         <StepperItem
                             v-for="step in steps"
-                            :key="step.step"
+                            :key="step.key"
                             v-slot="{ state }"
                             class="relative flex w-full flex-col items-center justify-center"
                             :step="step.step"
@@ -565,39 +687,46 @@ const handleSubmit = () => {
                 <!-- Step Content -->
                 <div class="flex-1 rounded-lg border py-2 px-6">
                     <Step1BasicInfo
-                        v-if="currentStep === 1"
+                        v-if="currentStepKey === 'basic'"
                         v-model="step1Data"
                         :templates="templateOptions"
                         :errors="form.errors"
                     />
 
                     <Step2Modules
-                        v-if="currentStep === 2"
+                        v-if="currentStepKey === 'modules'"
                         v-model="step2Data"
                         :errors="form.errors"
                     />
 
                     <Step3Base
-                        v-if="currentStep === 3"
+                        v-if="currentStepKey === 'base'"
                         v-model="step3Data"
                         :errors="form.errors"
                     />
 
                     <Step4Rack
-                        v-if="currentStep === 4"
+                        v-if="currentStepKey === 'rack'"
                         v-model="step4Data"
                         :errors="form.errors"
                     />
 
                     <Step5Shelves
-                        v-if="currentStep === 5"
+                        v-if="currentStepKey === 'shelves'"
                         v-model="step5Data"
                         :module-data="moduleData"
                         :errors="form.errors"
                     />
 
+                    <StepGeneration
+                        v-if="currentStepKey === 'generation'"
+                        :form="form"
+                        :errors="form.errors"
+                        :root-category-id="resolvedPlanogramCategoryId"
+                    />
+
                     <Step6Workflow
-                        v-if="currentStep === 6"
+                        v-if="currentStepKey === 'workflow'"
                         v-model="step6Data"
                         :available-users="availableUsers"
                         :errors="form.errors"
@@ -616,7 +745,7 @@ const handleSubmit = () => {
                     </Button>
 
                     <Button
-                        v-if="currentStep < 6"
+                        v-if="!isLastStep"
                         @click="nextStep"
                         :disabled="!canGoNext"
                     >
@@ -629,7 +758,7 @@ const handleSubmit = () => {
                         @click="handleSubmit"
                         :disabled="!canGoNext || form.processing"
                     >
-                        {{ form.processing ? t('plannerate.form.gondola_create.creating') : t('plannerate.form.gondola_create.create') }}
+                        {{ form.processing ? t('plannerate.form.gondola_create.creating') : submitLabel }}
                         <Check class="size-4" />
                     </Button>
                 </div>

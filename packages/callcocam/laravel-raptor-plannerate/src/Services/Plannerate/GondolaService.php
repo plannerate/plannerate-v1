@@ -23,7 +23,8 @@ class GondolaService
     use UsesPlannerateTenantDatabase;
 
     public function __construct(
-        private GondolaRepository $repository
+        private GondolaRepository $repository,
+        private ShelfStructureService $shelfStructure
     ) {}
 
     /**
@@ -101,112 +102,22 @@ class GondolaService
     }
 
     /**
+     * Cria as prateleiras de uma seção a partir de numShelves do formulário.
+     * Delega a matemática de posicionamento ao ShelfStructureService (fonte compartilhada
+     * com o modo automático).
+     *
      * @param  array<string, mixed>  $data
      */
     protected function createShelvesForSection(Section $section, Gondola $gondola, array $data, int $sectionIndex): void
     {
         $numShelves = (int) ($data['numShelves'] ?? 0);
-        if ($numShelves <= 0) {
-            return;
-        }
 
-        $availableHeight = (float) (($data['height'] ?? 0) - ($data['baseHeight'] ?? 0));
-        $shelfPositions = $this->calculateShelfPositions(
-            $availableHeight,
-            0,
-            $numShelves,
-            (float) ($data['holeSpacing'] ?? 2),
-            (float) ($data['holeHeight'] ?? 2)
-        );
-
-        foreach ($shelfPositions as $index => $position) {
-            $section->shelves()->create([
-                'code' => str(uniqid('SHELF-'))->upper(),
-                'ordering' => $index + 1,
-                'shelf_position' => $position,
-                'shelf_width' => $data['shelfWidth'] ?? 4,
-                'shelf_height' => $data['shelfHeight'] ?? 4,
-                'shelf_depth' => $data['shelfDepth'] ?? 40,
-                'product_type' => $data['productType'] ?? 'normal',
-            ]);
-        }
-    }
-
-    /**
-     * @return array<int, float>
-     */
-    protected function calculateShelfPositions(
-        float $totalHeight,
-        float $baseHeight,
-        int $numShelves,
-        float $holeSpacing,
-        float $holeHeight
-    ): array {
-        if ($numShelves <= 0) {
-            return [];
-        }
-
-        $holes = $this->buildHolePositions($baseHeight, $totalHeight, $holeSpacing, $holeHeight);
-        if (empty($holes)) {
-            return [];
-        }
-
-        if ($numShelves === 1) {
-            $middle = $holes[(int) floor(count($holes) / 2)];
-
-            return [$middle];
-        }
-
-        if ($numShelves === 2) {
-            return [$holes[0], $holes[count($holes) - 1]];
-        }
-
-        $positions = [$holes[0]];
-        $first = $holes[0];
-        $last = $holes[count($holes) - 1];
-        $step = ($last - $first) / ($numShelves - 1);
-
-        for ($i = 1; $i < $numShelves - 1; $i++) {
-            $ideal = $first + ($step * $i);
-            $positions[] = $this->closestHole($ideal, $holes);
-        }
-        $positions[] = $last;
-        sort($positions);
-
-        return $positions;
-    }
-
-    /**
-     * @return array<int, float>
-     */
-    protected function buildHolePositions(float $baseHeight, float $totalHeight, float $holeSpacing, float $holeHeight): array
-    {
-        $holes = [];
-        $current = $baseHeight;
-        while ($current <= $totalHeight) {
-            $holes[] = $current;
-            $current += $holeSpacing;
-        }
-        if (end($holes) !== $totalHeight) {
-            $holes[] = $totalHeight;
-        }
-
-        return $holes;
-    }
-
-    protected function closestHole(float $ideal, array $holes): float
-    {
-        $closest = $holes[0];
-        $min = abs($ideal - $closest);
-        foreach ($holes as $hole) {
-            $dist = abs($ideal - $hole);
-            if ($dist < $min) {
-                $min = $dist;
-                $closest = $hole;
-            }
-        }
-
-        return $closest;
+        $this->shelfStructure->createShelves($section, [
+            'shelf_width' => $data['shelfWidth'] ?? 4,
+            'shelf_height' => $data['shelfHeight'] ?? 4,
+            'shelf_depth' => $data['shelfDepth'] ?? 40,
+            'product_type' => $data['productType'] ?? 'normal',
+        ], $numShelves);
     }
 
     /**

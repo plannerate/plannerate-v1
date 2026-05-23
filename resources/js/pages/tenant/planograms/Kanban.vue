@@ -300,6 +300,9 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
             v-if="props.can_create_gondola && props.selected_planogram"
             :open="showGondolaCreate"
             :planogram-id="props.selected_planogram.id"
+            :planogram-start-date="props.selected_planogram.start_date"
+            :planogram-end-date="props.selected_planogram.end_date"
+            :planogram-category-id="props.selected_planogram.category_id"
             @update:open="(val) => (showGondolaCreate = val)"
             @success="showGondolaCreate = false"
         />

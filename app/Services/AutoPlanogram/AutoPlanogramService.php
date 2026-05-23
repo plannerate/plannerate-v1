@@ -3,6 +3,9 @@
 namespace App\Services\AutoPlanogram;
 
 use App\Enums\PlacementFailureReason;
+use App\Models\PlanogramSubtemplate;
+use App\Models\PlanogramTemplateSlot;
+use App\Models\Scopes\TenantScope;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\DTO\PlanogramOutput;
@@ -13,6 +16,8 @@ use App\Services\AutoPlanogram\Scoring\ProductScorerInterface;
 use App\Services\AutoPlanogram\Synthesis\AutoTemplateSynthesisOrchestrator;
 use App\Services\AutoPlanogram\Template\SlotSuggestionGenerator;
 use App\Services\AutoPlanogram\Validation\PlanogramValidator;
+use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
+use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\ShelfStructureService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -43,6 +48,7 @@ final class AutoPlanogramService
         private readonly SlotSuggestionGenerator $suggestionGenerator,
         private readonly RejectedProductsWriter $rejectedProductsWriter,
         private readonly AutoTemplateSynthesisOrchestrator $synthesisOrchestrator,
+        private readonly ShelfStructureService $shelfStructure,
     ) {}
 
     public function generate(PlanogramInput $input): PlanogramOutput
@@ -82,6 +88,11 @@ final class AutoPlanogramService
 
         $subtemplate = $this->synthesisOrchestrator->orchestrate($input, $scored, $planogramBaseCategoryId);
 
+        // Modo automático dirige a estrutura: o motor cria as prateleiras conforme o template
+        // sintetizado, dentro do envelope físico das seções. Gôndolas que já têm prateleiras
+        // (regeração) são preservadas.
+        $this->ensureShelvesForSynthesizedTemplate($input->sections, $subtemplate);
+
         $numModules = max($input->sections->count(), 1);
         $updatedSettings = $input->settings->withTemplate(
             templateId: $subtemplate->template_id,
@@ -107,6 +118,53 @@ final class AutoPlanogramService
         ]);
 
         return $this->generateWithTemplate($updatedInput, $scored, $scoreType);
+    }
+
+    /**
+     * Cria as prateleiras físicas das seções a partir do template sintetizado.
+     *
+     * Para cada módulo, o número de prateleiras é o número de shelf_orders distintos que os
+     * slots reservam (slot-driven: módulo/categoria sem slot não ganha prateleira). As prateleiras
+     * são distribuídas dentro do envelope físico da própria seção (altura/base/furos já persistidos).
+     *
+     * Seções que já possuem prateleiras são ignoradas — preserva o fluxo manual e a regeração.
+     *
+     * @param  Collection<int, Section>  $sections
+     */
+    private function ensureShelvesForSynthesizedTemplate(Collection $sections, PlanogramSubtemplate $subtemplate): void
+    {
+        // shelf_orders distintos por módulo, na ordem dos slots do subtemplate
+        $shelvesByModule = PlanogramTemplateSlot::withoutGlobalScope(TenantScope::class)
+            ->where('subtemplate_id', $subtemplate->getKey())
+            ->get(['module_number', 'shelf_order'])
+            ->groupBy('module_number')
+            ->map(fn (Collection $slots): int => $slots->pluck('shelf_order')->unique()->count());
+
+        $created = false;
+
+        foreach ($sections as $index => $section) {
+            if ($section->shelves->isNotEmpty()) {
+                continue;
+            }
+
+            $moduleNumber = $index + 1;
+            $numShelves = (int) ($shelvesByModule[$moduleNumber] ?? 0);
+
+            if ($numShelves <= 0) {
+                continue;
+            }
+
+            $this->shelfStructure->createShelves($section, [
+                'shelf_width' => $section->width,
+            ], $numShelves);
+
+            $created = true;
+        }
+
+        if ($created) {
+            // Recarrega a relação para o engine (resolveShelf) e o writer enxergarem as novas prateleiras
+            $sections->each(fn ($section) => $section->load('shelves'));
+        }
     }
 
     private function generateWithTemplate(PlanogramInput $input, Collection $scored, string $scoreType): PlanogramOutput

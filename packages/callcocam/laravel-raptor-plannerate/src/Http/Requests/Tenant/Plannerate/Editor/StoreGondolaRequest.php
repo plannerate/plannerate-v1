@@ -55,6 +55,28 @@ class StoreGondolaRequest extends FormRequest
             'assignedUserId' => ['sometimes', 'nullable', 'string'],
             'startDate' => ['sometimes', 'nullable', 'string'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:1000'],
+
+            // Step 1: subtemplate selecionado (modo template — modelo escolhido explicitamente)
+            'subtemplate_id' => ['nullable', 'string', 'required_if:mode,template'],
+
+            // Parâmetros de geração (modo automático — criado + gerado no mesmo fluxo).
+            // Campos flat para reaproveitar os mesmos partials do AutomaticGenerateModal.
+            'strategy' => ['sometimes', 'string', 'in:abc,sales,margin,mix'],
+            'use_existing_analysis' => ['sometimes', 'boolean'],
+            'start_date' => ['sometimes', 'nullable', 'string'],
+            'end_date' => ['sometimes', 'nullable', 'string'],
+            'min_facings' => ['sometimes', 'integer', 'min:1', 'max:10'],
+            'max_facings' => ['sometimes', 'integer', 'min:1', 'max:20'],
+            'group_by_subcategory' => ['sometimes', 'boolean'],
+            'include_products_without_sales' => ['sometimes', 'boolean'],
+            'table_type' => ['sometimes', 'string', 'in:sales,monthly_summaries'],
+            'category_id' => ['sometimes', 'nullable', 'string'],
+            'facing_expansion' => ['sometimes', 'nullable', 'string', 'in:none,score,current_stock,target_stock,equal'],
+            'use_target_stock' => ['sometimes', 'nullable', 'boolean'],
+            'space_fallback' => ['sometimes', 'nullable', 'string', 'in:reduce_c,reduce_facings,skip'],
+            'max_share_per_sku' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100'],
+            'max_share_per_brand' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100'],
+            'max_share_per_subcategory' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100'],
         ];
     }
 

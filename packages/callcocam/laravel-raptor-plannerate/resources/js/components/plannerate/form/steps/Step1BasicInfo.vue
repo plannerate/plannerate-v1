@@ -8,9 +8,10 @@ export const validate = (data: {
     status: string;
     mode?: 'manual' | 'template' | 'automatic';
     template_id?: string | null;
+    subtemplate_id?: string | null;
 }): boolean => {
-    // Modo template exige um template selecionado
-    if (data.mode === 'template' && !data.template_id) {
+    // Modo template exige template E modelo (subtemplate) selecionados
+    if (data.mode === 'template' && (!data.template_id || !data.subtemplate_id)) {
         return false;
     }
 
@@ -21,6 +22,7 @@ export const validate = (data: {
 
 <script setup lang="ts">
 import { InfoIcon } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,6 +55,7 @@ interface Props {
         status: string;
         mode: 'manual' | 'template' | 'automatic';
         template_id: string | null;
+        subtemplate_id: string | null;
     };
     errors?: Record<string, string>;
     templates?: TemplateOption[];
@@ -86,9 +89,51 @@ const setMode = (modeValue: 'manual' | 'template' | 'automatic') => {
     emit('update:modelValue', {
         ...props.modelValue,
         mode: modeValue,
-        // Limpa o template ao sair do modo template
+        // Limpa template/modelo ao sair do modo template
         template_id: modeValue === 'template' ? props.modelValue.template_id : null,
+        subtemplate_id:
+            modeValue === 'template' ? props.modelValue.subtemplate_id : null,
     });
+};
+
+/** Subtemplates (modelos) do template selecionado */
+const selectedSubtemplates = computed(
+    () =>
+        props.templates.find(
+            (option) => option.value === props.modelValue.template_id,
+        )?.subtemplates ?? [],
+);
+
+/** Rótulo de um modelo: usa code quando houver, senão "N módulos" */
+const subtemplateLabel = (subtemplate: {
+    id: string;
+    num_modules: number;
+    code?: string;
+}): string => {
+    if (subtemplate.code) {
+        return `${subtemplate.code} · ${subtemplate.num_modules} ${t('plannerate.form.step1.mode.modules_suffix')}`;
+    }
+
+    return `${subtemplate.num_modules} ${t('plannerate.form.step1.mode.modules_suffix')}`;
+};
+
+/** Ao escolher um template, limpa o modelo e auto-seleciona quando houver só um */
+const setTemplate = (templateId: string | null) => {
+    const subtemplates =
+        props.templates.find((option) => option.value === templateId)
+            ?.subtemplates ?? [];
+    const onlyOne = subtemplates.length === 1 ? subtemplates[0] : null;
+
+    emit('update:modelValue', {
+        ...props.modelValue,
+        template_id: templateId,
+        subtemplate_id: onlyOne?.id ?? null,
+    });
+};
+
+/** Ao escolher o modelo, propaga o subtemplate selecionado */
+const setSubtemplate = (subtemplateId: string | null) => {
+    updateField('subtemplate_id', subtemplateId);
 };
 </script>
 
@@ -220,7 +265,7 @@ const setMode = (modeValue: 'manual' | 'template' | 'automatic') => {
                 <Label for="template_id">{{ t('plannerate.form.step1.mode.template_label') }} *</Label>
                 <Select
                     :model-value="props.modelValue.template_id ?? ''"
-                    @update:model-value="(val) => updateField('template_id', val ? String(val) : null)"
+                    @update:model-value="(val) => setTemplate(val ? String(val) : null)"
                 >
                     <SelectTrigger
                         id="template_id"
@@ -249,6 +294,44 @@ const setMode = (modeValue: 'manual' | 'template' | 'automatic') => {
                     {{ t('plannerate.form.step1.mode.no_templates') }}
                 </p>
             </div>
+        </div>
+
+        <!-- Seleção explícita do modelo (subtemplate) — obrigatória no modo template -->
+        <div
+            v-if="props.modelValue.mode === 'template' && props.modelValue.template_id"
+            class="space-y-2"
+        >
+            <Label for="subtemplate_id">{{ t('plannerate.form.step1.mode.subtemplate_label') }} *</Label>
+            <Select
+                :model-value="props.modelValue.subtemplate_id ?? ''"
+                @update:model-value="(val) => setSubtemplate(val ? String(val) : null)"
+            >
+                <SelectTrigger
+                    id="subtemplate_id"
+                    class="w-full"
+                    :class="{ 'border-red-500': errors?.subtemplate_id }"
+                >
+                    <SelectValue :placeholder="t('plannerate.form.step1.mode.select_subtemplate')" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectGroup>
+                        <SelectLabel>{{ t('plannerate.form.step1.mode.subtemplate_label') }}</SelectLabel>
+                        <SelectItem
+                            v-for="subtemplate in selectedSubtemplates"
+                            :key="subtemplate.id"
+                            :value="subtemplate.id"
+                        >
+                            {{ subtemplateLabel(subtemplate) }}
+                        </SelectItem>
+                    </SelectGroup>
+                </SelectContent>
+            </Select>
+            <p v-if="errors?.subtemplate_id" class="text-xs text-red-500">
+                {{ errors.subtemplate_id }}
+            </p>
+            <p v-else class="text-xs text-muted-foreground">
+                {{ t('plannerate.form.step1.mode.subtemplate_hint') }}
+            </p>
         </div>
 
         <div class="space-y-2">

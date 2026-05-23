@@ -13,6 +13,8 @@ use App\Models\PlanogramTemplate;
 use App\Models\Tenant;
 use App\Models\WorkflowGondolaExecution;
 use App\Models\WorkflowPlanogramStep;
+use App\Services\AutoPlanogram\AutoGenerationRunner;
+use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use App\Support\Authorization\PermissionName;
 use App\Support\Modules\ModuleSlug;
 use App\Support\Modules\TenantModuleService;
@@ -118,10 +120,28 @@ class GondolaController extends Controller
         }
 
         $mode = $request->input('mode', 'manual');
+        $editorUrl = route('tenant.planograms.gondolas.editor', ['record' => $gondola->id], false);
 
-        if (in_array($mode, ['template', 'automatic'], true)) {
-            return redirect(route('tenant.planograms.gondolas.editor', ['record' => $gondola->id], false))
-                ->with('auto_generate', true);
+        // Modo automático: o motor dirige a estrutura — cria + gera no mesmo fluxo e
+        // redireciona para a gôndola já preenchida (sem reabrir o modal de geração).
+        if ($mode === 'automatic') {
+            try {
+                $config = AutoGenerateConfigDTO::fromArray($request->validated());
+
+                $gondola->load('sections.shelves');
+
+                app(AutoGenerationRunner::class)->run($gondola, $planogramModel, $config, templateId: null);
+
+                return redirect($editorUrl)->with('success', __('Gôndola criada e gerada com sucesso!'));
+            } catch (\RuntimeException $e) {
+                // Gôndola criada, mas sem produtos elegíveis para gerar — leva ao editor com aviso.
+                return redirect($editorUrl)->with('warning', $e->getMessage());
+            }
+        }
+
+        // Modo template: cria a estrutura e abre o modal de geração no editor.
+        if ($mode === 'template') {
+            return redirect($editorUrl)->with('auto_generate', true);
         }
 
         return redirect()->back()->with('success', 'Gôndola criada com sucesso!');

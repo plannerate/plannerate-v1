@@ -33,6 +33,7 @@ type PlanogramRow = {
     store: string | null;
     cluster: string | null;
     category: string | null;
+    category_id: string | null;
     start_date: string | null;
     end_date: string | null;
     status: 'draft' | 'published';
@@ -68,9 +69,15 @@ const listPageRef = ref<InstanceType<typeof ListPage> | null>(null);
 const categoryId = ref<string | null>(props.filters.category_id ?? null);
 const showGondolaCreate = ref(false);
 const gondolaCreatePlanogramId = ref<string>('');
+const gondolaCreateStartDate = ref<string | null>(null);
+const gondolaCreateEndDate = ref<string | null>(null);
+const gondolaCreateCategoryId = ref<string | null>(null);
 
-function openGondolaCreate(planogramId: string): void {
-    gondolaCreatePlanogramId.value = planogramId;
+function openGondolaCreate(planogram: PlanogramRow): void {
+    gondolaCreatePlanogramId.value = planogram.id;
+    gondolaCreateStartDate.value = planogram.start_date ?? null;
+    gondolaCreateEndDate.value = planogram.end_date ?? null;
+    gondolaCreateCategoryId.value = planogram.category_id ?? null;
     showGondolaCreate.value = true;
 }
 const categoryPopoverOpen = ref(false);
@@ -293,7 +300,7 @@ const pageMeta = useCrudPageMeta({
                                     variant="outline"
                                     size="sm"
                                     class="gap-1.5"
-                                    @click="openGondolaCreate(planogram.id)"
+                                    @click="openGondolaCreate(planogram)"
                                 >
                                     <Plus class="size-3.5" />
                                     {{ t('app.tenant.gondolas.actions.new') }}
@@ -308,6 +315,9 @@ const pageMeta = useCrudPageMeta({
             v-if="props.can_create_gondola"
             :open="showGondolaCreate"
             :planogram-id="gondolaCreatePlanogramId"
+            :planogram-start-date="gondolaCreateStartDate"
+            :planogram-end-date="gondolaCreateEndDate"
+            :planogram-category-id="gondolaCreateCategoryId"
             @update:open="(val) => (showGondolaCreate = val)"
             @success="showGondolaCreate = false"
         />

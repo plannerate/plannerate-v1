@@ -105,6 +105,7 @@ class PlanogramController extends Controller
                 'store' => $planogram->store?->name,
                 'cluster' => $planogram->cluster?->name,
                 'category' => $planogram->category?->name,
+                'category_id' => $planogram->category_id,
                 'start_date' => $planogram->start_date?->toDateString(),
                 'end_date' => $planogram->end_date?->toDateString(),
                 'status' => $planogram->status,

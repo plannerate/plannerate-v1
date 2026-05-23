@@ -149,21 +149,34 @@ function openGenerateFlow(): void {
         return;
     }
 
-    // Gôndola já gerada → vai direto para template
-    if (gondola.template_id) {
+    // Respeita o generation_mode salvo: abre direto o modal correspondente, sem chooser.
+    const mode = (gondola as any).generation_mode as
+        | 'manual'
+        | 'template'
+        | 'automatic'
+        | null
+        | undefined;
+
+    if (mode === 'automatic') {
+        showAutomaticModal.value = true;
+
+        return;
+    }
+
+    // Template (modo salvo ou gôndola já vinculada a um template)
+    if (mode === 'template' || gondola.template_id) {
         showTemplateModal.value = true;
 
         return;
     }
 
-    // Sem templates disponíveis → vai direto para automático
+    // Legado (generation_mode null e sem template): sem templates → automático; senão chooser.
     if ((planogramTemplates.value as any[]).length === 0) {
         showAutomaticModal.value = true;
 
         return;
     }
 
-    // Caso geral → exibe o chooser
     showChooserDialog.value = true;
 }
 

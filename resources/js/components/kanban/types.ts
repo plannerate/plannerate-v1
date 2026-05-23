@@ -89,7 +89,14 @@ export type KanbanPageProps = {
         current_responsible_id?: string;
     };
     board: BoardColumn[] | null;
-    selected_planogram: { id: string; name: string; store: string | null } | null;
+    selected_planogram: {
+        id: string;
+        name: string;
+        store: string | null;
+        category_id: string | null;
+        start_date: string | null;
+        end_date: string | null;
+    } | null;
     can_initiate: boolean;
     can_create_gondola: boolean;
 };
