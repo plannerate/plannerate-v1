@@ -43,33 +43,35 @@ defineSlots<{
         <!-- Header -->
         <div
             v-if="title || $slots['header-extra'] || $slots.icon"
-            class="flex items-center gap-4 border-b border-border/60 bg-muted/35 px-6 py-5"
+            class="flex flex-col gap-3 border-b border-border/60 bg-muted/35 px-6 py-5"
         >
-            <div
-                v-if="$slots.icon"
-                class="flex size-10 shrink-0 items-center justify-center rounded bg-primary/12 text-primary ring-1 ring-primary/15"
-            >
-                <slot name="icon" />
-            </div>
+            <div class="flex items-start gap-4">
+                <div
+                    v-if="$slots.icon"
+                    class="flex size-10 shrink-0 items-center justify-center rounded bg-primary/12 text-primary ring-1 ring-primary/15"
+                >
+                    <slot name="icon" />
+                </div>
 
-            <div class="min-w-0 flex-1">
-                <h2
-                    v-if="title"
-                    class="truncate text-lg font-semibold tracking-tight text-foreground"
-                >
-                    {{ title }}
-                </h2>
-                <p
-                    v-if="description"
-                    class="mt-1 text-sm text-muted-foreground/90"
-                >
-                    {{ description }}
-                </p>
+                <div class="min-w-0 flex-1">
+                    <h2
+                        v-if="title"
+                        class="text-lg font-semibold tracking-tight text-foreground"
+                    >
+                        {{ title }}
+                    </h2>
+                    <p
+                        v-if="description"
+                        class="mt-1 text-sm text-muted-foreground/90"
+                    >
+                        {{ description }}
+                    </p>
+                </div>
             </div>
 
             <div
                 v-if="$slots['header-extra']"
-                class="flex shrink-0 items-center gap-2"
+                class="flex flex-wrap items-center gap-2"
             >
                 <slot name="header-extra" />
             </div>

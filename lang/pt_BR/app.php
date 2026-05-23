@@ -1150,9 +1150,10 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'code_name' => 'Código / Nome',
                 'subtemplates' => 'Subtemplates',
                 'products' => 'Produtos',
-                'status' => 'Status',
                 'created_at' => 'Criado em',
                 'actions' => 'Ações',
+                'gondola_category' => 'Categoria da Gôndola',
+                'gondola_category_hint' => 'Selecione a categoria mercadológica que representa esta gôndola. Obrigatório para configurar slots.',
             ],
             'status' => [
                 'active' => 'Ativo',
