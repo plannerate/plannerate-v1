@@ -198,33 +198,43 @@ async function handleRedistribute() {
     }
 }
 
-async function handlePromote() {
+function handlePromote() {
     if (!props.gondola.template_id) {
         return;
     }
     isPromoting.value = true;
-    try {
-        await axios.post(promoteUrl(props.gondola.template_id));
-        toast.success(t('plannerate.sidebar.generation.auto_generated.promote_success'));
-        router.reload({ only: ['record'] });
-    } catch {
-        toast.error(t('plannerate.sidebar.generation.auto_generated.promote_error'));
-    } finally {
-        isPromoting.value = false;
-    }
+    router.post(promoteUrl(props.gondola.template_id), {}, {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+            toast.success(t('plannerate.sidebar.generation.auto_generated.promote_success'));
+            router.reload({ only: ['record'] });
+        },
+        onError: () => {
+            toast.error(t('plannerate.sidebar.generation.auto_generated.promote_error'));
+        },
+        onFinish: () => {
+            isPromoting.value = false;
+        },
+    });
 }
 
-async function handleRegenerateAuto() {
+function handleRegenerateAuto() {
     isRegeneratingAuto.value = true;
-    try {
-        await axios.post(regenerateAuto.url(props.gondola.id));
-        toast.success(t('plannerate.sidebar.generation.auto_generated.regenerate_auto_success'));
-        router.reload({ only: ['record'] });
-    } catch {
-        toast.error(t('plannerate.sidebar.generation.auto_generated.regenerate_auto_error'));
-    } finally {
-        isRegeneratingAuto.value = false;
-    }
+    router.post(regenerateAuto.url(props.gondola.id), {}, {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+            toast.success(t('plannerate.sidebar.generation.auto_generated.regenerate_auto_success'));
+            router.reload({ only: ['record'] });
+        },
+        onError: () => {
+            toast.error(t('plannerate.sidebar.generation.auto_generated.regenerate_auto_error'));
+        },
+        onFinish: () => {
+            isRegeneratingAuto.value = false;
+        },
+    });
 }
 </script>
 
