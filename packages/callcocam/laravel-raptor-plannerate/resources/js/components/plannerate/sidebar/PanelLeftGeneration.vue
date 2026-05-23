@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3';
-import axios from 'axios';
-import { ArrowUpDown, LayoutGrid, RefreshCw, Sparkles, X } from 'lucide-vue-next';
+import {  RefreshCw, Sparkles, X } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { reorderGondola, redistributeGondola, regenerateAuto } from '@/actions/App/Http/Controllers/AutoPlanogramController';
@@ -172,30 +171,26 @@ function formattedDate(iso: string): string {
     }
 }
 
-async function handleReorder() {
+function handleReorder() {
     isReordering.value = true;
-    try {
-        await axios.post(reorderGondola.url(props.gondola.id));
-        toast.success(t('plannerate.sidebar.generation.reorder.success'));
-        router.reload({ only: ['record'] });
-    } catch {
-        toast.error(t('plannerate.sidebar.generation.reorder.error'));
-    } finally {
-        isReordering.value = false;
-    }
+    router.post(reorderGondola.url(props.gondola.id), {}, {
+        preserveScroll: true,
+        only: ['record'],
+        onSuccess: () => toast.success(t('plannerate.sidebar.generation.reorder.success')),
+        onError: () => toast.error(t('plannerate.sidebar.generation.reorder.error')),
+        onFinish: () => { isReordering.value = false; },
+    });
 }
 
-async function handleRedistribute() {
+function handleRedistribute() {
     isRedistributing.value = true;
-    try {
-        await axios.post(redistributeGondola.url(props.gondola.id));
-        toast.success(t('plannerate.sidebar.generation.redistribute.success'));
-        router.reload({ only: ['record'] });
-    } catch {
-        toast.error(t('plannerate.sidebar.generation.redistribute.error'));
-    } finally {
-        isRedistributing.value = false;
-    }
+    router.post(redistributeGondola.url(props.gondola.id), {}, {
+        preserveScroll: true,
+        only: ['record'],
+        onSuccess: () => toast.success(t('plannerate.sidebar.generation.redistribute.success')),
+        onError: () => toast.error(t('plannerate.sidebar.generation.redistribute.error')),
+        onFinish: () => { isRedistributing.value = false; },
+    });
 }
 
 function handlePromote() {
@@ -205,17 +200,10 @@ function handlePromote() {
     isPromoting.value = true;
     router.post(promoteUrl(props.gondola.template_id), {}, {
         preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            toast.success(t('plannerate.sidebar.generation.auto_generated.promote_success'));
-            router.reload({ only: ['record'] });
-        },
-        onError: () => {
-            toast.error(t('plannerate.sidebar.generation.auto_generated.promote_error'));
-        },
-        onFinish: () => {
-            isPromoting.value = false;
-        },
+        preserveState: false, 
+        onSuccess: () => toast.success(t('plannerate.sidebar.generation.auto_generated.promote_success')),
+        onError: () => toast.error(t('plannerate.sidebar.generation.auto_generated.promote_error')),
+        onFinish: () => { isPromoting.value = false; },
     });
 }
 
@@ -223,17 +211,10 @@ function handleRegenerateAuto() {
     isRegeneratingAuto.value = true;
     router.post(regenerateAuto.url(props.gondola.id), {}, {
         preserveScroll: true,
-        preserveState: true,
-        onSuccess: () => {
-            toast.success(t('plannerate.sidebar.generation.auto_generated.regenerate_auto_success'));
-            router.reload({ only: ['record'] });
-        },
-        onError: () => {
-            toast.error(t('plannerate.sidebar.generation.auto_generated.regenerate_auto_error'));
-        },
-        onFinish: () => {
-            isRegeneratingAuto.value = false;
-        },
+        only: ['record'],
+        onSuccess: () => toast.success(t('plannerate.sidebar.generation.auto_generated.regenerate_auto_success')),
+        onError: () => toast.error(t('plannerate.sidebar.generation.auto_generated.regenerate_auto_error')),
+        onFinish: () => { isRegeneratingAuto.value = false; },
     });
 }
 </script>

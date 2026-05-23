@@ -229,7 +229,8 @@ class PlanogramTemplateController extends Controller
 
     /**
      * Promove um template auto (origin='auto') tornando-o visível para reuso.
-     * Seta is_active=true no template e em todos os seus subtemplates.
+     * Seta is_active=true e limpa origin (null) no template e em todos os seus subtemplates.
+     * Limpar origin é obrigatório para que scopeVisible() inclua o template na listagem.
      */
     public function promote(PlanogramTemplate $planogramTemplate): RedirectResponse
     {
@@ -239,7 +240,7 @@ class PlanogramTemplateController extends Controller
             return back()->with('warning', __('app.tenant.planogram_templates.messages.not_auto_origin'));
         }
 
-        $planogramTemplate->update(['is_active' => true]);
+        $planogramTemplate->update(['is_active' => true, 'origin' => null]);
         $planogramTemplate->subtemplates()->update(['is_active' => true]);
 
         Inertia::flash('toast', [

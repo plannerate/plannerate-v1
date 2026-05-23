@@ -16,6 +16,7 @@ interface SalesDataFormState {
 
 defineProps<{
     form: SalesDataFormState;
+    errors?: Record<string, string>;
 }>();
 
 const { t } = useT();
@@ -63,6 +64,8 @@ const { t } = useT();
                     end-name="end_date"
                     placeholder="Selecionar mês/ano"
                 />
+                <p v-if="errors?.start_date" class="text-xs text-red-500">{{ errors.start_date }}</p>
+                <p v-else-if="errors?.end_date" class="text-xs text-red-500">{{ errors.end_date }}</p>
             </div>
         </div>
     </div>

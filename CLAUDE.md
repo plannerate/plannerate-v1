@@ -313,6 +313,31 @@ Arquivos em `lang/pt_BR/*.php`. Estrutura de chaves: `app.{contexto}.{recurso}.{
 - `AppLayout` como wrapper com breadcrumbs e page header
 - Dados via props Inertia — nunca fetch client-side para dados de página
 
+### Requisições HTTP no Frontend
+
+**Sempre usar o `router` do Inertia.js** para navegação e mutações — nunca `axios` ou `fetch` diretamente.
+
+```typescript
+import { router } from '@inertiajs/vue3';
+
+// Mutação simples
+router.post(MinhaAction.url(), payload);
+
+// Com callbacks
+router.put(MinhaAction.url(), payload, {
+    onSuccess: () => { /* ... */ },
+    onError: (errors) => { /* ... */ },
+    preserveScroll: true,
+});
+```
+
+**Exceções permitidas** (usar `useHttp` do Inertia v3 ou `fetch` nativo):
+- Requisições a APIs externas (fora do próprio Laravel)
+- Polling de status sem navegação (ex.: verificar progresso de job em background)
+- Upload de arquivo com progresso customizado que o `router` não suporta
+
+Nunca instalar ou importar `axios` — o Inertia v3 o removeu. Use `useHttp` para requisições standalone ao próprio backend quando o `router` não for adequado.
+
 ### Wayfinder (TypeScript actions)
 
 - Importar de `@/actions/` (controllers) ou `@/routes/` (rotas nomeadas)

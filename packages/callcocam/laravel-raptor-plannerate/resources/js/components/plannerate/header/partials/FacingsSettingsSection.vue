@@ -12,6 +12,7 @@ interface FacingsFormState {
 
 defineProps<{
     form: FacingsFormState;
+    errors?: Record<string, string>;
 }>();
 
 const { t } = useT();
@@ -30,7 +31,8 @@ const { t } = useT();
                     min="1"
                     max="10"
                 />
-                <p class="text-xs text-muted-foreground">
+                <p v-if="errors?.min_facings" class="text-xs text-red-500">{{ errors.min_facings }}</p>
+                <p v-else class="text-xs text-muted-foreground">
                     {{ t('plannerate.header.facings.min_hint') }}
                 </p>
             </div>
@@ -43,7 +45,8 @@ const { t } = useT();
                     min="1"
                     max="20"
                 />
-                <p class="text-xs text-muted-foreground">
+                <p v-if="errors?.max_facings" class="text-xs text-red-500">{{ errors.max_facings }}</p>
+                <p v-else class="text-xs text-muted-foreground">
                     {{ t('plannerate.header.facings.max_hint') }}
                 </p>
             </div>

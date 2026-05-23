@@ -178,6 +178,28 @@ beforeEach(function (): void {
         $table->softDeletes();
     });
 
+    Schema::connection('tenant')->create('planogram_gondola_slot_overrides', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26)->nullable();
+        $table->char('gondola_id', 26);
+        $table->char('category_id', 26)->nullable();
+        $table->unsignedTinyInteger('min_facings')->nullable();
+        $table->unsignedSmallInteger('max_facings')->nullable();
+        $table->string('price_order')->nullable();
+        $table->string('size_order')->nullable();
+        $table->string('brand_exposure')->nullable();
+        $table->string('flavor_exposure')->nullable();
+        $table->string('space_fallback')->nullable();
+        $table->string('facing_expansion')->nullable();
+        $table->boolean('use_target_stock')->nullable();
+        $table->string('role_override')->nullable();
+        $table->unsignedTinyInteger('max_share_per_sku')->nullable();
+        $table->unsignedTinyInteger('max_share_per_brand')->nullable();
+        $table->unsignedTinyInteger('max_share_per_subcategory')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+
     Schema::connection('tenant')->create('planogram_rejected_products', function (Blueprint $table): void {
         $table->char('id', 26)->primary();
         $table->char('tenant_id', 26)->nullable();

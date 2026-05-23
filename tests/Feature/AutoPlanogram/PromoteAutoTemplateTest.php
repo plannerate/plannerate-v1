@@ -82,7 +82,7 @@ function insertAutoSubtemplate(string $templateId, array $attrs = []): string
     return $id;
 }
 
-test('promover template auto seta is_active=true no template e nos subtemplates', function (): void {
+test('promover template auto seta is_active=true e limpa origin no template e nos subtemplates', function (): void {
     $templateId = insertAutoTemplate(['origin' => 'auto', 'is_active' => false]);
     $sub1 = insertAutoSubtemplate($templateId);
     $sub2 = insertAutoSubtemplate($templateId);
@@ -91,11 +91,12 @@ test('promover template auto seta is_active=true no template e nos subtemplates'
 
     // Lógica equivalente ao PlanogramTemplateController::promote()
     expect($template->origin)->toBe('auto');
-    $template->update(['is_active' => true]);
+    $template->update(['is_active' => true, 'origin' => null]);
     $template->subtemplates()->update(['is_active' => true]);
 
     $template->refresh();
-    expect($template->is_active)->toBeTrue();
+    expect($template->is_active)->toBeTrue()
+        ->and($template->origin)->toBeNull(); // obrigatório para scopeVisible() incluir o template
 
     $activeSubs = PlanogramSubtemplate::where('template_id', $templateId)
         ->where('is_active', true)
