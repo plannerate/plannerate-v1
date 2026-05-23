@@ -216,7 +216,7 @@ async function handleRedistribute() {
             <!-- Template info -->
             <div v-if="gondola.template_id" class="border-b border-border bg-muted/30 px-4 py-2">
                 <p class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.generation.template_in_use') }}</p>
-                <p class="mt-0.5 text-xs font-medium text-foreground">{{ gondola.template_id }}</p>
+                <p class="mt-0.5 text-xs font-medium text-foreground">{{ gondola.template_name ?? gondola.template_id }}</p>
             </div>
 
             <!-- Content -->

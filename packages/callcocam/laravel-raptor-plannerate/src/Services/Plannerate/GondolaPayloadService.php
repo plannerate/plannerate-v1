@@ -2,6 +2,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
+use App\Models\PlanogramTemplate;
 use App\Models\PlanogramTemplateSlot;
 use App\Models\Tenant;
 use App\Models\WorkflowGondolaExecution;
@@ -43,6 +44,9 @@ class GondolaPayloadService
             'depth' => $gondola->depth,
             'planogram_id' => $gondola->planogram_id,
             'template_id' => $gondola->template_id,
+            'template_name' => $gondola->template_id
+                ? PlanogramTemplate::find($gondola->template_id)?->name
+                : null,
             'generation_mode' => $gondola->generation_mode,
             'linked_map_gondola_id' => $gondola->linked_map_gondola_id,
             'linked_map_gondola_category' => $gondola->linked_map_gondola_category,

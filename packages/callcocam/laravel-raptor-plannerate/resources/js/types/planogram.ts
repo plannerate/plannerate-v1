@@ -180,6 +180,7 @@ export interface Gondola {
     depth?: number;
     planogram_id?: string;
     template_id?: string | null;
+    template_name?: string | null;
     generation_mode?: 'manual' | 'template' | 'automatic' | null;
     generation_overrides?: GondolaSlotOverride[];
     linked_map_gondola_id?: string | null;
