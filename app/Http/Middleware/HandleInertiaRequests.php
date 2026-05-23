@@ -50,6 +50,7 @@ class HandleInertiaRequests extends Middleware
                 'pagination' => trans('pagination'),
                 'validation' => trans('validation'),
                 'planogram-templates' => trans('planogram-templates'),
+                'site' => trans('site'),
             ],
             'locale' => app()->getLocale(),
             'auth' => [
