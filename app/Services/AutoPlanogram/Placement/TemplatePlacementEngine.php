@@ -659,6 +659,20 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 ];
                 $occupied += $width;
             } else {
+                // Log de diagnóstico: prateleira vazia rejeitando produto (anomalia de min_facings).
+                // Indica min_facings alto demais para a largura do produto vs. capacidade do slot.
+                if ($occupied < 0.01) {
+                    Log::debug('TemplatePlacementEngine: produto rejeitado em prateleira vazia', [
+                        'product_id' => $product->id,
+                        'min_facings' => $facing,
+                        'singleWidth' => $singleWidth,
+                        'width_necessaria' => $width,
+                        'available' => $available,
+                        'slot_id' => $slot->id,
+                        'dica' => 'Verificar min_facings do slot ou width do produto.',
+                    ]);
+                }
+
                 $rejected->push([
                     'product' => $product,
                     'reason' => PlacementFailureReason::NoHorizontalSpace,

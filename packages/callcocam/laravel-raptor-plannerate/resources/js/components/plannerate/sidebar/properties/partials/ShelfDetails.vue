@@ -226,7 +226,7 @@ import {
     Box,
     Trash2,
 } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -234,6 +234,7 @@ import { Separator } from '@/components/ui/separator';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramKeyboard } from '@/composables/plannerate/interactions/usePlanogramKeyboard';
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
+import { selectedTemplateCategoryId } from '@/composables/plannerate/core/useGondolaState';
 import { findNearestHole } from '@/composables/plannerate/geometry/useSectionHoles';
 import { useShelfActions } from '@/composables/plannerate/actions/useShelfActions';
 import { useT } from '@/composables/useT';
@@ -268,6 +269,19 @@ const section = computed(() => {
 const shelfActions = useShelfActions(
     () => shelf.value,
     () => section.value,
+);
+
+/**
+ * Sincroniza a categoria do template_slot da prateleira com o estado global
+ * ao montar o painel e sempre que a prateleira selecionada mudar.
+ * Isso garante que o CategoryConfigPanel realce o card correspondente.
+ */
+watch(
+    () => (shelf.value as any).template_slot?.category_id as string | undefined,
+    (categoryId) => {
+        selectedTemplateCategoryId.value = categoryId ?? null;
+    },
+    { immediate: true },
 );
 
 /**

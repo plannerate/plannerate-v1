@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { Pencil, RotateCcw, Search, Send } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import FormSelectField from '@/components/form/FormSelectField.vue';
 import FormSwitchField from '@/components/form/FormSwitchField.vue';
@@ -174,6 +174,37 @@ const localEdits = ref<Record<string, Partial<GondolaSlotOverride>>>({});
 
 /** Categoria com accordion aberto (só uma por vez) */
 const openCategoryId = ref<string | null>(null);
+
+/** Refs dos cards de categoria para permitir scrollIntoView */
+const categoryCardRefs = ref<Record<string, HTMLElement>>({});
+
+/**
+ * Registra ou remove a ref de um card de categoria.
+ * Chamado pelo :ref dinâmico no v-for do template.
+ */
+function setCategoryCardRef(categoryId: string, el: unknown) {
+    if (el instanceof HTMLElement) {
+        categoryCardRefs.value[categoryId] = el;
+    } else {
+        delete categoryCardRefs.value[categoryId];
+    }
+}
+
+/**
+ * Quando a seleção vem de fora (ex.: clique numa prateleira no canvas),
+ * rola o card correspondente para a vista sem abrir o accordion.
+ */
+watch(selectedTemplateCategoryId, (newCategoryId) => {
+    if (!newCategoryId) {
+        return;
+    }
+    nextTick(() => {
+        categoryCardRefs.value[newCategoryId]?.scrollIntoView({
+            block: 'nearest',
+            behavior: 'smooth',
+        });
+    });
+});
 
 const savingCategory = ref<string | null>(null);
 const applyingCategory = ref<string | null>(null);
@@ -354,13 +385,15 @@ function handleReset(categoryId: string) {
             <div
                 v-for="cat in filteredCategories"
                 :key="cat.category_id"
-                class="rounded-lg border border-border bg-background shadow-sm"
+                :ref="(el) => setCategoryCardRef(cat.category_id, el)"
+                class="rounded-lg border bg-background shadow-sm transition-colors"
+                :class="selectedTemplateCategoryId === cat.category_id ? 'border-green-500/70' : 'border-border'"
             >
                 <!-- Cabeçalho do accordion -->
                 <button
                     type="button"
                     class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors cursor-pointer hover:bg-muted/50"
-                    :class="selectedTemplateCategoryId === cat.category_id ? 'bg-primary/5' : ''"
+                    :class="selectedTemplateCategoryId === cat.category_id ? 'bg-green-500/15' : ''"
                     @click="selectCategory(cat.category_id)"
                 >
                     <div class="min-w-0 flex-1">

@@ -34,7 +34,9 @@ function rejectedProduct(string $id, PlacementFailureReason $reason): array
     return ['product' => $product, 'reason' => $reason];
 }
 
-test('validation fails when placement rejects products by horizontal space', function (): void {
+test('validation passes with warning when placement rejects products by horizontal space', function (): void {
+    // NoHorizontalSpace não é uma regra hard (não é Blocked/MandatoryNoSpace),
+    // portanto gera Warning e não impede a aprovação do planograma.
     $validator = new PlanogramValidator([new UnplacedProductsRule]);
     $result = new PlacementResult(
         placedSegments: collect(),
@@ -45,9 +47,9 @@ test('validation fails when placement rejects products by horizontal space', fun
 
     $report = $validator->validate(collect(), placementInputForValidation(), $result);
 
-    expect($report->passed)->toBeFalse()
-        ->and($report->errorCount)->toBe(1)
-        ->and($report->warningCount)->toBe(0);
+    expect($report->passed)->toBeTrue()
+        ->and($report->errorCount)->toBe(0)
+        ->and($report->warningCount)->toBe(1);
 });
 
 test('validation passes with warning when placement rejects only by physical height', function (): void {

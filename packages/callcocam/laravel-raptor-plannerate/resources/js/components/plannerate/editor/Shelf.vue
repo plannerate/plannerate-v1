@@ -4,8 +4,9 @@
         data-shelf-area="true"
         class="group/shelf absolute hover:bg-primary/10"
         :class="[
-            isSelected ? 'bg-primary/10 ring-2 ring-primary' : '',
+            isSelected ? 'bg-primary/10 ring-2 ring-inset ring-primary' : '',
             showZoneIndicators ? shelfZone.bgClass : '',
+            isCategoryHighlighted && !isSelected ? 'ring-2 ring-inset ring-green-500' : '',
         ]"
         :style="shelfAreaStyle"
         @click="handleSelectShelf"
@@ -73,6 +74,7 @@
                     isDraggingShelf,
                 'hover:border-slate-600 hover:bg-slate-700/95 hover:ring-1 hover:ring-slate-500':
                     !isDraggingShelf,
+                'ring-2 ring-inset ring-green-500': isCategoryHighlighted,
             }" @mousedown="handleMouseDown" @dragstart.stop="handleShelfDragStart" @dragend.stop="handleShelfDragEnd"
             @click.stop="handleSelectShelf">
             <!-- Shelf label -->
@@ -100,7 +102,7 @@ import { usePlanogramEditor } from '../../../composables/plannerate/core/usePlan
 import { usePlanogramSelection } from '../../../composables/plannerate/core/usePlanogramSelection';
 import type { Section, Shelf as ShelfType } from '../../../types/planogram';
 import Segment from './Segment.vue';
-import { showZoneIndicators } from '../../../composables/plannerate/core/useGondolaState';
+import { selectedTemplateCategoryId, showZoneIndicators } from '../../../composables/plannerate/core/useGondolaState';
 
 interface Props {
     shelf: ShelfType;
@@ -172,6 +174,18 @@ const {
 
 const isSelected = computed(() => selection.isShelfSelected(shelfRef.value));
 
+/**
+ * Verdadeiro quando a categoria do template_slot desta prateleira bate com a
+ * categoria selecionada no CategoryConfigPanel.
+ * Usado para destaque visual bidirecional (categoria ↔ prateleira).
+ */
+const isCategoryHighlighted = computed(
+    () =>
+        props.highlightGroupingNormalized != null &&
+        !!props.shelf.template_slot?.category_id &&
+        props.shelf.template_slot.category_id === props.highlightGroupingNormalized,
+);
+
 function handleSelectShelf(event: MouseEvent) {
     event.stopPropagation();
     selection.selectItem('shelf', props.shelf.id, props.shelf, {
@@ -179,5 +193,8 @@ function handleSelectShelf(event: MouseEvent) {
         lastShelf: props.lastShelf,
         firstShelf: props.firstShelf,
     });
+    // Sincroniza a categoria do template com o estado global para que o
+    // CategoryConfigPanel realce o card correspondente.
+    selectedTemplateCategoryId.value = props.shelf.template_slot?.category_id ?? null;
 }
 </script>

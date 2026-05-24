@@ -11,7 +11,10 @@ use App\Services\AutoPlanogram\Validation\PlanogramValidator;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
@@ -22,12 +25,159 @@ use Illuminate\Support\Str;
  *
  * O PlanogramWriter é mockado para isolar o pipeline da camada de persistência.
  * O scorer é mockado para evitar dependência de dados de vendas reais.
+ *
+ * Nota: o modo automático sempre passa pelo AutoTemplateSynthesisOrchestrator,
+ * portanto é necessária infraestrutura mínima de banco (categorias, templates, etc.).
+ * Os testes criam uma categoria-raiz em cada execução para satisfazer essa dependência.
  */
+
+// ── Schema mínimo para testes de regressão ────────────────────────────────────
+
+/**
+ * Recria as tabelas mínimas necessárias para o pipeline de geração automática.
+ * É chamado em cada beforeEach para garantir isolamento entre testes.
+ */
+beforeEach(function (): void {
+    Schema::connection('tenant')->dropAllTables();
+
+    Schema::connection('tenant')->create('categories', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26)->nullable();
+        $table->char('category_id', 26)->nullable()->index();
+        $table->string('name');
+        $table->string('slug')->nullable();
+        $table->string('status')->default('active');
+        $table->integer('hierarchy_position')->nullable();
+        $table->string('role')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+
+    Schema::connection('tenant')->create('planogram_templates', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26)->nullable();
+        $table->string('code');
+        $table->string('name');
+        $table->string('department');
+        $table->char('category_id', 26)->nullable();
+        $table->text('description')->nullable();
+        $table->boolean('is_active')->default(false);
+        $table->char('created_by', 26)->nullable();
+        $table->string('origin')->nullable();
+        $table->char('source_gondola_id', 26)->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+
+    Schema::connection('tenant')->create('planogram_subtemplates', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26)->nullable();
+        $table->char('template_id', 26);
+        $table->string('code');
+        $table->unsignedTinyInteger('num_modules');
+        $table->boolean('is_active')->default(true);
+        $table->string('hot_zone_priority')->nullable();
+        $table->string('cold_zone_priority')->nullable();
+        $table->string('flow_direction')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+
+    Schema::connection('tenant')->create('planogram_template_slots', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26)->nullable();
+        $table->char('subtemplate_id', 26);
+        $table->char('category_id', 26)->nullable();
+        $table->unsignedTinyInteger('module_number');
+        $table->unsignedTinyInteger('shelf_order');
+        $table->unsignedTinyInteger('min_facings')->nullable();
+        $table->unsignedSmallInteger('max_facings')->nullable();
+        $table->json('visual_criteria')->nullable();
+        $table->string('role_override')->nullable();
+        $table->string('facing_expansion')->nullable();
+        $table->boolean('use_target_stock')->default(false);
+        $table->string('space_fallback')->nullable();
+        $table->unsignedTinyInteger('max_share_per_sku')->nullable();
+        $table->unsignedTinyInteger('max_share_per_brand')->nullable();
+        $table->unsignedTinyInteger('max_share_per_subcategory')->nullable();
+        $table->unsignedSmallInteger('ordering')->default(1);
+        $table->unsignedSmallInteger('priority')->default(1);
+        $table->timestamps();
+        $table->softDeletes();
+    });
+
+    Schema::connection('tenant')->create('shelves', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26)->nullable();
+        $table->char('section_id', 26)->nullable();
+        $table->string('code')->nullable();
+        $table->integer('ordering')->default(0);
+        $table->integer('shelf_position')->default(0);
+        $table->float('shelf_width')->default(100.0);
+        $table->float('shelf_height')->default(4.0);
+        $table->float('shelf_depth')->default(40.0);
+        $table->string('product_type')->default('normal');
+        $table->timestamps();
+        $table->softDeletes();
+    });
+
+    Schema::connection('tenant')->create('planogram_rejected_products', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26)->nullable();
+        $table->char('planogram_id', 26)->nullable();
+        $table->char('gondola_id', 26)->nullable();
+        $table->char('product_id', 26)->nullable();
+        $table->string('product_name')->nullable();
+        $table->string('ean')->nullable();
+        $table->string('image_url')->nullable();
+        $table->float('product_width')->nullable();
+        $table->float('product_height')->nullable();
+        $table->string('rejection_reason')->nullable();
+        $table->char('slot_id', 26)->nullable();
+        $table->string('category_name')->nullable();
+        $table->char('category_id', 26)->nullable();
+        $table->integer('module_number')->nullable();
+        $table->integer('shelf_order')->nullable();
+        $table->text('rejected_shelf_orders')->nullable();
+        $table->timestamps();
+    });
+
+    Schema::connection('tenant')->create('planograms', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26)->nullable();
+        $table->char('subtemplate_id', 26)->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+
+    Schema::connection('tenant')->create('planogram_gondola_slot_overrides', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26)->nullable();
+        $table->char('gondola_id', 26);
+        $table->char('category_id', 26)->nullable();
+        $table->unsignedTinyInteger('min_facings')->nullable();
+        $table->unsignedSmallInteger('max_facings')->nullable();
+        $table->string('price_order')->nullable();
+        $table->string('size_order')->nullable();
+        $table->string('brand_exposure')->nullable();
+        $table->string('flavor_exposure')->nullable();
+        $table->string('space_fallback')->nullable();
+        $table->string('facing_expansion')->nullable();
+        $table->boolean('use_target_stock')->nullable();
+        $table->string('role_override')->nullable();
+        $table->unsignedTinyInteger('max_share_per_sku')->nullable();
+        $table->unsignedTinyInteger('max_share_per_brand')->nullable();
+        $table->unsignedTinyInteger('max_share_per_subcategory')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+});
 
 // ── Factories em memória ─────────────────────────────────────────────────────
 
 /**
  * Cria um produto sintético sem persistir no banco.
+ * O category_id deve ser definido pelo chamador antes de usar no pipeline.
  */
 function fakeProduct(int $index, string $tenantId = 'tenant-test'): Product
 {
@@ -40,6 +190,7 @@ function fakeProduct(int $index, string $tenantId = 'tenant-test'): Product
     $product->width = 10;
     $product->height = 25;
     $product->depth = 30;
+    $product->status = 'published';
 
     return $product;
 }
@@ -115,6 +266,11 @@ function fakeScorer(Collection $products): ProductScorerInterface
         {
             return $this->scored;
         }
+
+        public function scoreOrNeutral(Collection $products, PlacementSettings $settings): Collection
+        {
+            return $this->scored;
+        }
     };
 }
 
@@ -124,7 +280,7 @@ function fakeScorer(Collection $products): ProductScorerInterface
  * @param  Collection<int, Section>  $sections
  * @param  Collection<int, Product>  $products
  */
-function buildTestInput(Collection $sections, Collection $products): PlanogramInput
+function buildTestInput(Collection $sections, Collection $products, string $planogramCategoryId = ''): PlanogramInput
 {
     return new PlanogramInput(
         planogramId: (string) Str::ulid(),
@@ -141,12 +297,19 @@ function buildTestInput(Collection $sections, Collection $products): PlanogramIn
             maxFacings: 3,
             groupBySubcategory: false,
             includeProductsWithoutSales: true,
+            categoryId: $planogramCategoryId ?: null,
         ),
+        planogramCategoryId: $planogramCategoryId ?: null,
     );
 }
 
 /**
  * Executa o pipeline com Writer mockado, retornando os PlacedSegments capturados.
+ *
+ * Cria uma categoria-raiz no banco em cada execução (necessário para o
+ * AutoTemplateSynthesisOrchestrator encontrar a categoria pelo ID).
+ * Atribui o category_id dos produtos a essa categoria-raiz para que
+ * o placement engine os associe aos slots sintetizados.
  *
  * @param  Collection<int, Section>  $sections
  * @param  Collection<int, Product>  $products
@@ -154,6 +317,25 @@ function buildTestInput(Collection $sections, Collection $products): PlanogramIn
  */
 function runPipelineWithMockedWriter(Collection $sections, Collection $products): Collection
 {
+    // Cria uma categoria-raiz para satisfazer a dependência do orchestrator.
+    // Produtos são atribuídos a essa raiz (categoria-folha → modo leaf do orchestrator).
+    $rootCatId = (string) Str::ulid();
+    DB::connection('tenant')->table('categories')->insert([
+        'id' => $rootCatId,
+        'name' => 'Root Category',
+        'slug' => 'root-category-'.substr($rootCatId, -6),
+        'category_id' => null,
+        'status' => 'active',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    // Vincula todos os produtos à categoria-raiz para que o placement engine
+    // encontre candidatos nos slots sintetizados (category_id = rootCatId).
+    $products->each(function (Product $p) use ($rootCatId): void {
+        $p->category_id = $rootCatId;
+    });
+
     $capturedSegments = collect();
 
     $mockWriter = new class($capturedSegments) implements PlanogramWriterInterface
@@ -172,7 +354,7 @@ function runPipelineWithMockedWriter(Collection $sections, Collection $products)
     app()->instance(PlanogramWriterInterface::class, $mockWriter);
     app()->instance(PlanogramValidator::class, new PlanogramValidator);
 
-    app(AutoPlanogramService::class)->generate(buildTestInput($sections, $products));
+    app(AutoPlanogramService::class)->generate(buildTestInput($sections, $products, $rootCatId));
 
     return $capturedSegments;
 }
@@ -240,11 +422,13 @@ test(
 test(
     'nenhum segmento excede a largura da shelf',
     function (Collection $sections, Collection $products): void {
+        // O mapa é construído APÓS o pipeline porque ensureShelvesForSynthesizedTemplate
+        // substitui as prateleiras em memória pelas prateleiras criadas no banco.
+        $segments = runPipelineWithMockedWriter($sections, $products);
+
         $shelfWidthMap = $sections
             ->flatMap(fn (Section $s) => $s->shelves->map(fn (Shelf $sh) => [$sh->id => $sh->shelf_width]))
             ->collapse();
-
-        $segments = runPipelineWithMockedWriter($sections, $products);
 
         $groupedByShelf = $segments->groupBy('shelfId');
 
@@ -260,6 +444,9 @@ test(
 test(
     'pipeline é determinístico — duas execuções produzem a mesma estrutura',
     function (Collection $sections, Collection $products): void {
+        // Nota: cada execução recria as prateleiras (novas ULIDs), portanto shelfId
+        // difere entre runs. Verificamos contagem, ordering e width — propriedades
+        // estruturais independentes dos IDs gerados.
         $first = runPipelineWithMockedWriter($sections, $products);
         $second = runPipelineWithMockedWriter($sections, $products);
 
@@ -267,8 +454,7 @@ test(
 
         $first->each(function (PlacedSegment $seg, int $idx) use ($second): void {
             $other = $second[$idx];
-            expect($seg->shelfId)->toBe($other->shelfId)
-                ->and($seg->ordering)->toBe($other->ordering)
+            expect($seg->ordering)->toBe($other->ordering)
                 ->and($seg->width)->toBe($other->width);
         });
     }

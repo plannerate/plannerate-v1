@@ -9,7 +9,6 @@
  */
 
 use App\Models\Category;
-use App\Models\PlanogramTemplateSlot;
 use App\Services\AutoPlanogram\AutoPlanogramService;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
@@ -350,7 +349,10 @@ function autoShelfInput(string $gondolaId, string $planogramId, string $baseCate
 
 // ── Testes ────────────────────────────────────────────────────────────────────
 
-test('motor cria prateleiras numa gôndola sem prateleiras e as preenche', function (): void {
+test('motor cria 4 prateleiras somente nos módulos com demanda, deixa excedentes vazios', function (): void {
+    // Cenário: 3 produtos de 8 cm cada em 2 subcategorias, prateleiras de 100 cm, 2 módulos físicos.
+    // Demanda: 2 slots (1 por subcategoria) → ceil(2/4) = 1 módulo necessário.
+    // Apenas o módulo 1 (seção 1) ganha 4 prateleiras; a seção 2 fica sem prateleiras.
     $gondolaId = (string) Str::ulid();
     $planogramId = (string) Str::ulid();
 
@@ -358,9 +360,9 @@ test('motor cria prateleiras numa gôndola sem prateleiras e as preenche', funct
     $refri = autoShelfCategory('Refrigerantes', parentId: $root->id);
     $sucos = autoShelfCategory('Sucos', parentId: $root->id);
 
-    $refri1 = autoShelfProduct($refri->id, name: 'Refri 1');
-    $refri2 = autoShelfProduct($refri->id, name: 'Refri 2');
-    $suco1 = autoShelfProduct($sucos->id, name: 'Suco 1');
+    $refri1 = autoShelfProduct($refri->id, name: 'Refri 1');  // width=8.0
+    $refri2 = autoShelfProduct($refri->id, name: 'Refri 2');  // width=8.0
+    $suco1 = autoShelfProduct($sucos->id, name: 'Suco 1');    // width=8.0
 
     $products = collect([$refri1, $refri2, $suco1]);
     $abcMap = [$refri1->id => 'A', $refri2->id => 'A', $suco1->id => 'C'];
@@ -374,22 +376,60 @@ test('motor cria prateleiras numa gôndola sem prateleiras e as preenche', funct
 
     autoShelfGenerate(autoShelfInput($gondolaId, $planogramId, $root->id, $products, $sections, $abcMap));
 
-    // Prateleiras criadas: shelvesPerModule default = 4 (sem prateleiras existentes) × 2 módulos
-    expect(Shelf::count())->toBe(8);
-
-    // Cada módulo tem o número de prateleiras igual aos shelf_orders distintos dos seus slots
-    $sectionIds = Section::pluck('id');
-    foreach ($sectionIds as $sectionId) {
-        $shelvesInSection = Shelf::where('section_id', $sectionId)->count();
-        expect($shelvesInSection)->toBe(4);
-    }
+    // 1 módulo necessário × 4 prateleiras = 4 total; seção 2 fica sem prateleiras
+    $orderedSections = Section::orderBy('ordering')->get();
+    expect(Shelf::where('section_id', $orderedSections[0]->id)->count())->toBe(4);
+    expect(Shelf::where('section_id', $orderedSections[1]->id)->count())->toBe(0);
+    expect(Shelf::count())->toBe(4);
 
     // Produtos foram efetivamente alocados nas prateleiras criadas
     expect(Layer::whereNotNull('product_id')->count())->toBeGreaterThan(0);
     expect(Layer::where('product_id', $refri1->id)->count())->toBeGreaterThan(0);
 });
 
-test('número de prateleiras por módulo segue os shelf_orders dos slots sintetizados', function (): void {
+test('motor usa 2 módulos quando demanda exige mais de 4 slots', function (): void {
+    // Cenário: 5 subcategorias, cada uma com 1 produto de 40 cm → totalWidth = 200 cm.
+    // Demanda per-subcat: ceil(40/100)=1 slot cada → total = 5 slots.
+    // numModules = ceil(5/4) = 2 módulos → 2 seções × 4 prateleiras = 8 prateleiras.
+    $gondolaId = (string) Str::ulid();
+    $planogramId = (string) Str::ulid();
+
+    $root = autoShelfCategory('Bebidas');
+    $sub1 = autoShelfCategory('Sub1', parentId: $root->id);
+    $sub2 = autoShelfCategory('Sub2', parentId: $root->id);
+    $sub3 = autoShelfCategory('Sub3', parentId: $root->id);
+    $sub4 = autoShelfCategory('Sub4', parentId: $root->id);
+    $sub5 = autoShelfCategory('Sub5', parentId: $root->id);
+
+    $p1 = autoShelfProduct($sub1->id, width: 40.0, name: 'P1');
+    $p2 = autoShelfProduct($sub2->id, width: 40.0, name: 'P2');
+    $p3 = autoShelfProduct($sub3->id, width: 40.0, name: 'P3');
+    $p4 = autoShelfProduct($sub4->id, width: 40.0, name: 'P4');
+    $p5 = autoShelfProduct($sub5->id, width: 40.0, name: 'P5');
+
+    $products = collect([$p1, $p2, $p3, $p4, $p5]);
+    $abcMap = [$p1->id => 'A', $p2->id => 'B', $p3->id => 'C', $p4->id => 'C', $p5->id => 'C'];
+
+    autoShelfBindMockScorer($abcMap, array_fill_keys($products->pluck('id')->all(), 10.0));
+
+    // 3 seções físicas — apenas 2 serão usadas
+    $sections = autoShelfSectionsWithoutShelves($gondolaId, numModules: 3);
+
+    autoShelfGenerate(autoShelfInput($gondolaId, $planogramId, $root->id, $products, $sections, $abcMap));
+
+    // 2 módulos × 4 prateleiras = 8; seção 3 fica vazia
+    $orderedSections = Section::orderBy('ordering')->get();
+    expect(Shelf::where('section_id', $orderedSections[0]->id)->count())->toBe(4);
+    expect(Shelf::where('section_id', $orderedSections[1]->id)->count())->toBe(4);
+    expect(Shelf::where('section_id', $orderedSections[2]->id)->count())->toBe(0);
+    expect(Shelf::count())->toBe(8);
+
+    expect(Layer::whereNotNull('product_id')->count())->toBeGreaterThan(0);
+});
+
+test('com 1 subcategoria e 1 módulo físico, cria exatamente 4 prateleiras (mínimo)', function (): void {
+    // Cenário: 1 produto em 1 subcategoria → demanda = 1 slot → numModules = 1 → 4 prateleiras mínimas.
+    // O mínimo de 4 prateleiras por módulo garante que o módulo seja aproveitado integralmente.
     $gondolaId = (string) Str::ulid();
     $planogramId = (string) Str::ulid();
 
@@ -406,17 +446,19 @@ test('número de prateleiras por módulo segue os shelf_orders dos slots sinteti
 
     autoShelfGenerate(autoShelfInput($gondolaId, $planogramId, $root->id, $products, $sections, $abcMap));
 
-    // Prateleiras criadas = shelf_orders distintos dos slots do módulo 1
-    $distinctShelfOrders = PlanogramTemplateSlot::where('module_number', 1)
-        ->pluck('shelf_order')
-        ->unique()
-        ->count();
-
+    // Com 1 módulo e mínimo de 4 prateleiras, deve criar exatamente 4
     $sectionId = Section::first()->id;
-    expect(Shelf::where('section_id', $sectionId)->count())->toBe($distinctShelfOrders);
+    expect(Shelf::where('section_id', $sectionId)->count())->toBe(4);
+    expect(Shelf::count())->toBe(4);
+
+    // Produto alocado em alguma das prateleiras
+    expect(Layer::where('product_id', $refri1->id)->count())->toBeGreaterThan(0);
 });
 
-test('gôndola que já tem prateleiras não recebe prateleiras extras (regeração)', function (): void {
+test('regeração apaga prateleiras existentes e recria com mínimo de 4 por módulo', function (): void {
+    // Comportamento "apagar tudo e regenerar": ao gerar automaticamente numa gôndola que já
+    // tem prateleiras, o motor apaga as prateleiras existentes e cria novas (mín. 4 por módulo).
+    // Isso garante que a estrutura resultante seja sempre determinística e dirigida pelo template.
     $gondolaId = (string) Str::ulid();
     $planogramId = (string) Str::ulid();
 
@@ -428,7 +470,7 @@ test('gôndola que já tem prateleiras não recebe prateleiras extras (regeraç�
     $abcMap = [$refri1->id => 'A'];
     autoShelfBindMockScorer($abcMap, [$refri1->id => 100.0]);
 
-    // Seção já com 3 prateleiras criadas previamente
+    // Seção já com 3 prateleiras criadas previamente (estrutura legada)
     $section = Section::create([
         'gondola_id' => $gondolaId,
         'width' => 100.0,
@@ -457,6 +499,10 @@ test('gôndola que já tem prateleiras não recebe prateleiras extras (regeraç�
 
     autoShelfGenerate(autoShelfInput($gondolaId, $planogramId, $root->id, $products, collect([$section]), $abcMap));
 
-    // Nenhuma prateleira extra criada — preserva a estrutura existente
-    expect(Shelf::count())->toBe(3);
+    // Regeração apaga as 3 prateleiras antigas e cria 4 novas (mínimo por módulo)
+    expect(Shelf::count())->toBe(4);
+    expect(Shelf::where('section_id', $section->id)->count())->toBe(4);
+
+    // Produto deve estar alocado nas novas prateleiras
+    expect(Layer::where('product_id', $refri1->id)->count())->toBeGreaterThan(0);
 });

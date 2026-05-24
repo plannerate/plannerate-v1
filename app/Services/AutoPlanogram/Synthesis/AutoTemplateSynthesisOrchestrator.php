@@ -8,6 +8,7 @@ use App\Services\AutoPlanogram\DTO\CategoryAbcSummary;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -25,6 +26,15 @@ use Illuminate\Validation\ValidationException;
  */
 final class AutoTemplateSynthesisOrchestrator
 {
+    /**
+     * Número mínimo de prateleiras por módulo para novas gôndolas.
+     *
+     * Garante que cada módulo tenha slots suficientes para expor múltiplas categorias
+     * e evita gôndolas com apenas 1-2 prateleiras por seção quando a demanda calculada
+     * é pequena. Não se aplica a regenerações (a estrutura existente é preservada).
+     */
+    public const MIN_SHELVES_PER_MODULE = 4;
+
     public function __construct(
         private readonly CategoryRoleInferrer $roleInferrer,
         private readonly SlotPlanBuilder $slotPlanBuilder,
@@ -72,8 +82,29 @@ final class AutoTemplateSynthesisOrchestrator
             ];
         })->values();
 
-        $numModules = max($input->sections->count(), 1);
-        $shelvesPerModule = $input->sections->map(fn ($s) => $s->shelves->count())->max() ?: 4;
+        $numModulesPhysical = max($input->sections->count(), 1);
+        $shelfWidth = (float) ($input->sections->first()?->width ?? 100.0);
+
+        // shelvesPerModule: padrão físico fixo — cada módulo tem sempre MIN_SHELVES_PER_MODULE prateleiras.
+        // O número de módulos é ajustado pela demanda (ver abaixo); o tamanho de cada módulo é constante.
+        $shelvesPerModule = self::MIN_SHELVES_PER_MODULE;
+
+        // numModules: dirigido pela demanda real, não pela grade física.
+        // Cria apenas os módulos necessários para acomodar a demanda (slot mínimo = ceil(demand/4)).
+        // Cappado pela quantidade de seções físicas disponíveis.
+        $numModules = $this->computeNumModules(
+            $summaries,
+            $scored,
+            $numModulesPhysical,
+            $shelvesPerModule,
+            $shelfWidth,
+        );
+
+        Log::info('AutoTemplateSynthesisOrchestrator: estrutura calculada', [
+            'num_modules_physical' => $numModulesPhysical,
+            'num_modules_demand' => $numModules,
+            'shelves_per_module' => $shelvesPerModule,
+        ]);
 
         $slotPlan = $this->slotPlanBuilder->build(
             selectedCategory: $selectedCategory,
@@ -81,6 +112,8 @@ final class AutoTemplateSynthesisOrchestrator
             numModules: $numModules,
             shelvesPerModule: $shelvesPerModule,
             settings: $input->settings,
+            shelfWidth: $shelfWidth,
+            useFullCapacity: true,  // usa toda a capacidade dos módulos criados (4 prateleiras/módulo)
         );
 
         return $this->synthesizer->synthesize(
@@ -108,6 +141,61 @@ final class AutoTemplateSynthesisOrchestrator
                 'category_id' => [__('A categoria selecionada está fora do escopo do planograma.')],
             ]);
         }
+    }
+
+    /**
+     * Calcula o número de módulos necessários pela demanda real das subcategorias.
+     *
+     * Estratégia:
+     * - Soma a demanda individual por subcategoria: ceil(totalWidth / shelfWidth), mínimo 1.
+     * - totalDemandedSlots = max(numSubcats, soma individual) — garante 1 slot por subcat.
+     * - numModules = ceil(totalDemandedSlots / shelvesPerModule), cappado pelo físico.
+     *
+     * Categoria folha (summaries vazio): usa os scored products diretamente para calcular a largura.
+     *
+     * Exemplos com shelvesPerModule=4:
+     *   5 subcats, total=6 slots → ceil(6/4)=2 módulos
+     *   2 subcats, total=2 slots → ceil(2/4)=1 módulo (não cria módulos desnecessários)
+     *
+     * @param  Collection<string, CategoryAbcSummary>  $summaries  Indexado por category_id.
+     * @param  Collection<int, ScoredProduct>  $scored
+     */
+    private function computeNumModules(
+        Collection $summaries,
+        Collection $scored,
+        int $numModulesPhysical,
+        int $shelvesPerModule,
+        float $shelfWidth,
+    ): int {
+        // Calcular total de slots demandados (soma das demandas individuais por subcat)
+        if ($summaries->isEmpty()) {
+            // Categoria folha: 1 categoria → slots = ceil(totalWidth / shelfWidth)
+            $totalWidth = $scored->sum(function (ScoredProduct $sp): float {
+                $w = (float) ($sp->product->width ?? 0);
+
+                return ($w > 0 && $w <= 60) ? $w : 10.0;
+            });
+            $totalDemandedSlots = max(1, (int) ceil($totalWidth / max($shelfWidth, 1.0)));
+        } else {
+            // Soma per-subcat: cada uma contribui ceil(width/shelfWidth) ≥ 1
+            $totalDemandedSlots = (int) $summaries->sum(fn (CategoryAbcSummary $s) => max(1, (int) ceil($s->totalWidth / max($shelfWidth, 1.0))));
+            // Garante mínimo de 1 slot por subcategoria mesmo sem dados de largura
+            $totalDemandedSlots = max($summaries->count(), $totalDemandedSlots);
+        }
+
+        // Número de módulos necessários = ceil(totalSlots / shelvesPerModule), capped no físico
+        $numModulesNeeded = max(1, (int) ceil($totalDemandedSlots / max($shelvesPerModule, 1)));
+        $numModules = min($numModulesNeeded, $numModulesPhysical);
+
+        Log::info('AutoTemplateSynthesisOrchestrator: numModules demand-based', [
+            'total_demanded_slots' => $totalDemandedSlots,
+            'shelves_per_module' => $shelvesPerModule,
+            'num_modules_needed' => $numModulesNeeded,
+            'num_modules_physical' => $numModulesPhysical,
+            'num_modules_used' => $numModules,
+        ]);
+
+        return $numModules;
     }
 
     /**

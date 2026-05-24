@@ -10,7 +10,7 @@
  * - Gôndola 2 sections × 4 prateleiras, 100 cm de largura cada.
  * - Categoria-base "Bebidas" com 3 subcategorias: Refrigerantes (A), Sucos, Chás (C).
  * - ~10 produtos com width/height válidos; alguns com venda, alguns sem.
- * - Produto "Wide" (25 cm, min_facings=5 → 125 cm > 100) → forçosamente rejeitado.
+ * - Produto "Wide" (34 cm, min_facings=3 para classe A → 102 cm > 100) → forçosamente rejeitado.
  * - Produto "Direto" pendurado na própria categoria selecionada → descartado silenciosamente.
  */
 
@@ -154,7 +154,13 @@ beforeEach(function (): void {
         $table->char('id', 26)->primary();
         $table->char('tenant_id', 26)->nullable();
         $table->char('section_id', 26)->nullable();
+        $table->string('code')->nullable();
+        $table->integer('ordering')->default(0);
         $table->integer('shelf_position')->default(0);
+        $table->float('shelf_width')->default(100.0);
+        $table->float('shelf_height')->default(4.0);
+        $table->float('shelf_depth')->default(40.0);
+        $table->string('product_type')->default('normal');
         $table->timestamps();
         $table->softDeletes();
     });
@@ -435,8 +441,9 @@ function autoE2eFixture(): array
     $refriA2 = autoE2eProduct($refri->id, width: 8, name: 'Refri A2');
     $refriC = autoE2eProduct($refri->id, width: 8, name: 'Refri C');
 
-    // Produto "Wide" em Refrigerantes — muito largo para caber (25 cm × 5 frentes = 125 > 100)
-    $wide = autoE2eProduct($refri->id, width: 25, name: 'Wide (rejeitado)');
+    // Produto "Wide" em Refrigerantes — muito largo para caber (34 cm × 3 frentes mínimas = 102 > 100)
+    // Nota: min_facings para classe A é 3 (ABC_MIN_FACINGS); 34 × 3 = 102 > 100 → rejeitado.
+    $wide = autoE2eProduct($refri->id, width: 34, name: 'Wide (rejeitado)');
 
     // Produtos — Sucos (neutro, sem venda — para testar scoreOrNeutral)
     $suco1 = autoE2eProduct($sucos->id, width: 8, name: 'Suco sem venda');
@@ -521,7 +528,10 @@ test('1 — síntese cria template com origin=auto, is_active=false, category_id
         ->and($template->source_gondola_id)->toBe($fx['gondolaId']);
 });
 
-test('2 — subtemplate tem num_modules=2 e slots cobrem as subcategorias elegíveis', function (): void {
+test('2 — subtemplate tem num_modules=1 (demanda: 3 subcats × 1 slot = 3 slots, cabe em 1 módulo) e slots cobrem as subcategorias elegíveis', function (): void {
+    // 3 subcategorias pequenas: Refrigerantes (58 cm), Sucos (8 cm), Chás (16 cm).
+    // Cada uma demanda ceil(totalWidth / 100) = 1 slot → totalDemandedSlots = 3.
+    // numModulesNeeded = ceil(3 / 4) = 1 (algoritmo demand-based, não físico).
     $fx = autoE2eFixture();
     autoE2eBindMockScorer($fx['abcMap'], $fx['rawQtyMap'], $fx['rawMargemMap']);
 
@@ -530,7 +540,7 @@ test('2 — subtemplate tem num_modules=2 e slots cobrem as subcategorias elegí
 
     $subtemplate = PlanogramSubtemplate::first();
     expect($subtemplate)->not->toBeNull()
-        ->and($subtemplate->num_modules)->toBe(2);
+        ->and($subtemplate->num_modules)->toBe(1);
 
     $slotCategoryIds = PlanogramTemplateSlot::pluck('category_id')->unique()->values();
 
@@ -554,7 +564,7 @@ test('3 — curva A tem min_facings maior que curva C no slot sintetizado', func
     expect($refriSlot)->not->toBeNull()
         ->and($chasSlot)->not->toBeNull();
 
-    // Refrigerantes (dominante A, min_facings=5) > Chás (dominante C, min_facings=1)
+    // Refrigerantes (dominante A, min_facings=3) > Chás (dominante C, min_facings=1)
     expect($refriSlot->getRawOriginal('min_facings'))
         ->toBeGreaterThan($chasSlot->getRawOriginal('min_facings'));
 });
@@ -656,7 +666,7 @@ test('8 — produto que não cabe é registrado em planogram_rejected_products c
     $input = autoE2eInput($fx['gondolaId'], $fx['planogramId'], $fx['rootId'], $fx['products'], $fx['sections'], $fx['abcMap']);
     autoE2eGenerate($input);
 
-    // "Wide" (25 cm × 5 frentes = 125 cm > 100 cm disponíveis em toda prateleira) deve ser rejeitado
+    // "Wide" (34 cm × 3 frentes mínimas = 102 cm > 100 cm disponíveis em toda prateleira) deve ser rejeitado
     $rejected = PlanogramRejectedProduct::where('product_id', $fx['wideId'])->first();
 
     expect($rejected)->not->toBeNull('Produto Wide deve aparecer em planogram_rejected_products')

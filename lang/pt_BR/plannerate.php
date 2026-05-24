@@ -78,14 +78,6 @@ return [
             'ai_full_gondola' => '🤖 IA gondola inteira (Prism, ~8-15s)',
             'fast_algorithm_full_gondola' => '⚡ Algoritmo rapido gondola inteira (~2s)',
         ],
-        'chooser' => [
-            'title' => 'Como gerar este planograma?',
-            'description' => 'Escolha a forma de geracao para esta gondola.',
-            'template_label' => 'Por Template',
-            'template_description' => 'Use um template existente como base. O subtemplate com o numero de modulos mais proximo sera selecionado automaticamente.',
-            'automatic_label' => 'Automatico',
-            'automatic_description' => 'Sintetiza a distribuicao de categorias com base em analise ABC, vendas e regras de merchandising.',
-        ],
         'auto_generate' => [
             'title' => 'Gerar Planograma Automaticamente',
             'description' => 'Configure as opcoes para gerar o planograma automaticamente baseado em vendas, analise ABC e regras de merchandising.',

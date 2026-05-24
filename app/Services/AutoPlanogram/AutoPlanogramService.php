@@ -93,7 +93,9 @@ final class AutoPlanogramService
         // (regeração) são preservadas.
         $this->ensureShelvesForSynthesizedTemplate($input->sections, $subtemplate);
 
-        $numModules = max($input->sections->count(), 1);
+        // Usa o num_modules real do subtemplate (dirigido pela demanda, não pela grade física).
+        // Garante que o engine encontre o subtemplate via (template_id, num_modules) corretamente.
+        $numModules = $subtemplate->num_modules;
         $updatedSettings = $input->settings->withTemplate(
             templateId: $subtemplate->template_id,
             numModules: $numModules,
@@ -121,13 +123,11 @@ final class AutoPlanogramService
     }
 
     /**
-     * Cria as prateleiras físicas das seções a partir do template sintetizado.
+     * Reconstrói as prateleiras físicas das seções a partir do template sintetizado.
      *
-     * Para cada módulo, o número de prateleiras é o número de shelf_orders distintos que os
-     * slots reservam (slot-driven: módulo/categoria sem slot não ganha prateleira). As prateleiras
-     * são distribuídas dentro do envelope físico da própria seção (altura/base/furos já persistidos).
-     *
-     * Seções que já possuem prateleiras são ignoradas — preserva o fluxo manual e a regeração.
+     * Sempre apaga todas as prateleiras existentes antes de criar as novas (modo "partir do zero").
+     * O número de prateleiras por módulo = max(MIN_SHELVES_PER_MODULE, shelf_orders distintos dos slots).
+     * Seções sem slots no template ficam sem prateleiras (módulos não usados pelo template).
      *
      * @param  Collection<int, Section>  $sections
      */
@@ -140,31 +140,35 @@ final class AutoPlanogramService
             ->groupBy('module_number')
             ->map(fn (Collection $slots): int => $slots->pluck('shelf_order')->unique()->count());
 
-        $created = false;
+        // Apagar todas as prateleiras existentes de todas as seções (geração parte do zero).
+        // Segmentos e layers são apagados em cascata pelo banco ou pela PlanogramWriter.
+        foreach ($sections as $section) {
+            $section->shelves()->delete();
+        }
+
+        // Resetar relação em memória após deleção
+        $sections->each(fn (Section $s) => $s->setRelation('shelves', collect()));
 
         foreach ($sections as $index => $section) {
-            if ($section->shelves->isNotEmpty()) {
-                continue;
-            }
-
             $moduleNumber = $index + 1;
             $numShelves = (int) ($shelvesByModule[$moduleNumber] ?? 0);
 
             if ($numShelves <= 0) {
+                // Seção além do numModules do template: fica sem prateleiras (coluna vazia na gôndola).
                 continue;
             }
+
+            // Garante mínimo de MIN_SHELVES_PER_MODULE prateleiras por módulo ativo.
+            // Isso evita que módulos parciais (ex.: 1 slot apenas) fiquem com poucas prateleiras.
+            $numShelves = max(AutoTemplateSynthesisOrchestrator::MIN_SHELVES_PER_MODULE, $numShelves);
 
             $this->shelfStructure->createShelves($section, [
                 'shelf_width' => $section->width,
             ], $numShelves);
-
-            $created = true;
         }
 
-        if ($created) {
-            // Recarrega a relação para o engine (resolveShelf) e o writer enxergarem as novas prateleiras
-            $sections->each(fn ($section) => $section->load('shelves'));
-        }
+        // Recarrega a relação para o engine (resolveShelf) e o writer enxergarem as novas prateleiras
+        $sections->each(fn ($section) => $section->load('shelves'));
     }
 
     private function generateWithTemplate(PlanogramInput $input, Collection $scored, string $scoreType): PlanogramOutput

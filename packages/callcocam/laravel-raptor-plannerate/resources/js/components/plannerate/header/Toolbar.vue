@@ -67,7 +67,6 @@ import DropdownActions from '../DropdownActions.vue';
 import DropdownPerformance from '../DropdownPerformance.vue';
 import AutomaticGenerateModal from './AutomaticGenerateModal.vue';
 import ConfirmDeleteGondolaDialog from './ConfirmDeleteGondolaDialog.vue';
-import GenerateModeChooserDialog from './GenerateModeChooserDialog.vue';
 import MapRegionSelectorModal from './MapRegionSelectorModal.vue';
 import TemplateGenerateModal from './TemplateGenerateModal.vue';
 import TransferSectionDialog from './partials/TransferSectionDialog.vue';
@@ -137,11 +136,15 @@ const isMounted = ref(false);
 onMounted(() => {
     isMounted.value = true;
 
-    if ((page.props.flash as any)?.auto_generate && autoGenerateEnabled.value) {
+    if ((page.props.flash as any)?.auto_generate && canAutoGenerate.value) {
         openGenerateFlow();
     }
 });
 
+/**
+ * Abre o modal de geração adequado com base em `generation_mode`.
+ * Não há mais chooser — o modo é decidido na criação da gôndola.
+ */
 function openGenerateFlow(): void {
     const gondola = currentGondola.value as Gondola | undefined;
 
@@ -149,7 +152,6 @@ function openGenerateFlow(): void {
         return;
     }
 
-    // Respeita o generation_mode salvo: abre direto o modal correspondente, sem chooser.
     const mode = (gondola as any).generation_mode as
         | 'manual'
         | 'template'
@@ -163,29 +165,13 @@ function openGenerateFlow(): void {
         return;
     }
 
-    // Template (modo salvo ou gôndola já vinculada a um template)
-    if (mode === 'template' || gondola.template_id) {
-        showTemplateModal.value = true;
-
-        return;
-    }
-
-    // Legado (generation_mode null e sem template): sem templates → automático; senão chooser.
-    if ((planogramTemplates.value as any[]).length === 0) {
-        showAutomaticModal.value = true;
-
-        return;
-    }
-
-    showChooserDialog.value = true;
-}
-
-function handleChooserChoice(mode: 'template' | 'automatic'): void {
     if (mode === 'template') {
         showTemplateModal.value = true;
-    } else {
-        showAutomaticModal.value = true;
+
+        return;
     }
+
+    // manual / null: botão está oculto por canAutoGenerate; esta linha é apenas proteção.
 }
 
 /**
@@ -301,6 +287,20 @@ const autoGenerateEnabled = computed(
     }
 );
 
+/**
+ * Botão de geração só aparece quando o modo da gôndola é template ou automatic.
+ * Gôndolas manuais ou legadas (null) não têm geração automática disponível na toolbar.
+ */
+const canAutoGenerate = computed(() => {
+    if (!autoGenerateEnabled.value) {
+        return false;
+    }
+
+    const mode = (currentGondola.value as any)?.generation_mode as string | null | undefined;
+
+    return mode === 'template' || mode === 'automatic';
+});
+
 const strategyOptions = computed(
     () => (page.props as any)?.strategyOptions ?? [],
 );
@@ -327,7 +327,6 @@ const permissions = computed(
 /**
  * Estados dos modais de geração
  */
-const showChooserDialog = ref(false);
 const showTemplateModal = ref(false);
 const showAutomaticModal = ref(false);
 
@@ -725,8 +724,8 @@ const handleMapRegionSelect = (regionId: string | null) => {
                         (value: boolean) => (showPerformanceModal = value)
                     " />
 
-                <!-- Geração Automática (Feature Flag) -->
-                <ButtonWithTooltip v-if="autoGenerateEnabled" variant="default" size="sm"
+                <!-- Geração Automática (Feature Flag + modo template/automatic) -->
+                <ButtonWithTooltip v-if="canAutoGenerate" variant="default" size="sm"
                     :tooltip="t('plannerate.toolbar.auto_generate_tooltip')" @click="openGenerateFlow()">
                     <Sparkles class="mr-2 size-4" />
                     <span class="max-w-24 truncate">
@@ -742,14 +741,6 @@ const handleMapRegionSelect = (regionId: string | null) => {
 
             </div>
         </div>
-
-        <!-- Chooser de modo de geração -->
-        <GenerateModeChooserDialog
-            v-if="autoGenerateEnabled && permissions.can_autogenate_gondola"
-            :open="showChooserDialog"
-            @update:open="(v: boolean) => (showChooserDialog = v)"
-            @choose="handleChooserChoice"
-        />
 
         <!-- Modal de geração por template -->
         <TemplateGenerateModal
