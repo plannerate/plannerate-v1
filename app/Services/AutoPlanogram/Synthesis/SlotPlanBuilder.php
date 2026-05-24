@@ -18,10 +18,16 @@ use Illuminate\Support\Facades\Log;
  * Algoritmo (block-partition):
  * 1. Ordenar subcategorias: hot-preferring primeiro (destino/impulso), por ABC e giro.
  * 2. Construir slots ordenados por zona dentro de cada módulo (hot first) → blocagem vertical.
- * 3. Particionar slots em blocos proporcionais à demanda de cada subcategoria:
- *    - Demanda principal: largura total dos produtos (totalWidth) × ceil(totalWidth / shelfWidth).
+ * 3. Particionar slots em blocos proporcionais à demanda de cada subcategoria (Approach B):
+ *    - Demanda principal: largura total dos produtos (totalWidth) → ceil(totalWidth / shelfWidth).
  *    - Fallback quando sem dados de largura: proporcional ao volume (totalQuantity).
- *    - "Não super-provisionar": se demanda total < capacidade física, gera menos prateleiras.
+ *    - Usa TODA a capacidade disponível; slots excedentes (teto de módulo) fluem para as
+ *      subcategorias com OVERFLOW (totalWidth % shelfWidth > 0): aquelas cuja última
+ *      prateleira demandada não está completamente cheia e podem absorver espaço extra.
+ *      Categorias sem overflow (ex.: DE TRIGO a 600 cm exatos) NÃO recebem extras, pois
+ *      qualquer slot além da demanda exata ficaria garantidamente vazio.
+ *    - Fallback quando não há overflow em nenhuma categoria: round-robin nas de maior demanda.
+ *    - O controle de não super-provisionar opera no nível de seções (AutoPlanogramService).
  *    - Subcategoria sem produto elegível (skuCount=0 e totalQuantity=0) não gera slot.
  *
  * ABC é SEMPRE o primeiro critério visual (score_abc desc) — não é configurável.
@@ -166,20 +172,23 @@ class SlotPlanBuilder
     /**
      * Particiona slots em blocos proporcionais à demanda de cada subcategoria.
      *
-     * Estratégia de demanda (hasSomeWidth = true):
+     * Estratégia de demanda (hasSomeWidth = true) — Approach B com overflow-routing:
      * - Computa demanda individual: ceil(totalWidth / shelfWidth), mínimo 1 slot por subcat.
-     * - totalDemandado = soma das demandas individuais (substitui o max uniforme anterior).
-     * - Capacidade suficiente: usa contagens individuais diretamente (sem distorção Hare).
-     *   Subcategoria grande recebe mais prateleiras; pequena recebe menos.
-     * - Capacidade insuficiente: aplica Hare puro com as contagens como pesos.
+     * - Usa TODA a capacidade disponível (não super-provisionamento é responsabilidade do
+     *   AutoPlanogramService que deleta seções excedentes antes desta etapa).
+     * - Capacidade suficiente (capacity ≥ demand): cada subcat recebe sua demanda exata;
+     *   slots excedentes fluem (Hare) para as subcategorias com overflow > 0
+     *   (totalWidth % shelfWidth > 0), i.e., aquelas cuja última prateleira demandada não
+     *   está completamente cheia — o placement engine pode distribuir produtos nelas.
+     *   Categorias sem overflow (ex.: DE TRIGO a 600 cm exatos) NÃO recebem extras, pois
+     *   qualquer slot além da demanda exata ficaria garantidamente vazio.
+     *   Fallback quando overflow = 0 em todas: round-robin pelas de maior demanda.
+     * - Capacidade insuficiente (capacity < demand): Hare puro escala demandas para baixo.
      *
      * Fallback quando sem dados de largura: usa totalQuantity como peso proporcional (Hare com
      * garantia de 1 slot por subcategoria). Toda a capacidade disponível é usada.
      *
      * Subcategorias sem produto elegível (skuCount = 0 e totalQuantity = 0) são excluídas.
-     *
-     * Regeneração (useFullCapacity = true): usa toda a capacidade disponível sem redução por demanda.
-     * Isso preserva a estrutura física existente da gôndola ao regenerar um planograma.
      *
      * @param  Collection<int, array{category: Category, summary: CategoryAbcSummary, role: CategoryRole}>  $sorted
      * @param  list<array{module: int, shelf_order: int, zone: string, zone_priority: int}>  $orderedSlots
@@ -213,32 +222,30 @@ class SlotPlanBuilder
             // Demanda individual: ceil(totalWidth / shelfWidth), mínimo 1.
             // Subcategoria com 267 cm → 3 slots; com 44 cm → 1 slot; com 5 cm → 1 slot.
             $subcatSlotsNeeded = $this->computePerSubcatSlots($withDemand, $shelfWidth);
-            $demandedTotal = (int) array_sum($subcatSlotsNeeded);
         } else {
             // Sem dados de largura: fallback por quantidade (Hare com garantia de 1)
             $subcatSlotsNeeded = null;
-            $demandedTotal = $totalCapacity;
         }
 
-        // 3. Não super-provisionar (apenas para gôndolas novas).
-        //    Regeneração (useFullCapacity=true): preservar estrutura física existente, usar toda capacidade.
-        $totalUsed = $useFullCapacity ? $totalCapacity : min($totalCapacity, $demandedTotal);
-        $activeSlots = array_slice($orderedSlots, 0, $totalUsed);
+        // 3. Usar sempre toda a capacidade disponível (Approach B).
+        //    O controle de não super-provisionar opera no nível de seções (AutoPlanogramService:
+        //    seções sem slots no template são deletadas antes desta etapa).
+        $totalUsed = $totalCapacity;
+        $activeSlots = $orderedSlots;
 
-        // 4. Distribuir slots por subcategoria
+        // 4. Distribuir slots por subcategoria (Approach B + overflow-routing).
         if ($hasSomeWidth && $subcatSlotsNeeded !== null) {
-            if (! $useFullCapacity && $totalCapacity >= $demandedTotal) {
-                // Capacidade suficiente: usa contagens individuais diretamente.
-                // Regra-mor: subcategoria com mais demanda recebe mais prateleiras.
-                $slotCounts = $subcatSlotsNeeded;
-            } else {
-                // Capacidade insuficiente ou regeneração: Hare puro com demandas como pesos.
-                // Hare puro (sem pré-alocação de 1) preserva proporção ao escalar.
-                $slotCounts = $this->distributeByPureHare(
-                    array_map('floatval', $subcatSlotsNeeded),
-                    $totalUsed,
-                );
-            }
+            // Overflow = fração ocupada da última prateleira demandada por subcategoria.
+            // overflow[i] = totalWidth[i] % shelfWidth; 0 → última prateleira 100% cheia
+            // (um extra seria garantidamente vazio); >0 → última prateleira parcialmente cheia
+            // (o placement engine pode acomodar produtos espalhados num slot extra).
+            $overflowWeights = $withDemand->values()->map(
+                fn ($item) => fmod($item['summary']->totalWidth, max($shelfWidth, 1.0))
+            )->all();
+
+            // Capacidade ≥ demanda: base garantida + extras para subcategorias com overflow.
+            // Capacidade < demanda: Hare puro escala proporcionalmente para baixo.
+            $slotCounts = $this->distributeWithExtraToOverflow($subcatSlotsNeeded, $overflowWeights, $totalUsed);
         } else {
             // Fallback por quantidade: Hare com garantia de 1 slot por subcategoria
             $demandWeights = $withDemand->values()->map(
@@ -439,6 +446,80 @@ class SlotPlanBuilder
         }
 
         return array_values($result);
+    }
+
+    /**
+     * Distribui $totalCapacity slots entre subcategorias — Approach B com overflow-routing.
+     *
+     * Três estratégias conforme a relação capacidade/demanda e overflow por subcategoria:
+     *
+     * 1. Capacidade insuficiente (totalCapacity < demandedTotal):
+     *    Hare puro escala a demanda proporcionalmente para baixo.
+     *    Subcategorias de maior demanda perdem menos prateleiras que as de menor demanda.
+     *
+     * 2. Capacidade suficiente, com alguma categoria de overflow (overflowSum > 0):
+     *    a) Cada subcategoria recebe exatamente o que demanda (base garantida).
+     *    b) Slots excedentes fluem (Hare) proporcionalmente ao overflow de cada subcategoria:
+     *       overflow[i] = totalWidth[i] % shelfWidth.
+     *       Categorias com overflow = 0 (ex.: DE TRIGO a 600 cm exatos) NÃO recebem extras,
+     *       pois qualquer slot além dos demandados ficaria garantidamente vazio.
+     *       Categorias com overflow > 0 (última prateleira parcialmente cheia) absorvem os
+     *       extras; o placement engine pode espalhar os produtos remanescentes por essas slots.
+     *
+     *    Exemplo: demands=[6,1,1,1], overflows=[0, 80, 40, 60], capacity=12 → extra=3.
+     *    overflowSum=180 → Hare([0,80,40,60], 3) = [0,1,1,1].
+     *    result = [6, 2, 2, 2] — DE TRIGO não recebe extras; as demais absorvem 1 cada.
+     *
+     * 3. Capacidade suficiente, nenhuma categoria tem overflow (overflowSum = 0):
+     *    Fallback: extras em round-robin pelas subcategorias empatadas no TOPO de demanda.
+     *
+     * @param  array<int, int>  $demanded  Slots demandados por índice (valores ≥ 1).
+     * @param  array<int, float>  $overflowWeights  Peso de overflow por índice (totalWidth % shelfWidth).
+     * @return array<int, int> Contagens finais; soma exata = $totalCapacity.
+     */
+    private function distributeWithExtraToOverflow(array $demanded, array $overflowWeights, int $totalCapacity): array
+    {
+        $n = count($demanded);
+
+        if ($n === 0 || $totalCapacity <= 0) {
+            return [];
+        }
+
+        $demandedTotal = (int) array_sum($demanded);
+
+        // Capacidade insuficiente: Hare puro escala demandas para baixo (preserva proporção).
+        if ($demandedTotal >= $totalCapacity) {
+            return $this->distributeByPureHare(array_map('floatval', $demanded), $totalCapacity);
+        }
+
+        // Capacidade suficiente: cada subcat recebe sua demanda exata como base.
+        $result = $demanded;
+        $extra = $totalCapacity - $demandedTotal;
+        $overflowSum = (float) array_sum($overflowWeights);
+
+        if ($overflowSum > 0.0) {
+            // Distribui extras proporcionalmente ao overflow via Hare puro.
+            // Categorias com overflow=0 recebem 0 extras; evita slots garantidamente vazios.
+            $extraAllocated = $this->distributeByPureHare($overflowWeights, $extra);
+
+            foreach ($extraAllocated as $i => $add) {
+                $result[$i] += $add;
+            }
+        } else {
+            // Fallback (todas as demandas são múltiplos exatos de shelfWidth):
+            // round-robin pelas subcategorias empatadas no topo de demanda.
+            $maxDemand = max($demanded);
+            $topIndices = array_values(array_filter(
+                array_keys($demanded),
+                fn (int $i) => $demanded[$i] === $maxDemand
+            ));
+
+            for ($i = 0; $i < $extra; $i++) {
+                $result[$topIndices[$i % count($topIndices)]]++;
+            }
+        }
+
+        return $result;
     }
 
     /**

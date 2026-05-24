@@ -89,9 +89,9 @@ final class AutoPlanogramService
         $subtemplate = $this->synthesisOrchestrator->orchestrate($input, $scored, $planogramBaseCategoryId);
 
         // Modo automático dirige a estrutura: o motor cria as prateleiras conforme o template
-        // sintetizado, dentro do envelope físico das seções. Gôndolas que já têm prateleiras
-        // (regeração) são preservadas.
-        $this->ensureShelvesForSynthesizedTemplate($input->sections, $subtemplate);
+        // sintetizado, dentro do envelope físico das seções. Seções excedentes (sem demanda)
+        // são deletadas do banco para não aparecer na UI como módulos vazios.
+        $keptSections = $this->ensureShelvesForSynthesizedTemplate($input->sections, $subtemplate);
 
         // Usa o num_modules real do subtemplate (dirigido pela demanda, não pela grade física).
         // Garante que o engine encontre o subtemplate via (template_id, num_modules) corretamente.
@@ -108,7 +108,7 @@ final class AutoPlanogramService
             gondolaId: $input->gondolaId,
             tenantId: $input->tenantId,
             products: $input->products,
-            sections: $input->sections,
+            sections: $keptSections,
             settings: $updatedSettings,
             planogramCategoryId: $input->planogramCategoryId,
         );
@@ -127,11 +127,12 @@ final class AutoPlanogramService
      *
      * Sempre apaga todas as prateleiras existentes antes de criar as novas (modo "partir do zero").
      * O número de prateleiras por módulo = max(MIN_SHELVES_PER_MODULE, shelf_orders distintos dos slots).
-     * Seções sem slots no template ficam sem prateleiras (módulos não usados pelo template).
+     * Seções sem slots no template são **deletadas** do banco — evita módulos vazios visíveis na UI.
      *
-     * @param  Collection<int, Section>  $sections
+     * @param  Collection<int, Section>  $sections  Todas as seções físicas da gôndola.
+     * @return Collection<int, Section> Apenas as seções que receberam prateleiras.
      */
-    private function ensureShelvesForSynthesizedTemplate(Collection $sections, PlanogramSubtemplate $subtemplate): void
+    private function ensureShelvesForSynthesizedTemplate(Collection $sections, PlanogramSubtemplate $subtemplate): Collection
     {
         // shelf_orders distintos por módulo, na ordem dos slots do subtemplate
         $shelvesByModule = PlanogramTemplateSlot::withoutGlobalScope(TenantScope::class)
@@ -149,12 +150,22 @@ final class AutoPlanogramService
         // Resetar relação em memória após deleção
         $sections->each(fn (Section $s) => $s->setRelation('shelves', collect()));
 
+        /** @var Collection<int, Section> $keptSections Seções que receberão prateleiras */
+        $keptSections = collect();
+        $deletedCount = 0;
+
         foreach ($sections as $index => $section) {
             $moduleNumber = $index + 1;
             $numShelves = (int) ($shelvesByModule[$moduleNumber] ?? 0);
 
             if ($numShelves <= 0) {
-                // Seção além do numModules do template: fica sem prateleiras (coluna vazia na gôndola).
+                // Seção além do numModules demandado: deletar do banco para não aparecer
+                // na UI como módulo vazio. Só deletamos se a seção foi persistida (exists=true).
+                if ($section->exists) {
+                    $section->delete();
+                    $deletedCount++;
+                }
+
                 continue;
             }
 
@@ -165,10 +176,21 @@ final class AutoPlanogramService
             $this->shelfStructure->createShelves($section, [
                 'shelf_width' => $section->width,
             ], $numShelves);
+
+            $keptSections->push($section);
+        }
+
+        if ($deletedCount > 0) {
+            Log::info('AutoPlanogramService: seções excedentes deletadas', [
+                'deleted_sections' => $deletedCount,
+                'kept_sections' => $keptSections->count(),
+            ]);
         }
 
         // Recarrega a relação para o engine (resolveShelf) e o writer enxergarem as novas prateleiras
-        $sections->each(fn ($section) => $section->load('shelves'));
+        $keptSections->each(fn ($section) => $section->load('shelves'));
+
+        return $keptSections;
     }
 
     private function generateWithTemplate(PlanogramInput $input, Collection $scored, string $scoreType): PlanogramOutput

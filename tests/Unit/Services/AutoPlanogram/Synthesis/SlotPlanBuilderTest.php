@@ -93,10 +93,12 @@ test('sem dados de largura distribui todos os slots (fallback por quantity)', fu
 
 // ── Testes: partição proporcional por demanda (com totalWidth) ───────────────
 
-test('subcategoria grande recebe mais prateleiras que a pequena (proporcional por width)', function (): void {
-    // Categoria grande: 200 cm → demanda 2 prateleiras (ceil(200/100))
-    // Categoria pequena: 50 cm → demanda 1 prateleira (ceil(50/100))
-    // Total: 3 prateleiras, capacidade 4 → usa 3
+test('extras vão para categoria com overflow, não para a de maior demanda', function (): void {
+    // catGrande: 200 cm → demanda 2 slots, overflow = 200 % 100 = 0 (ambas prateleiras 100% cheias).
+    // catPequena: 50 cm → demanda 1 slot, overflow = 50 % 100 = 50 (última prateleira 50% cheia).
+    // Capacidade: 1 módulo × 4 = 4; demanda total = 3; extra = 1.
+    // Overflow-routing: catGrande (overflow=0) não recebe o extra; catPequena (overflow=50) recebe.
+    // Resultado esperado: catGrande=2 (demanda exata), catPequena=2 (1 + 1 extra). Total=4.
     $builder = new SlotPlanBuilder;
 
     $catGrande = makeCat(id: 'cat-grande');
@@ -119,11 +121,14 @@ test('subcategoria grande recebe mais prateleiras que a pequena (proporcional po
     $slotsGrande = collect($plan)->where('categoryId', 'cat-grande')->count();
     $slotsPequena = collect($plan)->where('categoryId', 'cat-pequena')->count();
 
-    // Categoria grande recebe mais prateleiras
-    expect($slotsGrande)->toBeGreaterThan($slotsPequena);
+    // Usa toda a capacidade (4 slots)
+    expect(count($plan))->toBe(4);
 
-    // Não super-provisiona: total = ceil(250/100) = 3, não 4
-    expect(count($plan))->toBe(3);
+    // catGrande (overflow=0) recebe exatamente o demandado, sem extras.
+    expect($slotsGrande)->toBe(2);
+
+    // catPequena (overflow=50) absorve o slot extra.
+    expect($slotsPequena)->toBe(2);
 });
 
 test('subcategoria sem produto elegível não gera slot', function (): void {
@@ -153,14 +158,18 @@ test('subcategoria sem produto elegível não gera slot', function (): void {
     expect(count($plan))->toBeGreaterThan(0);
 });
 
-test('não super-provisiona quando demanda < capacidade física', function (): void {
-    // 2 subcategorias com 30 cm cada → total 60 cm → ceil(60/100) = 1 prateleira
-    // Mínimo = 2 subcats → usa 2 prateleiras de 8 disponíveis
+test('slots excedentes distribuídos igualmente entre subcategorias de mesma demanda', function (): void {
+    // 2 subcategorias com 30 cm cada → demanda = [1, 1] = 2 slots.
+    // Capacidade física: 2 módulos × 4 prateleiras = 8 slots. Excedente = 6 slots.
+    // Approach B: usa 8 slots; com demanda igual (empate no topo), round-robin distribui 4+4.
     $builder = new SlotPlanBuilder;
 
+    $catIguaisA = makeCat(id: 'cat-iguais-a');
+    $catIguaisB = makeCat(id: 'cat-iguais-b');
+
     $subcats = Collection::make([
-        makeSubcatItem(makeCat(), makeSummaryWith('A', qty: 100.0, totalWidth: 30.0), CategoryRole::Destino),
-        makeSubcatItem(makeCat(), makeSummaryWith('C', qty: 20.0, totalWidth: 30.0), CategoryRole::Complementar),
+        makeSubcatItem($catIguaisA, makeSummaryWith('A', qty: 100.0, totalWidth: 30.0), CategoryRole::Destino),
+        makeSubcatItem($catIguaisB, makeSummaryWith('C', qty: 20.0, totalWidth: 30.0), CategoryRole::Complementar),
     ]);
 
     $plan = $builder->build(
@@ -172,8 +181,88 @@ test('não super-provisiona quando demanda < capacidade física', function (): v
         shelfWidth: 100.0,
     );
 
-    // Demanda = max(2, ceil(60/100)) = max(2, 1) = 2 slots usados, não 8
-    expect(count($plan))->toBe(2);
+    // Approach B: usa toda a capacidade disponível (8 slots)
+    expect(count($plan))->toBe(8);
+
+    // Demanda igual → extras distribuídos igualmente entre as duas (4 cada)
+    $slotsA = collect($plan)->where('categoryId', 'cat-iguais-a')->count();
+    $slotsB = collect($plan)->where('categoryId', 'cat-iguais-b')->count();
+    expect($slotsA)->toBe(4);
+    expect($slotsB)->toBe(4);
+});
+
+test('maior demanda sem overflow não recebe extras; categoria com overflow os absorve', function (): void {
+    // catAlta: 300 cm → demanda 3 slots, overflow = 300 % 100 = 0 (todas prateleiras 100% cheias).
+    // catBaixa: 50 cm → demanda 1 slot, overflow = 50 % 100 = 50 (última prateleira 50% cheia).
+    // Capacidade: 2 módulos × 4 = 8 slots. Excedente: 4 slots.
+    // Overflow-routing: catAlta (overflow=0) NÃO recebe extras (evita slots garantidamente vazios);
+    //   catBaixa (overflow=50) absorve todos os 4 extras.
+    // Resultado esperado: catAlta = 3 (demanda exata); catBaixa = 1 + 4 = 5. Total = 8.
+    $builder = new SlotPlanBuilder;
+
+    $catAlta = makeCat(id: 'cat-alta-demanda');
+    $catBaixa = makeCat(id: 'cat-baixa-demanda');
+
+    $subcats = Collection::make([
+        makeSubcatItem($catAlta, makeSummaryWith('A', qty: 300.0, totalWidth: 300.0), CategoryRole::Destino),
+        makeSubcatItem($catBaixa, makeSummaryWith('C', qty: 50.0, totalWidth: 50.0), CategoryRole::Complementar),
+    ]);
+
+    $plan = $builder->build(
+        selectedCategory: makeCat(),
+        subcategories: $subcats,
+        numModules: 2,
+        shelvesPerModule: 4,
+        settings: makeSlotPlanSettings(),
+        shelfWidth: 100.0,
+    );
+
+    // Usa toda a capacidade (8 slots)
+    expect(count($plan))->toBe(8);
+
+    $slotsAlta = collect($plan)->where('categoryId', 'cat-alta-demanda')->count();
+    $slotsBaixa = collect($plan)->where('categoryId', 'cat-baixa-demanda')->count();
+
+    // catAlta (overflow=0) recebe apenas os 3 slots demandados — sem extras que ficariam vazios.
+    expect($slotsAlta)->toBe(3);
+
+    // catBaixa (overflow=50) absorve os 4 extras: 1 demandado + 4 = 5 slots.
+    expect($slotsBaixa)->toBe(5);
+});
+
+test('sem overflow em nenhuma categoria, extras vão para maior demanda (fallback round-robin)', function (): void {
+    // catA: 200 cm → demanda 2 slots, overflow = 0.
+    // catB: 400 cm → demanda 4 slots, overflow = 0.
+    // Capacidade: 2 módulos × 4 = 8. Excedente: 2 slots.
+    // Todos overflow=0 → fallback: extras em round-robin para maior demanda (catB=4).
+    // Resultado esperado: catA = 2; catB = 4 + 2 = 6. Total = 8.
+    $builder = new SlotPlanBuilder;
+
+    $catA = makeCat(id: 'cat-a-exact');
+    $catB = makeCat(id: 'cat-b-exact');
+
+    $subcats = Collection::make([
+        makeSubcatItem($catA, makeSummaryWith('B', qty: 200.0, totalWidth: 200.0), CategoryRole::Rotina),
+        makeSubcatItem($catB, makeSummaryWith('A', qty: 400.0, totalWidth: 400.0), CategoryRole::Destino),
+    ]);
+
+    $plan = $builder->build(
+        selectedCategory: makeCat(),
+        subcategories: $subcats,
+        numModules: 2,
+        shelvesPerModule: 4,
+        settings: makeSlotPlanSettings(),
+        shelfWidth: 100.0,
+    );
+
+    expect(count($plan))->toBe(8);
+
+    $slotsA = collect($plan)->where('categoryId', 'cat-a-exact')->count();
+    $slotsB = collect($plan)->where('categoryId', 'cat-b-exact')->count();
+
+    // Fallback: catB (maior demanda) absorve os extras.
+    expect($slotsA)->toBe(2);
+    expect($slotsB)->toBe(6);
 });
 
 // ── Testes: zona térmica ────────────────────────────────────────────────────

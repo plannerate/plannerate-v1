@@ -349,10 +349,10 @@ function autoShelfInput(string $gondolaId, string $planogramId, string $baseCate
 
 // ── Testes ────────────────────────────────────────────────────────────────────
 
-test('motor cria 4 prateleiras somente nos módulos com demanda, deixa excedentes vazios', function (): void {
+test('motor cria 4 prateleiras somente nos módulos com demanda e deleta seções excedentes', function (): void {
     // Cenário: 3 produtos de 8 cm cada em 2 subcategorias, prateleiras de 100 cm, 2 módulos físicos.
     // Demanda: 2 slots (1 por subcategoria) → ceil(2/4) = 1 módulo necessário.
-    // Apenas o módulo 1 (seção 1) ganha 4 prateleiras; a seção 2 fica sem prateleiras.
+    // Módulo 1 (seção 1) ganha 4 prateleiras; seção 2 é DELETADA (não fica vazia na UI).
     $gondolaId = (string) Str::ulid();
     $planogramId = (string) Str::ulid();
 
@@ -371,15 +371,18 @@ test('motor cria 4 prateleiras somente nos módulos com demanda, deixa excedente
 
     $sections = autoShelfSectionsWithoutShelves($gondolaId, numModules: 2);
 
-    // Pré-condição: nenhuma prateleira existe
+    // Pré-condição: nenhuma prateleira existe, 2 seções
     expect(Shelf::count())->toBe(0);
+    expect(Section::count())->toBe(2);
 
     autoShelfGenerate(autoShelfInput($gondolaId, $planogramId, $root->id, $products, $sections, $abcMap));
 
-    // 1 módulo necessário × 4 prateleiras = 4 total; seção 2 fica sem prateleiras
-    $orderedSections = Section::orderBy('ordering')->get();
-    expect(Shelf::where('section_id', $orderedSections[0]->id)->count())->toBe(4);
-    expect(Shelf::where('section_id', $orderedSections[1]->id)->count())->toBe(0);
+    // Seção 2 excedente deve ser DELETADA — não deve aparecer mais no banco
+    expect(Section::count())->toBe(1, 'Seção 2 deve ser deletada por não ter demanda');
+
+    // Seção 1 tem 4 prateleiras (mínimo por módulo ativo)
+    $section1 = Section::orderBy('ordering')->first();
+    expect(Shelf::where('section_id', $section1->id)->count())->toBe(4);
     expect(Shelf::count())->toBe(4);
 
     // Produtos foram efetivamente alocados nas prateleiras criadas
@@ -387,10 +390,11 @@ test('motor cria 4 prateleiras somente nos módulos com demanda, deixa excedente
     expect(Layer::where('product_id', $refri1->id)->count())->toBeGreaterThan(0);
 });
 
-test('motor usa 2 módulos quando demanda exige mais de 4 slots', function (): void {
+test('motor usa 2 módulos quando demanda exige mais de 4 slots e deleta seção excedente', function (): void {
     // Cenário: 5 subcategorias, cada uma com 1 produto de 40 cm → totalWidth = 200 cm.
     // Demanda per-subcat: ceil(40/100)=1 slot cada → total = 5 slots.
     // numModules = ceil(5/4) = 2 módulos → 2 seções × 4 prateleiras = 8 prateleiras.
+    // Seção 3 (excedente) é DELETADA.
     $gondolaId = (string) Str::ulid();
     $planogramId = (string) Str::ulid();
 
@@ -412,16 +416,19 @@ test('motor usa 2 módulos quando demanda exige mais de 4 slots', function (): v
 
     autoShelfBindMockScorer($abcMap, array_fill_keys($products->pluck('id')->all(), 10.0));
 
-    // 3 seções físicas — apenas 2 serão usadas
+    // 3 seções físicas — apenas 2 serão usadas, seção 3 deve ser deletada
     $sections = autoShelfSectionsWithoutShelves($gondolaId, numModules: 3);
+    expect(Section::count())->toBe(3);
 
     autoShelfGenerate(autoShelfInput($gondolaId, $planogramId, $root->id, $products, $sections, $abcMap));
 
-    // 2 módulos × 4 prateleiras = 8; seção 3 fica vazia
+    // Seção 3 excedente deve ser DELETADA
+    expect(Section::count())->toBe(2, 'Seção 3 deve ser deletada por não ter demanda');
+
+    // 2 módulos × 4 prateleiras = 8
     $orderedSections = Section::orderBy('ordering')->get();
     expect(Shelf::where('section_id', $orderedSections[0]->id)->count())->toBe(4);
     expect(Shelf::where('section_id', $orderedSections[1]->id)->count())->toBe(4);
-    expect(Shelf::where('section_id', $orderedSections[2]->id)->count())->toBe(0);
     expect(Shelf::count())->toBe(8);
 
     expect(Layer::whereNotNull('product_id')->count())->toBeGreaterThan(0);
