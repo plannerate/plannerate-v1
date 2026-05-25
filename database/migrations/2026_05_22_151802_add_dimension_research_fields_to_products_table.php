@@ -63,20 +63,10 @@ return new class extends Migration
             return;
         }
 
-        // Coluna vector(768) e índice HNSW — exclusivos do pgsql + pgvector
-        DB::connection($this->connection)->statement(
-            'ALTER TABLE products ADD COLUMN IF NOT EXISTS description_embedding vector(768)'
-        );
-
         DB::connection($this->connection)->statement(
             "UPDATE products SET dimension_status = 'approved'
              WHERE width IS NOT NULL AND height IS NOT NULL AND depth IS NOT NULL
                AND width > 0 AND height > 0 AND depth > 0"
-        );
-
-        DB::connection($this->connection)->statement(
-            'CREATE INDEX IF NOT EXISTS products_description_embedding_idx
-             ON products USING hnsw (description_embedding vector_cosine_ops)'
         );
 
         Schema::connection($this->connection)->table('products', function (Blueprint $table): void {
@@ -85,6 +75,24 @@ return new class extends Migration
                 ->on('products')
                 ->nullOnDelete();
         });
+
+        // Coluna vector(768) e índice HNSW — requerem a extensão pgvector instalada
+        $hasVector = DB::connection($this->connection)
+            ->selectOne("SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'vector') AS has_vector")
+            ->has_vector;
+
+        if (! $hasVector) {
+            return;
+        }
+
+        DB::connection($this->connection)->statement(
+            'ALTER TABLE products ADD COLUMN IF NOT EXISTS description_embedding vector(768)'
+        );
+
+        DB::connection($this->connection)->statement(
+            'CREATE INDEX IF NOT EXISTS products_description_embedding_idx
+             ON products USING hnsw (description_embedding vector_cosine_ops)'
+        );
     }
 
     public function down(): void
@@ -96,13 +104,19 @@ return new class extends Migration
                 $table->dropForeign(['similar_to_product_id']);
             });
 
-            DB::connection($this->connection)->statement(
-                'DROP INDEX IF EXISTS products_description_embedding_idx'
-            );
+            $hasVector = DB::connection($this->connection)
+                ->selectOne("SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'vector') AS has_vector")
+                ->has_vector;
 
-            DB::connection($this->connection)->statement(
-                'ALTER TABLE products DROP COLUMN IF EXISTS description_embedding'
-            );
+            if ($hasVector) {
+                DB::connection($this->connection)->statement(
+                    'DROP INDEX IF EXISTS products_description_embedding_idx'
+                );
+
+                DB::connection($this->connection)->statement(
+                    'ALTER TABLE products DROP COLUMN IF EXISTS description_embedding'
+                );
+            }
         }
 
         Schema::connection($this->connection)->table('products', function (Blueprint $table): void {
