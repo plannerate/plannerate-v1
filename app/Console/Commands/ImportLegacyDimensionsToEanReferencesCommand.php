@@ -38,6 +38,17 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
             return self::FAILURE;
         }
 
+        $referenceColumns = Schema::connection('landlord')->getColumnListing('ean_references');
+        $dimensionStatusColumn = in_array('dimension_publish_status', $referenceColumns, true)
+            ? 'dimension_publish_status'
+            : (in_array('dimension_status', $referenceColumns, true) ? 'dimension_status' : null);
+
+        if ($dimensionStatusColumn === null) {
+            $this->error("❌ Nenhuma coluna de status de dimensão encontrada em 'ean_references' (esperado: dimension_publish_status ou dimension_status).");
+
+            return self::FAILURE;
+        }
+
         $chunkSize = max(100, (int) $this->option('chunk'));
         $baseQuery = DB::connection('mysql_legacy')
             ->table('dimensions')
@@ -68,9 +79,10 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
         $processed = 0;
         $upserted = 0;
 
-        (clone $baseQuery)->orderBy('ean')->chunk($chunkSize, function ($rows) use (&$processed, &$upserted): void {
+        (clone $baseQuery)->orderBy('ean')->chunk($chunkSize, function ($rows) use (&$processed, &$upserted, $dimensionStatusColumn): void {
             $now = now();
             $payload = [];
+            $upsertColumns = ['width', 'height', 'depth', 'weight', 'unit', 'has_dimensions', $dimensionStatusColumn, 'updated_at', 'deleted_at'];
 
             foreach ($rows as $row) {
                 $ean = $this->normalizeEan((string) $row->ean);
@@ -97,11 +109,12 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
                     'weight' => $weight,
                     'unit' => $unit,
                     'has_dimensions' => $hasDimensions,
-                    'dimension_publish_status' => $dimensionStatus,
                     'updated_at' => $now,
                     'created_at' => $now,
                     'deleted_at' => null,
                 ];
+
+                $payload[$ean][$dimensionStatusColumn] = $dimensionStatus;
             }
 
             if ($payload !== []) {
@@ -110,7 +123,7 @@ class ImportLegacyDimensionsToEanReferencesCommand extends Command
                     ->upsert(
                         array_values($payload),
                         ['ean'],
-                        ['width', 'height', 'depth', 'weight', 'unit', 'has_dimensions', 'dimension_publish_status', 'updated_at', 'deleted_at']
+                        $upsertColumns
                     );
 
                 $upserted += count($payload);
