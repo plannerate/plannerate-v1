@@ -69,7 +69,7 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
     ->group(function (): void {
 
         // ── Dashboard ─────────────────────────────────────────
-        Route::get('/dashboard', [Tenant\DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/', [Tenant\DashboardController::class, 'index'])->name('dashboard');
 
         // ── Categories ───────────────────────────────────────
         Route::get('categories/cascade/children', [Tenant\CategoryController::class, 'cascadeChildren'])

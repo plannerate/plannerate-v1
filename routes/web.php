@@ -6,7 +6,11 @@ use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
-Route::inertia('/',  'Welcome')->name('home');
+// Route::inertia('/',  'Welcome')->name('home');
+
+Route::get('/hetail', function () {
+    return redirect()->route('dashboard');
+})->name('home');
 
 include __DIR__.'/landlord.php';
 

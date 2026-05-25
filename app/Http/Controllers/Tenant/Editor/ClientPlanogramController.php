@@ -39,12 +39,12 @@ class ClientPlanogramController extends Controller
                 ->count('store_id'),
             'active_count' => Planogram::query()
                 ->where('status', 'published')
-                ->where(fn ($q) => $q->whereNull('start_date')->orWhere('start_date', '<=', $today))
-                ->where(fn ($q) => $q->whereNull('end_date')->orWhere('end_date', '>=', $today))
+                ->where(fn($q) => $q->whereNull('start_date')->orWhere('start_date', '<=', $today))
+                ->where(fn($q) => $q->whereNull('end_date')->orWhere('end_date', '>=', $today))
                 ->count(),
         ];
 
-        return $this->renderDeferredIndex('tenant/editor/planograms/Index', 'planograms', fn (): LengthAwarePaginator => $this->planogramsPaginator(
+        return $this->renderDeferredIndex('tenant/editor/planograms/Index', 'planograms', fn(): LengthAwarePaginator => $this->planogramsPaginator(
             $search,
             $storeId,
             $categoryId,
@@ -62,7 +62,7 @@ class ClientPlanogramController extends Controller
         ]);
     }
 
-    public function gondolas(Request $request, string $subdomain, Planogram $planogram): Response
+    public function gondolas(Request $request,   Planogram $planogram): Response
     {
         unset($subdomain);
         Gate::authorize(PermissionName::TENANT_EDITOR_PLANOGRAMS_VIEW_ANY);
@@ -70,7 +70,7 @@ class ClientPlanogramController extends Controller
         $search = $this->requestString($request, 'search');
         $status = $this->requestEnum($request, 'status', ['draft', 'published']);
 
-        return $this->renderDeferredIndex('tenant/editor/planograms/Gondolas', 'gondolas', fn (): LengthAwarePaginator => $this->gondolasPaginator(
+        return $this->renderDeferredIndex('tenant/editor/planograms/Gondolas', 'gondolas', fn(): LengthAwarePaginator => $this->gondolasPaginator(
             $planogram,
             $search,
             $status,
@@ -96,17 +96,17 @@ class ClientPlanogramController extends Controller
         return Planogram::query()
             ->with(['store:id,name', 'category:id,name'])
             ->where('status', 'published')
-            ->when($search !== '', fn ($query) => $query->where(function ($where) use ($search): void {
+            ->when($search !== '', fn($query) => $query->where(function ($where) use ($search): void {
                 $where
-                    ->where('name', 'like', '%'.$search.'%')
-                    ->orWhere('description', 'like', '%'.$search.'%');
+                    ->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('description', 'like', '%' . $search . '%');
             }))
-            ->when($storeId !== '', fn ($query) => $query->where('store_id', $storeId))
-            ->when($categoryId !== '', fn ($query) => $query->where('category_id', $categoryId))
+            ->when($storeId !== '', fn($query) => $query->where('store_id', $storeId))
+            ->when($categoryId !== '', fn($query) => $query->where('category_id', $categoryId))
             ->latest()
             ->paginate($perPage)
             ->withQueryString()
-            ->through(fn (Planogram $planogram): array => [
+            ->through(fn(Planogram $planogram): array => [
                 'id' => $planogram->id,
                 'name' => $planogram->name,
                 'slug' => $planogram->slug,
@@ -128,16 +128,16 @@ class ClientPlanogramController extends Controller
     ): LengthAwarePaginator {
         return Gondola::query()
             ->where('planogram_id', $planogram->id)
-            ->when($search !== '', fn ($query) => $query->where(function ($where) use ($search): void {
+            ->when($search !== '', fn($query) => $query->where(function ($where) use ($search): void {
                 $where
-                    ->where('name', 'like', '%'.$search.'%')
-                    ->orWhere('location', 'like', '%'.$search.'%');
+                    ->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('location', 'like', '%' . $search . '%');
             }))
-            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($status !== '', fn($query) => $query->where('status', $status))
             ->latest()
             ->paginate($perPage)
             ->withQueryString()
-            ->through(fn (Gondola $gondola): array => [
+            ->through(fn(Gondola $gondola): array => [
                 'id' => $gondola->id,
                 'name' => $gondola->name,
                 'slug' => $gondola->slug,
@@ -159,7 +159,7 @@ class ClientPlanogramController extends Controller
         return Store::query()
             ->orderBy('name')
             ->get(['id', 'name'])
-            ->map(fn (Store $store): array => [
+            ->map(fn(Store $store): array => [
                 'id' => $store->id,
                 'name' => $store->name,
             ])
