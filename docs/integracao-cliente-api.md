@@ -83,7 +83,7 @@ Também suportado: **Bearer Token** (estático ou via endpoint de login separado
 
 | Campo | Tipo | Obrigatório |
 |-------|------|-------------|
-| `produto` | string | **Sim** |
+| `produto` | string | **Sim** | código ERP
 | `ean` | string (EAN-13) | **Sim** |
 | `descricao` | string | **Sim**  |
 | `cadastro_ativo` | string | **Sim**  |
@@ -109,7 +109,7 @@ Também suportado: **Bearer Token** (estático ou via endpoint de login separado
 
 | Campo | Tipo | Obrigatório |
 |-------|------|-------------|
-| `produto` | string | **Sim** |
+| `produto` | string | **Sim** | código ERP |
 | `ean`  string | Não |
 | `data_venda` | date (YYYY-MM-DD) | **Sim** |
 | `promocao` | string | **Sim** |
@@ -137,7 +137,7 @@ Também suportado: **Bearer Token** (estático ou via endpoint de login separado
 
 | Campo | Tipo | Obrigatório |
 |-------|------|-------------|
-| `produto` | string | **Sim** |
+| `produto` | string | **Sim** | código ERP |
 | `ean`  string | Não |
 | `data_compra` | date (YYYY-MM-DD) | **Sim** |
 | `quantidade` | decimal | **Sim** |
