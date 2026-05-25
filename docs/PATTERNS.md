@@ -65,7 +65,6 @@ class CategoryController extends Controller
         $categories = Category::query()->latest()->paginate(10);
 
         return Inertia::render('tenant/categories/Index', [
-            'subdomain' => $this->tenantSubdomain(), // sempre passar
             'categories' => $categories,
         ]);
     }
@@ -81,9 +80,8 @@ class CategoryController extends Controller
         return to_route('tenant.categories.index', $this->tenantRouteParameters());
     }
 
-    public function edit(string $subdomain, Category $category): Response
+    public function edit(Category $category): Response
     {
-        unset($subdomain);
         // NÃO chamar ensureTenantOwnership — route model binding já filtra pelo scope
         $this->authorize('update', $category);
         // ...
@@ -95,11 +93,9 @@ class CategoryController extends Controller
 - Nunca `->where('tenant_id', ...)` — o `BelongsToTenant` scope cuida disso
 - Nunca `'tenant_id' => $this->tenantId()` no `create()` — o trait auto-preenche
 - Nunca `ensureTenantOwnership()` — o scope garante que route model binding retorna 404 para outros tenants
-- Sempre passar `'subdomain' => $this->tenantSubdomain()` para as views
 - Sempre usar `$this->tenantRouteParameters()` em redirects
 
 **O que `InteractsWithTenantContext` ainda oferece:**
-- `tenantSubdomain()` — para views e routes
 - `tenantRouteParameters()` — para redirects
 
 **Form Requests** continuam usando `->where('tenant_id', $tenantId)` dentro de `Rule::exists()` / `Rule::unique()` — essas regras operam em SQL direto, não via Eloquent scope.
@@ -126,13 +122,12 @@ import type { Paginator } from '@/types';
 type ResourceRow = { id: string; name: string; /* ... */ };
 
 const props = defineProps<{
-    subdomain: string;
     resources: Paginator<ResourceRow>;
     filters: { search: string };
 }>();
 
 const { t } = useT();
-const indexPath = ResourceController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const indexPath = ResourceController.index.url().replace(/^\/\/[^/]+/, '');
 const pageMeta = useCrudPageMeta({
     headTitle: t('app.tenant.resources.title'),
     title: t('app.tenant.resources.title'),
@@ -156,7 +151,7 @@ const pageMeta = useCrudPageMeta({
         :search-value="props.filters.search"
     >
         <template #action>
-            <NewActionButton :href="ResourceController.create.url(props.subdomain)">
+            <NewActionButton :href="ResourceController.create.url()">
                 {{ t('app.tenant.resources.actions.new') }}
             </NewActionButton>
         </template>
@@ -164,8 +159,8 @@ const pageMeta = useCrudPageMeta({
         <template #rows="{ item }">
             <td>{{ item.name }}</td>
             <td class="">
-                <EditButton :href="ResourceController.edit.url({ subdomain: props.subdomain, resource: item.id })" />
-                <DeleteButton :href="ResourceController.destroy.url({ subdomain: props.subdomain, resource: item.id })" />
+                <EditButton :href="ResourceController.edit.url({ resource: item.id })" />
+                <DeleteButton :href="ResourceController.destroy.url({ resource: item.id })" />
             </td>
         </template>
     </ListPage>
@@ -192,13 +187,12 @@ import { dashboard } from '@/routes';
 type ResourcePayload = { id: string; name: string; status: string };
 
 const props = defineProps<{
-    subdomain: string;
     resource: ResourcePayload | null;
 }>();
 
 const { t } = useT();
 const isEdit = computed(() => props.resource !== null);
-const indexPath = ResourceController.index.url(props.subdomain).replace(/^\/\/[^/]+/, '');
+const indexPath = ResourceController.index.url().replace(/^\/\/[^/]+/, '');
 const pageMeta = useCrudPageMeta({
     headTitle: isEdit.value ? t('app.tenant.resources.actions.edit') : t('app.tenant.resources.actions.new'),
     title: isEdit.value ? t('app.tenant.resources.actions.edit') : t('app.tenant.resources.actions.new'),
@@ -209,8 +203,8 @@ const pageMeta = useCrudPageMeta({
         {
             title: isEdit.value ? t('app.tenant.resources.actions.edit') : t('app.tenant.resources.actions.new'),
             href: isEdit.value
-                ? ResourceController.edit.url({ subdomain: props.subdomain, resource: props.resource!.id })
-                : ResourceController.create.url(props.subdomain),
+                ? ResourceController.edit.url({ resource: props.resource!.id })
+                : ResourceController.create.url(),
         },
     ],
 });
@@ -222,8 +216,8 @@ const pageMeta = useCrudPageMeta({
     <div class="p-4">
         <Form
             :action="isEdit
-                ? ResourceController.update.form({ subdomain: props.subdomain, resource: props.resource!.id })
-                : ResourceController.store.form({ subdomain: props.subdomain })"
+                ? ResourceController.update.form({ resource: props.resource!.id })
+                : ResourceController.store.form()"
             class="space-y-6"
         >
             <FormCard :title="pageMeta.title" :description="pageMeta.description" :back-href="indexPath">
@@ -251,20 +245,20 @@ Sempre usar Wayfinder em vez de URLs hardcoded:
 import CategoryController from '@/actions/App/Http/Controllers/Tenant/CategoryController';
 
 // Navegação
-CategoryController.index.url(subdomain)
-CategoryController.create.url(subdomain)
-CategoryController.edit.url({ subdomain, category: id })
+CategoryController.index.url()
+CategoryController.create.url()
+CategoryController.edit.url({ category: id })
 
 // Formulários (Inertia <Form>)
-CategoryController.store.form({ subdomain })
-CategoryController.update.form({ subdomain, category: id })
-CategoryController.destroy.form({ subdomain, category: id })
+CategoryController.store.form()
+CategoryController.update.form({ category: id })
+CategoryController.destroy.form({ category: id })
 
 // Remover prefixo de domínio para links internos:
-CategoryController.index.url(subdomain).replace(/^\/\/[^/]+/, '')
+CategoryController.index.url().replace(/^\/\/[^/]+/, '')
 ```
 
-Após alterar rotas: `./vendor/bin/sail artisan wayfinder:generate --with-form`
+Após alterar rotas: `docker compose exec -u root php php artisan wayfinder:generate --with-form`
 
 ---
 
