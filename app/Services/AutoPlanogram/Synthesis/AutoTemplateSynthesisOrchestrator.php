@@ -35,6 +35,20 @@ final class AutoTemplateSynthesisOrchestrator
      */
     public const MIN_SHELVES_PER_MODULE = 4;
 
+    /**
+     * Taxa estimada de preenchimento efetivo de prateleira (75%).
+     *
+     * O placement engine não consegue usar 100% da largura da prateleira: espaçamentos
+     * entre produtos, arredondamentos de frentes (facings), último produto que não cabe
+     * no espaço restante e folgas de categorias levam a uma ocupação típica de 70–80%.
+     *
+     * Usado em computeNumModules para escalonar a largura efetiva por prateleira ao
+     * estimar o número de módulos necessários — produz uma contagem conservadora que
+     * evita que produtos sejam rejeitados por falta de espaço. Não afeta a distribuição
+     * de slots dentro de cada módulo (o SlotPlanBuilder usa a largura real).
+     */
+    private const SHELF_FILL_RATE_ESTIMATE = 0.75;
+
     public function __construct(
         private readonly CategoryRoleInferrer $roleInferrer,
         private readonly SlotPlanBuilder $slotPlanBuilder,
@@ -144,20 +158,24 @@ final class AutoTemplateSynthesisOrchestrator
     }
 
     /**
-     * Calcula o número de módulos a usar na síntese do template.
+     * Calcula o número de módulos necessários pela demanda real das subcategorias.
      *
-     * Estratégia: usa SEMPRE toda a capacidade física configurada pelo usuário (numModulesPhysical).
-     * O usuário criou a gôndola com N seções intencionalmente; o auto-planograma deve respeitar
-     * essa escolha para maximizar a distribuição dos produtos disponíveis.
+     * Estratégia:
+     * - Soma a demanda individual por subcategoria usando a largura efetiva da prateleira
+     *   (shelfWidth × SHELF_FILL_RATE_ESTIMATE), que reflete a ocupação real do placement
+     *   engine (~75%). Isso produz uma estimativa conservadora que evita rejeições de produtos.
+     * - totalDemandedSlots = max(numSubcats, soma individual) — garante 1 slot por subcat.
+     * - numModules = ceil(totalDemandedSlots / shelvesPerModule), cappado pelo físico.
+     * - Seções excedentes (além de numModules) são deletadas pelo AutoPlanogramService.
      *
-     * A demanda calculada (totalDemandedSlots) é registrada apenas como referência diagnóstica —
-     * ela pode subestimar a necessidade real quando:
-     *   - Produtos têm largura 0 (cai no fallback de 10 cm), mas ocupam mais espaço na prática.
-     *   - O mix de produtos excede o que o cálculo de largura antecipa.
-     *   - O placement engine rejeita produtos por falta de espaço, indicando subdimensionamento.
+     * Por que usar largura efetiva (não a real):
+     *   O cálculo de largura bruta (totalWidth) subestima a necessidade real porque ignora
+     *   espaçamentos entre produtos, arredondamentos de facings, e itens que não cabem nos
+     *   últimos centímetros de uma prateleira. A taxa de preenchimento observada é ~75%, logo
+     *   usar shelfWidth × 0.75 como denominador produz ~33% mais slots que a conta bruta —
+     *   suficiente para acomodar todos os produtos sem criar módulos desnecessários.
      *
-     * Seções fisicamente existentes que ficarem sem produto ao final do placement são tratadas
-     * pela lógica de deleção em AutoPlanogramService (após, não antes, do placement).
+     * Categoria folha (summaries vazio): usa os scored products diretamente para calcular a largura.
      *
      * @param  Collection<string, CategoryAbcSummary>  $summaries  Indexado por category_id.
      * @param  Collection<int, ScoredProduct>  $scored
@@ -169,24 +187,29 @@ final class AutoTemplateSynthesisOrchestrator
         int $shelvesPerModule,
         float $shelfWidth,
     ): int {
-        // Calcula demanda apenas para log diagnóstico (não limita o módulo count)
+        // Largura efetiva por prateleira: taxa de preenchimento real do placement engine (~75%).
+        // Produz estimativa conservadora de módulos — evita rejeições por falta de espaço.
+        $effectiveShelfWidth = max($shelfWidth, 1.0) * self::SHELF_FILL_RATE_ESTIMATE;
+
+        // Calcular total de slots demandados (soma das demandas individuais por subcat)
         if ($summaries->isEmpty()) {
+            // Categoria folha: 1 categoria → slots = ceil(totalWidth / effectiveShelfWidth)
             $totalWidth = $scored->sum(function (ScoredProduct $sp): float {
                 $w = (float) ($sp->product->width ?? 0);
 
                 return ($w > 0 && $w <= 60) ? $w : 10.0;
             });
-            $totalDemandedSlots = max(1, (int) ceil($totalWidth / max($shelfWidth, 1.0)));
+            $totalDemandedSlots = max(1, (int) ceil($totalWidth / $effectiveShelfWidth));
         } else {
-            $totalDemandedSlots = (int) $summaries->sum(fn (CategoryAbcSummary $s) => max(1, (int) ceil($s->totalWidth / max($shelfWidth, 1.0))));
+            // Soma per-subcat: cada uma contribui ceil(width/effectiveShelfWidth) ≥ 1
+            $totalDemandedSlots = (int) $summaries->sum(fn (CategoryAbcSummary $s) => max(1, (int) ceil($s->totalWidth / $effectiveShelfWidth)));
+            // Garante mínimo de 1 slot por subcategoria mesmo sem dados de largura
             $totalDemandedSlots = max($summaries->count(), $totalDemandedSlots);
         }
 
+        // Número de módulos necessários = ceil(totalSlots / shelvesPerModule), capped no físico
         $numModulesNeeded = max(1, (int) ceil($totalDemandedSlots / max($shelvesPerModule, 1)));
-
-        // Usa toda a capacidade física: respeita a gôndola configurada pelo usuário.
-        // numModulesNeeded é registrado para diagnóstico mas NÃO limita o resultado.
-        $numModules = $numModulesPhysical;
+        $numModules = min($numModulesNeeded, $numModulesPhysical);
 
         Log::info('AutoTemplateSynthesisOrchestrator: numModules demand-based', [
             'total_demanded_slots' => $totalDemandedSlots,
