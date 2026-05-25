@@ -17,7 +17,7 @@ class AdjacencyMatrixController extends Controller
 {
     use InteractsWithTenantContext;
 
-    public function edit(string $subdomain): Response
+    public function edit(): Response
     {
         $model = ScoringWeights::first();
         $defaults = ScoringWeightsValue::default();
@@ -54,10 +54,8 @@ class AdjacencyMatrixController extends Controller
         ]);
     }
 
-    public function store(AdjacencyRuleRequest $request, string $subdomain): RedirectResponse
+    public function store(AdjacencyRuleRequest $request): RedirectResponse
     {
-        unset($subdomain);
-
         AdjacencyRule::create($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.adjacency_rule_created')]);
@@ -65,10 +63,8 @@ class AdjacencyMatrixController extends Controller
         return $this->toTenantRoute('tenant.adjacency-matrix.edit');
     }
 
-    public function update(AdjacencyRuleRequest $request, string $subdomain, AdjacencyRule $adjacencyRule): RedirectResponse
+    public function update(AdjacencyRuleRequest $request, AdjacencyRule $adjacencyRule): RedirectResponse
     {
-        unset($subdomain);
-
         $adjacencyRule->update($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.adjacency_rule_updated')]);
@@ -76,10 +72,8 @@ class AdjacencyMatrixController extends Controller
         return $this->toTenantRoute('tenant.adjacency-matrix.edit');
     }
 
-    public function destroy(string $subdomain, AdjacencyRule $adjacencyRule): RedirectResponse
+    public function destroy(AdjacencyRule $adjacencyRule): RedirectResponse
     {
-        unset($subdomain);
-
         $adjacencyRule->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.adjacency_rule_deleted')]);

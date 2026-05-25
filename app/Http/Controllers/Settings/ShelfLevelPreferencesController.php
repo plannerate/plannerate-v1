@@ -15,7 +15,7 @@ class ShelfLevelPreferencesController extends Controller
 {
     use InteractsWithTenantContext;
 
-    public function edit(string $subdomain): Response
+    public function edit(): Response
     {
         return Inertia::render('settings/ShelfLevelPreferences', [
             'preferences' => ShelfLevelPreference::query()
@@ -42,10 +42,8 @@ class ShelfLevelPreferencesController extends Controller
         ]);
     }
 
-    public function store(ShelfLevelPreferenceRequest $request, string $subdomain): RedirectResponse
+    public function store(ShelfLevelPreferenceRequest $request): RedirectResponse
     {
-        unset($subdomain);
-
         ShelfLevelPreference::create($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.shelf_level_preference_created')]);
@@ -53,10 +51,8 @@ class ShelfLevelPreferencesController extends Controller
         return $this->toTenantRoute('tenant.shelf-level-preferences.edit');
     }
 
-    public function update(ShelfLevelPreferenceRequest $request, string $subdomain, ShelfLevelPreference $preference): RedirectResponse
+    public function update(ShelfLevelPreferenceRequest $request, ShelfLevelPreference $preference): RedirectResponse
     {
-        unset($subdomain);
-
         $preference->update($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.shelf_level_preference_updated')]);
@@ -64,10 +60,8 @@ class ShelfLevelPreferencesController extends Controller
         return $this->toTenantRoute('tenant.shelf-level-preferences.edit');
     }
 
-    public function destroy(string $subdomain, ShelfLevelPreference $preference): RedirectResponse
+    public function destroy(ShelfLevelPreference $preference): RedirectResponse
     {
-        unset($subdomain);
-
         $preference->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.messages.shelf_level_preference_deleted')]);

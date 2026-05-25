@@ -17,7 +17,7 @@ final class PlanogramSettingsController extends Controller
 {
     use InteractsWithTenantContext;
 
-    public function edit(string $subdomain): Response
+    public function edit(): Response
     {
         $model = ScoringWeights::first();
         $defaults = ScoringWeightsValue::default();
@@ -57,10 +57,8 @@ final class PlanogramSettingsController extends Controller
         ]);
     }
 
-    public function update(Request $request, string $subdomain): RedirectResponse
+    public function update(Request $request): RedirectResponse
     {
-        unset($subdomain);
-
         $validated = $request->validate([
             'w_giro' => ['required', 'numeric', 'min:0', 'max:1'],
             'w_margem' => ['required', 'numeric', 'min:0', 'max:1'],
