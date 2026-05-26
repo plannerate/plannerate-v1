@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { parseDate } from '@internationalized/date';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-vue-next';
-import type { DateRange, DateValue } from 'reka-ui';
+import type { DateRange } from 'reka-ui';
 import {
     RangeCalendarCell,
     RangeCalendarCellTrigger,
@@ -16,7 +15,7 @@ import {
     RangeCalendarPrev,
     RangeCalendarRoot,
 } from 'reka-ui';
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -24,7 +23,7 @@ import { cn } from '@/lib/utils';
 /**
  * Seletor de intervalo de datas (dia a dia) com calendário visual.
  * Interface idêntica ao MonthRangeFilter, mas com precisão de dia.
- * Valores no formato YYYY-MM-DD.
+ * Emite update:startValue e update:endValue com strings YYYY-MM-DD.
  */
 
 const emit = defineEmits<{
@@ -51,7 +50,15 @@ const props = withDefaults(
 
 const open = ref(false);
 
+/**
+ * Seleção atual do calendário.
+ * Inicializada vazia — o calendário mostra as datas apenas após o usuário selecionar.
+ * O botão/label exibe as datas das props (startValue/endValue) como fallback.
+ */
 const selectedRange = ref<DateRange>({ start: undefined, end: undefined });
+
+/** Indica se o usuário já fez alguma seleção nesta sessão. */
+const hasSelectionChanged = ref(false);
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
@@ -59,30 +66,17 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
     year: 'numeric',
 });
 
-/** Converte string YYYY-MM-DD para CalendarDate do reka-ui. */
-function toCalendarDate(value?: string | null): DateValue | undefined {
-    if (!value) return undefined;
-    try {
-        return parseDate(value) as DateValue;
-    } catch {
-        return undefined;
-    }
-}
-
-// Sincroniza props externas → seleção interna do calendário
-watch(
-    [() => props.startValue, () => props.endValue],
-    ([start, end]) => {
-        selectedRange.value = {
-            start: toCalendarDate(start),
-            end: toCalendarDate(end),
-        };
-    },
-    { immediate: true },
+const startInputValue = computed(() =>
+    hasSelectionChanged.value
+        ? (selectedRange.value.start?.toString() ?? '')
+        : (selectedRange.value.start?.toString() ?? props.startValue ?? ''),
 );
 
-const startInputValue = computed(() => selectedRange.value.start?.toString() ?? props.startValue ?? '');
-const endInputValue = computed(() => selectedRange.value.end?.toString() ?? props.endValue ?? '');
+const endInputValue = computed(() =>
+    hasSelectionChanged.value
+        ? (selectedRange.value.end?.toString() ?? '')
+        : (selectedRange.value.end?.toString() ?? props.endValue ?? ''),
+);
 
 const buttonLabel = computed(() => {
     const start = startInputValue.value;
@@ -94,15 +88,26 @@ const buttonLabel = computed(() => {
     return props.placeholder;
 });
 
+/**
+ * Formata uma string de data para o padrão PT-BR.
+ * Aceita tanto YYYY-MM-DD quanto ISO completo (2026-01-01T03:00:00.000000Z).
+ * Sempre interpreta no fuso local (sem deslocamento de UTC).
+ */
 function formatDate(value: string): string {
-    const date = new Date(`${value}T00:00:00`);
+    // ISO completo: usar apenas a parte da data (primeiros 10 chars) para evitar
+    // deslocamento de UTC → sempre mostrar o dia correto independente do fuso.
+    const datePart = value.length > 10 ? value.slice(0, 10) : value;
+    const date = new Date(`${datePart}T00:00:00`);
     if (Number.isNaN(date.getTime())) return value;
     return dateFormatter.format(date);
 }
 
 /** Chamado pelo RangeCalendarRoot a cada mudança de seleção. */
 function handleRangeUpdate(value: DateRange): void {
+    hasSelectionChanged.value = true;
     selectedRange.value = value;
+
+    // Emite as datas em formato YYYY-MM-DD (CalendarDate.toString() retorna esse formato)
     emit('update:startValue', value.start?.toString() ?? '');
     emit('update:endValue', value.end?.toString() ?? '');
 
