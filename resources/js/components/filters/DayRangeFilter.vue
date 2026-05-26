@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { parseDate } from '@internationalized/date';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-vue-next';
-import type { DateRange } from 'reka-ui';
+import type { DateRange, DateValue } from 'reka-ui';
 import {
     RangeCalendarCell,
     RangeCalendarCellTrigger,
@@ -60,10 +60,10 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
 });
 
 /** Converte string YYYY-MM-DD para CalendarDate do reka-ui. */
-function toCalendarDate(value?: string | null) {
+function toCalendarDate(value?: string | null): DateValue | undefined {
     if (!value) return undefined;
     try {
-        return parseDate(value);
+        return parseDate(value) as DateValue;
     } catch {
         return undefined;
     }
