@@ -16,8 +16,16 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Encoders\WebpEncoder;
 use Intervention\Image\Laravel\Facades\Image;
+use Spatie\Multitenancy\Jobs\NotTenantAware;
 
-class DOProcessProductImageJob implements ShouldQueue
+/**
+ * Processa e redimensiona a imagem de um produto para WebP.
+ *
+ * Implementa NotTenantAware porque gerencia a conexão tenant manualmente
+ * via $tenantId/$database — o Spatie não deve tentar resolver o tenant
+ * automaticamente pelo payload.
+ */
+class DOProcessProductImageJob implements NotTenantAware, ShouldQueue
 {
     use Batchable, BelongsToConnection, Queueable;
 
@@ -159,7 +167,7 @@ class DOProcessProductImageJob implements ShouldQueue
 
             return $newPath;
         } catch (\Exception $e) {
-            Log::error("Falha ao processar imagem para EAN {$product->ean}: " . $e->getMessage());
+            Log::error("Falha ao processar imagem para EAN {$product->ean}: ".$e->getMessage());
 
             return null;
         }

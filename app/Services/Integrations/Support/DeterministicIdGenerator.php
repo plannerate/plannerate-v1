@@ -14,8 +14,13 @@ class DeterministicIdGenerator
     /**
      * Gera um ID determinístico a partir dos campos unique_by do registro mapeado.
      *
+     * Por padrão, inclui o integrationId no hash para isolar registros de integrações
+     * diferentes. Para recursos compartilhados entre integrações (ex: produtos, cujo ID
+     * depende apenas de tenant + EAN), defina `include_integration_in_id: false` no
+     * path config da integração.
+     *
      * @param  array<string, mixed>  $record  Registro já mapeado pelo field_map
-     * @param  array<string, mixed>  $pathConfig  Config do path (unique_by, include_store_in_id, id_prefix)
+     * @param  array<string, mixed>  $pathConfig  Config do path (unique_by, include_store_in_id, include_integration_in_id, id_prefix)
      */
     public function fromRecord(
         string $tenantId,
@@ -26,9 +31,14 @@ class DeterministicIdGenerator
     ): string {
         $uniqueBy = (array) data_get($pathConfig, 'unique_by', []);
         $includeStore = (bool) data_get($pathConfig, 'include_store_in_id', false);
+        $includeIntegration = (bool) data_get($pathConfig, 'include_integration_in_id', true);
         $prefix = (string) data_get($pathConfig, 'id_prefix', 'I1');
 
-        $parts = [$tenantId, $integrationId];
+        $parts = [$tenantId];
+
+        if ($includeIntegration) {
+            $parts[] = $integrationId;
+        }
 
         if ($includeStore) {
             $parts[] = $storeId ?? 'sem-loja';

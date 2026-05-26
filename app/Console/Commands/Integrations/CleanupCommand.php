@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Log;
 
 class CleanupCommand extends Command
 {
-    private const INACTIVE_DAYS = 90;
+    private const INACTIVE_DAYS = 120;
 
     protected $signature = 'sync:cleanup {--tenant= : ID do tenant específico}';
 

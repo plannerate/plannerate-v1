@@ -62,7 +62,7 @@ class IntegrationApiController extends Controller
             'message' => __('app.landlord.integration_apis.messages.created'),
         ]);
 
-        return $this->toLandlordRoute('landlord.integration-apis.edit', $integrationApi);
+        return $this->toLandlordRoute('landlord.integration-apis.edit', ['integration_api' => $integrationApi]);
     }
 
     public function edit(IntegrationApi $integrationApi): Response
@@ -87,7 +87,7 @@ class IntegrationApiController extends Controller
             'message' => __('app.landlord.integration_apis.messages.updated'),
         ]);
 
-        return $this->toLandlordRoute('landlord.integration-apis.edit', $integrationApi);
+        return $this->toLandlordRoute('landlord.integration-apis.edit', ['integration_api' => $integrationApi]);
     }
 
     public function destroy(IntegrationApi $integrationApi): RedirectResponse

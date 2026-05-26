@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
-import { ChevronDown, ImageDown, SlidersHorizontal, X } from 'lucide-vue-next';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ChevronDown, ImageDown, ShoppingCart, SlidersHorizontal, X } from 'lucide-vue-next';
 import { computed, nextTick, ref, watch } from 'vue';
 import ProductController from '@/actions/App/Http/Controllers/Tenant/ProductController';
 import ListPage from '@/components/ListPage.vue';
@@ -296,14 +296,22 @@ const pageMeta = useCrudPageMeta({
                                 <span class="text-muted-foreground">{{ formatSyncDate(product) }}</span>
                             </div>
                         </td>
-                        <td class="px-4 py-3 ">
-                            <ColumnActions :edit-href="ProductController.edit.url({
-                                product: product.id,
-                            })
-                                " :delete-href="ProductController.destroy.url({
-                                    product: product.id,
-                                })
-                                    " :delete-label="product.name ?? undefined" :require-confirm-word="true" />
+                        <td class="px-4 py-3">
+                            <ColumnActions
+                                :edit-href="ProductController.edit.url({ product: product.id })"
+                                :delete-href="ProductController.destroy.url({ product: product.id })"
+                                :delete-label="product.name ?? undefined"
+                                :require-confirm-word="true"
+                            >
+                                <!-- Link para o mini-dashboard de vendas do produto -->
+                                <Link
+                                    :href="ProductController.sales.url({ product: product.id })"
+                                    class="inline-flex items-center justify-center rounded-md border border-border bg-background p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                    :title="t('app.tenant.products.sales.navigation')"
+                                >
+                                    <ShoppingCart class="size-3.5" />
+                                </Link>
+                            </ColumnActions>
                         </td>
                     </tr>
                 </tbody>
