@@ -46,7 +46,7 @@ class ProcessProductImagesByEansJob implements ShouldQueue
 
         $products = Product::on($connection)
             ->whereIn('ean', $this->eans)
-            ->get(['id', 'ean']);
+            ->get(['id', 'ean', 'tenant_id']);
 
         if ($products->isEmpty()) {
             event(new GondolaProductImagesUpdated(
@@ -61,7 +61,7 @@ class ProcessProductImagesByEansJob implements ShouldQueue
         $jobs = $products
             ->map(fn (Product $product): DOProcessProductImageJob => new DOProcessProductImageJob(
                 (string) $product->id,
-                null,
+                $product->tenant_id,
                 $this->database,
             ))
             ->all();

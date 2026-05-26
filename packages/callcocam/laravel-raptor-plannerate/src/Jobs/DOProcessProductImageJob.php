@@ -45,6 +45,7 @@ class DOProcessProductImageJob implements NotTenantAware, ShouldQueue
      */
     public function handle(): void
     {
+
         try {
             if ($this->database) {
                 $this->configureTenantConnection($this->database);
