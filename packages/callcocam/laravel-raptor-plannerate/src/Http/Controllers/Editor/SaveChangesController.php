@@ -116,9 +116,7 @@ class SaveChangesController extends Controller
             return in_array($change['type'], [
                 'layer_create',
                 'layer_update',
-                'product_placement',
                 'product_update',
-                'product_removal',
             ]);
         });
 

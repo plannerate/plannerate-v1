@@ -45,7 +45,7 @@ class SaveChangesRequest extends FormRequest
             'changes.*.type' => [
                 'required',
                 'string',
-                'in:shelf_create,shelf_move,shelf_transfer,shelf_update,section_update,product_placement,layer_create,layer_update,segment_update,product_update,product_removal,gondola_update,gondola_scale,gondola_alignment,gondola_flow,segment_copy,segment_update,segment_transfer,segment_reorder',
+                'in:shelf_create,shelf_move,shelf_transfer,shelf_update,section_update,layer_create,layer_update,segment_update,product_update,gondola_update,gondola_scale,gondola_alignment,gondola_flow,segment_copy,segment_update,segment_transfer,segment_reorder',
             ],
             'changes.*.entityType' => 'required|string|in:shelf,section,product,layer,segment,gondola',
             'changes.*.entityId' => 'required|string',

@@ -20,9 +20,7 @@ export type ChangeType =
     | 'shelf_move' // Move prateleira dentro da mesma seção
     | 'shelf_transfer' // Transfere prateleira entre seções
     | 'section_update' // Atualiza propriedades de uma seção
-    | 'product_placement' // Coloca/move produto em uma camada
     | 'product_update' // Atualiza propriedades de um produto
-    | 'product_removal' // Remove produto de uma camada
     | 'layer_update' // Atualiza propriedades de uma camada
     | 'layer_create' // Cria nova camada
     | 'segment_update' // Atualiza propriedades de um segmento
@@ -367,7 +365,6 @@ export function usePlanogramChanges() {
                             // Captura antes de limpar: o save continha remoções de produto?
                             lastSaveHadRemovals.value = Array.from(pendingChanges.value.values()).some(
                                 (c) =>
-                                    c.type === 'product_removal' ||
                                     (c.type === 'segment_update' && c.data?.deleted_at) ||
                                     (c.type === 'layer_update' && c.data?.deleted_at),
                             );

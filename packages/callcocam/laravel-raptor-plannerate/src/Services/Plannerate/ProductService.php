@@ -31,7 +31,6 @@ class ProductService
 
         return match ($type) {
             'product_update' => $this->updateDimensions($change['entityId'], $change['data']),
-            'product_placement' => $this->place($change['data']),
             default => false
         };
     }
@@ -92,21 +91,6 @@ class ProductService
             'product_id' => $productId,
             'updates' => $dimensionUpdates,
         ]);
-
-        return true;
-    }
-
-    /**
-     * Posiciona produto (implementar se necessário)
-     *
-     * Placeholder para lógica de posicionamento de produtos
-     *
-     * @param  array<string, mixed>  $data
-     */
-    public function place(array $data): bool
-    {
-        // TODO: Implementar lógica de posicionamento se necessário
-        Log::info('ℹ️ product_placement chamado (não implementado)', ['data' => $data]);
 
         return true;
     }

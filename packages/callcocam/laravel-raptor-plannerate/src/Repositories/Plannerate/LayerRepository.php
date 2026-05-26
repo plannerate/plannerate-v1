@@ -20,22 +20,6 @@ class LayerRepository
 
     private const REPO = 'LayerRepository';
 
-    public function findByProductId(string $productId): ?object
-    {
-        try {
-            return $this->plannerateTenantTable('layers')->where('product_id', $productId)->first();
-        } catch (\Throwable $e) {
-            Log::error('Plannerate repository failed', [
-                'repository' => self::REPO,
-                'method' => 'findByProductId',
-                'product_id' => $productId,
-                'connection' => $this->plannerateTenantConnectionName(),
-                'message' => $e->getMessage(),
-            ]);
-            throw $e;
-        }
-    }
-
     public function find(string $layerId): ?object
     {
         try {
@@ -94,22 +78,6 @@ class LayerRepository
                 'repository' => self::REPO,
                 'method' => 'delete',
                 'layer_id' => $layerId,
-                'connection' => $this->plannerateTenantConnectionName(),
-                'message' => $e->getMessage(),
-            ]);
-            throw $e;
-        }
-    }
-
-    public function countBySegmentId(string $segmentId): int
-    {
-        try {
-            return $this->plannerateTenantTable('layers')->where('segment_id', $segmentId)->count();
-        } catch (\Throwable $e) {
-            Log::error('Plannerate repository failed', [
-                'repository' => self::REPO,
-                'method' => 'countBySegmentId',
-                'segment_id' => $segmentId,
                 'connection' => $this->plannerateTenantConnectionName(),
                 'message' => $e->getMessage(),
             ]);

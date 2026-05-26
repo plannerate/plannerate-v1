@@ -11,7 +11,6 @@ namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 use Callcocam\LaravelRaptorPlannerate\Events\LayerRemovedEvent;
 use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\GondolaRepository;
 use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\LayerRepository;
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\SegmentRepository;
 use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\ShelfRepository;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -23,7 +22,6 @@ class LayerService
 {
     public function __construct(
         private LayerRepository $repository,
-        private SegmentRepository $segmentRepository,
         private ShelfRepository $shelfRepository,
         private SegmentService $segmentService,
         private GondolaRepository $gondolaRepository,
@@ -36,7 +34,7 @@ class LayerService
      * possam ser disparados com contexto completo da gôndola.
      *
      * Nota: o frontend remove layers via soft delete ('layer_update' com deleted_at),
-     * não via 'product_removal'. Ambos os caminhos disparam LayerRemovedEvent.
+     * que dispara LayerRemovedEvent.
      *
      * @param  array<string, mixed>  $change
      */
@@ -47,7 +45,6 @@ class LayerService
         return match ($type) {
             'layer_create' => $this->createSegmentAndLayer($change['data']),
             'layer_update' => $this->update($change['entityId'], $change['data'], $change['gondolaId'] ?? null),
-            'product_removal' => $this->remove($change['entityId'], $change['gondolaId'] ?? null),
             default => false
         };
     }
@@ -172,50 +169,6 @@ class LayerService
         }
 
         return $updated > 0;
-    }
-
-    /**
-     * Remove layer (e segment se for a última layer do segment).
-     *
-     * Após a remoção bem-sucedida, dispara LayerRemovedEvent quando o gondolaId
-     * é fornecido — permite que listeners externos (ex.: inserção em rejeitados)
-     * reajam à remoção sem acoplamento direto com este service.
-     */
-    public function remove(string $productId, ?string $gondolaId = null): bool
-    {
-        // Busca layer pelo product_id
-        $layer = $this->repository->findByProductId($productId);
-        if (! $layer) {
-            Log::warning('⚠️ Layer para remoção não encontrada', ['product_id' => $productId]);
-
-            return false;
-        }
-
-        // Busca segment
-        $segment = $this->segmentRepository->find($layer->segment_id);
-        if (! $segment) {
-            Log::warning('⚠️ Segmento para remoção não encontrado', ['segment_id' => $layer->segment_id]);
-
-            return false;
-        }
-
-        // Se for a última layer do segment, remove segment também
-        if ($this->repository->countBySegmentId($segment->id) <= 1) {
-            $this->segmentRepository->delete($segment->id);
-            Log::info('🗑️ Segment removido (última layer)', ['segment_id' => $segment->id]);
-        }
-
-        // Remove layer
-        $deleted = $this->repository->delete($layer->id);
-
-        if ($deleted > 0) {
-            Log::info('🗑️ Layer removida', ['layer_id' => $layer->id, 'product_id' => $productId]);
-
-            // Dispara evento se o contexto da gôndola foi fornecido
-            $this->dispatchRemovedEvent($layer, $gondolaId);
-        }
-
-        return $deleted > 0;
     }
 
     /**
