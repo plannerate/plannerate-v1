@@ -2,12 +2,21 @@
 
 namespace App\Services\Integrations\Support;
 
+use Symfony\Component\Uid\Ulid;
+
 /**
  * Gera IDs determinísticos para registros importados.
  *
  * Usa os campos de unique_by do path config para garantir
  * que o mesmo registro sempre gera o mesmo ID, independente
  * de quantas vezes for importado.
+ *
+ * O ID final é um ULID estruturalmente válido (Crockford base32, 26 chars,
+ * primeiro caractere entre 0-7), derivado do SHA-256 das partes que identificam
+ * o registro. Por ser derivado de hash, é determinístico — o mesmo conjunto de
+ * partes sempre produz o mesmo ULID — porém não carrega timestamp real e não é
+ * ordenável cronologicamente. Ser um ULID válido garante que passe na regra de
+ * validação `ulid` aplicada a chaves como product_id, category_id e store_id.
  */
 class DeterministicIdGenerator
 {
@@ -32,7 +41,6 @@ class DeterministicIdGenerator
         $uniqueBy = (array) data_get($pathConfig, 'unique_by', []);
         $includeStore = (bool) data_get($pathConfig, 'include_store_in_id', false);
         $includeIntegration = (bool) data_get($pathConfig, 'include_integration_in_id', true);
-        $prefix = (string) data_get($pathConfig, 'id_prefix', 'I1');
 
         $parts = [$tenantId];
 
@@ -49,24 +57,30 @@ class DeterministicIdGenerator
             $parts[] = preg_replace('/[^A-Za-z0-9]/', '', $value) ?: $value;
         }
 
-        $hash = hash('sha256', implode('|', $parts));
-
-        return $prefix.strtoupper(substr($hash, 0, 24));
+        return $this->ulidFromParts(implode('|', $parts));
     }
 
     public function productIdFromEan(string $tenantId, string $ean): string
     {
-        $prefix = 'P1';
-        $hash = hash('sha256', $tenantId.'|'.$ean);
-
-        return $prefix.strtoupper(substr($hash, 0, 24));
+        return $this->ulidFromParts($tenantId.'|'.$ean);
     }
 
     public function productIdFromReference(string $tenantId, string $reference): string
     {
-        $prefix = 'P1';
-        $hash = hash('sha256', $tenantId.'|'.$reference);
+        return $this->ulidFromParts($tenantId.'|'.$reference);
+    }
 
-        return $prefix.strtoupper(substr($hash, 0, 24));
+    /**
+     * Codifica a string identificadora em um ULID válido e determinístico.
+     *
+     * Usa os 16 primeiros bytes do SHA-256 (128 bits) como payload do ULID.
+     * Como o valor de 128 bits ocupa apenas 128 dos 130 bits do encoding base32,
+     * o primeiro caractere fica sempre entre 0-7, satisfazendo o formato ULID.
+     */
+    private function ulidFromParts(string $input): string
+    {
+        $bytes = substr(hash('sha256', $input, true), 0, 16);
+
+        return (string) Ulid::fromBinary($bytes);
     }
 }
