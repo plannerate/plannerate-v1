@@ -255,13 +255,6 @@ class SegmentService
         // Verifica se é um soft delete antes de aplicar
         $isBeingRemoved = isset($updates['deleted_at']) && $updates['deleted_at'] !== null;
 
-        Log::debug('[LayerEvent] 3/6 SegmentService::update', [
-            'segment_id' => $segmentId,
-            'gondola_id' => $gondolaId,
-            'is_being_removed' => $isBeingRemoved,
-            'updates_keys' => array_keys($updates),
-        ]);
-
         // Normaliza deleted_at
         if (isset($updates['deleted_at']) && is_string($updates['deleted_at'])) {
             $updates['deleted_at'] = Carbon::parse($updates['deleted_at'])->format('Y-m-d H:i:s');
@@ -270,12 +263,6 @@ class SegmentService
         $updates['updated_at'] = now();
 
         $updated = $this->repository->update($segmentId, $updates);
-
-        Log::debug('[LayerEvent] 3/6 SegmentService::update resultado', [
-            'segment_id' => $segmentId,
-            'rows_updated' => $updated,
-            'is_being_removed' => $isBeingRemoved,
-        ]);
 
         // Ao soft-deletar o segment, dispara evento para cada layer filha
         if ($updated > 0 && $isBeingRemoved) {
@@ -293,45 +280,18 @@ class SegmentService
     private function dispatchEventsForSegmentLayers(string $segmentId, ?string $gondolaId): void
     {
         if ($gondolaId === null || $gondolaId === '') {
-            Log::warning('[LayerEvent] 4/6 dispatchEventsForSegmentLayers: gondolaId vazio, abortando', [
-                'segment_id' => $segmentId,
-            ]);
-
             return;
         }
 
         $gondola = $this->gondolaRepository->find($gondolaId);
 
-        Log::debug('[LayerEvent] 4/6 dispatchEventsForSegmentLayers: busca da gôndola', [
-            'gondola_id' => $gondolaId,
-            'gondola_found' => $gondola !== null,
-            'generation_mode' => $gondola->generation_mode ?? null,
-        ]);
-
         if (! $gondola) {
-            Log::warning('[LayerEvent] 4/6 LayerRemovedEvent não disparado: gôndola não encontrada', [
-                'gondola_id' => $gondolaId,
-                'segment_id' => $segmentId,
-            ]);
-
             return;
         }
 
         $layers = $this->layerRepository->findAllBySegmentId($segmentId);
 
-        Log::debug('[LayerEvent] 4/6 dispatchEventsForSegmentLayers: layers encontradas', [
-            'segment_id' => $segmentId,
-            'layers_count' => count($layers),
-        ]);
-
         foreach ($layers as $layer) {
-            Log::info('[LayerEvent] 4/6 Disparando LayerRemovedEvent (via segment)', [
-                'layer_id' => $layer->id ?? null,
-                'product_id' => $layer->product_id ?? null,
-                'gondola_id' => $gondola->id,
-                'generation_mode' => $gondola->generation_mode,
-            ]);
-
             LayerRemovedEvent::dispatch($layer, $gondola);
         }
     }

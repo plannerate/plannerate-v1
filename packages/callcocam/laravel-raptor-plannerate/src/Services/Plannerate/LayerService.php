@@ -44,13 +44,6 @@ class LayerService
     {
         $type = $change['type'];
 
-        Log::debug('[LayerEvent] 2/6 LayerService::createOrUpdate', [
-            'type' => $type,
-            'entity_id' => $change['entityId'] ?? null,
-            'gondola_id' => $change['gondolaId'] ?? null,
-            'data_keys' => array_keys($change['data'] ?? []),
-        ]);
-
         return match ($type) {
             'layer_create' => $this->createSegmentAndLayer($change['data']),
             'layer_update' => $this->update($change['entityId'], $change['data'], $change['gondolaId'] ?? null),
@@ -160,13 +153,6 @@ class LayerService
         // Verifica se esta atualização é uma remoção (soft delete) antes de sobrescrever
         $isBeingRemoved = isset($updates['deleted_at']) && $updates['deleted_at'] !== null;
 
-        Log::debug('[LayerEvent] 3/6 LayerService::update', [
-            'layer_id' => $layerId,
-            'gondola_id' => $gondolaId,
-            'is_being_removed' => $isBeingRemoved,
-            'updates_keys' => array_keys($updates),
-        ]);
-
         // Normaliza deleted_at
         if (isset($updates['deleted_at']) && is_string($updates['deleted_at'])) {
             $updates['deleted_at'] = Carbon::parse($updates['deleted_at'])->format('Y-m-d H:i:s');
@@ -176,21 +162,9 @@ class LayerService
 
         $updated = $this->repository->update($layerId, $updates);
 
-        Log::debug('[LayerEvent] 3/6 LayerService::update resultado', [
-            'layer_id' => $layerId,
-            'rows_updated' => $updated,
-            'is_being_removed' => $isBeingRemoved,
-        ]);
-
         // Dispara evento de remoção quando a layer foi soft-deletada com sucesso
         if ($updated > 0 && $isBeingRemoved) {
             $layer = $this->repository->find($layerId);
-
-            Log::debug('[LayerEvent] 3/6 LayerService::update buscou layer pós-update', [
-                'layer_id' => $layerId,
-                'layer_found' => $layer !== null,
-                'product_id' => $layer->product_id ?? null,
-            ]);
 
             if ($layer) {
                 $this->dispatchRemovedEvent($layer, $gondolaId);
@@ -252,43 +226,15 @@ class LayerService
      */
     private function dispatchRemovedEvent(object $layer, ?string $gondolaId): void
     {
-        Log::debug('[LayerEvent] 4/6 dispatchRemovedEvent: entrada', [
-            'gondola_id' => $gondolaId,
-            'layer_id' => $layer->id ?? null,
-            'product_id' => $layer->product_id ?? null,
-        ]);
-
         if ($gondolaId === null || $gondolaId === '') {
-            Log::warning('[LayerEvent] 4/6 dispatchRemovedEvent: gondolaId vazio, abortando', [
-                'layer_id' => $layer->id ?? null,
-            ]);
-
             return;
         }
 
         $gondola = $this->gondolaRepository->find($gondolaId);
 
-        Log::debug('[LayerEvent] 4/6 dispatchRemovedEvent: resultado da busca da gôndola', [
-            'gondola_id' => $gondolaId,
-            'gondola_found' => $gondola !== null,
-            'generation_mode' => $gondola->generation_mode ?? null,
-        ]);
-
         if (! $gondola) {
-            Log::warning('[LayerEvent] 4/6 LayerRemovedEvent não disparado: gôndola não encontrada', [
-                'gondola_id' => $gondolaId,
-                'layer_id' => $layer->id ?? null,
-            ]);
-
             return;
         }
-
-        Log::info('[LayerEvent] 4/6 Disparando LayerRemovedEvent', [
-            'layer_id' => $layer->id ?? null,
-            'product_id' => $layer->product_id ?? null,
-            'gondola_id' => $gondola->id,
-            'generation_mode' => $gondola->generation_mode,
-        ]);
 
         LayerRemovedEvent::dispatch($layer, $gondola);
     }

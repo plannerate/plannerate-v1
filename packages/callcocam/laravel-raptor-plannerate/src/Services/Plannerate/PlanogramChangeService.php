@@ -72,14 +72,6 @@ class PlanogramChangeService
         foreach ($changes as $change) {
             $change['gondolaId'] = $gondolaId;
 
-            Log::debug('[LayerEvent] 1/6 processChanges: change recebido', [
-                'gondola_id' => $gondolaId,
-                'entity_type' => $change['entityType'] ?? null,
-                'type' => $change['type'] ?? null,
-                'entity_id' => $change['entityId'] ?? null,
-                'data_keys' => array_keys($change['data'] ?? []),
-            ]);
-
             $applied = $this->applyChange($change);
             if ($applied) {
                 $changesApplied++;
