@@ -431,7 +431,6 @@ class ImportLegacyBaseClientCommand extends Command
         if ($this->option('fresh')) {
             $this->tenantDb->table($table)->truncate();
         }
-        $this->tenantDb->table($table)->truncate();
 
         $targetColumns = Schema::connection('tenant_import')->getColumnListing($table);
         $hasEan = in_array('ean', $targetColumns);
@@ -461,8 +460,12 @@ class ImportLegacyBaseClientCommand extends Command
 
                     $ean = is_string($record->ean ?? null) ? trim($record->ean) : '';
 
-                    // Gera product_id deterministico via EAN (sem consultar o banco)
-                    $row['product_id'] = $generator->productIdFromEan($tenantId, $ean);
+                    // Gera product_id deterministico via EAN (sem consultar o banco).
+                    // Sem EAN não há como derivar o produto: deixa null em vez de
+                    // apontar todas as layers para o mesmo id "fantasma".
+                    $row['product_id'] = $ean !== ''
+                        ? $generator->productIdFromEan($tenantId, $ean)
+                        : null;
 
                     // Salva o ean na layer se a coluna existir
                     if ($hasEan && $ean !== '') {
