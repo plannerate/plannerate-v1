@@ -1290,6 +1290,28 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                 'updated' => 'Produto atualizado com sucesso.',
                 'deleted' => 'Produto removido com sucesso.',
             ],
+            'sales' => [
+                'title' => 'Vendas do produto',
+                'navigation' => 'Vendas',
+                'description' => 'Histórico e indicadores de vendas do produto.',
+                'dashboard' => [
+                    'total_quantity' => 'Qtd. total vendida',
+                    'total_value' => 'Receita total',
+                    'avg_sale_price' => 'Preço médio de venda',
+                    'total_records' => 'Registros de venda',
+                    'promo_quantity' => 'Qtd. em promoção',
+                    'promo_value' => 'Receita em promoção',
+                    'regular_quantity' => 'Qtd. fora de promoção',
+                    'regular_value' => 'Receita fora de promoção',
+                    'total_profit_margin' => 'Margem de lucro total',
+                    'total_margem_contribuicao' => 'Margem de contribuição total',
+                ],
+                'filters' => [
+                    'promotion_all' => 'Todas as vendas',
+                    'promotion_yes' => 'Somente em promoção',
+                    'promotion_no' => 'Somente sem promoção',
+                ],
+            ],
             'status_options' => [
                 'draft' => 'Rascunho',
                 'published' => 'Publicado',

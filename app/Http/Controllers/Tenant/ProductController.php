@@ -12,6 +12,7 @@ use App\Http\Requests\Tenant\StoreProductRequest;
 use App\Http\Requests\Tenant\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Sale;
 use App\Models\Store;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -193,6 +194,124 @@ class ProductController extends Controller
                 'current_stock' => $product->current_stock,
                 'last_purchase_date' => $product->last_purchase_date?->toDateTimeString(),
             ]);
+    }
+
+    /**
+     * Exibe o mini-dashboard de vendas de um produto específico com filtros
+     * por período e promoção, além de totalizadores agregados.
+     */
+    public function sales(Request $request, string $product): Response
+    {
+        $product = Product::query()->findOrFail($product);
+        $this->authorize('view', $product);
+
+        $saleDateFrom = $this->requestString($request, 'sale_date_from');
+        $saleDateTo   = $this->requestString($request, 'sale_date_to');
+        $promotion    = $this->requestString($request, 'promotion');
+        $storeId      = $this->requestString($request, 'store_id');
+        $requestedSort = trim((string) $request->query('sort', ''));
+        $sort = in_array($requestedSort, ['sale_date', 'total_sale_quantity', 'total_sale_value', 'store'], true)
+            ? $requestedSort
+            : null;
+        $requestedDirection = strtolower((string) $request->query('direction', 'desc'));
+        $direction = in_array($requestedDirection, ['asc', 'desc'], true) ? $requestedDirection : 'desc';
+
+        /** @var \Illuminate\Database\Eloquent\Builder<Sale> $baseQuery */
+        $baseQuery = Sale::query()
+            ->where(function ($q) use ($product): void {
+                $q->where('product_id', $product->id)
+                    ->orWhere('ean', $product->ean)
+                    ->orWhere('codigo_erp', $product->codigo_erp);
+            })
+            ->when($saleDateFrom !== '', fn ($q) => $q->whereDate('sale_date', '>=', $saleDateFrom))
+            ->when($saleDateTo !== '', fn ($q) => $q->whereDate('sale_date', '<=', $saleDateTo))
+            ->when($promotion !== '', fn ($q) => $q->where('promotion', $promotion))
+            ->when($storeId !== '', fn ($q) => $q->where('store_id', $storeId));
+
+        // ── Totalizadores para o mini-dashboard ──────────────────────────
+        $totals = (clone $baseQuery)->selectRaw(
+            'COUNT(*) as total_records,
+            SUM(total_sale_quantity) as total_quantity,
+            SUM(total_sale_value) as total_value,
+            SUM(acquisition_cost) as total_acquisition_cost,
+            SUM(total_profit_margin) as total_profit_margin,
+            SUM(margem_contribuicao) as total_margem_contribuicao,
+            AVG(sale_price) as avg_sale_price,
+            SUM(CASE WHEN promotion = \'S\' THEN 1 ELSE 0 END) as promo_records,
+            SUM(CASE WHEN promotion = \'S\' THEN total_sale_quantity ELSE 0 END) as promo_quantity,
+            SUM(CASE WHEN promotion = \'S\' THEN total_sale_value ELSE 0 END) as promo_value,
+            SUM(CASE WHEN promotion != \'S\' OR promotion IS NULL THEN total_sale_quantity ELSE 0 END) as regular_quantity,
+            SUM(CASE WHEN promotion != \'S\' OR promotion IS NULL THEN total_sale_value ELSE 0 END) as regular_value'
+        )->first();
+
+        // ── Tabela paginada ───────────────────────────────────────────────
+        $perPage = $this->resolvePerPage($request, 15);
+        $sales = (clone $baseQuery)
+            ->with(['store:id,name'])
+            ->when(
+                $sort !== null,
+                function ($q) use ($sort, $direction): void {
+                    if ($sort === 'store') {
+                        $q->orderBy(
+                            Store::query()->select('name')->whereColumn('stores.id', 'sales.store_id')->limit(1),
+                            $direction,
+                        );
+
+                        return;
+                    }
+                    $q->orderBy($sort, $direction);
+                },
+                fn ($q) => $q->latest('sale_date'),
+            )
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(fn (Sale $sale): array => [
+                'id'                   => $sale->id,
+                'store'                => $sale->store?->name,
+                'sale_date'            => $sale->sale_date?->toDateString(),
+                'promotion'            => $sale->promotion,
+                'total_sale_quantity'  => $sale->total_sale_quantity,
+                'total_sale_value'     => $sale->total_sale_value,
+                'acquisition_cost'     => $sale->acquisition_cost,
+                'sale_price'           => $sale->sale_price,
+                'total_profit_margin'  => $sale->total_profit_margin,
+                'margem_contribuicao'  => $sale->margem_contribuicao,
+                'extra_data'           => $sale->extra_data,
+            ]);
+
+        return Inertia::render('tenant/products/Sales', [
+            'product' => [
+                'id'          => $product->id,
+                'name'        => $product->name,
+                'ean'         => $product->ean,
+                'codigo_erp'  => $product->codigo_erp,
+                'image_url'   => $product->image_url ?? null,
+            ],
+            'sales'   => $sales,
+            'totals'  => [
+                'total_records'           => (int) ($totals?->total_records ?? 0),
+                'total_quantity'          => (string) ($totals?->total_quantity ?? '0'),
+                'total_value'             => (string) ($totals?->total_value ?? '0'),
+                'total_acquisition_cost'  => (string) ($totals?->total_acquisition_cost ?? '0'),
+                'total_profit_margin'     => (string) ($totals?->total_profit_margin ?? '0'),
+                'total_margem_contribuicao' => (string) ($totals?->total_margem_contribuicao ?? '0'),
+                'avg_sale_price'          => (string) ($totals?->avg_sale_price ?? '0'),
+                'promo_records'           => (int) ($totals?->promo_records ?? 0),
+                'promo_quantity'          => (string) ($totals?->promo_quantity ?? '0'),
+                'promo_value'             => (string) ($totals?->promo_value ?? '0'),
+                'regular_quantity'        => (string) ($totals?->regular_quantity ?? '0'),
+                'regular_value'           => (string) ($totals?->regular_value ?? '0'),
+            ],
+            'filters' => [
+                'sale_date_from' => $saleDateFrom,
+                'sale_date_to'   => $saleDateTo,
+                'promotion'      => $promotion,
+                'store_id'       => $storeId,
+            ],
+            'filter_options' => [
+                'stores' => $this->storesForSelect(),
+            ],
+        ]);
     }
 
     public function create(): Response

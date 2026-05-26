@@ -90,6 +90,8 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
         Route::resource('products', Tenant\ProductController::class)
             ->except(['show'])
             ->names('products');
+        Route::get('products/{product}/sales', [Tenant\ProductController::class, 'sales'])
+            ->name('products.sales');
         Route::get('products/sortiment-attributes', [Tenant\ProductController::class, 'sortimentAttributes'])
             ->name('products.sortiment-attributes');
         Route::post('products/sync-single', [Tenant\ProductController::class, 'syncSingle'])
