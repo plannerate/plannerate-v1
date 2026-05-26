@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan; 
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
@@ -18,15 +18,18 @@ Schedule::command('logs:archive-and-clear --max-size-mb=10')
     ->withoutOverlapping()
     ->name('logs-size-check');
 
-Schedule::command('sync:products-from-ean-references')
-    ->dailyAt('09:20')
-    ->withoutOverlapping()
-    ->name('sync-products-from-ean-references');
-
 Schedule::command('integration:run')
     ->dailyAt('06:00')
     ->withoutOverlapping()
     ->name('integration:run');
+
+// Pipeline pós-importação: roda ~1h30 após integration:run para garantir que
+// os jobs da fila `imports` já foram processados.
+// Ordem: sync:link-sales → sync:cleanup → sync:products-from-ean-references
+Schedule::command('sync:post-import')
+    ->dailyAt('07:30')
+    ->withoutOverlapping()
+    ->name('sync-post-import');
 
 Schedule::command('horizon:snapshot')
     ->everyFiveMinutes()
