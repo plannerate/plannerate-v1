@@ -8,6 +8,8 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
+use Callcocam\LaravelRaptorPlannerate\Events\LayerRemovedEvent;
+use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\GondolaRepository;
 use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\LayerRepository;
 use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\SegmentRepository;
 use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\ShelfRepository;
@@ -23,11 +25,18 @@ class LayerService
         private LayerRepository $repository,
         private SegmentRepository $segmentRepository,
         private ShelfRepository $shelfRepository,
-        private SegmentService $segmentService
+        private SegmentService $segmentService,
+        private GondolaRepository $gondolaRepository,
     ) {}
 
     /**
-     * Cria ou atualiza uma layer baseado no tipo de mudança
+     * Cria ou atualiza uma layer baseado no tipo de mudança.
+     *
+     * O array $change deve conter 'gondolaId' para que eventos de remoção
+     * possam ser disparados com contexto completo da gôndola.
+     *
+     * Nota: o frontend remove layers via soft delete ('layer_update' com deleted_at),
+     * não via 'product_removal'. Ambos os caminhos disparam LayerRemovedEvent.
      *
      * @param  array<string, mixed>  $change
      */
@@ -37,16 +46,16 @@ class LayerService
 
         return match ($type) {
             'layer_create' => $this->createSegmentAndLayer($change['data']),
-            'layer_update' => $this->update($change['entityId'], $change['data']),
-            'product_removal' => $this->remove($change['entityId']),
+            'layer_update' => $this->update($change['entityId'], $change['data'], $change['gondolaId'] ?? null),
+            'product_removal' => $this->remove($change['entityId'], $change['gondolaId'] ?? null),
             default => false
         };
     }
 
     /**
-     * Cria segment + layer (adiciona produto à prateleira)
+     * Cria segment + layer (adiciona produto à prateleira).
      *
-     * Layer create é composto: cria segment E layer juntos
+     * Layer create é composto: cria segment E layer juntos.
      * Frontend envia: { segment: {...}, layer: {...} }
      *
      * @param  array<string, mixed>  $data
@@ -107,7 +116,7 @@ class LayerService
     }
 
     /**
-     * Cria uma layer para um segment
+     * Cria uma layer para um segment.
      *
      * @param  array<string, mixed>  $data
      */
@@ -124,11 +133,15 @@ class LayerService
     }
 
     /**
-     * Atualiza propriedades da layer
+     * Atualiza propriedades da layer.
+     *
+     * Quando deleted_at é definido (soft delete), a layer está sendo removida pelo
+     * frontend. Neste caso, dispara LayerRemovedEvent para que listeners externos
+     * possam reagir — por exemplo, inserindo o produto na lista de rejeitados.
      *
      * @param  array<string, mixed>  $data
      */
-    public function update(string $layerId, array $data): bool
+    public function update(string $layerId, array $data, ?string $gondolaId = null): bool
     {
         $allowedFields = ['quantity', 'deleted_at'];
         $updates = array_intersect_key($data, array_flip($allowedFields));
@@ -136,6 +149,9 @@ class LayerService
         if (empty($updates)) {
             return false;
         }
+
+        // Verifica se esta atualização é uma remoção (soft delete) antes de sobrescrever
+        $isBeingRemoved = isset($updates['deleted_at']) && $updates['deleted_at'] !== null;
 
         // Normaliza deleted_at
         if (isset($updates['deleted_at']) && is_string($updates['deleted_at'])) {
@@ -146,13 +162,25 @@ class LayerService
 
         $updated = $this->repository->update($layerId, $updates);
 
+        // Dispara evento de remoção quando a layer foi soft-deletada com sucesso
+        if ($updated > 0 && $isBeingRemoved) {
+            $layer = $this->repository->find($layerId);
+            if ($layer) {
+                $this->dispatchRemovedEvent($layer, $gondolaId);
+            }
+        }
+
         return $updated > 0;
     }
 
     /**
-     * Remove layer (e segment se for a última layer do segment)
+     * Remove layer (e segment se for a última layer do segment).
+     *
+     * Após a remoção bem-sucedida, dispara LayerRemovedEvent quando o gondolaId
+     * é fornecido — permite que listeners externos (ex.: inserção em rejeitados)
+     * reajam à remoção sem acoplamento direto com este service.
      */
-    public function remove(string $productId): bool
+    public function remove(string $productId, ?string $gondolaId = null): bool
     {
         // Busca layer pelo product_id
         $layer = $this->repository->findByProductId($productId);
@@ -177,12 +205,41 @@ class LayerService
         }
 
         // Remove layer
-        $updated = $this->repository->delete($layer->id);
+        $deleted = $this->repository->delete($layer->id);
 
-        if ($updated > 0) {
-            Log::info('🗑️ Layer removida', ['layer_id' => $layer->id]);
+        if ($deleted > 0) {
+            Log::info('🗑️ Layer removida', ['layer_id' => $layer->id, 'product_id' => $productId]);
+
+            // Dispara evento se o contexto da gôndola foi fornecido
+            $this->dispatchRemovedEvent($layer, $gondolaId);
         }
 
-        return $updated > 0;
+        return $deleted > 0;
+    }
+
+    /**
+     * Dispara LayerRemovedEvent com o modelo completo da gôndola.
+     *
+     * Falhas ao buscar a gôndola apenas logam um warning — não devem
+     * interromper o fluxo principal de remoção da layer.
+     */
+    private function dispatchRemovedEvent(object $layer, ?string $gondolaId): void
+    {
+        if ($gondolaId === null || $gondolaId === '') {
+            return;
+        }
+
+        $gondola = $this->gondolaRepository->find($gondolaId);
+
+        if (! $gondola) {
+            Log::warning('⚠️ LayerRemovedEvent não disparado: gôndola não encontrada', [
+                'gondola_id' => $gondolaId,
+                'layer_id' => $layer->id ?? null,
+            ]);
+
+            return;
+        }
+
+        LayerRemovedEvent::dispatch($layer, $gondola);
     }
 }

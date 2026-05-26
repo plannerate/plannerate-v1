@@ -57,7 +57,10 @@ class PlanogramChangeService
     }
 
     /**
-     * Processa múltiplas mudanças e atualiza a gôndola
+     * Processa múltiplas mudanças e atualiza a gôndola.
+     *
+     * Enriquece cada change com 'gondolaId' antes de processar — necessário para
+     * que services como LayerService possam disparar eventos com contexto completo.
      *
      * @param  array<int, array<string, mixed>>  $changes
      */
@@ -65,8 +68,9 @@ class PlanogramChangeService
     {
         $changesApplied = 0;
 
-        // Processa cada mudança
+        // Processa cada mudança, injetando o gondolaId no contexto
         foreach ($changes as $change) {
+            $change['gondolaId'] = $gondolaId;
             $applied = $this->applyChange($change);
             if ($applied) {
                 $changesApplied++;

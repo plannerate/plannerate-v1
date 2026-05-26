@@ -6,7 +6,9 @@ use App\Events\Tenant\ProductImageProcessed;
 use App\Events\Tenant\TenantIsolationCheckEvent;
 use App\Listeners\Landlord\CreateTenantIsolationCheckNotification;
 use App\Listeners\Tenant\CreateTenantIsolationTenantNotification;
+use App\Listeners\Tenant\HandleLayerRemovedForRejectedProducts;
 use App\Listeners\Tenant\SaveEanReferenceOnProductImageProcessed;
+use Callcocam\LaravelRaptorPlannerate\Events\LayerRemovedEvent;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
@@ -23,6 +25,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         ProductImageProcessed::class => [
             SaveEanReferenceOnProductImageProcessed::class,
+        ],
+        LayerRemovedEvent::class => [
+            HandleLayerRemovedForRejectedProducts::class,
         ],
     ];
 }

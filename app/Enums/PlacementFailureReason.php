@@ -12,6 +12,8 @@ enum PlacementFailureReason: string
     case Blocked = 'blocked';
     /** Produto obrigatório que não coube no slot nem com 1 frente */
     case MandatoryNoSpace = 'mandatory_no_space';
+    /** Produto removido manualmente de gôndola automática ou de template */
+    case ManuallyRemoved = 'manually_removed';
 
     public function label(): string
     {
@@ -22,6 +24,7 @@ enum PlacementFailureReason: string
             self::MissingDimensions => 'Produto sem dimensões cadastradas (width/height)',
             self::Blocked => 'Produto bloqueado por regra',
             self::MandatoryNoSpace => 'Produto obrigatório sem espaço disponível',
+            self::ManuallyRemoved => 'Produto removido manualmente',
         };
     }
 
