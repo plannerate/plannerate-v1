@@ -189,10 +189,10 @@ class GondolaAnalysisController extends Controller
 
     private function buildStockSummary(array $results): array
     {
-        $totalTarget = array_sum(array_column($results, 'estoque_alvo') ?: array_column($results, 'target_stock') ?: [0]);
-        $totalCurrent = array_sum(array_column($results, 'estoque_atual') ?: array_column($results, 'current_stock') ?: [0]);
+        $totalTarget = array_sum(array_column($results, 'estoque_alvo'));
+        $totalCurrent = array_sum(array_column($results, 'estoque_atual'));
 
-        $above = count(array_filter($results, fn ($r) => ($r['estoque_atual'] ?? $r['current_stock'] ?? 0) >= ($r['estoque_alvo'] ?? $r['target_stock'] ?? 0)));
+        $above = count(array_filter($results, fn ($r) => ($r['estoque_atual'] ?? 0) >= ($r['estoque_alvo'] ?? 0)));
         $below = count($results) - $above;
 
         return [

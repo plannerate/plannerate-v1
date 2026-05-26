@@ -21,16 +21,6 @@ class SectionController extends Controller
 {
     use UsesPlannerateTenantDatabase;
 
-    protected function getResourceLabel(): ?string
-    {
-        return 'Seção';
-    }
-
-    protected function resourcePath(): ?string
-    {
-        return 'tenant';
-    }
-
     public function store(Request $request, string $gondola)
     {
         $validated = $request->validate([
@@ -50,7 +40,7 @@ class SectionController extends Controller
             'num_shelves' => 'nullable|integer|min:0',
             'product_type' => 'nullable|string|in:normal,hook',
         ]);
- 
+
         try {
             $this->plannerateTenantDatabase()->beginTransaction();
 

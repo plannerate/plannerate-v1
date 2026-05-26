@@ -275,18 +275,6 @@ class GondolaController extends Controller
         $withDimensions = $request->boolean('with_dimensions', true);
         $categoryId = $request->input('category', $gondolaModel->planogram->category_id);
 
-        // Cache key único incluindo filtros
-        // $cacheKey = sprintf(
-        //     'products_planogram_%s_category_%s_client_%s_page_%s_search_%s_used_%s_dims_%s',
-        //     $gondola->planogram_id,
-        //     $categoryId ?? 'null',
-        //     $gondola->tenant_id ?? 'null',
-        //     $page,
-        //     md5($search),
-        //     $showUsed ? 'true' : 'false',
-        //     $withDimensions
-        // );
-
         // Obter IDs de categorias (hierarquia) — cacheado por categoria pois é estático
         $categoryIds = [];
         if ($categoryId) {
@@ -562,15 +550,6 @@ class GondolaController extends Controller
 
         return array_values(array_unique(array_merge($hierarchyIds, $descendantIds)));
     }
-
-    // public function getRouteGondolasAttribute()
-    // {
-    //     if (! Route::has('tenant.planograms.gondolas.editor')) {
-    //         return null;
-    //     }
-
-    //     return route('tenant.planograms.gondolas.editor', ['planogram' => $this->id]);
-    // }
 
     /**
      * @return array<int, array{value: string, label: string, description: string}>

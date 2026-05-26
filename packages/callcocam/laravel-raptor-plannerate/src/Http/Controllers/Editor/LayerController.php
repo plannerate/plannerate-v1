@@ -14,16 +14,6 @@ use Illuminate\Http\Request;
 
 class LayerController extends Controller
 {
-    protected function getResourceLabel(): ?string
-    {
-        return 'Camada';
-    }
-
-    protected function resourcePath(): ?string
-    {
-        return 'tenant';
-    }
-
     public function update(Request $request, ?string $id)
     {
         $validated = $request->validate([

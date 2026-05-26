@@ -15,16 +15,6 @@ use Illuminate\Http\Request;
 
 class ShelfController extends Controller
 {
-    protected function getResourceLabel(): ?string
-    {
-        return 'Prateleira';
-    }
-
-    protected function resourcePath(): ?string
-    {
-        return 'tenant';
-    }
-
     public function update(Request $request, ?string $id)
     {
         $validated = $request->validate([

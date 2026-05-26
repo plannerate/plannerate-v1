@@ -14,16 +14,6 @@ use Illuminate\Http\Request;
 
 class SegmentController extends Controller
 {
-    protected function getResourceLabel(): ?string
-    {
-        return 'Segmento';
-    }
-
-    protected function resourcePath(): ?string
-    {
-        return 'tenant';
-    }
-
     public function update(Request $request, ?string $id)
     {
         $validated = $request->validate([

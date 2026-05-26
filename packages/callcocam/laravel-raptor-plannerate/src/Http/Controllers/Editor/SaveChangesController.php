@@ -11,9 +11,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\Editor\SaveChangesRequest;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\PlanogramChangeService;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -70,12 +68,6 @@ class SaveChangesController extends Controller
                 $validated['changes']
             );
 
-            // Invalida cache de produtos quando há mudanças em layers/produtos
-            $this->invalidateProductsCacheIfNeeded(
-                $validated['gondola_id'],
-                $validated['changes']
-            );
-
             $this->plannerateTenantDatabase()->commit();
 
             // Log::info('💾 Mudanças salvas', [
@@ -101,71 +93,5 @@ class SaveChangesController extends Controller
                 'error' => 'Erro ao salvar mudanças: '.$e->getMessage(),
             ]);
         }
-    }
-
-    /**
-     * Invalida cache de produtos quando há mudanças relacionadas a layers/produtos
-     *
-     * Isso garante que a lista de produtos disponíveis seja atualizada
-     * após adicionar/remover produtos das prateleiras
-     */
-    private function invalidateProductsCacheIfNeeded(string $gondolaId, array $changes): void
-    {
-        // Verifica se há mudanças que afetam produtos (layer_create, layer_update, product_*)
-        $affectsProducts = collect($changes)->contains(function ($change) {
-            return in_array($change['type'], [
-                'layer_create',
-                'layer_update',
-                'product_update',
-            ]);
-        });
-
-        if (! $affectsProducts) {
-            return;
-        }
-
-        // Busca gondola e planogram para invalidar cache
-        $gondola = Gondola::with('planogram')->find($gondolaId);
-        if (! $gondola) {
-            return;
-        }
-
-        // Invalida cache de produtos usando pattern matching
-        // Formato: products_planogram_{planogram_id}_category_{category_id}_tenant_{tenant_id}_*
-        $cachePattern = sprintf(
-            'products_planogram_%s_category_%s_tenant_%s_*',
-            $gondola->planogram_id,
-            $gondola->planogram->category_id ?? 'null',
-            $gondola->tenant_id ?? 'null'
-        );
-
-        // Laravel Cache não suporta wildcard delete nativamente
-        // Então vamos invalidar as combinações mais comuns
-        $pagesToInvalidate = [1, 2, 3]; // Primeiras páginas
-        $searchVariations = ['', 'null']; // Com e sem busca
-        $usedVariations = ['true', 'false']; // Com e sem filtro de usados
-
-        foreach ($pagesToInvalidate as $page) {
-            foreach ($searchVariations as $search) {
-                foreach ($usedVariations as $used) {
-                    $key = sprintf(
-                        'products_planogram_%s_category_%s_tenant_%s_page_%s_search_%s_used_%s',
-                        $gondola->planogram_id,
-                        $gondola->planogram->category_id ?? 'null',
-                        $gondola->tenant_id ?? 'null',
-                        $page,
-                        $search === '' ? md5('') : $search,
-                        $used
-                    );
-                    Cache::forget($key);
-                }
-            }
-        }
-
-        Log::info('🗑️ Cache de produtos invalidado', [
-            'gondola_id' => $gondolaId,
-            'planogram_id' => $gondola->planogram_id,
-            'pattern' => $cachePattern,
-        ]);
     }
 }
