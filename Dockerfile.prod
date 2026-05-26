@@ -37,7 +37,8 @@ WORKDIR /app
 ENV VITE_ENABLE_WAYFINDER=false
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --include=optional \
+    && npm install --no-save @rolldown/binding-linux-x64-musl
 COPY . .
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=wayfinder /app/resources/js/actions ./resources/js/actions
