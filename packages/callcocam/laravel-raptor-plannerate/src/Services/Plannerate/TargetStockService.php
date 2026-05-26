@@ -121,6 +121,9 @@ class TargetStockService
 
         // Processa resultados
         $results = collect();
+        $breakdownSample = [];
+        $semEstatistica = 0;
+        $puladosNivelServico = 0;
 
         foreach ($abcResults as $abcResult) {
             $ean = $abcResult['ean'];
@@ -134,12 +137,18 @@ class TargetStockService
             $desvioPadrao = $stats ? (float) $stats->desvio_padrao : 0.0;
             $variabilidade = $media > 0 ? $desvioPadrao / $media : 0.0;
 
+            if (! $stats) {
+                $semEstatistica++;
+            }
+
             // Obtém parâmetros baseados na classificação ABC
             $nivelServico = $this->niveisServico[$classificacao] ?? 0.9;
             $coberturaDias = $this->coberturaDias[$classificacao] ?? 7;
 
             // Valida nível de serviço
             if ($nivelServico < 0.5 || $nivelServico >= 1) {
+                $puladosNivelServico++;
+
                 continue;
             }
 
@@ -154,6 +163,24 @@ class TargetStockService
             // Estoque atual (padrão: 0 se não fornecido)
             $estoqueAtual = $currentStock[$ean] ?? 0;
             $permiteFrentes = $estoqueAtual >= $estoqueAlvo ? 'Sim' : 'Não';
+
+            // Guarda amostra das primeiras linhas com a quebra completa do cálculo
+            if (count($breakdownSample) < 10) {
+                $breakdownSample[] = [
+                    'ean' => $ean,
+                    'classificacao' => $classificacao,
+                    'media' => round($media, 4),
+                    'desvio_padrao' => round($desvioPadrao, 4),
+                    'nivel_servico' => $nivelServico,
+                    'z_score' => round($zScore, 4),
+                    'cobertura_dias' => $coberturaDias,
+                    'estoque_minimo_calc' => "media({$media}) * cobertura({$coberturaDias}) = ".round($media * $coberturaDias, 4),
+                    'estoque_seguranca_calc' => "z({$zScore}) * desvio({$desvioPadrao}) = ".round($zScore * $desvioPadrao, 4),
+                    'estoque_minimo' => $estoqueMinimo,
+                    'estoque_seguranca' => $estoqueSeguranca,
+                    'estoque_alvo' => $estoqueAlvo,
+                ];
+            }
 
             $results->push([
                 'product_id' => $productId,
@@ -174,6 +201,20 @@ class TargetStockService
                 'alerta_variabilidade' => $variabilidade > 1, // Alerta se variabilidade > 100%
             ]);
         }
+
+        // Diagnóstico: comprova as entradas e a fórmula do estoque alvo.
+        // NOTA: a fórmula usa estoque_seguranca = Z * desvio (sem multiplicar por sqrt(cobertura_dias)),
+        // ou seja, assume variabilidade de 1 período. Confirmar se bate com a planilha VBA de referência.
+        Log::info('TargetStock - calculateByAbcResults diagnóstico', [
+            'table_type' => $tableType,
+            'abc_results_count' => count($abcResults),
+            'resultados_gerados' => $results->count(),
+            'sem_estatistica_venda' => $semEstatistica,
+            'pulados_nivel_servico_invalido' => $puladosNivelServico,
+            'niveis_servico' => $this->niveisServico,
+            'cobertura_dias' => $this->coberturaDias,
+            'amostra_breakdown' => $breakdownSample,
+        ]);
 
         return $results;
     }
@@ -284,19 +325,24 @@ class TargetStockService
         // Aproximação usando método de Abramowitz e Stegun
         // Para valores comuns de nível de serviço (0.7, 0.8, 0.9, 0.95, etc)
 
-        // Valores exatos para casos comuns
+        // Valores exatos para casos comuns.
+        // IMPORTANTE: as chaves são STRING — chaves float em arrays PHP são truncadas
+        // para int (0.70, 0.80, 0.90... viram todas 0), o que colapsaria a tabela.
         $commonValues = [
-            0.70 => 0.5244,
-            0.75 => 0.6745,
-            0.80 => 0.8416,
-            0.85 => 1.0364,
-            0.90 => 1.2816,
-            0.95 => 1.6449,
-            0.99 => 2.3263,
+            '0.70' => 0.5244,
+            '0.75' => 0.6745,
+            '0.80' => 0.8416,
+            '0.85' => 1.0364,
+            '0.90' => 1.2816,
+            '0.95' => 1.6449,
+            '0.99' => 2.3263,
         ];
 
-        if (isset($commonValues[$probability])) {
-            return $commonValues[$probability];
+        // Normaliza a probabilidade para 2 casas decimais como string ("0.70")
+        $key = number_format($probability, 2, '.', '');
+
+        if (isset($commonValues[$key])) {
+            return $commonValues[$key];
         }
 
         // Aproximação usando método de Abramowitz e Stegun

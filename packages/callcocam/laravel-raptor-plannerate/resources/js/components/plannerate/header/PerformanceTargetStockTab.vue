@@ -1,19 +1,13 @@
 <template>
     <div class="space-y-2">
         <!-- Modal de Parâmetros -->
-        <TargetStockParamsModal
-            v-model:open="showParametersModal"
-            :initial-data="form"
-            @submit="handleParamsSubmit"
-        />
+        <TargetStockParamsModal v-model:open="showParametersModal" :initial-data="form" @submit="handleParamsSubmit" />
 
         <!-- Loading State -->
         <Card v-if="loading">
             <CardContent class="py-12 text-center">
                 <div class="flex flex-col items-center gap-3">
-                    <div
-                        class="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
-                    ></div>
+                    <div class="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
                     <p class="text-sm text-muted-foreground">
                         {{ t('plannerate.performance.target_stock_tab.loading') }}
                     </p>
@@ -22,19 +16,17 @@
         </Card>
 
         <!-- Resultados -->
-        <TargetStockResultsList
-            v-else-if="results.length > 0"
-            :results="results"
-            :loading="loading"
-        >
+        <TargetStockResultsList v-else-if="results.length > 0" :results="results" :loading="loading">
             <template #top>
                 <div class="flex flex-wrap items-center gap-2">
-                    <div class="inline-flex items-center gap-1.5 rounded-md border border-border bg-accent/30 px-2 py-1 text-[11px] font-medium text-foreground">
+                    <div
+                        class="inline-flex items-center gap-1.5 rounded-md border border-border bg-accent/30 px-2 py-1 text-[11px] font-medium text-foreground">
                         <Settings class="size-3.5 text-muted-foreground" />
                         {{ t('plannerate.performance.target_stock_tab.parameters') }}
                     </div>
 
-                    <div class="inline-flex min-w-32 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
+                    <div
+                        class="inline-flex min-w-32 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
                         <span class="text-muted-foreground">{{ t('plannerate.performance.common.type') }}</span>
                         <span class="font-medium">
                             {{
@@ -45,10 +37,8 @@
                         </span>
                     </div>
 
-                    <div
-                        v-if="form.table_type === 'sales'"
-                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]"
-                    >
+                    <div v-if="form.table_type === 'sales'"
+                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
                         <span class="inline-flex items-center gap-1 text-muted-foreground">
                             <Calendar class="size-3.5" />
                             {{ t('plannerate.performance.common.start') }}
@@ -56,10 +46,8 @@
                         <span class="font-medium">{{ formatDate(form.date_from) }}</span>
                     </div>
 
-                    <div
-                        v-if="form.table_type === 'sales'"
-                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]"
-                    >
+                    <div v-if="form.table_type === 'sales'"
+                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
                         <span class="inline-flex items-center gap-1 text-muted-foreground">
                             <Calendar class="size-3.5" />
                             {{ t('plannerate.performance.common.end') }}
@@ -67,10 +55,8 @@
                         <span class="font-medium">{{ formatDate(form.date_to) }}</span>
                     </div>
 
-                    <div
-                        v-if="form.table_type === 'monthly_summaries'"
-                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]"
-                    >
+                    <div v-if="form.table_type === 'monthly_summaries'"
+                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
                         <span class="inline-flex items-center gap-1 text-muted-foreground">
                             <Calendar class="size-3.5" />
                             {{ t('plannerate.performance.common.start_month') }}
@@ -78,10 +64,8 @@
                         <span class="font-medium">{{ formatMonth(form.start_month) }}</span>
                     </div>
 
-                    <div
-                        v-if="form.table_type === 'monthly_summaries'"
-                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]"
-                    >
+                    <div v-if="form.table_type === 'monthly_summaries'"
+                        class="inline-flex min-w-40 items-center justify-between rounded-md bg-accent/40 px-2 py-1 text-[11px]">
                         <span class="inline-flex items-center gap-1 text-muted-foreground">
                             <Calendar class="size-3.5" />
                             {{ t('plannerate.performance.common.end_month') }}
@@ -89,14 +73,11 @@
                         <span class="font-medium">{{ formatMonth(form.end_month) }}</span>
                     </div>
 
-                    <Button
-                        type="button"
-                        size="sm"
+                    <Button type="button" size="sm"
                         class="ml-auto h-9 gap-2 border border-primary/40 bg-primary/10 px-3 font-semibold text-primary shadow-sm transition-colors hover:bg-primary/20 focus-visible:ring-2 focus-visible:ring-primary/40"
-                        @click="openParametersModal"
-                    >
+                        @click="openParametersModal">
                         <Settings class="size-3.5" />
-                        <span >{{ t('plannerate.performance.common.configure') }}</span>
+                        <span>{{ t('plannerate.performance.common.configure') }}</span>
                     </Button>
                 </div>
             </template>
@@ -118,20 +99,20 @@
                 <div class="flex flex-col items-center gap-3">
                     <Package class="size-10 text-muted-foreground/50" />
                     <div>
-                        <p class="text-sm font-medium">{{ t('plannerate.performance.target_stock_tab.no_calculation') }}</p>
-                        <p class="mt-1 text-xs text-muted-foreground">{{ t('plannerate.performance.target_stock_tab.no_calculation_description') }}</p>
+                        <p class="text-sm font-medium">{{ t('plannerate.performance.target_stock_tab.no_calculation') }}
+                        </p>
+                        <p class="mt-1 text-xs text-muted-foreground">{{
+                            t('plannerate.performance.target_stock_tab.no_calculation_description') }}</p>
                     </div>
                     <Button type="button" size="sm" class="gap-2" @click="openParametersModal">
-                        <ActionIconBox variant="outline" class="[&_svg]:size-3.5">
-                            <Settings />
-                        </ActionIconBox>
+                        <Settings />
                         {{ t('plannerate.performance.common.configure_and_calculate') }}
                     </Button>
                 </div>
             </CardContent>
         </Card>
     </div>
-</template> 
+</template>
 
 <script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3';
@@ -140,7 +121,7 @@ import { computed, ref, watch } from 'vue';
 import { calculateTargetStockApi } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 import TargetStockParamsModal from '@/components/plannerate/analysis/TargetStockParamsModal.vue';
 import TargetStockResultsList from '@/components/plannerate/analysis/TargetStockResultsList.vue';
-import { Button } from '@/components/ui/button';  
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -308,14 +289,14 @@ watch(() => props.gondolaId, () => {
 const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) {
         return t('plannerate.performance.common.not_defined_feminine');
-}
+    }
 
     try {
         const date = new Date(dateString);
 
         if (isNaN(date.getTime())) {
-return dateString;
-}
+            return dateString;
+        }
 
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -330,14 +311,14 @@ return dateString;
 const formatMonth = (monthString: string | null | undefined): string => {
     if (!monthString) {
         return t('plannerate.performance.common.not_defined_feminine');
-}
+    }
 
     try {
         const [year, month] = monthString.split('-');
 
         if (!year || !month) {
-return monthString;
-}
+            return monthString;
+        }
 
         return `${month}/${year}`;
     } catch {
@@ -359,7 +340,7 @@ const handleParamsSubmit = (data: typeof form.value): void => {
     hasCalculated.value = true;
 
     router.post(
-        wayfinderPath(calculateTargetStockApi.url({ subdomain, gondola: props.gondolaId })),
+        wayfinderPath(calculateTargetStockApi.url({ gondola: props.gondolaId })),
         form.value,
         {
             preserveState: true,

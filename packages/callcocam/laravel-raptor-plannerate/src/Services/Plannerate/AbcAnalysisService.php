@@ -490,7 +490,13 @@ class AbcAnalysisService
      */
     private function calculateWeightedAverage(Collection $salesData): Collection
     {
-        return $salesData->map(function ($item) {
+        // Acumula totais por métrica para diagnosticar dominância de escala
+        $totalQtde = 0.0;
+        $totalValor = 0.0;
+        $totalMargem = 0.0;
+        $breakdownSample = [];
+
+        $resultado = $salesData->map(function ($item) use (&$totalQtde, &$totalValor, &$totalMargem, &$breakdownSample) {
             $qtde = (float) ($item->qtde ?? 0);
             $valor = (float) ($item->valor ?? 0);
             $margem = (float) ($item->margem ?? 0);
@@ -498,22 +504,49 @@ class AbcAnalysisService
             $somaPesos = 0;
             $mediaPonderada = 0;
 
+            // Contribuição individual de cada métrica para o cálculo (para auditoria)
+            $contribQtde = 0.0;
+            $contribValor = 0.0;
+            $contribMargem = 0.0;
+
             if ($qtde != 0) {
                 $somaPesos += $this->pesoQtde;
-                $mediaPonderada += ($qtde * $this->pesoQtde);
+                $contribQtde = $qtde * $this->pesoQtde;
+                $mediaPonderada += $contribQtde;
             }
 
             if ($valor != 0) {
                 $somaPesos += $this->pesoValor;
-                $mediaPonderada += ($valor * $this->pesoValor);
+                $contribValor = $valor * $this->pesoValor;
+                $mediaPonderada += $contribValor;
             }
 
             if ($margem != 0) {
                 $somaPesos += $this->pesoMargem;
-                $mediaPonderada += ($margem * $this->pesoMargem);
+                $contribMargem = $margem * $this->pesoMargem;
+                $mediaPonderada += $contribMargem;
             }
 
             $mediaPonderadaFinal = $somaPesos != 0 ? ($mediaPonderada / $somaPesos) : 0;
+
+            $totalQtde += $qtde;
+            $totalValor += $valor;
+            $totalMargem += $margem;
+
+            // Guarda uma amostra das primeiras linhas com a quebra de contribuições
+            if (count($breakdownSample) < 10) {
+                $breakdownSample[] = [
+                    'product_id' => $item->product_id,
+                    'qtde' => $qtde,
+                    'valor' => $valor,
+                    'margem' => $margem,
+                    'contrib_qtde' => round($contribQtde, 4),
+                    'contrib_valor' => round($contribValor, 4),
+                    'contrib_margem' => round($contribMargem, 4),
+                    'soma_pesos' => $somaPesos,
+                    'media_ponderada' => round($mediaPonderadaFinal, 6),
+                ];
+            }
 
             return [
                 'product_id' => $item->product_id,
@@ -524,6 +557,28 @@ class AbcAnalysisService
                 'media_ponderada' => round($mediaPonderadaFinal, 6),
             ];
         });
+
+        // Diagnóstico: revela se uma métrica domina a média ponderada por diferença de escala.
+        // Se 'valor' tem ordem de grandeza muito maior que 'qtde'/'margem', os pesos perdem efeito.
+        Log::info('ABC Analysis - calculateWeightedAverage diagnóstico', [
+            'pesos' => [
+                'qtde' => $this->pesoQtde,
+                'valor' => $this->pesoValor,
+                'margem' => $this->pesoMargem,
+            ],
+            'totais_brutos' => [
+                'qtde' => round($totalQtde, 2),
+                'valor' => round($totalValor, 2),
+                'margem' => round($totalMargem, 2),
+            ],
+            'escala_relativa' => [
+                'valor_vs_qtde' => $totalQtde > 0 ? round($totalValor / $totalQtde, 2) : null,
+                'margem_vs_qtde' => $totalQtde > 0 ? round($totalMargem / $totalQtde, 2) : null,
+            ],
+            'amostra_breakdown' => $breakdownSample,
+        ]);
+
+        return $resultado;
     }
 
     /**
@@ -587,6 +642,7 @@ class AbcAnalysisService
         $acumulado = 0;
         $ranking = 1;
         $menorPercentualB = 1.0;
+        $hasClassB = false;
 
         // Primeiro, encontra o menor percentual da classe B
         foreach ($products as $product) {
@@ -595,8 +651,11 @@ class AbcAnalysisService
 
             // Classifica temporariamente para encontrar menor B
             $classificacao = $this->classify($acumulado);
-            if ($classificacao === 'B' && $percentualIndividual < $menorPercentualB) {
-                $menorPercentualB = $percentualIndividual;
+            if ($classificacao === 'B') {
+                $hasClassB = true;
+                if ($percentualIndividual < $menorPercentualB) {
+                    $menorPercentualB = $percentualIndividual;
+                }
             }
         }
 
@@ -612,7 +671,7 @@ class AbcAnalysisService
             $classificacao = $this->classify($acumulado);
 
             // Determina se deve retirar do mix
-            $retirarDoMix = $this->shouldRemoveFromMix($classificacao, $percentualIndividual, $menorPercentualB);
+            $retirarDoMix = $this->shouldRemoveFromMix($classificacao, $percentualIndividual, $menorPercentualB, $hasClassB);
 
             // Busca informações do produto (usa cache se disponível)
             $productModel = $productsCache?->get($product['product_id'])
@@ -652,6 +711,23 @@ class AbcAnalysisService
             $ranking++;
         }
 
+        // Diagnóstico: confere se os cortes A/B/C e o acumulado fecham 100%
+        Log::info('ABC Analysis - classificação por categoria', [
+            'category_id' => $categoryId,
+            'total_ponderado' => round($totalPonderado, 6),
+            'menor_percentual_b' => round($menorPercentualB * 100, 4),
+            'corte_a' => $this->corteA,
+            'corte_b' => $this->corteB,
+            'acumulado_final_pct' => round($acumulado * 100, 4),
+            'produtos' => $result->count(),
+            'distribuicao' => [
+                'A' => $result->where('classificacao', 'A')->count(),
+                'B' => $result->where('classificacao', 'B')->count(),
+                'C' => $result->where('classificacao', 'C')->count(),
+            ],
+            'retirar_do_mix' => $result->where('retirar_do_mix', true)->count(),
+        ]);
+
         return $result;
     }
 
@@ -672,10 +748,16 @@ class AbcAnalysisService
     /**
      * Determina se produto deve ser retirado do mix
      *
-     * Regra: Classe C com percentual individual menor que metade do menor percentual B
+     * Regra: Classe C com percentual individual menor que metade do menor percentual B.
+     * Se a categoria não possui nenhum produto classe B, não há referência (menor %B)
+     * para a regra — nesse caso nenhum produto é retirado, evitando remoção em massa.
      */
-    private function shouldRemoveFromMix(string $classificacao, float $percentualIndividual, float $menorPercentualB): bool
+    private function shouldRemoveFromMix(string $classificacao, float $percentualIndividual, float $menorPercentualB, bool $hasClassB): bool
     {
+        if (! $hasClassB) {
+            return false;
+        }
+
         if ($classificacao === 'C' && $menorPercentualB > 0) {
             return $percentualIndividual < ($menorPercentualB / 2);
         }
