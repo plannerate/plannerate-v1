@@ -1299,6 +1299,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
                     'total_value' => 'Receita total',
                     'avg_sale_price' => 'Preço médio de venda',
                     'total_records' => 'Registros de venda',
+                    'promo_records' => 'em promoção',
                     'promo_quantity' => 'Qtd. em promoção',
                     'promo_value' => 'Receita em promoção',
                     'regular_quantity' => 'Qtd. fora de promoção',
