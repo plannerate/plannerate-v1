@@ -37,11 +37,6 @@ class TargetStockService
     ];
 
     /**
-     * Tipo de período: 'daily' ou 'monthly'
-     */
-    private string $periodType = 'daily';
-
-    /**
      * Configura os níveis de serviço por classe ABC
      */
     public function setServiceLevels(float $nivelA, float $nivelB, float $nivelC): self
@@ -65,16 +60,6 @@ class TargetStockService
             'B' => $diasB,
             'C' => $diasC,
         ];
-
-        return $this;
-    }
-
-    /**
-     * Configura o tipo de período
-     */
-    public function setPeriodType(string $type): self
-    {
-        $this->periodType = $type; // 'daily' ou 'monthly'
 
         return $this;
     }

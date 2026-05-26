@@ -181,23 +181,6 @@ class SegmentService
     }
 
     /**
-     * Cria um segment para uma shelf
-     *
-     * @param  array<string, mixed>  $data
-     */
-    public function createForShelf(string $shelfId, array $data, ?string $tenantId): bool
-    {
-        return $this->repository->create(array_merge($data, [
-            'shelf_id' => $shelfId,
-            'tenant_id' => $tenantId,
-            'user_id' => auth()->id(),
-            'status' => 'published',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]));
-    }
-
-    /**
      * Cria um segment com dados completos
      *
      * @param  array<string, mixed>  $data

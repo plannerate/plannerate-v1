@@ -3,7 +3,6 @@
 namespace Callcocam\LaravelRaptorPlannerate\Services\Printing;
 
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Services\QRCode\QRCodeService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -145,38 +144,6 @@ class GondolaPrintService
     }
 
     /**
-     * Gera view de um módulo específico
-     */
-    public function generateSingleModuleView(string $sectionId)
-    {
-        $section = Section::with([
-            'shelves' => function ($query) {
-                $query->orderBy('shelf_position', 'asc');
-            },
-            'shelves.segments.layer.product',
-        ])->findOrFail($sectionId);
-
-        $gondola = $section->gondola;
-        $sections = collect([$section]);
-
-        // QR Codes
-        $gondolaQrCode = $this->qrCodeService->generateForGondola($gondola->id);
-        $gondolaQrCode = $this->getImageAsBase64OrUrl($gondolaQrCode);
-
-        // Processar imagens
-        $this->processProductImages($sections);
-
-        $data = [
-            'gondola' => $gondola,
-            'sections' => $sections,
-            'gondolaQrCode' => $gondolaQrCode,
-            'qrCodeService' => $this->qrCodeService,
-        ];
-
-        return view('pdf.gondola.modules', $data);
-    }
-
-    /**
      * Prepara dados da gôndola para visualização
      */
     public function prepareGondolaData(string $gondolaId): array
@@ -272,85 +239,6 @@ class GondolaPrintService
                     })->toArray(),
                 ];
             })->toArray(),
-        ];
-    }
-
-    /**
-     * Prepara dados das seções com medidas precisas
-     */
-    protected function prepareSectionsData(Collection $sections): array
-    {
-        return $sections->map(function ($section) {
-            $totalProducts = 0;
-            $totalFacings = 0;
-
-            foreach ($section->shelves as $shelf) {
-                foreach ($shelf->segments as $segment) {
-                    if ($segment->layer && $segment->layer->product) {
-                        $totalProducts++;
-                        $totalFacings += $segment->layer->quantity ?? 1;
-                    }
-                }
-            }
-
-            return [
-                'id' => $section->id,
-                'name' => $section->name,
-                'ordering' => $section->ordering,
-                'width' => $section->width,
-                'height' => $section->height,
-                'base_height' => $section->base_height,
-                'cremalheira_width' => $section->cremalheira_width,
-                'hole_width' => $section->hole_width,
-                'hole_height' => $section->hole_height,
-                'hole_spacing' => $section->hole_spacing,
-                'num_shelves' => $section->shelves->count(),
-                'total_products' => $totalProducts,
-                'total_facings' => $totalFacings,
-                'shelves' => $section->shelves->map(function ($shelf) {
-                    return [
-                        'id' => $shelf->id,
-                        'shelf_position' => $shelf->shelf_position,
-                        'shelf_height' => $shelf->shelf_height,
-                        'shelf_width' => $shelf->shelf_width,
-                        'shelf_depth' => $shelf->shelf_depth,
-                        'segments_count' => $shelf->segments->count(),
-                    ];
-                })->toArray(),
-            ];
-        })->toArray();
-    }
-
-    /**
-     * Calcula estatísticas da gôndola
-     */
-    protected function calculateStatistics(Gondola $gondola): array
-    {
-        $totalProducts = 0;
-        $totalFacings = 0;
-        $totalShelves = 0;
-
-        foreach ($gondola->sections as $section) {
-            $totalShelves += $section->shelves->count();
-            foreach ($section->shelves as $shelf) {
-                foreach ($shelf->segments as $segment) {
-                    if ($segment->layer && $segment->layer->product) {
-                        $totalProducts++;
-                        $totalFacings += $segment->layer->quantity ?? 1;
-                    }
-                }
-            }
-        }
-
-        return [
-            'total_sections' => $gondola->sections->count(),
-            'total_shelves' => $totalShelves,
-            'total_products' => $totalProducts,
-            'total_facings' => $totalFacings,
-            'total_width' => $gondola->sections->sum('width'),
-            'average_products_per_module' => $gondola->sections->count() > 0
-                ? round($totalProducts / $gondola->sections->count(), 2)
-                : 0,
         ];
     }
 }

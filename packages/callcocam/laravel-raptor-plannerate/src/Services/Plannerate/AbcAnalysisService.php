@@ -3,7 +3,6 @@
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Category;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\MonthlySalesSummary;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
@@ -148,74 +147,6 @@ class AbcAnalysisService
 
         if (empty($codigosErp)) {
             Log::warning('ABC Analysis - Nenhum codigo_erp encontrado na tabela products', [
-                'tenant_id' => $filters['tenant_id'],
-                'product_ids_count' => count($productIds),
-            ]);
-
-            return collect();
-        }
-
-        // Usa codigo_erp para filtrar vendas
-        return $this->analyzeByCodigoErp($codigosErp, $productIds, $tableType, $filters);
-    }
-
-    /**
-     * Executa análise ABC por lista de EANs
-     *
-     * @param  array  $eans  Lista de EANs
-     * @param  string  $tableType  'sales' ou 'monthly_summaries'
-     * @param  array  $filters  Filtros adicionais (deve incluir tenant_id)
-     */
-    public function analyzeByEans(
-        array $eans,
-        string $tableType = 'sales',
-        array $filters = []
-    ): Collection {
-        if (empty($eans)) {
-            Log::warning('ABC Analysis - Lista de EANs vazia');
-
-            return collect();
-        }
-
-        if (! isset($filters['tenant_id']) || empty($filters['tenant_id'])) {
-            Log::error('ABC Analysis - tenant_id é obrigatório para análise por EANs');
-            throw new \InvalidArgumentException('tenant_id é obrigatório para análise ABC');
-        }
-
-        // Busca produtos pelos EANs
-        $products = Product::whereIn('ean', $eans)->get();
-
-        Log::info('ABC Analysis - analyzeByEans', [
-            'tenant_id' => $filters['tenant_id'],
-            'eans_count' => count($eans),
-            'products_found' => $products->count(),
-        ]);
-
-        if ($products->isEmpty()) {
-            Log::warning('ABC Analysis - Nenhum produto encontrado para os EANs', [
-                'eans' => $eans,
-            ]);
-
-            return collect();
-        }
-
-        // Busca codigo_erp diretamente da tabela products (campo direto, não precisa de pivot)
-        // Usa o Model Product que já tem a conexão tenant configurada via UsesTenantDatabase
-        $productIds = $products->pluck('id')->toArray();
-        $codigosErp = Product::query()
-            ->whereIn('id', $productIds)
-            ->whereNotNull('codigo_erp')
-            ->pluck('codigo_erp')
-            ->toArray();
-
-        Log::info('ABC Analysis - codigos_erp encontrados (EANs)', [
-            'tenant_id' => $filters['tenant_id'],
-            'codigos_erp_count' => count($codigosErp),
-            'codigos_erp_sample' => array_slice($codigosErp, 0, 5),
-        ]);
-
-        if (empty($codigosErp)) {
-            Log::warning('ABC Analysis - Nenhum codigo_erp encontrado na tabela products (EANs)', [
                 'tenant_id' => $filters['tenant_id'],
                 'product_ids_count' => count($productIds),
             ]);
@@ -825,8 +756,6 @@ class AbcAnalysisService
         $ultimaVendaDate = $lastSaleData?->last_sale_date ?? null;
         $diasSemVenda = $ultimaVendaDate ? $dataHoje->diffInDays($ultimaVendaDate) : null;
 
-        // TODO: Implementar busca de última compra quando houver tabela
-        $diasSemCompra = null;
         $estoqueAtual = 0;
 
         // Lógica simplificada de status baseada apenas em vendas

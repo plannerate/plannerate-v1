@@ -48,9 +48,6 @@ class ProductRepository
     public function update(object $product, array $data): bool
     {
         try {
-            $width = data_get($data, 'width', $product->width);
-            $height = data_get($data, 'height', $product->height);
-            $depth = data_get($data, 'depth', $product->depth);
             Log::info('✅ Dimensões do produto atualizadas', ['product_id' => $product->id, 'updates' => $data]);
             // has_dimensions não existe como coluna; é derivado de width/height/depth
             unset($data['has_dimensions']);
@@ -68,10 +65,5 @@ class ProductRepository
             ]);
             throw $e;
         }
-    }
-
-    protected function isDimensionValid(mixed $value): bool
-    {
-        return is_numeric($value) && $value > 0;
     }
 }
