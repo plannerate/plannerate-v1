@@ -53,7 +53,7 @@ class AutoPlanogramController extends Controller
             $synthTemplateId = $result->synthTemplateId;
 
             $report = $output->validationReport;
-            $totalProducts = $input->products->count();
+            $totalProducts = $result->totalInputProducts;
 
             // Produtos únicos definitivamente sem espaço: exclui rejeitados de um slot
             // que acabaram colocados em outro slot da mesma categoria.

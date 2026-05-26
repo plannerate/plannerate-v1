@@ -4,7 +4,7 @@ import { useRejectedProductsStore } from '@/composables/plannerate/interactions/
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
 import { selectedTemplateCategoryId } from '@/composables/plannerate/core/useGondolaState';
 import type { RejectedProduct } from '@/composables/plannerate/core/useGondolaState';
-import { ArrowLeftRight, ChevronDown, ChevronUp, GripVertical, Layers, Loader2, MoveHorizontal, Ruler, X } from 'lucide-vue-next';
+import { ArrowLeftRight, ChevronDown, ChevronUp, GripVertical, Layers, Loader2, MoveHorizontal, Ruler, Trash2, X } from 'lucide-vue-next';
 import { type Component, computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
@@ -103,6 +103,8 @@ const reasonMeta = (
         return { icon: MoveHorizontal, label: 'Sem espaço', variant: 'outline' };
     if (reason === 'height_exceeds_shelf')
         return { icon: Ruler, label: 'Altura', variant: 'destructive' };
+    if (reason === 'manually_removed')
+        return { icon: Trash2, label: 'Removido', variant: 'secondary' };
     return { icon: Layers, label: 'Nível', variant: 'secondary' };
 };
 

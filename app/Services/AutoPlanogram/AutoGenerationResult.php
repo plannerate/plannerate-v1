@@ -13,5 +13,7 @@ final class AutoGenerationResult
         public readonly PlanogramOutput $output,
         /** ID do template sintetizado quando a gôndola foi promovida de automático para template-mode */
         public readonly ?string $synthTemplateId,
+        /** Total de produtos únicos passados como entrada ao gerador */
+        public readonly int $totalInputProducts = 0,
     ) {}
 }

@@ -99,6 +99,12 @@ const isSaving = ref(false);
 const lastSavedAt = ref<number | null>(null);
 
 /**
+ * Indica se o último save bem-sucedido continha remoções de produto.
+ * Usado por usePlanogramEditor para recarregar a lista de rejeitados automaticamente.
+ */
+const lastSaveHadRemovals = ref(false);
+
+/**
  * Timer para auto-save com debounce (3 segundos)
  */
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -358,6 +364,14 @@ export function usePlanogramChanges() {
                         preserveScroll: true,
                         preserveState: true,
                         onSuccess: async (page) => {
+                            // Captura antes de limpar: o save continha remoções de produto?
+                            lastSaveHadRemovals.value = Array.from(pendingChanges.value.values()).some(
+                                (c) =>
+                                    c.type === 'product_removal' ||
+                                    (c.type === 'segment_update' && c.data?.deleted_at) ||
+                                    (c.type === 'layer_update' && c.data?.deleted_at),
+                            );
+
                             // Reconciliação com backend (opcional)
                             const response = page?.props || {};
                             const reconciliationData = {
@@ -507,6 +521,7 @@ export function usePlanogramChanges() {
         isNearSaveThreshold,
         changes,
         lastSavedAt,
+        lastSaveHadRemovals,
         autoSaveEnabled,
 
         // Configuração

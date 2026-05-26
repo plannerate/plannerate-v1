@@ -130,6 +130,6 @@ final class AutoGenerationRunner
             }
         }
 
-        return new AutoGenerationResult($output, $synthTemplateId);
+        return new AutoGenerationResult($output, $synthTemplateId, $products->count());
     }
 }

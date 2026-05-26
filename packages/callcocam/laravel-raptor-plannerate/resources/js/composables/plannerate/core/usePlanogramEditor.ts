@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { router } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { calculateAbc } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaAnalysisController';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
 import { usePlanogramChanges } from './usePlanogramChanges';
@@ -67,6 +67,30 @@ export function usePlanogramEditor() {
         recordChange,
         history,
         shelfOps.addProductToShelf,
+    );
+
+    // ========================================================================
+    // AUTO-REFRESH DE PRODUTOS REJEITADOS PÓS-SAVE
+    // ========================================================================
+
+    /**
+     * Sempre que o auto-save (ou save manual via usePlanogramChanges) concluir com
+     * sucesso E o save contiver remoções de produto/segmento/camada, recarrega a
+     * lista de produtos rejeitados automaticamente — sem precisar de F5.
+     *
+     * `lastSavedAt` é atualizado pelo singleton de usePlanogramChanges após cada
+     * save bem-sucedido; `lastSaveHadRemovals` indica se havia remoções naquele
+     * batch, e é zerado no próximo save que não contenha remoções.
+     */
+    watch(
+        () => changes.lastSavedAt.value,
+        (savedAt) => {
+            if (!savedAt) return;
+            if (!changes.lastSaveHadRemovals.value) return;
+            if (!currentGondola.value?.id) return;
+
+            void rejectedOps.fetchRejectedProducts(currentGondola.value.id);
+        },
     );
 
     // ========================================================================
@@ -987,6 +1011,10 @@ export function usePlanogramEditor() {
         if (!success) {
             console.error('❌ Erro ao salvar mudanças');
         }
+
+        // Nota: o recarregamento de rejectedProducts após remoções é feito automaticamente
+        // pelo watch em lastSavedAt/lastSaveHadRemovals, cobrindo tanto saves manuais
+        // quanto auto-saves.
 
         return success;
     }
