@@ -6,8 +6,16 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Spatie\Multitenancy\Jobs\NotTenantAware;
 
-class AppNotification extends Notification implements ShouldQueue
+/**
+ * Notificação genérica do app — canal database + broadcast.
+ *
+ * Implementa NotTenantAware porque pode ser disparada tanto em contexto landlord
+ * (ex: ProcessEanReferenceImageJob, sem tenant ativo) quanto em contexto tenant.
+ * A conexão correta é gerenciada pelo modelo User notificável, não pelo Spatie.
+ */
+class AppNotification extends Notification implements NotTenantAware, ShouldQueue
 {
     use Queueable;
 
