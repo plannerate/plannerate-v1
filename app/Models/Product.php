@@ -163,10 +163,6 @@ class Product extends Model
             return '';
         }
 
-        // if ($domain = app('currentTenant')->domains->first()) {
-        //     return sprintf('%s://%s/storage/%s', request()->getScheme(), $domain->host, $this->url);
-        // }
-
         return Storage::disk('public')->url($this->url);
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Services\Integrations\Support;
 
+use App\Enums\DimensionStatus;
 use App\Models\EanReference;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -206,6 +207,32 @@ class SyncProductsFromEanReferencesService
         $missingAnyDimension = $product->width === null || $product->height === null || $product->depth === null;
         if ($missingAnyDimension) {
             $updates['has_dimensions'] = (bool) $reference->has_dimensions;
+        }
+
+        // Publica o produto se, após os updates, ele tiver width + height + depth.
+        // Mesma lógica de ProductDimensionController::fillProductDimensionsFromReference().
+        $finalWidth = $updates['width'] ?? $product->width;
+        $finalHeight = $updates['height'] ?? $product->height;
+        $finalDepth = $updates['depth'] ?? $product->depth;
+
+        $willHaveDimensions = $finalWidth !== null && $finalHeight !== null && $finalDepth !== null;
+
+        if ($willHaveDimensions) {
+            if (($product->status ?? '') !== 'published') {
+                $updates['status'] = 'published';
+            }
+
+            if (($product->dimension_publish_status ?? '') !== 'published') {
+                $updates['dimension_publish_status'] = 'published';
+            }
+
+            if (! $product->has_dimensions) {
+                $updates['has_dimensions'] = true;
+            }
+
+            if (($product->dimension_status ?? '') !== DimensionStatus::Approved->value) {
+                $updates['dimension_status'] = DimensionStatus::Approved->value;
+            }
         }
 
         return $updates;
