@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search } from 'lucide-vue-next';
+import { Download, Search } from 'lucide-vue-next';
 import { computed, ref, useSlots, watch } from 'vue';
 import TableHeadAnalysis from '@/components/plannerate/analysis/TableHeadAnalysis.vue';
 import TargetStockSelectionPanel from '@/components/plannerate/analysis/target-stock/TargetStockSelectionPanel.vue';
@@ -18,6 +18,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useAnalysisExport } from '@/composables/plannerate/analysis/useAnalysisExport';
 import { useAnalysisFilters } from '@/composables/plannerate/analysis/useAnalysisFilters';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
@@ -42,6 +43,7 @@ const selectedProductId = ref<string | null>(null);
 const slots = useSlots();
 const hasTopSlot = computed(() => Boolean(slots.top));
 const { t } = useT();
+const { exportStockToCsv } = useAnalysisExport();
 
 // Usa o composable compartilhado
 const {
@@ -307,6 +309,17 @@ function handleDecreaseFronts(): void {
                             class="h-7 px-2.5 text-[11px]"
                         >
                             C ({{ classStats.classC }})
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            :title="t('plannerate.analysis.results.export_report_tooltip')"
+                            @click="exportStockToCsv(filteredResults)"
+                            class="h-7 px-2.5 text-[11px]"
+                        >
+                            <Download class="mr-1 size-3" />
+                            {{ t('plannerate.analysis.results.export_report') }}
                         </Button>
                     </div>
                 </div>

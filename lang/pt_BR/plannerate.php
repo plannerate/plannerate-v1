@@ -18,6 +18,8 @@ return [
             'target_stock' => 'Estoque Alvo',
             'all' => 'Todos',
             'clear_all' => 'Limpar Todas as Analises',
+            'export_abc' => 'Exportar Analise ABC (CSV)',
+            'export_stock' => 'Exportar Estoque Alvo (CSV)',
         ],
     ],
     'header' => [
@@ -945,6 +947,8 @@ return [
             'ranking' => 'Ranking',
             'status' => 'Status',
             'status_detail' => 'Detalhe do Status',
+            'export_report' => 'Exportar Relatorio',
+            'export_report_tooltip' => 'Exportar resultados filtrados em CSV',
         ],
         'target_stock_results' => [
             'product_description' => 'Descricao Produto',

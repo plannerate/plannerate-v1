@@ -6,6 +6,7 @@
  * com middleware web, auth, NeedsTenant e SetPermissionTeamContext (igual routes/web.php do tenant).
  */
 
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\AnalysisExportController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Api\ProductDetailsController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Api\ProductImageController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\CategoryController;
@@ -26,7 +27,6 @@ Route::prefix('api')->name('api.')
     ->group(function () {
         // Grupo sem middleware 'tenant.client.redirect' para permitir acesso de clientes (sem redirecionamento) às APIs necessárias para visualização de planogramas publicados, como detalhes de produtos e imagens, mesmo que não tenham acesso ao editor.
 
-
         // Performance Analysis API - ABC e Estoque Alvo
         Route::post('editor/gondolas/{gondola}/analysis/abc', [GondolaAnalysisController::class, 'calculateAbcApi'])
             ->name('editor.gondolas.analysis.abc');
@@ -34,6 +34,12 @@ Route::prefix('api')->name('api.')
             ->name('editor.gondolas.analysis.target-stock');
         Route::delete('editor/gondolas/{gondola}/analysis', [GondolaAnalysisController::class, 'clearAnalysisApi'])
             ->name('editor.gondolas.analysis.clear');
+
+        // Analysis Export API - Relatórios CSV
+        Route::get('editor/gondolas/{gondola}/analysis/abc/export', [AnalysisExportController::class, 'exportAbcCsv'])
+            ->name('editor.gondolas.analysis.abc.export');
+        Route::get('editor/gondolas/{gondola}/analysis/stock/export', [AnalysisExportController::class, 'exportStockCsv'])
+            ->name('editor.gondolas.analysis.stock.export');
 
         // Editor API Routes - Segment Notes
         Route::get('editor/segments/{segment}/notes', [SegmentNoteController::class, 'index'])

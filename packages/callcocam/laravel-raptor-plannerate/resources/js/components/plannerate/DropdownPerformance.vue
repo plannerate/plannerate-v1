@@ -57,6 +57,25 @@
                 <Trash2 class="mr-2 size-4" />
                 {{ t('plannerate.dropdown.performance.clear_all') }}
             </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <!-- Exportar Relatórios CSV -->
+            <DropdownMenuItem
+                @click="handleExportAbc"
+                :disabled="!performance.abc.hasData.value"
+            >
+                <Download class="mr-2 size-4 text-green-600" />
+                {{ t('plannerate.dropdown.performance.export_abc') }}
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+                @click="handleExportStock"
+                :disabled="!performance.targetStock.hasData.value"
+            >
+                <Download class="mr-2 size-4 text-blue-600" />
+                {{ t('plannerate.dropdown.performance.export_stock') }}
+            </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
     <!-- Performance Modal -->
@@ -64,9 +83,11 @@
         :analysis="props.analysis" />
 </template>
 <script setup lang="ts">
-import { ChevronDown, Eye, EyeOff, Gauge, Trash2 } from 'lucide-vue-next';
+import { ChevronDown, Download, Eye, EyeOff, Gauge, Trash2 } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import Performance from '@/components/plannerate/header/Performance.vue';
+import type { AbcResult } from '@/components/plannerate/analysis/abc/types';
+import type { TargetStockResult } from '@/components/plannerate/analysis/target-stock/types';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -75,7 +96,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
+import { useAnalysisExport } from '@/composables/plannerate/analysis/useAnalysisExport';
 import { usePerformanceIndicators } from '@/composables/plannerate/analysis/usePerformanceIndicators';
 import { useT } from '@/composables/useT';
 import type { AbcAnalysis, Gondola, StockAnalysis } from '@/types/planogram';
@@ -92,6 +113,8 @@ const props = defineProps<{
 
 const showPerformanceModal = ref(false);
 const { t } = useT();
+const { exportAbcToCsv, exportStockToCsv } = useAnalysisExport();
+
 // Performance indicators
 const performance = usePerformanceIndicators();
 
@@ -212,4 +235,26 @@ const planogram = computed(() => {
 
     return null;
 });
+
+/** Exporta os resultados ABC já carregados (dados completos da análise salva). */
+function handleExportAbc(): void {
+    const results = props.analysis?.abc?.results;
+
+    if (!results?.length) {
+        return;
+    }
+
+    exportAbcToCsv(results as AbcResult[]);
+}
+
+/** Exporta os resultados de Estoque Alvo já carregados (dados completos da análise salva). */
+function handleExportStock(): void {
+    const results = props.analysis?.stock?.results;
+
+    if (!results?.length) {
+        return;
+    }
+
+    exportStockToCsv(results as TargetStockResult[]);
+}
 </script>

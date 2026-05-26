@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search } from 'lucide-vue-next';
+import { Download, Search } from 'lucide-vue-next';
 import { computed, ref, useSlots, watch } from 'vue';
 import AbcSelectionPanel from '@/components/plannerate/analysis/abc/AbcSelectionPanel.vue';
 import type { AbcResult } from '@/components/plannerate/analysis/abc/types';
@@ -15,6 +15,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useAnalysisExport } from '@/composables/plannerate/analysis/useAnalysisExport';
 import { useAnalysisFilters } from '@/composables/plannerate/analysis/useAnalysisFilters';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
@@ -38,6 +39,7 @@ const editor = usePlanogramEditor();
 const selection = usePlanogramSelection();
 const filterByClass = ref<'all' | 'A' | 'B' | 'C' | 'retirarMix'>('all');
 const { t } = useT();
+const { exportAbcToCsv } = useAnalysisExport();
 
 // Usa o composable compartilhado (sem o filterByClass que será customizado)
 const {
@@ -330,6 +332,17 @@ async function handleRemoveFromPlanogram(productId: string): Promise<void> {
                             class="h-7 px-2.5 text-[11px]"
                         >
                             {{ t('plannerate.analysis.results.remove_from_mix') }} ({{ stats.retirarMix }})
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            :title="t('plannerate.analysis.results.export_report_tooltip')"
+                            @click="exportAbcToCsv(displayedResults)"
+                            class="h-7 px-2.5 text-[11px]"
+                        >
+                            <Download class="mr-1 size-3" />
+                            {{ t('plannerate.analysis.results.export_report') }}
                         </Button>
                     </div>
                 </div>

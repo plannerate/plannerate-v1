@@ -9,6 +9,7 @@
  *   - useAnalysisFilters: filtro, busca e ordenação genéricos para listas
  */
 export * from './useAnalysisFilters';
+export * from './useAnalysisExport';
 export * from './useEanAnalysisStore';
 export * from './useAbcClassification';
 export * from './useTargetStockAnalysis';
