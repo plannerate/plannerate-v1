@@ -12,7 +12,7 @@ use App\Models\Tenant;
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
+use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\ShelfStructureService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -67,33 +67,15 @@ class SectionController extends Controller
                 'status' => 'published',
             ]);
 
-            // Criar prateleiras padrão
-            $numShelves = $validated['num_shelves'] ?? 4;
-            $shelfHeight = $validated['shelf_height'] ?? 4;
-            $shelfWidth = $validated['shelf_width'] ?? 130;
-            $shelfDepth = $validated['shelf_depth'] ?? 40;
-            $productType = $validated['product_type'] ?? 'normal';
-
-            // Calcular espaçamento vertical
-            $baseHeight = $validated['base_height'] ?? 17;
-            $availableHeight = $validated['height'] - $baseHeight;
-            $shelfSpacing = $numShelves > 0 ? $availableHeight / $numShelves : 0;
-
-            for ($i = 0; $i < $numShelves; $i++) {
-                Shelf::create([
-                    'tenant_id' => Tenant::current()?->getKey(),
-                    'user_id' => auth()->id(),
-                    'section_id' => $section->id,
-                    'code' => 'SHELF-'.$section->id.'-'.($i + 1),
-                    'shelf_height' => $shelfHeight,
-                    'shelf_width' => $shelfWidth,
-                    'shelf_depth' => $shelfDepth,
-                    'shelf_position' => $baseHeight + (($i + 1) * $shelfSpacing), // Base + espaçamento proporcional
-                    'ordering' => $i,
-                    'product_type' => $productType,
-                    'status' => 'published',
-                ]);
-            }
+            // Cria as prateleiras distribuídas pelos furos da cremalheira.
+            // Usa a mesma fonte de matemática da criação manual/automática de gôndolas
+            // (ShelfStructureService) para que a estrutura física seja idêntica entre os fluxos.
+            app(ShelfStructureService::class)->createShelves($section, [
+                'shelf_width' => $validated['shelf_width'] ?? 130,
+                'shelf_height' => $validated['shelf_height'] ?? 4,
+                'shelf_depth' => $validated['shelf_depth'] ?? 40,
+                'product_type' => $validated['product_type'] ?? 'normal',
+            ], (int) ($validated['num_shelves'] ?? 4));
 
             $this->plannerateTenantDatabase()->commit();
 
