@@ -116,4 +116,28 @@ class LayerRepository
             throw $e;
         }
     }
+
+    /**
+     * Retorna todas as layers de um segment (incluindo soft-deletadas).
+     *
+     * @return object[]
+     */
+    public function findAllBySegmentId(string $segmentId): array
+    {
+        try {
+            return $this->plannerateTenantTable('layers')
+                ->where('segment_id', $segmentId)
+                ->get()
+                ->all();
+        } catch (\Throwable $e) {
+            Log::error('Plannerate repository failed', [
+                'repository' => self::REPO,
+                'method' => 'findAllBySegmentId',
+                'segment_id' => $segmentId,
+                'connection' => $this->plannerateTenantConnectionName(),
+                'message' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
 }

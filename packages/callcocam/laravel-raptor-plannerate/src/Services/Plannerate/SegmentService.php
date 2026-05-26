@@ -8,6 +8,8 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
+use Callcocam\LaravelRaptorPlannerate\Events\LayerRemovedEvent;
+use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\GondolaRepository;
 use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\LayerRepository;
 use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\SegmentRepository;
 use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\ShelfRepository;
@@ -22,11 +24,15 @@ class SegmentService
     public function __construct(
         private SegmentRepository $repository,
         private LayerRepository $layerRepository,
-        private ShelfRepository $shelfRepository
+        private ShelfRepository $shelfRepository,
+        private GondolaRepository $gondolaRepository,
     ) {}
 
     /**
-     * Cria ou atualiza um segment baseado no tipo de mudança
+     * Cria ou atualiza um segment baseado no tipo de mudança.
+     *
+     * O array $change deve conter 'gondolaId' para que o soft-delete de segmentos
+     * dispare LayerRemovedEvent para cada layer filha.
      *
      * @param  array<string, mixed>  $change
      */
@@ -38,7 +44,7 @@ class SegmentService
             'segment_copy' => $this->copySegment($change['entityId'], $change['data']),
             'segment_transfer' => $this->transferSegment($change['entityId'], $change['data']),
             'segment_reorder' => $this->reorderSegment($change['entityId'], $change['data']),
-            'segment_update' => $this->update($change['entityId'], $change['data']),
+            'segment_update' => $this->update($change['entityId'], $change['data'], $change['gondolaId'] ?? null),
             default => false
         };
     }
@@ -245,11 +251,15 @@ class SegmentService
     }
 
     /**
-     * Atualiza um segment
+     * Atualiza um segment.
+     *
+     * Quando deleted_at é definido (soft delete = remoção de produto pelo usuário),
+     * busca todas as layers filhas do segment e dispara LayerRemovedEvent para cada uma —
+     * permitindo que listeners externos (ex.: inserção em rejeitados) reajam corretamente.
      *
      * @param  array<string, mixed>  $data
      */
-    public function update(string $segmentId, array $data): bool
+    public function update(string $segmentId, array $data, ?string $gondolaId = null): bool
     {
         // Campos permitidos (inclui shelf_id para mover segmento entre shelves)
         $allowedFields = ['shelf_id', 'width', 'height', 'ordering', 'alignment', 'spacing', 'quantity', 'deleted_at'];
@@ -258,6 +268,16 @@ class SegmentService
         if (empty($updates)) {
             return false;
         }
+
+        // Verifica se é um soft delete antes de aplicar
+        $isBeingRemoved = isset($updates['deleted_at']) && $updates['deleted_at'] !== null;
+
+        Log::debug('[LayerEvent] 3/6 SegmentService::update', [
+            'segment_id' => $segmentId,
+            'gondola_id' => $gondolaId,
+            'is_being_removed' => $isBeingRemoved,
+            'updates_keys' => array_keys($updates),
+        ]);
 
         // Normaliza deleted_at
         if (isset($updates['deleted_at']) && is_string($updates['deleted_at'])) {
@@ -268,14 +288,68 @@ class SegmentService
 
         $updated = $this->repository->update($segmentId, $updates);
 
-        // Log de movimentação entre shelves
-        if ($updated > 0 && isset($updates['shelf_id'])) {
-            // Log::info('📦 Segmento movido entre prateleiras', [
-            //     'segment_id' => $segmentId,
-            //     'new_shelf_id' => $updates['shelf_id'],
-            // ]);
+        Log::debug('[LayerEvent] 3/6 SegmentService::update resultado', [
+            'segment_id' => $segmentId,
+            'rows_updated' => $updated,
+            'is_being_removed' => $isBeingRemoved,
+        ]);
+
+        // Ao soft-deletar o segment, dispara evento para cada layer filha
+        if ($updated > 0 && $isBeingRemoved) {
+            $this->dispatchEventsForSegmentLayers($segmentId, $gondolaId);
         }
 
         return $updated > 0;
+    }
+
+    /**
+     * Busca todas as layers do segment e dispara LayerRemovedEvent para cada uma.
+     *
+     * Falhas ao buscar a gôndola apenas logam um warning — não interrompem o fluxo.
+     */
+    private function dispatchEventsForSegmentLayers(string $segmentId, ?string $gondolaId): void
+    {
+        if ($gondolaId === null || $gondolaId === '') {
+            Log::warning('[LayerEvent] 4/6 dispatchEventsForSegmentLayers: gondolaId vazio, abortando', [
+                'segment_id' => $segmentId,
+            ]);
+
+            return;
+        }
+
+        $gondola = $this->gondolaRepository->find($gondolaId);
+
+        Log::debug('[LayerEvent] 4/6 dispatchEventsForSegmentLayers: busca da gôndola', [
+            'gondola_id' => $gondolaId,
+            'gondola_found' => $gondola !== null,
+            'generation_mode' => $gondola->generation_mode ?? null,
+        ]);
+
+        if (! $gondola) {
+            Log::warning('[LayerEvent] 4/6 LayerRemovedEvent não disparado: gôndola não encontrada', [
+                'gondola_id' => $gondolaId,
+                'segment_id' => $segmentId,
+            ]);
+
+            return;
+        }
+
+        $layers = $this->layerRepository->findAllBySegmentId($segmentId);
+
+        Log::debug('[LayerEvent] 4/6 dispatchEventsForSegmentLayers: layers encontradas', [
+            'segment_id' => $segmentId,
+            'layers_count' => count($layers),
+        ]);
+
+        foreach ($layers as $layer) {
+            Log::info('[LayerEvent] 4/6 Disparando LayerRemovedEvent (via segment)', [
+                'layer_id' => $layer->id ?? null,
+                'product_id' => $layer->product_id ?? null,
+                'gondola_id' => $gondola->id,
+                'generation_mode' => $gondola->generation_mode,
+            ]);
+
+            LayerRemovedEvent::dispatch($layer, $gondola);
+        }
     }
 }
