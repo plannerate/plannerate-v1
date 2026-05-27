@@ -262,6 +262,8 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
         // ── System Logs ───────────────────────────────────────
         Route::get('system-logs', [Tenant\SystemLogController::class, 'index'])
             ->name('system-logs.index');
+        Route::get('system-logs/download', [Tenant\SystemLogController::class, 'download'])
+            ->name('system-logs.download');
         Route::delete('system-logs', [Tenant\SystemLogController::class, 'clear'])
             ->name('system-logs.clear');
 

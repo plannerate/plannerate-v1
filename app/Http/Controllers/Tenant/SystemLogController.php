@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SystemLogController extends Controller
 {
@@ -52,6 +53,52 @@ class SystemLogController extends Controller
             ],
             'levels' => ['debug', 'info', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency'],
             'files' => $logFiles,
+        ]);
+    }
+
+    /**
+     * Exporta as entradas filtradas do log selecionado como arquivo de texto para download.
+     */
+    public function download(Request $request, SystemLogService $systemLogService): StreamedResponse
+    {
+        $this->authorize('viewAny', Product::class);
+
+        $search = trim((string) $request->query('search', ''));
+        $level = trim(strtolower((string) $request->query('level', '')));
+        $keyOnly = $request->boolean('key_only');
+        $from = trim((string) $request->query('from', ''));
+        $to = trim((string) $request->query('to', ''));
+        $selectedFile = trim((string) $request->query('file', 'laravel.log'));
+
+        $logFiles = $this->availableLogFiles();
+        if (! in_array($selectedFile, $logFiles, true)) {
+            $selectedFile = 'laravel.log';
+        }
+
+        $path = storage_path('logs/'.$selectedFile);
+        $entries = $systemLogService->readEntries($path, 5000);
+        $filteredEntries = $systemLogService->filterEntries($entries, $search, $level, $keyOnly, $from, $to);
+
+        $lines = array_map(static function (array $entry): string {
+            return sprintf(
+                '[%s] %s.%s: %s',
+                $entry['timestamp'] ?? '',
+                $entry['environment'] ?? '',
+                strtoupper((string) ($entry['level'] ?? '')),
+                $entry['message'] ?? '',
+            );
+        }, array_reverse($filteredEntries));
+
+        $downloadName = sprintf(
+            '%s-%s.log',
+            pathinfo($selectedFile, PATHINFO_FILENAME),
+            now()->format('Ymd-His'),
+        );
+
+        return response()->streamDownload(function () use ($lines): void {
+            echo implode(PHP_EOL, $lines).PHP_EOL;
+        }, $downloadName, [
+            'Content-Type' => 'text/plain; charset=utf-8',
         ]);
     }
 

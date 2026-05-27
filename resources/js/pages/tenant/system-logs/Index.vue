@@ -38,6 +38,7 @@ const props = defineProps<{
 const { t } = useT();
 const indexPath = SystemLogController.index.url().replace(/^\/\/[^/]+/, '');
 const clearPath = SystemLogController.clear.url().replace(/^\/\/[^/]+/, '');
+const downloadPath = SystemLogController.download.url().replace(/^\/\/[^/]+/, '');
 const form = ref({
     search: props.filters.search,
     file: props.filters.file,
@@ -71,6 +72,81 @@ const clearHref = computed(() => {
 
     return params.toString() === '' ? clearPath : `${clearPath}?${params.toString()}`;
 });
+
+/**
+ * Monta a query string com os filtros atualmente aplicados (vindos das props),
+ * usada tanto para o download quanto para refletir o que está sendo exibido.
+ */
+const appliedFilterParams = computed(() => {
+    const params = new URLSearchParams();
+
+    if (props.filters.file !== '') {
+        params.set('file', props.filters.file);
+    }
+    if (props.filters.search !== '') {
+        params.set('search', props.filters.search);
+    }
+    if (props.filters.level !== '') {
+        params.set('level', props.filters.level);
+    }
+    if (props.filters.from !== '') {
+        params.set('from', props.filters.from);
+    }
+    if (props.filters.to !== '') {
+        params.set('to', props.filters.to);
+    }
+    if (props.filters.key_only) {
+        params.set('key_only', '1');
+    }
+
+    return params;
+});
+
+/**
+ * URL de download do log respeitando os filtros aplicados.
+ */
+const downloadHref = computed(() => {
+    const query = appliedFilterParams.value.toString();
+
+    return query === '' ? downloadPath : `${downloadPath}?${query}`;
+});
+
+/**
+ * Reconstrói as entradas exibidas em texto, em ordem cronológica, para copiar.
+ */
+function buildLogText(): string {
+    return [...props.entries]
+        .reverse()
+        .map((entry) => `[${entry.timestamp}] ${entry.environment}.${entry.level.toUpperCase()}: ${entry.message}`)
+        .join('\n');
+}
+
+const copied = ref(false);
+
+/**
+ * Copia as entradas filtradas para a área de transferência.
+ */
+async function copyLogs(): Promise<void> {
+    const text = buildLogText();
+
+    try {
+        await navigator.clipboard.writeText(text);
+    } catch {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+    }
+
+    copied.value = true;
+    window.setTimeout(() => {
+        copied.value = false;
+    }, 2000);
+}
 
 function formatDateTimeLocal(date: Date): string {
     const year = date.getFullYear();
@@ -134,9 +210,25 @@ const pageMeta = useCrudPageMeta({
                     <Badge variant="outline">{{ t('app.tenant.system-logs.summary_total', { total: String(summary.total) }) }}</Badge>
                     <Badge variant="secondary">{{ t('app.tenant.system-logs.summary_filtered', { filtered: String(summary.filtered) }) }}</Badge>
                 </div>
-                <DeleteButton :href="clearHref" :label="props.filters.file" :require-confirm-word="true">
-                    {{ t('app.tenant.system-logs.clear_button') }}
-                </DeleteButton>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button
+                        type="button"
+                        class="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium text-foreground transition hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50"
+                        :disabled="entries.length === 0"
+                        @click="copyLogs"
+                    >
+                        {{ copied ? t('app.tenant.system-logs.copied_feedback') : t('app.tenant.system-logs.copy_button') }}
+                    </button>
+                    <a
+                        :href="downloadHref"
+                        class="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium text-foreground transition hover:bg-muted/50"
+                    >
+                        {{ t('app.tenant.system-logs.download_button') }}
+                    </a>
+                    <DeleteButton :href="clearHref" :label="props.filters.file" :require-confirm-word="true">
+                        {{ t('app.tenant.system-logs.clear_button') }}
+                    </DeleteButton>
+                </div>
             </div>
 
             <form @submit.prevent="applyFilters" class="rounded-xl border border-sidebar-border/70 bg-background p-4 dark:border-sidebar-border">
