@@ -64,7 +64,7 @@ class SlotPlanBuilder
      *  - há uma categoria precedente com slot disponível para compartilhar
      * Apenas UMA micro-categoria compartilha por slot predecessor (evita superlotação).
      */
-    private const MICRO_CATEGORY_WIDTH_THRESHOLD = 0.35;
+    public const MICRO_CATEGORY_WIDTH_THRESHOLD = 0.35;
 
     /**
      * Papéis que preferem zona quente (eye/hand).

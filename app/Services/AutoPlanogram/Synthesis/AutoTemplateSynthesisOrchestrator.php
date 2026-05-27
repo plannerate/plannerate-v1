@@ -231,6 +231,28 @@ final class AutoTemplateSynthesisOrchestrator
             'demanda_excede_fisico' => $numModulesNeeded > $numModulesPhysical,
         ]);
 
+        // Quando a demanda excede o físico, loga quais categorias estão sendo comprimidas
+        // para facilitar diagnóstico de produtos rejeitados e slots mal distribuídos.
+        if ($numModulesNeeded > $numModulesPhysical && $summaries->isNotEmpty()) {
+            $slotsDisponiveis = $numModulesPhysical * $shelvesPerModule;
+            $compressao = $summaries->map(function (CategoryAbcSummary $s) use ($effectiveShelfWidth): array {
+                $facings = SlotPlanBuilder::ABC_MIN_FACINGS[$s->dominantAbcClass ?? ''] ?? SlotPlanBuilder::ABC_MIN_FACINGS[''];
+
+                return [
+                    'category_id' => $s->categoryId,
+                    'total_width_cm' => round($s->totalWidth, 1),
+                    'slots_demandados' => max(1, (int) ceil(($s->totalWidth * $facings) / $effectiveShelfWidth)),
+                ];
+            })->sortByDesc('slots_demandados')->take(10)->values()->toArray();
+
+            Log::warning('AutoTemplateSynthesisOrchestrator: compressão ativa — demanda excede capacidade física', [
+                'slots_demandados' => $totalDemandedSlots,
+                'slots_fisicos' => $slotsDisponiveis,
+                'excesso_slots' => $totalDemandedSlots - $slotsDisponiveis,
+                'top_categorias_por_demanda' => $compressao,
+            ]);
+        }
+
         return $numModules;
     }
 

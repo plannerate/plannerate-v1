@@ -143,6 +143,24 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             ->orderBy('ordering')
             ->get();
 
+        // Pré-scan: detecta posições (module_number, shelf_order) com múltiplos slots.
+        // O primeiro slot de cada prateleira compartilhada precisa reservar espaço para o seguinte,
+        // caso contrário o expandFacings consumirá toda a largura e a micro-categoria ficará sem espaço.
+        $sharedShelfFirstSlotIds = []; // [slot_id => true]
+        $positionSlotCounts = [];
+        foreach ($slots as $s) {
+            $posKey = $s->module_number.'_'.$s->shelf_order;
+            $positionSlotCounts[$posKey] = ($positionSlotCounts[$posKey] ?? 0) + 1;
+        }
+        $seenSharedPositions = [];
+        foreach ($slots as $s) {
+            $posKey = $s->module_number.'_'.$s->shelf_order;
+            if (($positionSlotCounts[$posKey] ?? 1) >= 2 && ! isset($seenSharedPositions[$posKey])) {
+                $sharedShelfFirstSlotIds[$s->id] = true;
+                $seenSharedPositions[$posKey] = true;
+            }
+        }
+
         foreach ($slots as $slot) {
             $this->applySlotOverride($slot);
 
@@ -202,8 +220,26 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             // após o espaço já ocupado pelo primeiro, adensando micro-categorias no espaço livre.
             $shelfId = $shelf->getKey();
             $alreadyOccupied = (float) ($occupiedPerShelf[$shelfId] ?? 0.0);
-            $available = max(0.0, $this->getShelfAvailableWidth($section) - $alreadyOccupied);
+            $shelfTotalWidth = $this->getShelfAvailableWidth($section);
+            $available = max(0.0, $shelfTotalWidth - $alreadyOccupied);
             $startPosition = (int) round($alreadyOccupied);
+
+            // Reserva de espaço para prateleira compartilhada: quando este é o PRIMEIRO slot
+            // de uma prateleira que tem dois slots (primário + micro), limita o disponível para
+            // que o expandFacings não consuma 100% da largura antes da micro-categoria ser processada.
+            // A mesma fração (MICRO_CATEGORY_WIDTH_THRESHOLD) usada pelo SlotPlanBuilder para
+            // detectar micro-categorias é usada aqui como cota mínima reservada para elas.
+            if (isset($sharedShelfFirstSlotIds[$slot->id]) && $alreadyOccupied < 1.0) {
+                $reservedForMicro = $shelfTotalWidth * SlotPlanBuilder::MICRO_CATEGORY_WIDTH_THRESHOLD;
+                $available = max(0.0, $available - $reservedForMicro);
+                Log::debug('TemplatePlacementEngine: espaço reservado para categoria compartilhada', [
+                    'slot_id' => $slot->id,
+                    'category_id' => $slot->category_id,
+                    'shelf_total_cm' => round($shelfTotalWidth, 1),
+                    'reservado_cm' => round($reservedForMicro, 1),
+                    'disponivel_apos_reserva_cm' => round($available, 1),
+                ]);
+            }
 
             $slotResult = $this->distributeInShelf($ordered, $section, $shelf, $slot, $available, $startPosition);
 
@@ -863,18 +899,31 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 ];
                 $occupied += $width;
             } else {
-                // Log de diagnóstico: prateleira vazia rejeitando produto (anomalia de min_facings).
-                // Indica min_facings alto demais para a largura do produto vs. capacidade do slot.
+                // Log de diagnóstico quando o slot está vazio mas o produto não coube.
                 if ($occupied < 0.01) {
-                    Log::debug('TemplatePlacementEngine: produto rejeitado em prateleira vazia', [
-                        'product_id' => $product->id,
-                        'min_facings' => $facing,
-                        'singleWidth' => $singleWidth,
-                        'width_necessaria' => $width,
-                        'available' => $available,
-                        'slot_id' => $slot->id,
-                        'dica' => 'Verificar min_facings do slot ou width do produto.',
-                    ]);
+                    if ($available <= 0.0) {
+                        // Slot sem espaço algum: categoria primária expandiu até 100% antes da reserva
+                        // ser aplicada, ou erro de adensamento no SlotPlanBuilder.
+                        Log::debug('TemplatePlacementEngine: produto rejeitado — slot sem espaço (possível adensamento mal planejado)', [
+                            'product_id' => $product->id,
+                            'singleWidth' => $singleWidth,
+                            'width_necessaria' => $width,
+                            'available' => 0.0,
+                            'slot_id' => $slot->id,
+                            'categoria' => $slot->category_id,
+                        ]);
+                    } else {
+                        // Slot com espaço, mas produto é mais largo que o disponível.
+                        Log::debug('TemplatePlacementEngine: produto rejeitado — mais largo que espaço disponível no slot', [
+                            'product_id' => $product->id,
+                            'min_facings' => $facing,
+                            'singleWidth' => $singleWidth,
+                            'width_necessaria' => $width,
+                            'available' => $available,
+                            'slot_id' => $slot->id,
+                            'dica' => 'Verificar min_facings do slot ou width do produto.',
+                        ]);
+                    }
                 }
 
                 $rejected->push([
