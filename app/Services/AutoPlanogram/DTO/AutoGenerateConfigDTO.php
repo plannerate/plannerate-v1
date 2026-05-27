@@ -67,6 +67,22 @@ class AutoGenerateConfigDTO
 
         /** Limite de participação por subcategoria (%) — null = sem limite */
         public readonly ?int $maxSharePerSubcategory = null,
+
+        /**
+         * Corte acumulado para classificação A (padrão 80%).
+         * Produtos que representam até $abcCutoffA do volume total são classe A.
+         */
+        public readonly float $abcCutoffA = 0.80,
+
+        /**
+         * Corte acumulado para classificação B (padrão 90%).
+         * Produtos entre $abcCutoffA e $abcCutoffB são classe B; acima disso, classe C.
+         *
+         * Padrão aumentado de 0.85 → 0.90: com a faixa B em 10% (vs. 5% anterior),
+         * mais produtos recebem classificação B, evitando distorções na distribuição
+         * quando poucos itens dominam >80% do volume (caso típico de mercearia seca).
+         */
+        public readonly float $abcCutoffB = 0.90,
     ) {}
 
     /**
@@ -91,6 +107,8 @@ class AutoGenerateConfigDTO
             maxSharePerSku: isset($data['max_share_per_sku']) ? (int) $data['max_share_per_sku'] : null,
             maxSharePerBrand: isset($data['max_share_per_brand']) ? (int) $data['max_share_per_brand'] : null,
             maxSharePerSubcategory: isset($data['max_share_per_subcategory']) ? (int) $data['max_share_per_subcategory'] : null,
+            abcCutoffA: (float) ($data['abc_cutoff_a'] ?? 0.80),
+            abcCutoffB: (float) ($data['abc_cutoff_b'] ?? 0.90),
         );
     }
 
@@ -116,6 +134,8 @@ class AutoGenerateConfigDTO
             'max_share_per_sku' => $this->maxSharePerSku,
             'max_share_per_brand' => $this->maxSharePerBrand,
             'max_share_per_subcategory' => $this->maxSharePerSubcategory,
+            'abc_cutoff_a' => $this->abcCutoffA,
+            'abc_cutoff_b' => $this->abcCutoffB,
         ];
     }
 }

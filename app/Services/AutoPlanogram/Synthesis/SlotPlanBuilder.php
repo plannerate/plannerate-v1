@@ -51,6 +51,22 @@ class SlotPlanBuilder
     public const ABC_MIN_FACINGS = ['A' => 1, 'B' => 1, 'C' => 1, '' => 1];
 
     /**
+     * Limiar de micro-categoria: subcategoria cujo totalWidth é inferior a esta fração da largura
+     * da prateleira é considerada "micro" e compartilha a prateleira da categoria precedente,
+     * adensando o uso do espaço livre em vez de monopolizar uma prateleira inteira.
+     *
+     * Exemplo (shelfWidth=96cm): threshold = 96 × 0.35 = 33.6 cm.
+     * Uma categoria com 10 produtos × 2 cm cada (totalWidth=20 cm) é micro → compartilhada.
+     *
+     * O compartilhamento só ocorre quando:
+     *  - slotCount == 1 (a categoria não recebeu slots extras via overflow-routing)
+     *  - totalWidth > 0 (há dados de largura — sem fallback por quantity)
+     *  - há uma categoria precedente com slot disponível para compartilhar
+     * Apenas UMA micro-categoria compartilha por slot predecessor (evita superlotação).
+     */
+    private const MICRO_CATEGORY_WIDTH_THRESHOLD = 0.35;
+
+    /**
      * Papéis que preferem zona quente (eye/hand).
      */
     private const HOT_ROLES = [
@@ -275,6 +291,15 @@ class SlotPlanBuilder
         // 6. Montar entradas do plano
         $entries = [];
         $slotIndex = 0;
+        /**
+         * Último slot físico consumido — usado para compartilhamento de micro-categorias.
+         * null = nenhum slot disponível para compartilhar ainda.
+         * Resetado para null depois de cada compartilhamento, para que no máximo UMA
+         * micro-categoria por prateleira compartilhe (evita superlotação).
+         *
+         * @var array{module: int, shelf_order: int, zone: string, zone_priority: int}|null
+         */
+        $lastConsumedSlot = null;
 
         foreach ($withDemand->values() as $i => $item) {
             $count = $slotCounts[$i] ?? 1;
@@ -285,12 +310,59 @@ class SlotPlanBuilder
                 $settings->maxFacings,
             );
 
+            // Micro-categoria: compartilha a prateleira da categoria precedente para adensar
+            // o espaço livre em vez de monopolizar uma prateleira inteira.
+            // Condição: exatamente 1 slot demandado (sem extras via overflow), largura real
+            // conhecida e menor que o limiar, e há uma prateleira precedente disponível.
+            $isMicro = $hasSomeWidth
+                && $count === 1
+                && $item['summary']->totalWidth > 0
+                && $item['summary']->totalWidth < max($shelfWidth, 1.0) * self::MICRO_CATEGORY_WIDTH_THRESHOLD
+                && $lastConsumedSlot !== null;
+
+            if ($isMicro) {
+                // Compartilha o slot anterior: mesmas coordenadas físicas, categoria diferente.
+                // O engine posiciona os produtos desta categoria a partir do espaço livre
+                // deixado pela categoria anterior (via $occupiedPerShelf no TemplatePlacementEngine).
+                $entries[] = new SlotPlanEntry(
+                    categoryId: $item['category']->id,
+                    moduleNumber: $lastConsumedSlot['module'],
+                    shelfOrder: $lastConsumedSlot['shelf_order'],
+                    minFacings: $minFacings,
+                    visualCriteria: $this->buildVisualCriteria(),
+                    zone: $lastConsumedSlot['zone'],
+                    roleOverride: $item['role'],
+                    maxFacings: $settings->maxFacings > 0 ? $settings->maxFacings : null,
+                    facingExpansion: $settings->facingExpansion,
+                    useTargetStock: $settings->useTargetStock,
+                    spaceFallback: $settings->spaceFallback,
+                    maxSharePerSku: $settings->maxSharePerSku,
+                    maxSharePerBrand: $settings->maxSharePerBrand,
+                    maxSharePerSubcategory: $settings->maxSharePerSubcategory,
+                );
+
+                Log::debug('SlotPlanBuilder: micro-categoria adensada em prateleira compartilhada', [
+                    'category_id' => $item['category']->id,
+                    'total_width_cm' => $item['summary']->totalWidth,
+                    'threshold_cm' => round(max($shelfWidth, 1.0) * self::MICRO_CATEGORY_WIDTH_THRESHOLD, 1),
+                    'shared_module' => $lastConsumedSlot['module'],
+                    'shared_shelf' => $lastConsumedSlot['shelf_order'],
+                ]);
+
+                // Após compartilhar, reseta o slot disponível: apenas 1 micro-categoria por prateleira.
+                $lastConsumedSlot = null;
+
+                continue;
+            }
+
             for ($s = 0; $s < $count; $s++) {
                 if ($slotIndex >= count($activeSlots)) {
                     break;
                 }
 
                 $slot = $activeSlots[$slotIndex++];
+                $lastConsumedSlot = $slot; // atualiza para possível compartilhamento posterior
+
                 $entries[] = new SlotPlanEntry(
                     categoryId: $item['category']->id,
                     moduleNumber: $slot['module'],

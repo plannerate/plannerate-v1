@@ -125,6 +125,15 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $allPlacedExplanations = [];
         /** @var list<string> IDs de slots do template sem candidatos nesta geração */
         $emptySlotIds = [];
+        /**
+         * Largura já ocupada por prateleira (shelfId → float em cm).
+         *
+         * Permite que múltiplos slots (de categorias diferentes) compartilhem a mesma
+         * prateleira física — micro-categorias são adensadas no espaço livre de categorias
+         * já processadas na mesma prateleira.  O segundo slot começa após $occupiedPerShelf[id].
+         */
+        /** @var array<string, float> */
+        $occupiedPerShelf = [];
 
         $slots = $subtemplate->slots()
             ->withoutGlobalScope(TenantScope::class)
@@ -188,8 +197,19 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 })->values();
             }
 
-            $available = $this->getShelfAvailableWidth($section);
-            $slotResult = $this->distributeInShelf($ordered, $section, $shelf, $slot, $available);
+            // Suporte a prateleiras compartilhadas: múltiplos slots (de categorias diferentes)
+            // podem apontar para o mesmo par (module_number, shelf_order). O segundo slot começa
+            // após o espaço já ocupado pelo primeiro, adensando micro-categorias no espaço livre.
+            $shelfId = $shelf->getKey();
+            $alreadyOccupied = (float) ($occupiedPerShelf[$shelfId] ?? 0.0);
+            $available = max(0.0, $this->getShelfAvailableWidth($section) - $alreadyOccupied);
+            $startPosition = (int) round($alreadyOccupied);
+
+            $slotResult = $this->distributeInShelf($ordered, $section, $shelf, $slot, $available, $startPosition);
+
+            // Atualiza espaço ocupado nesta prateleira para o próximo slot compartilhado
+            $newlyOccupied = (float) $slotResult['placed']->sum('width');
+            $occupiedPerShelf[$shelfId] = $alreadyOccupied + $newlyOccupied;
 
             foreach ($slotResult['placed'] as $seg) {
                 foreach ($seg->layers as $layer) {
@@ -219,7 +239,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             $rejected = $rejected->merge($slotRejected);
             $allPlacedExplanations = array_merge($allPlacedExplanations, $slotResult['placed_explanations']);
 
-            $occupied = round((float) $slotResult['placed']->sum('width'), 1);
+            // Para slots compartilhados: largura_total reflete o espaço disponível PARA ESTE SLOT
+            // (não a largura bruta da prateleira), e largura_livre o que sobrou após ele.
+            $occupied = round($newlyOccupied, 1);
             $livre = round(max(0.0, $available - $occupied), 1);
             $slotAnalysis[] = [
                 'slot_id' => $slot->id,
@@ -228,7 +250,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 'role' => $slot->effectiveRole()?->value,
                 'module_number' => $slot->module_number,
                 'shelf_order' => $slot->shelf_order,
-                'shelf_id' => $shelf->getKey(),
+                'shelf_id' => $shelfId,
                 'largura_total' => round($available, 1),
                 'largura_usada' => $occupied,
                 'largura_livre' => $livre,
@@ -792,12 +814,21 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /**
      * @return array{placed: Collection<int, PlacedSegment>, rejected: Collection<int, array{product: mixed, reason: PlacementFailureReason}>}
      */
+    /**
+     * Distribui produtos numa prateleira física, ocupando o espaço disponível.
+     *
+     * @param  float  $available  Largura disponível para este slot (já descontado o que
+     *                            slots anteriores na mesma prateleira ocuparam).
+     * @param  int  $startPosition  Posição inicial em cm — 0 para a primeira categoria,
+     *                              >0 quando a prateleira é compartilhada com outra categoria.
+     */
     private function distributeInShelf(
         Collection $products,
         Section $section,
         Shelf $shelf,
         PlanogramTemplateSlot $slot,
         float $available,
+        int $startPosition = 0,
     ): array {
         /** @var array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}> $placedItems */
         $placedItems = [];
@@ -865,8 +896,10 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $placedExplanations = $this->buildPlacedExplanations($placedItems, $slot, $minFacing, $zone);
 
         // Build readonly PlacedSegment DTOs
+        // $x parte de $startPosition para acomodar prateleiras compartilhadas: quando outra
+        // categoria já ocupa [0, startPosition), este slot começa a partir de startPosition.
         $placed = collect();
-        $x = 0.0;
+        $x = (float) $startPosition;
 
         foreach ($placedItems as $item) {
             $product = $item['product'];

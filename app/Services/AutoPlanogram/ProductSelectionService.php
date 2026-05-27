@@ -406,6 +406,9 @@ class ProductSelectionService
             }
         }
 
+        // Aplica cortes ABC configuráveis antes de executar a análise
+        $this->abcAnalysis->setCuts($config->abcCutoffA, $config->abcCutoffB);
+
         $abcResults = $this->abcAnalysis->analyzeByProductIds($productIds, $config->tableType, $filters);
 
         if ($abcResults->isEmpty()) {

@@ -34,6 +34,12 @@ final class SlotSuggestionGenerator
     private const ESPACO_MINIMO_CM = 10;
 
     /**
+     * Percentual de ocupação acima do qual um slot é considerado sob pressão de capacidade.
+     * Sugere adicionar módulos ou reduzir o mix quando atingido com rejeições intermediárias.
+     */
+    private const PRESSAO_PERCENTUAL = 85;
+
+    /**
      * Analisa os slots e gera sugestões acionáveis.
      *
      * @param  list<SlotAnalysis>  $slotAnalysis
@@ -84,6 +90,41 @@ final class SlotSuggestionGenerator
                     'total_rejeitados' => $totalRejeitados,
                     'groupings_cheios' => $groupingsAfetados,
                     'produtos_fora' => $produtosFora,
+                ],
+            ];
+        }
+
+        // Alerta de pressão de capacidade: categorias com média de ocupação > 85%.
+        // Indica que a gôndola está na borda da capacidade para esse agrupamento —
+        // qualquer crescimento do mix resultará em rejeições. Sugere adicionar módulos.
+        $categoriasComPressao = $slots
+            ->filter(fn ($s) => $s['percentual_uso'] >= self::PRESSAO_PERCENTUAL)
+            ->groupBy('category_name')
+            ->map(fn ($group, $name) => [
+                'category_name' => $name,
+                'category_id' => $group->first()['category_id'],
+                'avg_uso' => (int) round($group->avg('percentual_uso')),
+                'max_uso' => $group->max('percentual_uso'),
+                'num_slots' => $group->count(),
+            ])
+            ->values()
+            ->filter(fn ($c) => $c['num_slots'] >= 2); // pelo menos 2 slots saturados = padrão
+
+        foreach ($categoriasComPressao as $cat) {
+            $suggestions[] = [
+                'tipo' => 'pressao_capacidade',
+                'prioridade' => $cat['max_uso'] >= 95 ? 'alta' : 'media',
+                'mensagem' => "Categoria \"{$cat['category_name']}\" está saturada: "
+                    ."{$cat['num_slots']} slot(s) com média de {$cat['avg_uso']}% de ocupação "
+                    ."(máx. {$cat['max_uso']}%).",
+                'acao' => 'Considere adicionar 1 módulo para reduzir a pressão nessa categoria '
+                    .'ou remover produtos de menor giro do mix.',
+                'dados' => [
+                    'category_name' => $cat['category_name'],
+                    'category_id' => $cat['category_id'],
+                    'avg_uso_percentual' => $cat['avg_uso'],
+                    'max_uso_percentual' => $cat['max_uso'],
+                    'num_slots_saturados' => $cat['num_slots'],
                 ],
             ];
         }
