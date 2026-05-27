@@ -705,3 +705,95 @@ test('9 — produto diretamente na categoria selecionada é descartado silencios
     // Nem deve aparecer em planogram_rejected_products
     expect(PlanogramRejectedProduct::where('product_id', $fx['diretoId'])->count())->toBe(0);
 });
+
+test('10 — categoria intermediária (Flocão) é expandida para filhos; De Milho e De Arroz recebem slots separados', function (): void {
+    /**
+     * Cenário: Cereais → Flocão → [De Milho, De Arroz]
+     *
+     * No modo automático, "Flocão" é um nó intermediário sem produtos diretos.
+     * O sistema deve percorrer a árvore e criar um slot para cada filho de "Flocão",
+     * em vez de agrupar "De Milho" e "De Arroz" na mesma prateleira.
+     *
+     * Esperado:
+     * - Template slots cobrem "De Milho" e "De Arroz" (NÃO "Flocão").
+     * - Produtos de "De Milho" e "De Arroz" são alocados em prateleiras distintas.
+     */
+    $gondolaId = (string) Str::ulid();
+    $planogramId = (string) Str::ulid();
+
+    $cereais = autoE2eCategory('Cereais');
+    $floacao = autoE2eCategory('Flocão', parentId: $cereais->id);
+    $deMilho = autoE2eCategory('De Milho', parentId: $floacao->id);
+    $deArroz = autoE2eCategory('De Arroz', parentId: $floacao->id);
+
+    $milhoP1 = autoE2eProduct($deMilho->id, width: 8, name: 'Flocão Milho 1');
+    $milhoP2 = autoE2eProduct($deMilho->id, width: 8, name: 'Flocão Milho 2');
+    $arrozP1 = autoE2eProduct($deArroz->id, width: 8, name: 'Flocão Arroz 1');
+    $arrozP2 = autoE2eProduct($deArroz->id, width: 8, name: 'Flocão Arroz 2');
+
+    $products = collect([$milhoP1, $milhoP2, $arrozP1, $arrozP2]);
+
+    $abcMap = [
+        $milhoP1->id => 'A',
+        $milhoP2->id => 'B',
+        $arrozP1->id => 'A',
+        $arrozP2->id => 'C',
+    ];
+
+    autoE2eBindMockScorer($abcMap, [], []);
+
+    // 1 módulo × 4 prateleiras × 100 cm → espaço farto para todos os produtos
+    $sections = autoE2eSections(numModules: 1, numShelves: 4, width: 100.0);
+
+    $input = autoE2eInput($gondolaId, $planogramId, $cereais->id, $products, $sections, $abcMap);
+    autoE2eGenerate($input);
+
+    // Os slots sintetizados devem cobrir as folhas "De Milho" e "De Arroz"
+    $slotCategoryIds = PlanogramTemplateSlot::pluck('category_id')->unique()->values()->all();
+
+    expect($slotCategoryIds)->toContain($deMilho->id);
+    expect($slotCategoryIds)->toContain($deArroz->id);
+
+    // "Flocão" NÃO deve ser usado como slot (foi expandido para os filhos)
+    expect($slotCategoryIds)->not->toContain($floacao->id);
+
+    // Todos os produtos devem ter sido alocados
+    expect(Layer::where('product_id', $milhoP1->id)->count())->toBeGreaterThan(0);
+    expect(Layer::where('product_id', $milhoP2->id)->count())->toBeGreaterThan(0);
+    expect(Layer::where('product_id', $arrozP1->id)->count())->toBeGreaterThan(0);
+    expect(Layer::where('product_id', $arrozP2->id)->count())->toBeGreaterThan(0);
+});
+
+test('11 — categoria folha selecionada diretamente não é expandida (comportamento preservado)', function (): void {
+    /**
+     * Garante que a expansão não afeta o caso de categoria-folha:
+     * quando a categoria selecionada não tem filhos, comportamento idêntico ao anterior.
+     */
+    $gondolaId = (string) Str::ulid();
+    $planogramId = (string) Str::ulid();
+
+    $bebidas = autoE2eCategory('Bebidas');
+    $refri = autoE2eCategory('Refrigerantes', parentId: $bebidas->id);  // sem filhos
+
+    $p1 = autoE2eProduct($refri->id, width: 8, name: 'Refri 1');
+    $p2 = autoE2eProduct($refri->id, width: 8, name: 'Refri 2');
+
+    $abcMap = [$p1->id => 'A', $p2->id => 'B'];
+
+    autoE2eBindMockScorer($abcMap);
+
+    $sections = autoE2eSections(numModules: 1, numShelves: 4, width: 100.0);
+
+    // selectedCategoryId = $refri (categoria folha com produtos diretos)
+    $input = autoE2eInput($gondolaId, $planogramId, $refri->id, collect([$p1, $p2]), $sections, $abcMap);
+    autoE2eGenerate($input);
+
+    // Categoria folha selecionada como base: sem filhos → SlotPlanBuilder usa buildLeafPlan
+    // com a própria categoria em todos os slots
+    $slotCategoryIds = PlanogramTemplateSlot::pluck('category_id')->unique()->values()->all();
+    expect($slotCategoryIds)->toContain($refri->id);
+
+    // Produtos devem estar alocados
+    expect(Layer::where('product_id', $p1->id)->count())->toBeGreaterThan(0);
+    expect(Layer::where('product_id', $p2->id)->count())->toBeGreaterThan(0);
+});

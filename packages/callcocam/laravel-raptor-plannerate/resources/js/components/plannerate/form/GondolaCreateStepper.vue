@@ -551,6 +551,9 @@ const validateByKey: Record<StepKey, () => boolean> = {
             include_products_without_sales: form.include_products_without_sales,
             table_type: form.table_type,
             category_id: form.category_id,
+            facing_expansion: form.facing_expansion,
+            space_fallback: form.space_fallback,
+            use_target_stock: form.use_target_stock,
         }),
     workflow: () => validateStep6(),
 };

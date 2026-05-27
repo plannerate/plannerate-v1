@@ -10,6 +10,12 @@ export interface GenerationFormState {
     include_products_without_sales: boolean;
     table_type: 'sales' | 'monthly_summaries';
     category_id: string | null;
+    /** Comportamento de expansão de frentes no espaço livre */
+    facing_expansion: string | null;
+    /** Comportamento quando falta espaço para todos os produtos */
+    space_fallback: string | null;
+    /** Usar estoque alvo para expandir frentes */
+    use_target_stock: boolean;
 }
 
 /**
@@ -83,7 +89,7 @@ function setCategory(value: string | null): void {
         <SalesDataSection :form="props.form" :errors="errors" />
 
         <div class="border-t pt-4" />
-        <FacingsSettingsSection :form="props.form" :errors="errors" />
+        <FacingsSettingsSection :form="props.form" :errors="errors" :show-expansion-options="true" />
 
         <div class="border-t pt-4" />
         <AdvancedOptionsSection :form="props.form" />

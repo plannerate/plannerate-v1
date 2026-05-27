@@ -77,9 +77,13 @@ final class AutoTemplateSynthesisOrchestrator
         $selectedCategory = Category::find($selectedCategoryId)
             ?? throw new \RuntimeException("Categoria selecionada não encontrada: {$selectedCategoryId}");
 
-        $children = Category::where('category_id', $selectedCategoryId)->get();
+        // Filhos diretos servem como ponto de partida; depois expandimos até o nível
+        // onde os produtos realmente vivem para que nós intermediários (ex.: "Flocão")
+        // não agrupem subcategorias distintas ("De milho" e "De arroz") em uma só prateleira.
+        $directChildren = Category::where('category_id', $selectedCategoryId)->get();
+        $slotCategories = $this->expandToProductLevel($directChildren, $scored);
 
-        $grouped = $this->groupBySubcategory($children, $scored);
+        $grouped = $this->groupBySubcategory($slotCategories, $scored);
 
         $summaries = $grouped->map(fn (Collection $prods, string $catId) => CategoryAbcSummary::fromScoredProducts($catId, $prods, $input->settings->abcClassMap)
         );
@@ -87,8 +91,8 @@ final class AutoTemplateSynthesisOrchestrator
         $totalQ = max($summaries->sum('totalQuantity'), 1e-9);
         $totalM = max($summaries->sum('totalMargem'), 1e-9);
 
-        $subcats = $summaries->map(function (CategoryAbcSummary $s) use ($children, $totalQ, $totalM) {
-            $cat = $children->firstWhere('id', $s->categoryId);
+        $subcats = $summaries->map(function (CategoryAbcSummary $s) use ($slotCategories, $totalQ, $totalM) {
+            $cat = $slotCategories->firstWhere('id', $s->categoryId);
             $norm = $s->withParticipation(
                 $s->totalQuantity / $totalQ,
                 $s->totalMargem / $totalM,
@@ -231,10 +235,95 @@ final class AutoTemplateSynthesisOrchestrator
     }
 
     /**
-     * Agrupa ScoredProducts pela subcategoria direta (filha da categoria selecionada).
+     * Expande os filhos da categoria selecionada descendo a árvore até o nível onde os
+     * produtos estão de fato atribuídos, garantindo um slot por subcategoria real.
      *
-     * Para cada filho, usa getDescendantIds para mapear todas as folhas ao filho correto.
-     * Produtos sem correspondência são silenciosamente descartados.
+     * Comportamento por tipo de nó:
+     * - Folha (sem filhos) → mantida como slot.
+     * - Nó com produtos diretos (products.category_id = cat.id) → mantido como slot (não expande).
+     * - Nó intermediário sem produtos diretos mas com produtos em descendentes →
+     *   substituído pelos seus filhos diretos, que passam pela mesma avaliação recursivamente.
+     * - Nó sem produtos em nenhum descendente → mantido como slot vazio (será descartado
+     *   pelo SlotPlanBuilder por falta de demanda).
+     *
+     * Exemplo: Cereais → [Flocão → [De milho, De arroz], Farofa]
+     * Se os produtos estão em "De milho" e "De arroz":
+     *   resultado = [De milho, De arroz, Farofa] — cada filho de "Flocão" recebe prateleira própria.
+     *
+     * @param  Collection<int, Category>  $children  Filhos diretos da categoria selecionada.
+     * @param  Collection<int, ScoredProduct>  $scored  Produtos pontuados (fonte de category_id real).
+     * @return Collection<int, Category>
+     */
+    private function expandToProductLevel(Collection $children, Collection $scored): Collection
+    {
+        if ($children->isEmpty()) {
+            return $children;
+        }
+
+        // Set dos category_ids que têm produtos diretamente atribuídos nos scored products.
+        $productCatIds = $scored
+            ->map(fn (ScoredProduct $sp) => $sp->product->category_id)
+            ->filter()
+            ->unique()
+            ->flip()
+            ->all();
+
+        $result = collect();
+        $queue = $children->all();
+
+        while ($queue !== []) {
+            $cat = array_shift($queue);
+
+            // Categoria folha: sem filhos → inclui como slot diretamente.
+            $catChildren = Category::where('category_id', $cat->id)->get();
+
+            if ($catChildren->isEmpty()) {
+                $result->push($cat);
+
+                continue;
+            }
+
+            // Tem produtos atribuídos diretamente a este nó (ex.: Farofa com products na Farofa)
+            // → usar como slot, não expandir para os filhos.
+            if (isset($productCatIds[$cat->id])) {
+                $result->push($cat);
+
+                continue;
+            }
+
+            // Sem produtos diretos, mas tem filhos — verificar se algum descendente tem produto.
+            $descIds = Category::getDescendantIds($cat->id);
+            $hasProductsInDescendants = collect($descIds)->some(
+                fn (string $id) => isset($productCatIds[$id])
+            );
+
+            if ($hasProductsInDescendants) {
+                // Expande: substitui este nó pelos filhos diretos para nova avaliação recursiva.
+                // Ex.: "Flocão" → queue recebe ["De milho", "De arroz"].
+                foreach ($catChildren as $child) {
+                    $queue[] = $child;
+                }
+
+                Log::debug('AutoTemplateSynthesisOrchestrator: categoria intermediária expandida para filhos', [
+                    'category_id' => $cat->id,
+                    'category_name' => $cat->name,
+                    'filhos_adicionados' => $catChildren->count(),
+                ]);
+            } else {
+                // Nenhum produto em descendentes → mantém como slot vazio; será descartado
+                // pelo SlotPlanBuilder por skuCount=0 e totalQuantity=0.
+                $result->push($cat);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Agrupa ScoredProducts pela subcategoria de slot (após expansão pelo expandToProductLevel).
+     *
+     * Para cada categoria de slot, usa getDescendantIds para mapear todas as folhas ao
+     * slot correto. Produtos sem correspondência são silenciosamente descartados.
      *
      * @param  Collection<int, Category>  $children
      * @param  Collection<int, ScoredProduct>  $scored
