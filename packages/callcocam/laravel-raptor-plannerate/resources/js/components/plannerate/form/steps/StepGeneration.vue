@@ -16,6 +16,12 @@ export interface GenerationFormState {
     space_fallback: string | null;
     /** Usar estoque alvo para expandir frentes */
     use_target_stock: boolean;
+    /** Prioridade de zona quente (ex: 'maior_margem') */
+    hot_zone_priority: string | null;
+    /** Prioridade de zona fria (ex: 'complementar_fria') */
+    cold_zone_priority: string | null;
+    /** Sentido de leitura (null = esquerda→direita) */
+    flow_direction: string | null;
 }
 
 /**
@@ -43,6 +49,7 @@ import AdvancedOptionsSection from '@/components/plannerate/header/partials/Adva
 import FacingsSettingsSection from '@/components/plannerate/header/partials/FacingsSettingsSection.vue';
 import SalesDataSection from '@/components/plannerate/header/partials/SalesDataSection.vue';
 import CategorySelect from '@/components/plannerate/sidebar/products/CategorySelect.vue';
+import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
 
 interface Props {
@@ -93,5 +100,43 @@ function setCategory(value: string | null): void {
 
         <div class="border-t pt-4" />
         <AdvancedOptionsSection :form="props.form" />
+
+        <!-- Zonas e sentido de leitura -->
+        <div class="border-t pt-4" />
+        <div class="space-y-2">
+            <Label class="text-base font-semibold">{{ t('plannerate.header.auto_generate.zone_flow_title') }}</Label>
+            <div class="grid grid-cols-3 gap-3">
+                <div class="space-y-1">
+                    <Label for="step-hot-zone" class="text-xs">{{ t('plannerate.header.auto_generate.hot_zone_priority_label') }}</Label>
+                    <select id="step-hot-zone" v-model="props.form.hot_zone_priority"
+                        class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                        <option value="none">{{ t('plannerate.header.auto_generate.zone_priority_none') }}</option>
+                        <option value="maior_margem">{{ t('plannerate.header.auto_generate.zone_priority_maior_margem') }}</option>
+                        <option value="maior_giro">{{ t('plannerate.header.auto_generate.zone_priority_maior_giro') }}</option>
+                        <option value="maior_valor_vendido">{{ t('plannerate.header.auto_generate.zone_priority_maior_valor_vendido') }}</option>
+                        <option value="curva_a">{{ t('plannerate.header.auto_generate.zone_priority_curva_a') }}</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <Label for="step-cold-zone" class="text-xs">{{ t('plannerate.header.auto_generate.cold_zone_priority_label') }}</Label>
+                    <select id="step-cold-zone" v-model="props.form.cold_zone_priority"
+                        class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                        <option value="none">{{ t('plannerate.header.auto_generate.zone_priority_none') }}</option>
+                        <option value="menor_margem">{{ t('plannerate.header.auto_generate.zone_priority_menor_margem') }}</option>
+                        <option value="complementar_fria">{{ t('plannerate.header.auto_generate.zone_priority_complementar_fria') }}</option>
+                        <option value="maior_volume">{{ t('plannerate.header.auto_generate.zone_priority_maior_volume') }}</option>
+                        <option value="menor_prioridade">{{ t('plannerate.header.auto_generate.zone_priority_menor_prioridade') }}</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <Label for="step-flow-direction" class="text-xs">{{ t('plannerate.header.auto_generate.flow_direction_label') }}</Label>
+                    <select id="step-flow-direction" v-model="props.form.flow_direction"
+                        class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                        <option :value="null">{{ t('plannerate.header.auto_generate.flow_direction_left_to_right') }}</option>
+                        <option value="right_to_left">{{ t('plannerate.header.auto_generate.flow_direction_right_to_left') }}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
     </div>
 </template>

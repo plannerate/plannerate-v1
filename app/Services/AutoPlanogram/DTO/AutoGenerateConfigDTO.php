@@ -83,6 +83,22 @@ class AutoGenerateConfigDTO
          * quando poucos itens dominam >80% do volume (caso típico de mercearia seca).
          */
         public readonly float $abcCutoffB = 0.90,
+
+        /** Prioridade de zona quente (valor de ZonePriority) — null = maior_margem */
+        public readonly ?string $hotZonePriority = 'maior_margem',
+
+        /** Prioridade de zona fria (valor de ZonePriority) — null = complementar_fria */
+        public readonly ?string $coldZonePriority = 'complementar_fria',
+
+        /** Sentido de leitura (valor de FlowDirection) — null = LeftToRight */
+        public readonly ?string $flowDirection = null,
+
+        /**
+         * Critérios visuais secundários adicionados após score_abc.
+         *
+         * @var list<array{key: string, direction: string}>
+         */
+        public readonly array $secondaryCriteria = [],
     ) {}
 
     /**
@@ -109,6 +125,10 @@ class AutoGenerateConfigDTO
             maxSharePerSubcategory: isset($data['max_share_per_subcategory']) ? (int) $data['max_share_per_subcategory'] : null,
             abcCutoffA: (float) ($data['abc_cutoff_a'] ?? 0.80),
             abcCutoffB: (float) ($data['abc_cutoff_b'] ?? 0.90),
+            hotZonePriority: $data['hot_zone_priority'] ?? 'maior_margem',
+            coldZonePriority: $data['cold_zone_priority'] ?? 'complementar_fria',
+            flowDirection: $data['flow_direction'] ?? null,
+            secondaryCriteria: $data['secondary_criteria'] ?? [],
         );
     }
 
@@ -136,6 +156,10 @@ class AutoGenerateConfigDTO
             'max_share_per_subcategory' => $this->maxSharePerSubcategory,
             'abc_cutoff_a' => $this->abcCutoffA,
             'abc_cutoff_b' => $this->abcCutoffB,
+            'hot_zone_priority' => $this->hotZonePriority,
+            'cold_zone_priority' => $this->coldZonePriority,
+            'flow_direction' => $this->flowDirection,
+            'secondary_criteria' => $this->secondaryCriteria,
         ];
     }
 }

@@ -70,7 +70,18 @@ export const slotDraftSchema = z
     .refine((data) => data.category_id !== null && data.category_id !== '', {
         message: 'Selecione uma categoria para este slot.',
         path: ['category_id'],
-    });
+    })
+    .refine(
+        (data) => {
+            const vc = data.visual_criteria;
+            if (!vc || vc.length === 0) return true;
+            return vc[0].key === 'score_abc';
+        },
+        {
+            message: 'O critério "Curva ABC" deve ser sempre o primeiro na lista de ordenação visual.',
+            path: ['visual_criteria'],
+        },
+    );
 
 export type SlotDraftValidated = z.infer<typeof slotDraftSchema>;
 

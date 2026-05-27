@@ -114,12 +114,15 @@ const form = useForm({
     table_type: 'monthly_summaries' as 'sales' | 'monthly_summaries',
     category_id: (props.categoryId ?? null) as string | null,
     template_id: null as string | null,
-    facing_expansion: null as string | null,
-    use_target_stock: false,
-    space_fallback: null as string | null,
+    facing_expansion: 'score' as string | null,
+    use_target_stock: true,
+    space_fallback: 'reduce_c' as string | null,
     max_share_per_sku: null as number | null,
     max_share_per_brand: null as number | null,
     max_share_per_subcategory: null as number | null,
+    hot_zone_priority: 'maior_margem' as string | null,
+    cold_zone_priority: 'complementar_fria' as string | null,
+    flow_direction: null as string | null,
 });
 
 /** Controla se o usuário já tentou submeter — erros só aparecem após o primeiro submit */
@@ -145,6 +148,9 @@ const zodResult = computed(() =>
         max_share_per_sku: form.max_share_per_sku,
         max_share_per_brand: form.max_share_per_brand,
         max_share_per_subcategory: form.max_share_per_subcategory,
+        hot_zone_priority: form.hot_zone_priority,
+        cold_zone_priority: form.cold_zone_priority,
+        flow_direction: form.flow_direction,
     }),
 );
 
@@ -354,6 +360,44 @@ function handleGenerate(): void {
                                     {{ zodErrors.max_share_per_subcategory }}
                                 </p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Zonas e sentido de leitura -->
+                <div class="border-t pt-4" />
+                <div class="space-y-2">
+                    <Label class="text-base font-semibold">{{ t('plannerate.header.auto_generate.zone_flow_title') }}</Label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="space-y-1">
+                            <Label for="hot-zone-priority" class="text-xs">{{ t('plannerate.header.auto_generate.hot_zone_priority_label') }}</Label>
+                            <select id="hot-zone-priority" v-model="form.hot_zone_priority"
+                                class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                                <option value="none">{{ t('plannerate.header.auto_generate.zone_priority_none') }}</option>
+                                <option value="maior_margem">{{ t('plannerate.header.auto_generate.zone_priority_maior_margem') }}</option>
+                                <option value="maior_giro">{{ t('plannerate.header.auto_generate.zone_priority_maior_giro') }}</option>
+                                <option value="maior_valor_vendido">{{ t('plannerate.header.auto_generate.zone_priority_maior_valor_vendido') }}</option>
+                                <option value="curva_a">{{ t('plannerate.header.auto_generate.zone_priority_curva_a') }}</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <Label for="cold-zone-priority" class="text-xs">{{ t('plannerate.header.auto_generate.cold_zone_priority_label') }}</Label>
+                            <select id="cold-zone-priority" v-model="form.cold_zone_priority"
+                                class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                                <option value="none">{{ t('plannerate.header.auto_generate.zone_priority_none') }}</option>
+                                <option value="menor_margem">{{ t('plannerate.header.auto_generate.zone_priority_menor_margem') }}</option>
+                                <option value="complementar_fria">{{ t('plannerate.header.auto_generate.zone_priority_complementar_fria') }}</option>
+                                <option value="maior_volume">{{ t('plannerate.header.auto_generate.zone_priority_maior_volume') }}</option>
+                                <option value="menor_prioridade">{{ t('plannerate.header.auto_generate.zone_priority_menor_prioridade') }}</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <Label for="flow-direction" class="text-xs">{{ t('plannerate.header.auto_generate.flow_direction_label') }}</Label>
+                            <select id="flow-direction" v-model="form.flow_direction"
+                                class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                                <option :value="null">{{ t('plannerate.header.auto_generate.flow_direction_left_to_right') }}</option>
+                                <option value="right_to_left">{{ t('plannerate.header.auto_generate.flow_direction_right_to_left') }}</option>
+                            </select>
                         </div>
                     </div>
                 </div>

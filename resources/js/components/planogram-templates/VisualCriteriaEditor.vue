@@ -60,7 +60,13 @@ function addCriterion(key: VisualCriterionKey): void {
     modelValue.value = [...(modelValue.value ?? []), item];
 }
 
+/** score_abc na posição 0 é obrigatório e não pode ser removido nem movido */
+function isLocked(index: number): boolean {
+    return index === 0 && active.value[0]?.key === 'score_abc';
+}
+
 function removeCriterion(index: number): void {
+    if (isLocked(index)) return;
     const next = [...(modelValue.value ?? [])];
     next.splice(index, 1);
     modelValue.value = next;
@@ -84,6 +90,10 @@ const dragIndex = ref<number | null>(null);
 const dragOverIndex = ref<number | null>(null);
 
 function onDragStart(index: number, event: DragEvent): void {
+    if (isLocked(index)) {
+        event.preventDefault();
+        return;
+    }
     dragIndex.value = index;
     if (event.dataTransfer) {
         event.dataTransfer.effectAllowed = 'move';
@@ -91,6 +101,8 @@ function onDragStart(index: number, event: DragEvent): void {
 }
 
 function onDragOver(index: number, event: DragEvent): void {
+    // Bloqueia drop na posição 0 quando ela é score_abc
+    if (isLocked(index)) return;
     event.preventDefault();
     dragOverIndex.value = index;
     if (event.dataTransfer) {
@@ -100,7 +112,7 @@ function onDragOver(index: number, event: DragEvent): void {
 
 function onDrop(targetIndex: number): void {
     const from = dragIndex.value;
-    if (from === null || from === targetIndex) {
+    if (from === null || from === targetIndex || isLocked(targetIndex)) {
         dragIndex.value = null;
         dragOverIndex.value = null;
         return;
@@ -233,12 +245,15 @@ function onPackagingDragEnd(): void {
                     v-for="(item, index) in active"
                     :key="item.key"
                     role="listitem"
-                    draggable="true"
-                    class="group flex cursor-grab items-center gap-1 rounded-full border px-3 py-1 text-sm select-none active:cursor-grabbing"
+                    :draggable="!isLocked(index)"
+                    class="group flex items-center gap-1 rounded-full border px-3 py-1 text-sm select-none"
                     :class="[
-                        dragOverIndex === index && dragIndex !== index
+                        isLocked(index)
+                            ? 'cursor-default border-primary/40 bg-primary/10 text-primary'
+                            : 'cursor-grab active:cursor-grabbing',
+                        !isLocked(index) && dragOverIndex === index && dragIndex !== index
                             ? 'border-primary bg-primary/10 ring-1 ring-primary'
-                            : 'border-border bg-muted',
+                            : !isLocked(index) ? 'border-border bg-muted' : '',
                         dragIndex === index ? 'opacity-40' : '',
                     ]"
                     :aria-label="`${t('planogram-templates.visual_criteria.criteria_labels.' + item.key)}, prioridade ${index + 1}`"
@@ -253,6 +268,9 @@ function onPackagingDragEnd(): void {
                     <!-- Nome do critério -->
                     <span class="font-medium">{{ t('planogram-templates.visual_criteria.criteria_labels.' + item.key) }}</span>
 
+                    <!-- Ícone de travado para score_abc (posição 0) -->
+                    <span v-if="isLocked(index)" class="ml-0.5 text-xs text-primary/70" :title="t('planogram-templates.visual_criteria.abc_locked_tooltip')">🔒</span>
+
                     <!-- Botão de direção -->
                     <button
                         v-if="visualCriterionMeta[item.key].supportsDirection"
@@ -264,8 +282,9 @@ function onPackagingDragEnd(): void {
                         {{ directionLabel(item) }}
                     </button>
 
-                    <!-- Botão remover -->
+                    <!-- Botão remover (oculto para critério travado) -->
                     <button
+                        v-if="!isLocked(index)"
                         type="button"
                         class="ml-1 rounded-full text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
                         :title="t('planogram-templates.visual_criteria.remove_criterion_tooltip')"

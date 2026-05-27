@@ -34,6 +34,9 @@ final class AutoTemplateSynthesizer
         int $numModules,
         string $gondolaId,
         array $abcClassMap = [],
+        ?string $hotZonePriority = null,
+        ?string $coldZonePriority = null,
+        ?string $flowDirection = null,
     ): PlanogramSubtemplate {
         return DB::transaction(function () use (
             $planogramBaseCategoryId,
@@ -42,6 +45,9 @@ final class AutoTemplateSynthesizer
             $numModules,
             $gondolaId,
             $abcClassMap,
+            $hotZonePriority,
+            $coldZonePriority,
+            $flowDirection,
         ): PlanogramSubtemplate {
             $this->warnIfNoAbcIntelligence($slotPlan, $abcClassMap);
 
@@ -54,6 +60,9 @@ final class AutoTemplateSynthesizer
             $subtemplate = $this->findOrReplaceSubtemplate(
                 template: $template,
                 numModules: $numModules,
+                hotZonePriority: $hotZonePriority,
+                coldZonePriority: $coldZonePriority,
+                flowDirection: $flowDirection,
             );
 
             $this->createSlots($subtemplate, $slotPlan);
@@ -125,6 +134,9 @@ final class AutoTemplateSynthesizer
     private function findOrReplaceSubtemplate(
         PlanogramTemplate $template,
         int $numModules,
+        ?string $hotZonePriority = null,
+        ?string $coldZonePriority = null,
+        ?string $flowDirection = null,
     ): PlanogramSubtemplate {
         $existing = PlanogramSubtemplate::withTrashed()
             ->where('template_id', $template->getKey())
@@ -139,7 +151,13 @@ final class AutoTemplateSynthesizer
                 $existing->restore();
             }
 
-            $existing->update(['code' => $code, 'is_active' => true]);
+            $existing->update([
+                'code' => $code,
+                'is_active' => true,
+                'hot_zone_priority' => $hotZonePriority,
+                'cold_zone_priority' => $coldZonePriority,
+                'flow_direction' => $flowDirection,
+            ]);
 
             // Remover slots antigos para recriação limpa (idempotência)
             $existing->slots()->withTrashed()->forceDelete();
@@ -152,6 +170,9 @@ final class AutoTemplateSynthesizer
             'code' => $code,
             'num_modules' => $numModules,
             'is_active' => true,
+            'hot_zone_priority' => $hotZonePriority,
+            'cold_zone_priority' => $coldZonePriority,
+            'flow_direction' => $flowDirection,
         ]);
     }
 

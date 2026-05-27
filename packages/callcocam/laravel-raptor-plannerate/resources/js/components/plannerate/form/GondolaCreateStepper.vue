@@ -254,12 +254,15 @@ const getInitialFormData = () => {
         include_products_without_sales: false,
         table_type: 'monthly_summaries' as 'sales' | 'monthly_summaries',
         category_id: null as string | null,
-        facing_expansion: null as string | null,
-        use_target_stock: false,
-        space_fallback: null as string | null,
+        facing_expansion: 'score' as string | null,
+        use_target_stock: true,
+        space_fallback: 'reduce_c' as string | null,
         max_share_per_sku: null as number | null,
         max_share_per_brand: null as number | null,
         max_share_per_subcategory: null as number | null,
+        hot_zone_priority: 'maior_margem' as string | null,
+        cold_zone_priority: 'complementar_fria' as string | null,
+        flow_direction: null as string | null,
     };
 };
 

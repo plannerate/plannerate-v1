@@ -323,6 +323,7 @@ return [
         'direction_desc' => 'Decrescente — clique para inverter',
         'direction_none' => 'Sem direção — clique para definir',
         'remove_criterion_tooltip' => 'Remover critério',
+        'abc_locked_tooltip' => 'Curva ABC é sempre o primeiro critério e não pode ser movida',
         'add_label' => 'Adicionar:',
         'packaging_order' => [
             'title' => 'Ordem dos tipos de embalagem',

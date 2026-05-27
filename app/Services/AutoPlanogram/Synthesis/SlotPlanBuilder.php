@@ -128,7 +128,7 @@ class SlotPlanBuilder
             moduleNumber: $slot['module'],
             shelfOrder: $slot['shelf_order'],
             minFacings: $minFacings,
-            visualCriteria: $this->buildVisualCriteria(),
+            visualCriteria: $this->buildVisualCriteria($settings->secondaryCriteria),
             zone: $slot['zone'],
             roleOverride: $selectedCategory->role,
             maxFacings: $settings->maxFacings > 0 ? $settings->maxFacings : null,
@@ -329,14 +329,14 @@ class SlotPlanBuilder
                     moduleNumber: $lastConsumedSlot['module'],
                     shelfOrder: $lastConsumedSlot['shelf_order'],
                     minFacings: $minFacings,
-                    visualCriteria: $this->buildVisualCriteria(),
+                    visualCriteria: $this->buildVisualCriteria($settings->secondaryCriteria),
                     zone: $lastConsumedSlot['zone'],
                     roleOverride: $item['role'],
                     maxFacings: $settings->maxFacings > 0 ? $settings->maxFacings : null,
                     facingExpansion: $settings->facingExpansion,
                     useTargetStock: $settings->useTargetStock,
                     spaceFallback: $settings->spaceFallback,
-                    maxSharePerSku: $settings->maxSharePerSku,
+                    maxSharePerSku: $this->deriveMaxSharePerSku($item['role'], $settings->maxSharePerSku),
                     maxSharePerBrand: $settings->maxSharePerBrand,
                     maxSharePerSubcategory: $settings->maxSharePerSubcategory,
                 );
@@ -368,14 +368,14 @@ class SlotPlanBuilder
                     moduleNumber: $slot['module'],
                     shelfOrder: $slot['shelf_order'],
                     minFacings: $minFacings,
-                    visualCriteria: $this->buildVisualCriteria(),
+                    visualCriteria: $this->buildVisualCriteria($settings->secondaryCriteria),
                     zone: $slot['zone'],
                     roleOverride: $item['role'],
                     maxFacings: $settings->maxFacings > 0 ? $settings->maxFacings : null,
                     facingExpansion: $settings->facingExpansion,
                     useTargetStock: $settings->useTargetStock,
                     spaceFallback: $settings->spaceFallback,
-                    maxSharePerSku: $settings->maxSharePerSku,
+                    maxSharePerSku: $this->deriveMaxSharePerSku($item['role'], $settings->maxSharePerSku),
                     maxSharePerBrand: $settings->maxSharePerBrand,
                     maxSharePerSubcategory: $settings->maxSharePerSubcategory,
                 );
@@ -649,21 +649,49 @@ class SlotPlanBuilder
     }
 
     /**
-     * Visual criteria com ABC sempre em primeiro lugar.
-     * Segundo critério padrão: margem desc.
+     * Visual criteria com ABC sempre em primeiro lugar (não substituível).
+     * Os critérios secundários fornecidos são anexados após score_abc.
+     * Quando nenhum secundário é passado, usa margem desc como padrão.
      *
+     * @param  list<array{key: string, direction: string}>  $secondaryCriteria
      * @return list<array{key: string, direction: string}>
      */
-    private function buildVisualCriteria(): array
+    private function buildVisualCriteria(array $secondaryCriteria = []): array
     {
-        return [
-            ['key' => 'score_abc', 'direction' => 'desc'],
-            ['key' => 'margem', 'direction' => 'desc'],
-        ];
+        $primary = ['key' => 'score_abc', 'direction' => 'desc'];
+
+        if ($secondaryCriteria === []) {
+            return [$primary, ['key' => 'margem', 'direction' => 'desc']];
+        }
+
+        return array_merge([$primary], $secondaryCriteria);
     }
 
     private function prefersHot(CategoryRole $role): bool
     {
         return in_array($role, self::HOT_ROLES, true);
+    }
+
+    /**
+     * Limite de participação por SKU derivado do papel da categoria.
+     *
+     * Destino → 40%: categoria de destino atrai tráfego, mas nenhum SKU deve dominar.
+     * Impulso → 35%: impulso depende de variedade visível para converter.
+     * Outros papéis → null (sem limite, comportamento padrão).
+     *
+     * O limite configurado explicitamente pelo usuário em $settings->maxSharePerSku
+     * sempre tem precedência sobre o padrão por papel.
+     */
+    private function deriveMaxSharePerSku(CategoryRole $role, ?int $configuredLimit): ?int
+    {
+        if ($configuredLimit !== null) {
+            return $configuredLimit;
+        }
+
+        return match ($role) {
+            CategoryRole::Destino => 40,
+            CategoryRole::Impulso => 35,
+            default => null,
+        };
     }
 }

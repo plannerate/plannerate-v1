@@ -140,6 +140,9 @@ final class AutoTemplateSynthesisOrchestrator
             numModules: $numModules,
             gondolaId: $input->gondolaId,
             abcClassMap: $input->settings->abcClassMap,
+            hotZonePriority: $input->settings->hotZonePriority,
+            coldZonePriority: $input->settings->coldZonePriority,
+            flowDirection: $input->settings->flowDirection,
         );
     }
 

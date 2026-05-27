@@ -56,6 +56,8 @@ final class TemplateSlotService
             ]);
         }
 
+        $this->validateAbcFirst($validated['visual_criteria'] ?? null, 'visual_criteria');
+
         return $validated;
     }
 
@@ -79,6 +81,8 @@ final class TemplateSlotService
                     "slots.{$index}.max_facings" => ['Frentes máximas deve ser maior ou igual às frentes mínimas.'],
                 ]);
             }
+
+            $this->validateAbcFirst($slot['visual_criteria'] ?? null, "slots.{$index}.visual_criteria");
         }
 
         return $validated;
@@ -125,6 +129,26 @@ final class TemplateSlotService
         }
 
         return $validated;
+    }
+
+    /**
+     * Lança ValidationException se visual_criteria não-nulo não começar com score_abc.
+     * score_abc na posição 0 é requisito do spec (Etapa 9) e garante que a
+     * inteligência ABC sempre domina o visual sort no placement engine.
+     *
+     * @param  array<int, array{key: string, direction: string}>|null  $criteria
+     */
+    private function validateAbcFirst(?array $criteria, string $field): void
+    {
+        if ($criteria === null || $criteria === []) {
+            return;
+        }
+
+        if (($criteria[0]['key'] ?? '') !== 'score_abc') {
+            throw ValidationException::withMessages([
+                $field => ['O critério "Curva ABC" deve ser sempre o primeiro na lista de ordenação visual.'],
+            ]);
+        }
     }
 
     /** @param array<string, mixed> $extra */

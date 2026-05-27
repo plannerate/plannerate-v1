@@ -146,6 +146,22 @@ final readonly class PlacementSettings
          * @var array<string, array<string, mixed>>
          */
         public array $gondolaSlotOverrides = [],
+
+        /** Prioridade de zona quente para o subtemplate sintetizado (valor de ZonePriority) */
+        public ?string $hotZonePriority = null,
+
+        /** Prioridade de zona fria para o subtemplate sintetizado (valor de ZonePriority) */
+        public ?string $coldZonePriority = null,
+
+        /** Sentido de leitura para o subtemplate sintetizado (valor de FlowDirection) */
+        public ?string $flowDirection = null,
+
+        /**
+         * Critérios visuais secundários adicionados após score_abc no subtemplate sintetizado.
+         *
+         * @var list<array{key: string, direction: string}>
+         */
+        public array $secondaryCriteria = [],
     ) {}
 
     public function usesTemplate(): bool
@@ -192,6 +208,10 @@ final readonly class PlacementSettings
             maxSharePerBrand: $this->maxSharePerBrand,
             maxSharePerSubcategory: $this->maxSharePerSubcategory,
             gondolaSlotOverrides: $this->gondolaSlotOverrides,
+            hotZonePriority: $this->hotZonePriority,
+            coldZonePriority: $this->coldZonePriority,
+            flowDirection: $this->flowDirection,
+            secondaryCriteria: $this->secondaryCriteria,
         );
     }
 
@@ -234,6 +254,10 @@ final readonly class PlacementSettings
             maxSharePerBrand: $this->maxSharePerBrand,
             maxSharePerSubcategory: $this->maxSharePerSubcategory,
             gondolaSlotOverrides: $this->gondolaSlotOverrides,
+            hotZonePriority: $this->hotZonePriority,
+            coldZonePriority: $this->coldZonePriority,
+            flowDirection: $this->flowDirection,
+            secondaryCriteria: $this->secondaryCriteria,
         );
     }
 
@@ -277,6 +301,10 @@ final readonly class PlacementSettings
             maxSharePerBrand: $this->maxSharePerBrand,
             maxSharePerSubcategory: $this->maxSharePerSubcategory,
             gondolaSlotOverrides: $this->gondolaSlotOverrides,
+            hotZonePriority: $this->hotZonePriority,
+            coldZonePriority: $this->coldZonePriority,
+            flowDirection: $this->flowDirection,
+            secondaryCriteria: $this->secondaryCriteria,
         );
     }
 
@@ -319,6 +347,10 @@ final readonly class PlacementSettings
             maxSharePerBrand: $this->maxSharePerBrand,
             maxSharePerSubcategory: $this->maxSharePerSubcategory,
             gondolaSlotOverrides: $this->gondolaSlotOverrides,
+            hotZonePriority: $this->hotZonePriority,
+            coldZonePriority: $this->coldZonePriority,
+            flowDirection: $this->flowDirection,
+            secondaryCriteria: $this->secondaryCriteria,
         );
     }
 
@@ -361,6 +393,10 @@ final readonly class PlacementSettings
             maxSharePerBrand: $this->maxSharePerBrand,
             maxSharePerSubcategory: $this->maxSharePerSubcategory,
             gondolaSlotOverrides: $this->gondolaSlotOverrides,
+            hotZonePriority: $this->hotZonePriority,
+            coldZonePriority: $this->coldZonePriority,
+            flowDirection: $this->flowDirection,
+            secondaryCriteria: $this->secondaryCriteria,
         );
     }
 
@@ -406,6 +442,10 @@ final readonly class PlacementSettings
             maxSharePerBrand: $this->maxSharePerBrand,
             maxSharePerSubcategory: $this->maxSharePerSubcategory,
             gondolaSlotOverrides: $this->gondolaSlotOverrides,
+            hotZonePriority: $this->hotZonePriority,
+            coldZonePriority: $this->coldZonePriority,
+            flowDirection: $this->flowDirection,
+            secondaryCriteria: $this->secondaryCriteria,
         );
     }
 
@@ -458,6 +498,10 @@ final readonly class PlacementSettings
             maxSharePerBrand: $this->maxSharePerBrand,
             maxSharePerSubcategory: $this->maxSharePerSubcategory,
             gondolaSlotOverrides: $this->gondolaSlotOverrides,
+            hotZonePriority: $this->hotZonePriority,
+            coldZonePriority: $this->coldZonePriority,
+            flowDirection: $this->flowDirection,
+            secondaryCriteria: $this->secondaryCriteria,
         );
     }
 
@@ -503,6 +547,10 @@ final readonly class PlacementSettings
             maxSharePerBrand: $this->maxSharePerBrand,
             maxSharePerSubcategory: $this->maxSharePerSubcategory,
             gondolaSlotOverrides: $gondolaSlotOverrides,
+            hotZonePriority: $this->hotZonePriority,
+            coldZonePriority: $this->coldZonePriority,
+            flowDirection: $this->flowDirection,
+            secondaryCriteria: $this->secondaryCriteria,
         );
     }
 
@@ -526,6 +574,10 @@ final readonly class PlacementSettings
             maxSharePerSku: $dto->maxSharePerSku,
             maxSharePerBrand: $dto->maxSharePerBrand,
             maxSharePerSubcategory: $dto->maxSharePerSubcategory,
+            hotZonePriority: $dto->hotZonePriority,
+            coldZonePriority: $dto->coldZonePriority,
+            flowDirection: $dto->flowDirection,
+            secondaryCriteria: $dto->secondaryCriteria,
         );
     }
 
@@ -548,6 +600,10 @@ final readonly class PlacementSettings
             maxSharePerSku: $this->maxSharePerSku,
             maxSharePerBrand: $this->maxSharePerBrand,
             maxSharePerSubcategory: $this->maxSharePerSubcategory,
+            hotZonePriority: $this->hotZonePriority,
+            coldZonePriority: $this->coldZonePriority,
+            flowDirection: $this->flowDirection,
+            secondaryCriteria: $this->secondaryCriteria,
         );
     }
 

@@ -29,8 +29,8 @@ const { t } = useT();
     <div class="space-y-3">
         <Label class="text-base font-semibold">{{ t('plannerate.header.facings.title') }}</Label>
 
-        <!-- Mínimo e máximo de frentes -->
-        <div class="grid grid-cols-2 gap-4">
+        <!-- Todos os campos em uma linha (5 colunas quando modo auto, 2 quando básico) -->
+        <div class="grid gap-4" :class="showExpansionOptions ? 'grid-cols-5' : 'grid-cols-2'">
             <div class="space-y-2">
                 <Label for="min-facings">{{ t('plannerate.header.facings.min') }}</Label>
                 <Input
@@ -41,9 +41,7 @@ const { t } = useT();
                     max="10"
                 />
                 <p v-if="errors?.min_facings" class="text-xs text-red-500">{{ errors.min_facings }}</p>
-                <p v-else class="text-xs text-muted-foreground">
-                    {{ t('plannerate.header.facings.min_hint') }}
-                </p>
+                <p v-else class="text-xs text-muted-foreground">{{ t('plannerate.header.facings.min_hint') }}</p>
             </div>
             <div class="space-y-2">
                 <Label for="max-facings">{{ t('plannerate.header.facings.max') }}</Label>
@@ -55,20 +53,12 @@ const { t } = useT();
                     max="20"
                 />
                 <p v-if="errors?.max_facings" class="text-xs text-red-500">{{ errors.max_facings }}</p>
-                <p v-else class="text-xs text-muted-foreground">
-                    {{ t('plannerate.header.facings.max_hint') }}
-                </p>
+                <p v-else class="text-xs text-muted-foreground">{{ t('plannerate.header.facings.max_hint') }}</p>
             </div>
-        </div>
 
-        <!-- Campos extras: expansão de frentes, fallback e estoque alvo (modo automático) -->
-        <template v-if="showExpansionOptions">
-            <div class="grid grid-cols-3 gap-4 pt-1">
-                <!-- Expansão de frentes -->
+            <template v-if="showExpansionOptions">
                 <div class="space-y-2">
-                    <Label for="facing-expansion">
-                        {{ t('planogram-templates.facing_expansion.label') }}
-                    </Label>
+                    <Label for="facing-expansion">{{ t('planogram-templates.facing_expansion.label') }}</Label>
                     <select
                         id="facing-expansion"
                         v-model="form.facing_expansion"
@@ -80,16 +70,10 @@ const { t } = useT();
                         <option value="target_stock">{{ t('planogram-templates.facing_expansion.target_stock') }}</option>
                         <option value="equal">{{ t('planogram-templates.facing_expansion.equal') }}</option>
                     </select>
-                    <p class="text-xs text-muted-foreground">
-                        {{ t('planogram-templates.facing_expansion.hint_module') }}
-                    </p>
+                    <p class="text-xs text-muted-foreground">{{ t('planogram-templates.facing_expansion.hint_module') }}</p>
                 </div>
-
-                <!-- Se faltar espaço -->
                 <div class="space-y-2">
-                    <Label for="space-fallback">
-                        {{ t('planogram-templates.slot_editor.space_fallback_label') }}
-                    </Label>
+                    <Label for="space-fallback">{{ t('planogram-templates.slot_editor.space_fallback_label') }}</Label>
                     <select
                         id="space-fallback"
                         v-model="form.space_fallback"
@@ -101,23 +85,16 @@ const { t } = useT();
                         <option value="skip">{{ t('planogram-templates.slot_editor.space_fallback_options.skip') }}</option>
                     </select>
                 </div>
-
-                <!-- Usar estoque alvo -->
                 <div class="space-y-2">
-                    <Label for="use-target-stock">
-                        {{ t('planogram-templates.slot_editor.target_stock_label') }}
-                    </Label>
+                    <Label for="use-target-stock">{{ t('planogram-templates.slot_editor.target_stock_label') }}</Label>
                     <div class="flex h-9 items-center gap-2">
-                        <Switch
-                            id="use-target-stock"
-                            v-model="form.use_target_stock"
-                        />
+                        <Switch id="use-target-stock" v-model="form.use_target_stock" />
                         <span class="text-sm text-muted-foreground">
                             {{ form.use_target_stock ? t('plannerate.common.yes') : t('plannerate.common.no') }}
                         </span>
                     </div>
                 </div>
-            </div>
-        </template>
+            </template>
+        </div>
     </div>
 </template>
