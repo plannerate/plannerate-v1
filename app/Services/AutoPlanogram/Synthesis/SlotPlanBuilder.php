@@ -41,9 +41,14 @@ class SlotPlanBuilder
      * O maxFacings é teto de expansão (Phase 2 de placement) e não deve ser confundido
      * com o piso mínimo de frentes necessário para um produto aparecer na gôndola.
      *
-     * A→3, B→2, C→1, ''(desconhecido)→2.
+     * Todos as classes começam com 1 frente mínima. A expansão de frentes (Phase 2 de
+     * placement) prioriza classe A antes de B, e B antes de C — via visual_criteria
+     * score_abc desc — garantindo que produtos classe A recebam frentes extras primeiro.
+     *
+     * Público para que o cálculo de demanda de espaço (largura × frentes) use a mesma
+     * fonte de verdade aqui e no AutoTemplateSynthesisOrchestrator.
      */
-    private const ABC_MIN_FACINGS = ['A' => 3, 'B' => 2, 'C' => 1, '' => 2];
+    public const ABC_MIN_FACINGS = ['A' => 1, 'B' => 1, 'C' => 1, '' => 1];
 
     /**
      * Papéis que preferem zona quente (eye/hand).
@@ -80,7 +85,7 @@ class SlotPlanBuilder
 
         $sorted = $this->sortSubcategories($subcategories);
 
-        return $this->partitionIntoBlocks($sorted, $orderedSlots, $settings, $shelfWidth, $useFullCapacity);
+        return $this->partitionIntoBlocks($sorted, $orderedSlots, $settings, $shelfWidth);
     }
 
     /**
@@ -199,7 +204,6 @@ class SlotPlanBuilder
         array $orderedSlots,
         PlacementSettings $settings,
         float $shelfWidth = 100.0,
-        bool $useFullCapacity = false,
     ): array {
         $totalCapacity = count($orderedSlots);
 
@@ -242,6 +246,11 @@ class SlotPlanBuilder
             $overflowWeights = $withDemand->values()->map(
                 fn ($item) => fmod($item['summary']->totalWidth, max($shelfWidth, 1.0))
             )->all();
+
+            // Overflow = fração ocupada da última prateleira: subcategorias com fração > 0
+            // podem absorver slots extras (o placement engine distribui os produtos extras
+            // no espaço sobrante). Subcategorias com totalWidth múltiplo exato de shelfWidth
+            // têm overflow=0 → a última prateleira já está 100% cheia, slot extra seria vazio.
 
             // Capacidade ≥ demanda: base garantida + extras para subcategorias com overflow.
             // Capacidade < demanda: Hare puro escala proporcionalmente para baixo.

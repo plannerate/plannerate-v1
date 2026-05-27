@@ -3,7 +3,6 @@
 namespace App\Services\AutoPlanogram;
 
 use App\Enums\PlacementFailureReason;
-use App\Models\PlanogramSubtemplate;
 use App\Models\PlanogramTemplateSlot;
 use App\Models\Scopes\TenantScope;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
@@ -86,15 +85,18 @@ final class AutoPlanogramService
             ?? $input->settings->categoryId
             ?? '';
 
-        $subtemplate = $this->synthesisOrchestrator->orchestrate($input, $scored, $planogramBaseCategoryId);
+        // A estrutura física (prateleiras) foi definida pelo usuário no stepper e já existe nas
+        // seções. Garante que as prateleiras estejam presentes — se não existirem (gôndola legada
+        // ou criada sem prateleiras), cria o mínimo padrão como fallback.
+        $keptSections = $this->ensureShelvesExist($input->sections);
 
-        // Modo automático dirige a estrutura: o motor cria as prateleiras conforme o template
-        // sintetizado, dentro do envelope físico das seções. Seções excedentes (sem demanda)
-        // são deletadas do banco para não aparecer na UI como módulos vazios.
-        $keptSections = $this->ensureShelvesForSynthesizedTemplate($input->sections, $subtemplate);
+        // Conta o M real das prateleiras existentes para que a síntese gere exatamente N×M slots,
+        // espelhando a estrutura física definida pelo usuário.
+        $shelvesPerModule = $this->countShelvesPerModule($keptSections);
 
-        // Usa o num_modules real do subtemplate (dirigido pela demanda, não pela grade física).
-        // Garante que o engine encontre o subtemplate via (template_id, num_modules) corretamente.
+        $subtemplate = $this->synthesisOrchestrator->orchestrate($input, $scored, $planogramBaseCategoryId, $shelvesPerModule);
+
+        // num_modules = seções físicas (já fixo no orchestrator); registra para o engine.
         $numModules = $subtemplate->num_modules;
         $updatedSettings = $input->settings->withTemplate(
             templateId: $subtemplate->template_id,
@@ -119,78 +121,102 @@ final class AutoPlanogramService
             'num_modules' => $numModules,
         ]);
 
-        return $this->generateWithTemplate($updatedInput, $scored, $scoreType);
+        $output = $this->generateWithTemplate($updatedInput, $scored, $scoreType);
+
+        // Pós-geração automática: remove slots do template que ficaram sem produtos.
+        // O SlotPlanBuilder pode alocar mais slots do que os produtos preenchem (overflow-routing
+        // e mínimo de prateleiras por módulo). Slots sem candidatos são deletados do subtemplate
+        // para que a estrutura reflita apenas os slots efetivamente utilizados nesta geração.
+        $this->pruneEmptySlots($output->emptySlotIds);
+
+        return $output;
     }
 
     /**
-     * Reconstrói as prateleiras físicas das seções a partir do template sintetizado.
+     * Remove slots do template (planogram_template_slots) que não receberam produtos.
      *
-     * Sempre apaga todas as prateleiras existentes antes de criar as novas (modo "partir do zero").
-     * O número de prateleiras por módulo = max(MIN_SHELVES_PER_MODULE, shelf_orders distintos dos slots).
-     * Seções sem slots no template são **deletadas** do banco — evita módulos vazios visíveis na UI.
+     * No modo automático, o SlotPlanBuilder pode gerar mais slots do que o necessário
+     * (overflow-routing + mínimo de prateleiras por módulo). Após o placement, slots
+     * sem nenhum candidato são excluídos do subtemplate para que o template reflita
+     * apenas os slots efetivamente utilizados.
      *
-     * @param  Collection<int, Section>  $sections  Todas as seções físicas da gôndola.
-     * @return Collection<int, Section> Apenas as seções que receberam prateleiras.
+     * Prateleiras físicas NÃO são alteradas — a estrutura da gôndola permanece intacta.
+     *
+     * @param  list<string>  $emptySlotIds  IDs de planogram_template_slots sem candidatos
      */
-    private function ensureShelvesForSynthesizedTemplate(Collection $sections, PlanogramSubtemplate $subtemplate): Collection
+    private function pruneEmptySlots(array $emptySlotIds): void
     {
-        // shelf_orders distintos por módulo, na ordem dos slots do subtemplate
-        $shelvesByModule = PlanogramTemplateSlot::withoutGlobalScope(TenantScope::class)
-            ->where('subtemplate_id', $subtemplate->getKey())
-            ->get(['module_number', 'shelf_order'])
-            ->groupBy('module_number')
-            ->map(fn (Collection $slots): int => $slots->pluck('shelf_order')->unique()->count());
-
-        // Apagar todas as prateleiras existentes de todas as seções (geração parte do zero).
-        // Segmentos e layers são apagados em cascata pelo banco ou pela PlanogramWriter.
-        foreach ($sections as $section) {
-            $section->shelves()->delete();
+        if (empty($emptySlotIds)) {
+            return;
         }
 
-        // Resetar relação em memória após deleção
-        $sections->each(fn (Section $s) => $s->setRelation('shelves', collect()));
+        $deleted = PlanogramTemplateSlot::withoutGlobalScope(TenantScope::class)
+            ->whereIn('id', $emptySlotIds)
+            ->delete();
 
-        /** @var Collection<int, Section> $keptSections Seções que receberão prateleiras */
-        $keptSections = collect();
-        $deletedCount = 0;
-
-        foreach ($sections as $index => $section) {
-            $moduleNumber = $index + 1;
-            $numShelves = (int) ($shelvesByModule[$moduleNumber] ?? 0);
-
-            if ($numShelves <= 0) {
-                // Seção além do numModules demandado: deletar do banco para não aparecer
-                // na UI como módulo vazio. Só deletamos se a seção foi persistida (exists=true).
-                if ($section->exists) {
-                    $section->delete();
-                    $deletedCount++;
-                }
-
-                continue;
-            }
-
-            // Garante mínimo de MIN_SHELVES_PER_MODULE prateleiras por módulo ativo.
-            // Isso evita que módulos parciais (ex.: 1 slot apenas) fiquem com poucas prateleiras.
-            $numShelves = max(AutoTemplateSynthesisOrchestrator::MIN_SHELVES_PER_MODULE, $numShelves);
-
-            $this->shelfStructure->createShelves($section, [
-                'shelf_width' => $section->width,
-            ], $numShelves);
-
-            $keptSections->push($section);
-        }
-
-        if ($deletedCount > 0) {
-            Log::info('AutoPlanogramService: seções excedentes deletadas', [
-                'deleted_sections' => $deletedCount,
-                'kept_sections' => $keptSections->count(),
+        if ($deleted > 0) {
+            Log::info('AutoPlanogramService: slots vazios removidos do subtemplate após geração', [
+                'slots_removidos' => $deleted,
             ]);
         }
+    }
 
-        // Recarrega a relação para o engine (resolveShelf) e o writer enxergarem as novas prateleiras
-        $keptSections->each(fn ($section) => $section->load('shelves'));
+    /**
+     * Garante que cada seção tenha prateleiras para o placement.
+     *
+     * A estrutura física é definida pelo usuário no stepper: quando as seções já possuem
+     * prateleiras, elas são usadas como estão (envelope fixo). Apenas quando uma seção não
+     * tem prateleiras (gôndola legada ou criada antes desta mudança) o fallback cria
+     * MIN_SHELVES_PER_MODULE prateleiras por módulo.
+     *
+     * Invariante: não apaga nem recria prateleiras existentes — a gôndola configurada pelo
+     * usuário é preservada integralmente.
+     *
+     * @param  Collection<int, Section>  $sections  Seções físicas da gôndola (com relação shelves carregada).
+     * @return Collection<int, Section> As mesmas seções, garantidamente com prateleiras.
+     */
+    private function ensureShelvesExist(Collection $sections): Collection
+    {
+        $firstSection = $sections->first();
+        $hasExistingShelves = $firstSection !== null && $firstSection->shelves->count() > 0;
 
-        return $keptSections;
+        if ($hasExistingShelves) {
+            // Prateleiras criadas no stepper pelo usuário — usar como estão.
+            return $sections;
+        }
+
+        // Fallback: gôndola sem prateleiras (legado ou criação fora do stepper).
+        // Cria o mínimo padrão para que o engine consiga posicionar produtos.
+        Log::info('AutoPlanogramService: seções sem prateleiras — criando fallback', [
+            'num_sections' => $sections->count(),
+            'shelves_per_module' => AutoTemplateSynthesisOrchestrator::MIN_SHELVES_PER_MODULE,
+        ]);
+
+        foreach ($sections as $section) {
+            $this->shelfStructure->createShelves($section, [
+                'shelf_width' => $section->width,
+            ], AutoTemplateSynthesisOrchestrator::MIN_SHELVES_PER_MODULE);
+        }
+
+        $sections->each(fn (Section $s) => $s->load('shelves'));
+
+        return $sections;
+    }
+
+    /**
+     * Conta o número de prateleiras da primeira seção para determinar M (prateleiras/módulo).
+     *
+     * Usa a primeira seção como referência: em gôndolas bem formadas todas as seções têm o
+     * mesmo M (definido pelo usuário no stepper). Retorna MIN_SHELVES_PER_MODULE quando nenhuma
+     * seção possui prateleiras (só ocorre no fallback, imediatamente após ensureShelvesExist).
+     *
+     * @param  Collection<int, Section>  $sections
+     */
+    private function countShelvesPerModule(Collection $sections): int
+    {
+        $count = $sections->first()?->shelves->count() ?? 0;
+
+        return $count > 0 ? $count : AutoTemplateSynthesisOrchestrator::MIN_SHELVES_PER_MODULE;
     }
 
     private function generateWithTemplate(PlanogramInput $input, Collection $scored, string $scoreType): PlanogramOutput
@@ -233,9 +259,17 @@ final class AutoPlanogramService
 
         $report = $this->validator->validate($allSegments, $input, $fullResult);
 
-        // Denominador real: apenas produtos que chegaram a algum slot (colocados + rejeitados com produto)
-        $reachableCount = $allSegments->count()
-            + $fullResult->rejectedProducts->filter(fn ($r) => $r['product'] !== null)->count();
+        // Denominador real: produtos ÚNICOS que chegaram a algum slot (posicionados ∪ rejeitados).
+        // Conta por product_id, não por evento/segmento — um produto rejeitado de um slot cheio
+        // mas posicionado em outro não deve inflar o denominador (senão a cobertura fica subestimada).
+        $placedProductIds = $allSegments
+            ->flatMap(fn ($seg) => $seg->layers->map(fn ($l) => $l->productId))
+            ->unique();
+        $rejectedProductIds = $fullResult->rejectedProducts
+            ->filter(fn ($r) => $r['product'] !== null)
+            ->map(fn ($r) => $r['product']->id)
+            ->unique();
+        $reachableCount = $placedProductIds->merge($rejectedProductIds)->unique()->count();
         $this->logCapacityAnalysis($input, $fullResult, $reachableCount);
 
         $suggestions = $this->suggestionGenerator->generate($result->slotAnalysis);
@@ -253,6 +287,7 @@ final class AutoPlanogramService
             gondolaModules: $result->gondolaModules,
             subtemplateId: $result->subtemplateId,
             explanationReport: $result->explanationReport,
+            emptySlotIds: $result->emptySlotIds,
         );
 
         DB::transaction(function () use ($input, $allSegments, $templateOutput): void {
@@ -419,7 +454,6 @@ final class AutoPlanogramService
     {
         // Modo template: denominar só pelos produtos que alcançaram algum slot; modo auto: pool completo
         $totalProducts = $reachableCount ?? $input->products->count();
-        $placed = $result->placedSegments->count();
 
         // Produtos únicos definitivamente sem espaço: exclui os que foram rejeitados de um slot
         // mas colocados em outro da mesma categoria (contagem por eventos seria enganosa).
@@ -427,6 +461,10 @@ final class AutoPlanogramService
             ->flatMap(fn ($seg) => $seg->layers->map(fn ($l) => $l->productId))
             ->flip()
             ->all();
+
+        // Numerador da cobertura: produtos ÚNICOS posicionados (não nº de segmentos), para casar
+        // com o denominador $totalProducts, também por produto único.
+        $placedUnique = count($placedProductIds);
         $rejectedSpace = $result->rejectedProducts
             ->filter(fn ($r) => $r['reason'] === PlacementFailureReason::NoHorizontalSpace
                 && $r['product'] !== null
@@ -441,11 +479,11 @@ final class AutoPlanogramService
 
         Log::info('AutoPlanogramService: análise de capacidade', [
             'produtos_com_venda' => $totalProducts,
-            'posicionados' => $placed,
+            'posicionados' => $placedUnique,
             'rejeitados_sem_espaco' => $rejectedSpace,
             'rejeitados_altura' => $rejectedHeight,
             'mix_excede_gondola' => $mixExceedsGondola,
-            'taxa_cobertura' => round($placed / max($totalProducts, 1), 3),
+            'taxa_cobertura' => round($placedUnique / max($totalProducts, 1), 3),
             'recomendacao' => $mixExceedsGondola
                 ? "Mix excede capacidade da gôndola. Considere ampliar a gôndola ou reduzir o mix em {$rejectedSpace} produto(s)."
                 : 'Mix dentro da capacidade.',

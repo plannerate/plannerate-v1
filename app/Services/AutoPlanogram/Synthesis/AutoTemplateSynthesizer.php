@@ -24,6 +24,8 @@ final class AutoTemplateSynthesizer
 {
     /**
      * @param  list<SlotPlanEntry>  $slotPlan  Plano produzido pelo SlotPlanBuilder.
+     * @param  array<string, string>  $abcClassMap  Mapa product_id → classe ABC usado na síntese.
+     *                                              Vazio sinaliza que a inteligência ABC não chegou.
      */
     public function synthesize(
         string $planogramBaseCategoryId,
@@ -31,6 +33,7 @@ final class AutoTemplateSynthesizer
         array $slotPlan,
         int $numModules,
         string $gondolaId,
+        array $abcClassMap = [],
     ): PlanogramSubtemplate {
         return DB::transaction(function () use (
             $planogramBaseCategoryId,
@@ -38,8 +41,9 @@ final class AutoTemplateSynthesizer
             $slotPlan,
             $numModules,
             $gondolaId,
+            $abcClassMap,
         ): PlanogramSubtemplate {
-            $this->warnIfNoAbcIntelligence($slotPlan);
+            $this->warnIfNoAbcIntelligence($slotPlan, $abcClassMap);
 
             $template = $this->findOrCreateTemplate(
                 planogramBaseCategoryId: $planogramBaseCategoryId,
@@ -179,21 +183,27 @@ final class AutoTemplateSynthesizer
     }
 
     /**
-     * Emite warning quando todos os slots têm o mesmo min_facings em um plano com
-     * múltiplas categorias — sinal de que abcClassMap não chegou ao SlotPlanBuilder.
+     * Emite warning apenas quando o abcClassMap está vazio em um plano com múltiplas
+     * categorias — o sinal real de que a inteligência ABC não chegou à síntese.
      *
-     * Não dispara para categorias folha (plano com única categoria), pois nesse caso
-     * todos os slots pertencerem ao mesmo category_id e terem o mesmo min_facings é correto.
+     * Não infere a partir de min_facings uniforme: várias categorias podem legitimamente
+     * compartilhar a mesma classe ABC dominante (ou empates resolverem para a mesma classe),
+     * o que gerava falsos positivos. Categoria folha (único category_id) também não dispara.
      *
      * @param  list<SlotPlanEntry>  $slotPlan
+     * @param  array<string, string>  $abcClassMap
      */
-    private function warnIfNoAbcIntelligence(array $slotPlan): void
+    private function warnIfNoAbcIntelligence(array $slotPlan, array $abcClassMap): void
     {
+        if ($abcClassMap !== []) {
+            return;
+        }
+
         if (count($slotPlan) < 2) {
             return;
         }
 
-        // Folha: único category_id → mesmo min_facings é o comportamento esperado
+        // Folha: único category_id → ausência de ABC é irrelevante (um bloco só)
         $uniqueCategories = array_unique(array_map(
             fn (SlotPlanEntry $e) => $e->categoryId,
             $slotPlan
@@ -203,17 +213,10 @@ final class AutoTemplateSynthesizer
             return;
         }
 
-        $uniqueFacings = array_unique(array_map(
-            fn (SlotPlanEntry $e) => $e->minFacings,
-            $slotPlan
-        ));
-
-        if (count($uniqueFacings) === 1) {
-            Log::warning(
-                'AutoTemplateSynthesizer: todos os slots têm o mesmo min_facings — '.
-                'verifique se abcClassMap foi injetado corretamente antes da síntese.',
-                ['min_facings' => reset($uniqueFacings), 'num_slots' => count($slotPlan), 'num_categories' => count($uniqueCategories)]
-            );
-        }
+        Log::warning(
+            'AutoTemplateSynthesizer: abcClassMap vazio com múltiplas categorias — '.
+            'a síntese não recebeu a classificação ABC; min_facings e ordenação ficam sem inteligência.',
+            ['num_slots' => count($slotPlan), 'num_categories' => count($uniqueCategories)]
+        );
     }
 }

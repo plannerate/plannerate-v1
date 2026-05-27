@@ -23,6 +23,7 @@ use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\ProductSizeResolver;
 use App\Services\AutoPlanogram\ProductWidthResolver;
 use App\Services\AutoPlanogram\ShelfZoneResolver;
+use App\Services\AutoPlanogram\Synthesis\SlotPlanBuilder;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Illuminate\Support\Collection;
@@ -122,6 +123,8 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $groupingsSemProduto = 0;
         $slotAnalysis = [];
         $allPlacedExplanations = [];
+        /** @var list<string> IDs de slots do template sem candidatos nesta geração */
+        $emptySlotIds = [];
 
         $slots = $subtemplate->slots()
             ->withoutGlobalScope(TenantScope::class)
@@ -162,6 +165,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
             if ($candidates->isEmpty()) {
                 $groupingsSemProduto++;
+                $emptySlotIds[] = $slot->id;
                 Log::debug('TemplatePlacementEngine: sem produto para slot', [
                     'category_id' => $slot->category_id,
                     'category_name' => $slot->relationLoaded('category') ? ($slot->category?->name ?? 'sem categoria') : 'não carregada',
@@ -240,6 +244,14 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             ];
         }
 
+        // === OVERFLOW PASS ===
+        // Produtos definitivamente rejeitados por falta de espaço são reposicionados em
+        // qualquer prateleira da gôndola que ainda tenha espaço disponível, usando 1 frente.
+        // Resolve o caso onde categorias menores (ex.: DE MILHO com 3 produtos) deixam
+        // prateleiras vazias enquanto a categoria dominante (ex.: FAROFA) rejeita produtos
+        // por falta de espaço nos seus próprios slots — o espaço ocioso passa a ser aproveitado.
+        [$placed, $rejected] = $this->placeOverflow($placed, $rejected, $sections);
+
         if ($settings->planogramId !== null) {
             $this->recordSubtemplateUsed($settings->planogramId, $subtemplate->getKey());
         }
@@ -299,7 +311,168 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             gondolaModules: $gondolaModules,
             subtemplateId: $subtemplate->getKey(),
             explanationReport: $explanationReport,
+            emptySlotIds: $emptySlotIds,
         );
+    }
+
+    /**
+     * Overflow pass: reposiciona produtos definitivamente rejeitados (NoHorizontalSpace) em
+     * qualquer prateleira da gôndola com espaço disponível, usando apenas 1 frente por produto.
+     *
+     * Lógica:
+     * 1. Identifica produtos únicos rejeitados por espaço que ainda não foram posicionados.
+     * 2. Calcula o espaço ocupado por prateleira a partir dos segmentos já posicionados.
+     * 3. Ordena prateleiras por maior espaço disponível (prioriza as mais vazias).
+     * 4. Posiciona os produtos ordenados por ABC (A→B→C) nas primeiras prateleiras com espaço.
+     * 5. Retorna as coleções atualizadas de placed e rejected.
+     *
+     * @param  Collection<int, PlacedSegment>  $placed
+     * @param  Collection<int, array>  $rejected
+     * @param  Collection<int, Section>  $sections
+     * @return array{0: Collection<int, PlacedSegment>, 1: Collection<int, array>}
+     */
+    private function placeOverflow(
+        Collection $placed,
+        Collection $rejected,
+        Collection $sections,
+    ): array {
+        // Identifica produtos já posicionados
+        $placedIds = $placed
+            ->flatMap(fn (PlacedSegment $seg) => $seg->layers->map(fn ($l) => $l->productId))
+            ->flip()
+            ->all();
+
+        // Produtos únicos definitivamente rejeitados por falta de espaço horizontal
+        $toRetry = $rejected
+            ->filter(fn ($r) => $r['product'] !== null
+                && $r['reason'] === PlacementFailureReason::NoHorizontalSpace
+                && ! isset($placedIds[$r['product']->id]))
+            ->unique(fn ($r) => $r['product']->id)
+            ->values();
+
+        if ($toRetry->isEmpty()) {
+            return [$placed, $rejected];
+        }
+
+        // Espaço ocupado por prateleira (soma das larguras dos segmentos posicionados)
+        $occupiedPerShelf = $placed
+            ->groupBy(fn (PlacedSegment $seg) => $seg->shelfId)
+            ->map(fn ($segs) => (float) $segs->sum('width'));
+
+        // Mapa de prateleiras com espaço disponível: [section, shelf, remaining, occupied]
+        $shelfMeta = [];
+
+        foreach ($sections as $section) {
+            $totalWidth = $this->getShelfAvailableWidth($section);
+
+            foreach ($section->shelves as $shelf) {
+                $occupied = (float) ($occupiedPerShelf[$shelf->getKey()] ?? 0.0);
+                $remaining = max(0.0, $totalWidth - $occupied);
+
+                if ($remaining > 1.0) {
+                    $shelfMeta[] = [
+                        'section' => $section,
+                        'shelf' => $shelf,
+                        'remaining' => $remaining,
+                        'occupied' => $occupied,
+                    ];
+                }
+            }
+        }
+
+        if (empty($shelfMeta)) {
+            return [$placed, $rejected];
+        }
+
+        // Ordena por maior espaço disponível (aproveita as mais vazias primeiro)
+        usort($shelfMeta, fn ($a, $b) => $b['remaining'] <=> $a['remaining']);
+
+        // Ordena produtos por ABC (A→B→C) para posicionar os de maior valor primeiro
+        $retryOrdered = $toRetry
+            ->sortBy(fn ($r) => match ($this->abcClassMap[$r['product']->id] ?? 'B') {
+                'A' => 0,
+                'B' => 1,
+                'C' => 2,
+                default => 1,
+            })
+            ->values();
+
+        $overflowPlaced = collect();
+        $overflowPlacedIds = [];
+        $orderingOffset = $placed->count();
+
+        foreach ($retryOrdered as $item) {
+            $product = $item['product'];
+            $singleWidth = (int) round($this->widthResolver->resolve($product));
+
+            if ($singleWidth <= 0) {
+                continue;
+            }
+
+            // Min-facings ABC: mesmo critério do placement principal (A→3, B→2, C→1).
+            // O overflow não reduz abaixo do mínimo — produtos que não cabem com seus
+            // facings mínimos em nenhuma prateleira permanecem rejeitados.
+            $abcClass = $this->abcClassMap[$product->id] ?? '';
+            $minFacings = SlotPlanBuilder::ABC_MIN_FACINGS[$abcClass] ?? SlotPlanBuilder::ABC_MIN_FACINGS[''];
+            $widthWithFacings = (int) round($singleWidth * $minFacings);
+
+            // Tenta a prateleira com maior espaço disponível
+            foreach ($shelfMeta as $i => $meta) {
+                if ($meta['remaining'] < $widthWithFacings) {
+                    continue;
+                }
+
+                $overflowPlaced->push(new PlacedSegment(
+                    sectionId: $meta['section']->getKey(),
+                    shelfId: $meta['shelf']->getKey(),
+                    ordering: $orderingOffset++,
+                    position: (int) round($meta['occupied']),
+                    width: $widthWithFacings,
+                    distributedWidth: $widthWithFacings,
+                    layers: collect([
+                        new PlacedLayer(
+                            productId: $product->id,
+                            ean: (string) ($product->ean ?? ''),
+                            quantity: $minFacings,
+                            height: 1,
+                        ),
+                    ]),
+                ));
+
+                $shelfMeta[$i]['occupied'] += $widthWithFacings;
+                $shelfMeta[$i]['remaining'] -= $widthWithFacings;
+                $this->globalPlacedProductIds[$product->id] = true;
+                $overflowPlacedIds[$product->id] = true;
+
+                // Re-ordena por espaço disponível após cada alocação (greedy)
+                usort($shelfMeta, fn ($a, $b) => $b['remaining'] <=> $a['remaining']);
+
+                break;
+            }
+        }
+
+        if ($overflowPlaced->isEmpty()) {
+            return [$placed, $rejected];
+        }
+
+        // Remove do rejected os produtos que foram colocados no overflow
+        $updatedRejected = $rejected
+            ->filter(fn ($r) => $r['product'] === null || ! isset($overflowPlacedIds[$r['product']->id]))
+            ->values();
+
+        $aindaRejeitados = $updatedRejected
+            ->filter(fn ($r) => $r['product'] !== null
+                && $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
+            ->unique(fn ($r) => $r['product']->id)
+            ->count();
+
+        Log::info('TemplatePlacementEngine: overflow placement', [
+            'tentativas' => $toRetry->count(),
+            'colocados_overflow' => $overflowPlaced->count(),
+            'ainda_rejeitados' => $aindaRejeitados,
+        ]);
+
+        return [$placed->merge($overflowPlaced), $updatedRejected];
     }
 
     private function resolveSubtemplate(PlacementSettings $settings): ?PlanogramSubtemplate

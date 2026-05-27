@@ -71,10 +71,17 @@ class RecalculateMonthlySalesSummariesService
                 'tenant_id',
                 'store_id',
                 'codigo_erp',
-                'ean',
-                'product_id',
                 'promotion',
                 DB::raw("{$saleMonthExpression} as sale_month"),
+                // ean/product_id ficam fora do GROUP BY para casar exatamente com a
+                // constraint única uq_monthly_sales (tenant_id, store_id, codigo_erp,
+                // sale_month, promotion). Vendas do mesmo codigo_erp com ean/product_id
+                // divergentes (comum após reimportação) gerariam linhas duplicadas que
+                // colidem na chave única. Pegamos um valor representativo via MAX; o
+                // product_id/ean definitivo é re-vinculado por codigo_erp em seguida
+                // por linkMonthlySalesSummariesToProducts().
+                DB::raw('MAX(ean) as ean'),
+                DB::raw('MAX(product_id) as product_id'),
                 DB::raw('SUM(acquisition_cost) as acquisition_cost'),
                 DB::raw('SUM(sale_price) as sale_price'),
                 DB::raw('SUM(total_profit_margin) as total_profit_margin'),
@@ -91,8 +98,6 @@ class RecalculateMonthlySalesSummariesService
                 'tenant_id',
                 'store_id',
                 'codigo_erp',
-                'ean',
-                'product_id',
                 'promotion',
                 DB::raw($saleMonthExpression),
             ]);

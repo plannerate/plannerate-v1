@@ -189,7 +189,7 @@ test('categoria igual à base do planograma é válida e sintetiza template', fu
         ->and($subtemplate)->toBeInstanceOf(PlanogramSubtemplate::class);
 });
 
-test('abcClassMap injetado faz subcategoria A ter min_facings maior que C', function (): void {
+test('abcClassMap injetado não altera min_facings (todos começam com 1; expansão prioriza A→B→C)', function (): void {
     $base = rouCategory('Limpeza');
     $catA = rouCategory('Sabão', parentId: $base->id);
     $catC = rouCategory('Flanela', parentId: $base->id);
@@ -226,9 +226,11 @@ test('abcClassMap injetado faz subcategoria A ter min_facings maior que C', func
     $facingsA = $slots->get($catA->id)?->first()?->getRawOriginal('min_facings');
     $facingsC = $slots->get($catC->id)?->first()?->getRawOriginal('min_facings');
 
+    // Todos os slots começam com 1 frente mínima, independente da classe ABC
     expect($facingsA)->not->toBeNull()
         ->and($facingsC)->not->toBeNull()
-        ->and($facingsA)->toBeGreaterThan($facingsC);
+        ->and($facingsA)->toBe(1)
+        ->and($facingsC)->toBe(1);
 });
 
 test('participações normalizadas fazem subcategorias receberem papéis distintos', function (): void {

@@ -293,7 +293,7 @@ test('subcategoria curva A cai em prateleira de zona quente', function (): void 
 
 // ── Testes: min_facings por ABC ──────────────────────────────────────────────
 
-test('min_facings maior para curva A do que para curva C', function (): void {
+test('min_facings é 1 para todas as classes ABC (expansão prioriza A→B→C na Phase 2)', function (): void {
     $builder = new SlotPlanBuilder;
 
     $catA = makeCat(id: 'cat-a');
@@ -315,10 +315,12 @@ test('min_facings maior para curva A do que para curva C', function (): void {
     $facingsA = collect($plan)->where('categoryId', 'cat-a')->first()?->minFacings;
     $facingsC = collect($plan)->where('categoryId', 'cat-c')->first()?->minFacings;
 
-    expect($facingsA)->toBeGreaterThan($facingsC);
+    // Todos começam com 1 frente; a prioridade A→B→C é resolvida na expansão (Phase 2)
+    expect($facingsA)->toBe(1);
+    expect($facingsC)->toBe(1);
 });
 
-test('leaf: min_facings deriva da classe ABC dominante do abcClassMap', function (): void {
+test('leaf: min_facings é 1 independente da classe ABC dominante do abcClassMap', function (): void {
     $builder = new SlotPlanBuilder;
 
     $leaf = makeCat(id: 'leaf-cat');
@@ -334,10 +336,10 @@ test('leaf: min_facings deriva da classe ABC dominante do abcClassMap', function
         settings: makeSlotPlanSettings(min: 1, max: 5, abcClassMap: $abcMap),
     );
 
-    // Dominante = 'A' → min_facings deve ser maior que o mínimo (1)
+    // Todos começam com 1 frente; expansão A→B→C é Phase 2 do placement engine
     expect($plan)->not->toBeEmpty();
     $facings = $plan[0]->minFacings;
-    expect($facings)->toBeGreaterThan(1); // A > mínimo
+    expect($facings)->toBe(1);
 });
 
 // ── Testes: categoria folha ──────────────────────────────────────────────────

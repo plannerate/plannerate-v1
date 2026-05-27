@@ -35,6 +35,8 @@ final readonly class PlanogramOutput
         public ?string $subtemplateId = null,
         /** @var array{allocated: list<array<string, mixed>>, rejected: list<array<string, mixed>>, alerts: list<array<string, mixed>>} Justificativa por produto (template mode only) */
         public array $explanationReport = [],
+        /** @var list<string> IDs de planogram_template_slots removidos por não ter produto (modo automático) */
+        public array $emptySlotIds = [],
     ) {}
 
     public function totalAllocated(): int

@@ -505,12 +505,12 @@ const stepDescription: Record<StepKey, () => string> = {
     workflow: () => t('plannerate.form.gondola_create.steps.workflow.description'),
 };
 
-// Manual e template: estrutura física completa.
-// Automático: motor cria as prateleiras → troca o passo "shelves" pelo passo de geração.
+// Todos os modos coletam a estrutura física completa (módulos + base + cremalheira + prateleiras).
+// No automático, o passo de geração vem depois das prateleiras para configurar a análise de vendas.
 const stepKeysByMode: Record<'manual' | 'template' | 'automatic', StepKey[]> = {
     manual: ['basic', 'modules', 'base', 'rack', 'shelves', 'workflow'],
     template: ['basic', 'modules', 'base', 'rack', 'shelves', 'workflow'],
-    automatic: ['basic', 'modules', 'base', 'rack', 'generation', 'workflow'],
+    automatic: ['basic', 'modules', 'base', 'rack', 'shelves', 'generation', 'workflow'],
 };
 
 const activeStepKeys = computed<StepKey[]>(
@@ -594,11 +594,9 @@ const handleSubmit = () => {
         return;
     }
 
-    // No automático o motor dirige a estrutura: a gôndola nasce sem prateleiras (numShelves=0)
-    // e o motor as cria conforme a categoria.
-    if (form.mode === 'automatic') {
-        form.numShelves = 0;
-    }
+    // No automático a estrutura física (módulos + prateleiras) é definida pelo usuário no Step 5.
+    // O backend cria as seções com exatamente numShelves prateleiras, e o motor de geração
+    // usa essa estrutura como envelope fixo para posicionar os produtos.
 
     form.post(storeGondolaRoute.url({ planogram: planogramId }), {
         preserveScroll: true,

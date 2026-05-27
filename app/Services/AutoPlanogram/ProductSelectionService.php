@@ -42,18 +42,28 @@ class ProductSelectionService
     ) {}
 
     /**
-     * Selecionar e rankear produtos para o planograma
+     * Selecionar e rankear produtos para o planograma.
      *
+     * @param  list<string>|null  $scopeCategoryIds  Modo template: categorias cobertas pelos
+     *                                               slots do template. Restringe o pool a elas
+     *                                               (e suas descendentes) em vez do departamento
+     *                                               inteiro do planograma.
      * @return Collection<RankedProductDTO>
      */
     public function selectAndRankProducts(
         Planogram $planogram,
         AutoGenerateConfigDTO $config,
         bool $requireDimensions = true,
+        ?array $scopeCategoryIds = null,
     ): Collection {
 
-        // 1. Buscar produtos da categoria (e filhas)
-        $products = $this->getProductsFromCategory(data_get($config, 'categoryId', $planogram->category_id));
+        // 1. Buscar produtos da categoria (e filhas).
+        // Modo template: pool restrito às categorias dos slots ($scopeCategoryIds).
+        // Caso contrário: categoria do formulário ou, como fallback, a categoria-base
+        // do planograma (departamento inteiro, expandido recursivamente).
+        $products = ($scopeCategoryIds !== null && $scopeCategoryIds !== [])
+            ? $this->getProductsFromCategories($scopeCategoryIds)
+            : $this->getProductsFromCategory(data_get($config, 'categoryId', $planogram->category_id));
 
         if ($products->isEmpty()) {
             return collect();
@@ -170,7 +180,68 @@ class ProductSelectionService
             'database' => $connection->getDatabaseName(),
         ]);
 
-        // Buscar produtos dessas categorias usando a conexão tenant
+        return $this->fetchProductsByCategoryIds($categoryIds);
+    }
+
+    /**
+     * Buscar produtos de múltiplas categorias-raiz (e suas descendentes), usado no modo
+     * template onde os slots definem o escopo. Categorias inexistentes são ignoradas
+     * silenciosamente — diferente de getProductsFromCategory(), que lança exceção.
+     *
+     * @param  list<string>  $rootCategoryIds
+     * @return Collection<int, Product>
+     */
+    protected function getProductsFromCategories(array $rootCategoryIds): Collection
+    {
+        $connection = $this->plannerateTenantDatabase();
+        $roots = array_values(array_unique(array_filter($rootCategoryIds)));
+
+        if ($roots === []) {
+            return collect();
+        }
+
+        $placeholders = implode(',', array_fill(0, count($roots), '?'));
+
+        // CTE recursiva com múltiplas raízes: expande cada categoria do template até as folhas.
+        $rows = $connection->select("
+            WITH RECURSIVE category_tree AS (
+                SELECT id, category_id, name
+                FROM categories
+                WHERE id IN ({$placeholders})
+
+                UNION ALL
+
+                SELECT c.id, c.category_id, c.name
+                FROM categories c
+                INNER JOIN category_tree ct ON c.category_id = ct.id
+            )
+            SELECT DISTINCT id FROM category_tree
+        ", $roots);
+
+        $categoryIds = array_map(fn ($cat) => $cat->id, $rows);
+
+        Log::info('📂 Categorias do template (recursivo)', [
+            'roots' => $roots,
+            'total' => count($categoryIds),
+            'tenant_connection' => $connection->getName(),
+            'database' => $connection->getDatabaseName(),
+        ]);
+
+        return $this->fetchProductsByCategoryIds($categoryIds);
+    }
+
+    /**
+     * Busca os produtos não-draft das categorias informadas (conexão tenant) e loga o resultado.
+     *
+     * @param  list<string>  $categoryIds
+     * @return Collection<int, Product>
+     */
+    protected function fetchProductsByCategoryIds(array $categoryIds): Collection
+    {
+        if ($categoryIds === []) {
+            return collect();
+        }
+
         $products = Product::on($this->plannerateTenantConnectionName())
             ->whereIn('category_id', $categoryIds)
             ->with(['category.parent.parent.parent.parent.parent.parent'])
@@ -184,7 +255,7 @@ class ProductSelectionService
             'total_categoria' => $total,
             'excluidos_draft' => $draftCount,
             'candidatos_finais' => $products->count(),
-            'tenant_connection' => $connection->getName(),
+            'tenant_connection' => $this->plannerateTenantConnectionName(),
             'sample_products' => $products->take(3)->pluck('name', 'id')->toArray(),
         ]);
 

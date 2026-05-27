@@ -8,6 +8,9 @@
  *   1. sync:link-sales        — vincula vendas aos produtos via codigo_erp
  *   2. sync:cleanup           — limpa vendas órfãs/antigas e produtos inativos
  *   3. sync:products-from-ean-references — padroniza produtos pela tabela ean_references
+ *   4. monthly-sales:recalculate — reagrega monthly_sales_summaries e re-vincula
+ *      product_id pelo codigo_erp (mantém o scoring e o ABC consistentes após
+ *      reimportações que geram novos ULIDs de produto)
  *
  * Deve ser agendado com gap suficiente após integration:run para garantir que
  * os jobs da fila `imports` já foram processados.
@@ -112,7 +115,7 @@ class RunDailyPostImportCommand extends Command
         $args = ['--tenant' => $tenantId];
 
         // 1. Vincula vendas aos produtos usando codigo_erp
-        $this->line('  [ 1/3 ] sync:link-sales');
+        $this->line('  [ 1/4 ] sync:link-sales');
         $exitCode = $this->call('sync:link-sales', $args);
 
         if ($exitCode !== self::SUCCESS) {
@@ -122,7 +125,7 @@ class RunDailyPostImportCommand extends Command
         }
 
         // 2. Limpeza: vendas órfãs/antigas, produtos inativos, restauração
-        $this->line('  [ 2/3 ] sync:cleanup');
+        $this->line('  [ 2/4 ] sync:cleanup');
         $exitCode = $this->call('sync:cleanup', $args);
 
         if ($exitCode !== self::SUCCESS) {
@@ -132,11 +135,23 @@ class RunDailyPostImportCommand extends Command
         }
 
         // 3. Padroniza produtos usando ean_references (nome, EAN, dimensões)
-        $this->line('  [ 3/3 ] sync:products-from-ean-references');
+        $this->line('  [ 3/4 ] sync:products-from-ean-references');
         $exitCode = $this->call('sync:products-from-ean-references', $args);
 
         if ($exitCode !== self::SUCCESS) {
             $this->error("         ❌ sync:products-from-ean-references falhou (código {$exitCode}).");
+
+            return $exitCode;
+        }
+
+        // 4. Reagrega monthly_sales_summaries e re-vincula product_id pelo codigo_erp.
+        // Roda por último (após produtos padronizados) e síncrono, garantindo que o
+        // scoring/ABC encontrem as vendas mesmo após reimportações com novos ULIDs.
+        $this->line('  [ 4/4 ] monthly-sales:recalculate');
+        $exitCode = $this->call('monthly-sales:recalculate', $args + ['--sync' => true]);
+
+        if ($exitCode !== self::SUCCESS) {
+            $this->error("         ❌ monthly-sales:recalculate falhou (código {$exitCode}).");
 
             return $exitCode;
         }

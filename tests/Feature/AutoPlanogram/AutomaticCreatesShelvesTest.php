@@ -5,10 +5,13 @@
  *
  * Cenário: gôndola criada SEM prateleiras (apenas o envelope físico das seções).
  * O motor deve, a partir do template sintetizado, criar as prateleiras dentro do envelope
- * e preenchê-las conforme a categoria. Módulo sem slot (categoria sem produto) não ganha prateleira.
+ * e preenchê-las conforme a categoria. Após a geração, slots do template sem candidatos
+ * são removidos (pruning de slots), mantendo as prateleiras físicas intactas.
  */
 
 use App\Models\Category;
+use App\Models\PlanogramTemplateSlot;
+use App\Models\Scopes\TenantScope;
 use App\Services\AutoPlanogram\AutoPlanogramService;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
@@ -349,10 +352,11 @@ function autoShelfInput(string $gondolaId, string $planogramId, string $baseCate
 
 // ── Testes ────────────────────────────────────────────────────────────────────
 
-test('motor cria 4 prateleiras somente nos módulos com demanda e deleta seções excedentes', function (): void {
-    // Cenário: 3 produtos de 8 cm cada em 2 subcategorias, prateleiras de 100 cm, 2 módulos físicos.
-    // Demanda: 2 slots (1 por subcategoria) → ceil(2/4) = 1 módulo necessário.
-    // Módulo 1 (seção 1) ganha 4 prateleiras; seção 2 é DELETADA (não fica vazia na UI).
+test('modo automático preserva todas as seções do formulário (não deleta excedentes)', function (): void {
+    // Cenário: 3 produtos de 8 cm em 2 subcategorias, 2 módulos físicos definidos no formulário.
+    // Regra "exatamente N": as 2 seções são preservadas (não há deleção por baixa demanda).
+    // Cada módulo recebe 4 prateleiras (min) → 8 prateleiras físicas preservadas.
+    // Pós-geração: slots do template sem candidatos são deletados (não as prateleiras físicas).
     $gondolaId = (string) Str::ulid();
     $planogramId = (string) Str::ulid();
 
@@ -377,24 +381,31 @@ test('motor cria 4 prateleiras somente nos módulos com demanda e deleta seçõe
 
     autoShelfGenerate(autoShelfInput($gondolaId, $planogramId, $root->id, $products, $sections, $abcMap));
 
-    // Seção 2 excedente deve ser DELETADA — não deve aparecer mais no banco
-    expect(Section::count())->toBe(1, 'Seção 2 deve ser deletada por não ter demanda');
+    // As 2 seções do formulário são PRESERVADAS (sem deleção)
+    expect(Section::count())->toBe(2, 'Nenhuma seção do formulário deve ser deletada');
 
-    // Seção 1 tem 4 prateleiras (mínimo por módulo ativo)
-    $section1 = Section::orderBy('ordering')->first();
-    expect(Shelf::where('section_id', $section1->id)->count())->toBe(4);
-    expect(Shelf::count())->toBe(4);
+    // Prateleiras físicas preservadas: 4 por módulo × 2 módulos = 8 (estrutura intacta)
+    $orderedSections = Section::orderBy('ordering')->get();
+    expect(Shelf::where('section_id', $orderedSections[0]->id)->count())->toBe(4)
+        ->and(Shelf::where('section_id', $orderedSections[1]->id)->count())->toBe(4)
+        ->and(Shelf::count())->toBe(8);
 
-    // Produtos foram efetivamente alocados nas prateleiras criadas
+    // Slots do template: apenas os que receberam candidatos permanecem.
+    // Com 2 subcategorias e cada produto colocado na primeira slot, os slots excedentes são deletados.
+    $slotsRestantes = PlanogramTemplateSlot::withoutGlobalScope(TenantScope::class)->count();
+    expect($slotsRestantes)->toBeGreaterThan(0)
+        ->and($slotsRestantes)->toBeLessThan(9, 'Slots vazios devem ter sido removidos do template');
+
+    // Produtos foram efetivamente alocados
     expect(Layer::whereNotNull('product_id')->count())->toBeGreaterThan(0);
     expect(Layer::where('product_id', $refri1->id)->count())->toBeGreaterThan(0);
 });
 
-test('motor usa 2 módulos quando demanda exige mais de 4 slots e deleta seção excedente', function (): void {
-    // Cenário: 5 subcategorias, cada uma com 1 produto de 40 cm → totalWidth = 200 cm.
-    // Demanda per-subcat: ceil(40/100)=1 slot cada → total = 5 slots.
-    // numModules = ceil(5/4) = 2 módulos → 2 seções × 4 prateleiras = 8 prateleiras.
-    // Seção 3 (excedente) é DELETADA.
+test('modo automático usa exatamente os módulos do formulário (3 módulos → 12 prateleiras, 5 slots)', function (): void {
+    // Cenário: 5 subcategorias × 1 produto de 40 cm, 3 módulos físicos no formulário.
+    // Regra "exatamente N": usa os 3 módulos definidos, sem encolher nem crescer.
+    // 3 seções × 4 prateleiras = 12 prateleiras físicas (preservadas).
+    // Pós-pruning de slots: 5 slots restam (1 por subcategoria com produto colocado).
     $gondolaId = (string) Str::ulid();
     $planogramId = (string) Str::ulid();
 
@@ -416,27 +427,38 @@ test('motor usa 2 módulos quando demanda exige mais de 4 slots e deleta seção
 
     autoShelfBindMockScorer($abcMap, array_fill_keys($products->pluck('id')->all(), 10.0));
 
-    // 3 seções físicas — apenas 2 serão usadas, seção 3 deve ser deletada
+    // 3 seções físicas definidas no formulário — todas devem ser usadas
     $sections = autoShelfSectionsWithoutShelves($gondolaId, numModules: 3);
     expect(Section::count())->toBe(3);
 
     autoShelfGenerate(autoShelfInput($gondolaId, $planogramId, $root->id, $products, $sections, $abcMap));
 
-    // Seção 3 excedente deve ser DELETADA
-    expect(Section::count())->toBe(2, 'Seção 3 deve ser deletada por não ter demanda');
+    // As 3 seções são preservadas (sem deleção de seções)
+    expect(Section::count())->toBe(3, 'Todos os módulos do formulário devem ser mantidos');
 
-    // 2 módulos × 4 prateleiras = 8
+    // Prateleiras físicas preservadas: 4 por módulo × 3 módulos = 12 (estrutura intacta)
     $orderedSections = Section::orderBy('ordering')->get();
-    expect(Shelf::where('section_id', $orderedSections[0]->id)->count())->toBe(4);
-    expect(Shelf::where('section_id', $orderedSections[1]->id)->count())->toBe(4);
-    expect(Shelf::count())->toBe(8);
+    expect(Shelf::where('section_id', $orderedSections[0]->id)->count())->toBe(4)
+        ->and(Shelf::where('section_id', $orderedSections[1]->id)->count())->toBe(4)
+        ->and(Shelf::where('section_id', $orderedSections[2]->id)->count())->toBe(4)
+        ->and(Shelf::count())->toBe(12);
 
+    // Slots do template: exatamente 5 restam (1 por subcategoria que teve produto colocado).
+    // Os demais slots (excedentes do overflow-routing) são deletados.
+    $slotsRestantes = PlanogramTemplateSlot::withoutGlobalScope(TenantScope::class)->count();
+    expect($slotsRestantes)->toBe(5, '1 slot por subcategoria após pruning de slots vazios');
+
+    // Todos os 5 produtos foram alocados em suas respectivas prateleiras
     expect(Layer::whereNotNull('product_id')->count())->toBeGreaterThan(0);
+    foreach ([$p1, $p2, $p3, $p4, $p5] as $p) {
+        expect(Layer::where('product_id', $p->id)->count())->toBeGreaterThan(0, "Produto {$p->name} deve estar alocado");
+    }
 });
 
-test('com 1 subcategoria e 1 módulo físico, cria exatamente 4 prateleiras (mínimo)', function (): void {
-    // Cenário: 1 produto em 1 subcategoria → demanda = 1 slot → numModules = 1 → 4 prateleiras mínimas.
-    // O mínimo de 4 prateleiras por módulo garante que o módulo seja aproveitado integralmente.
+test('com 1 subcategoria e 1 módulo físico, cria exatamente 4 prateleiras e 1 slot', function (): void {
+    // Cenário: 1 produto em 1 subcategoria → 1 slot com produto, 3 slots vazios.
+    // O engine cria 4 prateleiras físicas (mínimo por módulo) — todas preservadas.
+    // Pós-pruning de slots: apenas 1 slot resta (o que recebeu o produto).
     $gondolaId = (string) Str::ulid();
     $planogramId = (string) Str::ulid();
 
@@ -453,19 +475,26 @@ test('com 1 subcategoria e 1 módulo físico, cria exatamente 4 prateleiras (mí
 
     autoShelfGenerate(autoShelfInput($gondolaId, $planogramId, $root->id, $products, $sections, $abcMap));
 
-    // Com 1 módulo e mínimo de 4 prateleiras, deve criar exatamente 4
+    // Prateleiras físicas preservadas: 4 por módulo (estrutura intacta)
     $sectionId = Section::first()->id;
     expect(Shelf::where('section_id', $sectionId)->count())->toBe(4);
     expect(Shelf::count())->toBe(4);
+
+    // Slots do template: apenas 1 resta (o que recebeu o produto).
+    // Os 3 slots excedentes (mesma categoria, sem candidatos por globalPlacedProductIds) são deletados.
+    $slotsRestantes = PlanogramTemplateSlot::withoutGlobalScope(TenantScope::class)->count();
+    expect($slotsRestantes)->toBe(1, 'Apenas 1 slot deve restar após pruning de 3 vazios');
 
     // Produto alocado em alguma das prateleiras
     expect(Layer::where('product_id', $refri1->id)->count())->toBeGreaterThan(0);
 });
 
-test('regeração apaga prateleiras existentes e recria com mínimo de 4 por módulo', function (): void {
-    // Comportamento "apagar tudo e regenerar": ao gerar automaticamente numa gôndola que já
-    // tem prateleiras, o motor apaga as prateleiras existentes e cria novas (mín. 4 por módulo).
-    // Isso garante que a estrutura resultante seja sempre determinística e dirigida pelo template.
+test('reggerar com prateleiras existentes preserva a estrutura do usuário (não apaga nem recria)', function (): void {
+    // Comportamento novo: a estrutura física (prateleiras) é definida pelo usuário no stepper
+    // e preservada integralmente pela geração. O motor usa as prateleiras existentes como
+    // envelope fixo — não apaga nem recria.
+    // Seção com 3 prateleiras → continua com 3 após a geração.
+    // Pós-pruning de slots: apenas o slot com produto permanece no template.
     $gondolaId = (string) Str::ulid();
     $planogramId = (string) Str::ulid();
 
@@ -477,7 +506,7 @@ test('regeração apaga prateleiras existentes e recria com mínimo de 4 por mó
     $abcMap = [$refri1->id => 'A'];
     autoShelfBindMockScorer($abcMap, [$refri1->id => 100.0]);
 
-    // Seção já com 3 prateleiras criadas previamente (estrutura legada)
+    // Seção com 3 prateleiras criadas pelo stepper (estrutura definida pelo usuário)
     $section = Section::create([
         'gondola_id' => $gondolaId,
         'width' => 100.0,
@@ -506,10 +535,14 @@ test('regeração apaga prateleiras existentes e recria com mínimo de 4 por mó
 
     autoShelfGenerate(autoShelfInput($gondolaId, $planogramId, $root->id, $products, collect([$section]), $abcMap));
 
-    // Regeração apaga as 3 prateleiras antigas e cria 4 novas (mínimo por módulo)
-    expect(Shelf::count())->toBe(4);
-    expect(Shelf::where('section_id', $section->id)->count())->toBe(4);
+    // Estrutura preservada: as 3 prateleiras do usuário permanecem intactas (não foram apagadas/recriadas)
+    expect(Shelf::count())->toBe(3, '3 prateleiras do usuário devem ser preservadas integralmente');
+    expect(Shelf::where('section_id', $section->id)->count())->toBe(3);
 
-    // Produto deve estar alocado nas novas prateleiras
+    // Slots do template: apenas 1 resta (o que recebeu o produto)
+    $slotsRestantes = PlanogramTemplateSlot::withoutGlobalScope(TenantScope::class)->count();
+    expect($slotsRestantes)->toBe(1, 'Apenas 1 slot deve restar após pruning de vazios');
+
+    // Produto alocado em uma das 3 prateleiras existentes
     expect(Layer::where('product_id', $refri1->id)->count())->toBeGreaterThan(0);
 });

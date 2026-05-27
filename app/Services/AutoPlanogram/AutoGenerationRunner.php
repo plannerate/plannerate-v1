@@ -3,6 +3,8 @@
 namespace App\Services\AutoPlanogram;
 
 use App\Models\PlanogramSubtemplate;
+use App\Models\PlanogramTemplateSlot;
+use App\Models\Scopes\TenantScope;
 use App\Models\ScoringWeights;
 use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
@@ -61,10 +63,17 @@ final class AutoGenerationRunner
             )
             : $config;
 
+        // No modo template, restringe o pool às categorias que os slots do template cobrem,
+        // em vez do departamento inteiro do planograma. Vazio → fallback para a categoria-base.
+        $scopeCategoryIds = $templateId
+            ? $this->resolveTemplateScopeCategoryIds($templateId, $gondola->sections->count())
+            : null;
+
         $rankedProducts = $this->productSelection->selectAndRankProducts(
             $planogram,
             $effectiveConfig,
             requireDimensions: $templateId === null,
+            scopeCategoryIds: $scopeCategoryIds,
         );
 
         if ($rankedProducts->isEmpty()) {
@@ -131,5 +140,37 @@ final class AutoGenerationRunner
         }
 
         return new AutoGenerationResult($output, $synthTemplateId, $products->count());
+    }
+
+    /**
+     * Resolve os category_id distintos dos slots do subtemplate que será aplicado, para
+     * restringir o pool de candidatos às categorias que o template realmente cobre.
+     *
+     * Espelha a seleção de subtemplate do TemplatePlacementEngine (maior num_modules <= seções)
+     * para que o pool e o placement usem exatamente o mesmo escopo.
+     *
+     * @return list<string> Vazio se nenhum subtemplate/slot com categoria for encontrado
+     *                      (o chamador então faz fallback para a categoria-base do planograma).
+     */
+    private function resolveTemplateScopeCategoryIds(string $templateId, int $numModules): array
+    {
+        $subtemplate = PlanogramSubtemplate::withoutGlobalScope(TenantScope::class)
+            ->where('template_id', $templateId)
+            ->where('num_modules', '<=', $numModules)
+            ->where('is_active', true)
+            ->orderByDesc('num_modules')
+            ->first();
+
+        if ($subtemplate === null) {
+            return [];
+        }
+
+        return PlanogramTemplateSlot::withoutGlobalScope(TenantScope::class)
+            ->where('subtemplate_id', $subtemplate->getKey())
+            ->whereNotNull('category_id')
+            ->pluck('category_id')
+            ->unique()
+            ->values()
+            ->all();
     }
 }

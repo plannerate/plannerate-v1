@@ -20,5 +20,7 @@ final readonly class PlacementResult
         public ?string $subtemplateId = null,
         /** @var array{allocated: list<array<string, mixed>>, rejected: list<array<string, mixed>>, alerts: list<array<string, mixed>>} Justificativa por produto (template mode only) */
         public array $explanationReport = [],
+        /** @var list<string> IDs de planogram_template_slots sem candidatos nesta geração (sem produto para a categoria do slot) */
+        public array $emptySlotIds = [],
     ) {}
 }

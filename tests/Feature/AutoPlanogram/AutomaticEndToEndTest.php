@@ -10,7 +10,7 @@
  * - Gôndola 2 sections × 4 prateleiras, 100 cm de largura cada.
  * - Categoria-base "Bebidas" com 3 subcategorias: Refrigerantes (A), Sucos, Chás (C).
  * - ~10 produtos com width/height válidos; alguns com venda, alguns sem.
- * - Produto "Wide" (34 cm, min_facings=3 para classe A → 102 cm > 100) → forçosamente rejeitado.
+ * - Produto "Wide" (55 cm > 50 cm de largura de prateleira → 1 frente já não cabe) → forçosamente rejeitado.
  * - Produto "Direto" pendurado na própria categoria selecionada → descartado silenciosamente.
  */
 
@@ -441,9 +441,10 @@ function autoE2eFixture(): array
     $refriA2 = autoE2eProduct($refri->id, width: 8, name: 'Refri A2');
     $refriC = autoE2eProduct($refri->id, width: 8, name: 'Refri C');
 
-    // Produto "Wide" em Refrigerantes — muito largo para caber (34 cm × 3 frentes mínimas = 102 > 100)
-    // Nota: min_facings para classe A é 3 (ABC_MIN_FACINGS); 34 × 3 = 102 > 100 → rejeitado.
-    $wide = autoE2eProduct($refri->id, width: 34, name: 'Wide (rejeitado)');
+    // Produto "Wide" em Refrigerantes — mais largo que a prateleira (55 cm > 50 cm)
+    // ProductWidthResolver: MAX_PLAUSIBLE_WIDTH=60; width=55 está dentro do threshold.
+    // Com min_facings=1, 55 × 1 = 55 > 50 cm (largura da seção) → não cabe → rejeitado.
+    $wide = autoE2eProduct($refri->id, width: 55, name: 'Wide (rejeitado)');
 
     // Produtos — Sucos (neutro, sem venda — para testar scoreOrNeutral)
     $suco1 = autoE2eProduct($sucos->id, width: 8, name: 'Suco sem venda');
@@ -489,7 +490,9 @@ function autoE2eFixture(): array
         $direto->id => 0.0,
     ];
 
-    $sections = autoE2eSections(numModules: 2, numShelves: 4, width: 100.0);
+    // width=50cm para que o produto "Wide" (55cm) não caiba mesmo com 1 frente.
+    // ProductWidthResolver::MAX_PLAUSIBLE_WIDTH=60cm → 55 é resolvido como 55 (não cai no fallback).
+    $sections = autoE2eSections(numModules: 2, numShelves: 4, width: 50.0);
 
     return compact(
         'gondolaId', 'planogramId',
@@ -528,10 +531,10 @@ test('1 — síntese cria template com origin=auto, is_active=false, category_id
         ->and($template->source_gondola_id)->toBe($fx['gondolaId']);
 });
 
-test('2 — subtemplate tem num_modules=1 (demanda: 3 subcats × 1 slot = 3 slots, cabe em 1 módulo) e slots cobrem as subcategorias elegíveis', function (): void {
+test('2 — subtemplate usa exatamente os módulos do formulário (2 seções físicas → num_modules=2) e slots cobrem as subcategorias elegíveis', function (): void {
     // 3 subcategorias pequenas: Refrigerantes (58 cm), Sucos (8 cm), Chás (16 cm).
-    // Cada uma demanda ceil(totalWidth / 100) = 1 slot → totalDemandedSlots = 3.
-    // numModulesNeeded = ceil(3 / 4) = 1 (algoritmo demand-based, não físico).
+    // Regra "exatamente N": num_modules = nº de seções físicas do formulário (2), não a demanda.
+    // Os slots dos 2 módulos (8 no total) cobrem as 3 subcategorias elegíveis.
     $fx = autoE2eFixture();
     autoE2eBindMockScorer($fx['abcMap'], $fx['rawQtyMap'], $fx['rawMargemMap']);
 
@@ -540,7 +543,7 @@ test('2 — subtemplate tem num_modules=1 (demanda: 3 subcats × 1 slot = 3 slot
 
     $subtemplate = PlanogramSubtemplate::first();
     expect($subtemplate)->not->toBeNull()
-        ->and($subtemplate->num_modules)->toBe(1);
+        ->and($subtemplate->num_modules)->toBe(2);
 
     $slotCategoryIds = PlanogramTemplateSlot::pluck('category_id')->unique()->values();
 
@@ -550,8 +553,9 @@ test('2 — subtemplate tem num_modules=1 (demanda: 3 subcats × 1 slot = 3 slot
         ->and($slotCategoryIds)->toContain($fx['chasId']);
 });
 
-test('3 — curva A tem min_facings maior que curva C no slot sintetizado', function (): void {
+test('3 — todos os slots sintetizados começam com min_facings=1 (expansão prioriza A→B→C na Phase 2)', function (): void {
     // Para este teste: Refrigerantes é dominante A, Chás é dominante C
+    // A prioridade A→B→C é resolvida na expansão de frentes (FacingExpansion::Score → score_abc desc)
     $fx = autoE2eFixture();
     autoE2eBindMockScorer($fx['abcMap'], $fx['rawQtyMap'], $fx['rawMargemMap']);
 
@@ -564,9 +568,9 @@ test('3 — curva A tem min_facings maior que curva C no slot sintetizado', func
     expect($refriSlot)->not->toBeNull()
         ->and($chasSlot)->not->toBeNull();
 
-    // Refrigerantes (dominante A, min_facings=3) > Chás (dominante C, min_facings=1)
-    expect($refriSlot->getRawOriginal('min_facings'))
-        ->toBeGreaterThan($chasSlot->getRawOriginal('min_facings'));
+    // Todos os slots começam com 1 frente mínima, independente da classe ABC
+    expect($refriSlot->getRawOriginal('min_facings'))->toBe(1);
+    expect($chasSlot->getRawOriginal('min_facings'))->toBe(1);
 });
 
 test('4 — subcategoria de papel destino fica em slots de zona quente', function (): void {
@@ -666,7 +670,7 @@ test('8 — produto que não cabe é registrado em planogram_rejected_products c
     $input = autoE2eInput($fx['gondolaId'], $fx['planogramId'], $fx['rootId'], $fx['products'], $fx['sections'], $fx['abcMap']);
     autoE2eGenerate($input);
 
-    // "Wide" (34 cm × 3 frentes mínimas = 102 cm > 100 cm disponíveis em toda prateleira) deve ser rejeitado
+    // "Wide" (55 cm > 50 cm de largura de prateleira) deve ser rejeitado (não cabe mesmo com 1 frente)
     $rejected = PlanogramRejectedProduct::where('product_id', $fx['wideId'])->first();
 
     expect($rejected)->not->toBeNull('Produto Wide deve aparecer em planogram_rejected_products')
