@@ -518,9 +518,13 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             ->filter(fn ($r) => $r['product'] === null || ! isset($overflowPlacedIds[$r['product']->id]))
             ->values();
 
+        // Produtos definitivamente sem posição: rejeitados E não colocados nem no pass principal
+        // nem no overflow. Exclui falsos-positivos (produto rejeitado num slot mas alocado em outro).
+        $allPlacedIds = $placedIds + $overflowPlacedIds;
         $aindaRejeitados = $updatedRejected
             ->filter(fn ($r) => $r['product'] !== null
-                && $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
+                && $r['reason'] === PlacementFailureReason::NoHorizontalSpace
+                && ! isset($allPlacedIds[$r['product']->id]))
             ->unique(fn ($r) => $r['product']->id)
             ->count();
 
