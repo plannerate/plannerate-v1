@@ -20,7 +20,7 @@ class GondolaAnalysisController extends Controller
 {
     public function calculateAbcApi(Request $request, string $gondola)
     {
-        $gondolaModel = Gondola::with('planogram.category')->find($gondola);
+        $gondolaModel = Gondola::find($gondola);
 
         if (! $gondolaModel) {
             return redirect()->back()->withErrors(['error' => 'Gôndola não encontrada.']);
@@ -41,10 +41,10 @@ class GondolaAnalysisController extends Controller
                     (float) $request->input('corte_b', 0.85),
                 );
 
-            $category = $gondolaModel->planogram?->category;
-            $results = $category
-                ? $service->analyzeByCategory($category, $tableType, $filters)
-                : $service->analyzeAll($tableType, $filters);
+            // Usa apenas os produtos fisicamente alocados na gôndola (via layers)
+            // ignora a categoria do planograma, que pode não refletir o estado atual do planograma
+            $productIds = $service->getProductIdsByGondola($gondola);
+            $results = $service->analyzeByProductIds($productIds, $tableType, $filters);
 
             $summary = $this->buildAbcSummary($results->toArray());
 

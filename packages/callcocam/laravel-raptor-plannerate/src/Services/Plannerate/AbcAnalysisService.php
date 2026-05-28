@@ -869,7 +869,7 @@ class AbcAnalysisService
      * @param  string  $gondolaId  ID da gôndola
      * @return array Array de IDs de produtos
      */
-    private function getProductIdsByGondola(string $gondolaId): array
+    public function getProductIdsByGondola(string $gondolaId): array
     {
         return Layer::query()
             ->join('segments', 'segments.id', '=', 'layers.segment_id')
