@@ -1,4 +1,5 @@
 import type { AbcResult } from '@/components/plannerate/analysis/abc/types';
+import type { BcgResult } from '@/components/plannerate/analysis/bcg/types';
 import type { TargetStockResult } from '@/components/plannerate/analysis/target-stock/types';
 
 /**
@@ -99,6 +100,47 @@ export function useAnalysisExport() {
      * @param rows    - Linhas de dados
      * @param filenamePrefix - Prefixo do arquivo; a data é adicionada automaticamente
      */
+    /**
+     * Gera e dispara o download do CSV da análise BCG a partir dos resultados exibidos.
+     *
+     * @param results - Array de resultados BCG (normalmente os filtrados/exibidos na tela)
+     * @param filename - Prefixo do nome do arquivo; padrão: 'analise_bcg'
+     */
+    function exportBcgToCsv(results: BcgResult[], filename: string = 'analise_bcg'): void {
+        const quadrantLabels: Record<string, string> = {
+            star: 'Estrela',
+            cash_cow: 'Vaca Leiteira',
+            question_mark: 'Interrogacao',
+            dog: 'Abacaxi',
+        };
+
+        const headers = [
+            'EAN',
+            'Produto',
+            'Categoria',
+            'Quadrante',
+            'Market Share (%)',
+            'Crescimento (%)',
+            'Valor Atual (R$)',
+            'Valor Anterior (R$)',
+            'Limiar de Share (%)',
+        ];
+
+        const rows = results.map((item) => [
+            item.ean,
+            item.product_name,
+            item.category_name ?? '',
+            quadrantLabels[item.quadrant] ?? item.quadrant,
+            item.market_share.toFixed(2).replace('.', ','),
+            item.growth_rate.toFixed(2).replace('.', ','),
+            item.total_value_current.toFixed(2).replace('.', ','),
+            item.total_value_previous.toFixed(2).replace('.', ','),
+            item.share_threshold.toFixed(2).replace('.', ','),
+        ]);
+
+        downloadCsv(headers, rows, filename);
+    }
+
     function downloadCsv(headers: string[], rows: string[][], filenamePrefix: string): void {
         const separator = ';';
 
@@ -132,5 +174,5 @@ export function useAnalysisExport() {
         URL.revokeObjectURL(url);
     }
 
-    return { exportAbcToCsv, exportStockToCsv };
+    return { exportAbcToCsv, exportStockToCsv, exportBcgToCsv };
 }

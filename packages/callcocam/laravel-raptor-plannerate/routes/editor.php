@@ -32,6 +32,8 @@ Route::prefix('api')->name('api.')
             ->name('editor.gondolas.analysis.abc');
         Route::post('editor/gondolas/{gondola}/analysis/target-stock', [GondolaAnalysisController::class, 'calculateTargetStockApi'])
             ->name('editor.gondolas.analysis.target-stock');
+        Route::post('editor/gondolas/{gondola}/analysis/bcg', [GondolaAnalysisController::class, 'calculateBcgApi'])
+            ->name('editor.gondolas.analysis.bcg');
         Route::delete('editor/gondolas/{gondola}/analysis', [GondolaAnalysisController::class, 'clearAnalysisApi'])
             ->name('editor.gondolas.analysis.clear');
 

@@ -17,7 +17,7 @@
                     <TabsTrigger value="abc">
                         <div class="flex items-center gap-1.5">
                             <BarChart3 class="size-3.5 shrink-0  " />
-                            <span class="leading-tight">ABC</span>
+                            <span class="leading-tight">{{ t('plannerate.performance.abc_tab') }}</span>
                         </div>
                     </TabsTrigger>
                     <TabsTrigger value="target-stock">
@@ -26,7 +26,7 @@
                             <span class="leading-tight">{{ t('plannerate.performance.target_stock') }}</span>
                         </div>
                     </TabsTrigger>
-                    <TabsTrigger value="bcg" disabled>
+                    <TabsTrigger value="bcg">
                         <div class="flex items-center gap-1.5">
                             <TrendingUp class="size-3.5 shrink-0" />
                             <span class="leading-tight">{{ t('plannerate.performance.bcg_soon') }}</span>
@@ -43,13 +43,7 @@
                 </TabsContent>
 
                 <TabsContent value="bcg" class="flex-1 overflow-auto mt-2">
-                    <div class="flex items-center justify-center h-full text-muted-foreground">
-                        <div class="text-center">
-                            <TrendingUp class="mx-auto size-12 mb-4 opacity-50" />
-                            <p class="text-lg font-medium">{{ t('plannerate.performance.bcg_title') }}</p>
-                            <p class="text-sm">{{ t('plannerate.performance.soon') }}</p>
-                        </div>
-                    </div>
+                    <PerformanceBcgTab :gondola-id="gondolaId" :planogram="planogram" :results="analysis?.bcg?.results" />
                 </TabsContent>
             </Tabs>
         </DialogContent>
@@ -70,6 +64,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useT } from '@/composables/useT';
 import type { AbcAnalysis, StockAnalysis } from '@/types/planogram';
 import PerformanceAbcTab from './PerformanceAbcTab.vue';
+import PerformanceBcgTab from './PerformanceBcgTab.vue';
 import PerformanceTargetStockTab from './PerformanceTargetStockTab.vue';
 
 interface Planogram {

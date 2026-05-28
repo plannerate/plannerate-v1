@@ -11,6 +11,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\GondolaAnalysis;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AbcAnalysisService;
+use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\BcgAnalysisService;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\TargetStockService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -140,6 +141,52 @@ class GondolaAnalysisController extends Controller
         return redirect()->back();
     }
 
+    public function calculateBcgApi(Request $request, string $gondola)
+    {
+        $gondolaModel = Gondola::find($gondola);
+
+        if (! $gondolaModel) {
+            return redirect()->back()->withErrors(['error' => 'Gôndola não encontrada.']);
+        }
+
+        $tableType = $request->input('table_type', 'monthly_summaries');
+        $currentFilters = $this->buildFilters($request, $gondolaModel);
+        $previousFilters = $this->buildPreviousFilters($request);
+
+        try {
+            $service = app(BcgAnalysisService::class)
+                ->setGrowthThreshold((float) $request->input('growth_threshold', 0.0));
+
+            $productIds = $service->getProductIdsByGondola($gondola);
+            $results = $service->analyzeByProductIds($productIds, $tableType, $currentFilters, $previousFilters);
+
+            $summary = $this->buildBcgSummary($results->toArray());
+
+            GondolaAnalysis::updateOrCreate(
+                ['gondola_id' => $gondolaModel->id, 'type' => 'bcg'],
+                [
+                    'data' => [
+                        'results' => $results->toArray(),
+                        'filters' => $currentFilters,
+                        'previous_filters' => $previousFilters,
+                        'parameters' => [
+                            'table_type' => $tableType,
+                            'growth_threshold' => $request->input('growth_threshold', 0.0),
+                        ],
+                    ],
+                    'summary' => $summary,
+                    'analyzed_at' => now(),
+                ]
+            );
+        } catch (\Exception $e) {
+            Log::error('BCG Analysis failed', ['gondola' => $gondola, 'error' => $e->getMessage()]);
+
+            return redirect()->back()->with('flash', ['error' => 'Erro ao calcular análise BCG: '.$e->getMessage()]);
+        }
+
+        return redirect()->back();
+    }
+
     public function clearAnalysisApi(Request $request, string $gondola)
     {
         GondolaAnalysis::where('gondola_id', $gondola)->delete();
@@ -184,6 +231,48 @@ class GondolaAnalysisController extends Controller
             'class_a_count' => $classA,
             'class_b_count' => $classB,
             'class_c_count' => $classC,
+        ];
+    }
+
+    /**
+     * Extrai filtros de período anterior da request (prefixo prev_)
+     */
+    private function buildPreviousFilters(Request $request): array
+    {
+        $previous = [];
+
+        if ($request->filled('prev_date_from')) {
+            $previous['date_from'] = $request->input('prev_date_from');
+        }
+
+        if ($request->filled('prev_date_to')) {
+            $previous['date_to'] = $request->input('prev_date_to');
+        }
+
+        if ($request->filled('prev_start_month')) {
+            $previous['start_month'] = $request->input('prev_start_month');
+        }
+
+        if ($request->filled('prev_end_month')) {
+            $previous['end_month'] = $request->input('prev_end_month');
+        }
+
+        return $previous;
+    }
+
+    private function buildBcgSummary(array $results): array
+    {
+        $star = count(array_filter($results, fn ($r) => ($r['quadrant'] ?? '') === 'star'));
+        $cashCow = count(array_filter($results, fn ($r) => ($r['quadrant'] ?? '') === 'cash_cow'));
+        $questionMark = count(array_filter($results, fn ($r) => ($r['quadrant'] ?? '') === 'question_mark'));
+        $dog = count(array_filter($results, fn ($r) => ($r['quadrant'] ?? '') === 'dog'));
+
+        return [
+            'total' => count($results),
+            'star' => $star,
+            'cash_cow' => $cashCow,
+            'question_mark' => $questionMark,
+            'dog' => $dog,
         ];
     }
 
