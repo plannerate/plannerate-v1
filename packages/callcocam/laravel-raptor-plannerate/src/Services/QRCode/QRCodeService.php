@@ -20,12 +20,12 @@ class QRCodeService
 
     /**
      * Gera QR Code para uma gôndola
-     * URL: /export/gondola/{gondolaId}/view
+     * URL: /gondola/{gondolaId}/share (visualização pública, sem auth)
      */
     public function generateForGondola(string $gondolaId, ?string $baseUrl = null): string
     {
         $baseUrl = $baseUrl ?? config('app.url');
-        $url = "{$baseUrl}/export/gondola/{$gondolaId}/view";
+        $url = "{$baseUrl}/gondola/{$gondolaId}/share";
 
         return $this->generateForUrl($url);
     }

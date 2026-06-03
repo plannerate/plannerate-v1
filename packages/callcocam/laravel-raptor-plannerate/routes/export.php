@@ -2,6 +2,7 @@
 
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaExportController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaPdfPreviewController;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaShareController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('export/gondola')
@@ -14,4 +15,11 @@ Route::prefix('export/gondola')
         Route::get('section/{section}/qr-code', [GondolaExportController::class, 'generateSectionQrCode'])->name('section.qrcode');
 
         Route::get('{gondola}/report', [GondolaExportController::class, 'exportReport'])->name('report');
+    });
+
+// Rota pública — sem auth, acessível via link direto para repositores e fornecedores
+Route::prefix('gondola')
+    ->name('gondola.')
+    ->group(function () {
+        Route::get('{gondolaId}/share', [GondolaShareController::class, 'show'])->name('share');
     });
