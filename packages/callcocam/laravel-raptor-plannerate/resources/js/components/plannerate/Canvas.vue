@@ -104,22 +104,6 @@ onMounted(() => {
     }
 });
 
-watch(
-    () => selection.selectedItem.value,
-    (newSelection) => {
-        // Abre painel quando há item selecionado (nunca fecha automaticamente)
-        if (newSelection?.type) {
-            emit('openProperties');
-
-            if (isBrowser) {
-                window.localStorage.setItem(
-                    'planogram-properties-manual-open',
-                    'true',
-                );
-            }
-        }
-    },
-);
 
 const target = useTemplateRef<HTMLElement>('target');
 
