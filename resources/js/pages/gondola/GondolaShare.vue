@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import { useT } from '@/composables/useT';
 import type { Section } from '@/types/planogram';
@@ -29,8 +29,17 @@ const props = defineProps<{
 
 const { t } = useT();
 
-// Escala fixa adequada para visualização em tela (não é PDF)
-const SCALE = ref(0.4);
+/**
+ * Calcula escala para a seção preencher o container sem overflow.
+ * Target: 680px — garante que seção + cremalheiras cabem dentro do card
+ * com folga para o px-4 de padding interno (32px cada lado).
+ * Mínimo 0.3 para não ficar microscópico; máximo 3 para não estourar.
+ */
+function scaleForSection(section: Section): number {
+    const totalMm = (section.width ?? 100) + 2 * (section.cremalheira_width ?? 0);
+    if (totalMm <= 0) return 1;
+    return Math.min(3, Math.max(0.3, 680 / totalMm));
+}
 
 const isLeftToRight = computed(() => props.gondola.flow !== 'right_to_left');
 const flowLabel = computed(() =>
@@ -110,7 +119,7 @@ function shelvesWithProducts(section: Section) {
             <article
                 v-for="(section, index) in sections"
                 :key="section.id"
-                class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+                class="rounded-xl border border-slate-200 bg-white shadow-sm"
             >
                 <!-- Cabeçalho do módulo -->
                 <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-3">
@@ -129,14 +138,16 @@ function shelvesWithProducts(section: Section) {
                 </div>
 
                 <!-- Visualização da gôndola -->
-                <div class="overflow-x-auto bg-slate-50 px-4 py-6">
-                    <div class="flex justify-center">
+                <div class="overflow-x-auto bg-slate-50 px-6 pb-6"
+                    :style="{ paddingTop: `${Math.ceil(scaleForSection(section) * 40)}px` }">
+                    <!-- mx-auto + shrink-0: centraliza se cabe, rola se passa da largura -->
+                    <div class="mx-auto shrink-0 w-fit">
                         <PdfSection
                             :section="section"
-                            :scale-factor="SCALE"
+                            :scale-factor="scaleForSection(section)"
                             :alignment="gondola.alignment ?? 'justify'"
-                            layout-direction="column"
-                            :index="index"
+                            layout-direction="row"
+                            :index="0"
                             :extra-height="0"
                         />
                     </div>
