@@ -14,6 +14,7 @@ import ConfirmDeleteDialog from './editor/ConfirmDeleteDialog.vue';
 import DuplicateSectionDialog from './editor/DuplicateSectionDialog.vue';
 import Header from './header/Header.vue';
 import Toolbar from './header/Toolbar.vue';
+import ToolbarDrawer from './header/ToolbarDrawer.vue';
 import PanelLeftGeneration from './sidebar/PanelLeftGeneration.vue';
 import PanelRight from './sidebar/properties/PanelRight.vue';
 
@@ -258,7 +259,8 @@ const category = computed(() => {
 
 <template>
     <div class="h-screen overflow-hidden bg-background">
-        <div ref="headerAndToolbar" class="flex flex-col">
+        <!-- Top bar: visível apenas em telas xl+ -->
+        <div ref="headerAndToolbar" class="hidden xl:flex xl:flex-col">
             <Header
                 :title="record.planogram?.name || t('plannerate.planogram.editor_fallback_title')"
                 :status="record.planogram?.status || 'draft'"
@@ -273,6 +275,18 @@ const category = computed(() => {
         </div>
 
         <div class="relative flex overflow-hidden" :style="{ height: `${containerHeight}px` }">
+            <!-- Drawer lateral: visível apenas em telas menores que xl -->
+            <ToolbarDrawer
+                class="xl:hidden"
+                :title="record.planogram?.name || t('plannerate.planogram.editor_fallback_title')"
+                :status="record.planogram?.status || 'draft'"
+                :tenant="record.tenant"
+                :planogram-id="record.planogram_id"
+                :available-users="availableUsers || []"
+                :back-route="props.backRoute"
+                :permissions="permissions"
+                @update-gondola-images="handleUpdateGondolaImages"
+            />
             <PanelLeftGeneration
                 :open="storedGenerationPanel"
                 :gondola="record"
