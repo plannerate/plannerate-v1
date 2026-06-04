@@ -7,9 +7,9 @@ import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEd
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
 import { useT } from '@/composables/useT';
 import type { Gondola } from '@/types/planogram';
+import RejectedProductsDrawer from './editor/RejectedProductsDrawer.vue';
 import Sections from './editor/Sections.vue';
 import Indicador from './Indicador.vue';
-import RejectedProductsDrawer from './editor/RejectedProductsDrawer.vue';
 
 interface Props {
     record?: Gondola;
@@ -124,12 +124,11 @@ watch(
 );
 </script>
 <template>
-    <div class="relative flex min-w-0 flex-1 flex-col bg-muted/30" ref="target" v-if="containerHeight">
+    <div class="relative flex min-h-0 min-w-0 flex-1 flex-col bg-muted/30" ref="target" v-if="containerHeight">
         <!-- Indicador de Direção da Gôndola - fixo no topo do canvas -->
         <Indicador :isLeftToRight="isLeftToRight" />
 
-        <div class="relative isolate overflow-auto border border-dashed border-border bg-background p-8 dark:bg-background"
-            :style="{ height: containerHeight + 'px' }">
+        <div class="relative isolate min-h-0 flex-1 overflow-auto border border-dashed border-border bg-background p-8 dark:bg-background">
             <!-- Grade de alinhamento -->
             <div v-if="editor.showGrid.value" class="pointer-events-none absolute inset-0 z-10" :style="{
                 backgroundImage:
