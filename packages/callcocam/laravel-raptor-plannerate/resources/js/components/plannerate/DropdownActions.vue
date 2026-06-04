@@ -29,6 +29,10 @@
                 <Share2 class="mr-2 size-4" />
                 {{ t('plannerate.dropdown.actions.share_qr') }}
             </DropdownMenuItem>
+            <DropdownMenuItem @click="handleShareView">
+                <ExternalLink class="mr-2 size-4" />
+                {{ t('plannerate.dropdown.actions.share_view') }}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem @click="handlePreviewPdf">
                 <Eye class="mr-2 size-4" />
@@ -53,10 +57,11 @@
 
 </template>
 <script setup lang="ts">
-import { ArrowRightLeft, ChevronDown, Download, Eye, FileText, MapPin, MoreVertical, Plus, Share2, Trash2 } from 'lucide-vue-next';
+import { ArrowRightLeft, ChevronDown, Download, ExternalLink, Eye, FileText, MapPin, MoreVertical, Plus, Share2, Trash2 } from 'lucide-vue-next';
 
 import { ref } from 'vue';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
+import { show as gondolaShare } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaShareController';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -106,6 +111,19 @@ return;
 }
 
     const route = gondolaView(currentGondola.value.id);
+    window.open(route.url, '_blank');
+}
+
+/**
+ * Abre a visualização pública da gôndola em nova aba (sem auth)
+ * Destinada a repositores, fornecedores e pessoas com o link
+ */
+function handleShareView() {
+    if (!currentGondola.value?.id) {
+        return;
+    }
+
+    const route = gondolaShare(currentGondola.value.id);
     window.open(route.url, '_blank');
 }
 

@@ -40,6 +40,7 @@ interface Props {
         can_update_gondola: boolean;
     };
     backRoute?: string;
+    sidebar?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
     title: '',
@@ -48,6 +49,7 @@ const props = withDefaults(defineProps<Props>(), {
     tenant: {},
     availableUsers: () => [],
     backRoute: '',
+    sidebar: false,
 });
 const { t } = useT();
 const emit = defineEmits<{
@@ -120,17 +122,17 @@ function cancelUpdateGondolaImages() {
 
 <template>
     <div class="border-b bg-background">
-        <div class="flex h-16 items-center justify-between px-6">
-            <!-- Left: Title -->
-            <div class="flex items-center gap-3">
-                <h1 class="text-xl font-semibold">{{ titleDisplay }}</h1>
+        <div :class="sidebar ? 'flex flex-col gap-3 p-4' : 'flex h-16 items-center justify-between px-6'">
+            <!-- Title & Status -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <h1 :class="sidebar ? 'text-base font-semibold truncate' : 'text-xl font-semibold'">{{ titleDisplay }}</h1>
                 <Badge :class="getStatusColor(status)" variant="outline">
                     {{ status }}
                 </Badge>
             </div>
 
-            <!-- Right: Actions -->
-            <div class="flex items-center gap-2">
+            <!-- Actions -->
+            <div :class="sidebar ? 'flex flex-wrap gap-2' : 'flex items-center gap-2'">
                 <Button
                     variant="outline"
                     size="sm"
@@ -163,7 +165,7 @@ function cancelUpdateGondolaImages() {
                     <Edit />
                     {{ t('plannerate.header.edit_gondola') }}
                 </Button>
-                <!-- Atualizar imagens da gôndola -->
+
                 <Button
                     variant="outline"
                     size="sm"
@@ -203,9 +205,7 @@ function cancelUpdateGondolaImages() {
                     </AlertDialogContent>
                 </AlertDialog>
 
-                <div class="mx-2 h-6 w-px bg-border" />
-
-                <Link 
+                <Link
                     v-if="backRoute"
                     :href="wayfinderPath(backRoute)"
                     class="flex items-center gap-2 text-sm text-muted-foreground hover:text-muted-foreground/80 cursor-pointer"

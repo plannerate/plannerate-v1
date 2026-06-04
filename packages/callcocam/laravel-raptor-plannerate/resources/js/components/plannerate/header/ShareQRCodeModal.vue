@@ -10,7 +10,7 @@ import {
 import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { generateQrCode } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaExportController';
-import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
+import { show as gondolaShare } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaShareController';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -45,14 +45,14 @@ const { t } = useT();
 const qrCodeDataUri = ref<string>('');
 const isLoading = ref(false);
 
-// URL de compartilhamento usando Wayfinder
+// URL pública de compartilhamento (sem auth) — para repositores e fornecedores
 const shareUrl = computed(() => {
     if (!props.gondolaId) {
-return '';
-}
+        return '';
+    }
 
     const baseUrl = window.location.origin;
-    const route = gondolaView(props.gondolaId);
+    const route = gondolaShare(props.gondolaId);
 
     return `${baseUrl}${route.url}`;
 });
