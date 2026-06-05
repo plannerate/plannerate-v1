@@ -79,7 +79,7 @@ jobs:
             --build-arg WAYFINDER_LANDLORD_DOMAIN=${{ steps.context.outputs.wayfinder_landlord_domain }} \
             --tag "${TAG_SHA}" \
             --tag "${TAG_LATEST}" \
-            --cache-from type=gha \
-            --cache-to type=gha,mode=max \
+            --cache-from type=gha,scope=vps-v2-build-push \
+            --cache-to type=gha,mode=max,scope=vps-v2-build-push \
             --push \
             .

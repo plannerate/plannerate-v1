@@ -3,7 +3,9 @@
 FROM php:8.4-cli-bookworm AS vendor
 WORKDIR /app
 
-RUN apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         git \
         unzip \
@@ -19,7 +21,8 @@ RUN apt-get update \
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 COPY composer.json composer.lock ./
 COPY packages ./packages
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+RUN --mount=type=cache,target=/tmp/composer-cache,sharing=locked \
+    COMPOSER_CACHE_DIR=/tmp/composer-cache composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
 FROM php:8.4-cli-bookworm AS wayfinder
 WORKDIR /app
@@ -37,7 +40,8 @@ WORKDIR /app
 ENV VITE_ENABLE_WAYFINDER=false
 
 COPY package.json package-lock.json ./
-RUN npm ci --include=optional \
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm ci --include=optional \
     && npm install --no-save @rolldown/binding-linux-x64-musl
 COPY . .
 COPY --from=vendor /app/vendor ./vendor
@@ -52,7 +56,10 @@ RUN npm run build && \
 FROM php:8.4-cli-bookworm
 WORKDIR /var/www
 
-RUN apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    --mount=type=cache,target=/tmp/pear/cache,sharing=locked \
+    apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         git unzip curl \
         libzip-dev libpq-dev libsqlite3-dev \
