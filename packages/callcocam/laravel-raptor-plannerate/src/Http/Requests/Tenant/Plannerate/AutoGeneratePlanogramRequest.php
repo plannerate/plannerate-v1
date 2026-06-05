@@ -46,7 +46,7 @@ class AutoGeneratePlanogramRequest extends FormRequest
             'template_id' => ['nullable', 'string'],
             'facing_expansion' => ['nullable', 'string', 'in:none,score,current_stock,target_stock,equal'],
             'use_target_stock' => ['nullable', 'boolean'],
-            'space_fallback' => ['nullable', 'string', 'in:reduce_c,reduce_facings,skip'],
+            'space_fallback' => ['nullable', 'string', 'in:reduce_c,reduce_facings,skip,remove_dog'],
             'max_share_per_sku' => ['nullable', 'integer', 'min:1', 'max:100'],
             'max_share_per_brand' => ['nullable', 'integer', 'min:1', 'max:100'],
             'max_share_per_subcategory' => ['nullable', 'integer', 'min:1', 'max:100'],

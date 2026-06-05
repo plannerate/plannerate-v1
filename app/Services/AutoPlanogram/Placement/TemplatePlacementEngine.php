@@ -40,6 +40,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /** @var array<string, string> Mapa ABC [product_id => 'A'|'B'|'C'] vindo de PlacementSettings */
     private array $abcClassMap = [];
 
+    /** @var array<string, string> Mapa BCG [product_id => 'star'|'cash_cow'|'question_mark'|'dog'] vindo de PlacementSettings */
+    private array $bcgMap = [];
+
     /** @var array<string, float> Mapa de estoque alvo [product_id => float] vindo de PlacementSettings */
     private array $targetStockMap = [];
 
@@ -95,6 +98,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     ): PlacementResult {
         $this->globalPlacedProductIds = [];
         $this->abcClassMap = $settings->abcClassMap;
+        $this->bcgMap = $settings->bcgMap;
         $this->targetStockMap = $settings->targetStockMap;
         $this->zoneMetricsMap = $settings->zoneMetricsMap;
         $this->mandatoryProductIds = $settings->mandatoryProductIds;
@@ -212,6 +216,17 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                     'B' => 1,
                     'C' => 2,
                     default => 1,
+                })->values();
+            }
+
+            // RemoveDog: produtos BCG dog ficam por último para serem rejeitados primeiro
+            if ($slot->space_fallback === SpaceFallback::RemoveDog && ! empty($this->bcgMap)) {
+                $ordered = $ordered->sortBy(fn ($p) => match ($this->bcgMap[$p->id] ?? 'cash_cow') {
+                    'star' => 0,
+                    'question_mark' => 1,
+                    'cash_cow' => 2,
+                    'dog' => 3,
+                    default => 2,
                 })->values();
             }
 

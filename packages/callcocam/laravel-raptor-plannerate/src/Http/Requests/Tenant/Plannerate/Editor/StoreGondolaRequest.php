@@ -73,7 +73,7 @@ class StoreGondolaRequest extends FormRequest
             'category_id' => ['sometimes', 'nullable', 'string'],
             'facing_expansion' => ['sometimes', 'nullable', 'string', 'in:none,score,current_stock,target_stock,equal'],
             'use_target_stock' => ['sometimes', 'nullable', 'boolean'],
-            'space_fallback' => ['sometimes', 'nullable', 'string', 'in:reduce_c,reduce_facings,skip'],
+            'space_fallback' => ['sometimes', 'nullable', 'string', 'in:reduce_c,reduce_facings,skip,remove_dog'],
             'max_share_per_sku' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100'],
             'max_share_per_brand' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100'],
             'max_share_per_subcategory' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100'],

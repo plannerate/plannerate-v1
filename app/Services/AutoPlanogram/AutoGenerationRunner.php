@@ -92,6 +92,11 @@ final class AutoGenerationRunner
             ->mapWithKeys(fn ($dto) => [$dto->product->id => (float) $dto->targetStock])
             ->all();
 
+        $bcgMap = $rankedProducts
+            ->filter(fn ($dto) => $dto->bcgQuadrant !== null)
+            ->mapWithKeys(fn ($dto) => [$dto->product->id => $dto->bcgQuadrant])
+            ->all();
+
         $weightsModel = ScoringWeights::first();
         $weights = $weightsModel
             ? ScoringWeightsValue::fromModel($weightsModel)
@@ -102,7 +107,8 @@ final class AutoGenerationRunner
         $settings = PlacementSettings::fromConfigDto($config)
             ->withExtras(tenantId: $tenantId, weights: $weights)
             ->withAbcMap($abcClassMap)
-            ->withTargetStockMap($targetStockMap);
+            ->withTargetStockMap($targetStockMap)
+            ->withBcgMap($bcgMap);
 
         if ($templateId) {
             $settings = $settings->withTemplate(

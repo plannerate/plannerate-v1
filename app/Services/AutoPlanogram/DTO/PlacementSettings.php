@@ -162,6 +162,14 @@ final readonly class PlacementSettings
          * @var list<array{key: string, direction: string}>
          */
         public array $secondaryCriteria = [],
+
+        /**
+         * Mapa de quadrante BCG por produto [product_id => 'star'|'cash_cow'|'question_mark'|'dog'].
+         * Vazio quando BCG não pôde ser calculado (sem dados de dois períodos).
+         *
+         * @var array<string, string>
+         */
+        public array $bcgMap = [],
     ) {}
 
     public function usesTemplate(): bool
@@ -212,6 +220,7 @@ final readonly class PlacementSettings
             coldZonePriority: $this->coldZonePriority,
             flowDirection: $this->flowDirection,
             secondaryCriteria: $this->secondaryCriteria,
+            bcgMap: $this->bcgMap,
         );
     }
 
@@ -551,6 +560,56 @@ final readonly class PlacementSettings
             coldZonePriority: $this->coldZonePriority,
             flowDirection: $this->flowDirection,
             secondaryCriteria: $this->secondaryCriteria,
+        );
+    }
+
+    /**
+     * @param  array<string, string>  $bcgMap  [product_id => 'star'|'cash_cow'|'question_mark'|'dog']
+     */
+    public function withBcgMap(array $bcgMap): self
+    {
+        return new self(
+            strategy: $this->strategy,
+            useExistingAnalysis: $this->useExistingAnalysis,
+            startDate: $this->startDate,
+            endDate: $this->endDate,
+            minFacings: $this->minFacings,
+            maxFacings: $this->maxFacings,
+            groupBySubcategory: $this->groupBySubcategory,
+            includeProductsWithoutSales: $this->includeProductsWithoutSales,
+            tableType: $this->tableType,
+            categoryId: $this->categoryId,
+            tenantId: $this->tenantId,
+            storeId: $this->storeId,
+            weights: $this->weights,
+            blockHierarchyLevel: $this->blockHierarchyLevel,
+            adjacencyHierarchyLevel: $this->adjacencyHierarchyLevel,
+            targetOccupancyRate: $this->targetOccupancyRate,
+            verticalBlockThreshold: $this->verticalBlockThreshold,
+            verticalBlockMinShelves: $this->verticalBlockMinShelves,
+            templateId: $this->templateId,
+            numModules: $this->numModules,
+            planogramId: $this->planogramId,
+            products: $this->products,
+            abcClassMap: $this->abcClassMap,
+            targetStockMap: $this->targetStockMap,
+            zoneMetricsMap: $this->zoneMetricsMap,
+            mandatoryProductIds: $this->mandatoryProductIds,
+            blockedProductIds: $this->blockedProductIds,
+            blockedBrands: $this->blockedBrands,
+            blockedSubcategoryIds: $this->blockedSubcategoryIds,
+            facingExpansion: $this->facingExpansion,
+            useTargetStock: $this->useTargetStock,
+            spaceFallback: $this->spaceFallback,
+            maxSharePerSku: $this->maxSharePerSku,
+            maxSharePerBrand: $this->maxSharePerBrand,
+            maxSharePerSubcategory: $this->maxSharePerSubcategory,
+            gondolaSlotOverrides: $this->gondolaSlotOverrides,
+            hotZonePriority: $this->hotZonePriority,
+            coldZonePriority: $this->coldZonePriority,
+            flowDirection: $this->flowDirection,
+            secondaryCriteria: $this->secondaryCriteria,
+            bcgMap: $bcgMap,
         );
     }
 

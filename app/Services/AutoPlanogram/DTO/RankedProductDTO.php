@@ -46,6 +46,9 @@ class RankedProductDTO
 
         /** Número de facings calculado (1-20) */
         public int $facings = 1,
+
+        /** Quadrante BCG: 'star', 'cash_cow', 'question_mark', 'dog' — null se sem dados de dois períodos */
+        public readonly ?string $bcgQuadrant = null,
     ) {}
 
     /**
@@ -72,6 +75,7 @@ class RankedProductDTO
             'subcategory_id' => $this->subcategoryId,
             'target_stock' => $this->targetStock,
             'safety_stock' => $this->safetyStock,
+            'bcg_quadrant' => $this->bcgQuadrant,
         ];
     }
 }

@@ -57,8 +57,10 @@ class CompositeScorer implements ProductScorerInterface
             'm_max' => round($mMax, 2),
         ]);
 
+        $bcgMap = $settings->bcgMap;
+
         $scored = $products
-            ->map(fn ($p) => $this->scoreProduct($p, $metrics, $strategicIds, $weights, $qMax, $mMin, $mMax))
+            ->map(fn ($p) => $this->scoreProduct($p, $metrics, $strategicIds, $weights, $qMax, $mMin, $mMax, $bcgMap))
             ->sortByDesc('score')
             ->values();
 
@@ -106,6 +108,9 @@ class CompositeScorer implements ProductScorerInterface
         ))->values();
     }
 
+    /**
+     * @param  array<string, string>  $bcgMap  [product_id => quadrant]
+     */
     private function scoreProduct(
         Product $p,
         array $metrics,
@@ -114,6 +119,7 @@ class CompositeScorer implements ProductScorerInterface
         float $qMax,
         float $mMin,
         float $mMax,
+        array $bcgMap = [],
     ): ScoredProduct {
         $m = $metrics[$p->id] ?? ['quantity' => 0, 'margem' => 0.0, 'doh' => null];
 
@@ -122,10 +128,22 @@ class CompositeScorer implements ProductScorerInterface
         $dohNorm = $m['doh'] === null ? 0.5 : $this->normalizeDoh((float) $m['doh']);
         $strategic = in_array($p->id, $strategicIds, true) ? 1.0 : 0.0;
 
+        // Componente de crescimento BCG: usa quadrante para capturar a dimensão de tendência,
+        // que giro+margem isolados não expressam (produto grande mas declinando vs pequeno crescendo).
+        // Peso 0.0 por padrão — ative via w_crescimento em scoring_weights quando quiser.
+        $growthNorm = match ($bcgMap[$p->id] ?? null) {
+            'star' => 1.0,
+            'question_mark' => 0.7,
+            'cash_cow' => 0.3,
+            'dog' => 0.0,
+            default => 0.5,
+        };
+
         $score = ($giroNorm * $weights->giro)
                + ($margemNorm * $weights->margem)
                + ($strategic * $weights->estrategico)
-               + ((1 - $dohNorm) * $weights->doh);
+               + ((1 - $dohNorm) * $weights->doh)
+               + ($growthNorm * $weights->crescimento);
 
         return new ScoredProduct(
             productId: $p->id,
@@ -138,6 +156,8 @@ class CompositeScorer implements ProductScorerInterface
                 'margem_norm' => $margemNorm,
                 'doh_norm' => $dohNorm,
                 'strategic' => $strategic,
+                'growth_norm' => $growthNorm,
+                'bcg_quadrant' => $bcgMap[$p->id] ?? null,
                 'raw_quantity' => $m['quantity'],
                 'raw_margem' => $m['margem'],
             ],

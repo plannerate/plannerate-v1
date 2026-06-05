@@ -14,6 +14,7 @@ use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AbcAnalysisService;
+use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\BcgAnalysisService;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\TargetStockService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -39,6 +40,7 @@ class ProductSelectionService
     public function __construct(
         private readonly AbcAnalysisService $abcAnalysis,
         private readonly TargetStockService $targetStock,
+        private readonly BcgAnalysisService $bcgAnalysis,
     ) {}
 
     /**
@@ -77,8 +79,11 @@ class ProductSelectionService
         $salesData = $this->getSalesData($products, $planogram, $config);
         $abcAnalyses = $this->getAbcAnalyses($products, $config);
 
-        // 3. Montar DTOs com ABC e dados de venda (score = prioridade ABC para ordenar o fetch)
-        $rankedProducts = $products->map(function (Product $product) use ($salesData, $abcAnalyses) {
+        // 2b. Calcular quadrantes BCG (requer dois períodos — fallback silencioso se sem dados)
+        $bcgQuadrantMap = $this->getBcgQuadrants($products, $planogram, $config);
+
+        // 3. Montar DTOs com ABC, BCG e dados de venda (score = prioridade ABC para ordenar o fetch)
+        $rankedProducts = $products->map(function (Product $product) use ($salesData, $abcAnalyses, $bcgQuadrantMap) {
             $productId = $product->id;
 
             $analysisData = $abcAnalyses[$productId] ?? null;
@@ -101,6 +106,7 @@ class ProductSelectionService
                 subcategoryId: $product->category_id,
                 targetStock: $analysisData['target_stock'] ?? null,
                 safetyStock: $analysisData['safety_stock'] ?? null,
+                bcgQuadrant: $bcgQuadrantMap[$productId] ?? null,
             );
         });
 
@@ -292,6 +298,80 @@ class ProductSelectionService
         ]);
 
         return $products;
+    }
+
+    /**
+     * Calcula quadrantes BCG por produto.
+     *
+     * Usa o período do config como período atual e calcula o anterior automaticamente
+     * (mesmo intervalo deslocado). Retorna mapa vazio silenciosamente se sem dados.
+     *
+     * @return array<string, string> [product_id => 'star'|'cash_cow'|'question_mark'|'dog']
+     */
+    protected function getBcgQuadrants(
+        Collection $products,
+        Planogram $planogram,
+        AutoGenerateConfigDTO $config,
+    ): array {
+        $productIds = $products->pluck('id')->toArray();
+
+        if (empty($productIds)) {
+            return [];
+        }
+
+        $tenantId = app('currentTenant')?->getKey() ?? '';
+
+        $currentFilters = ['tenant_id' => $tenantId];
+
+        if ($config->tableType === 'monthly_summaries') {
+            $startDate = $config->startDate
+                ? Carbon::parse($config->startDate)->startOfMonth()->format('Y-m')
+                : Carbon::parse($planogram->start_date)->subYear()->startOfMonth()->format('Y-m');
+            $endDate = $config->endDate
+                ? Carbon::parse($config->endDate)->endOfMonth()->format('Y-m')
+                : Carbon::parse($planogram->end_date)->subYear()->endOfMonth()->format('Y-m');
+
+            $currentFilters['start_month'] = $startDate;
+            $currentFilters['end_month'] = $endDate;
+        } else {
+            $currentFilters['date_from'] = $config->startDate
+                ?? Carbon::parse($planogram->start_date)->subYear()->toDateString();
+            $currentFilters['date_to'] = $config->endDate
+                ?? Carbon::parse($planogram->end_date)->subYear()->toDateString();
+        }
+
+        try {
+            $results = $this->bcgAnalysis->analyzeByProductIds(
+                productIds: $productIds,
+                tableType: $config->tableType ?: 'sales',
+                currentFilters: $currentFilters,
+            );
+
+            if ($results->isEmpty()) {
+                return [];
+            }
+
+            $map = [];
+            foreach ($results as $item) {
+                $map[$item['product_id']] = $item['quadrant'];
+            }
+
+            Log::info('ProductSelectionService: BCG calculado', [
+                'total' => count($map),
+                'star' => count(array_filter($map, fn ($q) => $q === 'star')),
+                'cash_cow' => count(array_filter($map, fn ($q) => $q === 'cash_cow')),
+                'question_mark' => count(array_filter($map, fn ($q) => $q === 'question_mark')),
+                'dog' => count(array_filter($map, fn ($q) => $q === 'dog')),
+            ]);
+
+            return $map;
+        } catch (\Throwable $e) {
+            Log::warning('ProductSelectionService: BCG falhou (fallback silencioso)', [
+                'erro' => $e->getMessage(),
+            ]);
+
+            return [];
+        }
     }
 
     /**
