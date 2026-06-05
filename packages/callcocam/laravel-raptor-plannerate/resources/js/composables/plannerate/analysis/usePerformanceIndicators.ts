@@ -1,44 +1,41 @@
 import { router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useAbcClassification } from './useAbcClassification';
+import { usePaperAnalysis } from './usePaperAnalysis';
 import { useTargetStockAnalysis } from './useTargetStockAnalysis';
 
 /**
- * Composable centralizado para gerenciar todos os indicadores de performance
- * Controla ABC, Target Stock e futuramente BCG
+ * Composable centralizado para gerenciar todos os indicadores de performance.
+ * Controla ABC, Target Stock e Análise de Papel.
  */
 export function usePerformanceIndicators() {
     const abc = useAbcClassification();
     const targetStock = useTargetStockAnalysis();
+    const paper = usePaperAnalysis();
 
-    /**
-     * Alterna a visibilidade de TODOS os indicadores de performance
-     */
+    /** Alterna a visibilidade de TODOS os indicadores de performance. */
     function toggleAllIndicators() {
         const newState = !abc.isVisible.value;
         abc.setVisibility(newState);
         targetStock.setVisibility(newState);
+        paper.setVisibility(newState);
     }
 
-    /**
-     * Mostra todos os indicadores
-     */
+    /** Mostra todos os indicadores. */
     function showAllIndicators() {
         abc.setVisibility(true);
         targetStock.setVisibility(true);
+        paper.setVisibility(true);
     }
 
-    /**
-     * Esconde todos os indicadores
-     */
+    /** Esconde todos os indicadores. */
     function hideAllIndicators() {
         abc.setVisibility(false);
         targetStock.setVisibility(false);
+        paper.setVisibility(false);
     }
 
-    /**
-     * Limpa todos os dados de análise (ABC e Target Stock)
-     */
+    /** Limpa todos os dados de análise (ABC, Target Stock e Análise de Papel). */
     function clearAllAnalysis(gondolaId?: string | number) {
         if (gondolaId) {
             router.delete(`/api/editor/gondolas/${gondolaId}/analysis`, {
@@ -47,6 +44,7 @@ export function usePerformanceIndicators() {
                 onSuccess: () => {
                     abc.clearClassifications();
                     targetStock.clearTargetStockData();
+                    paper.clearPaperRoles();
                 },
                 onError: (errors) => {
                     console.error('Erro ao limpar análises no banco:', errors);
@@ -58,38 +56,31 @@ export function usePerformanceIndicators() {
 
         abc.clearClassifications();
         targetStock.clearTargetStockData();
+        paper.clearPaperRoles();
     }
 
-    /**
-     * Verifica se algum indicador está visível
-     */
-    const anyVisible = computed(() => abc.isVisible.value || targetStock.isVisible.value);
+    const anyVisible = computed(
+        () => abc.isVisible.value || targetStock.isVisible.value || paper.isVisible.value,
+    );
 
-    /**
-     * Verifica se todos os indicadores estão visíveis
-     */
-    const allVisible = computed(() => abc.isVisible.value && targetStock.isVisible.value);
+    const allVisible = computed(
+        () => abc.isVisible.value && targetStock.isVisible.value && paper.isVisible.value,
+    );
 
-    /**
-     * Verifica se há algum dado carregado
-     */
-    const hasAnyData = computed(() => abc.hasData.value || targetStock.hasData.value);
+    const hasAnyData = computed(
+        () => abc.hasData.value || targetStock.hasData.value || paper.hasData.value,
+    );
 
     return {
-        // Controles gerais
         toggleAllIndicators,
         showAllIndicators,
         hideAllIndicators,
         clearAllAnalysis,
-
-        // Controles individuais
         abc,
         targetStock,
-
-        // Estados computados
+        paper,
         anyVisible,
         allVisible,
         hasAnyData,
     };
 }
-

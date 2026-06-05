@@ -19,8 +19,10 @@ return [
             'target_stock' => 'Estoque Alvo',
             'all' => 'Todos',
             'clear_all' => 'Limpar Todas as Analises',
+            'paper_analysis' => 'Analise de Papel',
             'export_abc' => 'Exportar Sortimento (CSV)',
             'export_stock' => 'Exportar Estoque Alvo (CSV)',
+            'export_paper' => 'Exportar Analise de Papel (CSV)',
         ],
     ],
     'header' => [

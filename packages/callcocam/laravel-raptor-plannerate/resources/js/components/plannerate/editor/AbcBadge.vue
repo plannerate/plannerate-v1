@@ -1,7 +1,7 @@
 <template>
     <div
         v-if="classification && isVisible"
-        class="absolute -top-2 -right-2 z-30 flex items-center justify-center rounded-bl-md px-1 py-0.5 text-[10px] font-bold shadow-md rounded-lg"
+        class="flex items-center justify-center rounded-lg px-1 py-0.5 text-[10px] font-bold shadow-md"
         :class="badgeClasses"
         :title="t('plannerate.editor.abc_badge.title', { classification })"
     >

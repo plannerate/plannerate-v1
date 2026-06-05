@@ -41,9 +41,15 @@
             </svg>
         </div>
 
-        <!-- Indicador visual de performance A, B, C -->
-        <AbcBadge :classification="abcClassification" />
-        
+        <!-- Badges ABC + Papel lado a lado, centralizados no topo do segmento -->
+        <div
+            v-if="abcClassification || paperRole"
+            class="absolute -top-2.5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5"
+        >
+            <AbcBadge :classification="abcClassification" />
+            <PaperRoleBadge :role="paperRole" />
+        </div>
+
         <!-- Indicador visual de estoque alvo -->
         <StockIndicator :segment="segment" :shelf-depth="shelfDepth" :scale="props.scale" @click="handleSegmentClick" />
      
@@ -94,10 +100,12 @@ import {
     eanSearchQuery,
 } from '../../../composables/plannerate/core/useGondolaState';
 import { useAbcClassification } from '../../../composables/plannerate/analysis/useAbcClassification';
+import { usePaperAnalysis } from '../../../composables/plannerate/analysis/usePaperAnalysis';
 import { usePlanogramEditor } from '../../../composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '../../../composables/plannerate/core/usePlanogramSelection';
 import type { Layer, Segment } from '../../../types/planogram';
 import AbcBadge from './AbcBadge.vue';
+import PaperRoleBadge from './PaperRoleBadge.vue';
 import LayerRenderer from './Layer.vue';
 import StockIndicator from './StockIndicator.vue';
 
@@ -118,15 +126,15 @@ const layer = computed<Layer | undefined>(() => props.segment.layer);
 const selection = usePlanogramSelection();
 const editor = usePlanogramEditor();
 const { getClassification } = useAbcClassification();
+const { getPaperRole } = usePaperAnalysis();
 
 const getQuantity = computed(() => props.segment.quantity || 1);
 
 // Busca classificação ABC do produto pelo EAN
-const abcClassification = computed(() => {
-    const ean = layer.value?.product?.ean;
+const abcClassification = computed(() => getClassification(layer.value?.product?.ean));
 
-    return getClassification(ean);
-});
+// Busca papel estratégico do produto pelo EAN
+const paperRole = computed(() => getPaperRole(layer.value?.product?.ean));
 
 const isEanMatch = computed(() => {
     const query = eanSearchQuery.value.trim();
