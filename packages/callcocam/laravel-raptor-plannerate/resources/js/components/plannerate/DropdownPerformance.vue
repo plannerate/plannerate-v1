@@ -132,41 +132,29 @@ interface PerformanceVisibilityPreferences {
 }
 
 const saveVisibilityPreferences = (): void => {
-    if (typeof window === 'undefined') {
-        return;
-    }
+    if (typeof window === 'undefined') return;
 
     const payload: PerformanceVisibilityPreferences = {
         abcVisible: performance.abc.isVisible.value,
         targetStockVisible: performance.targetStock.isVisible.value,
+        paperVisible: performance.paper.isVisible.value,
     };
 
-    const storageKey = getStorageKey(props.gondola.id);
-    window.localStorage.setItem(storageKey, JSON.stringify(payload));
+    window.localStorage.setItem(getStorageKey(props.gondola.id), JSON.stringify(payload));
 };
 
 const loadVisibilityPreferences = (): void => {
-    if (typeof window === 'undefined') {
-        return;
-    }
+    if (typeof window === 'undefined') return;
 
-    const storageKey = getStorageKey(props.gondola.id);
-    const raw = window.localStorage.getItem(storageKey);
-
-    if (!raw) {
-        return;
-    }
+    const raw = window.localStorage.getItem(getStorageKey(props.gondola.id));
+    if (!raw) return;
 
     try {
         const parsed = JSON.parse(raw) as Partial<PerformanceVisibilityPreferences>;
 
-        if (typeof parsed.abcVisible === 'boolean') {
-            performance.abc.setVisibility(parsed.abcVisible);
-        }
-
-        if (typeof parsed.targetStockVisible === 'boolean') {
-            performance.targetStock.setVisibility(parsed.targetStockVisible);
-        }
+        if (typeof parsed.abcVisible === 'boolean') performance.abc.setVisibility(parsed.abcVisible);
+        if (typeof parsed.targetStockVisible === 'boolean') performance.targetStock.setVisibility(parsed.targetStockVisible);
+        if (typeof parsed.paperVisible === 'boolean') performance.paper.setVisibility(parsed.paperVisible);
     } catch {
         window.localStorage.removeItem(getStorageKey(props.gondola.id));
     }
