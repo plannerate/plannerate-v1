@@ -111,7 +111,7 @@ return [
             'space_fallback_reduce_c' => 'Reduzir classe C',
             'space_fallback_reduce_facings' => 'Reduzir frentes gerais',
             'space_fallback_skip' => 'Pular produto',
-            'space_fallback_remove_dog' => 'Remover BCG Dog primeiro',
+            'space_fallback_remove_dog' => 'Remover Retardatarios primeiro',
             'share_limits_title' => 'Limites de participacao',
             'share_limits_description' => 'Teto de frentes por SKU, marca ou subcategoria (%). Deixe em branco para sem limite.',
             'max_share_per_sku_label' => 'Max. % por SKU',
