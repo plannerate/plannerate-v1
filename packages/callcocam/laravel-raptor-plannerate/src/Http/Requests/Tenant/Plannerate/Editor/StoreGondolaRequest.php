@@ -83,6 +83,7 @@ class StoreGondolaRequest extends FormRequest
             'secondary_criteria' => ['sometimes', 'nullable', 'array'],
             'secondary_criteria.*.key' => ['required_with:secondary_criteria', 'string', 'in:marca,preco,tamanho,margem,embalagem,tipo,sabor,atributo'],
             'secondary_criteria.*.direction' => ['required_with:secondary_criteria', 'string', 'in:asc,desc,none'],
+            'exclude_class_c' => ['sometimes', 'boolean'],
         ];
     }
 

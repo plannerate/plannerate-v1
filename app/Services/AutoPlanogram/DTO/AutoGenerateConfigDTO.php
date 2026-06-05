@@ -99,6 +99,14 @@ class AutoGenerateConfigDTO
          * @var list<array{key: string, direction: string}>
          */
         public readonly array $secondaryCriteria = [],
+
+        /**
+         * Excluir produtos curva C do pool antes do placement?
+         *
+         * Quando true, produtos classificados como C são removidos na seleção.
+         * Produtos sem ABC (sem vendas no período) não são afetados por esta flag.
+         */
+        public readonly bool $excludeClassC = false,
     ) {}
 
     /**
@@ -129,6 +137,7 @@ class AutoGenerateConfigDTO
             coldZonePriority: $data['cold_zone_priority'] ?? 'complementar_fria',
             flowDirection: $data['flow_direction'] ?? null,
             secondaryCriteria: $data['secondary_criteria'] ?? [],
+            excludeClassC: (bool) ($data['exclude_class_c'] ?? false),
         );
     }
 
@@ -160,6 +169,7 @@ class AutoGenerateConfigDTO
             'cold_zone_priority' => $this->coldZonePriority,
             'flow_direction' => $this->flowDirection,
             'secondary_criteria' => $this->secondaryCriteria,
+            'exclude_class_c' => $this->excludeClassC,
         ];
     }
 }

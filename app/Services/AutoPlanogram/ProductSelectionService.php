@@ -109,6 +109,18 @@ class ProductSelectionService
             $rankedProducts = $rankedProducts->filter(fn ($p) => $p->salesTotal > 0);
         }
 
+        // 4b. Excluir curva C do pool (quando habilitado).
+        // Produtos sem ABC (abcClass = null) não são afetados — só os C explícitos saem.
+        if ($config->excludeClassC) {
+            $before = $rankedProducts->count();
+            $rankedProducts = $rankedProducts->filter(fn ($p) => $p->abcClass !== 'C');
+            Log::info('ProductSelectionService: curva C excluída do pool', [
+                'antes' => $before,
+                'depois' => $rankedProducts->count(),
+                'removidos' => $before - $rankedProducts->count(),
+            ]);
+        }
+
         // 5. Filtrar produtos sem dimensões (width ou height)
         // No modo template ($requireDimensions = false) o engine é quem rejeita e loga MissingDimensions
         if ($requireDimensions) {
