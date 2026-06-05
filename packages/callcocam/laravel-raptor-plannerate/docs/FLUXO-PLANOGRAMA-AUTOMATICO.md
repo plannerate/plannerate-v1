@@ -1,475 +1,337 @@
-Documento Conceitual — Fluxo da Geração Automática de Planogramas por Template 
+# Fluxo da Geração Automática de Planogramas
 
-1. Objetivo da funcionalidade 
+> Atualizado em 2026-06-05 para refletir a implementação atual.
+> Versão anterior era conceitual; este documento descreve o que está em produção.
 
-A funcionalidade tem como objetivo permitir que o sistema gere automaticamente um planograma a partir de um template pré-configurado. 
+---
 
-O usuário cria a base do planograma, informando cliente, loja ou cluster, estrutura mercadológica, quantidade de módulos, dimensões da gôndola, prateleiras e fluxo de leitura. 
+## 1. Objetivo
 
-Depois disso, o sistema deve usar o template correspondente e aplicar uma sequência obrigatória de cálculos para gerar o planograma automaticamente. 
+Permitir que o sistema gere automaticamente um planograma a partir de uma estrutura física (gôndola) e de dados de vendas e sortimento, aplicando uma sequência de cálculos obrigatórios para posicionar os produtos de forma estratégica.
 
-A lógica principal é: 
+O sistema opera em dois modos:
 
-Configurar planograma → aplicar template → rodar cálculos obrigatórios → organizar visualmente → gerar planograma final. 
+**Modo Template** — existe um template pré-configurado para a combinação de estrutura mercadológica + quantidade de módulos. O template define as regras de cada slot: categoria, zonas, frentes, ordenação e tipo de exposição.
 
-Forma 
+**Modo Automático** — não existe template pré-configurado. O sistema sintetiza um template dinamicamente a partir do mix de produtos e do espaço físico disponível, e então aplica o mesmo pipeline de geração.
 
-2. Primeiro passo — Criar a base do planograma 
+---
 
-O usuário inicia criando o planograma normalmente. 
+## 2. Primeiro passo — Criar a base do planograma
 
-Nesta etapa, são definidas as informações básicas: 
+O usuário cria a gôndola pelo stepper do editor, definindo em 6 etapas:
 
-· Cliente; 
-· Loja ou cluster; 
-· Estrutura mercadológica; 
-· Quantidade de módulos; 
-· Quantidade de prateleiras; 
-· Altura, largura e profundidade da gôndola; 
-· Fluxo de leitura do cliente; 
-· Demais configurações físicas necessárias. 
+- Nome, localização, lado do corredor e fluxo de leitura
+- Quantidade de módulos, altura, largura e profundidade
+- Configurações de base e cremalheira
+- Quantidade de prateleiras e tipo de produto padrão
+- Modo de geração: **manual**, **template** ou **automático**
+- Configurações de workflow (responsável, data de início)
 
-Essa etapa define o espaço onde o planograma será gerado. 
+Quando o modo é **automático**, a geração é disparada imediatamente após a criação da gôndola, no mesmo request.
 
-Forma 
+Quando o modo é **template**, o editor abre com o modal de geração já ativo para o usuário confirmar os parâmetros.
 
-3. Segundo passo — Buscar o template correspondente 
+---
 
-Após a configuração inicial, o sistema deve buscar automaticamente o template correspondente. 
+## 3. Segundo passo — Buscar ou sintetizar o template
 
-O template deve ser identificado pela combinação entre: 
+### Modo Template
 
-Estrutura mercadológica + quantidade de módulos 
+O sistema busca o `PlanogramSubtemplate` onde:
 
-Exemplo: 
+```
+template_id = gondola.template_id
+num_modules <= número de seções da gôndola
+```
 
-· Limpeza com 1 módulo = Template Limpeza 1M; 
-· Limpeza com 2 módulos = Template Limpeza 2M; 
-· Limpeza com 3 módulos = Template Limpeza 3M. 
+O subtemplate com maior `num_modules` dentro desse limite é selecionado. Cada slot do subtemplate define:
 
-O template será a base da geração automática. 
+- Categoria vinculada
+- Zona térmica (quente ou fria)
+- Frentes mínimas e máximas
+- Tipo de exposição (vertical/horizontal por marca ou sabor)
+- Critérios de ordenação visual
+- Regra de falta de espaço (`space_fallback`)
+- Regra de sobra de espaço (`facing_expansion`)
+- Uso de estoque alvo
 
-Ele deve trazer previamente: 
+### Modo Automático
 
-· distribuição dos módulos; 
-· zonas quentes e frias; 
-· regras por módulo; 
-· regras por zona; 
-· regras por slot; 
-· tipo de exposição; 
-· critérios de ordenação visual; 
-· regras de falta ou sobra de espaço. 
+O sistema sintetiza um template do zero:
 
-Forma 
+1. **`CategoryRoleInferrer`** — infere o papel estratégico de cada subcategoria com base no mix de produtos pontuados: `StarCategory`, `QuickWin`, `BudgetItem`, `NicheItem`
+2. **`SlotPlanBuilder`** — distribui as categorias pelos módulos e prateleiras disponíveis, criando o plano de slots
+3. **`AutoTemplateSynthesizer`** — persiste o template sintetizado como `PlanogramSubtemplate`
 
-4. Terceiro passo — Aplicar validações automáticas 
+O template sintetizado entra no mesmo engine de placement do modo template.
 
-Antes de gerar o planograma, o sistema deve validar automaticamente quais produtos podem participar da geração. 
+---
 
-Essas validações são regras internas do sistema. 
+## 4. Terceiro passo — Selecionar e validar produtos
 
-O produto só deve participar se: 
+Antes de gerar, o sistema filtra o pool de candidatos. Um produto só participa se atender **todos** os critérios:
 
-· estiver ativo; 
-· pertencer ao sortimento da loja ou cluster; 
-· pertencer à estrutura mercadológica escolhida; 
-· tiver dimensões cadastradas; 
-· couber fisicamente na gôndola ou prateleira; 
-· não estiver bloqueado. 
+| Critério | Como é verificado |
+|---|---|
+| Produto ativo (não draft) | `products.status != 'draft'` |
+| Pertence à estrutura mercadológica | CTE recursiva de categorias descendentes |
+| Pertence ao sortimento da loja ou cluster | `product_store` (loja direta) ou `clusters.store_id` (herança do cluster) |
+| Tem dimensões cadastradas | `width > 0` e `height > 0` (modo automático); engine rejeita com `MissingDimensions` (modo template) |
+| Não está bloqueado | `planogram_product_rules` com `type = blocked` (por produto, marca ou subcategoria) |
+| Cabe fisicamente | Engine rejeita com `HeightExceedsShelf` ou `NoHorizontalSpace` durante o placement |
 
-Produtos que não atenderem esses critérios devem ser rejeitados antes da geração. 
+Produtos obrigatórios (`planogram_product_rules` com `type = mandatory`) entram mesmo com score baixo.
 
-Forma 
+> Planogramas sem loja ou cluster definidos não aplicam o filtro de sortimento — compatibilidade com planogramas legados.
 
-5. Quarto passo — Aplicar o cálculo de papel (BCG) 
+---
 
-O primeiro cálculo obrigatório é o papel do produto ou categoria. 
+## 5. Quarto passo — Calcular o score de relevância
 
-Esse cálculo ajuda o sistema a entender a função estratégica de cada produto ou grupo dentro do planograma. 
+O sistema calcula um score numérico (0.0–1.0) para cada produto usando o `CompositeScorer`:
 
-Ele responde perguntas como: 
+| Componente | Descrição |
+|---|---|
+| `giro_norm` | Volume de vendas normalizado (log-transform para evitar distorção por outliers) |
+| `margem_norm` | Margem de contribuição normalizada pelo min-max do pool |
+| `doh_norm` | Days of hand — cobertura de estoque disponível |
+| `strategic` | 1.0 se o produto estiver na lista de estratégicos (`product_strategic_flags`), 0.0 caso contrário |
 
-· esse produto deve ser mantido? 
-· esse produto gera valor? 
-· esse produto gera margem? 
-· esse produto é um peso morto? 
-· esse produto deve receber incentivo? 
-· esse produto deve ir para uma zona quente ou fria? 
+Os pesos de cada componente são configuráveis por tenant em `ScoringWeights`.
 
-Exemplos de classificações: 
+O score ordena o pool — produtos com maior score têm prioridade na alocação de slots. Quando não há dados de venda no período, o sistema aplica um **score neutro** (0.5) para todos os produtos, garantindo que o template ainda possa distribuir produtos.
 
-· Alto valor — manutenção; 
-· Peso morto; 
-· Incentivo lucro; 
-· Incentivo valor; 
-· Incentivo margem. 
+> No modo automático, o `CategoryRoleInferrer` também calcula o papel estratégico de cada **categoria** (não produto individual) para orientar a síntese do template.
 
-O papel não decide sozinho o que entra ou sai. 
-Ele orienta a estratégia e o posicionamento dos produtos dentro da gôndola. 
+---
 
-Forma 
+## 6. Quinto passo — Análise de sortimento (ABC)
 
-6. Quinto passo — Aplicar a análise de sortimento (ABC) 
+O `AbcAnalysisService` classifica os produtos em curvas A, B e C por média ponderada de:
 
-Depois do cálculo de papel, o sistema deve aplicar a análise de sortimento. 
+- Quantidade vendida (peso padrão: 30%)
+- Valor vendido (peso padrão: 30%)
+- Margem de contribuição (peso padrão: 40%)
 
-Essa análise define quais produtos devem compor o planograma. 
+Cortes configuráveis: `abcCutoffA` (padrão 80%) e `abcCutoffB` (padrão 90%).
 
-Ela responde: 
+A classificação ABC é usada para:
 
-O que fica e o que sai? 
+- Pré-ordenar o pool (A > B > C > sem ABC)
+- Influenciar critérios de ordenação visual (`score_abc`)
+- Aplicar `space_fallback = RemoveCurvC` quando falta espaço
 
-A análise de sortimento pode considerar critérios como: 
+O sistema pode **excluir curva C do pool** antes do placement quando a flag `exclude_class_c` estiver ativa. Produtos sem classificação ABC (sem vendas no período) não são afetados por essa flag.
 
-· volume vendido; 
-· valor vendido; 
-· margem; 
-· lucro; 
-· frequência de venda; 
-· pesos configurados por categoria. 
+> Fonte dos dados: tabela `product_analyses` (cache, quando `useExistingAnalysis = true`) ou cálculo on-the-fly direto de `sales` ou `monthly_sales_summaries`.
 
-Essa etapa define: 
+---
 
-· produtos prioritários; 
-· produtos intermediários; 
-· produtos de baixa prioridade; 
-· produtos que devem ser retirados; 
-· produtos que devem ser preservados. 
+## 7. Sexto passo — Calcular o estoque alvo
 
-Em resumo: 
+O `TargetStockService` calcula `estoque_alvo` e `estoque_seguranca` por produto com base na classificação ABC:
 
-A análise de sortimento define a composição do planograma. 
+| Classe | Cobertura padrão | Nível de serviço padrão |
+|---|---|---|
+| A | 2 dias | 70% |
+| B | 5 dias | 80% |
+| C | 7 dias | 90% |
 
-Forma 
+O estoque alvo define quantas frentes o produto precisa para cobrir a demanda sem ruptura.
 
-7. Sexto passo — Calcular o estoque alvo 
+A flag `use_target_stock` no slot do template (ou em `planogram_gondola_slot_overrides`) controla se o estoque alvo influencia o cálculo de frentes durante o placement.
 
-Depois de definir quais produtos devem compor o planograma, o sistema deve calcular o estoque alvo. 
+---
 
-O estoque alvo responde: 
+## 8. Sétimo passo — Aplicar frente mínima e ajustar espaço
 
-Quanto espaço cada produto precisa ocupar? 
+A frente mínima garante presença visual suficiente para cada produto alocado.
 
-Ele deve ajudar a definir: 
+**Se faltar espaço**, o sistema aplica a regra `space_fallback` configurada no slot:
 
-· quantidade ideal exposta; 
-· quantidade sugerida de frentes; 
-· necessidade de cobertura; 
-· redução de risco de ruptura; 
-· equilíbrio entre venda, abastecimento e espaço disponível. 
+- `ReduceFacings` — reduz frentes até o mínimo
+- `RemoveLowestPriority` — remove produtos de menor score
+- `RemoveDeadWeight` — remove produtos sem vendas
+- `RemoveCurvC` — remove curva C primeiro
+- `PreserveMandatory` — nunca remove produtos obrigatórios
 
-O estoque alvo não deve decidir sozinho se o produto entra ou sai. 
-Ele calcula a necessidade de exposição dos produtos selecionados. 
+**Se sobrar espaço**, o sistema aplica a regra `facing_expansion`:
 
-Forma 
+- `NoExpansion` — não expande
+- `ExpandHighPriority` — expande produtos de maior score
+- `ExpandHighStock` — expande produtos com maior estoque alvo
+- `ExpandHighMargin` — expande produtos de maior margem
+- `ExpandHighSales` — expande produtos de maior venda
 
-8. Sétimo passo — Aplicar frente mínima e ajustar espaço 
+Essas regras podem ser sobrescritas por categoria em `planogram_gondola_slot_overrides`, permitindo comportamentos diferentes por categoria dentro da mesma gôndola.
 
-Depois do estoque alvo, o sistema deve aplicar a regra de frente mínima. 
+---
 
-A frente mínima garante que um produto alocado tenha presença visual suficiente. 
+## 9. Oitavo passo — Aplicar estratégia por zona
 
-Regra principal: 
+O `ShelfZoneResolver` mapeia cada prateleira em uma zona térmica com base em sua posição física:
 
-Se o produto entrou no planograma, ele deve respeitar a frente mínima configurada. 
+- **Zona quente** (Eye + Hand): prateleiras centrais — melhor acesso visual e físico
+- **Zona fria** (High + Low): prateleiras no topo e no chão
 
-Depois disso, o sistema deve verificar se há falta ou sobra de espaço. 
+A priorização por zona é configurada no template:
 
-Se faltar espaço, o sistema deve aplicar a regra configurada no template. 
+- Zona quente: `maior_margem`, `maior_giro`, `maior_valor_vendido`, `curva_a`
+- Zona fria: `menor_margem`, `complementar_fria`, `maior_volume`, `menor_prioridade`
 
-Exemplos: 
+A estratégia por zona é **preferencial, não absoluta**: orienta o posicionamento, mas não quebra regras físicas (categoria, dimensão, frente mínima).
 
-· reduzir frentes até o mínimo; 
-· remover produtos de menor prioridade; 
-· remover produtos classificados como peso morto; 
-· remover curva C primeiro; 
-· preservar produtos obrigatórios. 
+---
 
-Se sobrar espaço, o sistema deve aplicar a regra de expansão. 
+## 10. Nono passo — Aplicar o tipo de exposição
 
-Exemplos: 
+O tipo de exposição define o padrão visual de agrupamento:
 
-· não expandir; 
-· expandir produtos prioritários; 
-· expandir produtos com maior estoque alvo; 
-· expandir produtos de maior margem; 
-· expandir produtos de maior venda. 
+- **Vertical por marca**: produtos da mesma marca formam uma coluna entre prateleiras
+- **Vertical por sabor**: variantes de sabor formam colunas
+- **Horizontal**: produtos se distribuem lateralmente na prateleira
+- **Combinada**: slots diferentes usam regras diferentes (vertical em um módulo, horizontal em outro)
 
-Forma 
+Configurado por slot no template via `brand_exposure` e `flavor_exposure`.
 
-9. Oitavo passo — Aplicar estratégia por zona 
+---
 
-Depois dos cálculos e ajustes de espaço, o sistema deve aplicar a estratégia por zona definida no template. 
+## 11. Décimo passo — Aplicar a ordenação visual
 
-Exemplos: 
+A ordenação visual define a sequência dos produtos dentro de cada slot.
 
-· zona quente prioriza maior margem; 
-· zona quente prioriza produtos de alto valor; 
-· zona quente prioriza maior giro; 
-· zona fria recebe produtos complementares; 
-· zona fria recebe produtos de menor prioridade; 
-· zona fria recebe embalagens maiores. 
+O sistema aplica os critérios em cascata (do menos para o mais prioritário), usando `visual_criteria` configurado no slot do template.
 
-Essa regra orienta onde os produtos devem ficar dentro da gôndola. 
+**Critérios disponíveis:**
 
-Ela deve ser preferencial, não absoluta. 
+| Critério | Campo no produto | Descrição |
+|---|---|---|
+| `marca` | `brand` | Agrupa por marca |
+| `tipo` | `type` | Agrupa por tipo de produto |
+| `embalagem` | `packaging_type` | Ordena por tipo de embalagem (PET, lata, vidro…) |
+| `tamanho` | `width` / `height` / `depth` | Ordena por volume calculado |
+| `preco` | `price` | Ordena por preço de venda |
+| `sabor` | `flavor` | Agrupa por sabor |
+| `atributo` | `sortiment_attribute` | Ordena por atributo de sortimento |
+| `score_abc` | ABC calculado | Ordena por curva A > B > C |
+| `margem` | Métricas de venda | Ordena por margem de contribuição |
 
-Ou seja, a zona ajuda no posicionamento, mas não pode quebrar regras básicas como: 
+Cada critério aceita direção `asc`, `desc` ou `none`.
 
-· produto pertencer à categoria correta; 
-· produto caber fisicamente; 
-· produto respeitar frente mínima; 
-· produto não estar bloqueado. 
+**Exemplo de hierarquia:**
 
-Forma 
+```
+marca (asc) → embalagem (asc) → tamanho (desc) → preco (asc)
+```
 
-10. Nono passo — Aplicar o tipo de exposição 
+O sistema aplica do critério menos prioritário ao mais prioritário, garantindo que o primeiro critério seja o dominante.
 
-Depois que o sistema já sabe quais produtos entram, quanto espaço precisam e em qual zona devem ficar, ele deve aplicar o tipo de exposição definido no template. 
+---
 
-Opções principais: 
+## 12. Décimo primeiro passo — Respeitar o fluxo de leitura
 
-· Vertical; 
-· Horizontal; 
-· Combinada. 
+A ordenação visual respeita o sentido de leitura da gôndola:
 
-Exposição vertical 
+- `left_to_right` — início da exposição na esquerda
+- `right_to_left` — início da exposição na direita
 
-O grupo de produtos desce entre prateleiras, formando uma coluna visual. 
+O fluxo define onde começa e onde termina a leitura. Quando o fluxo é `right_to_left`, o engine espelha as posições físicas dos segmentos nas prateleiras.
 
-Exposição horizontal 
+---
 
-O grupo de produtos segue lateralmente na prateleira. 
+## 13. Décimo segundo passo — Validação pós-placement
 
-Exposição combinada 
+Antes de gravar, o `PlanogramValidator` executa 7 regras de integridade:
 
-O sistema pode usar regras diferentes por módulo, zona, prateleira ou grupo de produtos. 
+| Regra | O que verifica |
+|---|---|
+| `FacingMinimumRule` | Todo produto alocado respeita `min_facings` |
+| `SectionCapacityRule` | Nenhuma seção ultrapassa 100% da largura |
+| `EmptyShelfRule` | Não há prateleiras completamente vazias |
+| `AdjacencyRule` | Categorias incompatíveis não ficam adjacentes |
+| `BlockIntegrityRule` | Blocos verticais íntegros entre prateleiras |
+| `ShelfLevelRule` | Produtos pesados não estão em prateleiras altas |
+| `UnplacedProductsRule` | Taxa de produtos não alocados dentro do limite aceitável |
 
-Exemplo: 
+O resultado da validação é retornado no `PlanogramOutput` junto com o planograma gerado.
 
-· módulo 1 com exposição vertical por marca; 
-· módulo 2 com exposição horizontal por tipo; 
-· zona quente com produtos de maior margem; 
-· zona fria com embalagens maiores. 
+---
 
-Forma 
+## 14. Décimo terceiro passo — Gerar e gravar o planograma final
 
-11. Décimo passo — Aplicar a ordenação visual 
+O `PlanogramWriter` persiste os resultados em transação. O `PlanogramOutput` contém:
 
-Depois do tipo de exposição, o sistema deve aplicar a ordenação visual definida no template. 
+- `placedSegments` — produtos alocados com posição, largura e camadas
+- `rejectedProducts` — produtos rejeitados com motivo explícito (`PlacementFailureReason`)
+- `slotAnalysis` — análise de ocupação por slot
+- `suggestions` — sugestões automáticas de ajuste
+- `validationReport` — resultado das 7 regras de validação
+- `explanationReport` — explicação textual das decisões do engine
+- `modulesMismatch` — flag quando o template tem mais módulos que a gôndola física
 
-A ordenação visual define como os produtos serão lidos pelo cliente. 
+---
 
-Critérios possíveis: 
+## 15. Ajustes após a geração
 
-· marca; 
-· tipo; 
-· embalagem; 
-· tamanho; 
-· preço; 
-· versão; 
-· atributo. 
+Depois do planograma gerado, o usuário pode fazer ajustes no editor. O `AlterationClassifier` detecta automaticamente o tipo de alteração necessária:
 
-A lógica deve ser hierárquica. 
+**Reordenar** — muda apenas a sequência visual dos produtos.
+- Exemplos: inverter ordem de marcas, mudar preço de menor para maior.
+- O sistema mantém os mesmos produtos e frentes, apenas reorganiza.
+- Serviço: `VisualReorderService`
 
-Exemplo: 
+**Redistribuir** — muda o tipo de exposição ou agrupamento.
+- Exemplos: mudar de vertical para horizontal, trocar agrupamento principal.
+- O sistema tenta manter os mesmos produtos e frentes, mas redistribui as posições.
+- Serviço: `ExposureRedistributeService`
 
-Marca; 
- 
+**Regerar** — muda uma regra de decisão.
+- Exemplos: mudar parâmetros dos cálculos, mudar estratégia, mudar frente mínima, mudar estrutura mercadológica.
+- O sistema recalcula a geração do zero com os novos parâmetros.
+- Serviço: `AutoGenerationRunner::run()`
 
-Tipo; 
- 
+---
 
-Tamanho; 
- 
+## 16. Resumo do fluxo
 
-Preço. 
+```
+1.  Criar a base da gôndola (stepper)
+2.  Buscar template OU sintetizar automaticamente
+3.  Filtrar produtos elegíveis (sortimento, categoria, dimensões, bloqueios)
+4.  Calcular score de relevância por produto
+5.  Classificar por curva ABC (+ opção de excluir curva C)
+6.  Calcular estoque alvo por produto
+7.  Aplicar frente mínima e resolver falta/sobra de espaço
+8.  Aplicar estratégia por zona (quente/fria)
+9.  Aplicar tipo de exposição (vertical/horizontal/combinada)
+10. Aplicar ordenação visual hierárquica
+11. Respeitar o fluxo de leitura
+12. Validar integridade pós-placement (7 regras)
+13. Gravar planograma final
+14. Permitir ajustes no editor (reordenar / redistribuir / regerar)
+```
 
-Nesse caso, o sistema deve: 
+---
 
-· primeiro agrupar por marca; 
-· dentro da marca, organizar por tipo; 
-· dentro do tipo, ordenar por tamanho; 
-· dentro do tamanho, ordenar por preço. 
+## 17. Síntese conceitual
 
-Se a ordem for alterada para: 
+O **template** define a estrutura da exposição — distribuição de categorias, zonas e regras por slot.
 
-Tipo; 
- 
+O **score** define a relevância estratégica de cada produto — combina giro, margem, cobertura de estoque e flag estratégico.
 
-Embalagem; 
- 
+A **análise ABC** define a composição do planograma — o que é prioritário, intermediário ou candidato a saída.
 
-Marca; 
- 
+O **estoque alvo** define quanto espaço cada produto precisa para cobrir a demanda.
 
-Preço. 
+As **regras de falta e sobra** ajustam a ocupação real ao espaço disponível.
 
-O sistema deve seguir essa nova hierarquia. 
+A **estratégia por zona** define onde cada produto deve ficar dentro da gôndola.
 
-A regra principal é: 
+O **tipo de exposição** define se a leitura será vertical, horizontal ou combinada.
 
-O primeiro critério visual manda primeiro. 
-O segundo organiza dentro do primeiro. 
-O terceiro organiza dentro do segundo. 
+A **ordenação visual** define a sequência dos produtos dentro de cada slot.
 
-Forma 
+O **fluxo de leitura** define o sentido da exposição.
 
-12. Décimo primeiro passo — Respeitar o fluxo de leitura 
-
-A ordenação visual deve respeitar o fluxo definido na gôndola. 
-
-Exemplos: 
-
-· esquerda para direita; 
-· direita para esquerda; 
-· entrada para saída; 
-· saída para entrada. 
-
-Exemplo: 
-
-Se o fluxo for da esquerda para direita e o preço for configurado do menor para o maior: 
-
-· início do fluxo = menor preço; 
-· final do fluxo = maior preço. 
-
-Se a regra for tamanho do maior para o menor: 
-
-· início do fluxo = maior embalagem; 
-· final do fluxo = menor embalagem. 
-
-O fluxo define onde começa e onde termina a leitura da exposição. 
-
-Forma 
-
-13. Décimo segundo passo — Gerar o planograma final 
-
-Após aplicar o template, os cálculos obrigatórios, as regras de espaço, as zonas, o tipo de exposição e a ordenação visual, o sistema deve gerar o planograma final. 
-
-O resultado deve conter: 
-
-· produtos alocados; 
-· produtos rejeitados; 
-· quantidade de frentes; 
-· posição por módulo; 
-· posição por prateleira; 
-· zona de cada grupo ou produto; 
-· organização visual aplicada. 
-
-Forma 
-
-14. Ajustes após a geração 
-
-Depois do planograma gerado, o usuário poderá fazer ajustes no editor. 
-
-Esses ajustes podem ter três comportamentos: 
-
-Reordenar 
-
-Quando muda apenas a ordem visual. 
-
-Exemplos: 
-
-· mudar ordem das marcas; 
-· mudar preço de menor para maior; 
-· mudar tamanho de maior para menor. 
-
-Nesse caso, o sistema mantém os mesmos produtos e frentes, apenas reorganiza. 
-
-Redistribuir 
-
-Quando muda a estrutura visual. 
-
-Exemplos: 
-
-· mudar de vertical para horizontal; 
-· mudar de horizontal para combinada; 
-· trocar agrupamento principal. 
-
-Nesse caso, o sistema tenta manter os mesmos produtos e frentes, mas redistribui as posições. 
-
-Regerar 
-
-Quando muda uma regra de decisão. 
-
-Exemplos: 
-
-· mudar parâmetros dos cálculos; 
-· mudar regra de sortimento; 
-· mudar estoque alvo; 
-· mudar frente mínima; 
-· mudar estratégia por zona; 
-· mudar estrutura mercadológica. 
-
-Nesse caso, o sistema deve recalcular a geração. 
-
-Forma 
-
-15. Resumo da lógica final 
-
-A geração automática deve seguir esta ordem: 
-
-Criar a base do planograma; 
- 
-
-Buscar o template correspondente; 
- 
-
-Validar produtos elegíveis; 
- 
-
-Calcular papel do produto ou categoria; 
- 
-
-Aplicar análise de sortimento; 
- 
-
-Calcular estoque alvo; 
- 
-
-Aplicar frente mínima; 
- 
-
-Resolver falta ou sobra de espaço; 
- 
-
-Aplicar estratégia por zona; 
- 
-
-Aplicar tipo de exposição; 
- 
-
-Aplicar ordenação visual; 
- 
-
-Respeitar o fluxo de leitura; 
- 
-
-Gerar o planograma final; 
- 
-
-Permitir ajustes no editor. 
-
-Forma 
-
-16. Síntese conceitual 
-
-O template define a estrutura da exposição. 
-
-O papel define a intenção estratégica. 
-
-A análise de sortimento define o que entra e o que sai. 
-
-O estoque alvo define quanto espaço cada produto precisa. 
-
-As regras de falta e sobra ajustam a ocupação. 
-
-A estratégia por zona define onde os produtos devem ficar. 
-
-O tipo de exposição define se a leitura será vertical, horizontal ou combinada. 
-
-A ordenação visual define a sequência dos produtos. 
-
-O fluxo define o sentido da leitura. 
-
-O resultado deve ser um planograma gerado automaticamente com base em estratégia, dados e regras previamente configuradas. 
+O resultado é um planograma gerado automaticamente com base em estratégia, dados de venda, sortimento da loja e regras configuradas — com validação de integridade antes de gravar.
