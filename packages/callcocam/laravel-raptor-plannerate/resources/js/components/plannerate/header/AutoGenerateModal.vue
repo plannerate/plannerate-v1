@@ -59,6 +59,7 @@ const form = useForm({
     max_facings: 10,
     group_by_subcategory: true,
     include_products_without_sales: false,
+    exclude_class_c: false,
     table_type: 'monthly_summaries' as 'sales' | 'monthly_summaries',
     category_id: props.categoryId ?? null,
     template_id: props.gondola.template_id ?? null,

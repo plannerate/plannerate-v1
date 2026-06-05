@@ -8,6 +8,8 @@ export interface GenerationFormState {
     max_facings: number;
     group_by_subcategory: boolean;
     include_products_without_sales: boolean;
+    /** Remove produtos classificados como C antes da geração */
+    exclude_class_c: boolean;
     table_type: 'sales' | 'monthly_summaries';
     category_id: string | null;
     /** Comportamento de expansão de frentes no espaço livre */

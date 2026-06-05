@@ -8,6 +8,7 @@ import { useT } from '@/composables/useT';
 interface AdvancedOptionsFormState {
     group_by_subcategory: boolean;
     include_products_without_sales: boolean;
+    exclude_class_c: boolean;
 }
 
 defineProps<{
@@ -38,10 +39,17 @@ const { t } = useT();
                     {{ t('plannerate.header.advanced_options.include_no_sales_hint') }}
                 </div>
             </div>
-            <Switch
-                id="include-no-sales"
-                v-model="form.include_products_without_sales"
-            />
+            <Switch id="include-no-sales" v-model="form.include_products_without_sales" />
+        </div>
+
+        <div class="flex items-center justify-between">
+            <div class="space-y-0.5">
+                <Label for="exclude-class-c">{{ t('plannerate.header.advanced_options.exclude_class_c') }}</Label>
+                <div class="text-sm text-muted-foreground">
+                    {{ t('plannerate.header.advanced_options.exclude_class_c_hint') }}
+                </div>
+            </div>
+            <Switch id="exclude-class-c" v-model="form.exclude_class_c" />
         </div>
     </div>
 </template>

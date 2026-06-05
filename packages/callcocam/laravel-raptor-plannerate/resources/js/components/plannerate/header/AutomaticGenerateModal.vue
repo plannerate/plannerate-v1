@@ -56,7 +56,8 @@ const AutoGenerateSchema = z
         template_id: z.string().nullable(),
         facing_expansion: z.enum(['score', 'current_stock', 'target_stock', 'equal']).nullable(),
         use_target_stock: z.boolean(),
-        space_fallback: z.enum(['reduce_c', 'reduce_facings', 'skip']).nullable(),
+        space_fallback: z.enum(['reduce_c', 'reduce_facings', 'skip', 'remove_dog']).nullable(),
+        exclude_class_c: z.boolean(),
         max_share_per_sku: z.number().int().min(1, 'Mínimo 1%').max(100, 'Máximo 100%').nullable(),
         max_share_per_brand: z.number().int().min(1, 'Mínimo 1%').max(100, 'Máximo 100%').nullable(),
         max_share_per_subcategory: z
@@ -123,6 +124,7 @@ const form = useForm({
     hot_zone_priority: 'maior_margem' as string | null,
     cold_zone_priority: 'complementar_fria' as string | null,
     flow_direction: null as string | null,
+    exclude_class_c: false,
 });
 
 /** Controla se o usuário já tentou submeter — erros só aparecem após o primeiro submit */
@@ -151,6 +153,7 @@ const zodResult = computed(() =>
         hot_zone_priority: form.hot_zone_priority,
         cold_zone_priority: form.cold_zone_priority,
         flow_direction: form.flow_direction,
+        exclude_class_c: form.exclude_class_c,
     }),
 );
 
@@ -239,14 +242,18 @@ function handleGenerate(): void {
                     <div class="space-y-1 text-sm">
                         <p class="font-medium text-blue-900 dark:text-blue-100">Pontuação de posicionamento</p>
                         <p class="text-blue-700 dark:text-blue-300">
-                            Os produtos são posicionados por um score composto:
+                            Score composto:
                             <span class="font-medium">Giro 40%</span> ·
                             <span class="font-medium">Margem 30%</span> ·
                             <span class="font-medium">Estratégico 20%</span> ·
                             <span class="font-medium">DOH 10%</span>
                         </p>
-                        <p class="text-xs text-blue-600 dark:text-blue-400">Os pesos podem ser ajustados nas
-                            configurações do tenant.</p>
+                        <p class="text-blue-700 dark:text-blue-300">
+                            A análise BCG (Estrela / Vaca / Interrogação / Abacaxi) é calculada automaticamente
+                            e usada para o fallback <span class="font-medium">Remover BCG Dog</span>.
+                            Ative o peso de Crescimento nas configurações para influenciar o score.
+                        </p>
+                        <p class="text-xs text-blue-600 dark:text-blue-400">Os pesos podem ser ajustados nas configurações do tenant.</p>
                     </div>
                 </div>
 
@@ -303,12 +310,10 @@ function handleGenerate(): void {
                             <select id="space-fallback" v-model="form.space_fallback"
                                 class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                                 <option :value="null">—</option>
-                                <option value="reduce_c">{{ t('plannerate.header.auto_generate.space_fallback_reduce_c')
-                                    }}</option>
-                                <option value="reduce_facings">{{
-                                    t('plannerate.header.auto_generate.space_fallback_reduce_facings') }}</option>
-                                <option value="skip">{{ t('plannerate.header.auto_generate.space_fallback_skip') }}
-                                </option>
+                                <option value="reduce_c">{{ t('plannerate.header.auto_generate.space_fallback_reduce_c') }}</option>
+                                <option value="remove_dog">{{ t('plannerate.header.auto_generate.space_fallback_remove_dog') }}</option>
+                                <option value="reduce_facings">{{ t('plannerate.header.auto_generate.space_fallback_reduce_facings') }}</option>
+                                <option value="skip">{{ t('plannerate.header.auto_generate.space_fallback_skip') }}</option>
                             </select>
                         </div>
                     </div>

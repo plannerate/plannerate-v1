@@ -48,6 +48,8 @@ return [
             'group_subcategory_hint' => 'Mantem produtos da mesma subcategoria juntos',
             'include_no_sales' => 'Incluir produtos sem vendas',
             'include_no_sales_hint' => 'Produtos novos ou sem vendas no periodo',
+            'exclude_class_c' => 'Excluir curva C do mix',
+            'exclude_class_c_hint' => 'Remove produtos classificados como C antes da geracao (produtos sem ABC nao sao afetados)',
         ],
         'strategy' => [
             'title' => 'Estrategia de Otimizacao',
@@ -107,6 +109,7 @@ return [
             'space_fallback_reduce_c' => 'Reduzir classe C',
             'space_fallback_reduce_facings' => 'Reduzir frentes gerais',
             'space_fallback_skip' => 'Pular produto',
+            'space_fallback_remove_dog' => 'Remover BCG Dog primeiro',
             'share_limits_title' => 'Limites de participacao',
             'share_limits_description' => 'Teto de frentes por SKU, marca ou subcategoria (%). Deixe em branco para sem limite.',
             'max_share_per_sku_label' => 'Max. % por SKU',
