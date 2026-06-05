@@ -15,7 +15,7 @@ enum SpaceFallback: string
             self::ReduceC => 'Reduzir SKUs curva C primeiro',
             self::ReduceFacings => 'Reduzir facings para 1',
             self::Skip => 'Deixar incompleto',
-            self::RemoveDog => 'Remover produtos BCG Dog primeiro',
+            self::RemoveDog => 'Remover Retardatarios primeiro',
         };
     }
 

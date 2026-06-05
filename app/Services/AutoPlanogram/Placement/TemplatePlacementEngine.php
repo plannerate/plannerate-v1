@@ -40,7 +40,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
     /** @var array<string, string> Mapa ABC [product_id => 'A'|'B'|'C'] vindo de PlacementSettings */
     private array $abcClassMap = [];
 
-    /** @var array<string, string> Mapa BCG [product_id => 'star'|'cash_cow'|'question_mark'|'dog'] vindo de PlacementSettings */
+    /** @var array<string, string> Mapa de papel estratégico [product_id => 'leader'|'anchor'|'rising'|'lagging'] vindo de PlacementSettings */
     private array $bcgMap = [];
 
     /** @var array<string, float> Mapa de estoque alvo [product_id => float] vindo de PlacementSettings */
@@ -219,13 +219,13 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 })->values();
             }
 
-            // RemoveDog: produtos BCG dog ficam por último para serem rejeitados primeiro
+            // RemoveDog: produtos lagging (retardatários) ficam por último para serem rejeitados primeiro
             if ($slot->space_fallback === SpaceFallback::RemoveDog && ! empty($this->bcgMap)) {
-                $ordered = $ordered->sortBy(fn ($p) => match ($this->bcgMap[$p->id] ?? 'cash_cow') {
-                    'star' => 0,
-                    'question_mark' => 1,
-                    'cash_cow' => 2,
-                    'dog' => 3,
+                $ordered = $ordered->sortBy(fn ($p) => match ($this->bcgMap[$p->id] ?? 'anchor') {
+                    'leader' => 0,
+                    'rising' => 1,
+                    'anchor' => 2,
+                    'lagging' => 3,
                     default => 2,
                 })->values();
             }

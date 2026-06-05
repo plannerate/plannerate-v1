@@ -17,8 +17,8 @@ final readonly class ScoringWeightsValue
         public float $verticalBlockThreshold = 0.20,
         public int $verticalBlockMinShelves = 2,
         /**
-         * Peso do componente de crescimento BCG no score composto.
-         * Padrão 0.0 = BCG não afeta o score (apenas metadado e RemoveDog fallback).
+         * Peso do componente de crescimento (Análise de Papel) no score composto.
+         * Padrão 0.0 = não afeta o score (apenas metadado e RemoveDog fallback).
          * Configure w_crescimento na tabela scoring_weights para ativar por tenant.
          */
         public float $crescimento = 0.0,

@@ -164,8 +164,8 @@ final readonly class PlacementSettings
         public array $secondaryCriteria = [],
 
         /**
-         * Mapa de quadrante BCG por produto [product_id => 'star'|'cash_cow'|'question_mark'|'dog'].
-         * Vazio quando BCG não pôde ser calculado (sem dados de dois períodos).
+         * Mapa de papel estratégico por produto [product_id => 'leader'|'anchor'|'rising'|'lagging'].
+         * Vazio quando a Análise de Papel não pôde ser calculada (sem dados de dois períodos).
          *
          * @var array<string, string>
          */
@@ -564,7 +564,7 @@ final readonly class PlacementSettings
     }
 
     /**
-     * @param  array<string, string>  $bcgMap  [product_id => 'star'|'cash_cow'|'question_mark'|'dog']
+     * @param  array<string, string>  $bcgMap  [product_id => 'leader'|'anchor'|'rising'|'lagging']
      */
     public function withBcgMap(array $bcgMap): self
     {

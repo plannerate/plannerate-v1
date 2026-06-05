@@ -93,8 +93,8 @@ final class AutoGenerationRunner
             ->all();
 
         $bcgMap = $rankedProducts
-            ->filter(fn ($dto) => $dto->bcgQuadrant !== null)
-            ->mapWithKeys(fn ($dto) => [$dto->product->id => $dto->bcgQuadrant])
+            ->filter(fn ($dto) => $dto->paperRole !== null)
+            ->mapWithKeys(fn ($dto) => [$dto->product->id => $dto->paperRole])
             ->all();
 
         $weightsModel = ScoringWeights::first();

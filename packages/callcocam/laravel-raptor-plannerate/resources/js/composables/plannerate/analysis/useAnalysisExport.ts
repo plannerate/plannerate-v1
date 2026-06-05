@@ -1,5 +1,5 @@
 import type { AbcResult } from '@/components/plannerate/analysis/abc/types';
-import type { BcgResult } from '@/components/plannerate/analysis/bcg/types';
+import type { PaperResult } from '@/components/plannerate/analysis/paper/types';
 import type { TargetStockResult } from '@/components/plannerate/analysis/target-stock/types';
 
 /**
@@ -101,24 +101,24 @@ export function useAnalysisExport() {
      * @param filenamePrefix - Prefixo do arquivo; a data é adicionada automaticamente
      */
     /**
-     * Gera e dispara o download do CSV da análise BCG a partir dos resultados exibidos.
+     * Gera e dispara o download do CSV da Análise de Papel a partir dos resultados exibidos.
      *
-     * @param results - Array de resultados BCG (normalmente os filtrados/exibidos na tela)
-     * @param filename - Prefixo do nome do arquivo; padrão: 'analise_bcg'
+     * @param results  - Array de resultados da Análise de Papel (normalmente os filtrados/exibidos na tela)
+     * @param filename - Prefixo do nome do arquivo; padrão: 'analise_papel'
      */
-    function exportBcgToCsv(results: BcgResult[], filename: string = 'analise_bcg'): void {
-        const quadrantLabels: Record<string, string> = {
-            star: 'Estrela',
-            cash_cow: 'Vaca Leiteira',
-            question_mark: 'Interrogacao',
-            dog: 'Abacaxi',
+    function exportPaperToCsv(results: PaperResult[], filename: string = 'analise_papel'): void {
+        const roleLabels: Record<string, string> = {
+            leader:  'Lider',
+            anchor:  'Ancora',
+            rising:  'Ascendente',
+            lagging: 'Retardatario',
         };
 
         const headers = [
             'EAN',
             'Produto',
             'Categoria',
-            'Quadrante',
+            'Papel Estrategico',
             'Market Share (%)',
             'Crescimento (%)',
             'Valor Atual (R$)',
@@ -130,7 +130,7 @@ export function useAnalysisExport() {
             item.ean,
             item.product_name,
             item.category_name ?? '',
-            quadrantLabels[item.quadrant] ?? item.quadrant,
+            roleLabels[item.role] ?? item.role,
             item.market_share.toFixed(2).replace('.', ','),
             item.growth_rate.toFixed(2).replace('.', ','),
             item.total_value_current.toFixed(2).replace('.', ','),
@@ -174,5 +174,5 @@ export function useAnalysisExport() {
         URL.revokeObjectURL(url);
     }
 
-    return { exportAbcToCsv, exportStockToCsv, exportBcgToCsv };
+    return { exportAbcToCsv, exportStockToCsv, exportPaperToCsv };
 }

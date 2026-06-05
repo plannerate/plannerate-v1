@@ -109,7 +109,7 @@ class CompositeScorer implements ProductScorerInterface
     }
 
     /**
-     * @param  array<string, string>  $bcgMap  [product_id => quadrant]
+     * @param  array<string, string>  $bcgMap  [product_id => 'leader'|'anchor'|'rising'|'lagging']
      */
     private function scoreProduct(
         Product $p,
@@ -128,14 +128,14 @@ class CompositeScorer implements ProductScorerInterface
         $dohNorm = $m['doh'] === null ? 0.5 : $this->normalizeDoh((float) $m['doh']);
         $strategic = in_array($p->id, $strategicIds, true) ? 1.0 : 0.0;
 
-        // Componente de crescimento BCG: usa quadrante para capturar a dimensão de tendência,
+        // Componente de crescimento (Análise de Papel): usa o papel estratégico para capturar tendência,
         // que giro+margem isolados não expressam (produto grande mas declinando vs pequeno crescendo).
         // Peso 0.0 por padrão — ative via w_crescimento em scoring_weights quando quiser.
         $growthNorm = match ($bcgMap[$p->id] ?? null) {
-            'star' => 1.0,
-            'question_mark' => 0.7,
-            'cash_cow' => 0.3,
-            'dog' => 0.0,
+            'leader' => 1.0,
+            'rising' => 0.7,
+            'anchor' => 0.3,
+            'lagging' => 0.0,
             default => 0.5,
         };
 
@@ -157,7 +157,7 @@ class CompositeScorer implements ProductScorerInterface
                 'doh_norm' => $dohNorm,
                 'strategic' => $strategic,
                 'growth_norm' => $growthNorm,
-                'bcg_quadrant' => $bcgMap[$p->id] ?? null,
+                'paper_role' => $bcgMap[$p->id] ?? null,
                 'raw_quantity' => $m['quantity'],
                 'raw_margem' => $m['margem'],
             ],

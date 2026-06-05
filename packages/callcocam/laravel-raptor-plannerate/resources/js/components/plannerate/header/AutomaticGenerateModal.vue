@@ -249,9 +249,9 @@ function handleGenerate(): void {
                             <span class="font-medium">DOH 10%</span>
                         </p>
                         <p class="text-blue-700 dark:text-blue-300">
-                            A análise BCG (Estrela / Vaca / Interrogação / Abacaxi) é calculada automaticamente
-                            e usada para o fallback <span class="font-medium">Remover BCG Dog</span>.
-                            Ative o peso de Crescimento nas configurações para influenciar o score.
+                            A Analise de Papel (Lider / Ancora / Ascendente / Retardatario) e calculada automaticamente
+                            e usada para o fallback <span class="font-medium">Remover Retardatarios</span>.
+                            Ative o peso de Crescimento nas configuracoes para influenciar o score.
                         </p>
                         <p class="text-xs text-blue-600 dark:text-blue-400">Os pesos podem ser ajustados nas configurações do tenant.</p>
                     </div>

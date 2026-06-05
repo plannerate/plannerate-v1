@@ -11,7 +11,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\GondolaAnalysis;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AbcAnalysisService;
-use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\BcgAnalysisService;
+use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\PaperAnalysisService;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\TargetStockService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -141,7 +141,7 @@ class GondolaAnalysisController extends Controller
         return redirect()->back();
     }
 
-    public function calculateBcgApi(Request $request, string $gondola)
+    public function calculatePaperApi(Request $request, string $gondola)
     {
         $gondolaModel = Gondola::find($gondola);
 
@@ -154,16 +154,16 @@ class GondolaAnalysisController extends Controller
         $previousFilters = $this->buildPreviousFilters($request);
 
         try {
-            $service = app(BcgAnalysisService::class)
+            $service = app(PaperAnalysisService::class)
                 ->setGrowthThreshold((float) $request->input('growth_threshold', 0.0));
 
             $productIds = $service->getProductIdsByGondola($gondola);
             $results = $service->analyzeByProductIds($productIds, $tableType, $currentFilters, $previousFilters);
 
-            $summary = $this->buildBcgSummary($results->toArray());
+            $summary = $this->buildPaperSummary($results->toArray());
 
             GondolaAnalysis::updateOrCreate(
-                ['gondola_id' => $gondolaModel->id, 'type' => 'bcg'],
+                ['gondola_id' => $gondolaModel->id, 'type' => 'paper'],
                 [
                     'data' => [
                         'results' => $results->toArray(),
@@ -179,9 +179,9 @@ class GondolaAnalysisController extends Controller
                 ]
             );
         } catch (\Exception $e) {
-            Log::error('BCG Analysis failed', ['gondola' => $gondola, 'error' => $e->getMessage()]);
+            Log::error('PaperAnalysis failed', ['gondola' => $gondola, 'error' => $e->getMessage()]);
 
-            return redirect()->back()->with('flash', ['error' => 'Erro ao calcular análise BCG: '.$e->getMessage()]);
+            return redirect()->back()->with('flash', ['error' => 'Erro ao calcular Análise de Papel: '.$e->getMessage()]);
         }
 
         return redirect()->back();
@@ -260,19 +260,22 @@ class GondolaAnalysisController extends Controller
         return $previous;
     }
 
-    private function buildBcgSummary(array $results): array
+    /**
+     * Agrega os resultados da Análise de Papel por papel estratégico.
+     */
+    private function buildPaperSummary(array $results): array
     {
-        $star = count(array_filter($results, fn ($r) => ($r['quadrant'] ?? '') === 'star'));
-        $cashCow = count(array_filter($results, fn ($r) => ($r['quadrant'] ?? '') === 'cash_cow'));
-        $questionMark = count(array_filter($results, fn ($r) => ($r['quadrant'] ?? '') === 'question_mark'));
-        $dog = count(array_filter($results, fn ($r) => ($r['quadrant'] ?? '') === 'dog'));
+        $leader = count(array_filter($results, fn ($r) => ($r['role'] ?? '') === 'leader'));
+        $anchor = count(array_filter($results, fn ($r) => ($r['role'] ?? '') === 'anchor'));
+        $rising = count(array_filter($results, fn ($r) => ($r['role'] ?? '') === 'rising'));
+        $lagging = count(array_filter($results, fn ($r) => ($r['role'] ?? '') === 'lagging'));
 
         return [
             'total' => count($results),
-            'star' => $star,
-            'cash_cow' => $cashCow,
-            'question_mark' => $questionMark,
-            'dog' => $dog,
+            'leader' => $leader,
+            'anchor' => $anchor,
+            'rising' => $rising,
+            'lagging' => $lagging,
         ];
     }
 

@@ -14,7 +14,7 @@ use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AbcAnalysisService;
-use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\BcgAnalysisService;
+use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\PaperAnalysisService;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\TargetStockService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -40,7 +40,7 @@ class ProductSelectionService
     public function __construct(
         private readonly AbcAnalysisService $abcAnalysis,
         private readonly TargetStockService $targetStock,
-        private readonly BcgAnalysisService $bcgAnalysis,
+        private readonly PaperAnalysisService $paperAnalysis,
     ) {}
 
     /**
@@ -79,11 +79,11 @@ class ProductSelectionService
         $salesData = $this->getSalesData($products, $planogram, $config);
         $abcAnalyses = $this->getAbcAnalyses($products, $config);
 
-        // 2b. Calcular quadrantes BCG (requer dois períodos — fallback silencioso se sem dados)
-        $bcgQuadrantMap = $this->getBcgQuadrants($products, $planogram, $config);
+        // 2b. Calcular papéis estratégicos (Análise de Papel — requer dois períodos, fallback silencioso)
+        $paperRoleMap = $this->getPaperRoles($products, $planogram, $config);
 
-        // 3. Montar DTOs com ABC, BCG e dados de venda (score = prioridade ABC para ordenar o fetch)
-        $rankedProducts = $products->map(function (Product $product) use ($salesData, $abcAnalyses, $bcgQuadrantMap) {
+        // 3. Montar DTOs com ABC, Análise de Papel e dados de venda (score = prioridade ABC para ordenar o fetch)
+        $rankedProducts = $products->map(function (Product $product) use ($salesData, $abcAnalyses, $paperRoleMap) {
             $productId = $product->id;
 
             $analysisData = $abcAnalyses[$productId] ?? null;
@@ -106,7 +106,7 @@ class ProductSelectionService
                 subcategoryId: $product->category_id,
                 targetStock: $analysisData['target_stock'] ?? null,
                 safetyStock: $analysisData['safety_stock'] ?? null,
-                bcgQuadrant: $bcgQuadrantMap[$productId] ?? null,
+                paperRole: $paperRoleMap[$productId] ?? null,
             );
         });
 
@@ -301,14 +301,14 @@ class ProductSelectionService
     }
 
     /**
-     * Calcula quadrantes BCG por produto.
+     * Calcula o papel estratégico de cada produto via Análise de Papel.
      *
      * Usa o período do config como período atual e calcula o anterior automaticamente
      * (mesmo intervalo deslocado). Retorna mapa vazio silenciosamente se sem dados.
      *
-     * @return array<string, string> [product_id => 'star'|'cash_cow'|'question_mark'|'dog']
+     * @return array<string, string> [product_id => 'leader'|'anchor'|'rising'|'lagging']
      */
-    protected function getBcgQuadrants(
+    protected function getPaperRoles(
         Collection $products,
         Planogram $planogram,
         AutoGenerateConfigDTO $config,
@@ -341,7 +341,7 @@ class ProductSelectionService
         }
 
         try {
-            $results = $this->bcgAnalysis->analyzeByProductIds(
+            $results = $this->paperAnalysis->analyzeByProductIds(
                 productIds: $productIds,
                 tableType: $config->tableType ?: 'sales',
                 currentFilters: $currentFilters,
@@ -353,20 +353,20 @@ class ProductSelectionService
 
             $map = [];
             foreach ($results as $item) {
-                $map[$item['product_id']] = $item['quadrant'];
+                $map[$item['product_id']] = $item['role'];
             }
 
-            Log::info('ProductSelectionService: BCG calculado', [
+            Log::info('ProductSelectionService: Análise de Papel calculada', [
                 'total' => count($map),
-                'star' => count(array_filter($map, fn ($q) => $q === 'star')),
-                'cash_cow' => count(array_filter($map, fn ($q) => $q === 'cash_cow')),
-                'question_mark' => count(array_filter($map, fn ($q) => $q === 'question_mark')),
-                'dog' => count(array_filter($map, fn ($q) => $q === 'dog')),
+                'leader' => count(array_filter($map, fn ($r) => $r === 'leader')),
+                'anchor' => count(array_filter($map, fn ($r) => $r === 'anchor')),
+                'rising' => count(array_filter($map, fn ($r) => $r === 'rising')),
+                'lagging' => count(array_filter($map, fn ($r) => $r === 'lagging')),
             ]);
 
             return $map;
         } catch (\Throwable $e) {
-            Log::warning('ProductSelectionService: BCG falhou (fallback silencioso)', [
+            Log::warning('ProductSelectionService: Análise de Papel falhou (fallback silencioso)', [
                 'erro' => $e->getMessage(),
             ]);
 

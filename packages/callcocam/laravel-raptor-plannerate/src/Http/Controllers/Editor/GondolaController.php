@@ -84,6 +84,7 @@ class GondolaController extends Controller
         // Carregar análises mais recentes
         $abcAnalysis = GondolaAnalysis::getLatestAbcAnalysis($gondola->id);
         $stockAnalysis = GondolaAnalysis::getLatestStockAnalysis($gondola->id);
+        $paperAnalysis = GondolaAnalysis::getLatestPaperAnalysis($gondola->id);
 
         return Inertia::render('tenant/editor/Plannerate', [
             'record' => $recordData,
@@ -96,6 +97,7 @@ class GondolaController extends Controller
             'analysis' => [
                 'abc' => $abcAnalysis?->toAbcFormattedArray(),
                 'stock' => $stockAnalysis?->toStockFormattedArray(),
+                'paper' => $paperAnalysis?->toPaperFormattedArray(),
             ],
             'permissions' => [
                 'can_create_gondola' => $this->canCreateGondola($gondola->planogram),

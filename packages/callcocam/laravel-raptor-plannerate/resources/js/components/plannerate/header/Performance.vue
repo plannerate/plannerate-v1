@@ -29,7 +29,7 @@
                     <TabsTrigger value="bcg">
                         <div class="flex items-center gap-1.5">
                             <TrendingUp class="size-3.5 shrink-0" />
-                            <span class="leading-tight">{{ t('plannerate.performance.bcg_soon') }}</span>
+                            <span class="leading-tight">{{ t('plannerate.performance.paper_tab') }}</span>
                         </div>
                     </TabsTrigger>
                 </TabsList>
@@ -43,7 +43,7 @@
                 </TabsContent>
 
                 <TabsContent value="bcg" class="flex-1 overflow-auto mt-2">
-                    <PerformanceBcgTab :gondola-id="gondolaId" :planogram="planogram" :results="analysis?.bcg?.results" />
+                    <PerformancePaperTab :gondola-id="gondolaId" :planogram="planogram" :results="analysis?.paper?.results" />
                 </TabsContent>
             </Tabs>
         </DialogContent>
@@ -64,7 +64,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useT } from '@/composables/useT';
 import type { AbcAnalysis, StockAnalysis } from '@/types/planogram';
 import PerformanceAbcTab from './PerformanceAbcTab.vue';
-import PerformanceBcgTab from './PerformanceBcgTab.vue';
+import PerformancePaperTab from './PerformancePaperTab.vue';
 import PerformanceTargetStockTab from './PerformanceTargetStockTab.vue';
 
 interface Planogram {

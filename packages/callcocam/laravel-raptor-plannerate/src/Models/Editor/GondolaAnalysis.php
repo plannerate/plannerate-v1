@@ -78,6 +78,17 @@ class GondolaAnalysis extends Model
     }
 
     /**
+     * Obtém a Análise de Papel mais recente da gôndola
+     */
+    public static function getLatestPaperAnalysis(string $gondolaId): ?self
+    {
+        return static::ofType('paper')
+            ->where('gondola_id', $gondolaId)
+            ->latest('analyzed_at')
+            ->first();
+    }
+
+    /**
      * Verifica se a análise está desatualizada (mais de 24h)
      */
     public function isOutdated(): bool
@@ -206,6 +217,33 @@ class GondolaAnalysis extends Model
                 'total_current_stock' => $this->summary['total_current_stock'] ?? 0,
                 'products_above_target' => $this->summary['products_above_target'] ?? 0,
                 'products_below_target' => $this->summary['products_below_target'] ?? 0,
+            ],
+            'analyzed_at' => $this->analyzed_at,
+            'is_outdated' => $this->isOutdated(),
+        ];
+    }
+
+    /**
+     * Retorna Análise de Papel formatada para o frontend
+     */
+    public function toPaperFormattedArray(): array
+    {
+        if ($this->type !== 'paper') {
+            return $this->toFormattedArray();
+        }
+
+        return [
+            'id' => $this->id,
+            'type' => $this->type,
+            'results' => $this->data['results'] ?? [],
+            'filters' => $this->data['filters'] ?? [],
+            'parameters' => $this->data['parameters'] ?? [],
+            'summary' => [
+                'total' => $this->summary['total'] ?? 0,
+                'leader' => $this->summary['leader'] ?? 0,
+                'anchor' => $this->summary['anchor'] ?? 0,
+                'rising' => $this->summary['rising'] ?? 0,
+                'lagging' => $this->summary['lagging'] ?? 0,
             ],
             'analyzed_at' => $this->analyzed_at,
             'is_outdated' => $this->isOutdated(),
