@@ -83,7 +83,11 @@ jobs:
 
           IMAGE_TAG="${{ github.event.inputs.image_tag }}"
           if [[ -z "${IMAGE_TAG}" || "${IMAGE_TAG}" == "null" ]]; then
-            IMAGE_TAG="${DEPLOY_CHANNEL}-${HEAD_SHA:0:7}"
+            if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+              IMAGE_TAG="branch-${DEPLOY_CHANNEL}-latest"
+            else
+              IMAGE_TAG="${DEPLOY_CHANNEL}-${HEAD_SHA:0:7}"
+            fi
           fi
 
           {
