@@ -26,6 +26,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+/packages/callcocam
 /packages/callcocam/laravel-raptor-flow
 /vps-deployment-v2/manifest.env
 /vps-deployment-v2/manifest.staging.env
