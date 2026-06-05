@@ -57,13 +57,17 @@ class ProductSelectionService
         ?array $scopeCategoryIds = null,
     ): Collection {
 
+        // Resolve store_id para filtro de sortimento: loja direta ou via cluster.
+        // null = planograma sem loja definida → sem filtro (compatibilidade com legado).
+        $storeId = $this->resolveStoreIdForAssortment($planogram);
+
         // 1. Buscar produtos da categoria (e filhas).
         // Modo template: pool restrito às categorias dos slots ($scopeCategoryIds).
         // Caso contrário: categoria do formulário ou, como fallback, a categoria-base
         // do planograma (departamento inteiro, expandido recursivamente).
         $products = ($scopeCategoryIds !== null && $scopeCategoryIds !== [])
-            ? $this->getProductsFromCategories($scopeCategoryIds)
-            : $this->getProductsFromCategory(data_get($config, 'categoryId', $planogram->category_id));
+            ? $this->getProductsFromCategories($scopeCategoryIds, $storeId)
+            : $this->getProductsFromCategory(data_get($config, 'categoryId', $planogram->category_id), $storeId);
 
         if ($products->isEmpty()) {
             return collect();
@@ -126,7 +130,7 @@ class ProductSelectionService
      * Usa CTE recursiva do PostgreSQL para eficiência
      * IMPORTANTE: BelongsToConnection já configurou a conexão para o tenant correto
      */
-    protected function getProductsFromCategory(string $categoryId): Collection
+    protected function getProductsFromCategory(string $categoryId, ?string $storeId = null): Collection
     {
         $connection = $this->plannerateTenantDatabase();
 
@@ -158,9 +162,9 @@ class ProductSelectionService
                 SELECT id, category_id, name
                 FROM categories
                 WHERE id = ?
-                
+
                 UNION ALL
-                
+
                 -- Categorias filhas recursivamente
                 SELECT c.id, c.category_id, c.name
                 FROM categories c
@@ -180,7 +184,7 @@ class ProductSelectionService
             'database' => $connection->getDatabaseName(),
         ]);
 
-        return $this->fetchProductsByCategoryIds($categoryIds);
+        return $this->fetchProductsByCategoryIds($categoryIds, $storeId);
     }
 
     /**
@@ -191,7 +195,7 @@ class ProductSelectionService
      * @param  list<string>  $rootCategoryIds
      * @return Collection<int, Product>
      */
-    protected function getProductsFromCategories(array $rootCategoryIds): Collection
+    protected function getProductsFromCategories(array $rootCategoryIds, ?string $storeId = null): Collection
     {
         $connection = $this->plannerateTenantDatabase();
         $roots = array_values(array_unique(array_filter($rootCategoryIds)));
@@ -227,25 +231,39 @@ class ProductSelectionService
             'database' => $connection->getDatabaseName(),
         ]);
 
-        return $this->fetchProductsByCategoryIds($categoryIds);
+        return $this->fetchProductsByCategoryIds($categoryIds, $storeId);
     }
 
     /**
      * Busca os produtos não-draft das categorias informadas (conexão tenant) e loga o resultado.
      *
+     * Quando $storeId é informado, aplica filtro de sortimento via product_store:
+     * apenas produtos autorizados para aquela loja entram no pool.
+     *
      * @param  list<string>  $categoryIds
+     * @param  string|null  $storeId  ID da loja para filtro de sortimento; null = sem filtro
      * @return Collection<int, Product>
      */
-    protected function fetchProductsByCategoryIds(array $categoryIds): Collection
+    protected function fetchProductsByCategoryIds(array $categoryIds, ?string $storeId = null): Collection
     {
         if ($categoryIds === []) {
             return collect();
         }
 
-        $products = Product::on($this->plannerateTenantConnectionName())
+        $query = Product::on($this->plannerateTenantConnectionName())
             ->whereIn('category_id', $categoryIds)
-            ->with(['category.parent.parent.parent.parent.parent.parent'])
-            ->get();
+            ->with(['category.parent.parent.parent.parent.parent.parent']);
+
+        if ($storeId !== null) {
+            $query->whereExists(function ($sub) use ($storeId): void {
+                $sub->select(DB::raw(1))
+                    ->from('product_store')
+                    ->whereColumn('product_store.product_id', 'products.id')
+                    ->where('product_store.store_id', $storeId);
+            });
+        }
+
+        $products = $query->get();
 
         $total = $products->count();
         $draftCount = $products->filter(fn ($p) => $p->status === 'draft')->count();
@@ -255,11 +273,39 @@ class ProductSelectionService
             'total_categoria' => $total,
             'excluidos_draft' => $draftCount,
             'candidatos_finais' => $products->count(),
+            'filtro_sortimento' => $storeId !== null ? 'ativo' : 'inativo',
+            'store_id' => $storeId,
             'tenant_connection' => $this->plannerateTenantConnectionName(),
             'sample_products' => $products->take(3)->pluck('name', 'id')->toArray(),
         ]);
 
         return $products;
+    }
+
+    /**
+     * Resolve o store_id para filtro de sortimento a partir do planograma.
+     *
+     * - planogram.store_id preenchido → usa diretamente
+     * - planogram.cluster_id preenchido → busca store_id do cluster (herda sortimento da loja)
+     * - nenhum dos dois → retorna null (sem filtro, compatibilidade com planogramas legados)
+     */
+    private function resolveStoreIdForAssortment(Planogram $planogram): ?string
+    {
+        if ($planogram->store_id !== null) {
+            return (string) $planogram->store_id;
+        }
+
+        if ($planogram->cluster_id !== null) {
+            $storeId = $this->plannerateTenantDatabase()
+                ->table('clusters')
+                ->where('id', $planogram->cluster_id)
+                ->whereNull('deleted_at')
+                ->value('store_id');
+
+            return $storeId !== null ? (string) $storeId : null;
+        }
+
+        return null;
     }
 
     /**

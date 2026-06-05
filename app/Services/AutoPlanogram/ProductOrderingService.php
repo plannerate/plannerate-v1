@@ -116,7 +116,7 @@ final class ProductOrderingService
     /**
      * Aplica um único critério de ordenação (stable sort).
      *
-     * @param  string  $key  marca|preco|tamanho|score_abc|margem
+     * @param  string  $key  marca|preco|tamanho|score_abc|margem|tipo|embalagem|sabor|atributo
      * @param  string  $direction  asc|desc|none
      * @param  array<string, string>  $abcClassMap
      * @param  array<string, array{giro: float, margem: float}>  $zoneMetricsMap
@@ -159,6 +159,26 @@ final class ProductOrderingService
             'margem' => $products->sortBy(
                 fn ($p) => (float) ($zoneMetricsMap[$p->id]['margem'] ?? 0),
                 SORT_NUMERIC,
+                $desc,
+            ),
+            'tipo' => $products->sortBy(
+                fn ($p) => strtolower((string) ($p->type ?? 'zzz')),
+                SORT_STRING,
+                $desc,
+            ),
+            'embalagem' => $products->sortBy(
+                fn ($p) => strtolower((string) ($p->packaging_type ?? 'zzz')),
+                SORT_STRING,
+                $desc,
+            ),
+            'sabor' => $products->sortBy(
+                fn ($p) => strtolower((string) ($p->flavor ?? 'zzz')),
+                SORT_STRING,
+                $desc,
+            ),
+            'atributo' => $products->sortBy(
+                fn ($p) => strtolower((string) ($p->sortiment_attribute ?? 'zzz')),
+                SORT_STRING,
                 $desc,
             ),
             default => $products,

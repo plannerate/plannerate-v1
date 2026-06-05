@@ -81,7 +81,7 @@ class StoreGondolaRequest extends FormRequest
             'cold_zone_priority' => ['sometimes', 'nullable', 'string', 'in:none,menor_margem,complementar_fria,maior_volume,menor_prioridade'],
             'flow_direction' => ['sometimes', 'nullable', 'string', 'in:left_to_right,right_to_left'],
             'secondary_criteria' => ['sometimes', 'nullable', 'array'],
-            'secondary_criteria.*.key' => ['required_with:secondary_criteria', 'string', 'in:marca,preco,tamanho,margem,embalagem'],
+            'secondary_criteria.*.key' => ['required_with:secondary_criteria', 'string', 'in:marca,preco,tamanho,margem,embalagem,tipo,sabor,atributo'],
             'secondary_criteria.*.direction' => ['required_with:secondary_criteria', 'string', 'in:asc,desc,none'],
         ];
     }
