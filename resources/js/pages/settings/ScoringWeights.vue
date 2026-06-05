@@ -14,6 +14,7 @@ type WeightsProps = {
     w_margem: number;
     w_estrategico: number;
     w_doh: number;
+    w_crescimento: number;
     sales_window_months: number;
     block_hierarchy_level: number;
     adjacency_hierarchy_level: number;
@@ -40,13 +41,14 @@ const form = useForm({
     w_margem: props.weights.w_margem,
     w_estrategico: props.weights.w_estrategico,
     w_doh: props.weights.w_doh,
+    w_crescimento: props.weights.w_crescimento,
     sales_window_months: props.weights.sales_window_months,
     block_hierarchy_level: props.weights.block_hierarchy_level,
     adjacency_hierarchy_level: props.weights.adjacency_hierarchy_level,
 });
 
 const weightSum = computed(() =>
-    +(form.w_giro + form.w_margem + form.w_estrategico + form.w_doh).toFixed(2),
+    +(form.w_giro + form.w_margem + form.w_estrategico + form.w_doh + form.w_crescimento).toFixed(2),
 );
 
 function submit() {
@@ -58,16 +60,22 @@ function resetToDefault() {
     form.w_margem = 0.30;
     form.w_estrategico = 0.20;
     form.w_doh = 0.10;
+    form.w_crescimento = 0.00;
     form.sales_window_months = 4;
     form.block_hierarchy_level = 5;
     form.adjacency_hierarchy_level = 4;
 }
 
-const sliders: { key: keyof WeightsProps; label: string }[] = [
+const sliders: { key: keyof WeightsProps; label: string; hint?: string }[] = [
     { key: 'w_giro', label: t('app.labels.w_giro') },
     { key: 'w_margem', label: t('app.labels.w_margem') },
     { key: 'w_estrategico', label: t('app.labels.w_estrategico') },
     { key: 'w_doh', label: t('app.labels.w_doh') },
+    {
+        key: 'w_crescimento',
+        label: t('app.labels.w_crescimento'),
+        hint: 'Padrao 0 (inativo). Ative para que produtos BCG Estrela e Interrogacao subam no score vs. Abacaxi.',
+    },
 ];
 </script>
 
@@ -104,6 +112,7 @@ const sliders: { key: keyof WeightsProps; label: string }[] = [
                     max="1"
                     step="0.05"
                 />
+                <p v-if="slider.hint" class="text-muted-foreground text-xs">{{ slider.hint }}</p>
                 <InputError :message="form.errors[slider.key]" />
             </div>
 

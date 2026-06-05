@@ -113,6 +113,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
         'w_margem' => 'Peso de margem',
         'w_estrategico' => 'Peso estrategico',
         'w_doh' => 'Peso de DOH',
+        'w_crescimento' => 'Peso de crescimento BCG',
         'sales_window_months' => 'Janela de vendas (meses)',
         'weight_sum' => 'Soma dos pesos',
         'block_hierarchy_level' => 'Nivel hierarquico do bloco',
