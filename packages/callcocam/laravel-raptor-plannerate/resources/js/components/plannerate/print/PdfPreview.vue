@@ -261,7 +261,7 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
 
 <template>
     <div
-        class="flex min-h-screen flex-col bg-slate-100 text-slate-900 transition-colors dark:bg-[#010912] dark:text-slate-100"
+        class="force-light flex min-h-screen flex-col bg-slate-100 text-slate-900 transition-colors"
     >
         <!-- Toolbar fixo -->
         <PdfPreviewToolbar

@@ -80,7 +80,7 @@ function shelvesWithProducts(section: Section) {
 <template>
     <Head :title="`${gondola.name ?? t('plannerate.print.share.title')} — Plannerate`" />
 
-    <div class="min-h-screen bg-slate-100 text-slate-900">
+    <div class="force-light min-h-screen bg-slate-100 text-slate-900">
         <!-- Cabeçalho fixo -->
         <header class="sticky top-0 z-10 border-b border-slate-200 bg-white shadow-sm">
             <div class="mx-auto max-w-4xl px-4 py-3">

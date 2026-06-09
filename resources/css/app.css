@@ -6,7 +6,7 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark *):not(.force-light *));
 
 @theme inline {
     --font-sans:
@@ -151,6 +151,29 @@
     --sidebar-border: oklch(1 0 0 / 6%);
     --sidebar-ring: oklch(0.84 0.238 116);
     --sidebar: oklch(0.21 0.014 258);
+}
+
+/* Força tema claro independente do .dark no ancestral (ex: páginas PDF/share) */
+.force-light {
+    --background: hsl(210 20% 97%);
+    --foreground: hsl(228, 22%, 5%);
+    --card: hsl(0 0% 100%);
+    --card-foreground: hsl(220 28% 14%);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(220 28% 14%);
+    --primary: hsl(94 52% 42%);
+    --primary-foreground: hsl(0 0% 100%);
+    --secondary: hsl(210 18% 93%);
+    --secondary-foreground: hsl(220 26% 20%);
+    --muted: hsl(210 22% 94%);
+    --muted-foreground: hsl(215 16% 45%);
+    --accent: hsl(95 30% 90%);
+    --accent-foreground: hsl(220 42% 12%);
+    --destructive: hsl(0 84.2% 60.2%);
+    --destructive-foreground: hsl(0 0% 98%);
+    --border: hsl(214 20% 88%);
+    --input: hsl(214 18% 89%);
+    --ring: hsl(94 52% 42%);
 }
 
 @layer base {
