@@ -2,6 +2,7 @@
 import { BellRing, CheckCircle2, ChevronDown, ExternalLink, Pause, Play, RotateCcw, XCircle } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
+import { show as gondolaShare } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaShareController';
 import type { BoardStep, ExecutionDetails, WorkflowHistory } from '@/components/kanban/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -84,6 +85,21 @@ const executionLinkLabel = computed(() => (
         ? t('app.kanban.links.open_gondola_editor')
         : t('app.kanban.links.view_pdf')
 ));
+
+const isCompleted = computed(() => execution.value?.status === 'completed');
+const gondolaId = computed(() => execution.value?.gondola?.id ?? null);
+
+/** Visualizar PDF — disponível quando concluído */
+const completedPdfHref = computed(() =>
+    isCompleted.value && gondolaId.value ? gondolaView.url(gondolaId.value) : null,
+);
+
+/** Visualizar como Repositor — disponível quando concluído */
+const completedShareHref = computed(() =>
+    isCompleted.value && gondolaId.value
+        ? gondolaShare.url({ gondolaId: gondolaId.value })
+        : null,
+);
 const visibleHistories = computed(() => (showAllHistories.value ? props.histories : props.histories.slice(0, 5)));
 
 function formatDateTime(iso: string | null): string {
@@ -162,12 +178,26 @@ function toggleHistory(historyId: string): void {
                                     </p>
                                 </div>
                             </div>
-                            <Button v-if="executionLinkHref" variant="outline" size="sm" class="mt-3" as-child>
-                                <a :href="executionLinkHref" target="_blank" rel="noopener noreferrer">
-                                    <ExternalLink class="size-4" />
-                                    {{ executionLinkLabel }}
-                                </a>
-                            </Button>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <Button v-if="executionLinkHref" variant="outline" size="sm" as-child>
+                                    <a :href="executionLinkHref" target="_blank" rel="noopener noreferrer">
+                                        <ExternalLink class="size-4" />
+                                        {{ executionLinkLabel }}
+                                    </a>
+                                </Button>
+                                <Button v-if="completedShareHref" variant="outline" size="sm" as-child>
+                                    <a :href="completedShareHref" target="_blank" rel="noopener noreferrer">
+                                        <ExternalLink class="size-4" />
+                                        {{ t('app.kanban.links.view_as_repositor') }}
+                                    </a>
+                                </Button>
+                                <Button v-if="completedPdfHref" variant="outline" size="sm" as-child>
+                                    <a :href="completedPdfHref" target="_blank" rel="noopener noreferrer">
+                                        <ExternalLink class="size-4" />
+                                        {{ t('app.kanban.links.view_pdf') }}
+                                    </a>
+                                </Button>
+                            </div>
                         </section>
 
                         <section class="rounded-lg border bg-card p-3">

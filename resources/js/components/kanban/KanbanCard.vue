@@ -2,6 +2,7 @@
 import { BellRing, CalendarClock, CheckCircle2, ExternalLink, GripVertical, Pause, Play, User, XCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { show as gondolaView } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaPdfPreviewController';
+import { show as gondolaShare } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/GondolaShareController';
 import type { Execution } from '@/components/kanban/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ const canResume = computed(() => props.execution.can_resume);
 const canComplete = computed(() => props.execution.can_complete);
 const canMove = computed(() => props.execution.can_move && props.execution.status === 'active');
 const isActive = computed(() => props.execution.status === 'active');
+const isCompleted = computed(() => props.execution.status === 'completed');
 const wasStartedByCurrentUser = computed(
     () => isActive.value && props.execution.started_by?.id === props.currentUserId,
 );
@@ -61,6 +63,16 @@ const executionLinkLabel = computed(() => (
         ? t('app.kanban.links.open_editor')
         : t('app.kanban.links.view_pdf')
 ));
+
+/** Visualizar PDF — disponível quando concluído */
+const completedPdfHref = computed(() =>
+    isCompleted.value ? gondolaView.url(props.execution.gondola_id) : null,
+);
+
+/** Visualizar como Repositor — disponível quando concluído */
+const completedShareHref = computed(() =>
+    isCompleted.value ? gondolaShare.url({ gondolaId: props.execution.gondola_id }) : null,
+);
 </script>
 
 <template>
@@ -118,6 +130,20 @@ const executionLinkLabel = computed(() => (
         <div class="mt-3 flex flex-wrap items-center gap-1.5">
             <Button size="sm" variant="outline" class="h-7 px-2 text-xs" @click="emit('details', execution)">
                 {{ t('app.kanban.actions.details') }}
+            </Button>
+
+            <Button v-if="completedShareHref" size="sm" variant="outline" class="h-7 px-2 text-xs" as-child>
+                <a :href="completedShareHref" target="_blank" rel="noopener noreferrer">
+                    <ExternalLink class="mr-1 size-3.5" />
+                    {{ t('app.kanban.links.view_as_repositor') }}
+                </a>
+            </Button>
+
+            <Button v-if="completedPdfHref" size="sm" variant="outline" class="h-7 px-2 text-xs" as-child>
+                <a :href="completedPdfHref" target="_blank" rel="noopener noreferrer">
+                    <ExternalLink class="mr-1 size-3.5" />
+                    {{ t('app.kanban.links.view_pdf') }}
+                </a>
             </Button>
 
             <Button v-if="executionLinkHref" size="sm" variant="outline" class="h-7 px-2 text-xs" as-child>

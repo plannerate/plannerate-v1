@@ -1532,6 +1532,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'open_editor' => 'Abrir editor',
             'open_gondola_editor' => 'Abrir editor de gondolas',
             'view_pdf' => 'Visualizar PDF',
+            'view_as_repositor' => 'Visualizar como Repositor',
         ],
         'actions' => [
             'details' => 'Detalhes',
