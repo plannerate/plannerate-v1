@@ -125,6 +125,16 @@ class GondolaController extends Controller
         $mode = $request->input('mode', 'manual');
         $editorUrl = route('tenant.planograms.gondolas.editor', ['record' => $gondola->id], false);
 
+        // Garante que o modo solicitado é permitido pelo contrato do tenant.
+        // Sem o módulo correspondente, degrada para manual silenciosamente.
+        if ($mode === 'automatic' && ($tenant === null || ! app(TenantModuleService::class)->tenantHasActiveModule($tenant, ModuleSlug::PLANOGRAM_AUTOTIC))) {
+            $mode = 'manual';
+        }
+
+        if ($mode === 'template' && ($tenant === null || ! app(TenantModuleService::class)->tenantHasActiveModule($tenant, ModuleSlug::PLANOGRAM_TEMPLATE))) {
+            $mode = 'manual';
+        }
+
         // Modo automático: o motor dirige a estrutura — cria + gera no mesmo fluxo e
         // redireciona para a gôndola já preenchida (sem reabrir o modal de geração).
         if ($mode === 'automatic') {

@@ -48,7 +48,7 @@ export type ExecutionDetails = {
         id: string;
         status: Execution['status'];
         gondola: { id: string; name: string | null; location: string | null } | null;
-        step: { id: string; name: string; description: string | null } | null;
+        step: { id: string; template_id: string | null; name: string; description: string | null } | null;
         assigned_to_user: AssignedUser | null;
         started_by: AssignedUser | null;
         started_at: string | null;

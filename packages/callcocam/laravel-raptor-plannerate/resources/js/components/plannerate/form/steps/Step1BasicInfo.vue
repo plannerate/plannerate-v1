@@ -59,6 +59,10 @@ interface Props {
     };
     errors?: Record<string, string>;
     templates?: TemplateOption[];
+    /** Tenant tem o módulo planogram-automatic habilitado */
+    canUseAutomatic?: boolean;
+    /** Tenant tem o módulo planogram-template habilitado */
+    canUseTemplate?: boolean;
 }
 
 interface Emits {
@@ -67,6 +71,8 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
     templates: () => [],
+    canUseAutomatic: true,
+    canUseTemplate: true,
 });
 const emit = defineEmits<Emits>();
 const { t } = useT();
@@ -242,7 +248,13 @@ const setSubtemplate = (subtemplateId: string | null) => {
             <Label>{{ t('plannerate.form.step1.mode.label') }}</Label>
             <div
                 class="grid gap-3"
-                :class="props.templates.length > 0 ? 'grid-cols-3' : 'grid-cols-2'"
+                :class="
+                    (props.canUseTemplate && props.templates.length > 0) && props.canUseAutomatic
+                        ? 'grid-cols-3'
+                        : (props.canUseTemplate && props.templates.length > 0) || props.canUseAutomatic
+                          ? 'grid-cols-2'
+                          : 'grid-cols-1'
+                "
             >
                 <!-- Manual -->
                 <button
@@ -267,9 +279,9 @@ const setSubtemplate = (subtemplateId: string | null) => {
                     </div>
                 </button>
 
-                <!-- Por Template — só aparece se houver templates cadastrados -->
+                <!-- Por Template — só aparece se o módulo estiver ativo e houver templates cadastrados -->
                 <button
-                    v-if="props.templates.length > 0"
+                    v-if="props.canUseTemplate && props.templates.length > 0"
                     type="button"
                     class="flex flex-col gap-2 rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     :class="
@@ -291,8 +303,9 @@ const setSubtemplate = (subtemplateId: string | null) => {
                     </div>
                 </button>
 
-                <!-- Automático -->
+                <!-- Automático — só aparece se o módulo planogram-automatic estiver ativo -->
                 <button
+                    v-if="props.canUseAutomatic"
                     type="button"
                     class="flex flex-col gap-2 rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     :class="

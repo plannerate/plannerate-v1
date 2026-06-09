@@ -257,6 +257,7 @@ class WorkflowExecutionController extends Controller
                 ] : null,
                 'step' => $execution->step ? [
                     'id' => $execution->step->id,
+                    'template_id' => $execution->step->workflow_template_id,
                     'name' => $execution->step->name,
                     'description' => $execution->step->description,
                 ] : null,

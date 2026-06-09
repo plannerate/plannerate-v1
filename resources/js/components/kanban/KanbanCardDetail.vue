@@ -40,7 +40,8 @@ const emit = defineEmits<{
 
 const execution = computed(() => props.payload?.execution ?? null);
 const allowedUsers = computed(() => props.payload?.allowed_users ?? []);
-const currentStepId = computed(() => execution.value?.step?.id ?? null);
+// BoardStep.id = WorkflowTemplate.id; execution.step.template_id também é WorkflowTemplate.id
+const currentStepId = computed(() => execution.value?.step?.template_id ?? null);
 const currentStepIndex = computed(() => props.steps.findIndex((step) => step.id === currentStepId.value));
 const expandedHistoryId = ref<string | null>(null);
 const showAllHistories = ref(false);

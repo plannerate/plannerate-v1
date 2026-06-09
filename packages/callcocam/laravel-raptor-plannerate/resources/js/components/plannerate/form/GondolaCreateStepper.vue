@@ -74,6 +74,9 @@ const { t } = useT();
 const isBrowser = typeof window !== 'undefined';
 const page = usePage<{
     subdomain?: string;
+    tenant?: {
+        active_modules?: string[];
+    };
     record?: {
         planogram_id?: string;
         category_id?: string;
@@ -85,6 +88,27 @@ const page = usePage<{
         };
     };
 }>();
+
+/** Módulos ativos do tenant — lidos dos shared props do Inertia */
+const activeModules = computed<string[]>(
+    () => page.props.tenant?.active_modules ?? [],
+);
+
+/**
+ * Modo automático disponível apenas quando o tenant tem o módulo planogram-automatic.
+ * Exibido sempre em ambiente não-browser (SSR) para evitar flash de layout.
+ */
+const canUseAutomatic = computed(
+    () => !isBrowser || activeModules.value.includes('planogram-automatic'),
+);
+
+/**
+ * Modo template disponível apenas quando o tenant tem o módulo planogram-template.
+ * Exibido sempre em ambiente não-browser (SSR) para evitar flash de layout.
+ */
+const canUseTemplate = computed(
+    () => !isBrowser || activeModules.value.includes('planogram-template'),
+);
 
 const resolvedPlanogramId = computed(() => {
     const planogramIdFromProps = props.planogramId?.toString().trim();
@@ -697,6 +721,8 @@ const handleSubmit = () => {
                         v-model="step1Data"
                         :templates="templateOptions"
                         :errors="form.errors"
+                        :can-use-automatic="canUseAutomatic"
+                        :can-use-template="canUseTemplate"
                     />
 
                     <Step2Modules
