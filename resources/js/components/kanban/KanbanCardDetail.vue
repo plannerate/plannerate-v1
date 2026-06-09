@@ -188,8 +188,8 @@ function toggleHistory(historyId: string): void {
                     <section class="rounded-lg border bg-card p-3">
                         <h3 class="text-sm font-semibold text-foreground">{{ t('app.kanban.detail.workflow_flow') }}</h3>
                         <div class="relative mt-4 overflow-x-auto pb-1">
-                            <div class="absolute left-0 right-0 top-5 h-0.5 min-w-[640px] bg-border" />
-                            <div class="relative flex min-w-[640px] justify-between">
+                            <div class="absolute left-0 right-0 top-5 h-0.5 min-w-2xl bg-border" />
+                            <div class="relative flex min-w-2xl justify-between">
                                 <div v-for="(step, index) in steps" :key="step.id" class="flex w-24 flex-col items-center">
                                     <div
                                         class="relative z-10 flex size-9 items-center justify-center rounded-full border-2 bg-card text-xs font-bold transition"
@@ -294,11 +294,11 @@ function toggleHistory(historyId: string): void {
                                     >
                                         <p>
                                             <span class="font-medium text-foreground">{{ t('app.kanban.history.from_step') }}:</span>
-                                            {{ stepLabel(history.from_step_id) }}
+                                            {{ history.from_step_name ?? stepLabel(history.from_step_id) }}
                                         </p>
                                         <p>
                                             <span class="font-medium text-foreground">{{ t('app.kanban.history.to_step') }}:</span>
-                                            {{ stepLabel(history.to_step_id) }}
+                                            {{ history.to_step_name ?? stepLabel(history.to_step_id) }}
                                         </p>
                                         <p>
                                             <span class="font-medium text-foreground">{{ t('app.kanban.history.previous_responsible') }}:</span>

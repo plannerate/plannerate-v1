@@ -293,15 +293,30 @@ class WorkflowExecutionController extends Controller
     {
         $this->authorize('viewAny', WorkflowGondolaExecution::class);
 
-        $histories = $execution->histories()
+        $historyList = $execution->histories()
             ->with('performedBy:id,name')
-            ->get()
+            ->get();
+
+        // Resolve nomes das etapas em lote (WorkflowPlanogramStep → nome)
+        $stepIds = $historyList
+            ->flatMap(fn (WorkflowHistory $h): array => array_filter([$h->from_step_id, $h->to_step_id]))
+            ->unique()
+            ->values()
+            ->all();
+
+        $stepNames = WorkflowPlanogramStep::query()
+            ->whereIn('id', $stepIds)
+            ->pluck('name', 'id');
+
+        $histories = $historyList
             ->map(fn (WorkflowHistory $h): array => [
                 'id' => $h->id,
                 'action' => $h->action?->value,
                 'description' => $h->description,
                 'from_step_id' => $h->from_step_id,
+                'from_step_name' => $h->from_step_id ? ($stepNames[$h->from_step_id] ?? null) : null,
                 'to_step_id' => $h->to_step_id,
+                'to_step_name' => $h->to_step_id ? ($stepNames[$h->to_step_id] ?? null) : null,
                 'previous_responsible_id' => $h->previous_responsible_id,
                 'new_responsible_id' => $h->new_responsible_id,
                 'can_restore' => $h->can_restore,

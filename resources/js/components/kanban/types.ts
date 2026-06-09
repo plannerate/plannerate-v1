@@ -69,7 +69,9 @@ export type WorkflowHistory = {
     action: 'started' | 'moved' | 'paused' | 'resumed' | 'assigned' | 'completed' | 'cancelled' | 'restored';
     description: string | null;
     from_step_id: string | null;
+    from_step_name: string | null;
     to_step_id: string | null;
+    to_step_name: string | null;
     previous_responsible_id: string | null;
     new_responsible_id: string | null;
     can_restore: boolean;
