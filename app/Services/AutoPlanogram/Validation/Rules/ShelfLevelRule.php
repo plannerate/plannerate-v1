@@ -145,15 +145,33 @@ final class ShelfLevelRule implements ValidationRuleInterface
     }
 
     /**
-     * Get the shelf position (shelf_position column).
+     * Índice ordenado da prateleira na seção (0 = topo).
+     *
+     * shelf_position no banco é coordenada em cm a partir do topo (0, 60, 120…) —
+     * não pode ser passada direto a ShelfLevel::fromShelfPosition, que espera
+     * índice 0..N-1. Ordenar por shelf_position e usar a posição na lista funciona
+     * para ambas as semânticas (coordenada ou índice legado).
      */
     private function getShelfPosition(string $shelfId): int
     {
         $shelf = DB::connection('tenant')->table('shelves')
             ->where('id', $shelfId)
-            ->select('shelf_position')
+            ->select('section_id', 'shelf_position')
             ->first();
 
-        return $shelf ? (int) $shelf->shelf_position : 0;
+        if ($shelf === null) {
+            return 0;
+        }
+
+        $orderedIds = DB::connection('tenant')->table('shelves')
+            ->where('section_id', $shelf->section_id)
+            ->whereNull('deleted_at')
+            ->orderBy('shelf_position')
+            ->pluck('id')
+            ->all();
+
+        $index = array_search($shelfId, $orderedIds, true);
+
+        return $index === false ? 0 : (int) $index;
     }
 }

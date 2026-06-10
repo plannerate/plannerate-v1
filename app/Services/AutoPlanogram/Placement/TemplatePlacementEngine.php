@@ -729,7 +729,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             return $products;
         }
 
-        $zone = ShelfZoneResolver::resolve((int) $shelf->shelf_position, $numShelves);
+        $zone = ShelfZoneResolver::resolve($this->shelfSortedIndex($section, $shelf), $numShelves);
 
         $priority = match ($zone) {
             'hot' => $this->hotZonePriority,
@@ -1203,7 +1203,25 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             return 'neutral';
         }
 
-        return ShelfZoneResolver::resolve((int) $shelf->shelf_position, $numShelves);
+        return ShelfZoneResolver::resolve($this->shelfSortedIndex($section, $shelf), $numShelves);
+    }
+
+    /**
+     * Índice ordenado da prateleira na seção (0 = topo).
+     *
+     * shelf_position no banco é coordenada em cm a partir do topo (0, 60, 120…) —
+     * não pode ser passada direto ao ShelfZoneResolver, que espera índice 0..N-1.
+     * Ordenar por shelf_position e usar a posição na lista funciona para ambas
+     * as semânticas (coordenada em cm ou índice legado).
+     */
+    private function shelfSortedIndex(Section $section, Shelf $shelf): int
+    {
+        $index = $section->shelves
+            ->sortBy('shelf_position')
+            ->values()
+            ->search(fn (Shelf $s): bool => $s->getKey() === $shelf->getKey());
+
+        return $index === false ? 0 : (int) $index;
     }
 
     /**

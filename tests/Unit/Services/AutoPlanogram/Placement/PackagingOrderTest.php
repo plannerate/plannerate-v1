@@ -128,6 +128,27 @@ test('embalagem: packaging_order vazia não altera a ordem', function (): void {
     expect($result->first()->packaging_type)->toBe('caixa');
 });
 
+test('embalagem: ProductOrderingService respeita packaging_order (paridade geração × reordenação)', function (): void {
+    $engine = packagingEngine();
+    $service = new ProductOrderingService(new ProductSizeResolver);
+
+    $sache = makePackagingProduct('sache');
+    $caixa = makePackagingProduct('caixa');
+    $pacote = makePackagingProduct('pacote');
+    $products = collect([$sache, $caixa, $pacote]);
+
+    $slot = makePackagingSlot([
+        ['key' => 'embalagem', 'direction' => 'none', 'packaging_order' => ['caixa', 'pacote', 'sache']],
+    ]);
+
+    $engineOrder = callPackagingOrder($engine, $products, $slot)->pluck('id')->values()->all();
+    $serviceOrder = $service->orderBySlot($products, $slot)->pluck('id')->values()->all();
+
+    expect($serviceOrder)->toBe($engineOrder)
+        ->and($service->orderBySlot($products, $slot)->pluck('packaging_type')->values()->all())
+        ->toBe(['caixa', 'pacote', 'sache']);
+});
+
 test('embalagem: cascata com preco — embalagem domina como critério primário', function (): void {
     $engine = packagingEngine();
 
