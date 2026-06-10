@@ -7,6 +7,8 @@
             'hover:bg-accent/5': !isSelected,
             'bg-primary/5 ring-2 ring-primary': isShelfDropTarget,
         }"
+        tabindex="0"
+        @focus="handleFocusSection"
         @click="handleSelectSection"
         @dblclick="handleDoubleClick"
         @dragover.prevent="handleSectionDragOver"
@@ -218,6 +220,10 @@ const holes = computed(() => calculateHoles(props.section));
 const isSelected = computed(() => {
     return selection.isSectionSelected(props.section);
 });
+
+function handleFocusSection() {
+    selection.selectItem('section', props.section.id, props.section);
+}
 
 function handleSelectSection(event: MouseEvent) {
     event.stopPropagation();

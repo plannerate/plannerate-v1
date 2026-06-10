@@ -9,6 +9,8 @@
             isCategoryHighlighted && !isSelected ? 'ring-2 ring-inset ring-green-500' : '',
         ]"
         :style="shelfAreaStyle"
+        tabindex="0"
+        @focus="handleFocusShelf"
         @click="handleSelectShelf"
         @dragover.prevent="handleProductDragOver"
         @dragleave="handleProductDragLeave"
@@ -185,6 +187,15 @@ const isCategoryHighlighted = computed(
         !!props.shelf.template_slot?.category_id &&
         props.shelf.template_slot.category_id === props.highlightGroupingNormalized,
 );
+
+function handleFocusShelf() {
+    selection.selectItem('shelf', props.shelf.id, props.shelf, {
+        section: props.section,
+        lastShelf: props.lastShelf,
+        firstShelf: props.firstShelf,
+    });
+    selectedTemplateCategoryId.value = props.shelf.template_slot?.category_id ?? null;
+}
 
 function handleSelectShelf(event: MouseEvent) {
     event.stopPropagation();

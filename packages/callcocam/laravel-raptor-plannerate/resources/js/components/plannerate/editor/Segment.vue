@@ -3,6 +3,7 @@
     <div
         class="relative flex flex-col items-start transition-all duration-200"
         :style="segmentStyle"
+        tabindex="0"
         :class="{
             'ring-3 ring-primary ring-offset-2 bg-primary/20 shadow-xl scale-[1.02] animate-pulse z-50': isSegmentSelected,
             'ring-2 ring-amber-500/70 ring-offset-1 bg-amber-100/50 shadow-lg z-40':
@@ -20,6 +21,7 @@
             'border-l-2 border-amber-400': props.segment.is_vertical_block,
         }"
         draggable="true"
+        @focus="handleFocusSegment"
         @click="handleSegmentClick"
         @dragstart="handleDragStart"
         @dragend="handleDragEnd"
@@ -201,8 +203,12 @@ onBeforeUnmount(() => {
     window.removeEventListener('drop', clearDropTarget, true);
 });
 
+function handleFocusSegment() {
+    selection.selectItem('segment', props.segment.id, props.segment);
+}
+
 function handleSegmentClick(event: MouseEvent) {
-    event.stopPropagation(); 
+    event.stopPropagation();
     selection.selectItem('segment', props.segment.id, props.segment);
 }
 
