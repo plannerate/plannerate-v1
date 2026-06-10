@@ -161,7 +161,7 @@ function handleClose() {
 
 <template>
   <Dialog :open="open" @update:open="handleClose" :style="{ zIndex: 1000 }">
-    <DialogContent class="sm:max-w-4xl max-h-[90vh] flex flex-col z-[1000]">
+    <DialogContent class="force-light sm:max-w-4xl max-h-[90vh] flex flex-col z-1000">
       <DialogHeader class="shrink-0 pb-2">
         <DialogTitle>{{ t('plannerate.print.product_detail.title') }}</DialogTitle>
         <DialogDescription v-if="product">

@@ -6,11 +6,13 @@ import PdfAbcBadge from './PdfAbcBadge.vue'
 import PdfLayer from './PdfLayer.vue'
 import PdfStockIndicator from './PdfStockIndicator.vue'
 import ProductDetailModal from './ProductDetailModal.vue'
+import ProductDetailModalShare from './ProductDetailModalShare.vue'
 
 interface Props {
   segment: Segment
   scaleFactor: number
   shelfDepth?: number
+  isShare?: boolean
 }
 
 const props = defineProps<Props>()
@@ -62,8 +64,16 @@ function handleClick() {
     </div>
   </div>
 
-  <!-- Modal de detalhes -->
+  <!-- Modal de detalhes: simplificado no share, completo no editor -->
+  <ProductDetailModalShare
+    v-if="isShare"
+    v-model:open="showModal"
+    :product="segment.layer?.product"
+    :segment-quantity="segment.quantity"
+    :layer-quantity="segment.layer?.quantity"
+  />
   <ProductDetailModal
+    v-else
     v-model:open="showModal"
     :product="segment.layer?.product"
     :segment-id="segment.id"

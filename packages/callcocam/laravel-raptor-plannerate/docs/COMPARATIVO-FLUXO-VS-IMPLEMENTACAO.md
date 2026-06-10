@@ -1,6 +1,7 @@
 # Comparativo: Fluxo Documentado × Implementação Real
 
-> Gerado em 2026-06-03. Referência: `FLUXO-PLANOGRAMA-AUTOMATICO.md` vs código em `packages/` e `app/`.
+> Gerado em 2026-06-03; revisado em 2026-06-10. Referência: `FLUXO-PLANOGRAMA-AUTOMATICO.md` vs código em `packages/` e `app/`.
+> Os gaps 1, 3 e 4 da revisão original foram fechados (filtro de sortimento, critérios de ordenação, exclusão de curva C).
 
 ---
 
@@ -121,10 +122,8 @@ Dois modos de operação:
 | Pertence à categoria | ✅ | 📦 CTE recursiva em `getProductsFromCategory()` |
 | Tem dimensões cadastradas | ✅ | 🔧 `requireDimensions` flag no modo auto; engine rejeita `MissingDimensions` no modo template |
 | Não está bloqueado | ✅ | 🔧 `planogram_product_rules` (blocked por produto, marca, subcategoria) |
-| Cabe fisicamente | ✅ | 🔧 Engine rejeita com `HeightExceedsShelf` / `NoHorizontalSpace` |
-| **Pertence ao sortimento da loja/cluster** | ❌ **AUSENTE** | Não há filtro de assortment list por loja |
-
-> 🔴 **Gap crítico:** Produtos não autorizados para a loja entram no pool sem restrição.
+| Cabe fisicamente | ✅ | 🔧 Engine rejeita com `HeightExceedsShelf` (vão livre da prateleira) / `NoHorizontalSpace` |
+| Pertence ao sortimento da loja/cluster | ✅ | 🔧 `resolveStoreIdForAssortment()` + `whereExists product_store` em `ProductSelectionService` (loja direta ou herdada do cluster; planograma sem loja/cluster = sem filtro, compatibilidade legado) |
 
 **📦 Arquivos do Pacote:**
 - `src/Models/Editor/Product.php`
@@ -274,10 +273,12 @@ Dois modos de operação:
 ### Passo 10 — Ordenação visual hierárquica
 **Documentado:** Critérios em cascata: marca, tipo, embalagem, tamanho, preço, versão, atributo.
 
-**Implementado:** ✅ Estrutura correta, critérios parciais — **🔧 App**.
+**Implementado:** ✅ Completo — **🔧 App**.
 
 - `ProductOrderingService::applyCriteriaCascade()` aplica lista de critérios do menor ao maior peso.
-- `visual_criteria` em `PlanogramTemplateSlot` (JSON: `[{key, direction}]`).
+- O `TemplatePlacementEngine` delega a ordenação ao mesmo `ProductOrderingService` usado por
+  `VisualReorderService` e `ExposureRedistributeService` — geração e reordenação produzem a mesma ordem.
+- `visual_criteria` em `PlanogramTemplateSlot` (JSON: `[{key, direction, packaging_order?}]`).
 
 | Critério | Status |
 |---|---|
@@ -286,14 +287,12 @@ Dois modos de operação:
 | tamanho | ✅ |
 | score_abc | ✅ |
 | margem | ✅ |
-| **tipo** | ❌ Ausente |
-| **embalagem** | ❌ Ausente |
-| **versão** | ❌ Ausente |
-| **atributo** | ❌ Ausente |
+| tipo | ✅ |
+| embalagem | ✅ (ordem customizada via `packaging_order`) |
+| sabor | ✅ |
+| atributo | ✅ (`sortiment_attribute`) |
 
 - Ordenação legada (slots sem `visual_criteria`): size → price → brand.
-
-> ⚠️ **Gap:** `tipo`, `embalagem`, `versão` e `atributo` não têm implementação em `applySingleCriterion()`.
 
 **🔧 Arquivos do App:**
 - `app/Services/AutoPlanogram/ProductOrderingService.php`
@@ -413,12 +412,12 @@ Impede que um único produto, marca ou subcategoria domine o slot.
 
 ---
 
-## Resumo dos Gaps a Implementar
+## Resumo dos Gaps (revisão 2026-06-10)
 
-| # | Gap | Impacto | Complexidade | Onde implementar |
-|---|---|---|---|---|
-| 1 | **Filtro de sortimento por loja/cluster** — produtos não autorizados entram no pool | 🔴 Alto | Média | 🔧 App: nova tabela + filtro em `ProductSelectionService` |
-| 2 | **Conectar BCG do pacote ao pipeline** — `BcgAnalysisService` existe mas não é chamado na geração | 🟡 Médio | Alta | 🔗 Ambos: adaptar `CompositeScorer` ou `CategoryRoleInferrer` para usar a classificação BCG do pacote |
-| 3 | **Critérios de ordenação incompletos** — `tipo`, `embalagem`, `versão`, `atributo` ausentes | 🟡 Médio | Baixa | 🔧 App: adicionar cases em `ProductOrderingService::applySingleCriterion()` |
-| 4 | **Exclusão de curva C no sortimento** — C entra no pool; doc sugere poder excluí-lo antes | 🟢 Baixo | Baixa | 🔧 App: flag `excludeClassC` em `AutoGenerateConfigDTO` + filtro em `ProductSelectionService` |
-| 5 | **Atualizar doc original** — `FLUXO-PLANOGRAMA-AUTOMATICO.md` não cobre modo automático, síntese, overrides e regras mandatory/blocked | 🟢 Baixo | Baixa | Documentação |
+| # | Gap | Status |
+|---|---|---|
+| 1 | **Filtro de sortimento por loja/cluster** | ✅ Fechado — `resolveStoreIdForAssortment()` + `whereExists product_store` em `ProductSelectionService` |
+| 2 | **Conectar BCG do pacote ao pipeline** | ✅ Atendido via Análise de Papel — `PaperAnalysisService` (pacote) alimenta `paperRole` (`leader/anchor/rising/lagging`) no pipeline: componente do `CompositeScorer` e fallback `remove_dog` |
+| 3 | **Critérios de ordenação incompletos** | ✅ Fechado — `tipo`, `embalagem` (com `packaging_order`), `sabor` e `atributo` em `ProductOrderingService`, compartilhado entre geração e reordenação |
+| 4 | **Exclusão de curva C no sortimento** | ✅ Fechado — flag `excludeClassC` em `AutoGenerateConfigDTO` + filtro em `ProductSelectionService` (preservada no modo template via `withOverrides`) |
+| 5 | **Atualizar doc original** | ✅ Fechado — `FLUXO-PLANOGRAMA-AUTOMATICO.md` reescrito (modo automático, síntese, overrides, mandatory/blocked, overflow pass, enums reais) |

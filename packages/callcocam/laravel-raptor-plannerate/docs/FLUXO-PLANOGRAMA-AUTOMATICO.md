@@ -1,6 +1,6 @@
 # Fluxo da Geração Automática de Planogramas
 
-> Atualizado em 2026-06-05 para refletir a implementação atual.
+> Atualizado em 2026-06-10 para refletir a implementação atual.
 > Versão anterior era conceitual; este documento descreve o que está em produção.
 
 ---
@@ -148,23 +148,24 @@ A flag `use_target_stock` no slot do template (ou em `planogram_gondola_slot_ove
 
 A frente mínima garante presença visual suficiente para cada produto alocado.
 
-**Se faltar espaço**, o sistema aplica a regra `space_fallback` configurada no slot:
+**Se faltar espaço**, o sistema aplica a regra `space_fallback` configurada no slot (enum `SpaceFallback`):
 
-- `ReduceFacings` — reduz frentes até o mínimo
-- `RemoveLowestPriority` — remove produtos de menor score
-- `RemoveDeadWeight` — remove produtos sem vendas
-- `RemoveCurvC` — remove curva C primeiro
-- `PreserveMandatory` — nunca remove produtos obrigatórios
+- `reduce_facings` — tenta recolocar os rejeitados com 1 frente no espaço restante
+- `reduce_c` — produtos curva C vão para o fim da fila e são rejeitados primeiro
+- `remove_dog` — produtos retardatários (papel `lagging` da Análise de Papel) são rejeitados primeiro
+- `skip` — deixa incompleto, sem nova tentativa
 
-**Se sobrar espaço**, o sistema aplica a regra `facing_expansion`:
+**Se sobrar espaço**, o sistema aplica a regra `facing_expansion` (enum `FacingExpansion`):
 
-- `NoExpansion` — não expande
-- `ExpandHighPriority` — expande produtos de maior score
-- `ExpandHighStock` — expande produtos com maior estoque alvo
-- `ExpandHighMargin` — expande produtos de maior margem
-- `ExpandHighSales` — expande produtos de maior venda
+- `none` — não expande
+- `score` — expande na ordem de score (maior relevância primeiro)
+- `current_stock` — expande produtos com maior estoque atual
+- `target_stock` — expande produtos com maior déficit de estoque alvo
+- `equal` — expande em round-robin igualitário
 
 Essas regras podem ser sobrescritas por categoria em `planogram_gondola_slot_overrides`, permitindo comportamentos diferentes por categoria dentro da mesma gôndola.
+
+**Overflow pass**: após processar todos os slots, produtos definitivamente rejeitados por falta de espaço horizontal são realocados (com frentes mínimas por curva ABC) em qualquer prateleira da gôndola que ainda tenha espaço — respeitando o vão livre de altura. No modo automático, slots que ficaram sem produtos são removidos do subtemplate sintetizado após a geração.
 
 ---
 
@@ -217,7 +218,9 @@ O sistema aplica os critérios em cascata (do menos para o mais prioritário), u
 | `score_abc` | ABC calculado | Ordena por curva A > B > C |
 | `margem` | Métricas de venda | Ordena por margem de contribuição |
 
-Cada critério aceita direção `asc`, `desc` ou `none`.
+Cada critério aceita direção `asc`, `desc` ou `none`. O critério `embalagem` usa uma lista ordenada customizada (`packaging_order`) em vez de direção — tipos não listados vão para o fim.
+
+A ordenação é centralizada no `ProductOrderingService` — usado tanto pela geração (`TemplatePlacementEngine`) quanto pelos ajustes pós-geração (Reordenar/Redistribuir), garantindo resultado idêntico nos dois caminhos.
 
 **Exemplo de hierarquia:**
 
@@ -231,10 +234,12 @@ O sistema aplica do critério menos prioritário ao mais prioritário, garantind
 
 ## 12. Décimo primeiro passo — Respeitar o fluxo de leitura
 
-A ordenação visual respeita o sentido de leitura da gôndola:
+A ordenação visual respeita o sentido de leitura configurado no **subtemplate** (`flow_direction`):
 
 - `left_to_right` — início da exposição na esquerda
 - `right_to_left` — início da exposição na direita
+
+No modo automático, o fluxo escolhido no stepper/modal de geração é gravado no subtemplate sintetizado. Em templates pré-configurados, o fluxo é definido nos defaults do módulo (editor de template) — o campo `flow` da gôndola não é lido pelo engine.
 
 O fluxo define onde começa e onde termina a leitura. Quando o fluxo é `right_to_left`, o engine espelha as posições físicas dos segmentos nas prateleiras.
 

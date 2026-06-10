@@ -541,6 +541,7 @@ function handleReset(categoryId: string) {
                         <option value="reduce_c">{{ t('planogram-templates.slot_editor.space_fallback_options.reduce_c') }}</option>
                         <option value="reduce_facings">{{ t('planogram-templates.slot_editor.space_fallback_options.reduce_facings') }}</option>
                         <option value="skip">{{ t('planogram-templates.slot_editor.space_fallback_options.skip') }}</option>
+                        <option value="remove_dog">{{ t('planogram-templates.slot_editor.space_fallback_options.remove_dog') }}</option>
                     </FormSelectField>
 
                     <!-- Expansão de frentes -->

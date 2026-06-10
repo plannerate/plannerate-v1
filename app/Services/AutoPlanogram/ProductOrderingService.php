@@ -43,7 +43,7 @@ final class ProductOrderingService
      * Aplica ordenação estável em cascata pela lista de critérios.
      * Aplica do menos prioritário ao mais prioritário (reverso), para que o 1º domine.
      *
-     * @param  list<array{key: string, direction: string}>  $criteria
+     * @param  list<array{key: string, direction: string, packaging_order?: list<string>}>  $criteria
      * @param  array<string, string>  $abcClassMap
      * @param  array<string, array{giro: float, margem: float}>  $zoneMetricsMap
      */
@@ -58,7 +58,7 @@ final class ProductOrderingService
         foreach (array_reverse($criteria) as $item) {
             $key = $item['key'] ?? '';
             $direction = $item['direction'] ?? 'none';
-            $sorted = $this->applySingleCriterion($sorted, $key, $direction, $abcClassMap, $zoneMetricsMap);
+            $sorted = $this->applySingleCriterion($sorted, $key, $direction, $abcClassMap, $zoneMetricsMap, $item['packaging_order'] ?? []);
         }
 
         return $sorted;
@@ -120,6 +120,7 @@ final class ProductOrderingService
      * @param  string  $direction  asc|desc|none
      * @param  array<string, string>  $abcClassMap
      * @param  array<string, array{giro: float, margem: float}>  $zoneMetricsMap
+     * @param  list<string>  $packagingOrder  Ordem customizada de packaging_type (critério embalagem)
      */
     public function applySingleCriterion(
         Collection $products,
@@ -127,6 +128,7 @@ final class ProductOrderingService
         string $direction,
         array $abcClassMap = [],
         array $zoneMetricsMap = [],
+        array $packagingOrder = [],
     ): Collection {
         $desc = $direction === 'desc';
 
@@ -166,11 +168,7 @@ final class ProductOrderingService
                 SORT_STRING,
                 $desc,
             ),
-            'embalagem' => $products->sortBy(
-                fn ($p) => strtolower((string) ($p->packaging_type ?? 'zzz')),
-                SORT_STRING,
-                $desc,
-            ),
+            'embalagem' => $this->applyPackagingOrder($products, $packagingOrder),
             'sabor' => $products->sortBy(
                 fn ($p) => strtolower((string) ($p->flavor ?? 'zzz')),
                 SORT_STRING,
@@ -183,5 +181,26 @@ final class ProductOrderingService
             ),
             default => $products,
         };
+    }
+
+    /**
+     * Ordena produtos pela posição do packaging_type na lista configurada (prompt 41).
+     * Produtos com tipo não listado (ou sem tipo) vão para o fim.
+     * Ordem vazia → mantém a ordem original (sem fallback alfabético).
+     *
+     * @param  list<string>  $order  Lista de packaging_type em ordem de prioridade
+     */
+    private function applyPackagingOrder(Collection $products, array $order): Collection
+    {
+        if (empty($order)) {
+            return $products;
+        }
+
+        $indexMap = array_flip($order);
+
+        return $products->sortBy(
+            fn ($p) => $indexMap[$p->packaging_type ?? ''] ?? PHP_INT_MAX,
+            SORT_NUMERIC,
+        );
     }
 }

@@ -142,6 +142,19 @@ class AutoGenerateConfigDTO
     }
 
     /**
+     * Clona o DTO sobrescrevendo apenas as chaves informadas (formato snake_case de fromArray).
+     *
+     * Preserva todos os demais campos — usar em vez de reconstruir o DTO manualmente,
+     * o que silenciosamente reseta campos novos para o default (ex.: exclude_class_c).
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    public function withOverrides(array $overrides): self
+    {
+        return self::fromArray(array_merge($this->toArray(), $overrides));
+    }
+
+    /**
      * Converter para array
      */
     public function toArray(): array

@@ -149,6 +149,7 @@ function shelvesWithProducts(section: Section) {
                             layout-direction="row"
                             :index="0"
                             :extra-height="0"
+                            :is-share="true"
                         />
                     </div>
                 </div>

@@ -166,6 +166,7 @@ return [
             'reduce_c' => 'Remover curva C primeiro',
             'reduce_facings' => 'Reduzir frentes para 1',
             'skip' => 'Deixar incompleto',
+            'remove_dog' => 'Remover retardatários primeiro',
         ],
         'target_stock_label' => 'Usar estoque alvo',
         'cancel_button' => 'Cancelar',

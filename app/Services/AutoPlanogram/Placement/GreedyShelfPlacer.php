@@ -183,9 +183,14 @@ final class GreedyShelfPlacer implements PlacementEngineInterface
     }
 
     /**
-     * @return array<string, float>
+     * Calcula a altura útil (vão livre em cm) de cada prateleira da seção.
+     *
+     * Compartilhado com o TemplatePlacementEngine para que ambos os engines
+     * apliquem o mesmo critério de rejeição por altura (HeightExceedsShelf).
+     *
+     * @return array<string, float> [shelf_id => clearance_cm]
      */
-    private function shelfClearances(Section $section): array
+    public function shelfClearances(Section $section): array
     {
         $shelves = $section->shelves->sortBy('shelf_position')->values();
         $clearances = [];

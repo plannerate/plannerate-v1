@@ -24,7 +24,7 @@ export const slotDraftSchema = z
         size_order: z.enum(['asc', 'desc', 'none']),
         brand_exposure: z.enum(['vertical', 'horizontal', 'mixed']),
         flavor_exposure: z.enum(['vertical', 'horizontal', 'mixed']),
-        space_fallback: z.enum(['reduce_c', 'reduce_facings', 'skip']),
+        space_fallback: z.enum(['reduce_c', 'reduce_facings', 'skip', 'remove_dog']),
         use_target_stock: z.boolean(),
         facing_expansion: z.enum(['none', 'score', 'current_stock', 'target_stock', 'equal']),
         role_override: z
@@ -34,7 +34,7 @@ export const slotDraftSchema = z
         visual_criteria: z
             .array(
                 z.object({
-                    key: z.enum(['marca', 'preco', 'tamanho', 'score_abc', 'margem', 'embalagem']),
+                    key: z.enum(['marca', 'preco', 'tamanho', 'score_abc', 'margem', 'embalagem', 'tipo', 'sabor', 'atributo']),
                     direction: z.enum(['asc', 'desc', 'none']),
                     packaging_order: z.array(z.string()).optional(),
                 }),

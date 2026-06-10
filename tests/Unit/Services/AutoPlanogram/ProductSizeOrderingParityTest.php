@@ -59,6 +59,7 @@ test('engine and slot review produce the same ordering by size', function (): vo
         new ProductWidthResolver,
         $sizeResolver,
         new GreedyShelfPlacer(new ProductWidthResolver),
+        new ProductOrderingService($sizeResolver),
     );
     $review = new SlotReviewAnalysisService(new ProductWidthResolver, $sizeResolver, new ProductOrderingService($sizeResolver));
 

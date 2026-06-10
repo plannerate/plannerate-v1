@@ -2,12 +2,9 @@
 
 namespace App\Services\AutoPlanogram\Placement;
 
-use App\Enums\BrandExposure;
 use App\Enums\FacingExpansion;
 use App\Enums\FlowDirection;
 use App\Enums\PlacementFailureReason;
-use App\Enums\PriceOrder;
-use App\Enums\SizeOrder;
 use App\Enums\SpaceFallback;
 use App\Enums\ZonePriority;
 use App\Models\Category;
@@ -20,6 +17,7 @@ use App\Services\AutoPlanogram\DTO\PlacedLayer;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
+use App\Services\AutoPlanogram\ProductOrderingService;
 use App\Services\AutoPlanogram\ProductSizeResolver;
 use App\Services\AutoPlanogram\ProductWidthResolver;
 use App\Services\AutoPlanogram\ShelfZoneResolver;
@@ -77,6 +75,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         private readonly ProductWidthResolver $widthResolver,
         private readonly ProductSizeResolver $sizeResolver,
         private readonly GreedyShelfPlacer $greedyPlacer,
+        private readonly ProductOrderingService $ordering,
     ) {}
 
     /** @param Collection<int, Section> $sections */
@@ -138,6 +137,13 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
          */
         /** @var array<string, float> */
         $occupiedPerShelf = [];
+        /**
+         * Altura útil por prateleira (shelfId → vão livre em cm), cacheada por seção.
+         * Usada para rejeitar com HeightExceedsShelf produtos mais altos que o vão.
+         *
+         * @var array<string, array<string, float>>
+         */
+        $clearancesBySection = [];
 
         $slots = $subtemplate->slots()
             ->withoutGlobalScope(TenantScope::class)
@@ -256,7 +262,21 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 ]);
             }
 
-            $slotResult = $this->distributeInShelf($ordered, $section, $shelf, $slot, $available, $startPosition);
+            // Vão livre da prateleira: produtos mais altos são rejeitados (HeightExceedsShelf).
+            // Clearance <= 0 significa dado físico ausente/inconsistente → checagem desativada.
+            $sectionKey = (string) $section->getKey();
+            $clearancesBySection[$sectionKey] ??= $this->greedyPlacer->shelfClearances($section);
+            $clearance = $clearancesBySection[$sectionKey][$shelfId] ?? 0.0;
+
+            $slotResult = $this->distributeInShelf(
+                $ordered,
+                $section,
+                $shelf,
+                $slot,
+                $available,
+                $startPosition,
+                $clearance > 0 ? $clearance : null,
+            );
 
             // Atualiza espaço ocupado nesta prateleira para o próximo slot compartilhado
             $newlyOccupied = (float) $slotResult['placed']->sum('width');
@@ -437,6 +457,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
         foreach ($sections as $section) {
             $totalWidth = $this->getShelfAvailableWidth($section);
+            $clearances = $this->greedyPlacer->shelfClearances($section);
 
             foreach ($section->shelves as $shelf) {
                 $occupied = (float) ($occupiedPerShelf[$shelf->getKey()] ?? 0.0);
@@ -448,6 +469,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                         'shelf' => $shelf,
                         'remaining' => $remaining,
                         'occupied' => $occupied,
+                        'clearance' => (float) ($clearances[$shelf->getKey()] ?? 0.0),
                     ];
                 }
             }
@@ -492,6 +514,14 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             // Tenta a prateleira com maior espaço disponível
             foreach ($shelfMeta as $i => $meta) {
                 if ($meta['remaining'] < $widthWithFacings) {
+                    continue;
+                }
+
+                // Respeita o vão livre: não realoca produto em prateleira mais baixa que ele.
+                // Clearance 0 = dado físico ausente → checagem desativada (legado).
+                $productHeight = (float) ($product->height ?? 0);
+
+                if ($meta['clearance'] > 0 && $productHeight > $meta['clearance']) {
                     continue;
                 }
 
@@ -668,9 +698,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
     private function orderCandidates(Collection $products, PlanogramTemplateSlot $slot, ?Section $section = null, ?Shelf $shelf = null): Collection
     {
-        $sorted = $slot->visual_criteria !== null
-            ? $this->applyCriteriaCascade($products, $slot->visual_criteria)
-            : $this->applyLegacyOrdering($products, $slot);
+        // Delegado ao ProductOrderingService — mesma fonte usada por VisualReorderService e
+        // ExposureRedistributeService, garantindo que geração e reordenação produzam a mesma ordem.
+        $sorted = $this->ordering->orderBySlot($products, $slot, $this->abcClassMap, $this->zoneMetricsMap);
 
         // Zona térmica — aplicado por último para ser critério primário (stable sort)
         $sorted = $this->applyZoneOrdering($sorted, $section, $shelf);
@@ -681,121 +711,6 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         }
 
         return $sorted->values();
-    }
-
-    /**
-     * Comportamento legado: size → price → brand (para compatibilidade quando visual_criteria = null).
-     */
-    private function applyLegacyOrdering(Collection $products, PlanogramTemplateSlot $slot): Collection
-    {
-        $sorted = $products;
-
-        if ($slot->size_order !== SizeOrder::None) {
-            $sorted = $sorted->sortBy(
-                fn ($p) => $this->sizeResolver->resolve($p),
-                SORT_NUMERIC,
-                $slot->size_order === SizeOrder::Desc,
-            );
-        }
-
-        if ($slot->price_order !== PriceOrder::None && $products->first()?->price !== null) {
-            $sorted = $sorted->sortBy(
-                fn ($p) => (float) ($p->price ?? 0),
-                SORT_NUMERIC,
-                $slot->price_order === PriceOrder::Desc,
-            );
-        }
-
-        if ($slot->brand_exposure === BrandExposure::Vertical) {
-            $sorted = $sorted->groupBy(fn ($p) => $p->brand ?? 'SEM MARCA')->flatten(1);
-        }
-
-        return $sorted;
-    }
-
-    /**
-     * Aplica ordenação estável em cascata pela lista de critérios.
-     * Aplica do menos prioritário ao mais prioritário (ordem reversa),
-     * para que o primeiro critério da lista domine o resultado final.
-     *
-     * @param  list<array{key: string, direction: string, packaging_order?: list<string>}>  $criteria
-     */
-    private function applyCriteriaCascade(Collection $products, array $criteria): Collection
-    {
-        $sorted = $products;
-
-        foreach (array_reverse($criteria) as $item) {
-            $sorted = $this->applySingleCriterion($sorted, $item);
-        }
-
-        return $sorted;
-    }
-
-    /**
-     * Aplica um único critério de ordenação (stable sort).
-     *
-     * @param  array{key: string, direction: string, packaging_order?: list<string>}  $item
-     */
-    private function applySingleCriterion(Collection $products, array $item): Collection
-    {
-        $key = $item['key'] ?? '';
-        $direction = $item['direction'] ?? 'none';
-        $desc = $direction === 'desc';
-
-        return match ($key) {
-            'marca' => $products->sortBy(
-                fn ($p) => strtolower((string) ($p->brand ?? 'zzz')),
-                SORT_STRING,
-                $desc,
-            ),
-            'preco' => $products->sortBy(
-                fn ($p) => (float) ($p->price ?? 0),
-                SORT_NUMERIC,
-                $desc,
-            ),
-            'tamanho' => $products->sortBy(
-                fn ($p) => $this->sizeResolver->resolve($p),
-                SORT_NUMERIC,
-                $desc,
-            ),
-            'score_abc' => $products->sortBy(
-                fn ($p) => match ($this->abcClassMap[$p->id] ?? 'B') {
-                    'A' => 0,
-                    'B' => 1,
-                    'C' => 2,
-                    default => 1,
-                },
-                SORT_NUMERIC,
-                $desc,
-            ),
-            'margem' => $products->sortBy(
-                fn ($p) => (float) ($this->zoneMetricsMap[$p->id]['margem'] ?? 0),
-                SORT_NUMERIC,
-                $desc,
-            ),
-            'embalagem' => $this->applyPackagingOrder($products, $item['packaging_order'] ?? []),
-            default => $products,
-        };
-    }
-
-    /**
-     * Ordena produtos pela posição do packaging_type na lista configurada.
-     * Produtos com tipo não listado (ou sem tipo) vão para o fim.
-     *
-     * @param  list<string>  $order  Lista de packaging_type em ordem de prioridade
-     */
-    private function applyPackagingOrder(Collection $products, array $order): Collection
-    {
-        if (empty($order)) {
-            return $products;
-        }
-
-        $indexMap = array_flip($order);
-
-        return $products->sortBy(
-            fn ($p) => $indexMap[$p->packaging_type ?? ''] ?? PHP_INT_MAX,
-            SORT_NUMERIC,
-        );
     }
 
     /**
@@ -876,6 +791,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
      *                            slots anteriores na mesma prateleira ocuparam).
      * @param  int  $startPosition  Posição inicial em cm — 0 para a primeira categoria,
      *                              >0 quando a prateleira é compartilhada com outra categoria.
+     * @param  float|null  $maxProductHeight  Vão livre da prateleira em cm; produtos mais altos
+     *                                        são rejeitados com HeightExceedsShelf. null = sem checagem
+     *                                        (dado físico ausente — compatibilidade com gôndolas legadas).
      */
     private function distributeInShelf(
         Collection $products,
@@ -884,6 +802,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         PlanogramTemplateSlot $slot,
         float $available,
         int $startPosition = 0,
+        ?float $maxProductHeight = null,
     ): array {
         /** @var array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}> $placedItems */
         $placedItems = [];
@@ -899,6 +818,19 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 $rejected->push([
                     'product' => $product,
                     'reason' => PlacementFailureReason::MissingDimensions,
+                    'slot_id' => $slot->id,
+                ]);
+
+                continue;
+            }
+
+            // Produto mais alto que o vão livre da prateleira não cabe fisicamente.
+            $productHeight = (float) ($product->height ?? 0);
+
+            if ($maxProductHeight !== null && $productHeight > $maxProductHeight) {
+                $rejected->push([
+                    'product' => $product,
+                    'reason' => PlacementFailureReason::HeightExceedsShelf,
                     'slot_id' => $slot->id,
                 ]);
 
@@ -1018,11 +950,14 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             $noSpaceRejected = $fallback['remaining'];
         }
 
-        $missingDimRejected = $rejected->where('reason', PlacementFailureReason::MissingDimensions)->values();
+        // Demais motivos (MissingDimensions, HeightExceedsShelf) não passam pelo fallback de espaço.
+        $otherRejected = $rejected
+            ->filter(fn (array $r): bool => $r['reason'] !== PlacementFailureReason::NoHorizontalSpace)
+            ->values();
 
         return [
             'placed' => $placed,
-            'rejected' => $noSpaceRejected->merge($missingDimRejected),
+            'rejected' => $noSpaceRejected->merge($otherRejected),
             'placed_explanations' => $placedExplanations,
         ];
     }

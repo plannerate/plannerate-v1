@@ -12,6 +12,7 @@ interface Props {
     scaleFactor: number
     alignment: string
     extraHeight?: number
+    isShare?: boolean
 }
 
 const props = defineProps<Props>()
@@ -74,6 +75,7 @@ const { getPrevious: previousShelf } = useArrayNavigation(sortedShelves)
             :alignment="alignment"
             :extra-height="extraHeight"
             :previous-shelf="previousShelf(shelf)"
+            :is-share="isShare"
         />
 
         <!-- Cremalheira Direita (sempre visível) -->

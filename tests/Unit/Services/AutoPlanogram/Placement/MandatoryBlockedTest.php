@@ -15,6 +15,7 @@ use App\Models\PlanogramTemplateSlot;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
 use App\Services\AutoPlanogram\Placement\TemplatePlacementEngine;
+use App\Services\AutoPlanogram\ProductOrderingService;
 use App\Services\AutoPlanogram\ProductSizeResolver;
 use App\Services\AutoPlanogram\ProductWidthResolver;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
@@ -29,6 +30,7 @@ function makeMBEngine(): TemplatePlacementEngine
         new ProductWidthResolver,
         new ProductSizeResolver,
         new GreedyShelfPlacer(new ProductWidthResolver),
+        new ProductOrderingService(new ProductSizeResolver),
     );
 }
 

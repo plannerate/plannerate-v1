@@ -32,6 +32,9 @@ export const visualCriterionMeta: Record<VisualCriterionKey, { label: string; su
     score_abc: { label: 'Curva ABC', supportsDirection: false },
     margem: { label: 'Margem', supportsDirection: true },
     embalagem: { label: 'Embalagem', supportsDirection: false },
+    tipo: { label: 'Tipo de produto', supportsDirection: true },
+    sabor: { label: 'Sabor', supportsDirection: true },
+    atributo: { label: 'Atributo de sortimento', supportsDirection: true },
 };
 
 export const categoryRoleOptions: { value: CategoryRole | ''; label: string }[] = [

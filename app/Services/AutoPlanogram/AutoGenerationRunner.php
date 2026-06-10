@@ -48,19 +48,13 @@ final class AutoGenerationRunner
 
         // No modo template os slots definem as categorias — categoria do formulário é ignorada.
         // includeProductsWithoutSales=true para produtos sem histórico chegarem ao placer.
+        // withOverrides preserva os demais campos (exclude_class_c, cortes ABC etc.) — a
+        // reconstrução manual anterior resetava esses campos silenciosamente para o default.
         $effectiveConfig = $templateId
-            ? new AutoGenerateConfigDTO(
-                strategy: $config->strategy,
-                useExistingAnalysis: $config->useExistingAnalysis,
-                startDate: $config->startDate,
-                endDate: $config->endDate,
-                minFacings: $config->minFacings,
-                maxFacings: $config->maxFacings,
-                groupBySubcategory: $config->groupBySubcategory,
-                includeProductsWithoutSales: true,
-                tableType: $config->tableType,
-                categoryId: null,
-            )
+            ? $config->withOverrides([
+                'include_products_without_sales' => true,
+                'category_id' => null,
+            ])
             : $config;
 
         // No modo template, restringe o pool às categorias que os slots do template cobrem,

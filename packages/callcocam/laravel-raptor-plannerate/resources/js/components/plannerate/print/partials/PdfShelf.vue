@@ -15,6 +15,7 @@ interface Props {
   alignment: string
   extraHeight?: number
   previousShelf?: Shelf
+  isShare?: boolean
 }
 
 const props = defineProps<Props>()
@@ -128,6 +129,7 @@ const alignmentClass = computed(() => {
         :segment="segment"
         :scale-factor="scaleFactor"
         :shelf-depth="shelf.shelf_depth"
+        :is-share="isShare"
       />
     </div>
 

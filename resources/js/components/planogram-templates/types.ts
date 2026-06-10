@@ -1,4 +1,4 @@
-export type VisualCriterionKey = 'marca' | 'preco' | 'tamanho' | 'score_abc' | 'margem' | 'embalagem';
+export type VisualCriterionKey = 'marca' | 'preco' | 'tamanho' | 'score_abc' | 'margem' | 'embalagem' | 'tipo' | 'sabor' | 'atributo';
 export type VisualCriterionDirection = 'asc' | 'desc' | 'none';
 
 export type VisualCriterionItem = {

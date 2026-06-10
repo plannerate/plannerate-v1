@@ -29,7 +29,7 @@ class GondolaSlotOverrideController extends Controller
             'size_order' => ['nullable', 'string', 'in:asc,desc,none'],
             'brand_exposure' => ['nullable', 'string', 'in:vertical,horizontal,mixed'],
             'flavor_exposure' => ['nullable', 'string', 'in:vertical,horizontal,mixed'],
-            'space_fallback' => ['nullable', 'string', 'in:reduce_c,reduce_facings,skip'],
+            'space_fallback' => ['nullable', 'string', 'in:reduce_c,reduce_facings,skip,remove_dog'],
             'facing_expansion' => ['nullable', 'string', 'in:none,score,current_stock,target_stock,equal'],
             'use_target_stock' => ['nullable', 'boolean'],
             'role_override' => ['nullable', 'string', 'in:destino,rotina,conveniencia,impulso,sazonal,complementar'],
