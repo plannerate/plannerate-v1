@@ -272,7 +272,11 @@ function autoE2eProduct(
 
 /**
  * Constrói N sections em memória, cada uma com M prateleiras.
- * shelf_position: 0=topo … (M-1)=chão.
+ *
+ * shelf_position é COORDENADA EM CM (0 = topo), não índice: o engine calcula o
+ * vão vertical real entre prateleiras (shelfClearances) e rejeita por altura
+ * (HeightExceedsShelf) produtos que não cabem. Espaçamento de 50 cm comporta os
+ * produtos do fixture (30 cm de altura).
  *
  * @return Collection<int, Section>
  */
@@ -282,7 +286,7 @@ function autoE2eSections(int $numModules = 2, int $numShelves = 4, float $width 
         $shelves = collect(range(0, $numShelves - 1))->map(function (int $pos): Shelf {
             $s = new Shelf;
             $s->id = (string) Str::ulid();
-            $s->shelf_position = $pos;
+            $s->shelf_position = $pos * 50;
 
             return $s;
         });

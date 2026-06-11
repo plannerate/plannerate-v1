@@ -112,3 +112,30 @@ VITE_ENABLE_WAYFINDER=false npm run build
 - **Bug real corrigido de bônus:** o caminho neutro do `scoreOrNeutral` (score 0.5 p/ produtos sem venda — requisito do modo template) era inalcançável: a detecção usava `score > 0`, mas a contribuição neutra de DOH dá piso 0.05 a todo produto. Detecção agora usa `raw_quantity`/`raw_margem`.
 - **Estado final:** `tests/Unit/Services/AutoPlanogram` completo = **165 passed** (sem nenhum filtro de exclusão, primeira vez); domínio planograma 100% verde; suíte global roda de ponta a ponta (353 passed / 43 skipped / 308 failed — falhas restantes são de outros domínios, pré-existentes).
 - **Permanece para triagem de produto:** 4 falhas comportamentais do `AutomaticEndToEndTest` (casos 5/8/10/11) + 4 do `VerticalBlockTest` (§1.4).
+
+---
+
+## Adendo 2 — Triagem dos 8 casos comportamentais (2026-06-11)
+
+**Casos 5/8/10/11 do AutomaticEndToEndTest: NÃO eram bugs do motor.** Causa única:
+o fixture criava prateleiras com `shelf_position` 0,1,2,3 (índices), mas o engine atual
+trata position como coordenada em cm e calcula o vão vertical real (`shelfClearances`)
+— vãos de 1 cm rejeitavam TODOS os produtos (30 cm) por `height_exceeds_shelf`, em
+todos os slots. Corrigido para `pos * 50` cm (convenção dos testes verdes):
+**AutomaticEndToEndTest 11/11 ✅** (incluindo o caso 5 do score neutro, que funciona).
+
+**VerticalBlockTest: a feature morreu no reroute.** Após modernizar o fixture
+(categorias reais + tabelas de síntese), constatado que **nenhum código em
+src/AutoPlanogram seta `isVerticalBlock = true`** — a blocagem vertical era do
+GreedyShelfPlacer legado e não foi portada ao TemplatePlacementEngine quando o modo
+automático passou pela síntese. `PlacementSettings.verticalBlockThreshold` é carregado
+e ignorado. 2 testes dependentes da feature marcados skip com motivo; 2 contratos
+ainda válidos passam (threshold 0 / não-sobreposição de posições).
+
+**⚠️ DECISÃO DE PRODUTO PENDENTE:** reimplementar blocos verticais no
+TemplatePlacementEngine ou aposentar a feature (removendo
+`verticalBlockThreshold`/`MinShelves`, a coluna `vertical_block_threshold` de
+scoring_weights, o `is_vertical_block` de segments e o badge no Segment.vue).
+
+**Estado final do domínio:** `tests/Feature/AutoPlanogram` 29/29 ✅;
+Unit 165 ✅; Regression 15 ✅; VerticalBlock 2✅+2 skip. Zero falhas no domínio planograma.
