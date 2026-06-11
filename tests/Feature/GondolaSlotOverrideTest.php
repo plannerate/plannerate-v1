@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\GondolaSlotOverrideController;
 use App\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController;
 use Callcocam\LaravelRaptorPlannerate\Models\GondolaSlotOverride;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;

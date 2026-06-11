@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\AutoPlanogramController;
 use App\Models\Category;
 use App\Models\Gondola;
 use App\Models\Planogram;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;

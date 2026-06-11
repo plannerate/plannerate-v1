@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\Tenant;
+namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates;
 
-use App\Http\Controllers\Controller;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Models\Tenant;
 use App\Support\Tenancy\InteractsWithTenantContext;

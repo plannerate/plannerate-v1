@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation;
 
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramProductRule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

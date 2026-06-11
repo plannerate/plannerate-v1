@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Listeners\Tenant;
+namespace Callcocam\LaravelRaptorPlannerate\Listeners;
 
 use App\Models\Product;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;

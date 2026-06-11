@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation;
 
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use App\Models\Category;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\AutoGenerationRunner;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\AutoGenerateConfigDTO;
@@ -19,7 +20,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -453,7 +453,7 @@ class AutoPlanogramController extends Controller
 
         $layer = Layer::findOrFail($request->layer_id);
 
-        DB::transaction(function () use ($rejected, $layer, $gondola): void {
+        $layer->getConnection()->transaction(function () use ($rejected, $layer, $gondola): void {
             $tenantId = app('currentTenant')?->getKey() ?? '';
 
             // Captura o produto que estava posicionado antes de trocar

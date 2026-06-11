@@ -19,10 +19,13 @@ use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\Rules\SectionCapa
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\Rules\ShelfLevelRule;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\Rules\UnplacedProductsRule;
 use Callcocam\LaravelRaptorPlannerate\Commands\SyncPlannerateMigrationsCommand;
+use Callcocam\LaravelRaptorPlannerate\Events\LayerRemovedEvent;
+use Callcocam\LaravelRaptorPlannerate\Listeners\HandleLayerRemovedForRejectedProducts;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Policies\GondolaPolicy;
 use Callcocam\LaravelRaptorPlannerate\Policies\PlanogramPolicy;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Spatie\LaravelPackageTools\Package;
@@ -47,9 +50,55 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         $this->registerPolicyBindings();
+        $this->registerEventListeners();
         $this->registerPlannerateRoutes();
         $this->registerExportRoutes();
         $this->registerEditorApiRoutes();
+        $this->registerGenerationRoutes();
+        $this->registerTemplateRoutes();
+    }
+
+    /**
+     * Listeners de eventos do domínio planograma.
+     * Antes registrados no EventServiceProvider do app — fundidos aqui na Etapa 6.
+     */
+    protected function registerEventListeners(): void
+    {
+        Event::listen(LayerRemovedEvent::class, HandleLayerRemovedForRejectedProducts::class);
+    }
+
+    /**
+     * Rotas da API interna do Auto-Planograma (sem tenant.client.redirect),
+     * espelhando o grupo original de routes/tenant.php do app.
+     */
+    protected function registerGenerationRoutes(): void
+    {
+        $generationRouteFile = __DIR__.'/../routes/generation.php';
+
+        if (! file_exists($generationRouteFile)) {
+            return;
+        }
+
+        Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class])
+            ->name('tenant.')
+            ->group($generationRouteFile);
+    }
+
+    /**
+     * Rotas de templates de planograma e regras de produto (com tenant.client.redirect),
+     * espelhando o grupo "tenant principal" de routes/tenant.php do app.
+     */
+    protected function registerTemplateRoutes(): void
+    {
+        $templateRouteFile = __DIR__.'/../routes/templates.php';
+
+        if (! file_exists($templateRouteFile)) {
+            return;
+        }
+
+        Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::class, 'tenant.client.redirect'])
+            ->name('tenant.')
+            ->group($templateRouteFile);
     }
 
     /**
