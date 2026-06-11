@@ -36,6 +36,9 @@ beforeEach(function (): void {
         $table->string('code');
         $table->unsignedTinyInteger('num_modules');
         $table->boolean('is_active')->default(true);
+        $table->string('hot_zone_priority')->nullable();
+        $table->string('cold_zone_priority')->nullable();
+        $table->string('flow_direction')->nullable();
         $table->timestamps();
         $table->softDeletes();
     });

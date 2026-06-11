@@ -6,14 +6,17 @@ use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Template\SlotSuggestionGener
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-function makeSlotRow(float $livre, int $rejeitados = 0, string $grouping = 'Bebidas'): array
+function makeSlotRow(float $livre, int $rejeitados = 0, string $categoryName = 'Bebidas'): array
 {
     $total = 100.0;
     $usada = max(0.0, $total - $livre);
 
     return [
         'slot_id' => 'slot-'.uniqid(),
-        'grouping' => $grouping,
+        // shape atual do slotAnalysis do TemplatePlacementEngine (category_id como chave)
+        'category_id' => 'cat-'.md5($categoryName),
+        'category_name' => $categoryName,
+        'role' => null,
         'module_number' => 1,
         'shelf_order' => 1,
         'shelf_id' => 'shelf-'.uniqid(),
