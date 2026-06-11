@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Settings;
 
-use App\Enums\AdjacencyRuleType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\AdjacencyRuleRequest;
 use App\Models\AdjacencyRule;
 use App\Models\ScoringWeights;
 use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Callcocam\LaravelRaptorPlannerate\Enums\AdjacencyRuleType;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;

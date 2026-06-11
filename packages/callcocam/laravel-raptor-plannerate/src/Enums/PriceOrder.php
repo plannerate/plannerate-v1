@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Enums;
+namespace Callcocam\LaravelRaptorPlannerate\Enums;
 
-enum SizeOrder: string
+enum PriceOrder: string
 {
     case Asc = 'asc';
     case Desc = 'desc';
@@ -11,9 +11,9 @@ enum SizeOrder: string
     public function label(): string
     {
         return match ($this) {
-            self::Asc => 'Do menor para o maior',
-            self::Desc => 'Do maior para o menor',
-            self::None => 'Sem ordenação por tamanho',
+            self::Asc => 'Do mais barato para o mais caro',
+            self::Desc => 'Do mais caro para o mais barato',
+            self::None => 'Sem ordenação por preço',
         };
     }
 

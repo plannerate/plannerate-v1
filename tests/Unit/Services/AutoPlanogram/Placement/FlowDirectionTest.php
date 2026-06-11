@@ -7,12 +7,6 @@
  * lógica dos critérios de ordenação, e que LeftToRight é um no-op.
  */
 
-use App\Enums\BrandExposure;
-use App\Enums\FacingExpansion;
-use App\Enums\FlowDirection;
-use App\Enums\PriceOrder;
-use App\Enums\SizeOrder;
-use App\Enums\SpaceFallback;
 use App\Models\PlanogramTemplateSlot;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
 use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
@@ -20,6 +14,12 @@ use App\Services\AutoPlanogram\Placement\TemplatePlacementEngine;
 use App\Services\AutoPlanogram\ProductOrderingService;
 use App\Services\AutoPlanogram\ProductSizeResolver;
 use App\Services\AutoPlanogram\ProductWidthResolver;
+use Callcocam\LaravelRaptorPlannerate\Enums\BrandExposure;
+use Callcocam\LaravelRaptorPlannerate\Enums\FacingExpansion;
+use Callcocam\LaravelRaptorPlannerate\Enums\FlowDirection;
+use Callcocam\LaravelRaptorPlannerate\Enums\PriceOrder;
+use Callcocam\LaravelRaptorPlannerate\Enums\SizeOrder;
+use Callcocam\LaravelRaptorPlannerate\Enums\SpaceFallback;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;

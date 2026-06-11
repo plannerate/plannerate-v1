@@ -2,7 +2,7 @@
 
 namespace App\Services\AutoPlanogram\DTO;
 
-use App\Enums\ShelfLevel;
+use Callcocam\LaravelRaptorPlannerate\Enums\ShelfLevel;
 use Illuminate\Support\Collection;
 
 /**

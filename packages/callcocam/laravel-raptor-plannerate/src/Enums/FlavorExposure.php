@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Enums;
+namespace Callcocam\LaravelRaptorPlannerate\Enums;
 
 enum FlavorExposure: string
 {

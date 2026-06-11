@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Settings;
 
-use App\Enums\ShelfLevel;
 use App\Models\ShelfLevelPreference;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Callcocam\LaravelRaptorPlannerate\Enums\ShelfLevel;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

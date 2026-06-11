@@ -1,14 +1,14 @@
 <?php
 
-use App\Enums\AlterationLevel;
-use App\Enums\BrandExposure;
-use App\Enums\FlavorExposure;
-use App\Enums\PriceOrder;
-use App\Enums\SizeOrder;
 use App\Models\PlanogramTemplateSlot;
 use App\Services\AutoPlanogram\AlterationClassifier;
 use App\Services\AutoPlanogram\ProductOrderingService;
 use App\Services\AutoPlanogram\ProductSizeResolver;
+use Callcocam\LaravelRaptorPlannerate\Enums\AlterationLevel;
+use Callcocam\LaravelRaptorPlannerate\Enums\BrandExposure;
+use Callcocam\LaravelRaptorPlannerate\Enums\FlavorExposure;
+use Callcocam\LaravelRaptorPlannerate\Enums\PriceOrder;
+use Callcocam\LaravelRaptorPlannerate\Enums\SizeOrder;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Illuminate\Support\Str;
 

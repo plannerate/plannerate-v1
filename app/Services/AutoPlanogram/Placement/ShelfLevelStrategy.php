@@ -2,8 +2,8 @@
 
 namespace App\Services\AutoPlanogram\Placement;
 
-use App\Enums\ShelfLevel;
 use App\Services\AutoPlanogram\DTO\ProductBlock;
+use Callcocam\LaravelRaptorPlannerate\Enums\ShelfLevel;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;

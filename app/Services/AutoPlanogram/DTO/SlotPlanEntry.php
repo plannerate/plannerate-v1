@@ -2,7 +2,7 @@
 
 namespace App\Services\AutoPlanogram\DTO;
 
-use App\Enums\CategoryRole;
+use Callcocam\LaravelRaptorPlannerate\Enums\CategoryRole;
 
 /**
  * Uma entrada do plano de slots sintetizado pelo SlotPlanBuilder.

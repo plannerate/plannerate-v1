@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Enums;
+namespace Callcocam\LaravelRaptorPlannerate\Enums;
 
 /**
  * Critério de priorização de produtos por zona térmica da prateleira.

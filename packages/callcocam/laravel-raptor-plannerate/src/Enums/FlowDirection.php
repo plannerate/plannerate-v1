@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Enums;
+namespace Callcocam\LaravelRaptorPlannerate\Enums;
 
 /**
  * Sentido de circulação do cliente na frente da gôndola.

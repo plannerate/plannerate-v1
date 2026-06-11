@@ -2,9 +2,9 @@
 
 namespace App\Services\AutoPlanogram\Synthesis;
 
-use App\Enums\CategoryRole;
 use App\Models\Category;
 use App\Services\AutoPlanogram\DTO\CategoryAbcSummary;
+use Callcocam\LaravelRaptorPlannerate\Enums\CategoryRole;
 
 /**
  * Infere o papel (CategoryRole) de uma subcategoria a partir dos dados de venda.

@@ -2,7 +2,7 @@
 
 namespace App\Services\AutoPlanogram\DTO;
 
-use App\Enums\PlacementFailureReason;
+use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Illuminate\Support\Collection;
 
 final readonly class PlacementResult

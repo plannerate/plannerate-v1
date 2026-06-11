@@ -2,7 +2,7 @@
 
 namespace App\Services\AutoPlanogram\Validation;
 
-use App\Enums\ValidationSeverity;
+use Callcocam\LaravelRaptorPlannerate\Enums\ValidationSeverity;
 
 final readonly class ValidationResult
 {

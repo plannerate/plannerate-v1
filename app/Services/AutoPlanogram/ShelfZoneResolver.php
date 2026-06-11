@@ -2,7 +2,7 @@
 
 namespace App\Services\AutoPlanogram;
 
-use App\Enums\ShelfLevel;
+use Callcocam\LaravelRaptorPlannerate\Enums\ShelfLevel;
 
 /**
  * Resolve a zona térmica de uma prateleira a partir de sua posição física.

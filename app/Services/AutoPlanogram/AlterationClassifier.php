@@ -2,7 +2,7 @@
 
 namespace App\Services\AutoPlanogram;
 
-use App\Enums\AlterationLevel;
+use Callcocam\LaravelRaptorPlannerate\Enums\AlterationLevel;
 
 /**
  * Fonte única de verdade: mapeia campos de slot para o nível mínimo de alteração.

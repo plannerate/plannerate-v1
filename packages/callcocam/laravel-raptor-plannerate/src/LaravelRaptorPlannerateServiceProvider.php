@@ -30,7 +30,6 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
         $this->registerPlannerateRoutes();
         $this->registerExportRoutes();
         $this->registerEditorApiRoutes();
-        $this->registerEditorPageRoutes();
     }
 
     protected function registerPolicyBindings(): void
@@ -76,6 +75,4 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
 
         Route::middleware('web')->group($exportRouteFile);
     }
-
-    protected function registerEditorPageRoutes(): void {}
 }

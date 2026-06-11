@@ -1,12 +1,12 @@
 <?php
 
-use App\Enums\PlacementFailureReason;
 use App\Services\AutoPlanogram\DTO\OrderedBlock;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\ProductBlock;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
 use App\Services\AutoPlanogram\ProductWidthResolver;
+use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;

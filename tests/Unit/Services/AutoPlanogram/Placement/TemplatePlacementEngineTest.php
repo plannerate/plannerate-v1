@@ -183,11 +183,11 @@ test('findCandidates exclui produto já posicionado em slot anterior da mesma ca
 
 // ── PlacementResult: campos de descasamento de módulos ───────────────────────
 
-use App\Enums\BrandExposure;
-use App\Enums\FacingExpansion;
-use App\Enums\PriceOrder;
-use App\Enums\SizeOrder;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
+use Callcocam\LaravelRaptorPlannerate\Enums\BrandExposure;
+use Callcocam\LaravelRaptorPlannerate\Enums\FacingExpansion;
+use Callcocam\LaravelRaptorPlannerate\Enums\PriceOrder;
+use Callcocam\LaravelRaptorPlannerate\Enums\SizeOrder;
 
 test('PlacementResult expõe modulesMismatch false por padrão', function (): void {
     $result = new PlacementResult(collect(), collect());

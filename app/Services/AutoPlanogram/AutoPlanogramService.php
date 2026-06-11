@@ -2,7 +2,6 @@
 
 namespace App\Services\AutoPlanogram;
 
-use App\Enums\PlacementFailureReason;
 use App\Models\PlanogramTemplateSlot;
 use App\Models\Scopes\TenantScope;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
@@ -15,6 +14,7 @@ use App\Services\AutoPlanogram\Scoring\ProductScorerInterface;
 use App\Services\AutoPlanogram\Synthesis\AutoTemplateSynthesisOrchestrator;
 use App\Services\AutoPlanogram\Template\SlotSuggestionGenerator;
 use App\Services\AutoPlanogram\Validation\PlanogramValidator;
+use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\ShelfStructureService;
 use Illuminate\Support\Collection;

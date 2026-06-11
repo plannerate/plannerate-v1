@@ -2,12 +2,12 @@
 
 namespace App\Services\AutoPlanogram\Synthesis;
 
-use App\Enums\CategoryRole;
 use App\Models\Category;
 use App\Services\AutoPlanogram\DTO\CategoryAbcSummary;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\SlotPlanEntry;
 use App\Services\AutoPlanogram\ShelfZoneResolver;
+use Callcocam\LaravelRaptorPlannerate\Enums\CategoryRole;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 

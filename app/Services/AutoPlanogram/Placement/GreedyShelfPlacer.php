@@ -2,8 +2,6 @@
 
 namespace App\Services\AutoPlanogram\Placement;
 
-use App\Enums\PlacementFailureReason;
-use App\Enums\ShelfLevel;
 use App\Services\AutoPlanogram\DTO\OrderedBlock;
 use App\Services\AutoPlanogram\DTO\PlacedLayer;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
@@ -14,6 +12,8 @@ use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use App\Services\AutoPlanogram\DTO\ShelfLayoutDTO;
 use App\Services\AutoPlanogram\ProductWidthResolver;
 use App\Services\AutoPlanogram\ScoredProductMapper;
+use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
+use Callcocam\LaravelRaptorPlannerate\Enums\ShelfLevel;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Illuminate\Support\Collection;

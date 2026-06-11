@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\ShelfLevel;
+use Callcocam\LaravelRaptorPlannerate\Enums\ShelfLevel;
 
 describe('ShelfLevel Enum', function () {
     describe('label', function () {

@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Enums\ShelfLevel;
 use App\Models\Category;
 use App\Models\ShelfLevelPreference;
 use App\Models\Tenant;
+use Callcocam\LaravelRaptorPlannerate\Enums\ShelfLevel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

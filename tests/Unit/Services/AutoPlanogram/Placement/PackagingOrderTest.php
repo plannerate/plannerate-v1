@@ -1,14 +1,14 @@
 <?php
 
-use App\Enums\BrandExposure;
-use App\Enums\PriceOrder;
-use App\Enums\SizeOrder;
 use App\Models\PlanogramTemplateSlot;
 use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
 use App\Services\AutoPlanogram\Placement\TemplatePlacementEngine;
 use App\Services\AutoPlanogram\ProductOrderingService;
 use App\Services\AutoPlanogram\ProductSizeResolver;
 use App\Services\AutoPlanogram\ProductWidthResolver;
+use Callcocam\LaravelRaptorPlannerate\Enums\BrandExposure;
+use Callcocam\LaravelRaptorPlannerate\Enums\PriceOrder;
+use Callcocam\LaravelRaptorPlannerate\Enums\SizeOrder;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;

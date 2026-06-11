@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use App\Enums\ShelfLevel;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
+use Callcocam\LaravelRaptorPlannerate\Enums\ShelfLevel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

@@ -1,9 +1,9 @@
 <?php
 
-use App\Enums\ShelfLevel;
 use App\Services\AutoPlanogram\DTO\ProductBlock;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use App\Services\AutoPlanogram\Placement\ShelfLevelStrategy;
+use Callcocam\LaravelRaptorPlannerate\Enums\ShelfLevel;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

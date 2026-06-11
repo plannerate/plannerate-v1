@@ -2,11 +2,6 @@
 
 namespace App\Services\AutoPlanogram\Template;
 
-use App\Enums\FacingExpansion;
-use App\Enums\FlowDirection;
-use App\Enums\PlacementFailureReason;
-use App\Enums\SpaceFallback;
-use App\Enums\ZonePriority;
 use App\Models\Category;
 use App\Models\PlanogramTemplateSlot;
 use App\Models\Product;
@@ -15,6 +10,11 @@ use App\Services\AutoPlanogram\ProductOrderingService;
 use App\Services\AutoPlanogram\ProductSizeResolver;
 use App\Services\AutoPlanogram\ProductWidthResolver;
 use App\Services\AutoPlanogram\ShelfZoneResolver;
+use Callcocam\LaravelRaptorPlannerate\Enums\FacingExpansion;
+use Callcocam\LaravelRaptorPlannerate\Enums\FlowDirection;
+use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
+use Callcocam\LaravelRaptorPlannerate\Enums\SpaceFallback;
+use Callcocam\LaravelRaptorPlannerate\Enums\ZonePriority;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;

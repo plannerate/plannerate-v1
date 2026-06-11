@@ -2,11 +2,11 @@
 
 namespace App\Services\AutoPlanogram;
 
-use App\Enums\BrandExposure;
-use App\Enums\FlavorExposure;
-use App\Enums\PriceOrder;
-use App\Enums\SizeOrder;
 use App\Models\PlanogramTemplateSlot;
+use Callcocam\LaravelRaptorPlannerate\Enums\BrandExposure;
+use Callcocam\LaravelRaptorPlannerate\Enums\FlavorExposure;
+use Callcocam\LaravelRaptorPlannerate\Enums\PriceOrder;
+use Callcocam\LaravelRaptorPlannerate\Enums\SizeOrder;
 use Illuminate\Support\Collection;
 
 /**

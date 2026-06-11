@@ -7,13 +7,13 @@
  * na expansão de frentes do TemplatePlacementEngine.
  */
 
-use App\Enums\FacingExpansion;
 use App\Models\PlanogramTemplateSlot;
 use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
 use App\Services\AutoPlanogram\Placement\TemplatePlacementEngine;
 use App\Services\AutoPlanogram\ProductOrderingService;
 use App\Services\AutoPlanogram\ProductSizeResolver;
 use App\Services\AutoPlanogram\ProductWidthResolver;
+use Callcocam\LaravelRaptorPlannerate\Enums\FacingExpansion;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
 use Illuminate\Support\Str;
 

@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
-use App\Enums\BrandExposure;
-use App\Enums\CategoryRole;
-use App\Enums\FacingExpansion;
-use App\Enums\FlavorExposure;
-use App\Enums\PriceOrder;
-use App\Enums\SizeOrder;
-use App\Enums\SpaceFallback;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
+use Callcocam\LaravelRaptorPlannerate\Enums\BrandExposure;
+use Callcocam\LaravelRaptorPlannerate\Enums\CategoryRole;
+use Callcocam\LaravelRaptorPlannerate\Enums\FacingExpansion;
+use Callcocam\LaravelRaptorPlannerate\Enums\FlavorExposure;
+use Callcocam\LaravelRaptorPlannerate\Enums\PriceOrder;
+use Callcocam\LaravelRaptorPlannerate\Enums\SizeOrder;
+use Callcocam\LaravelRaptorPlannerate\Enums\SpaceFallback;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

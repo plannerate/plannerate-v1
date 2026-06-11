@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\PlacementFailureReason;
 use App\Models\Category;
 use App\Models\PlanogramRejectedProduct;
 use App\Models\PlanogramSubtemplate;
@@ -11,6 +10,7 @@ use App\Services\AutoPlanogram\AutoGenerationRunner;
 use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use App\Services\AutoPlanogram\Placement\ExposureRedistributeService;
 use App\Services\AutoPlanogram\Placement\VisualReorderService;
+use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\AutoGeneratePlanogramRequest;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;

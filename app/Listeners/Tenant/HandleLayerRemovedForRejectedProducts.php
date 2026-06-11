@@ -2,9 +2,9 @@
 
 namespace App\Listeners\Tenant;
 
-use App\Enums\PlacementFailureReason;
 use App\Models\PlanogramRejectedProduct;
 use App\Models\Product;
+use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Events\LayerRemovedEvent;
 use Illuminate\Support\Facades\Log;
 

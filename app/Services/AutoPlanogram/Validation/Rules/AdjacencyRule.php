@@ -2,7 +2,6 @@
 
 namespace App\Services\AutoPlanogram\Validation\Rules;
 
-use App\Enums\AdjacencyRuleType;
 use App\Models\AdjacencyRule as AdjacencyRuleModel;
 use App\Models\Product;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
@@ -10,6 +9,7 @@ use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\Validation\ValidationResult;
 use App\Services\AutoPlanogram\Validation\ValidationRuleInterface;
+use Callcocam\LaravelRaptorPlannerate\Enums\AdjacencyRuleType;
 use Illuminate\Support\Collection;
 
 /**
@@ -51,7 +51,7 @@ final class AdjacencyRule implements ValidationRuleInterface
                         if (isset($avoidedPairs[$this->pairKey($catA, $catB)])) {
                             $results[] = ValidationResult::error(
                                 $this->name(),
-                                "Categorias adjacentes violam regra de afastamento obrigatório.",
+                                'Categorias adjacentes violam regra de afastamento obrigatório.',
                                 [],
                                 (string) $shelfId,
                             );

@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use App\Enums\AdjacencyRuleType;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
+use Callcocam\LaravelRaptorPlannerate\Enums\AdjacencyRuleType;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-use App\Enums\CategoryRole;
 use App\Models\Scopes\TenantScope;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\HasCategory;
 use App\Models\Traits\UsesTenantConnection;
+use Callcocam\LaravelRaptorPlannerate\Enums\CategoryRole;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

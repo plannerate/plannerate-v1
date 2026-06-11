@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Enums;
+namespace Callcocam\LaravelRaptorPlannerate\Enums;
 
 /**
  * Nível mínimo de alteração necessário ao mudar configuração de um slot.

@@ -2,12 +2,12 @@
 
 namespace App\Services\AutoPlanogram\Validation\Rules;
 
-use App\Enums\ValidationSeverity;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\Validation\ValidationResult;
 use App\Services\AutoPlanogram\Validation\ValidationRuleInterface;
+use Callcocam\LaravelRaptorPlannerate\Enums\ValidationSeverity;
 use Illuminate\Support\Collection;
 
 final class UnplacedProductsRule implements ValidationRuleInterface
