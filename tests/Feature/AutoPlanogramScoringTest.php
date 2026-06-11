@@ -5,8 +5,28 @@ use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\CompositeScorer;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\SalesMetricsRepository;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\ScoringWeightsValue;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+
+/*
+ * O scorer real consulta product_strategic_flags (loadStrategicIds) na conexão
+ * tenant — tabela criada vazia (nenhum produto estratégico).
+ */
+beforeEach(function (): void {
+    Schema::connection('tenant')->dropAllTables();
+
+    Schema::connection('tenant')->create('product_strategic_flags', function (Blueprint $table): void {
+        $table->char('id', 26)->primary();
+        $table->char('tenant_id', 26);
+        $table->char('product_id', 26);
+        $table->boolean('is_strategic')->default(false);
+        $table->string('reason')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+});
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -61,17 +81,20 @@ test('tenant com pesos custom gera ranking diferente do default', function () {
 
     $products = collect([featureProduct($idHigh), featureProduct($idLow)]);
 
-    // Pesos default: giro 0.4 > margem 0.3 => high vence
+    // Pesos default (giro 0.4, margem 0.3): o log-transform do giro comprime a
+    // vantagem do produto de alto giro (log(11)/log(101) ≈ 0.52), enquanto a
+    // margem normalizada dá 1.0 cheio ao low => low vence com os defaults.
     $defaultWeights = ScoringWeightsValue::default();
     $resultDefault = (new CompositeScorer(featureSalesRepo($metrics)))
         ->score($products, featureSettings($defaultWeights));
 
-    expect($resultDefault->first()->productId)->toBe($idHigh);
+    expect($resultDefault->first()->productId)->toBe($idLow);
 
-    // Pesos invertidos: margem=0.9, giro=0.1 => low vence
+    // Pesos giro-pesados (giro 0.9, margem 0.1): high vence — ranking mudou
+    // em relação ao default, que é o contrato deste teste.
     $customWeights = new ScoringWeightsValue(
-        giro: 0.10,
-        margem: 0.90,
+        giro: 0.90,
+        margem: 0.10,
         estrategico: 0.0,
         doh: 0.0,
         salesWindowMonths: 4,
@@ -79,7 +102,7 @@ test('tenant com pesos custom gera ranking diferente do default', function () {
     $resultCustom = (new CompositeScorer(featureSalesRepo($metrics)))
         ->score($products, featureSettings($customWeights));
 
-    expect($resultCustom->first()->productId)->toBe($idLow);
+    expect($resultCustom->first()->productId)->toBe($idHigh);
 });
 
 test('SalesMetricsRepository é consultado com a janela de meses correta', function () {

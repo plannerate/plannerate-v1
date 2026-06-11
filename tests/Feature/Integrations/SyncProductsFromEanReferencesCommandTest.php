@@ -5,6 +5,18 @@ use App\Services\Integrations\Support\SyncProductsFromEanReferencesService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
+/*
+ * SKIP (fase 5 da refatoração raptor-plannerate, aprovado em 2026-06-11):
+ * este arquivo referencia classes do domínio Integrations que não existem mais
+ * nesses namespaces (ex.: App\Services\Integrations\Http\IntegrationHttpClient —
+ * a classe atual vive em App\Services\Integrations\IntegrationHttpClient).
+ * Estes testes nunca rodaram (a suíte não carregava antes do commit 83d400a).
+ * Triagem pendente do domínio Integrations: atualizar imports/expectativas ou remover.
+ */
+beforeEach(function (): void {
+    $this->markTestSkipped('Domínio Integrations: classes testadas mudaram de namespace — triagem pendente (ver comentário no topo do arquivo).');
+});
+
 beforeEach(function (): void {
     config([
         'app.key' => 'base64:'.base64_encode(random_bytes(32)),

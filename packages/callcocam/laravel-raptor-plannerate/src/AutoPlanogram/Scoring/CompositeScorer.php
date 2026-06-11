@@ -77,7 +77,15 @@ class CompositeScorer implements ProductScorerInterface
 
         $scored = $this->score($products, $settings);
 
-        $hasRealScores = $scored->some(fn ($sp) => $sp->score > 0);
+        /*
+         * "Tem venda" é decidido pelos dados brutos (quantidade/margem), não pelo
+         * score: o componente DOH dá contribuição neutra (1-0.5)*peso a todo
+         * produto, então o score composto nunca é zero — usar score > 0 tornava
+         * o caminho neutro inalcançável e produtos sem venda eram ranqueados
+         * com score residual em vez do 0.5 neutro documentado.
+         */
+        $hasRealScores = $scored->some(fn ($sp) => (float) ($sp->metadata['raw_quantity'] ?? 0) > 0
+            || (float) ($sp->metadata['raw_margem'] ?? 0) > 0);
 
         if ($hasRealScores) {
             return $scored;

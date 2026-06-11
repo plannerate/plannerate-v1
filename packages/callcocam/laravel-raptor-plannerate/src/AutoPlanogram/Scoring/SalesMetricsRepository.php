@@ -5,7 +5,13 @@ namespace Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring;
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Illuminate\Support\Collection;
 
-final class SalesMetricsRepository
+/*
+ * Não-final de propósito: CompositeScorerTest e AutoPlanogramScoringTest criam
+ * stubs anônimos estendendo esta classe. Com `final`, a extensão era um fatal de
+ * compilação na carga do arquivo de teste — o processo morria com exit 2 e zero
+ * output (o "crash do CompositeScorer" documentado na memória do projeto).
+ */
+class SalesMetricsRepository
 {
     use UsesPlannerateTenantDatabase;
 
