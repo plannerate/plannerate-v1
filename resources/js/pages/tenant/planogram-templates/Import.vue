@@ -2,7 +2,7 @@
 import { Head, useForm } from '@inertiajs/vue3';
 import { FileSpreadsheet, Upload } from 'lucide-vue-next';
 import { ref } from 'vue';
-import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
+import PlanogramTemplateController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Templates/PlanogramTemplateController';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
 import AppLayout from '@/layouts/AppLayout.vue';

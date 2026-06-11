@@ -2,8 +2,8 @@
 import { Head, router } from '@inertiajs/vue3';
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
-import TemplateSlotController from '@/actions/App/Http/Controllers/Tenant/TemplateSlotController';
+import PlanogramTemplateController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Templates/PlanogramTemplateController';
+import TemplateSlotController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Templates/TemplateSlotController';
 import ModuleSelectorButtons from '@/components/planogram-templates/ModuleSelectorButtons.vue';
 import ReviewSlotProductsPanel from '@/components/planogram-templates/ReviewSlotProductsPanel.vue';
 import ReviewSlotsList from '@/components/planogram-templates/ReviewSlotsList.vue';

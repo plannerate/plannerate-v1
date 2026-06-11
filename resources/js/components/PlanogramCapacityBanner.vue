@@ -231,7 +231,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { router } from '@inertiajs/vue3'
-import { cloneSubtemplate } from '@/actions/App/Http/Controllers/Tenant/TemplateSlotController'
+import { cloneSubtemplate } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Templates/TemplateSlotController'
 import type { AllocationEntry, ExplanationReport, ExplanationAlert } from '@/components/planogram-templates/types'
 
 interface RejectedProduct {

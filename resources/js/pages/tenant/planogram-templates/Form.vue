@@ -2,7 +2,7 @@
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { Download, Layers, PlusSquare, Upload } from 'lucide-vue-next';
 import { computed } from 'vue';
-import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
+import PlanogramTemplateController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Templates/PlanogramTemplateController';
 import FormCard from '@/components/FormCard.vue';
 import PlanogramTemplateFormFields from '@/components/planogram-templates/PlanogramTemplateFormFields.vue';
 import type { WizardStep } from '@/components/planogram-templates/types';

@@ -4,7 +4,7 @@ import { router } from '@inertiajs/vue3';
 import { BarChart2 } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
 import { useT } from '@/composables/useT';
-import TemplateSlotController from '@/actions/App/Http/Controllers/Tenant/TemplateSlotController';
+import TemplateSlotController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Templates/TemplateSlotController';
 import {
     Sheet,
     SheetContent,

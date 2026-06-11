@@ -3,7 +3,7 @@ import { router, usePage } from '@inertiajs/vue3';
 import {  RefreshCw, Sparkles, X } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { reorderGondola, redistributeGondola, regenerateAuto } from '@/actions/App/Http/Controllers/AutoPlanogramController';
+import { reorderGondola, redistributeGondola, regenerateAuto } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Generation/AutoPlanogramController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
