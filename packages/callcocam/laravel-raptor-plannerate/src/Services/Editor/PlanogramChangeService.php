@@ -6,15 +6,15 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
+namespace Callcocam\LaravelRaptorPlannerate\Services\Editor;
 
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\GondolaRepository;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Service orquestrador para processar mudanças no planograma
+ * Service orquestrador para processar mudanças (deltas) no planograma.
  *
- * Responsável por rotear mudanças para os services específicos de cada entidade
+ * Responsável por rotear cada mudança para o service específico da entidade.
  */
 class PlanogramChangeService
 {
@@ -25,7 +25,6 @@ class PlanogramChangeService
         private LayerService $layerService,
         private ProductService $productService,
         private GondolaService $gondolaService,
-        private GondolaRepository $gondolaRepository
     ) {}
 
     /**
@@ -72,15 +71,13 @@ class PlanogramChangeService
         foreach ($changes as $change) {
             $change['gondolaId'] = $gondolaId;
 
-            $applied = $this->applyChange($change);
-            if ($applied) {
+            if ($this->applyChange($change)) {
                 $changesApplied++;
             }
         }
 
         // Atualiza timestamp da gôndola (marca como modificada)
-        $gondola = $this->gondolaRepository->findOrFail($gondolaId);
-        $gondola->touch();
+        Gondola::query()->findOrFail($gondolaId)->touch();
 
         return $changesApplied;
     }

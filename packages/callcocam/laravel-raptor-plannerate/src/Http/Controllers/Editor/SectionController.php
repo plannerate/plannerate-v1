@@ -12,7 +12,7 @@ use App\Models\Tenant;
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Models\Section;
-use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\ShelfStructureService;
+use Callcocam\LaravelRaptorPlannerate\Services\Editor\ShelfStructureService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;

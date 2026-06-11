@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Support\Modules\ModuleSlug;
 use App\Support\Modules\TenantModuleService;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\GondolaPayloadService;
+use Callcocam\LaravelRaptorPlannerate\Services\Editor\GondolaPayloadService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

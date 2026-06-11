@@ -2,7 +2,7 @@
 
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\Editor\StoreGondolaRequest;
 use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
-use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\GondolaService;
+use Callcocam\LaravelRaptorPlannerate\Services\Editor\GondolaService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;

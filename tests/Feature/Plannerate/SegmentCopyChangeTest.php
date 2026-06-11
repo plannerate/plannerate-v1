@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\User;
-use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\PlanogramChangeService;
+use Callcocam\LaravelRaptorPlannerate\Services\Editor\PlanogramChangeService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

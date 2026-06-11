@@ -6,27 +6,23 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
+namespace Callcocam\LaravelRaptorPlannerate\Services\Editor;
 
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Events\LayerRemovedEvent;
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\GondolaRepository;
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\LayerRepository;
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\SegmentRepository;
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\ShelfRepository;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Service para operações de negócio relacionadas a Segments (Segmentos)
+ * Service para operações de negócio relacionadas a Segments (Segmentos).
+ *
+ * Acessa o banco tenant diretamente via UsesPlannerateTenantDatabase — a antiga
+ * camada de Repositories foi absorvida aqui (era um wrapper fino de query builder).
  */
 class SegmentService
 {
-    public function __construct(
-        private SegmentRepository $repository,
-        private LayerRepository $layerRepository,
-        private ShelfRepository $shelfRepository,
-        private GondolaRepository $gondolaRepository,
-    ) {}
+    use UsesPlannerateTenantDatabase;
 
     /**
      * Cria ou atualiza um segment baseado no tipo de mudança.
@@ -67,6 +63,7 @@ class SegmentService
 
         $layer = $data['layer'];
         $newSegmentId = $segmentId !== '' ? $segmentId : ($layer['segment_id'] ?? null);
+
         // Validações adicionais da layer
         if (! isset($layer['id'], $layer['product_id']) || ! is_string($newSegmentId) || $newSegmentId === '') {
             Log::warning('⚠️ segment_copy com layer incompleta', ['data' => $data]);
@@ -74,14 +71,14 @@ class SegmentService
             return false;
         }
 
-        $oldSegment = $this->repository->find($data['source_segment_id']);
+        $oldSegment = $this->plannerateTenantTable('segments')->where('id', $data['source_segment_id'])->first();
         if (! $oldSegment) {
             Log::warning('⚠️ segment_copy com source_segment_id inválido', ['source_segment_id' => $data['source_segment_id']]);
 
             return false;
         }
 
-        $targetShelf = $this->shelfRepository->find($data['shelf_id']);
+        $targetShelf = $this->plannerateTenantTable('shelves')->where('id', $data['shelf_id'])->first();
         if (! $targetShelf) {
             Log::warning('⚠️ segment_copy com shelf_id inválido', ['shelf_id' => $data['shelf_id']]);
 
@@ -92,50 +89,32 @@ class SegmentService
         $tenantId = $targetShelf->tenant_id ?? null;
 
         // Cria o novo segment com os dados recebidos
-        $segmentData = [
+        $created = $this->create([
             'id' => $newSegmentId,
             'shelf_id' => $data['shelf_id'],
             'ordering' => $position,
             'position' => $position,
             'quantity' => $oldSegment->quantity ?? 1,
-        ];
-
-        // Cria segment copiado
-        $created = $this->create($segmentData, $tenantId);
+        ], $tenantId);
 
         if (! $created) {
-            Log::error('❌ Falha ao copiar segment', ['segment' => $segmentData]);
+            Log::error('❌ Falha ao copiar segment', ['segment_id' => $newSegmentId]);
 
             return false;
         }
 
-        // Log::info('✅ Segment copiado', [
-        //     'source_segment_id' => $data['source_segment_id'],
-        //     'new_segment_id' => $layer['segment_id'],
-        //     'target_shelf_id' => $data['shelf_id'],
-        // ]);
-
-        // Filtra campos válidos da layer
+        // Filtra campos válidos da layer e cria a cópia vinculada ao novo segment
         $layerFields = ['id', 'segment_id', 'product_id', 'height', 'alignment', 'spacing', 'quantity'];
         $layerData = array_intersect_key($layer, array_flip($layerFields));
         $layerData['segment_id'] = $newSegmentId;
 
-        // Cria layer copiada usando o repository diretamente
-        $layerCreated = $this->layerRepository->create(array_merge($layerData, [
+        $layerCreated = $this->plannerateTenantTable('layers')->insert(array_merge($layerData, [
             'tenant_id' => $tenantId,
             'user_id' => auth()->id(),
             'status' => 'published',
             'created_at' => now(),
             'updated_at' => now(),
         ]));
-
-        if ($layerCreated) {
-            // Log::info('✅ Layer copiada com segment', [
-            //     'new_layer_id' => $layer['id'],
-            //     'new_segment_id' => $layer['segment_id'],
-            //     'product_id' => $layer['product_id'] ?? null,
-            // ]);
-        }
 
         return $created && $layerCreated;
     }
@@ -167,15 +146,7 @@ class SegmentService
             $updates['ordering'] = $data['position'];
         }
 
-        $updated = $this->repository->update($segmentId, $updates);
-
-        if ($updated > 0) {
-            // Log::info('✅ Segment transferido entre shelves', [
-            //     'segment_id' => $segmentId,
-            //     'from_shelf_id' => $data['from_shelf_id'],
-            //     'to_shelf_id' => $data['to_shelf_id'],
-            // ]);
-        }
+        $updated = $this->plannerateTenantTable('segments')->where('id', $segmentId)->update($updates);
 
         return $updated > 0;
     }
@@ -187,7 +158,7 @@ class SegmentService
      */
     public function create(array $data, ?string $tenantId): bool
     {
-        return $this->repository->create(array_merge($data, [
+        return $this->plannerateTenantTable('segments')->insert(array_merge($data, [
             'tenant_id' => $tenantId,
             'user_id' => auth()->id(),
             'status' => 'published',
@@ -215,20 +186,10 @@ class SegmentService
             return false;
         }
 
-        $updates = [
+        $updated = $this->plannerateTenantTable('segments')->where('id', $segmentId)->update([
             'ordering' => $data['ordering'],
             'updated_at' => now(),
-        ];
-
-        $updated = $this->repository->update($segmentId, $updates);
-
-        if ($updated > 0) {
-            // Log::info('🔄 Segment reordenado', [
-            //     'segment_id' => $segmentId,
-            //     'shelf_id' => $data['shelf_id'],
-            //     'new_ordering' => $data['ordering'],
-            // ]);
-        }
+        ]);
 
         return $updated > 0;
     }
@@ -262,7 +223,7 @@ class SegmentService
 
         $updates['updated_at'] = now();
 
-        $updated = $this->repository->update($segmentId, $updates);
+        $updated = $this->plannerateTenantTable('segments')->where('id', $segmentId)->update($updates);
 
         // Ao soft-deletar o segment, dispara evento para cada layer filha
         if ($updated > 0 && $isBeingRemoved) {
@@ -275,7 +236,7 @@ class SegmentService
     /**
      * Busca todas as layers do segment e dispara LayerRemovedEvent para cada uma.
      *
-     * Falhas ao buscar a gôndola apenas logam um warning — não interrompem o fluxo.
+     * Sem gôndola válida o evento não é disparado — não interrompe o fluxo principal.
      */
     private function dispatchEventsForSegmentLayers(string $segmentId, ?string $gondolaId): void
     {
@@ -283,13 +244,15 @@ class SegmentService
             return;
         }
 
-        $gondola = $this->gondolaRepository->find($gondolaId);
+        $gondola = Gondola::query()->find($gondolaId);
 
         if (! $gondola) {
             return;
         }
 
-        $layers = $this->layerRepository->findAllBySegmentId($segmentId);
+        $layers = $this->plannerateTenantTable('layers')
+            ->where('segment_id', $segmentId)
+            ->get();
 
         foreach ($layers as $layer) {
             LayerRemovedEvent::dispatch($layer, $gondola);

@@ -6,26 +6,21 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
+namespace Callcocam\LaravelRaptorPlannerate\Services\Editor;
 
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\LayerRepository;
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\SectionRepository;
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\SegmentRepository;
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\ShelfRepository;
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Service para operações de negócio relacionadas a Shelves (Prateleiras)
+ * Service para operações de negócio relacionadas a Shelves (Prateleiras).
+ *
+ * Acessa o banco tenant diretamente via UsesPlannerateTenantDatabase — a antiga
+ * camada de Repositories foi absorvida aqui (era um wrapper fino de query builder).
  */
 class ShelfService
 {
-    public function __construct(
-        private ShelfRepository $repository,
-        private SectionRepository $sectionRepository,
-        private SegmentRepository $segmentRepository,
-        private LayerRepository $layerRepository
-    ) {}
+    use UsesPlannerateTenantDatabase;
 
     /**
      * Cria ou atualiza uma shelf baseado no tipo de mudança
@@ -37,8 +32,8 @@ class ShelfService
         $shelfId = $change['entityId'];
         $data = $change['data'];
         $type = $change['type'];
-        // Verifica se shelf já existe
-        $shelfExists = $this->repository->exists($shelfId);
+
+        $shelfExists = $this->plannerateTenantTable('shelves')->where('id', $shelfId)->exists();
 
         // Criação de nova shelf (aceita tanto shelf_create quanto shelf_update com _is_new)
         if (! $shelfExists || $type === 'shelf_create' || ($type === 'shelf_update' && isset($data['_is_new']))) {
@@ -55,7 +50,7 @@ class ShelfService
     }
 
     /**
-     * Cria nova shelf
+     * Cria nova shelf (id é o ULID gerado no frontend)
      *
      * @param  array<string, mixed>  $data
      */
@@ -73,15 +68,14 @@ class ShelfService
         }
 
         // Busca section para obter tenant_id
-        $section = $this->sectionRepository->find($insertData['section_id']);
+        $section = $this->plannerateTenantTable('sections')->where('id', $insertData['section_id'])->first();
         if (! $section) {
             Log::warning('⚠️ Section não encontrada', ['section_id' => $insertData['section_id']]);
 
             return false;
         }
 
-        // Insere nova shelf
-        $this->repository->create(array_merge($insertData, [
+        $this->plannerateTenantTable('shelves')->insert(array_merge($insertData, [
             'id' => $shelfId,
             'code' => strtoupper(uniqid('SHELF-')),
             'tenant_id' => $section->tenant_id ?? null,
@@ -93,7 +87,7 @@ class ShelfService
 
         Log::info('✅ Shelf criada', ['shelf_id' => $shelfId, 'section_id' => $insertData['section_id']]);
 
-        // Se tiver segments no payload, cria os relacionamentos
+        // Se tiver segments no payload (duplicação de prateleira/seção), cria a hierarquia
         if (isset($data['segments']) && is_array($data['segments'])) {
             $this->createShelfSegments($shelfId, $data['segments'], $section->tenant_id ?? null);
         }
@@ -105,26 +99,23 @@ class ShelfService
     }
 
     /**
-     * Cria segments e layers para uma shelf recém-criada
+     * Cria segments e layers para uma shelf recém-criada (duplicação completa)
      *
      * @param  array<int, array<string, mixed>>  $segments  Array de segments do payload
      */
     private function createShelfSegments(string $shelfId, array $segments, ?string $tenantId): void
     {
         foreach ($segments as $segmentData) {
-            // Validação básica do segment
             if (! isset($segmentData['id'])) {
                 Log::warning('⚠️ Segment sem ID ao criar shelf', ['shelf_id' => $shelfId]);
 
                 continue;
             }
 
-            // Filtra campos válidos do segment
             $segmentFields = ['id', 'width', 'height', 'ordering', 'alignment', 'spacing', 'quantity'];
             $segmentInsert = array_intersect_key($segmentData, array_flip($segmentFields));
 
-            // Cria segment vinculado à shelf
-            $this->segmentRepository->create(array_merge($segmentInsert, [
+            $this->plannerateTenantTable('segments')->insert(array_merge($segmentInsert, [
                 'shelf_id' => $shelfId,
                 'tenant_id' => $tenantId,
                 'user_id' => auth()->id(),
@@ -133,16 +124,10 @@ class ShelfService
                 'updated_at' => now(),
             ]));
 
-            Log::info('✅ Segment criado para shelf', [
-                'segment_id' => $segmentData['id'],
-                'shelf_id' => $shelfId,
-            ]);
-
             // Se o segment tiver layer, cria também
             if (isset($segmentData['layer']) && is_array($segmentData['layer'])) {
                 $layerData = $segmentData['layer'];
 
-                // Validação: layer precisa de ID e product_id
                 if (! isset($layerData['id']) || ! isset($layerData['product_id'])) {
                     Log::warning('⚠️ Layer sem ID ou product_id ao criar shelf', [
                         'shelf_id' => $shelfId,
@@ -152,12 +137,10 @@ class ShelfService
                     continue;
                 }
 
-                // Filtra campos válidos da layer
                 $layerFields = ['id', 'product_id', 'height', 'alignment', 'spacing', 'quantity'];
                 $layerInsert = array_intersect_key($layerData, array_flip($layerFields));
 
-                // Cria layer vinculada ao segment
-                $this->layerRepository->create(array_merge($layerInsert, [
+                $this->plannerateTenantTable('layers')->insert(array_merge($layerInsert, [
                     'segment_id' => $segmentData['id'],
                     'tenant_id' => $tenantId,
                     'user_id' => auth()->id(),
@@ -165,12 +148,6 @@ class ShelfService
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]));
-
-                Log::info('✅ Layer criada para segment', [
-                    'layer_id' => $layerData['id'],
-                    'segment_id' => $segmentData['id'],
-                    'product_id' => $layerData['product_id'],
-                ]);
             }
         }
     }
@@ -187,12 +164,12 @@ class ShelfService
         }
 
         // Busca a prateleira para obter a section_id antes de atualizar
-        $shelf = $this->repository->find($shelfId);
+        $shelf = $this->plannerateTenantTable('shelves')->where('id', $shelfId)->first();
         if (! $shelf || ! $shelf->section_id) {
             return false;
         }
 
-        $updated = $this->repository->update($shelfId, [
+        $updated = $this->plannerateTenantTable('shelves')->where('id', $shelfId)->update([
             'shelf_position' => $data['shelf_position'],
             'updated_at' => now(),
         ]);
@@ -217,7 +194,7 @@ class ShelfService
         }
 
         // Busca a prateleira para obter a section_id de origem
-        $shelf = $this->repository->find($shelfId);
+        $shelf = $this->plannerateTenantTable('shelves')->where('id', $shelfId)->first();
         if (! $shelf) {
             return false;
         }
@@ -238,7 +215,7 @@ class ShelfService
             $updates['ordering'] = $data['ordering'];
         }
 
-        $updated = $this->repository->update($shelfId, $updates);
+        $updated = $this->plannerateTenantTable('shelves')->where('id', $shelfId)->update($updates);
 
         if ($updated > 0) {
             Log::info('📦 Shelf transferida', [
@@ -247,12 +224,11 @@ class ShelfService
                 'to_section_id' => $newSectionId,
             ]);
 
-            // Reordena as prateleiras da seção de origem (se existir)
+            // Reordena as prateleiras das seções de origem e destino
             if ($oldSectionId) {
                 $this->reorderByPosition($oldSectionId);
             }
 
-            // Reordena as prateleiras da seção de destino
             $this->reorderByPosition($newSectionId);
         }
 
@@ -260,7 +236,7 @@ class ShelfService
     }
 
     /**
-     * Atualiza propriedades da shelf
+     * Atualiza propriedades da shelf (inclui soft delete via deleted_at)
      *
      * @param  array<string, mixed>  $data
      */
@@ -274,7 +250,7 @@ class ShelfService
         }
 
         // Busca a prateleira para obter a section_id antes de atualizar
-        $shelf = $this->repository->find($shelfId);
+        $shelf = $this->plannerateTenantTable('shelves')->where('id', $shelfId)->first();
         if (! $shelf || ! $shelf->section_id) {
             return false;
         }
@@ -289,7 +265,7 @@ class ShelfService
 
         $updates['updated_at'] = now();
 
-        $updated = $this->repository->update($shelfId, $updates);
+        $updated = $this->plannerateTenantTable('shelves')->where('id', $shelfId)->update($updates);
 
         if ($updated > 0 && $positionChanged) {
             // Reordena as prateleiras da seção se a position foi alterada
@@ -300,53 +276,40 @@ class ShelfService
     }
 
     /**
-     * Reordena as prateleiras de uma seção com base na shelf_position
+     * Reordena as prateleiras de uma seção com base na shelf_position.
      *
      * Atualiza o campo `ordering` sequencialmente (1, 2, 3, ...) baseado na ordem
      * crescente de `shelf_position` (de baixo para cima).
      *
-     * @param  string  $sectionId  ID da seção
      * @return int Número de prateleiras reordenadas
      */
     public function reorderByPosition(string $sectionId): int
     {
-        // Busca todas as prateleiras da seção ordenadas por shelf_position
-        $shelves = $this->repository->findBySectionId($sectionId);
+        $shelves = $this->plannerateTenantTable('shelves')
+            ->where('section_id', $sectionId)
+            ->whereNull('deleted_at')
+            ->orderBy('shelf_position', 'asc')
+            ->get();
 
-        if (empty($shelves)) {
-            Log::info('ℹ️ Nenhuma prateleira encontrada para reordenar', ['section_id' => $sectionId]);
-
+        if ($shelves->isEmpty()) {
             return 0;
         }
 
-        // Prepara array com id e novo ordering baseado na posição
-        $updates = [];
+        $updatedCount = 0;
         $ordering = 1;
 
         foreach ($shelves as $shelf) {
             // Só atualiza se o ordering estiver diferente
             if ($shelf->ordering != $ordering) {
-                $updates[] = [
-                    'id' => $shelf->id,
+                $this->plannerateTenantTable('shelves')->where('id', $shelf->id)->update([
                     'ordering' => $ordering,
-                ];
+                    'updated_at' => now(),
+                ]);
+                $updatedCount++;
             }
             $ordering++;
         }
 
-        // Atualiza em lote se houver mudanças
-        if (! empty($updates)) {
-            $this->repository->updateBatch($updates);
-
-            // Log::info('✅ Prateleiras reordenadas', [
-            //     'section_id' => $sectionId,
-            //     'total_shelves' => count($shelves),
-            //     'updated' => count($updates),
-            // ]);
-
-            return count($updates);
-        }
-
-        return 0;
+        return $updatedCount;
     }
 }

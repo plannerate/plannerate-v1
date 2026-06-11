@@ -6,13 +6,12 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
+namespace Callcocam\LaravelRaptorPlannerate\Services\Editor;
 
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\Section;
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\GondolaRepository;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -23,7 +22,6 @@ class GondolaService
     use UsesPlannerateTenantDatabase;
 
     public function __construct(
-        private GondolaRepository $repository,
         private ShelfStructureService $shelfStructure
     ) {}
 
@@ -163,7 +161,7 @@ class GondolaService
 
         $updates['updated_at'] = now();
 
-        $updated = $this->repository->update($gondolaId, $updates);
+        $updated = $this->plannerateTenantTable('gondolas')->where('id', $gondolaId)->update($updates);
 
         return $updated > 0;
     }
@@ -179,7 +177,7 @@ class GondolaService
             return false;
         }
 
-        $updated = $this->repository->update($gondolaId, [
+        $updated = $this->plannerateTenantTable('gondolas')->where('id', $gondolaId)->update([
             'scale_factor' => $data['scale_factor'],
             'updated_at' => now(),
         ]);
@@ -199,7 +197,7 @@ class GondolaService
             return false;
         }
 
-        $updated = $this->repository->update($gondolaId, [
+        $updated = $this->plannerateTenantTable('gondolas')->where('id', $gondolaId)->update([
             'alignment' => $data['alignment'],
             'updated_at' => now(),
         ]);
@@ -218,7 +216,7 @@ class GondolaService
             return false;
         }
 
-        $updated = $this->repository->update($gondolaId, [
+        $updated = $this->plannerateTenantTable('gondolas')->where('id', $gondolaId)->update([
             'flow' => $data['flow'],
             'updated_at' => now(),
         ]);

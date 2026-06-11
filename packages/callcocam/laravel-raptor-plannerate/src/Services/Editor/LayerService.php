@@ -6,25 +6,26 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
+namespace Callcocam\LaravelRaptorPlannerate\Services\Editor;
 
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Events\LayerRemovedEvent;
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\GondolaRepository;
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\LayerRepository;
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\ShelfRepository;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Service para operações de negócio relacionadas a Layers (Camadas de produtos)
+ * Service para operações de negócio relacionadas a Layers (Camadas de produtos).
+ *
+ * Acessa o banco tenant diretamente via UsesPlannerateTenantDatabase — a antiga
+ * camada de Repositories foi absorvida aqui (era um wrapper fino de query builder).
  */
 class LayerService
 {
+    use UsesPlannerateTenantDatabase;
+
     public function __construct(
-        private LayerRepository $repository,
-        private ShelfRepository $shelfRepository,
         private SegmentService $segmentService,
-        private GondolaRepository $gondolaRepository,
     ) {}
 
     /**
@@ -77,18 +78,17 @@ class LayerService
         }
 
         // Busca shelf para obter tenant_id
-        $shelf = $this->shelfRepository->find($segment['shelf_id']);
+        $shelf = $this->plannerateTenantTable('shelves')->where('id', $segment['shelf_id'])->first();
         if (! $shelf) {
             Log::warning('⚠️ Shelf não encontrada', ['shelf_id' => $segment['shelf_id']]);
 
             return false;
         }
 
-        // Filtra campos válidos do segment
+        // Filtra campos válidos do segment e cria
         $segmentFields = ['id', 'shelf_id', 'width', 'height', 'ordering', 'alignment', 'spacing', 'quantity', 'deleted_at'];
         $segmentData = array_intersect_key($segment, array_flip($segmentFields));
 
-        // Cria segment
         $this->segmentService->create($segmentData, $shelf->tenant_id ?? null);
 
         Log::info('✅ Segment criado', [
@@ -96,11 +96,10 @@ class LayerService
             'shelf_id' => $segment['shelf_id'],
         ]);
 
-        // Filtra campos válidos da layer
+        // Filtra campos válidos da layer e cria
         $layerFields = ['id', 'segment_id', 'product_id', 'height', 'alignment', 'spacing', 'quantity', 'deleted_at'];
         $layerData = array_intersect_key($layer, array_flip($layerFields));
 
-        // Cria layer
         $this->createForSegment($segment['id'], $layerData, $shelf->tenant_id ?? null);
 
         Log::info('✅ Layer criada', [
@@ -119,7 +118,7 @@ class LayerService
      */
     public function createForSegment(string $segmentId, array $data, ?string $tenantId): bool
     {
-        return $this->repository->create(array_merge($data, [
+        return $this->plannerateTenantTable('layers')->insert(array_merge($data, [
             'segment_id' => $segmentId,
             'tenant_id' => $tenantId,
             'user_id' => auth()->id(),
@@ -157,11 +156,11 @@ class LayerService
 
         $updates['updated_at'] = now();
 
-        $updated = $this->repository->update($layerId, $updates);
+        $updated = $this->plannerateTenantTable('layers')->where('id', $layerId)->update($updates);
 
         // Dispara evento de remoção quando a layer foi soft-deletada com sucesso
         if ($updated > 0 && $isBeingRemoved) {
-            $layer = $this->repository->find($layerId);
+            $layer = $this->plannerateTenantTable('layers')->where('id', $layerId)->first();
 
             if ($layer) {
                 $this->dispatchRemovedEvent($layer, $gondolaId);
@@ -174,8 +173,7 @@ class LayerService
     /**
      * Dispara LayerRemovedEvent com o modelo completo da gôndola.
      *
-     * Falhas ao buscar a gôndola apenas logam um warning — não devem
-     * interromper o fluxo principal de remoção da layer.
+     * Sem gôndola válida o evento não é disparado — não interrompe o fluxo principal.
      */
     private function dispatchRemovedEvent(object $layer, ?string $gondolaId): void
     {
@@ -183,7 +181,7 @@ class LayerService
             return;
         }
 
-        $gondola = $this->gondolaRepository->find($gondolaId);
+        $gondola = Gondola::query()->find($gondolaId);
 
         if (! $gondola) {
             return;

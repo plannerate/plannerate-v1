@@ -6,19 +6,20 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
+namespace Callcocam\LaravelRaptorPlannerate\Services\Editor;
 
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\ProductRepository;
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Service para operações de negócio relacionadas a Products (Produtos)
+ * Service para operações de negócio relacionadas a Products (Produtos).
+ *
+ * Acessa o banco tenant diretamente via UsesPlannerateTenantDatabase — a antiga
+ * camada de Repositories foi absorvida aqui (era um wrapper fino de query builder).
  */
 class ProductService
 {
-    public function __construct(
-        private ProductRepository $productRepository
-    ) {}
+    use UsesPlannerateTenantDatabase;
 
     /**
      * Cria ou atualiza um produto baseado no tipo de mudança
@@ -36,9 +37,10 @@ class ProductService
     }
 
     /**
-     * Atualiza dimensões do produto
+     * Atualiza dimensões do produto.
      *
-     * Nota: Dimensões são armazenadas diretamente na tabela products (tabela dimensions foi removida)
+     * Nota: dimensões são armazenadas diretamente na tabela products
+     * (a tabela dimensions foi removida).
      *
      * @param  array<string, mixed>  $data
      */
@@ -49,31 +51,18 @@ class ProductService
             return false;
         }
 
-        $dimensionUpdates = [];
-
-        // Extrai width, height, depth, weight, unit
-        if (isset($data['product_dimension']['width'])) {
-            $dimensionUpdates['width'] = $data['product_dimension']['width'];
-        }
-        if (isset($data['product_dimension']['height'])) {
-            $dimensionUpdates['height'] = $data['product_dimension']['height'];
-        }
-        if (isset($data['product_dimension']['depth'])) {
-            $dimensionUpdates['depth'] = $data['product_dimension']['depth'];
-        }
-        if (isset($data['product_dimension']['weight'])) {
-            $dimensionUpdates['weight'] = $data['product_dimension']['weight'];
-        }
-        if (isset($data['product_dimension']['unit'])) {
-            $dimensionUpdates['unit'] = $data['product_dimension']['unit'];
-        }
+        // Extrai apenas os campos de dimensão suportados
+        $dimensionUpdates = array_intersect_key(
+            $data['product_dimension'],
+            array_flip(['width', 'height', 'depth', 'weight', 'unit']),
+        );
 
         if (empty($dimensionUpdates)) {
             return false;
         }
 
         // Busca produto
-        $product = $this->productRepository->find($productId);
+        $product = $this->plannerateTenantTable('products')->where('id', $productId)->first();
         if (! $product) {
             Log::warning('⚠️ Produto não encontrado', ['product_id' => $productId]);
 
@@ -85,7 +74,9 @@ class ProductService
             $dimensionUpdates['unit'] = 'cm';
         }
 
-        $this->productRepository->update($product, $dimensionUpdates);
+        $this->plannerateTenantTable('products')
+            ->where('id', $productId)
+            ->update($dimensionUpdates);
 
         Log::info('✅ Dimensões do produto atualizadas', [
             'product_id' => $productId,

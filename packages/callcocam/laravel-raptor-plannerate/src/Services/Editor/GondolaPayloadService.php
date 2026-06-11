@@ -1,6 +1,6 @@
 <?php
 
-namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
+namespace Callcocam\LaravelRaptorPlannerate\Services\Editor;
 
 use App\Models\Tenant;
 use App\Models\WorkflowGondolaExecution;

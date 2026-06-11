@@ -16,7 +16,7 @@ use App\Services\AutoPlanogram\Validation\PlanogramValidator;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 use Callcocam\LaravelRaptorPlannerate\Models\Section;
-use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\ShelfStructureService;
+use Callcocam\LaravelRaptorPlannerate\Services\Editor\ShelfStructureService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;

@@ -6,22 +6,21 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
+namespace Callcocam\LaravelRaptorPlannerate\Services\Editor;
 
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\GondolaRepository;
-use Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate\SectionRepository;
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Service para operações de negócio relacionadas a Sections (Modulos/Módulos)
+ * Service para operações de negócio relacionadas a Sections (Módulos).
+ *
+ * Acessa o banco tenant diretamente via UsesPlannerateTenantDatabase — a antiga
+ * camada de Repositories foi absorvida aqui (era um wrapper fino de query builder).
  */
 class SectionService
 {
-    public function __construct(
-        private SectionRepository $repository,
-        private GondolaRepository $gondolaRepository
-    ) {}
+    use UsesPlannerateTenantDatabase;
 
     /**
      * Cria ou atualiza uma section baseado no tipo de mudança
@@ -34,21 +33,20 @@ class SectionService
         $data = $change['data'];
         $type = $change['type'];
 
-        // Verifica se section já existe
-        $sectionExists = $this->repository->exists($sectionId);
+        $sectionExists = $this->plannerateTenantTable('sections')->where('id', $sectionId)->exists();
 
         // Criação de nova section (aceita tanto section_create quanto section_update com _is_new)
         if (! $sectionExists || $type === 'section_create' || ($type === 'section_update' && isset($data['_is_new']))) {
             return $this->create($sectionId, $data);
         }
+
         $this->update($sectionId, $data);
 
-        // Atualização
         return true;
     }
 
     /**
-     * Cria nova section
+     * Cria nova section (id é o ULID gerado no frontend)
      *
      * @param  array<string, mixed>  $data
      */
@@ -82,7 +80,7 @@ class SectionService
         }
 
         // Busca gondola para obter tenant_id
-        $gondola = $this->gondolaRepository->find($insertData['gondola_id']);
+        $gondola = $this->plannerateTenantTable('gondolas')->where('id', $insertData['gondola_id'])->first();
         if (! $gondola) {
             Log::warning('⚠️ Gondola não encontrada', ['gondola_id' => $insertData['gondola_id']]);
 
@@ -90,7 +88,7 @@ class SectionService
         }
 
         // Insere nova section (code único para não violar sections_code_unique ao duplicar)
-        $this->repository->create(array_merge($insertData, [
+        $this->plannerateTenantTable('sections')->insert(array_merge($insertData, [
             'id' => $sectionId,
             'code' => 'SEC-'.strtoupper(substr($sectionId, -10)),
             'tenant_id' => $gondola->tenant_id ?? null,
@@ -109,7 +107,10 @@ class SectionService
     }
 
     /**
-     * Atualiza uma section
+     * Atualiza uma section (inclui soft delete via deleted_at).
+     *
+     * Quando o ordering muda, o nome é regravado como "Módulo {n}" — as seções
+     * são nomeadas pela posição (contrato atual do editor).
      *
      * @param  array<string, mixed>  $data
      */
@@ -146,20 +147,18 @@ class SectionService
 
         $updates['updated_at'] = now();
 
-        $updated = $this->repository->update($sectionId, $updates);
+        $updated = $this->plannerateTenantTable('sections')->where('id', $sectionId)->update($updates);
 
         if ($updated > 0) {
             // Reordena apenas quando a seção foi deletada; evitar reordenar em updates de ordering
             // impede que trocas de posição sejam revertidas por estados intermediários duplicados.
-            $section = $this->repository->find($sectionId);
+            $section = $this->plannerateTenantTable('sections')->where('id', $sectionId)->first();
             if ($section && $section->gondola_id && isset($updates['deleted_at'])) {
                 $this->reorderByOrdering($section->gondola_id);
-            } else {
-                if (isset($updates['ordering'])) {
-                    $this->repository->update($sectionId, [
-                        'name' => sprintf('Módulo %s', $updates['ordering']),
-                    ]);
-                }
+            } elseif (isset($updates['ordering'])) {
+                $this->plannerateTenantTable('sections')->where('id', $sectionId)->update([
+                    'name' => sprintf('Módulo %s', $updates['ordering']),
+                ]);
             }
         }
 
@@ -167,56 +166,49 @@ class SectionService
     }
 
     /**
-     * Reordena as seções de uma gôndola com base no campo ordering
+     * Reordena as seções de uma gôndola com base no campo ordering.
      *
-     * Atualiza o campo `ordering` sequencialmente (1, 2, 3, ...) baseado na ordem
-     * crescente do campo `ordering` atual.
+     * Atualiza `ordering` sequencialmente (1, 2, 3, ...). O nome NÃO é alterado
+     * aqui — o rename "Módulo {n}" só acontece em update() quando o ordering é
+     * alterado explicitamente pelo usuário (comportamento original preservado).
      *
-     * @param  string  $gondolaId  ID da gôndola
      * @return int Número de seções reordenadas
      */
     public function reorderByOrdering(string $gondolaId): int
     {
-        // Busca todas as seções da gôndola ordenadas por ordering
-        $sections = $this->repository->findByGondolaId($gondolaId);
+        $sections = $this->plannerateTenantTable('sections')
+            ->where('gondola_id', $gondolaId)
+            ->whereNull('deleted_at')
+            ->orderBy('ordering', 'asc')
+            ->get();
 
-        if (empty($sections)) {
-            Log::info('ℹ️ Nenhuma seção encontrada para reordenar', ['gondola_id' => $gondolaId]);
-
+        if ($sections->isEmpty()) {
             return 0;
         }
 
-        // Prepara array com id e novo ordering baseado na ordem atual
-        $updates = [];
+        $updatedCount = 0;
         $ordering = 1;
 
         foreach ($sections as $section) {
             // Só atualiza se o ordering estiver diferente
             if ($section->ordering != $ordering) {
-                $updates[] = [
-                    'id' => $section->id,
-                    'name' => sprintf('Módulo %s', $ordering),
+                $this->plannerateTenantTable('sections')->where('id', $section->id)->update([
                     'ordering' => $ordering,
-                ];
+                    'updated_at' => now(),
+                ]);
+                $updatedCount++;
             }
             $ordering++;
         }
 
-        // Atualiza em lote se houver mudanças
-        if (! empty($updates)) {
-            $this->repository->updateBatch($updates);
-
-            Log::info('✅ Modulos reordenadas', [
+        if ($updatedCount > 0) {
+            Log::info('✅ Módulos reordenados', [
                 'gondola_id' => $gondolaId,
-                'total_sections' => count($sections),
-                'updated' => count($updates),
+                'total_sections' => $sections->count(),
+                'updated' => $updatedCount,
             ]);
-
-            return count($updates);
         }
 
-        Log::info('ℹ️ Modulos já estão ordenadas corretamente', ['gondola_id' => $gondolaId]);
-
-        return 0;
+        return $updatedCount;
     }
 }
