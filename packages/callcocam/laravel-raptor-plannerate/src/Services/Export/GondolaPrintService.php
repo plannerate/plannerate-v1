@@ -1,9 +1,9 @@
 <?php
 
-namespace Callcocam\LaravelRaptorPlannerate\Services\Printing;
+namespace Callcocam\LaravelRaptorPlannerate\Services\Export;
 
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Services\QRCode\QRCodeService;
+use Callcocam\LaravelRaptorPlannerate\Services\Export\QRCodeService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;

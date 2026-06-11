@@ -1,6 +1,6 @@
 <?php
 
-namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
+namespace Callcocam\LaravelRaptorPlannerate\Services\Analysis;
 
 use Callcocam\LaravelRaptorPlannerate\Models\MonthlySalesSummary;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;

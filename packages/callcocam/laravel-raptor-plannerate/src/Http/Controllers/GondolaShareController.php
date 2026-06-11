@@ -2,7 +2,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
 
-use Callcocam\LaravelRaptorPlannerate\Services\Printing\GondolaPrintService;
+use Callcocam\LaravelRaptorPlannerate\Services\Export\GondolaPrintService;
 use Inertia\Inertia;
 use Inertia\Response;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Callcocam\LaravelRaptorPlannerate\Services\QRCode;
+namespace Callcocam\LaravelRaptorPlannerate\Services\Export;
 
 use BaconQrCode\Common\ErrorCorrectionLevel;
 use BaconQrCode\Renderer\GDLibRenderer;

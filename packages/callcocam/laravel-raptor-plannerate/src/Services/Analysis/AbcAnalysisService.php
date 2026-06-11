@@ -1,6 +1,6 @@
 <?php
 
-namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
+namespace Callcocam\LaravelRaptorPlannerate\Services\Analysis;
 
 use Callcocam\LaravelRaptorPlannerate\Models\Category;
 use Callcocam\LaravelRaptorPlannerate\Models\Layer;

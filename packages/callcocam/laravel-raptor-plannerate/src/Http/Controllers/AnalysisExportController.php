@@ -8,7 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
 
-use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AnalysisExportService;
+use Callcocam\LaravelRaptorPlannerate\Services\Analysis\AnalysisExportService;
 use Illuminate\Http\Response;
 
 /**

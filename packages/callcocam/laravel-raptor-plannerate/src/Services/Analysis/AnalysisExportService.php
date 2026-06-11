@@ -6,7 +6,7 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
+namespace Callcocam\LaravelRaptorPlannerate\Services\Analysis;
 
 use Callcocam\LaravelRaptorPlannerate\Models\GondolaAnalysis;
 use Illuminate\Http\Response;
