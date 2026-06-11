@@ -101,6 +101,7 @@ import {
     draggingSegmentShelfId,
     eanSearchQuery,
 } from '../../../composables/plannerate/core/useGondolaState';
+import { DND_KEYS, hasSegmentData, setSegmentDragData } from '../../../composables/plannerate/dnd/transfer';
 import { useAbcClassification } from '../../../composables/plannerate/analysis/useAbcClassification';
 import { usePaperAnalysis } from '../../../composables/plannerate/analysis/usePaperAnalysis';
 import { usePlanogramEditor } from '../../../composables/plannerate/core/usePlanogramEditor';
@@ -220,25 +221,12 @@ function handleDragStart(event: DragEvent) {
     draggingSegmentShelfId.value = props.segment.shelf_id || null;
 
     if (event.dataTransfer) {
-        // Define o tipo de operação: copy se Ctrl estiver pressionado, senão move
-        event.dataTransfer.effectAllowed =
-            event.ctrlKey || event.metaKey ? 'copy' : 'move';
-
-        // Define os dados do segmento
-        event.dataTransfer.setData(
-            'application/x-segment-id',
+        // Copy se Ctrl estiver pressionado, senão move (contrato em dnd/transfer)
+        setSegmentDragData(
+            event.dataTransfer,
             props.segment.id,
-        );
-        event.dataTransfer.setData(
-            'application/x-segment-shelf-id',
             props.segment.shelf_id || '',
-        );
-        event.dataTransfer.setData('text/plain', `Segment ${props.segment.id}`);
-
-        // Armazena se é cópia ou movimento
-        event.dataTransfer.setData(
-            'application/x-is-copy',
-            (event.ctrlKey || event.metaKey).toString(),
+            event.ctrlKey || event.metaKey,
         );
 
         // Define uma imagem de arrastar customizada
@@ -263,16 +251,14 @@ function handleDragOver(event: DragEvent) {
 return;
 }
 
-    const hasSegment = event.dataTransfer.types.includes('application/x-segment-id');
-
-    if (!hasSegment) {
+    if (!hasSegmentData(event.dataTransfer)) {
         isDropTarget.value = false;
 
         return;
     }
 
     // Só aceita segments (não produtos) da mesma shelf usando o estado global
-    const draggedSegmentId = event.dataTransfer.getData('application/x-segment-id');
+    const draggedSegmentId = event.dataTransfer.getData(DND_KEYS.SEGMENT_ID);
 
     // Nunca marca o próprio segmento como alvo
     if (draggedSegmentId === props.segment.id) {
@@ -320,9 +306,7 @@ return;
 
     isDropTarget.value = false;
 
-    const draggedSegmentId = event.dataTransfer.getData(
-        'application/x-segment-id',
-    );
+    const draggedSegmentId = event.dataTransfer.getData(DND_KEYS.SEGMENT_ID);
 
     if (draggedSegmentId && draggedSegmentId !== props.segment.id) {
         // Troca posições usando o editor (registra no histórico)

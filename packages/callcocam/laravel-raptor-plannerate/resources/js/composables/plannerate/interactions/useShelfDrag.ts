@@ -1,6 +1,7 @@
 import { onBeforeUnmount, ref  } from 'vue';
 import type {Ref} from 'vue';
 import type { Shelf as ShelfType } from '@/types/planogram';
+import { setShelfDragData } from '../dnd/transfer';
 import {
     draggingShelfId,
     draggingShelfOffset,
@@ -78,9 +79,7 @@ return;
         draggingShelfOffset.value = event.clientY - rect.top;
 
         if (event.dataTransfer) {
-            event.dataTransfer.effectAllowed = 'move';
-            event.dataTransfer.setData('shelfId', options.shelf.value.id);
-            event.dataTransfer.setData('sectionId', options.sectionId.value);
+            setShelfDragData(event.dataTransfer, options.shelf.value.id, options.sectionId.value);
             event.dataTransfer.setDragImage(target, event.offsetX, event.offsetY);
         }
     }

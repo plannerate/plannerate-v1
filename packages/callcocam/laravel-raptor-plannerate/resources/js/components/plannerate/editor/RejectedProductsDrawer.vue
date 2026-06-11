@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
+import { setRejectedProductDragData } from '@/composables/plannerate/dnd/transfer';
 import { useRejectedProductsStore } from '@/composables/plannerate/interactions/useRejectedProductsStore';
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
 import { selectedTemplateCategoryId } from '@/composables/plannerate/core/useGondolaState';
@@ -128,11 +129,8 @@ function handleDragStart(event: DragEvent, product: RejectedProduct) {
     draggingId.value = product.id;
     if (!event.dataTransfer) return;
     const productObj = buildProduct(product);
-    event.dataTransfer.effectAllowed = 'copy';
-    event.dataTransfer.setData('application/x-product-id', productObj.id);
-    event.dataTransfer.setData('application/x-product', JSON.stringify(productObj));
+    setRejectedProductDragData(event.dataTransfer, product.id, productObj);
     event.dataTransfer.setData('text/plain', productObj.name ?? '');
-    event.dataTransfer.setData('application/x-rejected-id', product.id);
 }
 
 function handleDragEnd() {
