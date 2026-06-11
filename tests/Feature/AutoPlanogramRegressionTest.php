@@ -1,13 +1,13 @@
 <?php
 
-use App\Services\AutoPlanogram\AutoPlanogramService;
-use App\Services\AutoPlanogram\DTO\PlacedSegment;
-use App\Services\AutoPlanogram\DTO\PlacementSettings;
-use App\Services\AutoPlanogram\DTO\PlanogramInput;
-use App\Services\AutoPlanogram\DTO\ScoredProduct;
-use App\Services\AutoPlanogram\Placement\PlanogramWriterInterface;
-use App\Services\AutoPlanogram\Scoring\ProductScorerInterface;
-use App\Services\AutoPlanogram\Validation\PlanogramValidator;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\AutoPlanogramService;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacedSegment;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementSettings;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramInput;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\ScoredProduct;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\PlanogramWriterInterface;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\ProductScorerInterface;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\PlanogramValidator;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Shelf;

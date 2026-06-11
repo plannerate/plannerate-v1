@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\AdjacencyRuleRequest;
-use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\ScoringWeightsValue;
 use Callcocam\LaravelRaptorPlannerate\Enums\AdjacencyRuleType;
 use Callcocam\LaravelRaptorPlannerate\Models\AdjacencyRule;
 use Callcocam\LaravelRaptorPlannerate\Models\ScoringWeights;

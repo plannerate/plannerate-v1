@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
-use App\Services\AutoPlanogram\AutoGenerationRunner;
-use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
-use App\Services\AutoPlanogram\Placement\ExposureRedistributeService;
-use App\Services\AutoPlanogram\Placement\VisualReorderService;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\AutoGenerationRunner;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\AutoGenerateConfigDTO;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\ExposureRedistributeService;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\VisualReorderService;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\AutoGeneratePlanogramRequest;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;

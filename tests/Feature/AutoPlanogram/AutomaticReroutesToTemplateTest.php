@@ -1,11 +1,11 @@
 <?php
 
 use App\Models\Category;
-use App\Services\AutoPlanogram\DTO\CategoryAbcSummary;
-use App\Services\AutoPlanogram\DTO\PlacementSettings;
-use App\Services\AutoPlanogram\DTO\PlanogramInput;
-use App\Services\AutoPlanogram\DTO\ScoredProduct;
-use App\Services\AutoPlanogram\Synthesis\AutoTemplateSynthesisOrchestrator;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\CategoryAbcSummary;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementSettings;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramInput;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\ScoredProduct;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Synthesis\AutoTemplateSynthesisOrchestrator;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;

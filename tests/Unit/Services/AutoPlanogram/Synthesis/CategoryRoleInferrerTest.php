@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\Category;
-use App\Services\AutoPlanogram\DTO\CategoryAbcSummary;
-use App\Services\AutoPlanogram\Synthesis\CategoryRoleInferrer;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\CategoryAbcSummary;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Synthesis\CategoryRoleInferrer;
 use Callcocam\LaravelRaptorPlannerate\Enums\CategoryRole;
 use Illuminate\Support\Str;
 

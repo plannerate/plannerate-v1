@@ -1,0 +1,19 @@
+<?php
+
+namespace Callcocam\LaravelRaptorPlannerate\AutoPlanogram;
+
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramOutput;
+
+/**
+ * Resultado da orquestração de geração (AutoGenerationRunner).
+ */
+final class AutoGenerationResult
+{
+    public function __construct(
+        public readonly PlanogramOutput $output,
+        /** ID do template sintetizado quando a gôndola foi promovida de automático para template-mode */
+        public readonly ?string $synthTemplateId,
+        /** Total de produtos únicos passados como entrada ao gerador */
+        public readonly int $totalInputProducts = 0,
+    ) {}
+}

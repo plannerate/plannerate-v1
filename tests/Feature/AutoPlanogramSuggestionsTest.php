@@ -1,8 +1,8 @@
 <?php
 
-use App\Services\AutoPlanogram\DTO\PlanogramOutput;
-use App\Services\AutoPlanogram\DTO\ValidationReport;
-use App\Services\AutoPlanogram\Template\SlotSuggestionGenerator;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramOutput;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\ValidationReport;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Template\SlotSuggestionGenerator;
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 

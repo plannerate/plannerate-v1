@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
-use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\ScoringWeightsValue;
 use Callcocam\LaravelRaptorPlannerate\Enums\ShelfLevel;
 use Callcocam\LaravelRaptorPlannerate\Models\ScoringWeights;
 use Callcocam\LaravelRaptorPlannerate\Models\ShelfLevelPreference;

@@ -9,11 +9,11 @@
  * zona quente nunca é aplicada.
  */
 
-use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
-use App\Services\AutoPlanogram\Placement\TemplatePlacementEngine;
-use App\Services\AutoPlanogram\ProductOrderingService;
-use App\Services\AutoPlanogram\ProductSizeResolver;
-use App\Services\AutoPlanogram\ProductWidthResolver;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\GreedyShelfPlacer;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\TemplatePlacementEngine;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ProductOrderingService;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ProductSizeResolver;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ProductWidthResolver;
 use Callcocam\LaravelRaptorPlannerate\Enums\ZonePriority;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Section;

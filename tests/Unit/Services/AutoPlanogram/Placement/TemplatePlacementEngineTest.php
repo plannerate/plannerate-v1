@@ -1,11 +1,11 @@
 <?php
 
-use App\Services\AutoPlanogram\DTO\PlacementSettings;
-use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
-use App\Services\AutoPlanogram\Placement\TemplatePlacementEngine;
-use App\Services\AutoPlanogram\ProductOrderingService;
-use App\Services\AutoPlanogram\ProductSizeResolver;
-use App\Services\AutoPlanogram\ProductWidthResolver;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementSettings;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\GreedyShelfPlacer;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\TemplatePlacementEngine;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ProductOrderingService;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ProductSizeResolver;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ProductWidthResolver;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Illuminate\Support\Collection;
@@ -183,7 +183,7 @@ test('findCandidates exclui produto já posicionado em slot anterior da mesma ca
 
 // ── PlacementResult: campos de descasamento de módulos ───────────────────────
 
-use App\Services\AutoPlanogram\DTO\PlacementResult;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementResult;
 use Callcocam\LaravelRaptorPlannerate\Enums\BrandExposure;
 use Callcocam\LaravelRaptorPlannerate\Enums\FacingExpansion;
 use Callcocam\LaravelRaptorPlannerate\Enums\PriceOrder;

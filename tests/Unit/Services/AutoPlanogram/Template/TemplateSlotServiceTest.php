@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\AutoPlanogram\Template\TemplateSlotService;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Template\TemplateSlotService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 

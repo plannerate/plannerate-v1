@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Settings\PlanogramSettingsController;
-use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\ScoringWeightsValue;
 use Illuminate\Support\Facades\Validator;
 
 // ── ScoringWeightsValue defaults ──────────────────────────────────────────────

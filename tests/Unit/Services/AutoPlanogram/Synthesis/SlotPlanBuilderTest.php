@@ -1,9 +1,9 @@
 <?php
 
 use App\Models\Category;
-use App\Services\AutoPlanogram\DTO\CategoryAbcSummary;
-use App\Services\AutoPlanogram\DTO\PlacementSettings;
-use App\Services\AutoPlanogram\Synthesis\SlotPlanBuilder;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\CategoryAbcSummary;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementSettings;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Synthesis\SlotPlanBuilder;
 use Callcocam\LaravelRaptorPlannerate\Enums\CategoryRole;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;

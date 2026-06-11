@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\Category;
-use App\Services\AutoPlanogram\DTO\SlotPlanEntry;
-use App\Services\AutoPlanogram\Synthesis\AutoTemplateSynthesizer;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\SlotPlanEntry;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Synthesis\AutoTemplateSynthesizer;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;

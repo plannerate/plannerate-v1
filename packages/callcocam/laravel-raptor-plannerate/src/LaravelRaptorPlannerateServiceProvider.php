@@ -3,6 +3,21 @@
 namespace Callcocam\LaravelRaptorPlannerate;
 
 use App\Http\Middleware\SetPermissionTeamContext;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\GreedyShelfPlacer;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\PlacementEngineInterface;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\PlanogramWriter;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\PlanogramWriterInterface;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ProductWidthResolver;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\CompositeScorer;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\ProductScorerInterface;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\PlanogramValidator;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\Rules\AdjacencyRule;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\Rules\BlockIntegrityRule;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\Rules\EmptyShelfRule;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\Rules\FacingMinimumRule;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\Rules\SectionCapacityRule;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\Rules\ShelfLevelRule;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\Rules\UnplacedProductsRule;
 use Callcocam\LaravelRaptorPlannerate\Commands\SyncPlannerateMigrationsCommand;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
@@ -24,12 +39,47 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
             ->hasCommand(SyncPlannerateMigrationsCommand::class);
     }
 
+    public function packageRegistered(): void
+    {
+        $this->registerAutoPlanogramBindings();
+    }
+
     public function packageBooted(): void
     {
         $this->registerPolicyBindings();
         $this->registerPlannerateRoutes();
         $this->registerExportRoutes();
         $this->registerEditorApiRoutes();
+    }
+
+    /**
+     * Bindings DI do motor de geração automática (AutoPlanograma).
+     *
+     * Antes viviam em App\Providers\AutoPlanogramServiceProvider — fundidos aqui
+     * quando o AutoPlanograma migrou para dentro do pacote (Etapa 5 da refatoração).
+     */
+    protected function registerAutoPlanogramBindings(): void
+    {
+        $this->app->singleton(ProductWidthResolver::class, fn () => new ProductWidthResolver(
+            defaultWidth: 10.0,
+            maxPlausible: 60.0,
+        ));
+
+        $this->app->bind(ProductScorerInterface::class, CompositeScorer::class);
+        $this->app->bind(PlacementEngineInterface::class, GreedyShelfPlacer::class);
+        $this->app->bind(PlanogramWriterInterface::class, PlanogramWriter::class);
+
+        $this->app->singleton(PlanogramValidator::class, function () {
+            return new PlanogramValidator([
+                new BlockIntegrityRule,
+                new AdjacencyRule,
+                new ShelfLevelRule,
+                new FacingMinimumRule,
+                new SectionCapacityRule,
+                new EmptyShelfRule,
+                new UnplacedProductsRule,
+            ]);
+        });
     }
 
     protected function registerPolicyBindings(): void

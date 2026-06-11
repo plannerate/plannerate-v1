@@ -1,12 +1,12 @@
 <?php
 
 use App\Models\Product;
-use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
-use App\Services\AutoPlanogram\Placement\TemplatePlacementEngine;
-use App\Services\AutoPlanogram\ProductOrderingService;
-use App\Services\AutoPlanogram\ProductSizeResolver;
-use App\Services\AutoPlanogram\ProductWidthResolver;
-use App\Services\AutoPlanogram\Template\SlotReviewAnalysisService;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\GreedyShelfPlacer;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\TemplatePlacementEngine;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ProductOrderingService;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ProductSizeResolver;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ProductWidthResolver;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Template\SlotReviewAnalysisService;
 use Callcocam\LaravelRaptorPlannerate\Enums\BrandExposure;
 use Callcocam\LaravelRaptorPlannerate\Enums\PriceOrder;
 use Callcocam\LaravelRaptorPlannerate\Enums\SizeOrder;

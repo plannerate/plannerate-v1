@@ -1,9 +1,9 @@
 <?php
 
-use App\Services\AutoPlanogram\DTO\PlacementSettings;
-use App\Services\AutoPlanogram\Scoring\CompositeScorer;
-use App\Services\AutoPlanogram\Scoring\SalesMetricsRepository;
-use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementSettings;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\CompositeScorer;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\SalesMetricsRepository;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\ScoringWeightsValue;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;

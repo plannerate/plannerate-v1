@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\AutoPlanogram\Template\SlotSuggestionGenerator;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Template\SlotSuggestionGenerator;
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 

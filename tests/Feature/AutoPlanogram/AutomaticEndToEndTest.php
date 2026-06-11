@@ -15,12 +15,12 @@
  */
 
 use App\Models\Category;
-use App\Services\AutoPlanogram\AutoPlanogramService;
-use App\Services\AutoPlanogram\DTO\PlacementSettings;
-use App\Services\AutoPlanogram\DTO\PlanogramInput;
-use App\Services\AutoPlanogram\DTO\PlanogramOutput;
-use App\Services\AutoPlanogram\DTO\ScoredProduct;
-use App\Services\AutoPlanogram\Scoring\ProductScorerInterface;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\AutoPlanogramService;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementSettings;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramInput;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramOutput;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\ScoredProduct;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\ProductScorerInterface;
 use Callcocam\LaravelRaptorPlannerate\Models\Layer;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramRejectedProduct;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;

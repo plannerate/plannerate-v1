@@ -1,8 +1,8 @@
 <?php
 
-use App\Services\AutoPlanogram\DTO\PlacedLayer;
-use App\Services\AutoPlanogram\DTO\PlacedSegment;
-use App\Services\AutoPlanogram\Placement\RejectedProductsWriter;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacedLayer;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacedSegment;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Placement\RejectedProductsWriter;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
 
