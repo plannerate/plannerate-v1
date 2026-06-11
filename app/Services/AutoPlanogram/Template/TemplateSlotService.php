@@ -2,9 +2,9 @@
 
 namespace App\Services\AutoPlanogram\Template;
 
-use App\Models\PlanogramRejectedProduct;
 use Callcocam\LaravelRaptorPlannerate\Enums\FlowDirection;
 use Callcocam\LaravelRaptorPlannerate\Enums\ZonePriority;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramRejectedProduct;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

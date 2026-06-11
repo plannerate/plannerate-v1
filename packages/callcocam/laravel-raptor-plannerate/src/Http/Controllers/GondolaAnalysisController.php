@@ -8,8 +8,8 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\GondolaAnalysis;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\GondolaAnalysis;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\AbcAnalysisService;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\PaperAnalysisService;
 use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\TargetStockService;

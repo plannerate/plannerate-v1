@@ -5,7 +5,7 @@ namespace App\Services\AutoPlanogram\Placement;
 use App\Services\AutoPlanogram\DTO\OrderedBlock;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Section;
 use Illuminate\Support\Collection;
 
 interface PlacementEngineInterface

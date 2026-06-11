@@ -8,7 +8,6 @@
  * Clearance ausente (null) desativa a checagem (compatibilidade com gôndolas legadas).
  */
 
-use App\Models\PlanogramTemplateSlot;
 use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
 use App\Services\AutoPlanogram\Placement\TemplatePlacementEngine;
 use App\Services\AutoPlanogram\ProductOrderingService;
@@ -20,9 +19,10 @@ use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Enums\PriceOrder;
 use Callcocam\LaravelRaptorPlannerate\Enums\SizeOrder;
 use Callcocam\LaravelRaptorPlannerate\Enums\SpaceFallback;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Shelf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 

@@ -3,13 +3,13 @@
 namespace App\Services\AutoPlanogram\Validation\Rules;
 
 use App\Models\Product;
-use App\Models\ShelfLevelPreference;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\Validation\ValidationResult;
 use App\Services\AutoPlanogram\Validation\ValidationRuleInterface;
 use Callcocam\LaravelRaptorPlannerate\Enums\ShelfLevel;
+use Callcocam\LaravelRaptorPlannerate\Models\ShelfLevelPreference;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 

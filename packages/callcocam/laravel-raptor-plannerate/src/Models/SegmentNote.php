@@ -1,6 +1,6 @@
 <?php
 
-namespace Callcocam\LaravelRaptorPlannerate\Models\Editor;
+namespace Callcocam\LaravelRaptorPlannerate\Models;
 
 use App\Models\Traits\BelongsToTenant;
 use App\Models\User;

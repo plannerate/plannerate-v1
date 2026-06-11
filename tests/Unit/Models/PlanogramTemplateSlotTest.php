@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\PlanogramTemplateSlot;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 
 test('grouping_normalized não é mais derivado de grouping no slot', function (): void {
     $slot = new PlanogramTemplateSlot;

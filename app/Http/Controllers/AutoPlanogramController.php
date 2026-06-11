@@ -3,18 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
-use App\Models\PlanogramRejectedProduct;
-use App\Models\PlanogramSubtemplate;
-use App\Models\PlanogramTemplateSlot;
 use App\Services\AutoPlanogram\AutoGenerationRunner;
 use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use App\Services\AutoPlanogram\Placement\ExposureRedistributeService;
 use App\Services\AutoPlanogram\Placement\VisualReorderService;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\AutoGeneratePlanogramRequest;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Layer;
+use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramRejectedProduct;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

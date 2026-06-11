@@ -4,7 +4,7 @@ use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\Scoring\CompositeScorer;
 use App\Services\AutoPlanogram\Scoring\SalesMetricsRepository;
 use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 

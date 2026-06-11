@@ -1,6 +1,6 @@
 <?php
 
-namespace Callcocam\LaravelRaptorPlannerate\Models\Editor;
+namespace Callcocam\LaravelRaptorPlannerate\Models;
 
 /**
  * Alias for App\Models\User — kept for backwards compatibility within the package.

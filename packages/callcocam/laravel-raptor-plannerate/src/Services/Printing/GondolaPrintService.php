@@ -2,7 +2,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Printing;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Services\QRCode\QRCodeService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;

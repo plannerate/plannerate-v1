@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\PlanogramTemplateSlot;
 use App\Models\Product;
 use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
 use App\Services\AutoPlanogram\Placement\TemplatePlacementEngine;
@@ -12,6 +11,7 @@ use Callcocam\LaravelRaptorPlannerate\Enums\BrandExposure;
 use Callcocam\LaravelRaptorPlannerate\Enums\PriceOrder;
 use Callcocam\LaravelRaptorPlannerate\Enums\SizeOrder;
 use Callcocam\LaravelRaptorPlannerate\Enums\ZonePriority;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 

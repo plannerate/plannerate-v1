@@ -2,16 +2,16 @@
 
 namespace App\Services\AutoPlanogram;
 
-use App\Models\PlanogramSubtemplate;
-use App\Models\PlanogramTemplateSlot;
 use App\Models\Scopes\TenantScope;
-use App\Models\ScoringWeights;
 use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
+use Callcocam\LaravelRaptorPlannerate\Models\ScoringWeights;
 
 /**
  * Orquestra a geração de um planograma para uma gôndola: seleção/score de produtos,

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace Callcocam\LaravelRaptorPlannerate\Models;
 
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PlanogramSubtemplate extends Model
@@ -70,7 +69,7 @@ class PlanogramSubtemplate extends Model
             );
         }
 
-        return DB::transaction(function () use ($targetModules): self {
+        return $this->getConnection()->transaction(function () use ($targetModules): self {
             $clone = self::withTrashed()
                 ->where('template_id', $this->template_id)
                 ->where('num_modules', $targetModules)

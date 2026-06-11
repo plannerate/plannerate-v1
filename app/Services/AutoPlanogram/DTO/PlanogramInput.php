@@ -2,8 +2,8 @@
 
 namespace App\Services\AutoPlanogram\DTO;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Section;
 use Illuminate\Support\Collection;
 
 /**

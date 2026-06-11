@@ -4,8 +4,8 @@ namespace Callcocam\LaravelRaptorPlannerate;
 
 use App\Http\Middleware\SetPermissionTeamContext;
 use Callcocam\LaravelRaptorPlannerate\Commands\SyncPlannerateMigrationsCommand;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Policies\GondolaPolicy;
 use Callcocam\LaravelRaptorPlannerate\Policies\PlanogramPolicy;
 use Illuminate\Support\Facades\Gate;

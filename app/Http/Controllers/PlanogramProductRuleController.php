@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PlanogramProductRule;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramProductRule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

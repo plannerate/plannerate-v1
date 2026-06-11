@@ -2,11 +2,11 @@
 
 use App\Http\Controllers\GondolaSlotOverrideController;
 use App\Models\Gondola;
-use App\Models\GondolaSlotOverride;
-use App\Models\PlanogramSubtemplate;
-use App\Models\PlanogramTemplate;
-use App\Models\PlanogramTemplateSlot;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\GondolaSlotOverride;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
+use Callcocam\LaravelRaptorPlannerate\Models\Section;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;

@@ -8,7 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Section;
 
 /**
  * Serviço compartilhado para criação física de prateleiras dentro do envelope de uma seção.

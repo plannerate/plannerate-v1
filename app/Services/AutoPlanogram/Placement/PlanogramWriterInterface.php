@@ -3,7 +3,7 @@
 namespace App\Services\AutoPlanogram\Placement;
 
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Section;
 use Illuminate\Support\Collection;
 
 interface PlanogramWriterInterface

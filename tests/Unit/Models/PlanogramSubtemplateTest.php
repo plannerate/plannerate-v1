@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\PlanogramSubtemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
 
 test('cloneWithSlots lança InvalidArgumentException quando targetModules igual ao atual', function (): void {
     $sub = new PlanogramSubtemplate;

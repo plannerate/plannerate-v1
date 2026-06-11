@@ -4,7 +4,7 @@ use App\Services\AutoPlanogram\DTO\PlacedLayer;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
 use App\Services\AutoPlanogram\Placement\RejectedProductsWriter;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
 
 function writerTestProduct(string $id, float $width = 20.0, float $height = 33.0): Product
 {

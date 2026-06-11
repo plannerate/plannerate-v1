@@ -2,7 +2,7 @@
 
 namespace App\Services\AutoPlanogram\DTO;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
 
 /**
  * Produto com score calculado pelo scorer, pronto para agrupamento.

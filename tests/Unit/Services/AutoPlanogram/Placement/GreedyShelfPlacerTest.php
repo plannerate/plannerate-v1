@@ -7,9 +7,9 @@ use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use App\Services\AutoPlanogram\Placement\GreedyShelfPlacer;
 use App\Services\AutoPlanogram\ProductWidthResolver;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Shelf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 

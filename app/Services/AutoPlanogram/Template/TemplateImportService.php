@@ -3,9 +3,9 @@
 namespace App\Services\AutoPlanogram\Template;
 
 use App\Models\Category;
-use App\Models\PlanogramSubtemplate;
-use App\Models\PlanogramTemplate;
-use App\Models\PlanogramTemplateSlot;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;

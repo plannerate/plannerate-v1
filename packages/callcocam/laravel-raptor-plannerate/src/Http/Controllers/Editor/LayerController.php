@@ -9,7 +9,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
+use Callcocam\LaravelRaptorPlannerate\Models\Layer;
 use Illuminate\Http\Request;
 
 class LayerController extends Controller

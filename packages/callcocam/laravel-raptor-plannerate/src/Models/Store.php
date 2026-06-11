@@ -6,7 +6,7 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\Models\Editor;
+namespace Callcocam\LaravelRaptorPlannerate\Models;
 
 use App\Models\Address;
 use App\Models\Traits\BelongsToTenant;

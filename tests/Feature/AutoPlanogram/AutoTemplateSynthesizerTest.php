@@ -1,11 +1,11 @@
 <?php
 
 use App\Models\Category;
-use App\Models\PlanogramSubtemplate;
-use App\Models\PlanogramTemplate;
-use App\Models\PlanogramTemplateSlot;
 use App\Services\AutoPlanogram\DTO\SlotPlanEntry;
 use App\Services\AutoPlanogram\Synthesis\AutoTemplateSynthesizer;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;

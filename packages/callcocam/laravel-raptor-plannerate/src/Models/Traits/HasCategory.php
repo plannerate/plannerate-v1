@@ -8,7 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Models\Traits;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Category;
+use Callcocam\LaravelRaptorPlannerate\Models\Category;
 use Illuminate\Support\Str;
 
 trait HasCategory

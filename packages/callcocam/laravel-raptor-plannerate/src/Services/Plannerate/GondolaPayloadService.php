@@ -2,14 +2,14 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
-use App\Models\PlanogramTemplate;
-use App\Models\PlanogramTemplateSlot;
 use App\Models\Tenant;
 use App\Models\WorkflowGondolaExecution;
 use App\Support\Modules\ModuleSlug;
 use App\Support\Modules\TenantModuleService;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Store;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
+use Callcocam\LaravelRaptorPlannerate\Models\Store;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 

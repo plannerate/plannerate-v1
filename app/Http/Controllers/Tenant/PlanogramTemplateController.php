@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
-use App\Models\PlanogramTemplate;
 use App\Models\Tenant;
 use App\Services\AutoPlanogram\Template\TemplateExportService;
 use App\Services\AutoPlanogram\Template\TemplateImportService;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;

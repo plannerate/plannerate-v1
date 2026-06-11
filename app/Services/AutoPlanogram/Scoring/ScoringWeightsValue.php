@@ -2,7 +2,7 @@
 
 namespace App\Services\AutoPlanogram\Scoring;
 
-use App\Models\ScoringWeights;
+use Callcocam\LaravelRaptorPlannerate\Models\ScoringWeights;
 
 final readonly class ScoringWeightsValue
 {

@@ -3,10 +3,10 @@
 namespace App\Services\AutoPlanogram\Synthesis;
 
 use App\Models\Category;
-use App\Models\PlanogramSubtemplate;
 use App\Services\AutoPlanogram\DTO\CategoryAbcSummary;
 use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;

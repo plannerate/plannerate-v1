@@ -8,10 +8,10 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\MonthlySalesSummary;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Sale;
+use Callcocam\LaravelRaptorPlannerate\Models\Layer;
+use Callcocam\LaravelRaptorPlannerate\Models\MonthlySalesSummary;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Sale;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -53,10 +53,10 @@ class PaperAnalysisService
     /**
      * Executa a análise de papel para uma lista de produtos da gôndola.
      *
-     * @param  array   $productIds      IDs dos produtos fisicamente alocados na gôndola
-     * @param  string  $tableType       Fonte dos dados: 'sales' ou 'monthly_summaries'
-     * @param  array   $currentFilters  Filtros do período atual (obrigatório: tenant_id)
-     * @param  array   $previousFilters Filtros do período anterior (calculado automaticamente se vazio)
+     * @param  array  $productIds  IDs dos produtos fisicamente alocados na gôndola
+     * @param  string  $tableType  Fonte dos dados: 'sales' ou 'monthly_summaries'
+     * @param  array  $currentFilters  Filtros do período atual (obrigatório: tenant_id)
+     * @param  array  $previousFilters  Filtros do período anterior (calculado automaticamente se vazio)
      */
     public function analyzeByProductIds(
         array $productIds,
@@ -94,25 +94,25 @@ class PaperAnalysisService
         }
 
         Log::info('PaperAnalysis - Iniciando cálculo', [
-            'tenant_id'        => $currentFilters['tenant_id'],
-            'table_type'       => $tableType,
-            'product_count'    => count($productIds),
-            'current_filters'  => $currentFilters,
+            'tenant_id' => $currentFilters['tenant_id'],
+            'table_type' => $tableType,
+            'product_count' => count($productIds),
+            'current_filters' => $currentFilters,
             'previous_filters' => $previousFilters,
         ]);
 
         Log::info('PaperAnalysis - Produtos e codigos_erp', [
-            'product_ids_count'  => count($productIds),
-            'codigos_erp_count'  => count($codigosErp),
-            'previous_filters'   => $previousFilters,
+            'product_ids_count' => count($productIds),
+            'codigos_erp_count' => count($codigosErp),
+            'previous_filters' => $previousFilters,
         ]);
 
         // Busca dados agregados dos dois períodos
-        $currentData  = $this->getSalesData($codigosErp, $productIds, $tableType, $currentFilters);
+        $currentData = $this->getSalesData($codigosErp, $productIds, $tableType, $currentFilters);
         $previousData = $this->getSalesData($codigosErp, $productIds, $tableType, $previousFilters);
 
         Log::info('PaperAnalysis - Vendas encontradas', [
-            'current_data_rows'  => $currentData->count(),
+            'current_data_rows' => $currentData->count(),
             'previous_data_rows' => $previousData->count(),
         ]);
 
@@ -124,15 +124,15 @@ class PaperAnalysisService
             $previous = $previousByProduct->get($current->product_id);
 
             return (object) [
-                'product_id'      => $current->product_id,
-                'category_id'     => $current->category_id,
-                'valor_atual'     => (float) ($current->valor ?? 0),
-                'valor_anterior'  => (float) ($previous?->valor ?? 0),
+                'product_id' => $current->product_id,
+                'category_id' => $current->category_id,
+                'valor_atual' => (float) ($current->valor ?? 0),
+                'valor_anterior' => (float) ($previous?->valor ?? 0),
             ];
         });
 
         // Inclui produtos sem venda no período atual (valor zero) para não sumir da análise
-        $productsWithCurrentSales    = $currentData->pluck('product_id')->toArray();
+        $productsWithCurrentSales = $currentData->pluck('product_id')->toArray();
         $productsWithoutCurrentSales = array_diff($productIds, $productsWithCurrentSales);
 
         if (! empty($productsWithoutCurrentSales)) {
@@ -145,9 +145,9 @@ class PaperAnalysisService
                     $previous = $previousByProduct->get($p->id);
 
                     return (object) [
-                        'product_id'     => $p->id,
-                        'category_id'    => $p->category_id,
-                        'valor_atual'    => 0.0,
+                        'product_id' => $p->id,
+                        'category_id' => $p->category_id,
+                        'valor_atual' => 0.0,
                         'valor_anterior' => (float) ($previous?->valor ?? 0),
                     ];
                 });
@@ -174,19 +174,19 @@ class PaperAnalysisService
                 : ($item->valor_atual > 0 ? 100.0 : 0.0);
 
             return (object) [
-                'product_id'     => $item->product_id,
-                'category_id'    => $item->category_id,
-                'valor_atual'    => $item->valor_atual,
+                'product_id' => $item->product_id,
+                'category_id' => $item->category_id,
+                'valor_atual' => $item->valor_atual,
                 'valor_anterior' => $item->valor_anterior,
-                'market_share'   => round($marketShare, 4),
-                'growth_rate'    => round($growthRate, 4),
+                'market_share' => round($marketShare, 4),
+                'growth_rate' => round($growthRate, 4),
             ];
         });
 
         // Mediana do market_share por categoria — usada como divisor entre alto e baixo share
         $shareThresholds = $withMetrics->groupBy('category_id')->map(function ($items) {
             $shares = $items->pluck('market_share')->sort()->values();
-            $count  = $shares->count();
+            $count = $shares->count();
 
             if ($count === 0) {
                 return 0.0;
@@ -210,29 +210,29 @@ class PaperAnalysisService
         // Classifica cada produto e monta o resultado final
         return $withMetrics->map(function ($item) use ($shareThresholds, $productsData) {
             $shareThreshold = (float) ($shareThresholds->get($item->category_id) ?? 0);
-            $role           = $this->classifyRole($item->market_share, $item->growth_rate, $shareThreshold);
-            $product        = $productsData->get($item->product_id);
+            $role = $this->classifyRole($item->market_share, $item->growth_rate, $shareThreshold);
+            $product = $productsData->get($item->product_id);
 
             return [
-                'product_id'           => $item->product_id,
-                'product_name'         => $product?->name ?? '',
-                'ean'                  => $product?->ean ?? '',
-                'image_url'            => $product?->image_url ?? null,
-                'category_id'          => $item->category_id,
-                'category_name'        => $product?->category?->name ?? '',
-                'role'                 => $role,
-                'market_share'         => $item->market_share,
-                'growth_rate'          => $item->growth_rate,
-                'total_value_current'  => $item->valor_atual,
+                'product_id' => $item->product_id,
+                'product_name' => $product?->name ?? '',
+                'ean' => $product?->ean ?? '',
+                'image_url' => $product?->image_url ?? null,
+                'category_id' => $item->category_id,
+                'category_name' => $product?->category?->name ?? '',
+                'role' => $role,
+                'market_share' => $item->market_share,
+                'growth_rate' => $item->growth_rate,
+                'total_value_current' => $item->valor_atual,
                 'total_value_previous' => $item->valor_anterior,
-                'share_threshold'      => round($shareThreshold, 4),
+                'share_threshold' => round($shareThreshold, 4),
             ];
         })->values()->tap(function ($results) {
             Log::info('PaperAnalysis - Resultado final', [
-                'total'   => $results->count(),
-                'leader'  => $results->where('role', 'leader')->count(),
-                'anchor'  => $results->where('role', 'anchor')->count(),
-                'rising'  => $results->where('role', 'rising')->count(),
+                'total' => $results->count(),
+                'leader' => $results->where('role', 'leader')->count(),
+                'anchor' => $results->where('role', 'anchor')->count(),
+                'rising' => $results->where('role', 'rising')->count(),
                 'lagging' => $results->where('role', 'lagging')->count(),
             ]);
         });
@@ -269,14 +269,14 @@ class PaperAnalysisService
      */
     private function classifyRole(float $marketShare, float $growthRate, float $shareThreshold): string
     {
-        $isHighShare  = $marketShare >= $shareThreshold;
+        $isHighShare = $marketShare >= $shareThreshold;
         $isHighGrowth = $growthRate >= $this->growthThreshold;
 
         return match (true) {
-            $isHighShare && $isHighGrowth    => 'leader',
-            $isHighShare && ! $isHighGrowth  => 'anchor',
-            ! $isHighShare && $isHighGrowth  => 'rising',
-            default                          => 'lagging',
+            $isHighShare && $isHighGrowth => 'leader',
+            $isHighShare && ! $isHighGrowth => 'anchor',
+            ! $isHighShare && $isHighGrowth => 'rising',
+            default => 'lagging',
         };
     }
 
@@ -292,19 +292,19 @@ class PaperAnalysisService
         ]), ARRAY_FILTER_USE_KEY);
 
         if ($tableType === 'monthly_summaries' && isset($currentFilters['start_month'], $currentFilters['end_month'])) {
-            $start      = Carbon::createFromFormat('Y-m', $currentFilters['start_month']);
-            $end        = Carbon::createFromFormat('Y-m', $currentFilters['end_month']);
+            $start = Carbon::createFromFormat('Y-m', $currentFilters['start_month']);
+            $end = Carbon::createFromFormat('Y-m', $currentFilters['end_month']);
             $diffMonths = $start->diffInMonths($end) + 1;
 
             $previous['start_month'] = $start->subMonths($diffMonths)->format('Y-m');
-            $previous['end_month']   = $end->subMonths($diffMonths)->format('Y-m');
+            $previous['end_month'] = $end->subMonths($diffMonths)->format('Y-m');
         } elseif (isset($currentFilters['date_from'], $currentFilters['date_to'])) {
-            $from     = Carbon::parse($currentFilters['date_from']);
-            $to       = Carbon::parse($currentFilters['date_to']);
+            $from = Carbon::parse($currentFilters['date_from']);
+            $to = Carbon::parse($currentFilters['date_to']);
             $diffDays = $from->diffInDays($to) + 1;
 
             $previous['date_from'] = $from->subDays($diffDays)->format('Y-m-d');
-            $previous['date_to']   = $to->subDays($diffDays)->format('Y-m-d');
+            $previous['date_to'] = $to->subDays($diffDays)->format('Y-m-d');
         }
 
         return $previous;
@@ -322,7 +322,7 @@ class PaperAnalysisService
 
         $query = match ($tableType) {
             'monthly_summaries' => $this->getMonthlySummariesQuery($codigosErp, $productIds, $filters),
-            default             => $this->getSalesQuery($codigosErp, $productIds, $filters),
+            default => $this->getSalesQuery($codigosErp, $productIds, $filters),
         };
 
         return $query->get()->toBase();

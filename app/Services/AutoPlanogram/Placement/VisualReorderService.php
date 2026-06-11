@@ -2,11 +2,11 @@
 
 namespace App\Services\AutoPlanogram\Placement;
 
-use App\Models\PlanogramTemplateSlot;
 use App\Services\AutoPlanogram\ProductOrderingService;
 use App\Services\AutoPlanogram\ProductWidthResolver;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Segment;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
+use Callcocam\LaravelRaptorPlannerate\Models\Segment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 

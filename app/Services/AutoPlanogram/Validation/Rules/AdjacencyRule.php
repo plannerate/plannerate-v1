@@ -2,7 +2,6 @@
 
 namespace App\Services\AutoPlanogram\Validation\Rules;
 
-use App\Models\AdjacencyRule as AdjacencyRuleModel;
 use App\Models\Product;
 use App\Services\AutoPlanogram\DTO\PlacedSegment;
 use App\Services\AutoPlanogram\DTO\PlacementResult;
@@ -10,6 +9,7 @@ use App\Services\AutoPlanogram\DTO\PlanogramInput;
 use App\Services\AutoPlanogram\Validation\ValidationResult;
 use App\Services\AutoPlanogram\Validation\ValidationRuleInterface;
 use Callcocam\LaravelRaptorPlannerate\Enums\AdjacencyRuleType;
+use Callcocam\LaravelRaptorPlannerate\Models\AdjacencyRule as AdjacencyRuleModel;
 use Illuminate\Support\Collection;
 
 /**

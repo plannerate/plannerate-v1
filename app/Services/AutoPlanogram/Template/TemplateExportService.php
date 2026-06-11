@@ -2,12 +2,12 @@
 
 namespace App\Services\AutoPlanogram\Template;
 
-use App\Models\PlanogramTemplate;
 use Callcocam\LaravelRaptorPlannerate\Enums\BrandExposure;
 use Callcocam\LaravelRaptorPlannerate\Enums\FlavorExposure;
 use Callcocam\LaravelRaptorPlannerate\Enums\PriceOrder;
 use Callcocam\LaravelRaptorPlannerate\Enums\SizeOrder;
 use Callcocam\LaravelRaptorPlannerate\Enums\SpaceFallback;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;

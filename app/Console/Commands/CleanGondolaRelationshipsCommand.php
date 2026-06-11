@@ -3,15 +3,15 @@
 namespace App\Console\Commands;
 
 use App\Models\Gondola;
-use App\Models\PlanogramRejectedProduct;
 use App\Models\Tenant;
 use App\Models\WorkflowGondolaExecution;
 use App\Models\WorkflowHistory;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\GondolaAnalysis;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Segment;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
+use Callcocam\LaravelRaptorPlannerate\Models\GondolaAnalysis;
+use Callcocam\LaravelRaptorPlannerate\Models\Layer;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramRejectedProduct;
+use Callcocam\LaravelRaptorPlannerate\Models\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Segment;
+use Callcocam\LaravelRaptorPlannerate\Models\Shelf;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 

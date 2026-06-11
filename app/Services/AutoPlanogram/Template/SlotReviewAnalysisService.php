@@ -3,7 +3,6 @@
 namespace App\Services\AutoPlanogram\Template;
 
 use App\Models\Category;
-use App\Models\PlanogramTemplateSlot;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Services\AutoPlanogram\ProductOrderingService;
@@ -15,6 +14,7 @@ use Callcocam\LaravelRaptorPlannerate\Enums\FlowDirection;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Enums\SpaceFallback;
 use Callcocam\LaravelRaptorPlannerate\Enums\ZonePriority;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;

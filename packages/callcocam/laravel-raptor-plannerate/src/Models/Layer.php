@@ -6,7 +6,7 @@
  * https://www.sigasmart.com.br
  */
 
-namespace Callcocam\LaravelRaptorPlannerate\Models\Editor;
+namespace Callcocam\LaravelRaptorPlannerate\Models;
 
 use App\Models\Traits\BelongsToTenant;
 use Callcocam\LaravelRaptorPlannerate\Models\Traits\UsesPlannerateTenantConnection;
@@ -14,17 +14,12 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Segment extends Model
+class Layer extends Model
 {
     use BelongsToTenant, HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
 
-    public function layer()
+    public function product()
     {
-        return $this->hasOne(Layer::class);
-    }
-
-    public function shelf()
-    {
-        return $this->belongsTo(Shelf::class);
+        return $this->belongsTo(Product::class);
     }
 }

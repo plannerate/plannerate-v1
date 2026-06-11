@@ -8,7 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\GondolaAnalysis;
+use Callcocam\LaravelRaptorPlannerate\Models\GondolaAnalysis;
 use Illuminate\Http\Response;
 
 /**

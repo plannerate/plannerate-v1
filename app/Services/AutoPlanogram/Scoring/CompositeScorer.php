@@ -2,11 +2,11 @@
 
 namespace App\Services\AutoPlanogram\Scoring;
 
-use App\Models\ScoringWeights;
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\ScoringWeights;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 

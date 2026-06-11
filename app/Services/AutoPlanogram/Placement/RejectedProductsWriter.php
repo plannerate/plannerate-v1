@@ -2,8 +2,8 @@
 
 namespace App\Services\AutoPlanogram\Placement;
 
-use App\Models\PlanogramRejectedProduct;
 use App\Services\AutoPlanogram\DTO\PlanogramOutput;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramRejectedProduct;
 use Illuminate\Support\Str;
 
 /**

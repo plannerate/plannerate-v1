@@ -9,7 +9,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Repositories\Plannerate;
 
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Illuminate\Support\Facades\Log;
 
 /**

@@ -4,7 +4,7 @@ namespace App\Services\AutoPlanogram\Scoring;
 
 use App\Services\AutoPlanogram\DTO\PlacementSettings;
 use App\Services\AutoPlanogram\DTO\ScoredProduct;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Illuminate\Support\Collection;
 
 interface ProductScorerInterface

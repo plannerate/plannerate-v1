@@ -14,8 +14,8 @@ use App\Services\AutoPlanogram\ProductWidthResolver;
 use App\Services\AutoPlanogram\ScoredProductMapper;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Enums\ShelfLevel;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
+use Callcocam\LaravelRaptorPlannerate\Models\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Shelf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 

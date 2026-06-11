@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Settings;
 
-use App\Models\AdjacencyRule;
 use App\Support\Tenancy\InteractsWithTenantContext;
+use Callcocam\LaravelRaptorPlannerate\Models\AdjacencyRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Models;
+namespace Callcocam\LaravelRaptorPlannerate\Models;
 
+use App\Models\Category;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
 use Callcocam\LaravelRaptorPlannerate\Enums\AdjacencyRuleType;

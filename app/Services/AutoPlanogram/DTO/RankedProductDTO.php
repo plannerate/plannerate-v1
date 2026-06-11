@@ -8,7 +8,7 @@
 
 namespace App\Services\AutoPlanogram\DTO;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
 
 /**
  * DTO de Produto para Geração Automática

@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
-use App\Models\ScoringWeights;
-use App\Models\ShelfLevelPreference;
 use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Callcocam\LaravelRaptorPlannerate\Enums\ShelfLevel;
+use Callcocam\LaravelRaptorPlannerate\Models\ScoringWeights;
+use Callcocam\LaravelRaptorPlannerate\Models\ShelfLevelPreference;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

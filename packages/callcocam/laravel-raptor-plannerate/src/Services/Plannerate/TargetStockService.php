@@ -2,9 +2,9 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Services\Plannerate;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\MonthlySalesSummary;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Sale;
+use Callcocam\LaravelRaptorPlannerate\Models\MonthlySalesSummary;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Sale;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;

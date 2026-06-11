@@ -2,10 +2,10 @@
 
 namespace App\Policies;
 
-use App\Models\PlanogramTemplate;
 use App\Models\User;
 use App\Policies\Concerns\ChecksRbacPermission;
 use App\Support\Authorization\PermissionName;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
 
 class PlanogramTemplatePolicy
 {

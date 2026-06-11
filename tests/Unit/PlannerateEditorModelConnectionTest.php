@@ -1,18 +1,18 @@
 <?php
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Category;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\GondolaAnalysis;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\MercadologicoReorganizeLog;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\MonthlySalesSummary;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Sale;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Segment;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Store;
+use Callcocam\LaravelRaptorPlannerate\Models\Category;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\GondolaAnalysis;
+use Callcocam\LaravelRaptorPlannerate\Models\Layer;
+use Callcocam\LaravelRaptorPlannerate\Models\MercadologicoReorganizeLog;
+use Callcocam\LaravelRaptorPlannerate\Models\MonthlySalesSummary;
+use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Sale;
+use Callcocam\LaravelRaptorPlannerate\Models\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Segment;
+use Callcocam\LaravelRaptorPlannerate\Models\Shelf;
+use Callcocam\LaravelRaptorPlannerate\Models\Store;
 
 test('plannerate editor tenant models use configured tenant connection', function (string $modelClass): void {
     config(['multitenancy.tenant_database_connection_name' => 'tenant']);

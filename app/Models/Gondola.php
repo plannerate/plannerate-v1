@@ -4,12 +4,12 @@ namespace App\Models;
 
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola as EditorGondola;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\GondolaAnalysis;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Layer;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Segment;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola as EditorGondola;
+use Callcocam\LaravelRaptorPlannerate\Models\GondolaAnalysis;
+use Callcocam\LaravelRaptorPlannerate\Models\Layer;
+use Callcocam\LaravelRaptorPlannerate\Models\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Segment;
+use Callcocam\LaravelRaptorPlannerate\Models\Shelf;
 use Database\Factories\GondolaFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

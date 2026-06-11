@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Sale as PlannerateSale;
+use Callcocam\LaravelRaptorPlannerate\Models\Sale as PlannerateSale;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Sale extends PlannerateSale

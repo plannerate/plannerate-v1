@@ -4,8 +4,6 @@ namespace App\Services\AutoPlanogram\Placement;
 
 use App\Models\Category;
 use App\Models\Planogram;
-use App\Models\PlanogramSubtemplate;
-use App\Models\PlanogramTemplateSlot;
 use App\Models\Scopes\TenantScope;
 use App\Services\AutoPlanogram\DTO\OrderedBlock;
 use App\Services\AutoPlanogram\DTO\PlacedLayer;
@@ -22,8 +20,10 @@ use Callcocam\LaravelRaptorPlannerate\Enums\FlowDirection;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Enums\SpaceFallback;
 use Callcocam\LaravelRaptorPlannerate\Enums\ZonePriority;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
+use Callcocam\LaravelRaptorPlannerate\Models\Section;
+use Callcocam\LaravelRaptorPlannerate\Models\Shelf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
