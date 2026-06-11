@@ -41,6 +41,7 @@ export default defineConfig({
     resolve: {
         alias: {
             '@/components/plannerate': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js/components/plannerate'),
+            '@/components/planogram-templates': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js/components/planogram-templates'),
             '@/composables/plannerate': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js/composables/plannerate'),
             '@/types/planogram': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js/types/planogram.ts'),
             '@plannerate': path.resolve(__dirname, './vendor/callcocam/laravel-raptor-plannerate/resources/js'), 

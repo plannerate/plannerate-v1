@@ -43,6 +43,9 @@
             "@/components/plannerate/*": [
                 "./vendor/callcocam/laravel-raptor-plannerate/resources/js/components/plannerate/*"
             ],
+            "@/components/planogram-templates/*": [
+                "./vendor/callcocam/laravel-raptor-plannerate/resources/js/components/planogram-templates/*"
+            ],
             "@/composables/plannerate/*": [
                 "./vendor/callcocam/laravel-raptor-plannerate/resources/js/composables/plannerate/*"
             ],
