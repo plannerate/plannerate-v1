@@ -16,9 +16,6 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 test('client builds request with base url auth headers and enabled params', function (): void {
     Config::set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));

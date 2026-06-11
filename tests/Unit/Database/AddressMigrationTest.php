@@ -2,9 +2,6 @@
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 test('tenant and landlord addresses tables are created with expected columns', function (): void {
     Artisan::call('migrate:fresh', [

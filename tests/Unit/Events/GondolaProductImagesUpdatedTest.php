@@ -3,9 +3,6 @@
 use Callcocam\LaravelRaptorPlannerate\Events\GondolaProductImagesUpdated;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 test('gondola product images updated broadcasts to the requesting user channel', function (): void {
     $event = new GondolaProductImagesUpdated(

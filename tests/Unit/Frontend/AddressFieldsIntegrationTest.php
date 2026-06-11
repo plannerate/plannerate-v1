@@ -1,9 +1,5 @@
 <?php
 
-use Tests\TestCase;
-
-uses(TestCase::class);
-
 test('address fields component defines nested payload fields', function (): void {
     $content = file_get_contents(resource_path('js/components/form/AddressFields.vue'));
 

@@ -13,9 +13,6 @@ use Callcocam\LaravelRaptorPlannerate\Models\Editor\Section;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Segment;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Shelf;
 use Callcocam\LaravelRaptorPlannerate\Models\Editor\Store;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 test('plannerate editor tenant models use configured tenant connection', function (string $modelClass): void {
     config(['multitenancy.tenant_database_connection_name' => 'tenant']);
@@ -38,7 +35,7 @@ test('plannerate editor tenant models use configured tenant connection', functio
 ]);
 
 test('plannerate product model allows mass assignment for url', function (): void {
-    expect((new Product())->isFillable('url'))->toBeTrue();
+    expect((new Product)->isFillable('url'))->toBeTrue();
 });
 
 test('plannerate package does not query tenant tables through default or landlord connections', function (): void {

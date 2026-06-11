@@ -1,9 +1,5 @@
 <?php
 
-use Tests\TestCase;
-
-uses(TestCase::class);
-
 test('redis retry after exceeds configured worker timeouts', function (): void {
     $retryAfter = (int) config('queue.connections.redis.retry_after');
     $timeouts = collect(config('horizon.defaults', []))

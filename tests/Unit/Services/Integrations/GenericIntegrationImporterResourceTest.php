@@ -16,9 +16,6 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 beforeEach(function (): void {
     config()->set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));

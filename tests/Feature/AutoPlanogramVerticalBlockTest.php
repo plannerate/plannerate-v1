@@ -92,6 +92,11 @@ function vbFeatureScorer(Collection $products): ProductScorerInterface
         {
             return $this->scored;
         }
+
+        public function scoreOrNeutral(Collection $products, PlacementSettings $settings): Collection
+        {
+            return $this->scored;
+        }
     };
 }
 
