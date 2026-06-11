@@ -120,7 +120,7 @@ const alignmentClass = computed(() => {
               top: `${shelfBasePosition + shelfHeight}px`,
             }
           : {
-              bottom: `${shelfHeight}px`,
+              bottom: `${shelfArea.areaHeightCm * scaleFactor - shelfBasePosition}px`,
             }
       ">
       <PdfSegment

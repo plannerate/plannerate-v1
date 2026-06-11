@@ -82,7 +82,7 @@ function shelvesWithProducts(section: Section) {
 
     <div class="force-light min-h-screen bg-slate-100 text-slate-900">
         <!-- Cabeçalho fixo -->
-        <header class="sticky top-0 z-10 border-b border-slate-200 bg-white shadow-sm">
+        <header class="sticky top-0 z-[1000] border-b border-slate-200 bg-white shadow-sm">
             <div class="mx-auto max-w-4xl px-4 py-3">
                 <div class="flex items-start justify-between gap-4">
                     <div>
