@@ -101,3 +101,14 @@ VITE_ENABLE_WAYFINDER=false npm run build
 ---
 
 **Próximo passo:** sua validação manual no browser → merge → aprovação dos grupos B1/B2/B3 para eu executar a limpeza.
+
+---
+
+## Adendo — Execução da limpeza aprovada (2026-06-11, commit fab8f7b)
+
+- **B1 executado:** `packages/.../refatoração/` removido.
+- **B2 executado (variante skip):** 10 arquivos do domínio Integrations marcados `markTestSkipped` com motivo e pista do namespace atual — preservados para triagem, não deletados.
+- **B3 resolvido — causa-raiz do crash:** `SalesMetricsRepository` era `final` e os testes a estendem com stubs anônimos → fatal de compilação na carga, processo morria com exit 2 sem output. Removido o `final` (nota no código).
+- **Bug real corrigido de bônus:** o caminho neutro do `scoreOrNeutral` (score 0.5 p/ produtos sem venda — requisito do modo template) era inalcançável: a detecção usava `score > 0`, mas a contribuição neutra de DOH dá piso 0.05 a todo produto. Detecção agora usa `raw_quantity`/`raw_margem`.
+- **Estado final:** `tests/Unit/Services/AutoPlanogram` completo = **165 passed** (sem nenhum filtro de exclusão, primeira vez); domínio planograma 100% verde; suíte global roda de ponta a ponta (353 passed / 43 skipped / 308 failed — falhas restantes são de outros domínios, pré-existentes).
+- **Permanece para triagem de produto:** 4 falhas comportamentais do `AutomaticEndToEndTest` (casos 5/8/10/11) + 4 do `VerticalBlockTest` (§1.4).
