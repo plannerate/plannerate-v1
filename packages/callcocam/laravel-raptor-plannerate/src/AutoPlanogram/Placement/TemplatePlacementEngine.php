@@ -936,7 +936,6 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 width: $seg->width,
                 distributedWidth: $seg->distributedWidth,
                 layers: $seg->layers,
-                isVerticalBlock: $seg->isVerticalBlock,
                 shelfLevel: $seg->shelfLevel,
             ));
         }

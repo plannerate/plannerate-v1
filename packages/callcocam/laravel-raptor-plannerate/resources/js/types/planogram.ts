@@ -73,7 +73,6 @@ export interface Segment {
     quantity?: number;
     ordering?: number;
     position?: number;
-    is_vertical_block?: boolean;
     deleted_at?: string;
 }
 

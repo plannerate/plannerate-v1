@@ -2,7 +2,6 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\AutoPlanogram;
 
-use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use App\Models\Scopes\TenantScope;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementResult;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramInput;
@@ -14,6 +13,7 @@ use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\ProductScorerInterfa
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Synthesis\AutoTemplateSynthesisOrchestrator;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Template\SlotSuggestionGenerator;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\PlanogramValidator;
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 use Callcocam\LaravelRaptorPlannerate\Models\Section;
@@ -432,7 +432,6 @@ final class AutoPlanogramService
                             width: $seg->width,
                             distributedWidth: $seg->distributedWidth,
                             layers: $seg->layers,
-                            isVerticalBlock: $seg->isVerticalBlock,
                         );
                     });
             })
