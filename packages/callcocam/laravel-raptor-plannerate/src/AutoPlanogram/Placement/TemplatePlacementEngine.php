@@ -180,12 +180,24 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         // Quando layout_orientation = vertical, grupos de slots do mesmo módulo+categoria
         // que ocupam prateleiras consecutivas são processados como colunas por marca
         // (mesma faixa de X em todas as prateleiras). Slots fora dos grupos elegíveis
-        // (prateleiras compartilhadas, chão excluído, categorias de 1 prateleira)
-        // seguem o caminho horizontal legado intocado.
+        // (prateleiras compartilhadas, categorias de 1 prateleira) seguem o caminho
+        // horizontal legado intocado.
         $verticalProcessedSlotIds = [];
 
         if ($this->layoutOrientation === LayoutOrientation::Vertical) {
-            foreach ($this->buildVerticalGroups($slots, $positionSlotCounts) as $group) {
+            $verticalGroups = $this->buildVerticalGroups($slots, $positionSlotCounts);
+
+            if ($verticalGroups === []) {
+                // Sem grupo elegível a geração inteira sai horizontal — avisar em vez de
+                // silenciar, pois o usuário pediu vertical e não verá coluna nenhuma
+                Log::warning('TemplatePlacementEngine: blocagem vertical solicitada, mas nenhum grupo elegível', [
+                    'motivo' => 'nenhuma categoria ocupa 2+ prateleiras consecutivas no mesmo módulo',
+                    'dica' => 'sob compressão cada categoria tende a receber 1 prateleira — reduza o escopo de categorias ou use uma gôndola maior',
+                    'slots' => $slots->count(),
+                ]);
+            }
+
+            foreach ($verticalGroups as $group) {
                 foreach ($group as $groupSlot) {
                     $verticalProcessedSlotIds[$groupSlot->id] = true;
                 }
@@ -1021,8 +1033,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
      *  - prateleira compartilhada (micro-categoria adensada) nunca entra — o adensamento
      *    quebraria o alinhamento das colunas;
      *  - shelf_orders consecutivos (bloco visual contíguo);
-     *  - chão fora da blocagem: com 3+ prateleiras, o slot de shelf_order 1 sai do grupo
-     *    e segue o caminho horizontal legado (fardos/embalagens econômicas no chão).
+     *  - o chão (shelf_order 1) PARTICIPA da blocagem: as colunas atravessam todas as
+     *    prateleiras da categoria, como nas gôndolas de referência — excluí-lo cortava
+     *    a capacidade do grupo e empurrava o excedente para o overflow horizontal.
      *
      * @param  Collection<int, PlanogramTemplateSlot>  $slots
      * @param  array<string, int>  $positionSlotCounts  [module_shelf => qtde de slots na posição]
@@ -1046,11 +1059,6 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
         foreach ($byModuleCategory as $group) {
             usort($group, fn (PlanogramTemplateSlot $a, PlanogramTemplateSlot $b): int => $a->shelf_order <=> $b->shelf_order);
-
-            // Chão fora da blocagem quando o grupo tem 3+ prateleiras
-            if (count($group) >= 3 && $group[0]->shelf_order === 1) {
-                array_shift($group);
-            }
 
             if (count($group) < 2) {
                 continue;
@@ -1266,8 +1274,10 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $maxClearance = max(array_map(fn (array $row): float => $row['clearance'] ?? PHP_FLOAT_MAX, $rows));
 
         foreach ($brandProducts as $brand => $products) {
-            $rowIdx = 0;
-            $cellOccupied = 0.0;
+            // Ocupação por linha desta coluna: cada produto busca, de cima para baixo,
+            // a primeira célula com espaço — produto estreito preenche célula parcial
+            // em vez de virar sobra só porque um produto largo anterior não coube
+            $rowOccupied = array_fill(0, $rowCount, 0.0);
 
             foreach ($products as $product) {
                 $productHeight = (float) ($product->height ?? 0);
@@ -1277,7 +1287,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                     $rejected->push([
                         'product' => $product,
                         'reason' => PlacementFailureReason::HeightExceedsShelf,
-                        'slot_id' => $rows[$rowIdx]['slot']->id,
+                        'slot_id' => $firstSlot->id,
                     ]);
 
                     continue;
@@ -1293,30 +1303,35 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                     continue;
                 }
 
-                // Avança para a próxima linha quando a célula atual encheu ou o vão é baixo demais
-                while ($rowIdx < $rowCount
-                    && ($cellOccupied + $width > $colWidth[$brand] + 0.01
-                        || ($rows[$rowIdx]['clearance'] !== null && $productHeight > $rows[$rowIdx]['clearance']))) {
-                    $rowIdx++;
-                    $cellOccupied = 0.0;
+                $targetRow = null;
+
+                for ($rowIdx = 0; $rowIdx < $rowCount; $rowIdx++) {
+                    if ($rowOccupied[$rowIdx] + $width > $colWidth[$brand] + 0.01) {
+                        continue;
+                    }
+
+                    if ($rows[$rowIdx]['clearance'] !== null && $productHeight > $rows[$rowIdx]['clearance']) {
+                        continue;
+                    }
+
+                    $targetRow = $rowIdx;
+                    break;
                 }
 
-                if ($rowIdx >= $rowCount) {
-                    // Coluna cheia: o restante da marca vai para o overflow pass
+                if ($targetRow === null) {
+                    // Nenhuma célula da coluna comporta o produto: vai para o overflow pass
                     $leftovers[] = $product;
-                    $rowIdx = $rowCount - 1;
-                    $cellOccupied = $colWidth[$brand]; // mantém a célula marcada como cheia
 
                     continue;
                 }
 
-                $cells[$rowIdx][$brand][] = [
+                $cells[$targetRow][$brand][] = [
                     'product' => $product,
                     'facings' => $minFacings,
                     'singleWidth' => $singleWidth,
                     'ordering' => 0, // reatribuído por prateleira após o espelhamento
                 ];
-                $cellOccupied += $width;
+                $rowOccupied[$targetRow] += $width;
             }
         }
 
@@ -1337,6 +1352,51 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                         $occupied,
                     );
                 }
+            }
+
+            // 5b. Replicação vertical: linha sem nenhum item da marca herda os itens da
+            //     linha preenchida mais próxima ACIMA — os mesmos SKUs se repetem prateleira
+            //     a prateleira (gôndola de referência), em vez de deixar linhas do bloco vazias.
+            //     Roda após a expansão para que larguras e X fiquem idênticos entre as linhas.
+            $replicatedRows = 0;
+
+            foreach (array_keys($brandProducts) as $brand) {
+                $sourceItems = null;
+
+                for ($rowIdx = 0; $rowIdx < $rowCount; $rowIdx++) {
+                    $items = $cells[$rowIdx][$brand] ?? [];
+
+                    if ($items !== []) {
+                        $sourceItems = $items;
+
+                        continue;
+                    }
+
+                    if ($sourceItems === null) {
+                        continue;
+                    }
+
+                    // Só replica o que cabe no vão da linha destino
+                    $clearance = $rows[$rowIdx]['clearance'];
+                    $replicable = array_values(array_filter(
+                        $sourceItems,
+                        fn (array $item): bool => $clearance === null
+                            || (float) ($item['product']->height ?? 0) <= $clearance,
+                    ));
+
+                    if ($replicable !== []) {
+                        $cells[$rowIdx][$brand] = $replicable;
+                        $replicatedRows++;
+                    }
+                }
+            }
+
+            if ($replicatedRows > 0) {
+                Log::debug('TemplatePlacementEngine: blocagem vertical — linhas replicadas', [
+                    'module' => $firstSlot->module_number,
+                    'category_id' => $firstSlot->category_id,
+                    'linhas_replicadas' => $replicatedRows,
+                ]);
             }
         }
 
@@ -1479,6 +1539,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             'colunas' => array_map(fn (float $w): float => round($w, 1), $colWidth),
             'posicionados' => $placed->count(),
             'sobras_overflow' => count($leftovers),
+            // Sobra com déficit > 0 é limitação física (demanda excede o bloco), não defeito de empacotamento
+            'demanda_cm' => round(array_sum($demand), 1),
+            'capacidade_cm' => round($shelfTotalWidth * $rowCount, 1),
         ]);
 
         return [

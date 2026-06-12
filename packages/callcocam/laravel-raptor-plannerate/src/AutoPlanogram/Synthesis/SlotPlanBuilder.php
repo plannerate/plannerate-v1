@@ -8,6 +8,7 @@ use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementSettings;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\SlotPlanEntry;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ShelfZoneResolver;
 use Callcocam\LaravelRaptorPlannerate\Enums\CategoryRole;
+use Callcocam\LaravelRaptorPlannerate\Enums\LayoutOrientation;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -93,7 +94,8 @@ class SlotPlanBuilder
         float $shelfWidth = 100.0,
         bool $useFullCapacity = false,
     ): array {
-        $orderedSlots = $this->buildOrderedSlots($numModules, $shelvesPerModule);
+        $verticalLayout = $settings->layoutOrientation === LayoutOrientation::Vertical->value;
+        $orderedSlots = $this->buildOrderedSlots($numModules, $shelvesPerModule, $verticalLayout);
 
         if ($subcategories->isEmpty()) {
             return $this->buildLeafPlan($selectedCategory, $orderedSlots, $settings);
@@ -162,12 +164,16 @@ class SlotPlanBuilder
 
     /**
      * Gera todos os pares (módulo, prateleira) em ordem de prioridade:
-     * dentro de cada módulo, hot shelves primeiro (blocagem vertical);
-     * módulos em sequência (1, 2, …, N).
+     * dentro de cada módulo, hot shelves primeiro; módulos em sequência (1, 2, …, N).
+     *
+     * Em layout vertical a ordem dentro do módulo é FÍSICA (shelf_order 1..N):
+     * uma categoria que consome k slots recebe k prateleiras consecutivas — pré-requisito
+     * para a blocagem por marca atravessar o bloco. A prioridade por zona dispersaria
+     * os slots (ex.: prateleiras 3 e 1) e quebraria a elegibilidade do grupo vertical.
      *
      * @return list<array{module: int, shelf_order: int, zone: 'hot'|'cold'|'neutral'}>
      */
-    private function buildOrderedSlots(int $numModules, int $shelvesPerModule): array
+    private function buildOrderedSlots(int $numModules, int $shelvesPerModule, bool $verticalLayout = false): array
     {
         $slots = [];
 
@@ -183,7 +189,10 @@ class SlotPlanBuilder
                 $moduleSlots[] = ['module' => $mod, 'shelf_order' => $shelfOrder, 'zone' => $zone, 'zone_priority' => $zonePriority];
             }
 
-            usort($moduleSlots, fn ($a, $b) => $a['zone_priority'] <=> $b['zone_priority']);
+            if (! $verticalLayout) {
+                usort($moduleSlots, fn ($a, $b) => $a['zone_priority'] <=> $b['zone_priority']);
+            }
+
             $slots = array_merge($slots, $moduleSlots);
         }
 

@@ -304,7 +304,7 @@ test('ordering é sequencial por prateleira após a montagem das colunas', funct
 
 // ── elegibilidade dos grupos (buildVerticalGroups) ────────────────────────────
 
-test('buildVerticalGroups exclui o chão com 3+ prateleiras e prateleiras compartilhadas', function (): void {
+test('buildVerticalGroups inclui o chão na blocagem e exclui prateleiras compartilhadas', function (): void {
     $engine = vbcEngine();
     $cat = (string) Str::ulid();
     $otherCat = (string) Str::ulid();
@@ -323,9 +323,10 @@ test('buildVerticalGroups exclui o chão com 3+ prateleiras e prateleiras compar
     $ref->setAccessible(true);
     $groups = $ref->invoke($engine, $slots, $positionCounts);
 
-    // Um único grupo elegível: [2, 3] — chão excluído, compartilhados fora
+    // Um único grupo elegível: [1, 2, 3] — as colunas atravessam até o chão;
+    // só o slot compartilhado fica fora (o adensamento quebraria o alinhamento)
     expect($groups)->toHaveCount(1)
-        ->and(array_map(fn (PlanogramTemplateSlot $s): int => $s->shelf_order, $groups[0]))->toBe([2, 3]);
+        ->and(array_map(fn (PlanogramTemplateSlot $s): int => $s->shelf_order, $groups[0]))->toBe([1, 2, 3]);
 });
 
 test('buildVerticalGroups mantém o chão em grupos de exatamente 2 prateleiras', function (): void {
@@ -341,6 +342,98 @@ test('buildVerticalGroups mantém o chão em grupos de exatamente 2 prateleiras'
 
     expect($groups)->toHaveCount(1)
         ->and(array_map(fn (PlanogramTemplateSlot $s): int => $s->shelf_order, $groups[0]))->toBe([1, 2]);
+});
+
+// ── replicação vertical: linhas vazias herdam os SKUs da linha de cima ───────
+
+test('linha vazia da coluna replica os SKUs da linha preenchida acima (efeito gôndola de referência)', function (): void {
+    $engine = vbcEngine();
+    $cat = (string) Str::ulid();
+    vbcSeedDescendants($engine, $cat);
+
+    // 2 marcas, 1 produto cada → tudo cabe na linha do topo; a linha de baixo
+    // ficaria 0% — a replicação repete os mesmos SKUs nela, X alinhado
+    $section = vbcSection(100.0, 2);
+    $group = [
+        vbcSlot($cat, 1, maxFacings: 3, facingExpansion: FacingExpansion::Score),
+        vbcSlot($cat, 2, maxFacings: 3, facingExpansion: FacingExpansion::Score),
+    ];
+
+    $a1 = vbcProduct('A', 20.0, $cat, 'a1');
+    $b1 = vbcProduct('B', 20.0, $cat, 'b1');
+
+    $result = vbcPlaceGroup($engine, $group, $section, collect([$a1, $b1]));
+
+    // 4 segmentos: cada SKU aparece nas DUAS prateleiras
+    expect($result['placed'])->toHaveCount(4);
+
+    $byShelfProduct = [];
+    foreach ($result['placed'] as $seg) {
+        $byShelfProduct[$seg->layers->first()->productId][$seg->shelfId] = $seg->position;
+    }
+
+    foreach (['a1', 'b1'] as $productId) {
+        $positions = $byShelfProduct[$productId];
+        expect(count($positions))->toBe(2)
+            ->and(count(array_unique($positions)))->toBe(1); // mesmo X nas duas prateleiras
+    }
+});
+
+test('replicação vertical não ocorre com facing_expansion = none', function (): void {
+    $engine = vbcEngine();
+    $cat = (string) Str::ulid();
+    vbcSeedDescendants($engine, $cat);
+
+    $section = vbcSection(100.0, 2);
+    $group = [vbcSlot($cat, 1), vbcSlot($cat, 2)]; // FacingExpansion::None
+
+    $a1 = vbcProduct('A', 20.0, $cat, 'a1');
+    $b1 = vbcProduct('B', 20.0, $cat, 'b1');
+
+    $result = vbcPlaceGroup($engine, $group, $section, collect([$a1, $b1]));
+
+    // Sem expansão o usuário pediu presença mínima: nada é replicado
+    expect($result['placed'])->toHaveCount(2);
+});
+
+// ── empacotamento: produto estreito preenche célula parcial ──────────────────
+
+test('produto estreito preenche célula parcialmente ocupada em vez de virar sobra', function (): void {
+    $engine = vbcEngine();
+    $cat = (string) Str::ulid();
+    vbcSeedDescendants($engine, $cat);
+
+    // Marca única → coluna de 100cm; 2 prateleiras = 2 células de 100cm
+    $section = vbcSection(100.0, 2);
+    $group = [vbcSlot($cat, 1), vbcSlot($cat, 2)];
+
+    // Três produtos de 60cm: o 3º não cabe em linha nenhuma (vira sobra).
+    // No cursor sequencial antigo, isso marcava a coluna como CHEIA e o produto
+    // estreito seguinte (35cm) também virava sobra — mesmo cabendo nos 40cm
+    // livres da linha do topo. A busca por linha corrige o desperdício.
+    $w1 = vbcProduct('A', 60.0, $cat, 'w1');
+    $w2 = vbcProduct('A', 60.0, $cat, 'w2');
+    $w3 = vbcProduct('A', 60.0, $cat, 'w3');
+    $narrow = vbcProduct('A', 35.0, $cat, 'narrow');
+
+    $result = vbcPlaceGroup($engine, $group, $section, collect([$w1, $w2, $w3, $narrow]));
+
+    expect($result['placed'])->toHaveCount(3);
+
+    // narrow preenche os 40cm livres da linha do topo, ao lado de w1
+    $byProduct = vbcByProduct($result['placed']);
+
+    expect($byProduct['narrow']->shelfId)->toBe($byProduct['w1']->shelfId)
+        ->and($byProduct['narrow']->position)->toBe(60);
+
+    // Só w3 vira sobra (limitação física real); narrow não
+    $overflowIds = $result['rejected']
+        ->filter(fn (array $r): bool => $r['reason'] === PlacementFailureReason::NoHorizontalSpace)
+        ->map(fn (array $r): string => $r['product']->id)
+        ->values()
+        ->all();
+
+    expect($overflowIds)->toBe(['w3']);
 });
 
 test('buildVerticalGroups ignora categorias de uma prateleira e shelf_orders não consecutivos', function (): void {

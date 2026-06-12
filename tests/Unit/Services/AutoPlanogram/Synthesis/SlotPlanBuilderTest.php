@@ -391,3 +391,79 @@ test('visual_criteria tem score_abc como primeiro critério', function (): void 
     expect($criteria[0]['key'])->toBe('score_abc')
         ->and($criteria[0]['direction'])->toBe('desc');
 });
+
+// ── Testes: layout vertical → prateleiras fisicamente consecutivas ──────────
+
+test('layout vertical aloca slots de cada categoria em prateleiras consecutivas do módulo', function (): void {
+    // Demanda: catGrande 250cm → 3 slots; catMedia 150cm → 2 slots; capacidade 4 → Hare
+    // reduz para 2+2. No layout horizontal a ordem por zona daria [2,3] e [1,4] (disperso);
+    // no vertical a ordem física garante [1,2] e [3,4] — pré-requisito da blocagem por marca.
+    $builder = new SlotPlanBuilder;
+
+    $catGrande = makeCat(id: 'cat-grande');
+    $catMedia = makeCat(id: 'cat-media');
+
+    $subcats = Collection::make([
+        makeSubcatItem($catGrande, makeSummaryWith('A', qty: 200.0, totalWidth: 250.0), CategoryRole::Destino),
+        makeSubcatItem($catMedia, makeSummaryWith('B', qty: 80.0, totalWidth: 150.0), CategoryRole::Rotina),
+    ]);
+
+    $settings = new PlacementSettings(
+        strategy: 'abc',
+        useExistingAnalysis: false,
+        startDate: null,
+        endDate: null,
+        layoutOrientation: 'vertical',
+    );
+
+    $plan = $builder->build(
+        selectedCategory: makeCat(),
+        subcategories: $subcats,
+        numModules: 1,
+        shelvesPerModule: 4,
+        settings: $settings,
+        shelfWidth: 100.0,
+    );
+
+    $shelvesOf = fn (string $catId): array => collect($plan)
+        ->filter(fn ($e) => $e->categoryId === $catId)
+        ->map(fn ($e) => $e->shelfOrder)
+        ->sort()
+        ->values()
+        ->all();
+
+    expect($shelvesOf('cat-grande'))->toBe([1, 2])
+        ->and($shelvesOf('cat-media'))->toBe([3, 4]);
+});
+
+test('layout horizontal preserva a priorização por zona (regressão)', function (): void {
+    $builder = new SlotPlanBuilder;
+
+    $catGrande = makeCat(id: 'cat-grande');
+    $catMedia = makeCat(id: 'cat-media');
+
+    $subcats = Collection::make([
+        makeSubcatItem($catGrande, makeSummaryWith('A', qty: 200.0, totalWidth: 250.0), CategoryRole::Destino),
+        makeSubcatItem($catMedia, makeSummaryWith('B', qty: 80.0, totalWidth: 150.0), CategoryRole::Rotina),
+    ]);
+
+    $plan = $builder->build(
+        selectedCategory: makeCat(),
+        subcategories: $subcats,
+        numModules: 1,
+        shelvesPerModule: 4,
+        settings: makeSlotPlanSettings(),
+        shelfWidth: 100.0,
+    );
+
+    $shelvesOf = fn (string $catId): array => collect($plan)
+        ->filter(fn ($e) => $e->categoryId === $catId)
+        ->map(fn ($e) => $e->shelfOrder)
+        ->sort()
+        ->values()
+        ->all();
+
+    // Zona quente primeiro: catGrande fica com as prateleiras 2 e 3 (hot)
+    expect($shelvesOf('cat-grande'))->toBe([2, 3])
+        ->and($shelvesOf('cat-media'))->toBe([1, 4]);
+});
