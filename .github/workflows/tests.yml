@@ -101,8 +101,11 @@ jobs:
       - name: Install Node Dependencies
         run: npm ci
 
+      - name: 'Tests — JS (vitest)'
+        run: npm run test:js
+
       # VITE_ENABLE_WAYFINDER=false: o plugin wayfinder precisa de artisan +
-      # banco, indisponíveis no CI; as actions geradas não são versionadas.
+      # banco, indisponíveis no CI.
       - name: Build Assets
         run: VITE_ENABLE_WAYFINDER=false npm run build
 
