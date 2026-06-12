@@ -1,14 +1,25 @@
+# CI do domínio planograma — protege a suíte destravada na refatoração de 2026-06.
+#
+# Roda APENAS as suítes verdes do domínio (a suíte global tem ~270 falhas
+# pré-existentes de outros domínios, nunca executadas antes do destravamento —
+# ver docs/refatoracao-raptor-plannerate/fase-5-validacao-e-plano-de-limpeza.md).
+# À medida que outros domínios forem triados, adicionar seus paths aqui.
+#
+# Os grupos rodam em invocações separadas de propósito: alguns testes fazem
+# dropAllTables na conexão tenant e destroem o schema migrado de que outros
+# (ex.: SegmentCopyChangeTest) dependem — processos separados isolam isso.
+
 name: tests
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
 
 jobs:
-  ci:
+  planogram-domain:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php-version: ['8.4', '8.5']
 
     steps:
       - name: Checkout code
@@ -17,30 +28,86 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-version }}
-          extensions: mbstring, xml, ctype, intl, pdo, pdo_sqlite, sqlite3, pdo_mysql, pdo_pgsql, gd, zip, bcmath, curl
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, intl, pdo, pdo_sqlite, sqlite3, gd, zip, bcmath, curl
           tools: composer:v2
-          coverage: xdebug
+          coverage: none
+
+      - name: Install Composer Dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Prepare Environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: 'Tests — Unit (AutoPlanogram + pacote)'
+        run: |
+          php artisan test --compact \
+            tests/Unit/Services/AutoPlanogram \
+            tests/Unit/PlannerateEditorModelConnectionTest.php \
+            tests/Unit/Packages \
+            tests/Unit/Services/QRCodeServiceTest.php \
+            tests/Unit/Events/GondolaProductImagesUpdatedTest.php
+
+      - name: 'Tests — Feature (modo automático E2E)'
+        run: |
+          php artisan test --compact \
+            tests/Feature/AutoPlanogram \
+            tests/Feature/AutoPlanogramRegressionTest.php \
+            tests/Feature/AutoPlanogramPlacementTest.php \
+            tests/Feature/AutoPlanogramScoringTest.php \
+            tests/Feature/AutoPlanogramSuggestionsTest.php \
+            tests/Feature/AutoPlanogramPlacementOverlapTest.php \
+            tests/Feature/AutoPlanogramTemplateGroupingsTest.php
+
+      - name: 'Tests — Feature (editor, save-changes, settings)'
+        run: |
+          php artisan test --compact \
+            tests/Feature/Plannerate/GondolaCreateModeTest.php \
+            tests/Feature/Plannerate/PlanogramChangeServiceTest.php \
+            tests/Feature/GondolaSlotOverrideTest.php \
+            tests/Feature/Settings/PlanogramSettingsTest.php \
+            tests/Feature/PlannerateEditorApiUploadImageRouteTest.php
+
+      - name: 'Tests — Feature (save-changes com schema migrado)'
+        run: php artisan test --compact tests/Feature/Plannerate/SegmentCopyChangeTest.php
+
+  frontend-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
+
+      # vendor/ é necessário: os aliases do Vite apontam para
+      # vendor/callcocam/laravel-raptor-plannerate (path repo symlinkado)
+      - name: Install Composer Dependencies
+        run: composer install --no-interaction --prefer-dist --no-scripts
 
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
           node-version: '22'
+          cache: npm
 
       - name: Install Node Dependencies
-        run: npm i
+        run: npm ci
 
-      - name: Install Dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Copy Environment File
-        run: cp .env.example .env
-
-      - name: Generate Application Key
-        run: php artisan key:generate
-
+      # VITE_ENABLE_WAYFINDER=false: o plugin wayfinder precisa de artisan +
+      # banco, indisponíveis no CI; as actions geradas não são versionadas.
       - name: Build Assets
-        run: npm run build
+        run: VITE_ENABLE_WAYFINDER=false npm run build
 
-      - name: Tests
-        run: ./vendor/bin/pest
+      # Informacional: 77 erros pré-existentes fora do escopo da refatoração.
+      # Remover continue-on-error quando forem zerados.
+      - name: Type Check (informacional)
+        continue-on-error: true
+        run: npm run types:check

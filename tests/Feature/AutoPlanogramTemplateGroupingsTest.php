@@ -199,7 +199,7 @@ test('templateGroupings returns unique grouping list for gondola template', func
 
     $controller = makeAutoPlanogramControllerForTemplateGroupingTest();
 
-    $response = $controller->templateGroupings(new Request, 'tenant-a', $gondola->id);
+    $response = $controller->templateGroupings(new Request, $gondola->id);
 
     $payload = $response->getData(true);
 
@@ -239,7 +239,7 @@ test('templateGroupings returns empty data when gondola has no template', functi
 
     $controller = makeAutoPlanogramControllerForTemplateGroupingTest();
 
-    $response = $controller->templateGroupings(new Request, 'tenant-a', $gondola->id);
+    $response = $controller->templateGroupings(new Request, $gondola->id);
 
     $payload = $response->getData(true);
 

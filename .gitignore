@@ -6,9 +6,9 @@
 /public/storage
 /storage/*.key
 /storage/pail
-/resources/js/actions
-/resources/js/routes
-/resources/js/wayfinder
+# actions/routes/wayfinder do Wayfinder são versionados de propósito:
+# o build do Vite no CI depende deles e o gerador não roda lá (precisa de artisan).
+# Regenerar localmente: docker compose exec -u root php php artisan wayfinder:generate --with-form
 /vendor
 .DS_Store
 .env
