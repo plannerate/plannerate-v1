@@ -143,6 +143,7 @@ final class AutoTemplateSynthesisOrchestrator
             hotZonePriority: $input->settings->hotZonePriority,
             coldZonePriority: $input->settings->coldZonePriority,
             flowDirection: $input->settings->flowDirection,
+            layoutOrientation: $input->settings->layoutOrientation,
         );
     }
 

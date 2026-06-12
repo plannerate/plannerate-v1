@@ -216,6 +216,19 @@ O tipo de exposição define o padrão visual de agrupamento:
 
 Configurado por slot no template via `brand_exposure` e `flavor_exposure`.
 
+### Blocagem vertical real (`layout_orientation`) — 2026-06-12
+
+O campo `layout_orientation` do **subtemplate** (`horizontal` | `vertical`, null = horizontal legado) ativa a blocagem vertical de verdade — diferente do `brand_exposure = vertical`, que apenas agrupa a sequência dentro de cada prateleira:
+
+- **Como funciona**: quando uma categoria ocupa 2+ prateleiras consecutivas do mesmo módulo, cada marca recebe uma **coluna de largura proporcional à sua demanda** (piso = produto mais largo da marca), preenchida de cima para baixo — mesma faixa de X em todas as prateleiras, formando o bloco visual alinhado;
+- **Chão fora da blocagem**: com 3+ prateleiras, o slot do chão (shelf_order 1) segue o caminho horizontal (fardos/embalagens econômicas);
+- **Prateleiras compartilhadas** (micro-categorias adensadas) nunca entram em modo vertical;
+- **Expansão de frentes por célula** (marca × prateleira): nunca invade a coluna vizinha;
+- **Sobras** viram `NoHorizontalSpace` e são recolocadas pelo overflow pass;
+- **Fluxo RTL** espelha as colunas inteiras mantendo o alinhamento;
+- Onde escolher: select "Disposição" no stepper/modal de geração (modo automático, persiste no subtemplate sintetizado) e no `ModuleDefaultsModal` (modo template). Alterar a disposição exige **regerar** o planograma.
+- Engine: `TemplatePlacementEngine::buildVerticalGroups()` + `placeVerticalGroup()`.
+
 ---
 
 ## 11. Décimo passo — Aplicar a ordenação visual

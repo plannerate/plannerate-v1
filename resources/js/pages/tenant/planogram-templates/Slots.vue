@@ -610,7 +610,7 @@ function saveCurrentModuleDefaults(
         | 'flavor_exposure'
         | 'space_fallback'
         | 'use_target_stock'
-    > & { hot_zone_priority?: string | null; cold_zone_priority?: string | null; flow_direction?: string | null },
+    > & { hot_zone_priority?: string | null; cold_zone_priority?: string | null; flow_direction?: string | null; layout_orientation?: string | null },
 ): void {
     const subtemplate = currentSubtemplate.value;
 
@@ -962,6 +962,7 @@ const breadcrumbs = [
         :hot-zone-priority="currentSubtemplate?.hot_zone_priority ?? null"
         :cold-zone-priority="currentSubtemplate?.cold_zone_priority ?? null"
         :flow-direction="currentSubtemplate?.flow_direction ?? null"
+        :layout-orientation="currentSubtemplate?.layout_orientation ?? null"
         @save="saveCurrentModuleDefaults"
     />
 

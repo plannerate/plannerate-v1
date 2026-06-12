@@ -115,7 +115,7 @@ const maxSharePerSubcategoryModel = computed({
                     {{ t('planogram-templates.slot_editor_fields.role.description') }}
                 </p>
                 <select id="slot-role-override" v-model="draft.role_override"
-                    class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                    class="flex h-9 w-full rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                     <option v-for="opt in categoryRoleOptions" :key="opt.value" :value="opt.value || null">
                         {{ t(`planogram-templates.role_options.${opt.value || 'inherit'}`) }}
                     </option>

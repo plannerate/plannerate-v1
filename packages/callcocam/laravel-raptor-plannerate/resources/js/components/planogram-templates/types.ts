@@ -28,6 +28,9 @@ export type SlotFacingExpansion = 'none' | 'score' | 'current_stock' | 'target_s
 export type CategoryRole = 'destino' | 'rotina' | 'conveniencia' | 'impulso' | 'sazonal' | 'complementar';
 export type FlowDirection = 'left_to_right' | 'right_to_left';
 
+/** Disposição dos produtos: horizontal (legado) ou vertical (blocagem por marca em colunas alinhadas) */
+export type LayoutOrientation = 'horizontal' | 'vertical';
+
 /** Tipo de alerta no relatório de explicação */
 export type ExplanationAlertType = 'missing_dimensions' | 'mix_excede_gondola' | 'target_stock_not_met';
 
@@ -122,6 +125,7 @@ export type PlanogramSubtemplate = {
     hot_zone_priority?: ZonePriority | null;
     cold_zone_priority?: ZonePriority | null;
     flow_direction?: FlowDirection | null;
+    layout_orientation?: LayoutOrientation | null;
     slots: PlanogramTemplateSlot[];
 };
 

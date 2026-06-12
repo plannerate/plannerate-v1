@@ -9,6 +9,7 @@
  */
 
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\AutoGenerateConfigDTO;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementSettings;
 
 function makeFullConfig(): AutoGenerateConfigDTO
 {
@@ -34,6 +35,7 @@ function makeFullConfig(): AutoGenerateConfigDTO
         'hot_zone_priority' => 'maior_giro',
         'cold_zone_priority' => 'maior_volume',
         'flow_direction' => 'right_to_left',
+        'layout_orientation' => 'vertical',
         'secondary_criteria' => [['key' => 'marca', 'direction' => 'asc']],
         'exclude_class_c' => true,
     ]);
@@ -84,4 +86,19 @@ test('withOverrides sem chaves retorna clone idêntico', function (): void {
     $config = makeFullConfig();
 
     expect($config->withOverrides([])->toArray())->toBe($config->toArray());
+});
+
+test('layout_orientation sobrevive ao round-trip config → settings → clones', function (): void {
+    $config = makeFullConfig();
+
+    expect($config->layoutOrientation)->toBe('vertical');
+
+    // fromConfigDto deve carregar o campo, e os métodos clone (with*) preservá-lo —
+    // campo esquecido num clone silenciosamente viraria null e desligaria a blocagem
+    $settings = PlacementSettings::fromConfigDto($config);
+
+    expect($settings->layoutOrientation)->toBe('vertical')
+        ->and($settings->withAbcMap(['p1' => 'A'])->layoutOrientation)->toBe('vertical')
+        ->and($settings->withTemplate('tpl', 4, null, collect())->layoutOrientation)->toBe('vertical')
+        ->and($settings->withBcgMap(['p1' => 'leader'])->layoutOrientation)->toBe('vertical');
 });

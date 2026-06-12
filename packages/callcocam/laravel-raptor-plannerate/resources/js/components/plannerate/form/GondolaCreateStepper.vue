@@ -288,6 +288,7 @@ const getInitialFormData = () => {
         hot_zone_priority: 'maior_margem' as string | null,
         cold_zone_priority: 'complementar_fria' as string | null,
         flow_direction: null as string | null,
+        layout_orientation: null as string | null,
     };
 };
 

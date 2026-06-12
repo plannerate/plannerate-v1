@@ -5,6 +5,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Models;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
 use Callcocam\LaravelRaptorPlannerate\Enums\FlowDirection;
+use Callcocam\LaravelRaptorPlannerate\Enums\LayoutOrientation;
 use Callcocam\LaravelRaptorPlannerate\Enums\ZonePriority;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
@@ -28,6 +29,7 @@ class PlanogramSubtemplate extends Model
         'hot_zone_priority',
         'cold_zone_priority',
         'flow_direction',
+        'layout_orientation',
     ];
 
     protected function casts(): array
@@ -39,6 +41,7 @@ class PlanogramSubtemplate extends Model
             'hot_zone_priority' => ZonePriority::class,
             'cold_zone_priority' => ZonePriority::class,
             'flow_direction' => FlowDirection::class,
+            'layout_orientation' => LayoutOrientation::class,
         ];
     }
 

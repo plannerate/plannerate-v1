@@ -17,6 +17,7 @@ use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ShelfZoneResolver;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Synthesis\SlotPlanBuilder;
 use Callcocam\LaravelRaptorPlannerate\Enums\FacingExpansion;
 use Callcocam\LaravelRaptorPlannerate\Enums\FlowDirection;
+use Callcocam\LaravelRaptorPlannerate\Enums\LayoutOrientation;
 use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Enums\SpaceFallback;
 use Callcocam\LaravelRaptorPlannerate\Enums\ZonePriority;
@@ -67,6 +68,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
     /** Sentido de leitura do cliente — espelha posições físicas quando RightToLeft */
     private FlowDirection $flowDirection = FlowDirection::LeftToRight;
+
+    /** Disposição dos produtos: horizontal (legado) ou vertical (blocagem por marca em colunas alinhadas) */
+    private LayoutOrientation $layoutOrientation = LayoutOrientation::Horizontal;
 
     /** @var array<string, array<string, mixed>> Overrides por category_id desta gôndola [category_id => [campo => valor_raw]] */
     private array $gondolaSlotOverrides = [];
@@ -120,6 +124,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $this->hotZonePriority = $subtemplate->hot_zone_priority ?? ZonePriority::None;
         $this->coldZonePriority = $subtemplate->cold_zone_priority ?? ZonePriority::None;
         $this->flowDirection = $subtemplate->flow_direction ?? FlowDirection::LeftToRight;
+        $this->layoutOrientation = $subtemplate->layout_orientation ?? LayoutOrientation::Horizontal;
 
         $placed = collect();
         $rejected = collect();
@@ -171,7 +176,41 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             }
         }
 
+        // === BLOCAGEM VERTICAL (pré-passe) ===
+        // Quando layout_orientation = vertical, grupos de slots do mesmo módulo+categoria
+        // que ocupam prateleiras consecutivas são processados como colunas por marca
+        // (mesma faixa de X em todas as prateleiras). Slots fora dos grupos elegíveis
+        // (prateleiras compartilhadas, chão excluído, categorias de 1 prateleira)
+        // seguem o caminho horizontal legado intocado.
+        $verticalProcessedSlotIds = [];
+
+        if ($this->layoutOrientation === LayoutOrientation::Vertical) {
+            foreach ($this->buildVerticalGroups($slots, $positionSlotCounts) as $group) {
+                foreach ($group as $groupSlot) {
+                    $verticalProcessedSlotIds[$groupSlot->id] = true;
+                }
+
+                $groupResult = $this->placeVerticalGroup($group, $sections, $settings, $clearancesBySection);
+
+                $placed = $placed->merge($groupResult['placed']);
+                $rejected = $rejected->merge($groupResult['rejected']);
+                $slotAnalysis = array_merge($slotAnalysis, $groupResult['slot_analysis']);
+                $allPlacedExplanations = array_merge($allPlacedExplanations, $groupResult['placed_explanations']);
+                $emptySlotIds = array_merge($emptySlotIds, $groupResult['empty_slot_ids']);
+                $groupingsSemProduto += count($groupResult['empty_slot_ids']);
+
+                foreach ($groupResult['occupied_per_shelf'] as $vShelfId => $vWidth) {
+                    $occupiedPerShelf[$vShelfId] = ($occupiedPerShelf[$vShelfId] ?? 0.0) + $vWidth;
+                }
+            }
+        }
+
         foreach ($slots as $slot) {
+            // Slots já processados pela blocagem vertical não passam pelo caminho horizontal
+            if (isset($verticalProcessedSlotIds[$slot->id])) {
+                continue;
+            }
+
             $this->applySlotOverride($slot);
 
             $section = $this->resolveSection($sections, $slot->module_number);
@@ -213,28 +252,10 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 continue;
             }
 
-            $ordered = $this->orderCandidates($candidates, $slot, $section, $shelf);
-
-            // ReduceC: garante que produtos C ficam por último para serem rejeitados primeiro
-            if ($slot->space_fallback === SpaceFallback::ReduceC && ! empty($this->abcClassMap)) {
-                $ordered = $ordered->sortBy(fn ($p) => match ($this->abcClassMap[$p->id] ?? 'B') {
-                    'A' => 0,
-                    'B' => 1,
-                    'C' => 2,
-                    default => 1,
-                })->values();
-            }
-
-            // RemoveDog: produtos lagging (retardatários) ficam por último para serem rejeitados primeiro
-            if ($slot->space_fallback === SpaceFallback::RemoveDog && ! empty($this->bcgMap)) {
-                $ordered = $ordered->sortBy(fn ($p) => match ($this->bcgMap[$p->id] ?? 'anchor') {
-                    'leader' => 0,
-                    'rising' => 1,
-                    'anchor' => 2,
-                    'lagging' => 3,
-                    default => 2,
-                })->values();
-            }
+            $ordered = $this->applySpaceFallbackOrdering(
+                $this->orderCandidates($candidates, $slot, $section, $shelf),
+                $slot,
+            );
 
             // Suporte a prateleiras compartilhadas: múltiplos slots (de categorias diferentes)
             // podem apontar para o mesmo par (module_number, shelf_order). O segundo slot começa
@@ -958,6 +979,515 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             'placed' => $placed,
             'rejected' => $noSpaceRejected->merge($otherRejected),
             'placed_explanations' => $placedExplanations,
+        ];
+    }
+
+    /**
+     * Reordena o pool conforme a regra de falta de espaço do slot.
+     *
+     * ReduceC: produtos curva C vão para o fim da fila (rejeitados primeiro).
+     * RemoveDog: produtos lagging (retardatários) vão para o fim da fila.
+     * Compartilhado entre o caminho horizontal e a blocagem vertical.
+     */
+    private function applySpaceFallbackOrdering(Collection $ordered, PlanogramTemplateSlot $slot): Collection
+    {
+        if ($slot->space_fallback === SpaceFallback::ReduceC && ! empty($this->abcClassMap)) {
+            $ordered = $ordered->sortBy(fn ($p) => match ($this->abcClassMap[$p->id] ?? 'B') {
+                'A' => 0,
+                'B' => 1,
+                'C' => 2,
+                default => 1,
+            })->values();
+        }
+
+        if ($slot->space_fallback === SpaceFallback::RemoveDog && ! empty($this->bcgMap)) {
+            $ordered = $ordered->sortBy(fn ($p) => match ($this->bcgMap[$p->id] ?? 'anchor') {
+                'leader' => 0,
+                'rising' => 1,
+                'anchor' => 2,
+                'lagging' => 3,
+                default => 2,
+            })->values();
+        }
+
+        return $ordered;
+    }
+
+    /**
+     * Agrupa slots elegíveis para blocagem vertical (layout_orientation = vertical).
+     *
+     * Um grupo reúne slots do mesmo (module_number, category_id) cuja categoria ocupa
+     * 2+ prateleiras consecutivas. Regras de elegibilidade:
+     *  - prateleira compartilhada (micro-categoria adensada) nunca entra — o adensamento
+     *    quebraria o alinhamento das colunas;
+     *  - shelf_orders consecutivos (bloco visual contíguo);
+     *  - chão fora da blocagem: com 3+ prateleiras, o slot de shelf_order 1 sai do grupo
+     *    e segue o caminho horizontal legado (fardos/embalagens econômicas no chão).
+     *
+     * @param  Collection<int, PlanogramTemplateSlot>  $slots
+     * @param  array<string, int>  $positionSlotCounts  [module_shelf => qtde de slots na posição]
+     * @return list<list<PlanogramTemplateSlot>>
+     */
+    private function buildVerticalGroups(Collection $slots, array $positionSlotCounts): array
+    {
+        $byModuleCategory = [];
+
+        foreach ($slots as $slot) {
+            $posKey = $slot->module_number.'_'.$slot->shelf_order;
+
+            if (($positionSlotCounts[$posKey] ?? 1) >= 2 || $slot->category_id === null) {
+                continue;
+            }
+
+            $byModuleCategory[$slot->module_number.'|'.$slot->category_id][] = $slot;
+        }
+
+        $eligible = [];
+
+        foreach ($byModuleCategory as $group) {
+            usort($group, fn (PlanogramTemplateSlot $a, PlanogramTemplateSlot $b): int => $a->shelf_order <=> $b->shelf_order);
+
+            // Chão fora da blocagem quando o grupo tem 3+ prateleiras
+            if (count($group) >= 3 && $group[0]->shelf_order === 1) {
+                array_shift($group);
+            }
+
+            if (count($group) < 2) {
+                continue;
+            }
+
+            $consecutive = true;
+            for ($i = 1; $i < count($group); $i++) {
+                if ($group[$i]->shelf_order !== $group[$i - 1]->shelf_order + 1) {
+                    $consecutive = false;
+                    break;
+                }
+            }
+
+            if ($consecutive) {
+                $eligible[] = $group;
+            }
+        }
+
+        return $eligible;
+    }
+
+    /**
+     * Posiciona um grupo de slots como colunas verticais por marca.
+     *
+     * Cada marca recebe uma COLUNA de largura proporcional à sua demanda
+     * (com piso = produto mais largo da marca), e a coluna é preenchida de
+     * cima para baixo atravessando as prateleiras do grupo — mesma faixa de X
+     * em todas, formando o bloco visual alinhado.
+     *
+     * Produtos que não cabem na sua coluna viram NoHorizontalSpace e são
+     * recolocados pelo overflow pass global. A expansão de frentes acontece
+     * por célula (marca × prateleira) e nunca invade a coluna vizinha.
+     *
+     * @param  list<PlanogramTemplateSlot>  $group  Slots do mesmo módulo+categoria (shelf_order ASC)
+     * @param  Collection<int, Section>  $sections
+     * @param  array<string, array<string, float>>  $clearancesBySection  Cache de vãos livres (por referência)
+     * @return array{placed: Collection, rejected: Collection, slot_analysis: list<array<string, mixed>>, placed_explanations: list<array<string, mixed>>, occupied_per_shelf: array<string, float>, empty_slot_ids: list<string>}
+     */
+    private function placeVerticalGroup(
+        array $group,
+        Collection $sections,
+        PlacementSettings $settings,
+        array &$clearancesBySection,
+    ): array {
+        $rejected = collect();
+        $empty = [
+            'placed' => collect(),
+            'rejected' => $rejected,
+            'slot_analysis' => [],
+            'placed_explanations' => [],
+            'occupied_per_shelf' => [],
+            'empty_slot_ids' => [],
+        ];
+
+        foreach ($group as $slot) {
+            $this->applySlotOverride($slot);
+        }
+
+        $firstSlot = $group[0];
+        $section = $this->resolveSection($sections, $firstSlot->module_number);
+
+        if ($section === null) {
+            foreach ($group as $slot) {
+                $rejected->push([
+                    'product' => null,
+                    'reason' => PlacementFailureReason::NoShelfAtLevel,
+                    'slot_id' => $slot->id,
+                ]);
+            }
+
+            return $empty;
+        }
+
+        $sectionKey = (string) $section->getKey();
+        $clearancesBySection[$sectionKey] ??= $this->greedyPlacer->shelfClearances($section);
+
+        // Linhas da blocagem: topo primeiro (shelf_order maior = mais alto).
+        // O preenchimento desce prateleira a prateleira dentro de cada coluna.
+        /** @var list<array{slot: PlanogramTemplateSlot, shelf: Shelf, clearance: float|null}> $rows */
+        $rows = [];
+
+        foreach (array_reverse($group) as $slot) {
+            $shelf = $this->resolveShelf($section, $slot->shelf_order);
+
+            if ($shelf === null) {
+                $rejected->push([
+                    'product' => null,
+                    'reason' => PlacementFailureReason::NoShelfAtLevel,
+                    'slot_id' => $slot->id,
+                ]);
+
+                continue;
+            }
+
+            $clearance = $clearancesBySection[$sectionKey][$shelf->getKey()] ?? 0.0;
+            $rows[] = ['slot' => $slot, 'shelf' => $shelf, 'clearance' => $clearance > 0 ? $clearance : null];
+        }
+
+        if ($rows === []) {
+            return $empty;
+        }
+
+        // Pool de candidatos: o primeiro slot representa o grupo (mesma categoria)
+        $allCandidates = $this->findCandidates($firstSlot, $settings);
+        [$candidates, $blockedCandidates] = $this->partitionBlocked($allCandidates);
+
+        foreach ($blockedCandidates as $blockedProduct) {
+            $rejected->push([
+                'product' => $blockedProduct,
+                'reason' => PlacementFailureReason::Blocked,
+                'slot_id' => $firstSlot->id,
+            ]);
+        }
+
+        if ($candidates->isEmpty()) {
+            $empty['empty_slot_ids'] = array_map(fn (PlanogramTemplateSlot $s): string => $s->id, $group);
+
+            return $empty;
+        }
+
+        $ordered = $this->applySpaceFallbackOrdering(
+            $this->orderCandidates($candidates, $firstSlot, $section, $rows[0]['shelf']),
+            $firstSlot,
+        );
+
+        $shelfTotalWidth = $this->getShelfAvailableWidth($section);
+        $minFacings = max($firstSlot->min_facings, 1);
+
+        // 1. Partição por marca — ordem de primeira aparição no pool ordenado
+        //    (respeita score/ABC: a melhor marca fica na primeira coluna do fluxo)
+        /** @var array<string, list<mixed>> $brandProducts */
+        $brandProducts = [];
+
+        foreach ($ordered as $product) {
+            $rawWidth = isset($product->width) ? (float) $product->width : null;
+
+            if ($rawWidth === null || $rawWidth <= 0) {
+                $rejected->push([
+                    'product' => $product,
+                    'reason' => PlacementFailureReason::MissingDimensions,
+                    'slot_id' => $firstSlot->id,
+                ]);
+                // Mesma semântica do caminho horizontal: sem dimensão não tenta outros slots
+                $this->globalPlacedProductIds[$product->id] = true;
+
+                continue;
+            }
+
+            $brandProducts[$product->brand ?? 'SEM MARCA'][] = $product;
+        }
+
+        if ($brandProducts === []) {
+            $empty['empty_slot_ids'] = array_map(fn (PlanogramTemplateSlot $s): string => $s->id, $group);
+
+            return $empty;
+        }
+
+        // 2. Demanda e piso (produto mais largo × min_facings) por marca
+        $demand = [];
+        $minViable = [];
+
+        foreach ($brandProducts as $brand => $products) {
+            $demand[$brand] = 0.0;
+            $minViable[$brand] = 0.0;
+
+            foreach ($products as $product) {
+                $w = $this->widthResolver->resolve($product) * $minFacings;
+                $demand[$brand] += $w;
+                $minViable[$brand] = max($minViable[$brand], $w);
+            }
+        }
+
+        // 2b. Se nem os pisos cabem, remove a marca de MENOR demanda até caber
+        //     (produtos removidos viram NoHorizontalSpace → overflow pass)
+        $leftovers = [];
+
+        while (count($demand) > 1 && array_sum($minViable) > $shelfTotalWidth) {
+            $smallest = array_keys($demand, min($demand))[0];
+
+            foreach ($brandProducts[$smallest] as $product) {
+                $leftovers[] = $product;
+            }
+
+            unset($brandProducts[$smallest], $demand[$smallest], $minViable[$smallest]);
+        }
+
+        // 2c. Largura de coluna = piso + sobra distribuída proporcionalmente à demanda.
+        // Cap na largura da prateleira: protege o caso de marca única com piso maior que a prateleira
+        // (o produto largo demais cai no check de largura da coluna e vai para o overflow).
+        $rest = max(0.0, $shelfTotalWidth - array_sum($minViable));
+        $totalDemand = max(array_sum($demand), 0.001);
+        $colWidth = [];
+
+        foreach ($demand as $brand => $brandDemand) {
+            $colWidth[$brand] = min($shelfTotalWidth, $minViable[$brand] + $rest * ($brandDemand / $totalDemand));
+        }
+
+        // 3. Faixas de X por coluna (cálculo sempre em LTR; espelhamento no final)
+        $colStart = [];
+        $x = 0.0;
+
+        foreach ($colWidth as $brand => $width) {
+            $colStart[$brand] = $x;
+            $x += $width;
+        }
+
+        // 4. Preenchimento coluna por coluna, de cima para baixo.
+        //    Célula = (linha/prateleira × marca); o X de cada item é derivado
+        //    da posição acumulada DENTRO da célula após a expansão de frentes.
+        /** @var array<int, array<string, array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}>>> $cells */
+        $cells = [];
+        $rowCount = count($rows);
+        $maxClearance = max(array_map(fn (array $row): float => $row['clearance'] ?? PHP_FLOAT_MAX, $rows));
+
+        foreach ($brandProducts as $brand => $products) {
+            $rowIdx = 0;
+            $cellOccupied = 0.0;
+
+            foreach ($products as $product) {
+                $productHeight = (float) ($product->height ?? 0);
+
+                // Mais alto que TODOS os vãos do grupo: não cabe fisicamente em nenhuma linha
+                if ($productHeight > $maxClearance) {
+                    $rejected->push([
+                        'product' => $product,
+                        'reason' => PlacementFailureReason::HeightExceedsShelf,
+                        'slot_id' => $rows[$rowIdx]['slot']->id,
+                    ]);
+
+                    continue;
+                }
+
+                $singleWidth = $this->widthResolver->resolve($product);
+                $width = (int) round($singleWidth * $minFacings);
+
+                // Mais largo que a própria coluna: nem 1 conjunto de frentes mínimas cabe
+                if ($width > $colWidth[$brand] + 0.01) {
+                    $leftovers[] = $product;
+
+                    continue;
+                }
+
+                // Avança para a próxima linha quando a célula atual encheu ou o vão é baixo demais
+                while ($rowIdx < $rowCount
+                    && ($cellOccupied + $width > $colWidth[$brand] + 0.01
+                        || ($rows[$rowIdx]['clearance'] !== null && $productHeight > $rows[$rowIdx]['clearance']))) {
+                    $rowIdx++;
+                    $cellOccupied = 0.0;
+                }
+
+                if ($rowIdx >= $rowCount) {
+                    // Coluna cheia: o restante da marca vai para o overflow pass
+                    $leftovers[] = $product;
+                    $rowIdx = $rowCount - 1;
+                    $cellOccupied = $colWidth[$brand]; // mantém a célula marcada como cheia
+
+                    continue;
+                }
+
+                $cells[$rowIdx][$brand][] = [
+                    'product' => $product,
+                    'facings' => $minFacings,
+                    'singleWidth' => $singleWidth,
+                    'ordering' => 0, // reatribuído por prateleira após o espelhamento
+                ];
+                $cellOccupied += $width;
+            }
+        }
+
+        // 5. Expansão de frentes POR CÉLULA — nunca invade a coluna vizinha
+        if ($firstSlot->facing_expansion !== FacingExpansion::None) {
+            foreach ($cells as $rowIdx => $brandsInRow) {
+                foreach ($brandsInRow as $brand => $items) {
+                    $occupied = 0.0;
+
+                    foreach ($items as $item) {
+                        $occupied += round($item['singleWidth'] * $item['facings']);
+                    }
+
+                    [$cells[$rowIdx][$brand]] = $this->expandFacings(
+                        $items,
+                        $rows[$rowIdx]['slot'],
+                        $colWidth[$brand],
+                        $occupied,
+                    );
+                }
+            }
+        }
+
+        // 6. Construção dos PlacedSegments — a "coluna" é só a coincidência do X inicial
+        $placed = collect();
+        $placedExplanations = [];
+        $occupiedPerShelf = [];
+        $rowStats = array_fill(0, $rowCount, ['placed' => 0, 'occupied' => 0.0]);
+
+        foreach ($cells as $rowIdx => $brandsInRow) {
+            $row = $rows[$rowIdx];
+
+            foreach ($colStart as $brand => $startX) {
+                $items = $brandsInRow[$brand] ?? [];
+
+                if ($items === []) {
+                    continue;
+                }
+
+                $cellX = $startX;
+
+                foreach ($items as $item) {
+                    $width = (int) round($item['singleWidth'] * $item['facings']);
+
+                    $placed->push(new PlacedSegment(
+                        sectionId: $section->getKey(),
+                        shelfId: $row['shelf']->getKey(),
+                        ordering: 0, // reatribuído após o espelhamento
+                        position: (int) round($cellX),
+                        width: $width,
+                        distributedWidth: $width,
+                        layers: collect([
+                            new PlacedLayer(
+                                productId: $item['product']->id,
+                                ean: (string) ($item['product']->ean ?? ''),
+                                quantity: $item['facings'],
+                                height: 1,
+                            ),
+                        ]),
+                    ));
+
+                    $this->globalPlacedProductIds[$item['product']->id] = true;
+                    $cellX += $width;
+                    $rowStats[$rowIdx]['placed']++;
+                    $rowStats[$rowIdx]['occupied'] += $width;
+                }
+
+                $zone = $this->resolveZoneForShelf($section, $row['shelf']);
+                $placedExplanations = array_merge(
+                    $placedExplanations,
+                    $this->buildPlacedExplanations($items, $row['slot'], $minFacings, $zone),
+                );
+            }
+
+            $occupiedPerShelf[$row['shelf']->getKey()] = $rowStats[$rowIdx]['occupied'];
+        }
+
+        // 7. Espelhamento RightToLeft: colunas inteiras invertem mantendo o alinhamento,
+        //    pois todas as prateleiras usam a mesma largura total de referência
+        if ($this->flowDirection === FlowDirection::RightToLeft && $placed->isNotEmpty()) {
+            $mirrorWidth = (int) round($shelfTotalWidth);
+            $placed = $placed->map(fn (PlacedSegment $seg): PlacedSegment => new PlacedSegment(
+                sectionId: $seg->sectionId,
+                shelfId: $seg->shelfId,
+                ordering: $seg->ordering,
+                position: $mirrorWidth - $seg->position - $seg->width,
+                width: $seg->width,
+                distributedWidth: $seg->distributedWidth,
+                layers: $seg->layers,
+                shelfLevel: $seg->shelfLevel,
+            ));
+        }
+
+        // 8. Ordering sequencial por prateleira (contrato do PlacedSegment: índice horizontal)
+        $placed = $placed
+            ->groupBy('shelfId')
+            ->flatMap(fn (Collection $segments) => $segments
+                ->sortBy('position')
+                ->values()
+                ->map(fn (PlacedSegment $seg, int $i): PlacedSegment => new PlacedSegment(
+                    sectionId: $seg->sectionId,
+                    shelfId: $seg->shelfId,
+                    ordering: $i,
+                    position: $seg->position,
+                    width: $seg->width,
+                    distributedWidth: $seg->distributedWidth,
+                    layers: $seg->layers,
+                    shelfLevel: $seg->shelfLevel,
+                )))
+            ->values();
+
+        // 9. Sobras → NoHorizontalSpace (o overflow pass global tenta recolocá-las);
+        //    obrigatórios ganham o motivo específico, como no caminho horizontal
+        foreach ($leftovers as $product) {
+            $rejected->push([
+                'product' => $product,
+                'reason' => isset($this->mandatoryProductIds[$product->id])
+                    ? PlacementFailureReason::MandatoryNoSpace
+                    : PlacementFailureReason::NoHorizontalSpace,
+                'slot_id' => $firstSlot->id,
+            ]);
+        }
+
+        // 10. Análise de espaço por slot do grupo (mesmo formato do caminho horizontal)
+        $slotAnalysis = [];
+
+        foreach ($rows as $rowIdx => $row) {
+            $occupied = round($rowStats[$rowIdx]['occupied'], 1);
+            $slotAnalysis[] = [
+                'slot_id' => $row['slot']->id,
+                'category_id' => $row['slot']->category_id,
+                'category_name' => $row['slot']->category?->name ?? $row['slot']->category_id,
+                'role' => $row['slot']->effectiveRole()?->value,
+                'module_number' => $row['slot']->module_number,
+                'shelf_order' => $row['slot']->shelf_order,
+                'shelf_id' => $row['shelf']->getKey(),
+                'largura_total' => round($shelfTotalWidth, 1),
+                'largura_usada' => $occupied,
+                'largura_livre' => round(max(0.0, $shelfTotalWidth - $occupied), 1),
+                'percentual_uso' => $shelfTotalWidth > 0 ? (int) round(($occupied / $shelfTotalWidth) * 100) : 0,
+                'produtos_posicionados' => $rowStats[$rowIdx]['placed'],
+                'produtos_rejeitados' => 0, // sobras são contabilizadas no slot líder do grupo
+                'rejeitados_sem_dimensao' => 0,
+                'produtos_rejeitados_nomes' => [],
+            ];
+        }
+
+        if ($slotAnalysis !== []) {
+            $slotAnalysis[0]['produtos_rejeitados'] = count($leftovers);
+            $slotAnalysis[0]['produtos_rejeitados_nomes'] = array_values(array_map(
+                fn ($product) => $product->name,
+                $leftovers,
+            ));
+        }
+
+        Log::info('TemplatePlacementEngine: blocagem vertical aplicada', [
+            'module' => $firstSlot->module_number,
+            'category_id' => $firstSlot->category_id,
+            'prateleiras' => $rowCount,
+            'colunas' => array_map(fn (float $w): float => round($w, 1), $colWidth),
+            'posicionados' => $placed->count(),
+            'sobras_overflow' => count($leftovers),
+        ]);
+
+        return [
+            'placed' => $placed,
+            'rejected' => $rejected,
+            'slot_analysis' => $slotAnalysis,
+            'placed_explanations' => $placedExplanations,
+            'occupied_per_shelf' => $occupiedPerShelf,
+            'empty_slot_ids' => [],
         ];
     }
 

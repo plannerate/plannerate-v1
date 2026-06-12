@@ -13,7 +13,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useT } from '@/composables/useT';
-import type { FlowDirection, PlanogramSlotDefaults, PlanogramTemplateSlot, ZonePriority } from './types';
+import type { FlowDirection, LayoutOrientation, PlanogramSlotDefaults, PlanogramTemplateSlot, ZonePriority } from './types';
 
 type ModuleDefaultsDraft = {
     category_id: string | null;
@@ -30,6 +30,7 @@ type ModuleDefaultsDraft = {
     hot_zone_priority: ZonePriority | null;
     cold_zone_priority: ZonePriority | null;
     flow_direction: FlowDirection | null;
+    layout_orientation: LayoutOrientation | null;
 };
 
 const props = defineProps<{
@@ -39,6 +40,7 @@ const props = defineProps<{
     hotZonePriority?: ZonePriority | null;
     coldZonePriority?: ZonePriority | null;
     flowDirection?: FlowDirection | null;
+    layoutOrientation?: LayoutOrientation | null;
 }>();
 
 const emit = defineEmits<{
@@ -61,6 +63,7 @@ const draft = reactive<ModuleDefaultsDraft>({
     hot_zone_priority: null,
     cold_zone_priority: null,
     flow_direction: null,
+    layout_orientation: null,
 });
 
 watch(
@@ -84,6 +87,7 @@ watch(
         draft.hot_zone_priority = hotPriority ?? null;
         draft.cold_zone_priority = coldPriority ?? null;
         draft.flow_direction = props.flowDirection ?? null;
+        draft.layout_orientation = props.layoutOrientation ?? null;
     },
     { immediate: true },
 );
@@ -286,6 +290,43 @@ function saveDefaults(): void {
                             <span>←</span> {{ t('planogram-templates.flow_direction.right_to_left') }}
                         </button>
                     </div>
+                </div>
+
+                <!-- Disposição dos produtos (horizontal × blocagem vertical por marca) -->
+                <div class="rounded-md border border-border p-3">
+                    <p class="mb-3 text-sm font-medium">{{ t('planogram-templates.layout_orientation.title') }}</p>
+                    <p class="mb-3 text-xs text-muted-foreground">
+                        {{ t('planogram-templates.layout_orientation.description') }}
+                    </p>
+                    <div class="flex gap-2">
+                        <button
+                            type="button"
+                            class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm transition-colors"
+                            :class="
+                                !draft.layout_orientation || draft.layout_orientation === 'horizontal'
+                                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                                    : 'border-border text-muted-foreground hover:border-primary/50'
+                            "
+                            @click="draft.layout_orientation = 'horizontal'"
+                        >
+                            {{ t('planogram-templates.layout_orientation.horizontal') }} <span class="ml-1 text-xs opacity-60">{{ t('planogram-templates.layout_orientation.horizontal_default') }}</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm transition-colors"
+                            :class="
+                                draft.layout_orientation === 'vertical'
+                                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                                    : 'border-border text-muted-foreground hover:border-primary/50'
+                            "
+                            @click="draft.layout_orientation = 'vertical'"
+                        >
+                            {{ t('planogram-templates.layout_orientation.vertical') }}
+                        </button>
+                    </div>
+                    <p class="mt-2 text-xs text-muted-foreground">
+                        {{ t('planogram-templates.layout_orientation.regenerate_hint') }}
+                    </p>
                 </div>
 
                 <!-- Priorização por zona térmica -->

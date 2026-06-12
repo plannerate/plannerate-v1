@@ -4,11 +4,11 @@ namespace Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Template;
 
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Enums\FlowDirection;
+use Callcocam\LaravelRaptorPlannerate\Enums\LayoutOrientation;
 use Callcocam\LaravelRaptorPlannerate\Enums\ZonePriority;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramRejectedProduct;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 final class TemplateSlotService
@@ -123,6 +123,7 @@ final class TemplateSlotService
             'hot_zone_priority' => ['nullable', 'string', "in:{$zonePriorityValues}"],
             'cold_zone_priority' => ['nullable', 'string', "in:{$zonePriorityValues}"],
             'flow_direction' => ['nullable', 'string', 'in:'.implode(',', array_column(FlowDirection::cases(), 'value'))],
+            'layout_orientation' => ['nullable', 'string', 'in:'.implode(',', array_column(LayoutOrientation::cases(), 'value'))],
         ]);
 
         if ((int) ($validated['max_facings'] ?? 1) < (int) ($validated['min_facings'] ?? 1)) {
@@ -277,11 +278,12 @@ final class TemplateSlotService
     {
         $this->updateSubtemplateSlotDefaults($subtemplate, $validated);
 
-        // Zone priorities and flow direction are separate columns, not part of slot_defaults JSON
+        // Zone priorities, flow direction e layout orientation são colunas dedicadas, não parte do slot_defaults JSON
         $subtemplate->update([
             'hot_zone_priority' => $validated['hot_zone_priority'] ?? null,
             'cold_zone_priority' => $validated['cold_zone_priority'] ?? null,
             'flow_direction' => $validated['flow_direction'] ?? null,
+            'layout_orientation' => $validated['layout_orientation'] ?? null,
         ]);
     }
 
@@ -357,6 +359,7 @@ final class TemplateSlotService
                 'hot_zone_priority' => $sub->hot_zone_priority?->value,
                 'cold_zone_priority' => $sub->cold_zone_priority?->value,
                 'flow_direction' => $sub->flow_direction?->value,
+                'layout_orientation' => $sub->layout_orientation?->value,
                 'slots' => $sub->slots->map(function (Model $slot) use ($rejectedCounts): array {
                     $category = $slot->relationLoaded('category') ? $slot->getRelation('category') : null;
 

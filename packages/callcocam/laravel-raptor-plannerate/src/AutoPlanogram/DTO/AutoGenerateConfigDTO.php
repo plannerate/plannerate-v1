@@ -93,6 +93,9 @@ class AutoGenerateConfigDTO
         /** Sentido de leitura (valor de FlowDirection) — null = LeftToRight */
         public readonly ?string $flowDirection = null,
 
+        /** Disposição dos produtos (valor de LayoutOrientation) — null = horizontal legado */
+        public readonly ?string $layoutOrientation = null,
+
         /**
          * Critérios visuais secundários adicionados após score_abc.
          *
@@ -136,6 +139,7 @@ class AutoGenerateConfigDTO
             hotZonePriority: $data['hot_zone_priority'] ?? 'maior_margem',
             coldZonePriority: $data['cold_zone_priority'] ?? 'complementar_fria',
             flowDirection: $data['flow_direction'] ?? null,
+            layoutOrientation: $data['layout_orientation'] ?? null,
             secondaryCriteria: $data['secondary_criteria'] ?? [],
             excludeClassC: (bool) ($data['exclude_class_c'] ?? false),
         );
@@ -181,6 +185,7 @@ class AutoGenerateConfigDTO
             'hot_zone_priority' => $this->hotZonePriority,
             'cold_zone_priority' => $this->coldZonePriority,
             'flow_direction' => $this->flowDirection,
+            'layout_orientation' => $this->layoutOrientation,
             'secondary_criteria' => $this->secondaryCriteria,
             'exclude_class_c' => $this->excludeClassC,
         ];

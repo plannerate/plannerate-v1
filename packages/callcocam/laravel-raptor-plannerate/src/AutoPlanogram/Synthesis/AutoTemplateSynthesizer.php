@@ -2,14 +2,13 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Synthesis;
 
-use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use App\Models\Category;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\SlotPlanEntry;
+use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -40,6 +39,7 @@ final class AutoTemplateSynthesizer
         ?string $hotZonePriority = null,
         ?string $coldZonePriority = null,
         ?string $flowDirection = null,
+        ?string $layoutOrientation = null,
     ): PlanogramSubtemplate {
         return $this->plannerateTenantDatabase()->transaction(function () use (
             $planogramBaseCategoryId,
@@ -51,6 +51,7 @@ final class AutoTemplateSynthesizer
             $hotZonePriority,
             $coldZonePriority,
             $flowDirection,
+            $layoutOrientation,
         ): PlanogramSubtemplate {
             $this->warnIfNoAbcIntelligence($slotPlan, $abcClassMap);
 
@@ -66,6 +67,7 @@ final class AutoTemplateSynthesizer
                 hotZonePriority: $hotZonePriority,
                 coldZonePriority: $coldZonePriority,
                 flowDirection: $flowDirection,
+                layoutOrientation: $layoutOrientation,
             );
 
             $this->createSlots($subtemplate, $slotPlan);
@@ -140,6 +142,7 @@ final class AutoTemplateSynthesizer
         ?string $hotZonePriority = null,
         ?string $coldZonePriority = null,
         ?string $flowDirection = null,
+        ?string $layoutOrientation = null,
     ): PlanogramSubtemplate {
         $existing = PlanogramSubtemplate::withTrashed()
             ->where('template_id', $template->getKey())
@@ -160,6 +163,7 @@ final class AutoTemplateSynthesizer
                 'hot_zone_priority' => $hotZonePriority,
                 'cold_zone_priority' => $coldZonePriority,
                 'flow_direction' => $flowDirection,
+                'layout_orientation' => $layoutOrientation,
             ]);
 
             // Remover slots antigos para recriação limpa (idempotência)
@@ -176,6 +180,7 @@ final class AutoTemplateSynthesizer
             'hot_zone_priority' => $hotZonePriority,
             'cold_zone_priority' => $coldZonePriority,
             'flow_direction' => $flowDirection,
+            'layout_orientation' => $layoutOrientation,
         ]);
     }
 

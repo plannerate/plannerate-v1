@@ -124,6 +124,7 @@ const form = useForm({
     hot_zone_priority: 'maior_margem' as string | null,
     cold_zone_priority: 'complementar_fria' as string | null,
     flow_direction: null as string | null,
+    layout_orientation: null as string | null,
     exclude_class_c: false,
 });
 
@@ -153,6 +154,7 @@ const zodResult = computed(() =>
         hot_zone_priority: form.hot_zone_priority,
         cold_zone_priority: form.cold_zone_priority,
         flow_direction: form.flow_direction,
+        layout_orientation: form.layout_orientation,
         exclude_class_c: form.exclude_class_c,
     }),
 );
@@ -290,7 +292,7 @@ function handleGenerate(): void {
                             <Label for="facing-expansion">{{ t('plannerate.header.auto_generate.facing_expansion_label')
                                 }}</Label>
                             <select id="facing-expansion" v-model="form.facing_expansion"
-                                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                                class="flex h-9 w-full rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                                 <option :value="null">{{ t('plannerate.header.auto_generate.facing_expansion_none') }}
                                 </option>
                                 <option value="score">{{ t('plannerate.header.auto_generate.facing_expansion_score') }}
@@ -308,7 +310,7 @@ function handleGenerate(): void {
                             <Label for="space-fallback">{{ t('plannerate.header.auto_generate.space_fallback_label')
                                 }}</Label>
                             <select id="space-fallback" v-model="form.space_fallback"
-                                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                                class="flex h-9 w-full rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                                 <option :value="null">—</option>
                                 <option value="reduce_c">{{ t('plannerate.header.auto_generate.space_fallback_reduce_c') }}</option>
                                 <option value="remove_dog">{{ t('plannerate.header.auto_generate.space_fallback_remove_dog') }}</option>
@@ -377,7 +379,7 @@ function handleGenerate(): void {
                         <div class="space-y-1">
                             <Label for="hot-zone-priority" class="text-xs">{{ t('plannerate.header.auto_generate.hot_zone_priority_label') }}</Label>
                             <select id="hot-zone-priority" v-model="form.hot_zone_priority"
-                                class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                                class="flex h-8 w-full rounded-md border border-input bg-background text-foreground px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                                 <option value="none">{{ t('plannerate.header.auto_generate.zone_priority_none') }}</option>
                                 <option value="maior_margem">{{ t('plannerate.header.auto_generate.zone_priority_maior_margem') }}</option>
                                 <option value="maior_giro">{{ t('plannerate.header.auto_generate.zone_priority_maior_giro') }}</option>
@@ -388,7 +390,7 @@ function handleGenerate(): void {
                         <div class="space-y-1">
                             <Label for="cold-zone-priority" class="text-xs">{{ t('plannerate.header.auto_generate.cold_zone_priority_label') }}</Label>
                             <select id="cold-zone-priority" v-model="form.cold_zone_priority"
-                                class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                                class="flex h-8 w-full rounded-md border border-input bg-background text-foreground px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                                 <option value="none">{{ t('plannerate.header.auto_generate.zone_priority_none') }}</option>
                                 <option value="menor_margem">{{ t('plannerate.header.auto_generate.zone_priority_menor_margem') }}</option>
                                 <option value="complementar_fria">{{ t('plannerate.header.auto_generate.zone_priority_complementar_fria') }}</option>
@@ -399,10 +401,19 @@ function handleGenerate(): void {
                         <div class="space-y-1">
                             <Label for="flow-direction" class="text-xs">{{ t('plannerate.header.auto_generate.flow_direction_label') }}</Label>
                             <select id="flow-direction" v-model="form.flow_direction"
-                                class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                                class="flex h-8 w-full rounded-md border border-input bg-background text-foreground px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                                 <option :value="null">{{ t('plannerate.header.auto_generate.flow_direction_left_to_right') }}</option>
                                 <option value="right_to_left">{{ t('plannerate.header.auto_generate.flow_direction_right_to_left') }}</option>
                             </select>
+                        </div>
+                        <div class="space-y-1">
+                            <Label for="layout-orientation" class="text-xs">{{ t('plannerate.header.auto_generate.layout_orientation_label') }}</Label>
+                            <select id="layout-orientation" v-model="form.layout_orientation"
+                                class="flex h-8 w-full rounded-md border border-input bg-background text-foreground px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                                <option :value="null">{{ t('plannerate.header.auto_generate.layout_orientation_horizontal') }}</option>
+                                <option value="vertical">{{ t('plannerate.header.auto_generate.layout_orientation_vertical') }}</option>
+                            </select>
+                            <p class="text-[10px] text-muted-foreground">{{ t('plannerate.header.auto_generate.layout_orientation_hint') }}</p>
                         </div>
                     </div>
                 </div>

@@ -103,6 +103,16 @@ return [
         'right_to_left' => 'Direita → Esquerda',
     ],
 
+    // Layout orientation section (ModuleDefaultsModal.vue)
+    'layout_orientation' => [
+        'title' => 'Disposição dos produtos',
+        'description' => 'Horizontal: cada prateleira distribui seus produtos de forma independente. Vertical: quando a categoria ocupa várias prateleiras do módulo, cada marca forma uma coluna alinhada atravessando as prateleiras (blocagem por marca).',
+        'horizontal' => 'Horizontal',
+        'horizontal_default' => '(padrão)',
+        'vertical' => 'Vertical (blocagem por marca)',
+        'regenerate_hint' => 'Alterar a disposição exige regerar o planograma para reorganizar as colunas.',
+    ],
+
     // Zone priority section (ModuleDefaultsModal.vue)
     'zone_priority' => [
         'title' => 'Priorização por zona térmica',

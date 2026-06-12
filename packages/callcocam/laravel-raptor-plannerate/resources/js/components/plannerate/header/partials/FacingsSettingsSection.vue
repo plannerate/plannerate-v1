@@ -62,7 +62,7 @@ const { t } = useT();
                     <select
                         id="facing-expansion"
                         v-model="form.facing_expansion"
-                        class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        class="flex h-9 w-full rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
                         <option :value="null">{{ t('planogram-templates.facing_expansion.none') }}</option>
                         <option value="score">{{ t('planogram-templates.facing_expansion.score') }}</option>
@@ -77,7 +77,7 @@ const { t } = useT();
                     <select
                         id="space-fallback"
                         v-model="form.space_fallback"
-                        class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        class="flex h-9 w-full rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
                         <option :value="null">—</option>
                         <option value="reduce_c">{{ t('planogram-templates.slot_editor.space_fallback_options.reduce_c') }}</option>

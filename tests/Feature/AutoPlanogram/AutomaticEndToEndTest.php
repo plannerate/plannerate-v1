@@ -80,6 +80,7 @@ beforeEach(function (): void {
         $table->string('hot_zone_priority')->nullable();
         $table->string('cold_zone_priority')->nullable();
         $table->string('flow_direction')->nullable();
+        $table->string('layout_orientation')->nullable();
         $table->timestamps();
         $table->softDeletes();
     });
@@ -371,6 +372,7 @@ function autoE2eInput(
     Collection $sections,
     array $abcMap = [],
     ?string $selectedCategoryId = null,
+    ?string $layoutOrientation = null,
 ): PlanogramInput {
     return new PlanogramInput(
         planogramId: $planogramId,
@@ -388,6 +390,7 @@ function autoE2eInput(
             categoryId: $selectedCategoryId ?? $baseCategoryId,
             tenantId: null,
             abcClassMap: $abcMap,
+            layoutOrientation: $layoutOrientation,
         ),
         planogramCategoryId: $baseCategoryId,
     );
@@ -800,4 +803,83 @@ test('11 — categoria folha selecionada diretamente não é expandida (comporta
     // Produtos devem estar alocados
     expect(Layer::where('product_id', $p1->id)->count())->toBeGreaterThan(0);
     expect(Layer::where('product_id', $p2->id)->count())->toBeGreaterThan(0);
+});
+
+test('12 — layout_orientation=vertical: subtemplate persiste o campo e marcas formam colunas alinhadas entre prateleiras', function (): void {
+    $gondolaId = (string) Str::ulid();
+    $planogramId = (string) Str::ulid();
+
+    $acucares = autoE2eCategory('Açúcares');
+    $refinado = autoE2eCategory('Açúcar Refinado', parentId: $acucares->id);
+
+    // Duas marcas com 4 produtos de 12cm cada: a coluna (≈25cm em prateleira de 50cm)
+    // comporta 2 produtos por linha → cada marca ocupa 2 prateleiras, alinhadas
+    $brandA = [];
+    $brandB = [];
+
+    foreach (range(1, 4) as $i) {
+        $pa = autoE2eProduct($refinado->id, width: 12, name: "AltoAlegre {$i}");
+        $pa->brand = 'AltoAlegre';
+        $brandA[] = $pa;
+
+        $pb = autoE2eProduct($refinado->id, width: 12, name: "Uniao {$i}");
+        $pb->brand = 'Uniao';
+        $brandB[] = $pb;
+    }
+
+    $products = collect([...$brandA, ...$brandB]);
+    $abcMap = $products->mapWithKeys(fn (Product $p) => [$p->id => 'A'])->all();
+
+    autoE2eBindMockScorer($abcMap);
+
+    $sections = autoE2eSections(numModules: 1, numShelves: 4, width: 50.0);
+
+    $input = autoE2eInput(
+        $gondolaId,
+        $planogramId,
+        $acucares->id,
+        $products,
+        $sections,
+        $abcMap,
+        layoutOrientation: 'vertical',
+    );
+    autoE2eGenerate($input);
+
+    // O subtemplate sintetizado persiste a disposição escolhida
+    $subtemplate = PlanogramSubtemplate::first();
+    expect($subtemplate->layout_orientation?->value)->toBe('vertical');
+
+    // Reconstrói (marca → prateleira → posições X) a partir do que foi persistido
+    $brandOf = $products->mapWithKeys(fn (Product $p) => [$p->id => $p->brand]);
+    $positionsByBrandShelf = [];
+
+    foreach (Layer::all() as $layer) {
+        $segment = DB::connection('tenant')->table('segments')->where('id', $layer->segment_id)->first();
+        $brand = $brandOf[$layer->product_id];
+        $positionsByBrandShelf[$brand][$segment->shelf_id][] = (float) $segment->position;
+    }
+
+    // Cada marca aparece em 2+ prateleiras e o X INICIAL da coluna é idêntico em todas
+    foreach (['AltoAlegre', 'Uniao'] as $brand) {
+        $shelves = $positionsByBrandShelf[$brand] ?? [];
+        expect(count($shelves))->toBeGreaterThanOrEqual(2);
+
+        $startsPerShelf = array_map(fn (array $positions): float => min($positions), $shelves);
+        expect(count(array_unique($startsPerShelf)))->toBe(1);
+    }
+
+    // As duas colunas não se sobrepõem: faixas de X disjuntas
+    $allA = collect($positionsByBrandShelf['AltoAlegre'])->flatten();
+    $allB = collect($positionsByBrandShelf['Uniao'])->flatten();
+    expect($allA->max())->toBeLessThan($allB->min());
+});
+
+test('13 — sem layout_orientation a geração permanece horizontal (regressão zero: campo null no subtemplate)', function (): void {
+    $fx = autoE2eFixture();
+    autoE2eBindMockScorer($fx['abcMap'], $fx['rawQtyMap'], $fx['rawMargemMap']);
+
+    $input = autoE2eInput($fx['gondolaId'], $fx['planogramId'], $fx['rootId'], $fx['products'], $fx['sections'], $fx['abcMap']);
+    autoE2eGenerate($input);
+
+    expect(PlanogramSubtemplate::first()->layout_orientation)->toBeNull();
 });

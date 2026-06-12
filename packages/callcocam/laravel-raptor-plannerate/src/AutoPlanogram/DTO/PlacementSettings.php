@@ -150,6 +150,9 @@ final readonly class PlacementSettings
         /** Sentido de leitura para o subtemplate sintetizado (valor de FlowDirection) */
         public ?string $flowDirection = null,
 
+        /** Disposição dos produtos para o subtemplate sintetizado (valor de LayoutOrientation) — null = horizontal */
+        public ?string $layoutOrientation = null,
+
         /**
          * Critérios visuais secundários adicionados após score_abc no subtemplate sintetizado.
          *
@@ -211,6 +214,7 @@ final readonly class PlacementSettings
             hotZonePriority: $this->hotZonePriority,
             coldZonePriority: $this->coldZonePriority,
             flowDirection: $this->flowDirection,
+            layoutOrientation: $this->layoutOrientation,
             secondaryCriteria: $this->secondaryCriteria,
             bcgMap: $this->bcgMap,
         );
@@ -256,6 +260,7 @@ final readonly class PlacementSettings
             hotZonePriority: $this->hotZonePriority,
             coldZonePriority: $this->coldZonePriority,
             flowDirection: $this->flowDirection,
+            layoutOrientation: $this->layoutOrientation,
             secondaryCriteria: $this->secondaryCriteria,
         );
     }
@@ -301,6 +306,7 @@ final readonly class PlacementSettings
             hotZonePriority: $this->hotZonePriority,
             coldZonePriority: $this->coldZonePriority,
             flowDirection: $this->flowDirection,
+            layoutOrientation: $this->layoutOrientation,
             secondaryCriteria: $this->secondaryCriteria,
         );
     }
@@ -345,6 +351,7 @@ final readonly class PlacementSettings
             hotZonePriority: $this->hotZonePriority,
             coldZonePriority: $this->coldZonePriority,
             flowDirection: $this->flowDirection,
+            layoutOrientation: $this->layoutOrientation,
             secondaryCriteria: $this->secondaryCriteria,
         );
     }
@@ -389,6 +396,7 @@ final readonly class PlacementSettings
             hotZonePriority: $this->hotZonePriority,
             coldZonePriority: $this->coldZonePriority,
             flowDirection: $this->flowDirection,
+            layoutOrientation: $this->layoutOrientation,
             secondaryCriteria: $this->secondaryCriteria,
         );
     }
@@ -436,6 +444,7 @@ final readonly class PlacementSettings
             hotZonePriority: $this->hotZonePriority,
             coldZonePriority: $this->coldZonePriority,
             flowDirection: $this->flowDirection,
+            layoutOrientation: $this->layoutOrientation,
             secondaryCriteria: $this->secondaryCriteria,
         );
     }
@@ -490,6 +499,7 @@ final readonly class PlacementSettings
             hotZonePriority: $this->hotZonePriority,
             coldZonePriority: $this->coldZonePriority,
             flowDirection: $this->flowDirection,
+            layoutOrientation: $this->layoutOrientation,
             secondaryCriteria: $this->secondaryCriteria,
         );
     }
@@ -537,6 +547,7 @@ final readonly class PlacementSettings
             hotZonePriority: $this->hotZonePriority,
             coldZonePriority: $this->coldZonePriority,
             flowDirection: $this->flowDirection,
+            layoutOrientation: $this->layoutOrientation,
             secondaryCriteria: $this->secondaryCriteria,
         );
     }
@@ -584,6 +595,7 @@ final readonly class PlacementSettings
             hotZonePriority: $this->hotZonePriority,
             coldZonePriority: $this->coldZonePriority,
             flowDirection: $this->flowDirection,
+            layoutOrientation: $this->layoutOrientation,
             secondaryCriteria: $this->secondaryCriteria,
             bcgMap: $bcgMap,
         );
@@ -612,6 +624,7 @@ final readonly class PlacementSettings
             hotZonePriority: $dto->hotZonePriority,
             coldZonePriority: $dto->coldZonePriority,
             flowDirection: $dto->flowDirection,
+            layoutOrientation: $dto->layoutOrientation,
             secondaryCriteria: $dto->secondaryCriteria,
         );
     }
@@ -638,6 +651,7 @@ final readonly class PlacementSettings
             hotZonePriority: $this->hotZonePriority,
             coldZonePriority: $this->coldZonePriority,
             flowDirection: $this->flowDirection,
+            layoutOrientation: $this->layoutOrientation,
             secondaryCriteria: $this->secondaryCriteria,
         );
     }

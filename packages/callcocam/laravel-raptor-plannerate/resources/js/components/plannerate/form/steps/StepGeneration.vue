@@ -24,6 +24,8 @@ export interface GenerationFormState {
     cold_zone_priority: string | null;
     /** Sentido de leitura (null = esquerda→direita) */
     flow_direction: string | null;
+    /** Disposição dos produtos (null = horizontal; 'vertical' = blocagem por marca) */
+    layout_orientation: string | null;
 }
 
 /**
@@ -111,7 +113,7 @@ function setCategory(value: string | null): void {
                 <div class="space-y-1">
                     <Label for="step-hot-zone" class="text-xs">{{ t('plannerate.header.auto_generate.hot_zone_priority_label') }}</Label>
                     <select id="step-hot-zone" v-model="props.form.hot_zone_priority"
-                        class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                        class="flex h-8 w-full rounded-md border border-input bg-background text-foreground px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                         <option value="none">{{ t('plannerate.header.auto_generate.zone_priority_none') }}</option>
                         <option value="maior_margem">{{ t('plannerate.header.auto_generate.zone_priority_maior_margem') }}</option>
                         <option value="maior_giro">{{ t('plannerate.header.auto_generate.zone_priority_maior_giro') }}</option>
@@ -122,7 +124,7 @@ function setCategory(value: string | null): void {
                 <div class="space-y-1">
                     <Label for="step-cold-zone" class="text-xs">{{ t('plannerate.header.auto_generate.cold_zone_priority_label') }}</Label>
                     <select id="step-cold-zone" v-model="props.form.cold_zone_priority"
-                        class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                        class="flex h-8 w-full rounded-md border border-input bg-background text-foreground px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                         <option value="none">{{ t('plannerate.header.auto_generate.zone_priority_none') }}</option>
                         <option value="menor_margem">{{ t('plannerate.header.auto_generate.zone_priority_menor_margem') }}</option>
                         <option value="complementar_fria">{{ t('plannerate.header.auto_generate.zone_priority_complementar_fria') }}</option>
@@ -133,10 +135,19 @@ function setCategory(value: string | null): void {
                 <div class="space-y-1">
                     <Label for="step-flow-direction" class="text-xs">{{ t('plannerate.header.auto_generate.flow_direction_label') }}</Label>
                     <select id="step-flow-direction" v-model="props.form.flow_direction"
-                        class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                        class="flex h-8 w-full rounded-md border border-input bg-background text-foreground px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                         <option :value="null">{{ t('plannerate.header.auto_generate.flow_direction_left_to_right') }}</option>
                         <option value="right_to_left">{{ t('plannerate.header.auto_generate.flow_direction_right_to_left') }}</option>
                     </select>
+                </div>
+                <div class="space-y-1">
+                    <Label for="step-layout-orientation" class="text-xs">{{ t('plannerate.header.auto_generate.layout_orientation_label') }}</Label>
+                    <select id="step-layout-orientation" v-model="props.form.layout_orientation"
+                        class="flex h-8 w-full rounded-md border border-input bg-background text-foreground px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                        <option :value="null">{{ t('plannerate.header.auto_generate.layout_orientation_horizontal') }}</option>
+                        <option value="vertical">{{ t('plannerate.header.auto_generate.layout_orientation_vertical') }}</option>
+                    </select>
+                    <p class="text-[10px] text-muted-foreground">{{ t('plannerate.header.auto_generate.layout_orientation_hint') }}</p>
                 </div>
             </div>
         </div>
