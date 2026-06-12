@@ -639,39 +639,18 @@ class AbcAnalysisService
             return $noSalesResult;
         }
 
-        $acumulado = 0;
-        $ranking = 1;
-        $menorPercentualB = 1.0;
-        $hasClassB = false;
+        // Classificação pura (sem banco) — ver classifyRankedProducts() para a regra
+        $classified = $this->classifyRankedProducts($products, $totalPonderado);
 
-        // Primeiro, encontra o menor percentual da classe B
-        foreach ($products as $product) {
-            $percentualIndividual = $product['media_ponderada'] / $totalPonderado;
-            $acumulado += $percentualIndividual;
-
-            // Classifica temporariamente para encontrar menor B
-            $classificacao = $this->classify($acumulado);
-            if ($classificacao === 'B') {
-                $hasClassB = true;
-                if ($percentualIndividual < $menorPercentualB) {
-                    $menorPercentualB = $percentualIndividual;
-                }
-            }
-        }
-
-        // Agora processa todos os produtos com classificação final
-        $acumulado = 0;
-        $ranking = 1;
         $result = collect();
 
-        foreach ($products as $product) {
-            $percentualIndividual = $product['media_ponderada'] / $totalPonderado;
-            $acumulado += $percentualIndividual;
-
-            $classificacao = $this->classify($acumulado);
-
-            // Determina se deve retirar do mix
-            $retirarDoMix = $this->shouldRemoveFromMix($classificacao, $percentualIndividual, $menorPercentualB, $hasClassB);
+        foreach ($classified as $index => $item) {
+            $product = $products->values()->get($index);
+            $percentualIndividual = $item['percentual_individual'];
+            $acumulado = $item['percentual_acumulado'];
+            $classificacao = $item['classificacao'];
+            $ranking = $item['ranking'];
+            $retirarDoMix = $item['retirar_do_mix'];
 
             // Busca informações do produto (usa cache se disponível)
             $productModel = $productsCache?->get($product['product_id'])
@@ -707,9 +686,11 @@ class AbcAnalysisService
                 'retirar_do_mix' => $retirarDoMix,
                 'status' => $status,
             ]);
-
-            $ranking++;
         }
+
+        // Referências de diagnóstico derivadas da classificação pura
+        $menorPercentualB = $classified->where('classificacao', 'B')->min('percentual_individual') ?? 1.0;
+        $acumuladoFinal = $classified->last()['percentual_acumulado'] ?? 0.0;
 
         // Diagnóstico: confere se os cortes A/B/C e o acumulado fecham 100%
         Log::info('ABC Analysis - classificação por categoria', [
@@ -718,7 +699,7 @@ class AbcAnalysisService
             'menor_percentual_b' => round($menorPercentualB * 100, 4),
             'corte_a' => $this->corteA,
             'corte_b' => $this->corteB,
-            'acumulado_final_pct' => round($acumulado * 100, 4),
+            'acumulado_final_pct' => round($acumuladoFinal * 100, 4),
             'produtos' => $result->count(),
             'distribuicao' => [
                 'A' => $result->where('classificacao', 'A')->count(),
@@ -732,13 +713,91 @@ class AbcAnalysisService
     }
 
     /**
-     * Classifica produto em A, B ou C baseado no percentual acumulado
+     * Classifica produtos já ordenados (desc por media_ponderada) em A/B/C — lógica pura, sem banco.
+     *
+     * A classificação usa o percentual acumulado ANTES de somar o item (melhor prática
+     * de mercado): o primeiro do ranking é sempre A — inclusive em categorias com um
+     * único produto — e um item que cruza um corte ainda pertence à classe anterior.
+     * O percentual_acumulado retornado continua sendo o "após" (usado para exibição).
+     *
+     * @param  Collection  $products  Lista ordenada com 'product_id' e 'media_ponderada'
+     * @param  float  $totalPonderado  Soma de media_ponderada da categoria (deve ser > 0)
+     * @return Collection<int, array{product_id: mixed, percentual_individual: float, percentual_acumulado: float, classificacao: string, ranking: int, retirar_do_mix: bool}>
+     */
+    public function classifyRankedProducts(Collection $products, float $totalPonderado): Collection
+    {
+        $products = $products->values();
+
+        // Categoria inteira sem venda: não há evidência para promover ninguém —
+        // todos C, sem retirar do mix (espelha o ramo "sem vendas" do chamador).
+        if ($totalPonderado <= 0) {
+            return $products->map(fn ($product, $index) => [
+                'product_id' => $product['product_id'],
+                'percentual_individual' => 0.0,
+                'percentual_acumulado' => 0.0,
+                'classificacao' => 'C',
+                'ranking' => $index + 1,
+                'retirar_do_mix' => false,
+            ]);
+        }
+
+        // Primeiro passe: encontra o menor percentual individual da classe B,
+        // referência para a regra de retirar_do_mix.
+        $acumulado = 0.0;
+        $menorPercentualB = 1.0;
+        $hasClassB = false;
+
+        foreach ($products as $product) {
+            $percentualIndividual = $product['media_ponderada'] / $totalPonderado;
+            $acumuladoAntes = $acumulado;
+            $acumulado += $percentualIndividual;
+
+            if ($this->classify($acumuladoAntes) === 'B') {
+                $hasClassB = true;
+                if ($percentualIndividual < $menorPercentualB) {
+                    $menorPercentualB = $percentualIndividual;
+                }
+            }
+        }
+
+        // Segundo passe: classificação final + retirar_do_mix
+        $acumulado = 0.0;
+        $ranking = 1;
+        $result = collect();
+
+        foreach ($products as $product) {
+            $percentualIndividual = $product['media_ponderada'] / $totalPonderado;
+            $acumuladoAntes = $acumulado;
+            $acumulado += $percentualIndividual;
+
+            $classificacao = $this->classify($acumuladoAntes);
+
+            $result->push([
+                'product_id' => $product['product_id'],
+                'percentual_individual' => $percentualIndividual,
+                'percentual_acumulado' => $acumulado,
+                'classificacao' => $classificacao,
+                'ranking' => $ranking,
+                'retirar_do_mix' => $this->shouldRemoveFromMix($classificacao, $percentualIndividual, $menorPercentualB, $hasClassB),
+            ]);
+
+            $ranking++;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Classifica produto em A, B ou C baseado no percentual acumulado ANTES do item.
+     *
+     * Os cortes usam comparação estrita (<): um item cujo acumulado anterior está
+     * exatamente sobre o corte já pertence à classe seguinte.
      */
     private function classify(float $acumulado): string
     {
-        if ($acumulado <= $this->corteA) {
+        if ($acumulado < $this->corteA) {
             return 'A';
-        } elseif ($acumulado <= $this->corteB) {
+        } elseif ($acumulado < $this->corteB) {
             return 'B';
         }
 

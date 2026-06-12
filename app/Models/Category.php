@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Models\Scopes\TenantScope;
 use App\Models\Traits\BelongsToTenant;
-use App\Models\Traits\HasCategory;
 use App\Models\Traits\UsesTenantConnection;
 use Callcocam\LaravelRaptorPlannerate\Enums\CategoryRole;
 use Database\Factories\CategoryFactory;
@@ -64,10 +63,15 @@ class Category extends Model
 
     /**
      * Get parent category.
+     *
+     * static::class (late static binding) de propósito: o Category do pacote
+     * plannerate estende este model, e os pais/filhos precisam vir como a
+     * classe concreta para que os helpers de hierarquia do pacote
+     * (getAllDescendantIds etc.) funcionem na cadeia inteira.
      */
     public function parent(): BelongsTo
     {
-        return $this->belongsTo(self::class, 'category_id');
+        return $this->belongsTo(static::class, 'category_id');
     }
 
     /**
@@ -75,7 +79,7 @@ class Category extends Model
      */
     public function children(): HasMany
     {
-        return $this->hasMany(self::class, 'category_id');
+        return $this->hasMany(static::class, 'category_id');
     }
 
     /**
@@ -103,7 +107,7 @@ class Category extends Model
             }
             $current = $current->relationLoaded('parent')
                 ? $current->parent
-                : self::query()->whereKey($current->category_id)->first();
+                : static::query()->whereKey($current->category_id)->first();
         }
 
         return $chain->values();

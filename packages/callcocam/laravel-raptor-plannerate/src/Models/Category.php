@@ -8,61 +8,40 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Models;
 
-use App\Models\Traits\BelongsToTenant;
+use App\Models\Category as BaseCategory;
 use Callcocam\LaravelRaptorPlannerate\Models\Traits\HasCategory;
-use Callcocam\LaravelRaptorPlannerate\Models\Traits\UsesPlannerateTenantConnection;
-use Closure;
-use Database\Factories\CategoryFactory;
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Category extends Model
+/**
+ * Categoria sob a ótica do editor de planogramas.
+ *
+ * Estende App\Models\Category (dono da entidade — fillable, casts, slug,
+ * hierarquia parent/children/getFullHierarchy/getDescendantIds) e adiciona
+ * apenas o que é específico do domínio planograma:
+ *
+ * - appends mercadologico_cascading/hierarchy_path (accessors cacheados do
+ *   trait HasCategory, consumidos pelo payload do editor)
+ * - relações products()/planograms() apontando para os models do pacote
+ * - helpers de hierarquia usados pelo GondolaController e AbcAnalysisService
+ *
+ * As relações parent()/children() herdadas usam static::class, então pais e
+ * filhos desta classe vêm como Category do pacote — os helpers recursivos
+ * funcionam na cadeia inteira.
+ */
+class Category extends BaseCategory
 {
-    /** @use HasFactory<CategoryFactory> */
-    use BelongsToTenant, HasCategory, HasFactory, HasUlids, SoftDeletes, UsesPlannerateTenantConnection;
+    use HasCategory;
 
     protected $appends = ['mercadologico_cascading', 'hierarchy_path'];
 
-    public function products()
+    public function products(): HasMany
     {
         return $this->hasMany(Product::class);
     }
 
-    public function planograms()
+    public function planograms(): HasMany
     {
         return $this->hasMany(Planogram::class);
-    }
-
-    public function parent()
-    {
-        return $this->belongsTo(Category::class, 'category_id');
-    }
-
-    /**
-     * Categorias filhas (sub-categorias)
-     */
-    public function children()
-    {
-        return $this->hasMany(Category::class, 'category_id');
-    }
-
-    /**
-     * Retorna toda a hierarquia da categoria (do nível mais alto até esta categoria)
-     */
-    public function getFullHierarchy()
-    {
-        $hierarchy = collect();
-        $current = $this;
-
-        // Coleta a hierarquia de baixo para cima
-        while ($current) {
-            $hierarchy->prepend($current);
-            $current = $current->parent;
-        }
-
-        return $hierarchy;
     }
 
     /**
@@ -108,23 +87,5 @@ class Category extends Model
         }
 
         return $ids;
-    }
-
-    /**
-     * Retorna o caminho completo da hierarquia da categoria
-     * Exemplo: "SUPERMERCADO > MERCEARIA TRADICIONAL > FARINÁCEOS > FARINHA > DE MILHO"
-     */
-    public function getFullPathAttribute(): string
-    {
-        return $this->getFullHierarchy()
-            ->pluck('name')
-            ->implode(' > ');
-    }
-
-    public function callbackNewUniqueId(Closure $callback): self
-    {
-        $this->callbackNewUniqueId = $callback;
-
-        return $this;
     }
 }
