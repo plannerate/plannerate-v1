@@ -10,7 +10,6 @@ use App\Models\Module;
 use App\Models\Permission;
 use App\Models\Plan;
 use App\Models\Planogram;
-use App\Models\PlanogramTemplate;
 use App\Models\Product;
 use App\Models\Provider;
 use App\Models\Role;
@@ -23,6 +22,7 @@ use App\Models\User;
 use App\Support\Authorization\PermissionName;
 use App\Support\Navigation\Menu\Menu;
 use App\Support\Navigation\Menu\MenuPayloadAdapter;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
 use Illuminate\Http\Request;
 
 class SidebarNavigationService

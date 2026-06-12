@@ -2,7 +2,7 @@
 import { Head, router } from '@inertiajs/vue3';
 import { Download, Plus, Upload } from 'lucide-vue-next';
 import { computed } from 'vue';
-import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
+import PlanogramTemplateController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Templates/PlanogramTemplateController';
 import ListPage from '@/components/ListPage.vue';
 import NewActionButton from '@/components/NewActionButton.vue';
 import { ColumnActions, ColumnDate, ColumnLabel } from '@/components/table/columns';

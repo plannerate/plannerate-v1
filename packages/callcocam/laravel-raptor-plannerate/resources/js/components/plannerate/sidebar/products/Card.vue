@@ -65,6 +65,7 @@ import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
+import { setMultipleProductsDragData, setProductDragData } from '@/composables/plannerate/dnd/transfer';
 import { useT } from '@/composables/useT';
 import type { Product } from '@/types/planogram';
 
@@ -126,24 +127,14 @@ const handleDragStart = (event: DragEvent) => {
     isDragging.value = true;
 
     if (event.dataTransfer) {
-        event.dataTransfer.effectAllowed = 'copy';
-
         // Verifica se há múltiplos produtos selecionados
         const selectedProducts = selection.getSelectedProducts();
-        const hasMultiple = selectedProducts.length > 1;
 
-        if (hasMultiple) {
+        if (selectedProducts.length > 1) {
             // Modo múltiplo: inclui array de produtos
-            event.dataTransfer.setData(
-                'application/x-products-multiple',
-                'true',
-            );
-            event.dataTransfer.setData(
-                'application/x-products',
-                JSON.stringify(selectedProducts),
-            );
-            event.dataTransfer.setData(
-                'text/plain',
+            setMultipleProductsDragData(
+                event.dataTransfer,
+                selectedProducts,
                 t('plannerate.sidebar.product_card.selected_products', {
                     count: String(selectedProducts.length),
                 }),
@@ -157,16 +148,9 @@ const handleDragStart = (event: DragEvent) => {
             });
         } else {
             // Modo único: comportamento normal
-            event.dataTransfer.setData(
-                'application/x-product-id',
-                props.product.id,
-            );
-            event.dataTransfer.setData(
-                'application/x-product',
-                JSON.stringify(props.product),
-            );
-            event.dataTransfer.setData(
-                'text/plain',
+            setProductDragData(
+                event.dataTransfer,
+                props.product,
                 props.product.name || t('plannerate.sidebar.product_card.product_fallback'),
             );
         }

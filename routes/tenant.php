@@ -2,9 +2,6 @@
 
 // ── TENANT (rotas que exigem tenant ativo) ────────────────────
 
-use App\Http\Controllers\AutoPlanogramController;
-use App\Http\Controllers\GondolaSlotOverrideController;
-use App\Http\Controllers\PlanogramProductRuleController;
 use App\Http\Controllers\Settings;
 use App\Http\Controllers\Tenant;
 use App\Http\Controllers\Tenant\Products\DimensionApprovalController;
@@ -28,37 +25,6 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
         Route::get('editor/planograms/{record}/gondolas/editor', [Tenant\Editor\EditorPlanogramController::class, 'edit'])
             ->name('planograms.gondolas.editor');
 
-        // ── API interna — Auto-Planograma ─────────────────────
-        Route::prefix('api')->name('api.')->group(function (): void {
-            Route::post('gondolas/{gondola}/auto-generate', [AutoPlanogramController::class, 'generate'])
-                ->name('gondolas.auto-generate');
-            Route::get('gondolas/{gondola}/rejected-products', [AutoPlanogramController::class, 'rejectedProducts'])
-                ->name('gondolas.rejected-products');
-            Route::get('gondolas/{gondola}/template-groupings', [AutoPlanogramController::class, 'templateGroupings'])
-                ->name('gondolas.template-groupings');
-            Route::delete('gondolas/{gondola}/rejected-products/{rejected}', [AutoPlanogramController::class, 'destroyRejectedProduct'])
-                ->name('gondolas.rejected-products.destroy');
-            Route::post('gondolas/{gondola}/swap-product', [AutoPlanogramController::class, 'swapProduct'])
-                ->name('gondolas.swap-product');
-            Route::post('gondolas/{gondola}/reorder-visual', [AutoPlanogramController::class, 'reorderVisual'])
-                ->name('gondolas.reorder-visual');
-            Route::post('gondolas/{gondola}/redistribute', [AutoPlanogramController::class, 'redistributeExposure'])
-                ->name('gondolas.redistribute');
-            Route::post('gondolas/{gondola}/reorder-all', [AutoPlanogramController::class, 'reorderGondola'])
-                ->name('gondolas.reorder-all');
-            Route::post('gondolas/{gondola}/redistribute-all', [AutoPlanogramController::class, 'redistributeGondola'])
-                ->name('gondolas.redistribute-all');
-            Route::post('gondolas/{gondola}/regenerate-auto', [AutoPlanogramController::class, 'regenerateAuto'])
-                ->name('gondolas.regenerate-auto');
-
-            // ── Overrides de geração por categoria ───────────────
-            Route::put('gondolas/{gondola}/generation-overrides', [GondolaSlotOverrideController::class, 'upsert'])
-                ->name('gondolas.generation-overrides.upsert');
-            Route::delete('gondolas/{gondola}/generation-overrides/{categoryId}', [GondolaSlotOverrideController::class, 'destroy'])
-                ->name('gondolas.generation-overrides.destroy');
-            Route::post('gondolas/{gondola}/generation-overrides/{categoryId}/apply-to-template', [GondolaSlotOverrideController::class, 'applyToTemplate'])
-                ->name('gondolas.generation-overrides.apply-to-template');
-        });
     });
 
 // ── TENANT PRINCIPAL ──────────────────────────────────────────
@@ -156,74 +122,6 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
         Route::resource('providers', Tenant\ProviderController::class)
             ->except(['show'])
             ->names('providers');
-
-        // ── Planogram Templates ───────────────────────────────
-        Route::get('planogram-templates', [Tenant\PlanogramTemplateController::class, 'index'])
-            ->name('planogram-templates.index');
-        Route::get('planogram-templates/options', [Tenant\PlanogramTemplateController::class, 'options'])
-            ->name('planogram-templates.options');
-        Route::get('planogram-templates/import', [Tenant\PlanogramTemplateController::class, 'importPage'])
-            ->name('planogram-templates.import-page');
-        Route::post('planogram-templates/import', [Tenant\PlanogramTemplateController::class, 'import'])
-            ->name('planogram-templates.import');
-        Route::get('planogram-templates/export', [Tenant\PlanogramTemplateController::class, 'exportAll'])
-            ->name('planogram-templates.export-all');
-        Route::get('planogram-templates/create', [Tenant\PlanogramTemplateController::class, 'create'])
-            ->name('planogram-templates.create');
-        Route::post('planogram-templates', [Tenant\PlanogramTemplateController::class, 'store'])
-            ->name('planogram-templates.store');
-        Route::get('planogram-templates/{planogramTemplate}', [Tenant\PlanogramTemplateController::class, 'show'])
-            ->name('planogram-templates.show');
-        Route::get('planogram-templates/{planogramTemplate}/edit', [Tenant\PlanogramTemplateController::class, 'edit'])
-            ->name('planogram-templates.edit');
-        Route::put('planogram-templates/{planogramTemplate}', [Tenant\PlanogramTemplateController::class, 'update'])
-            ->name('planogram-templates.update');
-        Route::delete('planogram-templates/{planogramTemplate}', [Tenant\PlanogramTemplateController::class, 'destroy'])
-            ->name('planogram-templates.destroy');
-        Route::get('planogram-templates/{planogramTemplate}/export', [Tenant\PlanogramTemplateController::class, 'export'])
-            ->name('planogram-templates.export');
-        Route::post('planogram-templates/{planogramTemplate}/promote', [Tenant\PlanogramTemplateController::class, 'promote'])
-            ->name('planogram-templates.promote');
-
-        // ── Template Slots (wizard etapa 2) ───────────────────
-        Route::get('planogram-templates/{planogramTemplate}/slots', [Tenant\TemplateSlotController::class, 'index'])
-            ->name('planogram-templates.slots.index');
-        Route::get('planogram-templates/{planogramTemplate}/review', [Tenant\TemplateSlotController::class, 'review'])
-            ->name('planogram-templates.slots.review');
-        Route::get('planogram-templates/{planogramTemplate}/slots/products', [Tenant\TemplateSlotController::class, 'slotProducts'])
-            ->name('planogram-templates.slots.products');
-        Route::get('planogram-templates/{planogramTemplate}/slots/analysis', [Tenant\TemplateSlotController::class, 'slotAnalysis'])
-            ->name('planogram-templates.slots.analysis');
-        Route::post('planogram-templates/{planogramTemplate}/slots/reorder', [Tenant\TemplateSlotController::class, 'reorder'])
-            ->name('planogram-templates.slots.reorder');
-        Route::post('planogram-templates/{planogramTemplate}/slots/sync-images', [Tenant\TemplateSlotController::class, 'syncImages'])
-            ->name('planogram-templates.slots.sync-images');
-        Route::put('planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}', [Tenant\TemplateSlotController::class, 'updateSlot'])
-            ->name('planogram-templates.slots.update');
-        Route::delete('planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}', [Tenant\TemplateSlotController::class, 'destroySlot'])
-            ->name('planogram-templates.slots.destroy');
-
-        // ── Template Subtemplates ─────────────────────────────
-        Route::post('planogram-templates/{planogramTemplate}/subtemplates', [Tenant\TemplateSlotController::class, 'createSubtemplate'])
-            ->name('planogram-templates.subtemplates.store');
-        Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/clone', [Tenant\TemplateSlotController::class, 'cloneSubtemplate'])
-            ->name('planogram-templates.subtemplates.clone');
-        Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots', [Tenant\TemplateSlotController::class, 'storeSlot'])
-            ->name('planogram-templates.slots.store');
-        Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots/bulk', [Tenant\TemplateSlotController::class, 'bulkStoreSlots'])
-            ->name('planogram-templates.slots.bulk');
-        Route::put('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slot-defaults', [Tenant\TemplateSlotController::class, 'updateSubtemplateSlotDefaults'])
-            ->name('planogram-templates.subtemplates.slot-defaults.update');
-        Route::delete('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}', [Tenant\TemplateSlotController::class, 'destroySubtemplate'])
-            ->name('planogram-templates.subtemplates.destroy');
-
-        // ── Planogram Product Rules ───────────────────────────
-        Route::get('planogram-product-rules', [PlanogramProductRuleController::class, 'index'])
-            ->name('planogram-product-rules.index');
-        Route::post('planogram-product-rules', [PlanogramProductRuleController::class, 'store'])
-            ->name('planogram-product-rules.store');
-        Route::delete('planogram-product-rules/{planogramProductRule}', [PlanogramProductRuleController::class, 'destroy'])
-            ->name('planogram-product-rules.destroy');
 
         // ── Planograms ────────────────────────────────────────
         Route::resource('planograms', Tenant\PlanogramController::class)

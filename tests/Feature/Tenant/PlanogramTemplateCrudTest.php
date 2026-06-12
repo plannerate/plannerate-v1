@@ -1,12 +1,12 @@
 <?php
 
-use App\Models\PlanogramSubtemplate;
-use App\Models\PlanogramTemplate;
-use App\Models\PlanogramTemplateSlot;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;

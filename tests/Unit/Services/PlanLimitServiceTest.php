@@ -5,9 +5,6 @@ use App\Models\PlanItem;
 use App\Models\Tenant;
 use App\Services\PlanLimitService;
 use Illuminate\Support\Collection;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 function planLimitServiceMakePlan(string $key, mixed $value, string $type = 'integer'): Plan
 {

@@ -1,12 +1,12 @@
 <?php
 
-use App\Enums\PlacementFailureReason;
-use App\Services\AutoPlanogram\DTO\PlacementResult;
-use App\Services\AutoPlanogram\DTO\PlacementSettings;
-use App\Services\AutoPlanogram\DTO\PlanogramInput;
-use App\Services\AutoPlanogram\Validation\PlanogramValidator;
-use App\Services\AutoPlanogram\Validation\Rules\UnplacedProductsRule;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementResult;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementSettings;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramInput;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\PlanogramValidator;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\Rules\UnplacedProductsRule;
+use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
 
 function placementInputForValidation(): PlanogramInput
 {

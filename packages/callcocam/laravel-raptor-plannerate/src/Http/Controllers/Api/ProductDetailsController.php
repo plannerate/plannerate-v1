@@ -3,8 +3,8 @@
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Api;
 
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Illuminate\Http\Request;
 
 class ProductDetailsController extends Controller

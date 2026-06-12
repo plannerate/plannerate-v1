@@ -7,9 +7,6 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Console\Input\ArrayInput;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 beforeEach(function (): void {
     $landlordPath = database_path('testing_process_product_images_unit_landlord.sqlite');

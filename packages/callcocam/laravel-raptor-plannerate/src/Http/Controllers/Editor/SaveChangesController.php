@@ -11,7 +11,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 use Callcocam\LaravelRaptorPlannerate\Concerns\UsesPlannerateTenantDatabase;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\Tenant\Plannerate\Editor\SaveChangesRequest;
-use Callcocam\LaravelRaptorPlannerate\Services\Plannerate\PlanogramChangeService;
+use Callcocam\LaravelRaptorPlannerate\Services\Editor\PlanogramChangeService;
 use Illuminate\Support\Facades\Log;
 
 /**

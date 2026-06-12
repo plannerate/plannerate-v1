@@ -1,7 +1,7 @@
 <?php
 
-use App\Enums\ValidationSeverity;
-use App\Services\AutoPlanogram\Validation\ValidationResult;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Validation\ValidationResult;
+use Callcocam\LaravelRaptorPlannerate\Enums\ValidationSeverity;
 
 describe('ValidationResult', function () {
     describe('factory methods', function () {

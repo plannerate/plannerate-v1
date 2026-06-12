@@ -3,9 +3,6 @@
 use App\Support\Database\DatabaseConnectionConfigBuilder;
 use App\Support\Database\DatabaseCreator;
 use Illuminate\Database\Connection;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 afterEach(function (): void {
     Mockery::close();

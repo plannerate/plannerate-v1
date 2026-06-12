@@ -1,0 +1,63 @@
+<?php
+
+namespace Callcocam\LaravelRaptorPlannerate\Models;
+
+use App\Models\Gondola;
+use App\Models\Product;
+use App\Models\Traits\BelongsToTenant;
+use App\Models\Traits\UsesTenantConnection;
+use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class PlanogramRejectedProduct extends Model
+{
+    use BelongsToTenant, HasUlids, UsesTenantConnection;
+
+    protected $fillable = [
+        'tenant_id',
+        'planogram_id',
+        'gondola_id',
+        'product_id',
+        'product_name',
+        'ean',
+        'image_url',
+        'product_width',
+        'product_height',
+        'rejection_reason',
+        'slot_id',
+        'category_name',
+        'category_id',
+        'module_number',
+        'shelf_order',
+        'rejected_shelf_orders',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'rejection_reason' => PlacementFailureReason::class,
+            'product_width' => 'float',
+            'product_height' => 'float',
+            'module_number' => 'integer',
+            'shelf_order' => 'integer',
+            'rejected_shelf_orders' => 'array',
+        ];
+    }
+
+    public function gondola(): BelongsTo
+    {
+        return $this->belongsTo(Gondola::class);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    public function rejectionReasonLabel(): string
+    {
+        return $this->rejection_reason->label();
+    }
+}

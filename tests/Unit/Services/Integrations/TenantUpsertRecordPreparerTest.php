@@ -2,9 +2,6 @@
 
 use App\Services\Integrations\TenantUpsertRecordPreparer;
 use Illuminate\Support\Facades\Log;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 it('filters columns, normalizes ids, and keeps the last duplicate record', function (): void {
     Log::shouldReceive('warning')->once();

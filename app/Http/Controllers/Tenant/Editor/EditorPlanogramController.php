@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Tenant\Editor;
 use App\Models\Gondola as AppGondola;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 
 class EditorPlanogramController extends GondolaController
 {

@@ -8,7 +8,7 @@ import {
     classifyAlteration,
     diffSlotFields,
 } from '@/components/planogram-templates/alteration-classifier';
-import PlanogramTemplateController from '@/actions/App/Http/Controllers/Tenant/PlanogramTemplateController';
+import PlanogramTemplateController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Templates/PlanogramTemplateController';
 import GondolaGrid from '@/components/planogram-templates/GondolaGrid.vue';
 import ModuleDefaultsModal from '@/components/planogram-templates/ModuleDefaultsModal.vue';
 import ModuleSelectorButtons from '@/components/planogram-templates/ModuleSelectorButtons.vue';

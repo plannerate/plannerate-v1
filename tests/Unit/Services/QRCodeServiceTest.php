@@ -1,9 +1,6 @@
 <?php
 
-use Callcocam\LaravelRaptorPlannerate\Services\QRCode\QRCodeService;
-use Tests\TestCase;
-
-uses(TestCase::class);
+use Callcocam\LaravelRaptorPlannerate\Services\Export\QRCodeService;
 
 test('qr code service generates png data uri for url', function (): void {
     $dataUri = app(QRCodeService::class)->generateForUrl('https://plannerate.test/gondola/1');

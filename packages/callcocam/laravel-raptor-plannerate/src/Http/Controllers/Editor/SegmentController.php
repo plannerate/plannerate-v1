@@ -9,7 +9,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Segment;
+use Callcocam\LaravelRaptorPlannerate\Models\Segment;
 use Illuminate\Http\Request;
 
 class SegmentController extends Controller

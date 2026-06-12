@@ -1,10 +1,22 @@
 import { inject, ref } from 'vue';
 import { usePlanogramEditor } from '../core/usePlanogramEditor';
 import { draggingSegmentShelfId } from '../core/useGondolaState';
+import {
+    getMultipleProductsDragData,
+    getProductDragData,
+    getSegmentDragData,
+    hasMultipleProductsData,
+    hasProductData,
+    hasSegmentData,
+} from '../dnd/transfer';
 import { useRejectedProductsStore } from './useRejectedProductsStore';
 
 /**
- * Composable para gerenciar drag & drop na shelf
+ * Composable para gerenciar drag & drop na shelf (drop target).
+ *
+ * Aceita: produto único, múltiplos produtos (seleção), e segmentos vindos de
+ * OUTRAS prateleiras (move; com Ctrl = copy). Segmentos da mesma prateleira são
+ * ignorados aqui — o swap é tratado pelas drop zones do próprio Segment.vue.
  */
 export function useShelfDragDrop(shelfId: string) {
     const editor = usePlanogramEditor();
@@ -23,25 +35,18 @@ export function useShelfDragDrop(shelfId: string) {
         event.preventDefault();
 
         if (!event.dataTransfer) {
-return;
-}
+            return;
+        }
 
-        // Verifica se é produto(s) ou segment
-        const hasProduct = event.dataTransfer.types.includes(
-            'application/x-product',
-        );
-        const hasMultipleProducts = event.dataTransfer.types.includes(
-            'application/x-products-multiple',
-        );
-        const hasSegment = event.dataTransfer.types.includes(
-            'application/x-segment-id',
-        );
-
-        if (hasProduct || hasMultipleProducts) {
+        if (hasProductData(event.dataTransfer) || hasMultipleProductsData(event.dataTransfer)) {
             // Produtos sempre são "copy" (adicionar à shelf)
             event.dataTransfer.dropEffect = 'copy';
             isDropTarget.value = true;
-        } else if (hasSegment) {
+
+            return;
+        }
+
+        if (hasSegmentData(event.dataTransfer)) {
             // Verifica se o segment está na mesma shelf usando o estado global
             if (draggingSegmentShelfId.value === shelfId) {
                 // Mesma shelf - não mostra área de drop (deixa as drop zones do Segment funcionarem)
@@ -72,87 +77,60 @@ return;
         isDropTarget.value = false;
 
         if (!event.dataTransfer) {
-return;
-}
+            return;
+        }
 
-        // Verifica se são múltiplos produtos, produto único ou segmento
-        const isMultiple = event.dataTransfer.getData('application/x-products-multiple') === 'true';
-        const productsData = event.dataTransfer.getData('application/x-products');
-        const productData = event.dataTransfer.getData('application/x-product');
-        const segmentId = event.dataTransfer.getData(
-            'application/x-segment-id',
-        );
-        const segmentShelfId = event.dataTransfer.getData(
-            'application/x-segment-shelf-id',
-        );
+        const multipleProducts = getMultipleProductsDragData(event.dataTransfer);
 
-        if (isMultiple && productsData) {
-            // Lógica de múltiplos produtos
-            await handleMultipleProductsDrop(productsData);
-        } else if (productData) {
-            // Lógica de produto único
-            await handleProductDrop(productData);
-        } else if (segmentId) {
-            // Verifica se é mesma shelf - se for, ignora (deixa as drop zones do Segment funcionarem)
-            if (segmentShelfId === shelfId) {
+        if (multipleProducts.length > 0) {
+            handleMultipleProductsDrop(multipleProducts);
+
+            return;
+        }
+
+        const product = getProductDragData(event.dataTransfer);
+
+        if (product) {
+            addProduct(product);
+
+            return;
+        }
+
+        const segment = getSegmentDragData(event.dataTransfer);
+
+        if (segment) {
+            // Mesma shelf: ignora (deixa as drop zones do Segment funcionarem)
+            if (segment.sourceShelfId === shelfId) {
                 return;
             }
 
-            // Lógica de segmento (entre shelves diferentes)
-            await handleSegmentDrop(event, segmentId);
+            handleSegmentDrop(segment.segmentId, segment.isCopy);
         }
     };
 
     /**
-     * Processa drop de múltiplos produtos
+     * Processa drop de múltiplos produtos (apenas publicados entram)
      */
-    const handleMultipleProductsDrop = async (productsData: string) => {
-        const products = productsData ? JSON.parse(productsData) : [];
-
-        if (!products || products.length === 0) {
-            console.warn('⚠️ Nenhum produto encontrado');
-
-            return;
-        }
-
-        // Adiciona cada produto à shelf
+    const handleMultipleProductsDrop = (products: Array<{ id: string; name?: string; status?: string }>) => {
         for (const product of products) {
-            // Só adiciona produtos publicados
             if (product.status !== 'published') {
                 console.warn(`⚠️ Produto ${product.name} não está publicado, pulando...`);
+
                 continue;
             }
 
-            editor.addProductToShelf(
-                shelfId,
-                product.id,
-                product,
-                (addedProductId) => {
-                    removeUsedProduct?.(addedProductId);
-                    rejectedStore.notifyProductPlaced(addedProductId);
-                },
-            );
+            addProduct(product);
         }
     };
 
     /**
-     * Processa drop de produto único
+     * Adiciona um produto à shelf, removendo-o do painel e notificando o
+     * módulo de rejeitados (caso tenha vindo de lá).
      */
-    const handleProductDrop = async (productData: string) => {
-        const product = productData ? JSON.parse(productData) : null;
-
-        if (!product) {
-            console.warn('⚠️ Produto não encontrado');
-
-            return;
-        }
-
-        const productId = product.id;
-
-        // Adiciona o produto à shelf
+    const addProduct = (product: { id: string }) => {
         editor.addProductToShelf(
             shelfId,
-            productId,
+            product.id,
             product,
             (addedProductId) => {
                 removeUsedProduct?.(addedProductId);
@@ -162,26 +140,15 @@ return;
     };
 
     /**
-     * Processa drop de segment
+     * Processa drop de segment vindo de outra prateleira (move ou copy)
      */
-    const handleSegmentDrop = async (event: DragEvent, segmentId: string) => {
-        const isCopy =
-            event.dataTransfer!.getData('application/x-is-copy') === 'true';
+    const handleSegmentDrop = (segmentId: string, isCopy: boolean) => {
+        const result = isCopy
+            ? editor.copySegmentToShelf(segmentId, shelfId)
+            : editor.moveSegmentToShelf(segmentId, shelfId);
 
-        if (isCopy) {
-            // Copiar segmento
-            const result = editor.copySegmentToShelf(segmentId, shelfId);
-
-            if (!result) {
-                console.warn('⚠️ Erro ao copiar segmento');
-            }
-        } else {
-            // Mover segmento
-            const result = editor.moveSegmentToShelf(segmentId, shelfId);
-
-            if (!result) {
-                console.warn('⚠️ Erro ao mover segmento');
-            }
+        if (!result) {
+            console.warn(`⚠️ Erro ao ${isCopy ? 'copiar' : 'mover'} segmento`);
         }
     };
 

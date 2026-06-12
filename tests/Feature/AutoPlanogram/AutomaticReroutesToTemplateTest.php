@@ -1,15 +1,15 @@
 <?php
 
 use App\Models\Category;
-use App\Models\PlanogramSubtemplate;
-use App\Models\PlanogramTemplate;
-use App\Models\PlanogramTemplateSlot;
-use App\Services\AutoPlanogram\DTO\CategoryAbcSummary;
-use App\Services\AutoPlanogram\DTO\PlacementSettings;
-use App\Services\AutoPlanogram\DTO\PlanogramInput;
-use App\Services\AutoPlanogram\DTO\ScoredProduct;
-use App\Services\AutoPlanogram\Synthesis\AutoTemplateSynthesisOrchestrator;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\CategoryAbcSummary;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementSettings;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramInput;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\ScoredProduct;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Synthesis\AutoTemplateSynthesisOrchestrator;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -53,6 +53,9 @@ beforeEach(function (): void {
         $table->string('code');
         $table->unsignedTinyInteger('num_modules');
         $table->boolean('is_active')->default(true);
+        $table->string('hot_zone_priority')->nullable();
+        $table->string('cold_zone_priority')->nullable();
+        $table->string('flow_direction')->nullable();
         $table->timestamps();
         $table->softDeletes();
     });

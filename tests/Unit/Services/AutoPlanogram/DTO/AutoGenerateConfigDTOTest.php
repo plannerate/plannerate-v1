@@ -8,7 +8,7 @@
  * silenciosamente exclude_class_c e os cortes ABC para o default.
  */
 
-use App\Services\AutoPlanogram\DTO\AutoGenerateConfigDTO;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 
 function makeFullConfig(): AutoGenerateConfigDTO
 {

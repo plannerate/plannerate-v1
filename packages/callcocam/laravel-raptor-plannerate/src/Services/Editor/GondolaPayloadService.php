@@ -1,0 +1,418 @@
+<?php
+
+namespace Callcocam\LaravelRaptorPlannerate\Services\Editor;
+
+use App\Models\Tenant;
+use App\Models\WorkflowGondolaExecution;
+use App\Support\Modules\ModuleSlug;
+use App\Support\Modules\TenantModuleService;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
+use Callcocam\LaravelRaptorPlannerate\Models\Store;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
+
+class GondolaPayloadService
+{
+    /**
+     * Monta payload otimizado para o editor da gôndola.
+     *
+     * @return array<string, mixed>
+     */
+    public function buildEditorPayload(Gondola $gondola): array
+    {
+        $templateSlotMap = $this->resolveTemplateSlotMap($gondola);
+        $sectionModuleMap = $this->resolveSectionModuleMap($gondola);
+
+        $gondola->loadMissing('generationOverrides');
+
+        // Expõe origem e nome do template para o frontend
+        $templateOrigin = null;
+        $templateName = null;
+        if (is_string($gondola->template_id) && trim($gondola->template_id) !== '') {
+            $tpl = PlanogramTemplate::where('id', $gondola->template_id)
+                ->select(['origin', 'name'])
+                ->first();
+            $templateOrigin = $tpl?->origin;
+            $templateName = $tpl?->name;
+        }
+
+        $recordData = [
+            'id' => $gondola->id,
+            'name' => $gondola->name,
+            'slug' => $gondola->slug,
+            'route_gondolas' => $gondola->route_gondolas,
+            'scale_factor' => $gondola->scale_factor,
+            'status' => $gondola->status,
+            'num_modulos' => $gondola->num_modulos,
+            'side' => $gondola->side,
+            'alignment' => $gondola->alignment,
+            'location' => $gondola->location,
+            'flow' => $gondola->flow,
+            'height' => $gondola->height,
+            'width' => $gondola->width,
+            'depth' => $gondola->depth,
+            'planogram_id' => $gondola->planogram_id,
+            'template_id' => $gondola->template_id,
+            'template_origin' => $templateOrigin,
+            'template_name' => $templateName,
+            'generation_mode' => $gondola->generation_mode,
+            'linked_map_gondola_id' => $gondola->linked_map_gondola_id,
+            'linked_map_gondola_category' => $gondola->linked_map_gondola_category,
+            'created_at' => $gondola->created_at?->toISOString(),
+            'updated_at' => $gondola->updated_at?->toISOString(),
+            'deleted_at' => $gondola->deleted_at?->toISOString(),
+            'generation_overrides' => $gondola->relationLoaded('generationOverrides')
+                ? $gondola->generationOverrides->map(fn ($override) => [
+                    'id' => (string) $override->id,
+                    'category_id' => $override->category_id,
+                    'min_facings' => $override->min_facings,
+                    'max_facings' => $override->max_facings,
+                    'price_order' => $override->price_order?->value,
+                    'size_order' => $override->size_order?->value,
+                    'brand_exposure' => $override->brand_exposure?->value,
+                    'flavor_exposure' => $override->flavor_exposure?->value,
+                    'space_fallback' => $override->space_fallback?->value,
+                    'facing_expansion' => $override->facing_expansion?->value,
+                    'use_target_stock' => $override->use_target_stock,
+                    'role_override' => $override->role_override?->value,
+                    'max_share_per_sku' => $override->max_share_per_sku,
+                    'max_share_per_brand' => $override->max_share_per_brand,
+                    'max_share_per_subcategory' => $override->max_share_per_subcategory,
+                ])->values()->all()
+                : [],
+        ];
+
+        if ($gondola->relationLoaded('sections')) {
+            $recordData['sections'] = $gondola->sections->map(function ($section) use ($gondola, $templateSlotMap, $sectionModuleMap) {
+                return [
+                    'id' => $section->id,
+                    'gondola_id' => $section->gondola_id,
+                    'name' => $section->name,
+                    'code' => $section->code,
+                    'width' => $section->width,
+                    'height' => $section->height,
+                    'num_shelves' => $section->num_shelves,
+                    'base_height' => $section->base_height,
+                    'base_depth' => $section->base_depth,
+                    'base_width' => $section->base_width,
+                    'cremalheira_width' => $section->cremalheira_width,
+                    'ordering' => $section->ordering,
+                    'hole_height' => $section->hole_height,
+                    'hole_spacing' => $section->hole_spacing,
+                    'hole_width' => $section->hole_width,
+                    'settings' => $section->settings,
+                    'alignment' => $section->alignment,
+                    'deleted_at' => $section->deleted_at?->toISOString(),
+                    'section_width' => ($section->width + 2) + ($section->cremalheira_width * $gondola->scale_factor),
+                    'section_height' => $section->height * $gondola->scale_factor,
+                    'shelves' => $section->relationLoaded('shelves') ? $section->shelves->map(function ($shelf) use ($section, $templateSlotMap, $sectionModuleMap) {
+                        $moduleNumber = $sectionModuleMap[(string) $section->id] ?? null;
+                        $shelfOrder = $this->resolveShelfOrder($section, (string) $shelf->id);
+                        $templateSlot = $moduleNumber !== null
+                            ? ($templateSlotMap["{$moduleNumber}:{$shelfOrder}"] ?? null)
+                            : null;
+
+                        return [
+                            'id' => $shelf->id,
+                            'section_id' => $shelf->section_id,
+                            'code' => $shelf->code,
+                            'shelf_width' => $shelf->shelf_width,
+                            'shelf_height' => $shelf->shelf_height,
+                            'shelf_depth' => $shelf->shelf_depth,
+                            'shelf_position' => $shelf->shelf_position,
+                            'ordering' => $shelf->ordering,
+                            'alignment' => $shelf->alignment,
+                            'product_type' => $shelf->product_type,
+                            'template_slot' => $templateSlot,
+                            'deleted_at' => $shelf->deleted_at?->toISOString(),
+                            'segments' => $shelf->relationLoaded('segments') ? $shelf->segments->map(function ($segment) {
+                                return [
+                                    'id' => $segment->id,
+                                    'shelf_id' => $segment->shelf_id,
+                                    'layer_id' => $segment->layer_id,
+                                    'width' => $segment->width,
+                                    'height' => $segment->height,
+                                    'depth' => $segment->depth,
+                                    'position_x' => $segment->position_x,
+                                    'position_y' => $segment->position_y,
+                                    'facings' => $segment->facings,
+                                    'quantity' => $segment->quantity,
+                                    'ordering' => $segment->ordering,
+                                    'position' => $segment->position,
+                                    'deleted_at' => $segment->deleted_at?->toISOString(),
+                                    'layer' => $segment->relationLoaded('layer') && $segment->layer ? [
+                                        'id' => $segment->layer->id,
+                                        'segment_id' => $segment->layer->segment_id,
+                                        'product_id' => $segment->layer->product_id,
+                                        'quantity' => $segment->layer->quantity,
+                                        'height' => $segment->layer->height,
+                                        'alignment' => $segment->layer->alignment,
+                                        'spacing' => $segment->layer->spacing,
+                                        'deleted_at' => $segment->layer->deleted_at?->toISOString(),
+                                        'product' => $segment->layer->relationLoaded('product') && $segment->layer->product ? [
+                                            'id' => $segment->layer->product->id,
+                                            'name' => $segment->layer->product->name,
+                                            'codigo_erp' => $segment->layer->product->codigo_erp,
+                                            'ean' => $segment->layer->product->ean,
+                                            'barcode' => $segment->layer->product->barcode,
+                                            'image' => $segment->layer->product->image,
+                                            'image_url' => $segment->layer->product->image_url,
+                                            'width' => $segment->layer->product->width,
+                                            'height' => $segment->layer->product->height,
+                                            'depth' => $segment->layer->product->depth,
+                                            'weight' => $segment->layer->product->weight,
+                                            'brand' => $segment->layer->product->brand,
+                                            'status' => $segment->layer->product->status,
+                                            'category_id' => $segment->layer->product->category_id,
+                                            'category' => $segment->layer->product->category?->name,
+                                            'category_full_path' => $segment->layer->product->relationLoaded('category') && $segment->layer->product->category
+                                                ? $segment->layer->product->category->name
+                                                : null,
+                                            'has_dimensions' => ($segment->layer->product->width > 0 && $segment->layer->product->height > 0 && $segment->layer->product->depth > 0),
+                                        ] : null,
+                                    ] : null,
+                                ];
+                            })->values()->all() : [],
+                        ];
+                    })->values()->all() : [],
+                ];
+            })->values()->all();
+        }
+
+        if ($planogram = $gondola->planogram) {
+            $recordData['planogram'] = [
+                'id' => $planogram->id,
+                'tenant_id' => $planogram->tenant_id,
+                'store_id' => $planogram->store_id,
+                'cluster_id' => $planogram->cluster_id,
+                'name' => $planogram->name,
+                'slug' => $planogram->slug,
+                'type' => $planogram->type,
+                'category_id' => $planogram->category_id,
+                'status' => $planogram->status,
+                'start_date' => $planogram->start_date,
+                'end_date' => $planogram->end_date,
+                'start_month' => $planogram->getStartMonthInput(),
+                'end_month' => $planogram->getEndMonthInput(),
+                'created_at' => $planogram->created_at?->toISOString(),
+                'updated_at' => $planogram->updated_at?->toISOString(),
+            ];
+
+            $gondolas = $this->navigationGondolas($planogram->gondolas)
+                ->map(fn ($relatedGondola) => [
+                    'id' => $relatedGondola->id,
+                    'name' => $relatedGondola->name,
+                    'route_gondolas' => $relatedGondola->route_gondolas,
+                ])
+                ->values()
+                ->all();
+
+            $recordData['planogram']['gondolas'] = $gondolas;
+
+            if ($planogram->relationLoaded('category') && $planogram->category) {
+                $category = $planogram->category;
+                $recordData['planogram']['category'] = [
+                    'id' => $category->id,
+                    'tenant_id' => $category->tenant_id,
+                    'category_id' => $category->category_id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'level_name' => $category->level_name,
+                    'codigo' => $category->codigo,
+                    'status' => $category->status,
+                    'nivel' => $category->nivel,
+                    'hierarchy_position' => $category->hierarchy_position,
+                    'full_path' => $category->full_path,
+                    'hierarchy_path' => $category->hierarchy_path,
+                    'is_placeholder' => $category->is_placeholder,
+                ];
+            }
+
+            if ($planogram->store_id) {
+                $store = Store::find($planogram->store_id);
+                if ($store) {
+                    $recordData['planogram']['store'] = [
+                        'id' => $store->id,
+                        'name' => $store->name,
+                        'map_image_path' => $store->map_image_path,
+                        'map_regions' => $store->map_regions,
+                    ];
+                }
+            }
+        }
+
+        $tenant = app()->bound('tenant') ? app('tenant') : null;
+        $recordData['tenant'] = [
+            'id' => $tenant?->id,
+            'name' => $tenant?->name,
+            'settings' => $tenant?->settings,
+        ];
+
+        return $recordData;
+    }
+
+    /**
+     * @param  Collection<int, Gondola>  $gondolas
+     * @return Collection<int, Gondola>
+     */
+    private function navigationGondolas(Collection $gondolas): Collection
+    {
+        $tenant = $this->resolveTenant();
+
+        if (! $tenant instanceof Tenant) {
+            return $gondolas;
+        }
+
+        $hasKanban = app(TenantModuleService::class)
+            ->tenantHasActiveModule($tenant, ModuleSlug::KANBAN);
+
+        if (! $hasKanban) {
+            return $gondolas;
+        }
+
+        $currentUserId = auth()->id();
+
+        if (! $currentUserId) {
+            return collect();
+        }
+
+        $startedGondolaIds = WorkflowGondolaExecution::query()
+            ->whereIn('gondola_id', $gondolas->pluck('id')->filter()->values())
+            ->where('current_responsible_id', $currentUserId)
+            ->whereNotNull('execution_started_by')
+            ->whereNotNull('started_at')
+            ->pluck('gondola_id')
+            ->map(fn (mixed $id): string => (string) $id)
+            ->unique()
+            ->all();
+
+        return $gondolas
+            ->filter(fn (Gondola $relatedGondola): bool => in_array((string) $relatedGondola->id, $startedGondolaIds, true))
+            ->values();
+    }
+
+    private function resolveTenant(): ?Tenant
+    {
+        if (app()->bound('tenant')) {
+            $tenant = app('tenant');
+
+            if ($tenant instanceof Tenant) {
+                return $tenant;
+            }
+        }
+
+        $current = Tenant::current();
+
+        if ($current instanceof Tenant) {
+            return $current;
+        }
+
+        $containerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');
+
+        if (! app()->bound($containerKey)) {
+            return null;
+        }
+
+        $resolved = app($containerKey);
+
+        return $resolved instanceof Tenant ? $resolved : null;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function resolveTemplateSlotMap(Gondola $gondola): array
+    {
+        if (! $gondola->planogram || ! is_string($gondola->template_id) || trim($gondola->template_id) === '') {
+            return [];
+        }
+
+        $subtemplateId = $gondola->planogram->subtemplate_id;
+
+        $slotsQuery = PlanogramTemplateSlot::query()
+            ->whereHas('subtemplate', fn ($query) => $query->where('template_id', $gondola->template_id));
+
+        if (is_string($subtemplateId) && trim($subtemplateId) !== '') {
+            $slotsQuery->where('subtemplate_id', $subtemplateId);
+        }
+
+        return $slotsQuery
+            ->with(['category:id,name,full_path'])
+            ->get()
+            ->mapWithKeys(fn (PlanogramTemplateSlot $slot): array => [
+                "{$slot->module_number}:{$slot->shelf_order}" => [
+                    'id' => (string) $slot->id,
+                    'subtemplate_id' => (string) $slot->subtemplate_id,
+                    'category_id' => is_string($slot->category_id) ? $slot->category_id : null,
+                    'category_name' => $this->resolveSlotCategoryName($slot),
+                    'category_full_path' => is_string($slot->category?->full_path) && $slot->category->full_path !== '' ? $slot->category->full_path : null,
+                    'subcategory' => is_string($slot->subcategory) ? $slot->subcategory : null,
+                    'module_number' => $slot->module_number,
+                    'shelf_order' => $slot->shelf_order,
+                    'priority' => $slot->priority,
+                    'price_order' => $slot->price_order?->value,
+                    'size_order' => $slot->size_order?->value,
+                    'brand_exposure' => $slot->brand_exposure?->value,
+                    'flavor_exposure' => $slot->flavor_exposure?->value,
+                    'space_fallback' => $slot->space_fallback?->value,
+                    'use_target_stock' => $slot->use_target_stock,
+                    'min_facings' => $slot->min_facings,
+                    'max_facings' => $slot->max_facings,
+                    'facing_expansion' => $slot->facing_expansion?->value,
+                ],
+            ])->all();
+    }
+
+    /**
+     * @return array<string, int> [section_id => module_number]
+     */
+    private function resolveSectionModuleMap(Gondola $gondola): array
+    {
+        if (! $gondola->relationLoaded('sections')) {
+            return [];
+        }
+
+        return $gondola->sections
+            ->sortBy('ordering')
+            ->values()
+            ->mapWithKeys(fn ($section, int $index): array => [
+                (string) $section->id => $index + 1,
+            ])
+            ->all();
+    }
+
+    private function resolveShelfOrder(mixed $section, string $shelfId): int
+    {
+        if (! $section->relationLoaded('shelves')) {
+            return 0;
+        }
+
+        $shelves = $section->shelves->sortBy('shelf_position')->values();
+        $index = $shelves->search(fn ($shelf): bool => (string) $shelf->id === $shelfId);
+
+        if (! is_int($index) || $index < 0) {
+            return 0;
+        }
+
+        return $shelves->count() - $index;
+    }
+
+    private function resolveSlotCategoryName(PlanogramTemplateSlot $slot): ?string
+    {
+        if ($slot->relationLoaded('category')) {
+            $category = $slot->getRelation('category');
+
+            if ($category instanceof Model) {
+                $name = $category->getAttribute('name');
+
+                return is_string($name) && $name !== '' ? $name : null;
+            }
+        }
+
+        return is_string($slot->getAttribute('category')) && $slot->getAttribute('category') !== ''
+            ? $slot->getAttribute('category')
+            : null;
+    }
+}

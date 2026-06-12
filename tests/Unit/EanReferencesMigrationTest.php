@@ -2,9 +2,6 @@
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 test('landlord ean references table includes hybrid catalog columns', function (): void {
     Artisan::call('migrate:fresh', [

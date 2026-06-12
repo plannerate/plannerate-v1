@@ -4,9 +4,6 @@ use Callcocam\LaravelRaptorPlannerate\Jobs\DOProcessProductImageJob;
 use Illuminate\Bus\Batchable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 test('package job processImageFromStorage converte png para webp sem usar api removida', function (): void {
     Storage::fake('public');

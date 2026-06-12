@@ -1,9 +1,5 @@
 <?php
 
-use Tests\TestCase;
-
-uses(TestCase::class);
-
 test('auth split layout uses translation keys for visible marketing copy', function (): void {
     $component = file_get_contents(resource_path('js/layouts/auth/AuthSplitLayout.vue'));
     $translations = require lang_path('pt_BR/app.php');

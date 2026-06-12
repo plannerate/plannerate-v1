@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Enums\ShelfLevel;
 use App\Models\Category;
-use App\Models\ShelfLevelPreference;
 use App\Models\Tenant;
+use Callcocam\LaravelRaptorPlannerate\Enums\ShelfLevel;
+use Callcocam\LaravelRaptorPlannerate\Models\ShelfLevelPreference;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ShelfLevelPreferenceFactory extends Factory
 {
+    protected $model = ShelfLevelPreference::class;
+
     public function definition(): array
     {
         return [

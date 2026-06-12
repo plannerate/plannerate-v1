@@ -9,7 +9,7 @@ use App\Policies\Concerns\ChecksRbacPermission;
 use App\Support\Authorization\PermissionName;
 use App\Support\Modules\ModuleSlug;
 use App\Support\Modules\TenantModuleService;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 
 class GondolaPolicy
 {

@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Settings\PlanogramSettingsController;
-use App\Services\AutoPlanogram\Scoring\ScoringWeightsValue;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\ScoringWeightsValue;
 use Illuminate\Support\Facades\Validator;
 
 // ── ScoringWeightsValue defaults ──────────────────────────────────────────────
@@ -40,8 +40,6 @@ describe('PlanogramSettingsController validação', function () {
             'sales_window_months' => ['required', 'integer', 'min:1', 'max:24'],
             'block_hierarchy_level' => ['required', 'integer', 'min:2', 'max:7', 'gte:adjacency_hierarchy_level'],
             'adjacency_hierarchy_level' => ['required', 'integer', 'min:2', 'max:7'],
-            'vertical_block_threshold' => ['required', 'numeric', 'min:0.05', 'max:0.50'],
-            'vertical_block_min_shelves' => ['required', 'integer', 'min:2', 'max:4'],
         ];
     }
 
@@ -55,8 +53,6 @@ describe('PlanogramSettingsController validação', function () {
             'sales_window_months' => 4,
             'block_hierarchy_level' => 5,
             'adjacency_hierarchy_level' => 4,
-            'vertical_block_threshold' => 0.20,
-            'vertical_block_min_shelves' => 2,
         ], $overrides);
     }
 
@@ -85,21 +81,6 @@ describe('PlanogramSettingsController validação', function () {
         expect($validator->fails())->toBeFalse();
     });
 
-    it('rejeita vertical_block_threshold fora do range 0.05-0.50', function () {
-        $abaixo = Validator::make(validPlanogramPayload(['vertical_block_threshold' => 0.01]), planogramValidationRules());
-        $acima = Validator::make(validPlanogramPayload(['vertical_block_threshold' => 0.60]), planogramValidationRules());
-
-        expect($abaixo->fails())->toBeTrue()
-            ->and($acima->fails())->toBeTrue();
-    });
-
-    it('rejeita vertical_block_min_shelves fora do range 2-4', function () {
-        $abaixo = Validator::make(validPlanogramPayload(['vertical_block_min_shelves' => 1]), planogramValidationRules());
-        $acima = Validator::make(validPlanogramPayload(['vertical_block_min_shelves' => 5]), planogramValidationRules());
-
-        expect($abaixo->fails())->toBeTrue()
-            ->and($acima->fails())->toBeTrue();
-    });
 });
 
 // ── hierarchyLevels ───────────────────────────────────────────────────────────

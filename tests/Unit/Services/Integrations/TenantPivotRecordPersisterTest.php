@@ -3,9 +3,6 @@
 use App\Services\Integrations\TenantPivotRecordPersister;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Log;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 beforeEach(function (): void {
     Log::shouldReceive('debug')->zeroOrMoreTimes();

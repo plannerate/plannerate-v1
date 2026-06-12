@@ -11,7 +11,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Api;
 use App\Services\ProductRepositoryImageResolver;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Http\Requests\UploadProductImageRequest;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;

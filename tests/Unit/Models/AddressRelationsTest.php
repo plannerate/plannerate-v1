@@ -7,9 +7,6 @@ use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 test('address switches connection by tenant context', function (): void {
     $containerKey = (string) config('multitenancy.current_tenant_container_key', 'currentTenant');

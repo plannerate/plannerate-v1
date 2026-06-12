@@ -3,8 +3,8 @@
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Product;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Sale;
+use Callcocam\LaravelRaptorPlannerate\Models\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Sale;
 use Illuminate\Http\JsonResponse;
 
 class ProductSalesController extends Controller
@@ -12,7 +12,7 @@ class ProductSalesController extends Controller
     /**
      * Retorna resumo agregado de vendas do produto
      */
-    public function summary( string $productId): JsonResponse
+    public function summary(string $productId): JsonResponse
     {
         $product = Product::findOrFail($productId);
 

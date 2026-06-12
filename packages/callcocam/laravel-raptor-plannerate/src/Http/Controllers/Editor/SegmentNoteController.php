@@ -7,9 +7,9 @@ use App\Models\WorkflowGondolaExecution;
 use App\Models\WorkflowPlanogramStep;
 use App\Notifications\AppNotification;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Segment;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\SegmentNote;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Segment;
+use Callcocam\LaravelRaptorPlannerate\Models\SegmentNote;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -23,7 +23,7 @@ class SegmentNoteController extends Controller
             ->with('user:id,name')
             ->latest()
             ->get()
-            ->map(fn(SegmentNote $note) => [
+            ->map(fn (SegmentNote $note) => [
                 'id' => $note->id,
                 'content' => $note->content,
                 'author' => $note->user?->name ?? 'Usuário',
@@ -51,7 +51,7 @@ class SegmentNoteController extends Controller
             'content' => $validated['content'],
         ]);
 
-        $this->notifyResponsibleUsers($gondolaId, $tenantId,   $note, $request->user()?->name ?? 'Alguém');
+        $this->notifyResponsibleUsers($gondolaId, $tenantId, $note, $request->user()?->name ?? 'Alguém');
 
         return response()->json([
             'data' => [
@@ -93,7 +93,7 @@ class SegmentNoteController extends Controller
 
         User::whereIn('id', $recipientIds)
             ->get()
-            ->each(fn($user) => $user->notifyNow($notification));
+            ->each(fn ($user) => $user->notifyNow($notification));
     }
 
     private function resolveRecipientIds(string $gondolaId, ?string $planogramId, ?string $excludeUserId): Collection
@@ -102,7 +102,7 @@ class SegmentNoteController extends Controller
             ->whereNotNull('current_responsible_id')
             ->pluck('current_responsible_id')
             ->unique()
-            ->filter(fn($id) => $id !== $excludeUserId)
+            ->filter(fn ($id) => $id !== $excludeUserId)
             ->values();
 
         if ($responsibleIds->isNotEmpty()) {
@@ -116,9 +116,9 @@ class SegmentNoteController extends Controller
         return WorkflowPlanogramStep::where('planogram_id', $planogramId)
             ->with('availableUsers:id')
             ->get()
-            ->flatMap(fn($step) => $step->availableUsers->pluck('id'))
+            ->flatMap(fn ($step) => $step->availableUsers->pluck('id'))
             ->unique()
-            ->filter(fn($id) => $id !== $excludeUserId)
+            ->filter(fn ($id) => $id !== $excludeUserId)
             ->values();
     }
 }

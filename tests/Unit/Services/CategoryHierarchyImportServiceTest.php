@@ -5,12 +5,8 @@ use App\Models\EanReference;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\Files\Imports\Categories\CategoryHierarchyImportService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
-use Tests\TestCase;
-
-uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function (): void {
     static $landlordMigrated = false;

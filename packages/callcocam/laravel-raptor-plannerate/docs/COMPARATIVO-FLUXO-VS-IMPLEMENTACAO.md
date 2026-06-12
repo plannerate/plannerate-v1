@@ -73,7 +73,7 @@ Quando `mode = automatic`: geração é disparada imediatamente via `AutoGenerat
 - `src/Models/Editor/Gondola.php`, `Section.php`, `Shelf.php`, `Planogram.php`
 
 **🔧 Arquivos do App (ponto de entrada para geração):**
-- `app/Services/AutoPlanogram/AutoGenerationRunner.php` → chamado pelo `store()` quando `mode = automatic`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/AutoGenerationRunner.php` → chamado pelo `store()` quando `mode = automatic`
 
 ---
 
@@ -100,14 +100,14 @@ Dois modos de operação:
 > ⚠️ **O modo automático (síntese) não está descrito no doc original.**
 
 **🔧 Arquivos do App:**
-- `app/Services/AutoPlanogram/AutoGenerationRunner.php` → dispara geração e vincula template
-- `app/Services/AutoPlanogram/Synthesis/AutoTemplateSynthesisOrchestrator.php`
-- `app/Services/AutoPlanogram/Synthesis/CategoryRoleInferrer.php`
-- `app/Services/AutoPlanogram/Synthesis/SlotPlanBuilder.php`
-- `app/Services/AutoPlanogram/Synthesis/AutoTemplateSynthesizer.php`
-- `app/Models/PlanogramTemplate.php`
-- `app/Models/PlanogramSubtemplate.php`
-- `app/Models/PlanogramTemplateSlot.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/AutoGenerationRunner.php` → dispara geração e vincula template
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Synthesis/AutoTemplateSynthesisOrchestrator.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Synthesis/CategoryRoleInferrer.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Synthesis/SlotPlanBuilder.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Synthesis/AutoTemplateSynthesizer.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Models/PlanogramTemplate.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Models/PlanogramSubtemplate.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Models/PlanogramTemplateSlot.php`
 
 ---
 
@@ -130,8 +130,8 @@ Dois modos de operação:
 - `src/Models/Editor/Category.php`
 
 **🔧 Arquivos do App:**
-- `app/Services/AutoPlanogram/ProductSelectionService.php` → `selectAndRankProducts()`
-- `app/Services/AutoPlanogram/AutoPlanogramService.php` → `loadProductRules()`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/ProductSelectionService.php` → `selectAndRankProducts()`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/AutoPlanogramService.php` → `loadProductRules()`
 - `app/Models/PlanogramProductRule.php`
 
 ---
@@ -159,11 +159,11 @@ Dois modos de operação:
 - `src/Services/Plannerate/BcgAnalysisService.php` → análise BCG visual (editor)
 
 **🔧 Arquivos do App:**
-- `app/Services/AutoPlanogram/Scoring/CompositeScorer.php` → score numérico por produto
-- `app/Services/AutoPlanogram/Synthesis/CategoryRoleInferrer.php` → papel por categoria
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Scoring/CompositeScorer.php` → score numérico por produto
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Synthesis/CategoryRoleInferrer.php` → papel por categoria
 - `app/Models/ScoringWeights.php`
 - `app/Models/ProductStrategicFlag.php`
-- `app/Enums/CategoryRole.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Enums/CategoryRole.php`
 
 ---
 
@@ -185,8 +185,8 @@ Dois modos de operação:
 - `src/Services/Plannerate/AbcAnalysisService.php` → cálculo ABC
 
 **🔧 Arquivos do App:**
-- `app/Services/AutoPlanogram/ProductSelectionService.php` → `getAbcAnalyses()`, `computeAbcOnTheFly()`
-- `app/Services/AutoPlanogram/DTO/PlacementSettings.php` → transporta `abcClassMap`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/ProductSelectionService.php` → `getAbcAnalyses()`, `computeAbcOnTheFly()`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/DTO/PlacementSettings.php` → transporta `abcClassMap`
 
 ---
 
@@ -205,8 +205,8 @@ Dois modos de operação:
 - `src/Services/Plannerate/TargetStockService.php` → cálculo de estoque alvo
 
 **🔧 Arquivos do App:**
-- `app/Services/AutoPlanogram/ProductSelectionService.php` → chama `TargetStockService` e monta `targetStockMap`
-- `app/Services/AutoPlanogram/DTO/PlacementSettings.php` → transporta `targetStockMap`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/ProductSelectionService.php` → chama `TargetStockService` e monta `targetStockMap`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/DTO/PlacementSettings.php` → transporta `targetStockMap`
 
 ---
 
@@ -222,11 +222,11 @@ Dois modos de operação:
 - `planogram_gondola_slot_overrides` sobrescreve `min_facings`, `max_facings`, `space_fallback` e `facing_expansion` por categoria naquela gôndola.
 
 **🔧 Arquivos do App:**
-- `app/Services/AutoPlanogram/Placement/GreedyShelfPlacer.php`
-- `app/Services/AutoPlanogram/Validation/Rules/FacingMinimumRule.php`
-- `app/Services/AutoPlanogram/AutoPlanogramService.php` → `loadGondolaSlotOverrides()`
-- `app/Enums/SpaceFallback.php`
-- `app/Enums/FacingExpansion.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Placement/GreedyShelfPlacer.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Validation/Rules/FacingMinimumRule.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/AutoPlanogramService.php` → `loadGondolaSlotOverrides()`
+- `packages/callcocam/laravel-raptor-plannerate/src/Enums/SpaceFallback.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Enums/FacingExpansion.php`
 - `app/Models/GondolaSlotOverride.php`
 
 ---
@@ -244,10 +244,10 @@ Dois modos de operação:
 - `zoneMetricsMap` [product_id → {giro, margem}] construído a partir do `CompositeScorer`.
 
 **🔧 Arquivos do App:**
-- `app/Services/AutoPlanogram/ShelfZoneResolver.php`
-- `app/Enums/ShelfLevel.php`
-- `app/Enums/ZonePriority.php`
-- `app/Services/AutoPlanogram/Placement/TemplatePlacementEngine.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/ShelfZoneResolver.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Enums/ShelfLevel.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Enums/ZonePriority.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Placement/TemplatePlacementEngine.php`
 
 ---
 
@@ -264,9 +264,9 @@ Dois modos de operação:
 > ⚠️ "Exposição combinada" não é enum próprio — é resultado de regras diferentes em cada slot/módulo.
 
 **🔧 Arquivos do App:**
-- `app/Services/AutoPlanogram/Placement/ExposureRedistributeService.php`
-- `app/Enums/BrandExposure.php`
-- `app/Enums/FlavorExposure.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Placement/ExposureRedistributeService.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Enums/BrandExposure.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Enums/FlavorExposure.php`
 
 ---
 
@@ -295,10 +295,10 @@ Dois modos de operação:
 - Ordenação legada (slots sem `visual_criteria`): size → price → brand.
 
 **🔧 Arquivos do App:**
-- `app/Services/AutoPlanogram/ProductOrderingService.php`
-- `app/Services/AutoPlanogram/ProductSizeResolver.php`
-- `app/Enums/PriceOrder.php`
-- `app/Enums/SizeOrder.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/ProductOrderingService.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/ProductSizeResolver.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Enums/PriceOrder.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Enums/SizeOrder.php`
 
 ---
 
@@ -311,8 +311,8 @@ Dois modos de operação:
 - `TemplatePlacementEngine` espelha posições físicas quando `FlowDirection::RightToLeft`.
 
 **🔧 Arquivos do App:**
-- `app/Enums/FlowDirection.php`
-- `app/Services/AutoPlanogram/Placement/TemplatePlacementEngine.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Enums/FlowDirection.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Placement/TemplatePlacementEngine.php`
 
 ---
 
@@ -333,10 +333,10 @@ Dois modos de operação:
 - `src/Models/Editor/Segment.php`, `Layer.php`
 
 **🔧 Arquivos do App:**
-- `app/Services/AutoPlanogram/Placement/PlanogramWriter.php`
-- `app/Services/AutoPlanogram/Placement/RejectedProductsWriter.php`
-- `app/Models/PlanogramRejectedProduct.php`
-- `app/Enums/PlacementFailureReason.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Placement/PlanogramWriter.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Placement/RejectedProductsWriter.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Models/PlanogramRejectedProduct.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Enums/PlacementFailureReason.php`
 
 ---
 
@@ -358,8 +358,8 @@ Dois modos de operação:
 | `UnplacedProductsRule` | Taxa de não alocados dentro do limite aceitável |
 
 **🔧 Arquivos do App:**
-- `app/Services/AutoPlanogram/Validation/PlanogramValidator.php`
-- `app/Services/AutoPlanogram/Validation/Rules/` (7 arquivos)
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Validation/PlanogramValidator.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Validation/Rules/` (7 arquivos)
 - `app/Models/AdjacencyRule.php`
 - `app/Models/ShelfLevelPreference.php`
 
@@ -378,10 +378,10 @@ Dois modos de operação:
 | **Classificar** | Detecta automaticamente qual tipo é necessário | `AlterationClassifier` |
 
 **🔧 Arquivos do App:**
-- `app/Services/AutoPlanogram/Placement/VisualReorderService.php`
-- `app/Services/AutoPlanogram/Placement/ExposureRedistributeService.php`
-- `app/Services/AutoPlanogram/AlterationClassifier.php`
-- `app/Enums/AlterationLevel.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Placement/VisualReorderService.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Placement/ExposureRedistributeService.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/AlterationClassifier.php`
+- `packages/callcocam/laravel-raptor-plannerate/src/Enums/AlterationLevel.php`
 
 ---
 
@@ -389,7 +389,7 @@ Dois modos de operação:
 
 ### 1. Modo Automático com Síntese de Template (🔧 App)
 Gera planograma sem template pré-configurado. Sintetiza o template dinamicamente a partir do mix.
-- `app/Services/AutoPlanogram/Synthesis/`
+- `packages/callcocam/laravel-raptor-plannerate/src/AutoPlanogram/Synthesis/`
 
 ### 2. Slot Overrides por Gôndola (🔧 App)
 Configurações por categoria que sobrescrevem o template slot para aquela gôndola específica.

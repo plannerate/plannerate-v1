@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\AutoPlanogram\ProductWidthResolver;
+use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ProductWidthResolver;
 use Illuminate\Support\Facades\Log;
 
 function productWithWidth(mixed $width): object

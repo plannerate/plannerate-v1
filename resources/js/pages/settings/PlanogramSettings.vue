@@ -42,8 +42,6 @@ type WeightsProps = {
     sales_window_months: number;
     block_hierarchy_level: number;
     adjacency_hierarchy_level: number;
-    vertical_block_threshold: number;
-    vertical_block_min_shelves: number;
 };
 
 type HierarchyLevel = {
@@ -98,8 +96,6 @@ const defaults: WeightsProps = {
     sales_window_months: 4,
     block_hierarchy_level: 5,
     adjacency_hierarchy_level: 4,
-    vertical_block_threshold: 0.20,
-    vertical_block_min_shelves: 2,
 };
 
 const form = useForm({ ...props.weights });
@@ -109,10 +105,6 @@ const weightSum = computed(() =>
 );
 
 const weightSumWarning = computed(() => Math.abs(weightSum.value - 1.0) > 0.05);
-
-const candidatos = computed(() =>
-    Math.ceil(100 * form.vertical_block_threshold) + '%',
-);
 
 const hierarchyWarning = computed(() => form.block_hierarchy_level > 5);
 
@@ -138,8 +130,6 @@ function resetToDefaults() {
     form.sales_window_months = defaults.sales_window_months;
     form.block_hierarchy_level = defaults.block_hierarchy_level;
     form.adjacency_hierarchy_level = defaults.adjacency_hierarchy_level;
-    form.vertical_block_threshold = defaults.vertical_block_threshold;
-    form.vertical_block_min_shelves = defaults.vertical_block_min_shelves;
 }
 
 // ── Shelf preferences dialog ──────────────────────────────────────────────────
@@ -288,60 +278,7 @@ function badgeVariant(color: string): 'default' | 'secondary' | 'destructive' | 
                 </div>
             </div>
 
-            <!-- ── Seção 2: Bloco Vertical ────────────────────────────── -->
-            <div class="space-y-4">
-                <div>
-                    <h2 class="text-base font-semibold">Bloco Vertical</h2>
-                    <p class="text-muted-foreground mt-1 text-sm">
-                        Produtos de alto score recebem destaque ocupando a mesma posição horizontal em múltiplas prateleiras.
-                        Bloco vertical é posicionado nas prateleiras do meio (olhos e mãos).
-                    </p>
-                </div>
-
-                <div class="grid gap-4 md:grid-cols-2">
-                    <!-- Threshold -->
-                    <div class="space-y-2">
-                        <Label>
-                            Percentual de destaque —
-                            <span class="font-semibold">Top {{ Math.round(form.vertical_block_threshold * 100) }}%</span>
-                        </Label>
-                        <p class="text-muted-foreground text-xs">Top X% dos produtos por score recebem bloco vertical</p>
-                        <input
-                            v-model.number="form.vertical_block_threshold"
-                            class="accent-primary w-full cursor-pointer"
-                            type="range"
-                            min="0.05"
-                            max="0.50"
-                            step="0.05"
-                        />
-                        <InputError :message="form.errors.vertical_block_threshold" />
-                    </div>
-
-                    <!-- Mínimo de prateleiras -->
-                    <div class="space-y-2">
-                        <Label for="vertical_block_min_shelves">
-                            Mínimo de prateleiras
-                        </Label>
-                        <p class="text-muted-foreground text-xs">Produto só recebe bloco vertical com este mínimo de prateleiras EYE/HAND disponíveis</p>
-                        <Select
-                            :model-value="String(form.vertical_block_min_shelves)"
-                            @update:model-value="(v) => (form.vertical_block_min_shelves = Number(v))"
-                        >
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="2">2 prateleiras (mínimo)</SelectItem>
-                                <SelectItem value="3">3 prateleiras</SelectItem>
-                                <SelectItem value="4">4 prateleiras (toda a gôndola)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <InputError :message="form.errors.vertical_block_min_shelves" />
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Seção 3: Scoring ───────────────────────────────────── -->
+            <!-- ── Seção 2: Scoring ───────────────────────────────────── -->
             <div class="space-y-4">
                 <div>
                     <h2 class="text-base font-semibold">Critério de Score</h2>
@@ -419,7 +356,7 @@ function badgeVariant(color: string): 'default' | 'secondary' | 'destructive' | 
             </div>
         </form>
 
-        <!-- ── Seção 4: Preferências de nível por categoria ───────────── -->
+        <!-- ── Seção 3: Preferências de nível por categoria ───────────── -->
         <div class="space-y-4 border-t pt-6">
             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>

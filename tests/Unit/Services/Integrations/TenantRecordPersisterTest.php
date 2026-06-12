@@ -1,9 +1,6 @@
 <?php
 
 use App\Models\TenantIntegration;
-use Tests\TestCase;
-
-uses(TestCase::class);
 use App\Services\Integrations\TenantRecordPersister;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;

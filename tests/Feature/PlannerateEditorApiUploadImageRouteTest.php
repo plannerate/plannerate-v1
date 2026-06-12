@@ -5,12 +5,14 @@ use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Api\ProductImageControlle
 use Illuminate\Support\Facades\Route;
 use Spatie\Multitenancy\Http\Middleware\NeedsTenant;
 
-test('rota de upload de imagem do editor fica no domínio do tenant', function (): void {
+test('rota de upload de imagem do editor é registrada sem restrição de domínio', function (): void {
     $route = Route::getRoutes()->getByName('api.products.upload-image');
 
     expect($route)->not->toBeNull();
 
-    expect($route->getDomain())->toBe(sprintf('{subdomain}.%s', config('app.landlord_domain')));
+    // Sem domínio: registrar apenas no host central faria o host do tenant
+    // retornar 404 (ver comentário em registerEditorApiRoutes do provider)
+    expect($route->getDomain())->toBeNull();
 
     expect($route->uri())->toBe('api/products/{product}/upload-image');
 
@@ -33,9 +35,8 @@ test('rota delete-image do editor permite binding com produto soft-deleted', fun
     expect($route->allowsTrashedBindings())->toBeTrue();
 });
 
-test('rota save-changes do editor gera URL quando subdomain é informado', function (): void {
+test('rota save-changes do editor gera URL pelo path sem exigir subdomain', function (): void {
     $url = route('api.editor.gondolas.save-changes', [
-        'subdomain' => 'acme-tenant',
         'gondola' => '01fakegondolaidxxxxxxxx',
     ], false);
 

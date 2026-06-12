@@ -9,8 +9,8 @@
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
 use App\Models\Tenant;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;

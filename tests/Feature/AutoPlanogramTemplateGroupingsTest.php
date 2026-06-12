@@ -1,12 +1,12 @@
 <?php
 
-use App\Http\Controllers\AutoPlanogramController;
 use App\Models\Category;
 use App\Models\Gondola;
 use App\Models\Planogram;
-use App\Models\PlanogramSubtemplate;
-use App\Models\PlanogramTemplate;
-use App\Models\PlanogramTemplateSlot;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -79,6 +79,9 @@ beforeEach(function (): void {
         $table->string('code');
         $table->unsignedTinyInteger('num_modules');
         $table->boolean('is_active')->default(true);
+        $table->string('hot_zone_priority')->nullable();
+        $table->string('cold_zone_priority')->nullable();
+        $table->string('flow_direction')->nullable();
         $table->timestamps();
         $table->softDeletes();
     });

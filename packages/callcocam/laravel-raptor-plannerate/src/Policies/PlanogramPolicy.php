@@ -4,7 +4,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Policies;
 
 use App\Models\User;
 use App\Support\Authorization\PermissionName;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
+use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
 
 class PlanogramPolicy
 {

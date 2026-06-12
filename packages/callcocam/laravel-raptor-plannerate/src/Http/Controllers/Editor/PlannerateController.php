@@ -9,9 +9,9 @@
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Store;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\User;
+use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
+use Callcocam\LaravelRaptorPlannerate\Models\Store;
+use Callcocam\LaravelRaptorPlannerate\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;

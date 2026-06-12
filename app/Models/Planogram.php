@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Planogram as EditorPlanogram;
+use Callcocam\LaravelRaptorPlannerate\Models\Planogram as EditorPlanogram;
 use Database\Factories\PlanogramFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

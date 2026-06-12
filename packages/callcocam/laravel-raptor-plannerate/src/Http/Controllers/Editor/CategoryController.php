@@ -9,7 +9,7 @@
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Category;
+use Callcocam\LaravelRaptorPlannerate\Models\Category;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller

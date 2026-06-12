@@ -1,6 +1,6 @@
 <?php
 
-use Callcocam\LaravelRaptorPlannerate\Services\Printing\GondolaPrintService;
+use Callcocam\LaravelRaptorPlannerate\Services\Export\GondolaPrintService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 

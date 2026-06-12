@@ -2,7 +2,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Inertia\Inertia;
 use Inertia\Response;
 

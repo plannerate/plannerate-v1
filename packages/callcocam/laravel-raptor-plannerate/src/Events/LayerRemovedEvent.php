@@ -8,7 +8,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Events;
 
-use Callcocam\LaravelRaptorPlannerate\Models\Editor\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
