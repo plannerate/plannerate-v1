@@ -1,6 +1,6 @@
 # Fluxo da Geração Automática de Planogramas
 
-> Atualizado em 2026-06-10 para refletir a implementação atual.
+> Atualizado em 2026-06-12 para refletir a implementação atual.
 > Versão anterior era conceitual; este documento descreve o que está em produção.
 
 ---
@@ -102,6 +102,13 @@ Os pesos de cada componente são configuráveis por tenant em `ScoringWeights`.
 
 O score ordena o pool — produtos com maior score têm prioridade na alocação de slots. Quando não há dados de venda no período, o sistema aplica um **score neutro** (0.5) para todos os produtos, garantindo que o template ainda possa distribuir produtos.
 
+**Análise de Papel (papéis estratégicos por produto):** o `PaperAnalysisService` cruza market share × crescimento para classificar cada produto em `leader`, `anchor`, `rising` ou `lagging`. Regras (corrigidas em 2026-06-12):
+
+- O limiar de "alto crescimento" é **relativo**: mediana dos crescimentos da categoria (antes era fixo em 0, o que degenerava a matriz — anchor/lagging nunca apareciam em períodos de alta generalizada). `setGrowthThreshold()` permite fixar um limiar manual;
+- **Produto novo** (sem venda no período anterior) recebe `is_new = true`, `growth_rate = null` e papel `rising` (item em introdução) — antes ganhava +100% de crescimento artificial;
+- Produto sem venda nos dois períodos é `lagging` (candidato à revisão de mix);
+- O papel alimenta o componente `growth` do CompositeScorer e a regra `space_fallback = remove_dog`.
+
 > No modo automático, o `CategoryRoleInferrer` também calcula o papel estratégico de cada **categoria** (não produto individual) para orientar a síntese do template.
 
 ---
@@ -116,13 +123,24 @@ O `AbcAnalysisService` classifica os produtos em curvas A, B e C por média pond
 
 Cortes configuráveis: `abcCutoffA` (padrão 80%) e `abcCutoffB` (padrão 90%).
 
+**Regra de classificação (corrigida em 2026-06-12):** a classe é definida pelo percentual acumulado **antes** de somar o item. Consequências práticas:
+
+- O primeiro produto do ranking da categoria é **sempre A** — inclusive em categorias com um único produto (antes, o acumulado saltava para 100% e o único produto virava C);
+- Um produto que cruza um corte ainda pertence à classe anterior (ex.: produto com 85% de share individual é A, não B);
+- Categorias inteiras sem venda continuam todas C (não há evidência para promover ninguém).
+
 A classificação ABC é usada para:
 
 - Pré-ordenar o pool (A > B > C > sem ABC)
 - Influenciar critérios de ordenação visual (`score_abc`)
 - Aplicar `space_fallback = RemoveCurvC` quando falta espaço
+- Marcar `retirar_do_mix` (classe C com participação menor que metade do menor B)
 
-O sistema pode **excluir curva C do pool** antes do placement quando a flag `exclude_class_c` estiver ativa. Produtos sem classificação ABC (sem vendas no período) não são afetados por essa flag.
+O sistema pode **excluir curva C do pool** antes do placement quando a flag `exclude_class_c` estiver ativa, com **presença mínima por subcategoria** (padrão de mercado — cobertura de mix):
+
+1. Produtos marcados como `retirar_do_mix` saem sempre (recomendação explícita do ABC);
+2. Demais produtos C saem, **exceto** o de maior venda de cada subcategoria que ficaria vazia — nenhuma subcategoria ativa some da gôndola por causa do corte;
+3. Produtos sem classificação ABC (sem vendas no período) não são afetados.
 
 > Fonte dos dados: tabela `product_analyses` (cache, quando `useExistingAnalysis = true`) ou cálculo on-the-fly direto de `sales` ou `monthly_sales_summaries`.
 
@@ -137,6 +155,8 @@ O `TargetStockService` calcula `estoque_alvo` e `estoque_seguranca` por produto 
 | A | 2 dias | 70% |
 | B | 5 dias | 80% |
 | C | 7 dias | 90% |
+
+Os defaults (regra da planilha VBA original — `docs/ESTOQUE-ALVO.md`) são configuráveis em `config/plannerate.php` → `auto_planogram.target_stock` (`service_levels` e `coverage_days` por classe). Instalações que preferem o padrão de mercado (classe A com nível de serviço mais alto, ex.: 95%) podem sobrescrever ali sem alterar código; os setters do service seguem funcionando como override pontual.
 
 O estoque alvo define quantas frentes o produto precisa para cobrir a demanda sem ruptura.
 

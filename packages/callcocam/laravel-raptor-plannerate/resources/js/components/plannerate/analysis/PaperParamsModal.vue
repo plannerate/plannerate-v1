@@ -40,7 +40,8 @@ interface FormData {
     prev_date_to: string;
     prev_start_month: string;
     prev_end_month: string;
-    growth_threshold: number;
+    /** Limiar fixo de crescimento — null = mediana automática por categoria */
+    growth_threshold: number | null;
     x_axis: string;
     y_axis: string;
     classify_by: HierarchyLevel;
@@ -110,7 +111,7 @@ const buildForm = (data?: Partial<FormData> | null): FormData => ({
     prev_date_to: data?.prev_date_to || '',
     prev_start_month: data?.prev_start_month || '',
     prev_end_month: data?.prev_end_month || '',
-    growth_threshold: data?.growth_threshold ?? 0,
+    growth_threshold: data?.growth_threshold ?? null,
     x_axis: data?.x_axis || 'VALOR DE VENDA',
     y_axis: data?.y_axis || 'MARGEM DE CONTRIBUIÇÃO',
     classify_by: data?.classify_by || 'categoria',
@@ -188,6 +189,11 @@ function onRuleChange(event: Event) {
 }
 
 const handleSubmit = () => {
+    // Input numérico vazio vira '' — normaliza para null (mediana automática)
+    if (typeof form.value.growth_threshold !== 'number' || Number.isNaN(form.value.growth_threshold)) {
+        form.value.growth_threshold = null;
+    }
+
     emit('submit', form.value);
     emit('update:open', false);
 };
@@ -377,6 +383,7 @@ const handleOpenChange = (value: boolean) => {
                         type="number"
                         step="1"
                         class="h-8 text-xs"
+                        :placeholder="t('plannerate.analysis.paper_params.growth_threshold_placeholder')"
                     />
                     <p class="text-[10px] text-muted-foreground">
                         {{ t('plannerate.analysis.paper_params.growth_threshold_hint') }}

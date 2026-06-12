@@ -1,3 +1,22 @@
+<!--
+NOTA DE IMPLEMENTAÇÃO (2026-06-12)
+
+Este arquivo é a referência VBA original da planilha. A implementação em
+src/Services/Analysis/AbcAnalysisService.php diverge em um ponto importante:
+
+- Classificação pelo acumulado ANTES do item (melhor prática de mercado):
+  o VBA classifica pelo acumulado APÓS somar o item, o que rebaixava o líder
+  de categorias concentradas e classificava como C o único produto de
+  categorias pequenas (acumulado saltava direto para 100%).
+  No service, o primeiro do ranking é sempre A e um item que cruza um corte
+  ainda pertence à classe anterior.
+- Cortes default do pipeline: A=0.80 / B=0.90 (configuráveis via AutoGenerateConfigDTO).
+- retirar_do_mix: mesma regra do VBA (C com participação < metade do menor B;
+  sem classe B na categoria, ninguém é retirado).
+
+Testes: tests/Unit/Services/Analysis/AbcAnalysisServiceTest.php
+-->
+
 Sub AnaliseCompletaSortimentoEStatus()
 
     Dim ws As Worksheet

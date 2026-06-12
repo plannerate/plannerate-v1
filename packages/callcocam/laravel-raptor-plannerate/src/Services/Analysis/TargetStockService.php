@@ -19,7 +19,9 @@ use Illuminate\Support\Facades\Log;
 class TargetStockService
 {
     /**
-     * Parâmetros padrão de nível de serviço por classe ABC
+     * Parâmetros de nível de serviço por classe ABC.
+     * Inicializados a partir de config('plannerate.auto_planogram.target_stock');
+     * os setters continuam funcionando como override pontual.
      */
     private array $niveisServico = [
         'A' => 0.7,
@@ -28,13 +30,23 @@ class TargetStockService
     ];
 
     /**
-     * Parâmetros padrão de cobertura em dias por classe ABC
+     * Parâmetros de cobertura em dias por classe ABC.
      */
     private array $coberturaDias = [
         'A' => 2,
         'B' => 5,
         'C' => 7,
     ];
+
+    public function __construct()
+    {
+        // Defaults configuráveis por instalação/tenant — fallback preserva os
+        // valores da planilha VBA original (docs/ESTOQUE-ALVO.md)
+        $configured = config('plannerate.auto_planogram.target_stock', []);
+
+        $this->niveisServico = array_merge($this->niveisServico, $configured['service_levels'] ?? []);
+        $this->coberturaDias = array_merge($this->coberturaDias, $configured['coverage_days'] ?? []);
+    }
 
     /**
      * Configura os níveis de serviço por classe ABC

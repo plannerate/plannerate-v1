@@ -1,3 +1,22 @@
+<!--
+NOTA DE IMPLEMENTAÇÃO (2026-06-12)
+
+Este arquivo é a referência VBA original da planilha (matriz BCG por categoria).
+A Análise de Papel implementada em src/Services/Analysis/PaperAnalysisService.php
+usa share × crescimento por produto com as seguintes regras (diferentes do VBA):
+
+- Limiar de crescimento RELATIVO: mediana dos growth_rate da categoria
+  (produtos novos ficam fora do cálculo). Um limiar fixo pode ser definido
+  via setGrowthThreshold().
+- Produto novo (sem venda no período anterior): is_new = true,
+  growth_rate = null e papel 'rising' (item em introdução) — não recebe
+  +100% de crescimento artificial.
+- Produto sem venda nos dois períodos: 'lagging' (candidato à revisão de mix).
+- Papéis: leader / anchor / rising / lagging (share ≥ mediana × crescimento ≥ mediana).
+
+Testes: tests/Unit/Services/Analysis/PaperAnalysisServiceTest.php
+-->
+
 Dim wsDados As Worksheet
 Dim wsConfig As Worksheet
 Dim wsResultado As Worksheet

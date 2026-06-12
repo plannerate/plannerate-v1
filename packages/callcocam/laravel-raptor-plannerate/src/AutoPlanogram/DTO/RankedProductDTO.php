@@ -49,6 +49,9 @@ class RankedProductDTO
 
         /** Papel estratégico (Análise de Papel): 'leader', 'anchor', 'rising', 'lagging' — null se sem dados de dois períodos */
         public readonly ?string $paperRole = null,
+
+        /** Recomendação do ABC para retirar o produto do mix (classe C com participação irrelevante) */
+        public readonly bool $retirarDoMix = false,
     ) {}
 
     /**
@@ -76,6 +79,7 @@ class RankedProductDTO
             'target_stock' => $this->targetStock,
             'safety_stock' => $this->safetyStock,
             'paper_role' => $this->paperRole,
+            'retirar_do_mix' => $this->retirarDoMix,
         ];
     }
 }

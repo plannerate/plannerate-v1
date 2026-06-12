@@ -154,8 +154,13 @@ class GondolaAnalysisController extends Controller
         $previousFilters = $this->buildPreviousFilters($request);
 
         try {
-            $service = app(PaperAnalysisService::class)
-                ->setGrowthThreshold((float) $request->input('growth_threshold', 0.0));
+            $service = app(PaperAnalysisService::class);
+
+            // Limiar fixo só quando enviado explicitamente; sem o parâmetro, o
+            // service usa a mediana de crescimento por categoria (comportamento padrão)
+            if ($request->filled('growth_threshold')) {
+                $service->setGrowthThreshold((float) $request->input('growth_threshold'));
+            }
 
             $productIds = $service->getProductIdsByGondola($gondola);
             $results = $service->analyzeByProductIds($productIds, $tableType, $currentFilters, $previousFilters);
@@ -171,7 +176,10 @@ class GondolaAnalysisController extends Controller
                         'previous_filters' => $previousFilters,
                         'parameters' => [
                             'table_type' => $tableType,
-                            'growth_threshold' => $request->input('growth_threshold', 0.0),
+                            // null = mediana de crescimento por categoria
+                            'growth_threshold' => $request->filled('growth_threshold')
+                                ? (float) $request->input('growth_threshold')
+                                : null,
                         ],
                     ],
                     'summary' => $summary,

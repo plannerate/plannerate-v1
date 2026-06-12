@@ -143,7 +143,8 @@ interface PaperFormData {
     prev_date_to: string;
     prev_start_month: string;
     prev_end_month: string;
-    growth_threshold: number;
+    /** Limiar fixo de crescimento — null = mediana automática por categoria */
+    growth_threshold: number | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -184,7 +185,7 @@ const buildDefaultForm = (): PaperFormData => ({
     prev_date_to:      '',
     prev_start_month:  '',
     prev_end_month:    '',
-    growth_threshold:  0,
+    growth_threshold:  null,
 });
 
 const loadStoredForm = (): Partial<PaperFormData> => {
@@ -194,7 +195,15 @@ const loadStoredForm = (): Partial<PaperFormData> => {
     if (!raw) return {};
 
     try {
-        return JSON.parse(raw) as Partial<PaperFormData>;
+        const stored = JSON.parse(raw) as Partial<PaperFormData>;
+
+        // Migração: formulários antigos persistiam growth_threshold = 0 como default;
+        // 0 agora significa limiar fixo — restaura para null (mediana automática)
+        if (stored.growth_threshold === 0) {
+            stored.growth_threshold = null;
+        }
+
+        return stored;
     } catch {
         window.localStorage.removeItem(getStorageKey(props.gondolaId));
         return {};

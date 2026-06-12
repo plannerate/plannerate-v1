@@ -107,6 +107,7 @@ class ProductSelectionService
                 targetStock: $analysisData['target_stock'] ?? null,
                 safetyStock: $analysisData['safety_stock'] ?? null,
                 paperRole: $paperRoleMap[$productId] ?? null,
+                retirarDoMix: (bool) ($analysisData['retirar_do_mix'] ?? false),
             );
         });
 
@@ -115,16 +116,9 @@ class ProductSelectionService
             $rankedProducts = $rankedProducts->filter(fn ($p) => $p->salesTotal > 0);
         }
 
-        // 4b. Excluir curva C do pool (quando habilitado).
-        // Produtos sem ABC (abcClass = null) não são afetados — só os C explícitos saem.
+        // 4b. Excluir curva C do pool (quando habilitado), com presença mínima por subcategoria.
         if ($config->excludeClassC) {
-            $before = $rankedProducts->count();
-            $rankedProducts = $rankedProducts->filter(fn ($p) => $p->abcClass !== 'C');
-            Log::info('ProductSelectionService: curva C excluída do pool', [
-                'antes' => $before,
-                'depois' => $rankedProducts->count(),
-                'removidos' => $before - $rankedProducts->count(),
-            ]);
+            $rankedProducts = $this->excludeClassCWithMinimumPresence($rankedProducts);
         }
 
         // 5. Filtrar produtos sem dimensões (width ou height)
@@ -140,6 +134,57 @@ class ProductSelectionService
 
         // 6. Ordenar por score (maior = mais importante)
         return $rankedProducts->sortByDesc('score')->values();
+    }
+
+    /**
+     * Exclui produtos curva C do pool garantindo presença mínima por subcategoria.
+     *
+     * Padrão de mercado (cobertura de mix): nenhuma subcategoria ativa deve sumir
+     * da gôndola apenas por causa do corte da curva C.
+     *
+     * Regras:
+     *   1. Produtos com retirar_do_mix = true saem sempre (recomendação explícita do
+     *      ABC) — inclusive se a subcategoria ficar vazia, pois o ABC já apontou que
+     *      esses itens não justificam espaço;
+     *   2. Demais produtos C saem, EXCETO o de maior venda de cada subcategoria que
+     *      ficaria sem nenhum produto após o filtro;
+     *   3. Produtos sem ABC (abcClass = null) não são afetados.
+     *
+     * @param  Collection<int, RankedProductDTO>  $rankedProducts
+     * @return Collection<int, RankedProductDTO>
+     */
+    protected function excludeClassCWithMinimumPresence(Collection $rankedProducts): Collection
+    {
+        $before = $rankedProducts->count();
+
+        // Passo A: recomendação explícita do ABC — sai sempre, sem exceção
+        $afterMixRemoval = $rankedProducts->reject(fn (RankedProductDTO $p) => $p->retirarDoMix);
+
+        // Passo B: remove os demais C
+        $filtered = $afterMixRemoval->filter(fn (RankedProductDTO $p) => $p->abcClass !== 'C');
+
+        // Passo C: presença mínima — devolve o melhor C de cada subcategoria que zerou
+        $survivingSubcategories = $filtered->pluck('subcategoryId')->filter()->unique()->flip();
+
+        $keptForPresence = $afterMixRemoval
+            ->filter(fn (RankedProductDTO $p) => $p->abcClass === 'C'
+                && $p->subcategoryId !== null
+                && ! $survivingSubcategories->has($p->subcategoryId))
+            ->groupBy('subcategoryId')
+            ->map(fn (Collection $group) => $group->sortByDesc('salesTotal')->first())
+            ->values();
+
+        $result = $filtered->concat($keptForPresence)->values();
+
+        Log::info('ProductSelectionService: curva C excluída do pool', [
+            'antes' => $before,
+            'depois' => $result->count(),
+            'removidos' => $before - $result->count(),
+            'retirar_do_mix' => $rankedProducts->filter(fn (RankedProductDTO $p) => $p->retirarDoMix)->count(),
+            'mantidos_por_presenca_minima' => $keptForPresence->count(),
+        ]);
+
+        return $result;
     }
 
     /**
@@ -578,6 +623,7 @@ class ProductSelectionService
                 'abc' => $item['classificacao'],
                 'target_stock' => (float) ($target['estoque_alvo'] ?? 0),
                 'safety_stock' => (float) ($target['estoque_seguranca'] ?? 0),
+                'retirar_do_mix' => (bool) ($item['retirar_do_mix'] ?? false),
             ];
         }
 
