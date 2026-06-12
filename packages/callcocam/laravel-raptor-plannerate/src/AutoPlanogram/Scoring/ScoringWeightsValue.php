@@ -14,8 +14,6 @@ final readonly class ScoringWeightsValue
         public int $salesWindowMonths,
         public int $blockHierarchyLevel = 5,
         public int $adjacencyHierarchyLevel = 4,
-        public float $verticalBlockThreshold = 0.20,
-        public int $verticalBlockMinShelves = 2,
         /**
          * Peso do componente de crescimento (Análise de Papel) no score composto.
          * Padrão 0.0 = não afeta o score (apenas metadado e RemoveDog fallback).
@@ -34,14 +32,12 @@ final readonly class ScoringWeightsValue
             salesWindowMonths: $model->sales_window_months,
             blockHierarchyLevel: (int) ($model->block_hierarchy_level ?? 5),
             adjacencyHierarchyLevel: (int) ($model->adjacency_hierarchy_level ?? 4),
-            verticalBlockThreshold: (float) ($model->vertical_block_threshold ?? 0.20),
-            verticalBlockMinShelves: (int) ($model->vertical_block_min_shelves ?? 2),
             crescimento: (float) ($model->w_crescimento ?? 0.0),
         );
     }
 
     public static function default(): self
     {
-        return new self(0.40, 0.30, 0.20, 0.10, 4, 5, 4, 0.20, 2, 0.0);
+        return new self(0.40, 0.30, 0.20, 0.10, 4, 5, 4, 0.0);
     }
 }

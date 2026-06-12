@@ -31,8 +31,6 @@ final class PlanogramSettingsController extends Controller
                 'sales_window_months' => $model?->sales_window_months ?? $defaults->salesWindowMonths,
                 'block_hierarchy_level' => $model?->block_hierarchy_level ?? $defaults->blockHierarchyLevel,
                 'adjacency_hierarchy_level' => $model?->adjacency_hierarchy_level ?? $defaults->adjacencyHierarchyLevel,
-                'vertical_block_threshold' => $model?->vertical_block_threshold ?? $defaults->verticalBlockThreshold,
-                'vertical_block_min_shelves' => $model?->vertical_block_min_shelves ?? $defaults->verticalBlockMinShelves,
             ],
             'hierarchy_levels' => $this->hierarchyLevels(),
             'shelf_levels' => collect(ShelfLevel::cases())->map(fn (ShelfLevel $level): array => [
@@ -67,8 +65,6 @@ final class PlanogramSettingsController extends Controller
             'sales_window_months' => ['required', 'integer', 'min:1', 'max:24'],
             'block_hierarchy_level' => ['required', 'integer', 'min:2', 'max:7', 'gte:adjacency_hierarchy_level'],
             'adjacency_hierarchy_level' => ['required', 'integer', 'min:2', 'max:7'],
-            'vertical_block_threshold' => ['required', 'numeric', 'min:0.05', 'max:0.50'],
-            'vertical_block_min_shelves' => ['required', 'integer', 'min:2', 'max:4'],
         ]);
 
         ScoringWeights::updateOrCreate([], $validated);

@@ -23,8 +23,6 @@ class ScoringWeights extends Model
         'sales_window_months',
         'block_hierarchy_level',
         'adjacency_hierarchy_level',
-        'vertical_block_threshold',
-        'vertical_block_min_shelves',
     ];
 
     protected function casts(): array
@@ -38,8 +36,6 @@ class ScoringWeights extends Model
             'sales_window_months' => 'integer',
             'block_hierarchy_level' => 'integer',
             'adjacency_hierarchy_level' => 'integer',
-            'vertical_block_threshold' => 'float',
-            'vertical_block_min_shelves' => 'integer',
         ];
     }
 }

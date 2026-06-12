@@ -19,10 +19,14 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /*
+ * Invariante de placement do modo automático: segmentos nunca se sobrepõem no
+ * eixo X. Arquivo herdado do antigo AutoPlanogramVerticalBlockTest — a feature
+ * de blocos verticais foi aposentada (nunca produziu blocos em produção e não
+ * foi portada ao TemplatePlacementEngine); restou o invariante genérico.
+ *
  * O modo automático sintetiza um template real (categorias → slots) antes do
  * placement, então o teste precisa das tabelas de síntese e de uma hierarquia
- * de categorias persistida (fixture modernizado na triagem da fase 5 — o teste
- * original antecedia o reroute automático → síntese → TemplatePlacementEngine).
+ * de categorias persistida.
  */
 beforeEach(function (): void {
     Schema::connection('tenant')->dropAllTables();
@@ -259,7 +263,7 @@ function vbFeatureScorer(Collection $products): ProductScorerInterface
     };
 }
 
-function runVbPipeline(Collection $sections, Collection $products, float $threshold = 0.20, ?string $baseCategoryId = null): PlanogramOutput
+function runVbPipeline(Collection $sections, Collection $products, ?string $baseCategoryId = null): PlanogramOutput
 {
     $mockWriter = new class implements PlanogramWriterInterface
     {
@@ -285,8 +289,6 @@ function runVbPipeline(Collection $sections, Collection $products, float $thresh
             maxFacings: 1,
             groupBySubcategory: false,
             includeProductsWithoutSales: true,
-            verticalBlockThreshold: $threshold,
-            verticalBlockMinShelves: 2,
         ),
         planogramCategoryId: $baseCategoryId,
     ));
@@ -303,62 +305,13 @@ function vbCategoryPair(): array
 
 // ── Testes ────────────────────────────────────────────────────────────────────
 
-test('top 20% de 10 produtos gera blocos verticais', function (): void {
-    // 10 products, top 20% = 2 candidates
+test('segmentos posicionados pelo modo automático não se sobrepõem em position X', function (): void {
     [$rootId, $leafId] = vbCategoryPair();
     $gondolaId = (string) Str::ulid();
     $sections = collect([vbFeatureSection($gondolaId, numShelves: 3, widthCm: 200)]);
     $products = collect(range(0, 9))->map(fn ($i) => vbFeatureProduct($i, categoryId: $leafId));
 
-    $output = runVbPipeline($sections, $products, threshold: 0.20, baseCategoryId: $rootId);
-
-    $verticalSegments = $output->placedSegments->filter(fn (PlacedSegment $s) => $s->isVerticalBlock);
-
-    // 2 candidatos × 3 prateleiras = no mínimo 4 segmentos verticais (mínimo 2 prateleiras por candidato)
-    expect($verticalSegments->count())->toBeGreaterThanOrEqual(4);
-})->skip('Blocos verticais não são gerados pelo fluxo atual: o modo automático foi rerouteado para o TemplatePlacementEngine e a blocagem vertical (do GreedyShelfPlacer legado) não foi portada — nenhum código em src/AutoPlanogram seta isVerticalBlock=true. Decisão de produto pendente: reimplementar no engine ou aposentar a feature (e remover verticalBlockThreshold/MinShelves + badge no frontend).');
-
-test('produtos verticais têm mesmo position X em shelves diferentes da mesma section', function (): void {
-    [$rootId, $leafId] = vbCategoryPair();
-    $gondolaId = (string) Str::ulid();
-    $sections = collect([vbFeatureSection($gondolaId, numShelves: 3, widthCm: 200)]);
-    $products = collect(range(0, 4))->map(fn ($i) => vbFeatureProduct($i, categoryId: $leafId));
-
-    $output = runVbPipeline($sections, $products, threshold: 0.20, baseCategoryId: $rootId);
-
-    $verticalSegments = $output->placedSegments->filter(fn (PlacedSegment $s) => $s->isVerticalBlock);
-
-    // Para cada produto vertical, todos os segmentos na mesma section devem ter o mesmo position
-    $productPositions = $verticalSegments->groupBy(fn (PlacedSegment $s) => $s->layers->first()?->productId);
-
-    foreach ($productPositions as $productId => $segs) {
-        $uniquePositions = $segs->pluck('position')->unique();
-        expect($uniquePositions)->toHaveCount(1,
-            "Produto {$productId} tem posições X diferentes em shelves distintas"
-        );
-    }
-})->skip('Blocos verticais não são gerados pelo fluxo atual: o modo automático foi rerouteado para o TemplatePlacementEngine e a blocagem vertical (do GreedyShelfPlacer legado) não foi portada — nenhum código em src/AutoPlanogram seta isVerticalBlock=true. Decisão de produto pendente: reimplementar no engine ou aposentar a feature (e remover verticalBlockThreshold/MinShelves + badge no frontend).');
-
-test('threshold 0 desativa blocos verticais', function (): void {
-    [$rootId, $leafId] = vbCategoryPair();
-    $gondolaId = (string) Str::ulid();
-    $sections = collect([vbFeatureSection($gondolaId, numShelves: 3, widthCm: 200)]);
-    $products = collect(range(0, 9))->map(fn ($i) => vbFeatureProduct($i, categoryId: $leafId));
-
-    $output = runVbPipeline($sections, $products, threshold: 0.0, baseCategoryId: $rootId);
-
-    $verticalSegments = $output->placedSegments->filter(fn (PlacedSegment $s) => $s->isVerticalBlock);
-
-    expect($verticalSegments)->toHaveCount(0);
-});
-
-test('segmentos verticais e normais não se sobrepõem em position X', function (): void {
-    [$rootId, $leafId] = vbCategoryPair();
-    $gondolaId = (string) Str::ulid();
-    $sections = collect([vbFeatureSection($gondolaId, numShelves: 3, widthCm: 200)]);
-    $products = collect(range(0, 9))->map(fn ($i) => vbFeatureProduct($i, categoryId: $leafId));
-
-    $output = runVbPipeline($sections, $products, threshold: 0.20, baseCategoryId: $rootId);
+    $output = runVbPipeline($sections, $products, baseCategoryId: $rootId);
 
     // Agrupar por shelf_id
     $byShelf = $output->placedSegments->groupBy('shelfId');
