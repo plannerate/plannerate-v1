@@ -7,8 +7,10 @@ use Callcocam\LaravelRaptorPlannerate\Enums\FlavorExposure;
 use Callcocam\LaravelRaptorPlannerate\Enums\PriceOrder;
 use Callcocam\LaravelRaptorPlannerate\Enums\SizeOrder;
 use Callcocam\LaravelRaptorPlannerate\Enums\SpaceFallback;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
 use Illuminate\Support\Collection;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -52,6 +54,8 @@ final class TemplateExportService
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Templates');
 
+        // Colunas A–P: formato legado (labels PT-BR). Colunas Q–AB: campos novos com
+        // valores brutos dos enums, para round-trip simétrico export → import.
         $headers = [
             'A' => 'Código template',
             'B' => 'Departamento',
@@ -69,13 +73,25 @@ final class TemplateExportService
             'N' => 'Tipo de exposição por fragrancia ou sabor',
             'O' => 'Se faltar espaço, oque fazer?',
             'P' => 'Usar estoque alvo?',
+            'Q' => 'Frentes máximas',
+            'R' => 'Prioridade',
+            'S' => 'Expansão de frentes',
+            'T' => 'Papel da categoria (override)',
+            'U' => 'Máx % por SKU',
+            'V' => 'Máx % por marca',
+            'W' => 'Máx % por subcategoria',
+            'X' => 'Critérios visuais (JSON)',
+            'Y' => 'Disposição (subtemplate)',
+            'Z' => 'Sentido de leitura (subtemplate)',
+            'AA' => 'Zona quente (subtemplate)',
+            'AB' => 'Zona fria (subtemplate)',
         ];
 
         foreach ($headers as $col => $label) {
             $sheet->setCellValue($col.'1', $label);
         }
 
-        $headerRange = 'A1:P1';
+        $headerRange = 'A1:AB1';
         $sheet->getStyle($headerRange)->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2563EB']],
@@ -85,13 +101,18 @@ final class TemplateExportService
         $row = 2;
         foreach ($templates as $template) {
             foreach ($template->subtemplates as $subtemplate) {
+                $subtemplateSettings = $this->subtemplateSettingsColumns($subtemplate);
+
                 if ($subtemplate->slots->isEmpty()) {
+                    // Linha sem slots ainda carrega as configurações globais do subtemplate (Y–AB)
                     $sheet->fromArray([
                         $template->code,
                         $template->department,
                         $subtemplate->code,
                         $subtemplate->num_modules,
                         '', '', '', '', '', '', '', '', '', '', '', '',
+                        '', '', '', '', '', '', '', '',
+                        ...$subtemplateSettings,
                     ], null, 'A'.$row);
                     $row++;
 
@@ -119,17 +140,42 @@ final class TemplateExportService
                         $this->exposureLabel($slot->flavor_exposure),
                         $this->spaceFallbackLabel($slot->space_fallback),
                         $slot->use_target_stock ? 'Sim' : 'Não',
+                        $slot->max_facings,
+                        $slot->priority,
+                        $slot->facing_expansion?->value ?? '',
+                        $slot->role_override?->value ?? '',
+                        $slot->max_share_per_sku ?? '',
+                        $slot->max_share_per_brand ?? '',
+                        $slot->max_share_per_subcategory ?? '',
+                        $slot->visual_criteria !== null ? json_encode($slot->visual_criteria, JSON_UNESCAPED_UNICODE) : '',
+                        ...$subtemplateSettings,
                     ], null, 'A'.$row);
                     $row++;
                 }
             }
         }
 
-        foreach (range('A', 'P') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
+        for ($colIndex = 1; $colIndex <= 28; $colIndex++) {
+            $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($colIndex))->setAutoSize(true);
         }
 
         return $spreadsheet;
+    }
+
+    /**
+     * Configurações globais do subtemplate nas colunas Y–AB (valores brutos dos
+     * enums; vazio = não configurado). Repetidas em todas as linhas do subtemplate.
+     *
+     * @return list<string>
+     */
+    private function subtemplateSettingsColumns(PlanogramSubtemplate $subtemplate): array
+    {
+        return [
+            $subtemplate->layout_orientation?->value ?? '',
+            $subtemplate->flow_direction?->value ?? '',
+            $subtemplate->hot_zone_priority?->value ?? '',
+            $subtemplate->cold_zone_priority?->value ?? '',
+        ];
     }
 
     private function streamResponse(Spreadsheet $spreadsheet, string $filename): StreamedResponse
@@ -172,6 +218,7 @@ final class TemplateExportService
         return match ($fallback) {
             SpaceFallback::ReduceC => 'Reduzir SKUs curva C',
             SpaceFallback::ReduceFacings => 'Reduzir facings para 1',
+            SpaceFallback::RemoveDog => 'Remover retardatários primeiro',
             SpaceFallback::Skip => '',
         };
     }

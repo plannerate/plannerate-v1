@@ -527,6 +527,123 @@ test('saving slot persists subtemplate slot defaults and exposes them in slots p
             ->where('subtemplates.0.slot_defaults.use_target_stock', true));
 });
 
+test('updating subtemplate settings persists the four global fields and exposes them in the slots payload', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForTemplates('tpl-sub-settings');
+    assignTenantAdminRoleForTemplates($user, $tenant->id);
+
+    $template = PlanogramTemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'code' => 'LIMPEZA-SETTINGS',
+        'name' => 'LIMPEZA-SETTINGS',
+        'department' => 'LIMPEZA',
+        'is_active' => true,
+    ]);
+
+    $subtemplate = PlanogramSubtemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'template_id' => $template->id,
+        'code' => 'LIMPEZA-SETTINGS-1M',
+        'num_modules' => 1,
+        'is_active' => true,
+    ]);
+
+    $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-sub-settings.'.config('app.landlord_domain')])
+        ->put(
+            route('tenant.planogram-templates.subtemplates.settings.update', [
+                'subdomain' => 'tpl-sub-settings',
+                'planogramTemplate' => $template->id,
+                'planogramSubtemplate' => $subtemplate->id,
+            ], false),
+            [
+                'hot_zone_priority' => 'maior_margem',
+                'cold_zone_priority' => 'maior_volume',
+                'flow_direction' => 'right_to_left',
+                'layout_orientation' => 'vertical',
+            ],
+        )
+        ->assertRedirect();
+
+    $subtemplate->refresh();
+
+    expect($subtemplate->hot_zone_priority?->value)->toBe('maior_margem')
+        ->and($subtemplate->cold_zone_priority?->value)->toBe('maior_volume')
+        ->and($subtemplate->flow_direction?->value)->toBe('right_to_left')
+        ->and($subtemplate->layout_orientation?->value)->toBe('vertical');
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-sub-settings.'.config('app.landlord_domain')])
+        ->get(route('tenant.planogram-templates.slots.index', [
+            'subdomain' => 'tpl-sub-settings',
+            'planogramTemplate' => $template->id,
+        ], false));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tenant/planogram-templates/Slots')
+            ->where('subtemplates.0.hot_zone_priority', 'maior_margem')
+            ->where('subtemplates.0.cold_zone_priority', 'maior_volume')
+            ->where('subtemplates.0.flow_direction', 'right_to_left')
+            ->where('subtemplates.0.layout_orientation', 'vertical'));
+});
+
+test('subtemplate settings rejects invalid enum values and accepts nulls', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenantForTemplates('tpl-sub-settings-val');
+    assignTenantAdminRoleForTemplates($user, $tenant->id);
+
+    $template = PlanogramTemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'code' => 'LIMPEZA-SETTINGS-VAL',
+        'name' => 'LIMPEZA-SETTINGS-VAL',
+        'department' => 'LIMPEZA',
+        'is_active' => true,
+    ]);
+
+    $subtemplate = PlanogramSubtemplate::query()->create([
+        'tenant_id' => $tenant->id,
+        'template_id' => $template->id,
+        'code' => 'LIMPEZA-SETTINGS-VAL-1M',
+        'num_modules' => 1,
+        'is_active' => true,
+        'layout_orientation' => 'vertical',
+    ]);
+
+    $settingsUrl = route('tenant.planogram-templates.subtemplates.settings.update', [
+        'subdomain' => 'tpl-sub-settings-val',
+        'planogramTemplate' => $template->id,
+        'planogramSubtemplate' => $subtemplate->id,
+    ], false);
+
+    // Enum inválido → erro de validação no campo
+    $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-sub-settings-val.'.config('app.landlord_domain')])
+        ->put($settingsUrl, ['layout_orientation' => 'diagonal'])
+        ->assertSessionHasErrors('layout_orientation');
+
+    // Nulls explícitos limpam os valores salvos
+    $this
+        ->withServerVariables(['HTTP_HOST' => 'tpl-sub-settings-val.'.config('app.landlord_domain')])
+        ->put($settingsUrl, [
+            'hot_zone_priority' => null,
+            'cold_zone_priority' => null,
+            'flow_direction' => null,
+            'layout_orientation' => null,
+        ])
+        ->assertRedirect();
+
+    $subtemplate->refresh();
+
+    expect($subtemplate->layout_orientation)->toBeNull()
+        ->and($subtemplate->hot_zone_priority)->toBeNull();
+});
+
 test('reimport do mesmo Excel faz upsert — não apaga slots existentes', function (): void {
     $user = User::factory()->create();
     $this->actingAs($user);

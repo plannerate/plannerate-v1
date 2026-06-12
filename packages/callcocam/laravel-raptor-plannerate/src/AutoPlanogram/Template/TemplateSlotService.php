@@ -106,8 +106,6 @@ final class TemplateSlotService
     /** @return array<string, mixed> */
     public function validateSlotDefaults(Request $request): array
     {
-        $zonePriorityValues = implode(',', array_column(ZonePriority::cases(), 'value'));
-
         $validated = $request->validate([
             'category_id' => ['nullable', 'string', 'max:26'],
             'min_facings' => ['required', 'integer', 'min:1', 'max:20'],
@@ -120,10 +118,6 @@ final class TemplateSlotService
             'space_fallback' => ['required', 'string', 'in:reduce_c,reduce_facings,skip,remove_dog'],
             'use_target_stock' => ['boolean'],
             'facing_expansion' => ['required', 'string', 'in:none,score,current_stock,target_stock,equal'],
-            'hot_zone_priority' => ['nullable', 'string', "in:{$zonePriorityValues}"],
-            'cold_zone_priority' => ['nullable', 'string', "in:{$zonePriorityValues}"],
-            'flow_direction' => ['nullable', 'string', 'in:'.implode(',', array_column(FlowDirection::cases(), 'value'))],
-            'layout_orientation' => ['nullable', 'string', 'in:'.implode(',', array_column(LayoutOrientation::cases(), 'value'))],
         ]);
 
         if ((int) ($validated['max_facings'] ?? 1) < (int) ($validated['min_facings'] ?? 1)) {
@@ -133,6 +127,36 @@ final class TemplateSlotService
         }
 
         return $validated;
+    }
+
+    /**
+     * Valida as configurações globais do subtemplate (escopo: todos os módulos).
+     * Zone priorities, flow direction e layout orientation são colunas dedicadas
+     * do subtemplate — editadas em seção própria, fora do modal por módulo.
+     *
+     * @return array<string, mixed>
+     */
+    public function validateSubtemplateSettings(Request $request): array
+    {
+        $zonePriorityValues = implode(',', array_column(ZonePriority::cases(), 'value'));
+
+        return $request->validate([
+            'hot_zone_priority' => ['nullable', 'string', "in:{$zonePriorityValues}"],
+            'cold_zone_priority' => ['nullable', 'string', "in:{$zonePriorityValues}"],
+            'flow_direction' => ['nullable', 'string', 'in:'.implode(',', array_column(FlowDirection::cases(), 'value'))],
+            'layout_orientation' => ['nullable', 'string', 'in:'.implode(',', array_column(LayoutOrientation::cases(), 'value'))],
+        ]);
+    }
+
+    /** @param array<string, mixed> $validated */
+    public function updateSubtemplateSettings(Model $subtemplate, array $validated): void
+    {
+        $subtemplate->update([
+            'hot_zone_priority' => $validated['hot_zone_priority'] ?? null,
+            'cold_zone_priority' => $validated['cold_zone_priority'] ?? null,
+            'flow_direction' => $validated['flow_direction'] ?? null,
+            'layout_orientation' => $validated['layout_orientation'] ?? null,
+        ]);
     }
 
     /**
@@ -277,14 +301,6 @@ final class TemplateSlotService
     public function updateSlotDefaults(Model $subtemplate, array $validated): void
     {
         $this->updateSubtemplateSlotDefaults($subtemplate, $validated);
-
-        // Zone priorities, flow direction e layout orientation são colunas dedicadas, não parte do slot_defaults JSON
-        $subtemplate->update([
-            'hot_zone_priority' => $validated['hot_zone_priority'] ?? null,
-            'cold_zone_priority' => $validated['cold_zone_priority'] ?? null,
-            'flow_direction' => $validated['flow_direction'] ?? null,
-            'layout_orientation' => $validated['layout_orientation'] ?? null,
-        ]);
     }
 
     public function destroySlot(Model $slot): void

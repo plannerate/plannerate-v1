@@ -239,7 +239,7 @@ function onPackagingDragEnd(): void {
                 v-if="active.length > 0"
                 class="flex flex-wrap gap-2"
                 role="list"
-                aria-label="Critérios de ordenação (mais à esquerda = maior prioridade)"
+                :aria-label="t('planogram-templates.visual_criteria.list_aria_label')"
             >
                 <div
                     v-for="(item, index) in active"
@@ -256,7 +256,7 @@ function onPackagingDragEnd(): void {
                             : !isLocked(index) ? 'border-border bg-muted' : '',
                         dragIndex === index ? 'opacity-40' : '',
                     ]"
-                    :aria-label="`${t('planogram-templates.visual_criteria.criteria_labels.' + item.key)}, prioridade ${index + 1}`"
+                    :aria-label="t('planogram-templates.visual_criteria.chip_aria_label', { label: t('planogram-templates.visual_criteria.criteria_labels.' + item.key), n: String(index + 1) })"
                     @dragstart="onDragStart(index, $event)"
                     @dragover="onDragOver(index, $event)"
                     @drop="onDrop(index)"

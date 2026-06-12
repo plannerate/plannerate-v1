@@ -25,24 +25,32 @@ export type SlotDraft = {
     max_share_per_subcategory: number | null;
 };
 
-export const visualCriterionMeta: Record<VisualCriterionKey, { label: string; supportsDirection: boolean }> = {
-    marca: { label: 'Marca', supportsDirection: true },
-    preco: { label: 'Preço', supportsDirection: true },
-    tamanho: { label: 'Tamanho', supportsDirection: true },
-    score_abc: { label: 'Curva ABC', supportsDirection: false },
-    margem: { label: 'Margem', supportsDirection: true },
-    embalagem: { label: 'Embalagem', supportsDirection: false },
-    tipo: { label: 'Tipo de produto', supportsDirection: true },
-    sabor: { label: 'Sabor', supportsDirection: true },
-    atributo: { label: 'Atributo de sortimento', supportsDirection: true },
+/**
+ * Metadados estruturais dos critérios visuais (sem labels — textos visíveis
+ * vêm de `planogram-templates.visual_criteria.criteria_labels.*` via useT()).
+ */
+export const visualCriterionMeta: Record<VisualCriterionKey, { supportsDirection: boolean }> = {
+    marca: { supportsDirection: true },
+    preco: { supportsDirection: true },
+    tamanho: { supportsDirection: true },
+    score_abc: { supportsDirection: false },
+    margem: { supportsDirection: true },
+    embalagem: { supportsDirection: false },
+    tipo: { supportsDirection: true },
+    sabor: { supportsDirection: true },
+    atributo: { supportsDirection: true },
 };
 
-export const categoryRoleOptions: { value: CategoryRole | ''; label: string }[] = [
-    { value: '', label: 'Herdar da categoria' },
-    { value: 'destino', label: 'Destino — gera tráfego, área nobre' },
-    { value: 'rotina', label: 'Rotina — exposição equilibrada, centro' },
-    { value: 'conveniencia', label: 'Conveniência — leitura simples, acesso fácil' },
-    { value: 'impulso', label: 'Impulso — área quente, maior visibilidade' },
-    { value: 'sazonal', label: 'Sazonal — destaque temporário' },
-    { value: 'complementar', label: 'Complementar — zona fria, área de associação' },
+/**
+ * Valores possíveis do papel da categoria ('' = herdar da categoria).
+ * Labels traduzidos em `planogram-templates.role_options.*` via useT().
+ */
+export const categoryRoleValues: (CategoryRole | '')[] = [
+    '',
+    'destino',
+    'rotina',
+    'conveniencia',
+    'impulso',
+    'sazonal',
+    'complementar',
 ];

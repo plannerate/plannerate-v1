@@ -65,8 +65,8 @@ const normalizedTemplates = computed(() =>
         .filter((template) => !!template?.value)
         .map((template) => ({
             value: template.value,
-            label: template.label?.trim() || 'Template sem nome',
-            description: template.description?.trim() || 'Sem departamento informado',
+            label: template.label?.trim() || t('plannerate.header.auto_generate.template_no_name'),
+            description: template.description?.trim() || t('plannerate.header.auto_generate.template_no_department'),
         }))
         .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')),
 );
@@ -175,7 +175,7 @@ function selectTemplate(templateId: string): void {
 
                 <!-- Seleção de template -->
                 <div class="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950">
-                    <Label class="text-sm font-medium text-amber-900 dark:text-amber-100">Template de Planograma</Label>
+                    <Label class="text-sm font-medium text-amber-900 dark:text-amber-100">{{ t('plannerate.header.auto_generate.template_selector_label') }}</Label>
                     <Popover v-model:open="templateComboboxOpen">
                         <PopoverTrigger as-child>
                             <Button
@@ -186,7 +186,7 @@ function selectTemplate(templateId: string): void {
                                 class="w-full justify-between bg-background font-normal"
                             >
                                 <span class="truncate">
-                                    {{ selectedTemplate?.label ?? 'Selecione um template para gerar...' }}
+                                    {{ selectedTemplate?.label ?? t('plannerate.header.auto_generate.template_selector_placeholder') }}
                                 </span>
                                 <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-60" />
                             </Button>
@@ -197,7 +197,7 @@ function selectTemplate(templateId: string): void {
                                 <Input
                                     v-model="templateSearch"
                                     class="pl-9"
-                                    placeholder="Buscar template por nome/departamento..."
+                                    :placeholder="t('plannerate.header.auto_generate.template_search_placeholder')"
                                 />
                             </div>
                             <div class="mt-2 max-h-56 overflow-y-auto rounded-md border bg-background">
@@ -219,7 +219,7 @@ function selectTemplate(templateId: string): void {
                                     v-if="filteredTemplates.length === 0"
                                     class="px-3 py-4 text-center text-sm text-muted-foreground"
                                 >
-                                    Nenhum template encontrado.
+                                    {{ t('plannerate.header.auto_generate.template_none_found') }}
                                 </div>
                             </div>
                         </PopoverContent>
@@ -229,7 +229,15 @@ function selectTemplate(templateId: string): void {
                         <p class="text-muted-foreground">{{ selectedTemplate.description }}</p>
                     </div>
                     <p class="text-xs text-amber-700 dark:text-amber-300">
-                        O subtemplate com o número de módulos mais próximo da gôndola será usado automaticamente.
+                        {{ t('plannerate.header.auto_generate.template_closest_subtemplate_hint') }}
+                    </p>
+                </div>
+
+                <!-- Aviso: configurações de slot vêm do template, não deste modal -->
+                <div class="flex items-start gap-3 rounded-lg border border-border bg-muted/40 p-3">
+                    <Info class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <p class="text-xs text-muted-foreground">
+                        {{ t('plannerate.header.auto_generate.defined_by_template') }}
                     </p>
                 </div>
 

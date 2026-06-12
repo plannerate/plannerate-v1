@@ -2,12 +2,12 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates;
 
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use App\Http\Controllers\Tenant\Concerns\InteractsWithDeferredIndex;
 use App\Models\Tenant;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Template\TemplateExportService;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Template\TemplateImportService;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
@@ -206,6 +206,10 @@ class PlanogramTemplateController extends Controller
                     'code' => $sub->code,
                     'num_modules' => $sub->num_modules,
                     'slots_count' => $sub->slots->count(),
+                    'layout_orientation' => $sub->layout_orientation?->value,
+                    'flow_direction' => $sub->flow_direction?->value,
+                    'hot_zone_priority' => $sub->hot_zone_priority?->value,
+                    'cold_zone_priority' => $sub->cold_zone_priority?->value,
                 ]),
                 'created_at' => $planogramTemplate->created_at?->toDateTimeString(),
             ],

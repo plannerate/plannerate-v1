@@ -242,20 +242,10 @@ function handleGenerate(): void {
                     class="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
                     <Info class="mt-0.5 size-4 shrink-0 text-blue-600 dark:text-blue-400" />
                     <div class="space-y-1 text-sm">
-                        <p class="font-medium text-blue-900 dark:text-blue-100">Pontuação de posicionamento</p>
-                        <p class="text-blue-700 dark:text-blue-300">
-                            Score composto:
-                            <span class="font-medium">Giro 40%</span> ·
-                            <span class="font-medium">Margem 30%</span> ·
-                            <span class="font-medium">Estratégico 20%</span> ·
-                            <span class="font-medium">DOH 10%</span>
-                        </p>
-                        <p class="text-blue-700 dark:text-blue-300">
-                            A Analise de Papel (Lider / Ancora / Ascendente / Retardatario) e calculada automaticamente
-                            e usada para o fallback <span class="font-medium">Remover Retardatarios</span>.
-                            Ative o peso de Crescimento nas configuracoes para influenciar o score.
-                        </p>
-                        <p class="text-xs text-blue-600 dark:text-blue-400">Os pesos podem ser ajustados nas configurações do tenant.</p>
+                        <p class="font-medium text-blue-900 dark:text-blue-100">{{ t('plannerate.header.auto_generate.score_info_title') }}</p>
+                        <p class="text-blue-700 dark:text-blue-300">{{ t('plannerate.header.auto_generate.score_info_composition') }}</p>
+                        <p class="text-blue-700 dark:text-blue-300">{{ t('plannerate.header.auto_generate.score_info_paper') }}</p>
+                        <p class="text-xs text-blue-600 dark:text-blue-400">{{ t('plannerate.header.auto_generate.score_info_weights_hint') }}</p>
                     </div>
                 </div>
 

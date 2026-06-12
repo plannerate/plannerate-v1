@@ -15,6 +15,10 @@ type Subtemplate = {
     code: string;
     num_modules: number;
     slots_count: number;
+    layout_orientation: string | null;
+    flow_direction: string | null;
+    hot_zone_priority: string | null;
+    cold_zone_priority: string | null;
 };
 
 type Template = {
@@ -51,6 +55,38 @@ const breadcrumbs = [
 
 function confirmDelete(): void {
     deleteDialogOpen.value = true;
+}
+
+/**
+ * Badges das configurações globais do subtemplate (exibidos só quando não-nulos).
+ * Labels reutilizam as mesmas chaves de tradução da tela de Slots.
+ */
+function subtemplateBadges(sub: Subtemplate): string[] {
+    const badges: string[] = [];
+
+    if (sub.layout_orientation) {
+        badges.push(t(`planogram-templates.layout_orientation.${sub.layout_orientation}`));
+    }
+
+    if (sub.flow_direction === 'left_to_right') {
+        badges.push(t('planogram-templates.flow_direction.left_to_right'));
+    } else if (sub.flow_direction === 'right_to_left') {
+        badges.push(t('planogram-templates.flow_direction.right_to_left'));
+    }
+
+    if (sub.hot_zone_priority && sub.hot_zone_priority !== 'none') {
+        badges.push(t('planogram-templates.show_page.badge_hot_zone', {
+            label: t(`planogram-templates.zone_priority.hot.${sub.hot_zone_priority}`),
+        }));
+    }
+
+    if (sub.cold_zone_priority && sub.cold_zone_priority !== 'none') {
+        badges.push(t('planogram-templates.show_page.badge_cold_zone', {
+            label: t(`planogram-templates.zone_priority.cold.${sub.cold_zone_priority}`),
+        }));
+    }
+
+    return badges;
 }
 
 function deleteTemplate(): void {
@@ -163,6 +199,20 @@ function deleteTemplate(): void {
                                           )
                                 }}
                             </p>
+                            <!-- Configurações globais do subtemplate (layout / fluxo / zonas) -->
+                            <div
+                                v-if="subtemplateBadges(sub).length > 0"
+                                class="mt-1.5 flex flex-wrap gap-1.5"
+                            >
+                                <Badge
+                                    v-for="badge in subtemplateBadges(sub)"
+                                    :key="badge"
+                                    variant="secondary"
+                                    class="text-xs font-normal"
+                                >
+                                    {{ badge }}
+                                </Badge>
+                            </div>
                         </div>
                         <Badge variant="outline"
                             >{{ sub.slots_count }}

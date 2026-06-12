@@ -17,6 +17,8 @@ import SlotCopyPromptDialog from '@/components/planogram-templates/SlotCopyPromp
 import type { CopyPromptAction } from '@/components/planogram-templates/SlotCopyPromptDialog.vue';
 import SlotEditorModal from '@/components/planogram-templates/SlotEditorModal.vue';
 import SlotReviewDrawer from '@/components/planogram-templates/SlotReviewDrawer.vue';
+import SubtemplateSettingsCard from '@/components/planogram-templates/SubtemplateSettingsCard.vue';
+import type { SubtemplateSettingsDraft } from '@/components/planogram-templates/SubtemplateSettingsCard.vue';
 import type { SlotDraft } from '@/components/planogram-templates/slot-editor';
 import type {
     PlanogramSubtemplate,
@@ -610,7 +612,7 @@ function saveCurrentModuleDefaults(
         | 'flavor_exposure'
         | 'space_fallback'
         | 'use_target_stock'
-    > & { hot_zone_priority?: string | null; cold_zone_priority?: string | null; flow_direction?: string | null; layout_orientation?: string | null },
+    >,
 ): void {
     const subtemplate = currentSubtemplate.value;
 
@@ -624,6 +626,37 @@ function saveCurrentModuleDefaults(
         {
             preserveState: true,
             only: ['subtemplates'],
+        },
+    );
+}
+
+// ── Configurações globais do subtemplate (layout / fluxo / zonas) ───────────────
+const subtemplateSettingsBusy = ref(false);
+
+function saveSubtemplateSettings(settings: SubtemplateSettingsDraft): void {
+    const subtemplate = currentSubtemplate.value;
+
+    if (!subtemplate) {
+        return;
+    }
+
+    subtemplateSettingsBusy.value = true;
+    router.put(
+        `${baseUrl.value}/subtemplates/${subtemplate.id}/settings`,
+        settings,
+        {
+            preserveState: true,
+            only: ['subtemplates'],
+            onSuccess: () => {
+                toast.success(t('planogram-templates.subtemplate_settings.saved'));
+            },
+            onError: (errs) => {
+                const first = Object.values(errs)[0];
+                if (first) toast.error(first);
+            },
+            onFinish: () => {
+                subtemplateSettingsBusy.value = false;
+            },
         },
     );
 }
@@ -918,8 +951,16 @@ const breadcrumbs = [
                 </div>
             </div>
 
+            <!-- Configurações globais do subtemplate (valem para todos os módulos) -->
+            <SubtemplateSettingsCard
+                v-if="currentSubtemplate"
+                :subtemplate="currentSubtemplate"
+                :busy="subtemplateSettingsBusy"
+                @save="saveSubtemplateSettings"
+            />
+
             <GondolaGrid
-                v-else
+                v-if="subtemplateExists(currentModules)"
                 :slots="currentSubtemplate?.slots ?? []"
                 :num-modules="currentModules"
                 :num-shelves="numShelves"
@@ -959,10 +1000,6 @@ const breadcrumbs = [
         v-model:open="moduleDefaultsOpen"
         :module-number="currentModules"
         :slot-defaults="currentSlotDefaults"
-        :hot-zone-priority="currentSubtemplate?.hot_zone_priority ?? null"
-        :cold-zone-priority="currentSubtemplate?.cold_zone_priority ?? null"
-        :flow-direction="currentSubtemplate?.flow_direction ?? null"
-        :layout-orientation="currentSubtemplate?.layout_orientation ?? null"
         @save="saveCurrentModuleDefaults"
     />
 

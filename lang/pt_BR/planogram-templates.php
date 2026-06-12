@@ -82,6 +82,14 @@ return [
         'save_button' => 'Salvar padrão',
     ],
 
+    // Subtemplate global settings card (SubtemplateSettingsCard.vue)
+    'subtemplate_settings' => [
+        'title' => 'Configurações do subtemplate',
+        'hint' => 'Valem para todos os :count módulo(s) deste subtemplate — não são configuráveis por módulo.',
+        'save_button' => 'Salvar configurações',
+        'saved' => 'Configurações do subtemplate salvas',
+    ],
+
     // Facing expansion options (shared: ModuleDefaultsModal + SlotEditorFields)
     'facing_expansion' => [
         'label' => 'Expansão de frentes',
@@ -151,7 +159,7 @@ return [
         'subcategory_example' => 'Ex: PÓ PACOTE',
         'min_facings_label' => 'Frentes mínimas',
         'priority_label' => 'Prioridade',
-        'priority_hint' => '1 = mais importante',
+        'priority_hint' => 'Informativo — não altera o posicionamento',
         'price_order_label' => 'Ordem por preço',
         'price_order_options' => [
             'none' => 'Sem ordenação',
@@ -351,7 +359,12 @@ return [
             'score_abc' => 'Curva ABC',
             'margem' => 'Margem',
             'embalagem' => 'Embalagem',
+            'tipo' => 'Tipo de produto',
+            'sabor' => 'Sabor',
+            'atributo' => 'Atributo de sortimento',
         ],
+        'list_aria_label' => 'Critérios de ordenação (mais à esquerda = maior prioridade)',
+        'chip_aria_label' => ':label, prioridade :n',
     ],
 
     // Product search panel (ProductSearchPanel.vue)
@@ -445,6 +458,8 @@ return [
     'show_page' => [
         'head_title' => 'Template :code',
         'cannot_undo' => 'Esta ação não pode ser desfeita.',
+        'badge_hot_zone' => 'Zona quente: :label',
+        'badge_cold_zone' => 'Zona fria: :label',
     ],
 
     // Form page (Form.vue)

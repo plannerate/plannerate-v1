@@ -70,6 +70,8 @@ Route::post('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubt
     ->name('planogram-templates.slots.bulk');
 Route::put('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slot-defaults', [TemplateSlotController::class, 'updateSubtemplateSlotDefaults'])
     ->name('planogram-templates.subtemplates.slot-defaults.update');
+Route::put('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/settings', [TemplateSlotController::class, 'updateSubtemplateSettings'])
+    ->name('planogram-templates.subtemplates.settings.update');
 Route::delete('planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}', [TemplateSlotController::class, 'destroySubtemplate'])
     ->name('planogram-templates.subtemplates.destroy');
 

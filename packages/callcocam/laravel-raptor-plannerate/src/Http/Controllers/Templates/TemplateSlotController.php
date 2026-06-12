@@ -3,12 +3,12 @@
 namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates;
 
 use App\Http\Controllers\Concerns\InteractsWithSyncImageDownLoad;
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Template\SlotReviewAnalysisService;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Template\TemplateSlotService;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
@@ -155,6 +155,21 @@ class TemplateSlotController extends Controller
         return redirect()->route('tenant.planogram-templates.slots.index', [
             'planogramTemplate' => $planogramTemplate->id,
         ]);
+    }
+
+    /**
+     * Atualiza as configurações globais do subtemplate (layout, fluxo e zonas térmicas).
+     * Diferente do slot-defaults (padrão para novos slots), estes campos valem para
+     * todos os módulos do subtemplate durante a geração do planograma.
+     */
+    public function updateSubtemplateSettings(Request $request, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse
+    {
+        $this->authorize('update', $planogramTemplate);
+
+        $validated = $this->service->validateSubtemplateSettings($request);
+        $this->service->updateSubtemplateSettings($planogramSubtemplate, $validated);
+
+        return back();
     }
 
     public function storeSlot(Request $request, PlanogramTemplate $planogramTemplate, PlanogramSubtemplate $planogramSubtemplate): RedirectResponse

@@ -13,7 +13,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useT } from '@/composables/useT';
-import type { FlowDirection, LayoutOrientation, PlanogramSlotDefaults, PlanogramTemplateSlot, ZonePriority } from './types';
+import type { PlanogramSlotDefaults, PlanogramTemplateSlot } from './types';
 
 type ModuleDefaultsDraft = {
     category_id: string | null;
@@ -27,20 +27,12 @@ type ModuleDefaultsDraft = {
     space_fallback: PlanogramTemplateSlot['space_fallback'];
     use_target_stock: boolean;
     facing_expansion: PlanogramTemplateSlot['facing_expansion'];
-    hot_zone_priority: ZonePriority | null;
-    cold_zone_priority: ZonePriority | null;
-    flow_direction: FlowDirection | null;
-    layout_orientation: LayoutOrientation | null;
 };
 
 const props = defineProps<{
     open: boolean;
     moduleNumber: number;
     slotDefaults?: PlanogramSlotDefaults | null;
-    hotZonePriority?: ZonePriority | null;
-    coldZonePriority?: ZonePriority | null;
-    flowDirection?: FlowDirection | null;
-    layoutOrientation?: LayoutOrientation | null;
 }>();
 
 const emit = defineEmits<{
@@ -60,15 +52,11 @@ const draft = reactive<ModuleDefaultsDraft>({
     space_fallback: 'reduce_c',
     use_target_stock: false,
     facing_expansion: 'none',
-    hot_zone_priority: null,
-    cold_zone_priority: null,
-    flow_direction: null,
-    layout_orientation: null,
 });
 
 watch(
-    () => [props.open, props.slotDefaults, props.hotZonePriority, props.coldZonePriority] as const,
-    ([open, defaults, hotPriority, coldPriority]) => {
+    () => [props.open, props.slotDefaults] as const,
+    ([open, defaults]) => {
         if (!open) {
             return;
         }
@@ -84,10 +72,6 @@ watch(
         draft.space_fallback = defaults?.space_fallback ?? 'reduce_c';
         draft.use_target_stock = defaults?.use_target_stock ?? false;
         draft.facing_expansion = defaults?.facing_expansion ?? 'none';
-        draft.hot_zone_priority = hotPriority ?? null;
-        draft.cold_zone_priority = coldPriority ?? null;
-        draft.flow_direction = props.flowDirection ?? null;
-        draft.layout_orientation = props.layoutOrientation ?? null;
     },
     { immediate: true },
 );
@@ -258,112 +242,6 @@ function saveDefaults(): void {
                     />
                 </div>
 
-                <!-- Sentido de leitura do cliente -->
-                <div class="rounded-md border border-border p-3">
-                    <p class="mb-3 text-sm font-medium">{{ t('planogram-templates.flow_direction.title') }}</p>
-                    <p class="mb-3 text-xs text-muted-foreground">
-                        {{ t('planogram-templates.flow_direction.description') }}
-                    </p>
-                    <div class="flex gap-2">
-                        <button
-                            type="button"
-                            class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm transition-colors"
-                            :class="
-                                !draft.flow_direction || draft.flow_direction === 'left_to_right'
-                                    ? 'border-primary bg-primary/10 text-primary font-medium'
-                                    : 'border-border text-muted-foreground hover:border-primary/50'
-                            "
-                            @click="draft.flow_direction = 'left_to_right'"
-                        >
-                            <span>→</span> {{ t('planogram-templates.flow_direction.left_to_right') }} <span class="ml-1 text-xs opacity-60">{{ t('planogram-templates.flow_direction.left_to_right_default') }}</span>
-                        </button>
-                        <button
-                            type="button"
-                            class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm transition-colors"
-                            :class="
-                                draft.flow_direction === 'right_to_left'
-                                    ? 'border-primary bg-primary/10 text-primary font-medium'
-                                    : 'border-border text-muted-foreground hover:border-primary/50'
-                            "
-                            @click="draft.flow_direction = 'right_to_left'"
-                        >
-                            <span>←</span> {{ t('planogram-templates.flow_direction.right_to_left') }}
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Disposição dos produtos (horizontal × blocagem vertical por marca) -->
-                <div class="rounded-md border border-border p-3">
-                    <p class="mb-3 text-sm font-medium">{{ t('planogram-templates.layout_orientation.title') }}</p>
-                    <p class="mb-3 text-xs text-muted-foreground">
-                        {{ t('planogram-templates.layout_orientation.description') }}
-                    </p>
-                    <div class="flex gap-2">
-                        <button
-                            type="button"
-                            class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm transition-colors"
-                            :class="
-                                !draft.layout_orientation || draft.layout_orientation === 'horizontal'
-                                    ? 'border-primary bg-primary/10 text-primary font-medium'
-                                    : 'border-border text-muted-foreground hover:border-primary/50'
-                            "
-                            @click="draft.layout_orientation = 'horizontal'"
-                        >
-                            {{ t('planogram-templates.layout_orientation.horizontal') }} <span class="ml-1 text-xs opacity-60">{{ t('planogram-templates.layout_orientation.horizontal_default') }}</span>
-                        </button>
-                        <button
-                            type="button"
-                            class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm transition-colors"
-                            :class="
-                                draft.layout_orientation === 'vertical'
-                                    ? 'border-primary bg-primary/10 text-primary font-medium'
-                                    : 'border-border text-muted-foreground hover:border-primary/50'
-                            "
-                            @click="draft.layout_orientation = 'vertical'"
-                        >
-                            {{ t('planogram-templates.layout_orientation.vertical') }}
-                        </button>
-                    </div>
-                    <p class="mt-2 text-xs text-muted-foreground">
-                        {{ t('planogram-templates.layout_orientation.regenerate_hint') }}
-                    </p>
-                </div>
-
-                <!-- Priorização por zona térmica -->
-                <div class="rounded-md border border-border p-3">
-                    <p class="mb-3 text-sm font-medium">{{ t('planogram-templates.zone_priority.title') }}</p>
-                    <p class="mb-3 text-xs text-muted-foreground">
-                        {{ t('planogram-templates.zone_priority.description') }}
-                    </p>
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <FormSelectField
-                            id="module-default-hot-zone-priority"
-                            v-model="draft.hot_zone_priority"
-                            name="hot_zone_priority"
-                            :label="t('planogram-templates.zone_priority.hot_zone_label')"
-                            :hint="t('planogram-templates.zone_priority.hot_zone_hint')"
-                        >
-                            <option :value="null">{{ t('planogram-templates.zone_priority.no_criteria') }}</option>
-                            <option value="maior_margem">{{ t('planogram-templates.zone_priority.hot.maior_margem') }}</option>
-                            <option value="maior_giro">{{ t('planogram-templates.zone_priority.hot.maior_giro') }}</option>
-                            <option value="maior_valor_vendido">{{ t('planogram-templates.zone_priority.hot.maior_valor_vendido') }}</option>
-                            <option value="curva_a">{{ t('planogram-templates.zone_priority.hot.curva_a') }}</option>
-                        </FormSelectField>
-                        <FormSelectField
-                            id="module-default-cold-zone-priority"
-                            v-model="draft.cold_zone_priority"
-                            name="cold_zone_priority"
-                            :label="t('planogram-templates.zone_priority.cold_zone_label')"
-                            :hint="t('planogram-templates.zone_priority.cold_zone_hint')"
-                        >
-                            <option :value="null">{{ t('planogram-templates.zone_priority.no_criteria') }}</option>
-                            <option value="menor_margem">{{ t('planogram-templates.zone_priority.cold.menor_margem') }}</option>
-                            <option value="complementar_fria">{{ t('planogram-templates.zone_priority.cold.complementar_fria') }}</option>
-                            <option value="maior_volume">{{ t('planogram-templates.zone_priority.cold.maior_volume') }}</option>
-                            <option value="menor_prioridade">{{ t('planogram-templates.zone_priority.cold.menor_prioridade') }}</option>
-                        </FormSelectField>
-                    </div>
-                </div>
             </div>
 
             <DialogFooter>

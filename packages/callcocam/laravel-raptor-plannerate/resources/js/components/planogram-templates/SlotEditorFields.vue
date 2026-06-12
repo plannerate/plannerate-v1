@@ -7,7 +7,7 @@ import CategoryCascadeSelect from '@/components/tenant/CategoryCascadeSelect.vue
 import SlotCategorySelect from './SlotCategorySelect.vue';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/composables/useT';
-import { categoryRoleOptions } from './slot-editor';
+import { categoryRoleValues } from './slot-editor';
 import type { SlotDraft } from './slot-editor';
 import VisualCriteriaEditor from './VisualCriteriaEditor.vue';
 import type { SlotValidationErrors } from './validation';
@@ -116,8 +116,8 @@ const maxSharePerSubcategoryModel = computed({
                 </p>
                 <select id="slot-role-override" v-model="draft.role_override"
                     class="flex h-9 w-full rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                    <option v-for="opt in categoryRoleOptions" :key="opt.value" :value="opt.value || null">
-                        {{ t(`planogram-templates.role_options.${opt.value || 'inherit'}`) }}
+                    <option v-for="value in categoryRoleValues" :key="value" :value="value || null">
+                        {{ t(`planogram-templates.role_options.${value || 'inherit'}`) }}
                     </option>
                 </select>
             </div>

@@ -16,6 +16,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Slot de template de planograma — célula (módulo × prateleira) com a categoria
+ * e os parâmetros de geração.
+ *
+ * Nota sobre `priority`: campo informativo (exibido na UI e na exportação) que
+ * NÃO influencia o placement. A ordem real de preenchimento dentro da mesma
+ * prateleira é dada por `ordering`; o engine percorre os slots por
+ * module_number/shelf_order/ordering. Possível evolução futura: usar como
+ * tie-break em TemplatePlacementEngine::place().
+ */
 class PlanogramTemplateSlot extends Model
 {
     use BelongsToTenant, HasUlids, SoftDeletes, UsesTenantConnection;
