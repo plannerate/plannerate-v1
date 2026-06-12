@@ -36,12 +36,17 @@ class PaperAnalysisService
 {
     /**
      * Limiar de crescimento: produtos com growth_rate acima deste valor são "alto crescimento".
-     * Padrão 0 = qualquer crescimento positivo classifica como alto.
+     *
+     * null (padrão) = limiar relativo: usa a mediana dos crescimentos da categoria
+     * (excluindo produtos novos), o que garante que os quatro papéis existam mesmo
+     * em períodos de alta generalizada. Um valor explícito via setGrowthThreshold()
+     * desativa a mediana e aplica o limiar fixo a todas as categorias.
      */
-    private float $growthThreshold = 0.0;
+    private ?float $growthThreshold = null;
 
     /**
-     * Define o limiar de crescimento mínimo para classificar um produto como "alto crescimento".
+     * Define um limiar de crescimento fixo para classificar "alto crescimento".
+     * Quando definido, substitui a mediana por categoria em todas as categorias.
      */
     public function setGrowthThreshold(float $threshold): self
     {
@@ -155,78 +160,26 @@ class PaperAnalysisService
             $combined = $combined->merge($zeroRecords);
         }
 
-        // Calcula totais por categoria no período atual (denominador do market share)
-        $categoryTotals = $combined->groupBy('category_id')->map(
-            fn ($items) => $items->sum('valor_atual')
-        );
-
-        // Calcula market_share e growth_rate por produto
-        $withMetrics = $combined->map(function ($item) use ($categoryTotals) {
-            $categoryTotal = (float) ($categoryTotals->get($item->category_id) ?? 0);
-
-            $marketShare = $categoryTotal > 0
-                ? ($item->valor_atual / $categoryTotal) * 100
-                : 0.0;
-
-            // Crescimento positivo de 100% quando produto não tinha venda anterior
-            $growthRate = $item->valor_anterior > 0
-                ? (($item->valor_atual - $item->valor_anterior) / $item->valor_anterior) * 100
-                : ($item->valor_atual > 0 ? 100.0 : 0.0);
-
-            return (object) [
-                'product_id' => $item->product_id,
-                'category_id' => $item->category_id,
-                'valor_atual' => $item->valor_atual,
-                'valor_anterior' => $item->valor_anterior,
-                'market_share' => round($marketShare, 4),
-                'growth_rate' => round($growthRate, 4),
-            ];
-        });
-
-        // Mediana do market_share por categoria — usada como divisor entre alto e baixo share
-        $shareThresholds = $withMetrics->groupBy('category_id')->map(function ($items) {
-            $shares = $items->pluck('market_share')->sort()->values();
-            $count = $shares->count();
-
-            if ($count === 0) {
-                return 0.0;
-            }
-
-            $mid = intdiv($count, 2);
-
-            return $count % 2 === 0
-                ? ($shares[$mid - 1] + $shares[$mid]) / 2
-                : (float) $shares[$mid];
-        });
-
         Log::info('PaperAnalysis - Distribuição de papéis antes da classificação', [
             'combined_count' => $combined->count(),
-            'with_metrics_count' => $withMetrics->count(),
         ]);
+
+        // Etapa pura: share, crescimento, medianas e papel (testável sem banco)
+        $classified = $this->classifyMetrics($combined);
 
         // Carrega dados completos dos produtos para enriquecer o resultado
         $productsData = Product::with(['category'])->whereIn('id', $productIds)->get()->keyBy('id');
 
-        // Classifica cada produto e monta o resultado final
-        return $withMetrics->map(function ($item) use ($shareThresholds, $productsData) {
-            $shareThreshold = (float) ($shareThresholds->get($item->category_id) ?? 0);
-            $role = $this->classifyRole($item->market_share, $item->growth_rate, $shareThreshold);
-            $product = $productsData->get($item->product_id);
+        // Enriquece com dados cadastrais e monta o resultado final
+        return $classified->map(function (array $item) use ($productsData) {
+            $product = $productsData->get($item['product_id']);
 
-            return [
-                'product_id' => $item->product_id,
+            return array_merge($item, [
                 'product_name' => $product?->name ?? '',
                 'ean' => $product?->ean ?? '',
                 'image_url' => $product?->image_url ?? null,
-                'category_id' => $item->category_id,
                 'category_name' => $product?->category?->name ?? '',
-                'role' => $role,
-                'market_share' => $item->market_share,
-                'growth_rate' => $item->growth_rate,
-                'total_value_current' => $item->valor_atual,
-                'total_value_previous' => $item->valor_anterior,
-                'share_threshold' => round($shareThreshold, 4),
-            ];
+            ]);
         })->values()->tap(function ($results) {
             Log::info('PaperAnalysis - Resultado final', [
                 'total' => $results->count(),
@@ -234,8 +187,114 @@ class PaperAnalysisService
                 'anchor' => $results->where('role', 'anchor')->count(),
                 'rising' => $results->where('role', 'rising')->count(),
                 'lagging' => $results->where('role', 'lagging')->count(),
+                'novos' => $results->where('is_new', true)->count(),
             ]);
         });
+    }
+
+    /**
+     * Etapa pura da análise de papel: calcula market share, crescimento, medianas
+     * por categoria e classifica o papel de cada produto. Não consulta o banco.
+     *
+     * Regras:
+     *   - market_share = participação do produto no valor da categoria (período atual)
+     *   - growth_rate  = variação % vs período anterior; null quando não há base de
+     *     comparação (produto novo ou sem venda nos dois períodos)
+     *   - produto novo (sem venda anterior, com venda atual) → papel 'rising' com
+     *     is_new = true (item em introdução: ganha exposição, mas sinalizado à parte)
+     *   - limiar de crescimento = mediana dos growth_rate da categoria (produtos novos
+     *     ficam fora do cálculo), salvo limiar fixo definido via setGrowthThreshold()
+     *
+     * @param  Collection  $combined  Itens com product_id, category_id, valor_atual, valor_anterior
+     * @return Collection<int, array{product_id: mixed, category_id: mixed, role: string, is_new: bool, market_share: float, growth_rate: float|null, growth_threshold: float, share_threshold: float, total_value_current: float, total_value_previous: float}>
+     */
+    public function classifyMetrics(Collection $combined): Collection
+    {
+        // Totais por categoria no período atual (denominador do market share)
+        $categoryTotals = $combined->groupBy('category_id')->map(
+            fn ($items) => $items->sum('valor_atual')
+        );
+
+        // Calcula market_share, growth_rate e flag de produto novo por produto
+        $withMetrics = $combined->map(function ($item) use ($categoryTotals) {
+            $categoryTotal = (float) ($categoryTotals->get($item->category_id) ?? 0);
+
+            $marketShare = $categoryTotal > 0
+                ? ($item->valor_atual / $categoryTotal) * 100
+                : 0.0;
+
+            // Produto novo: vendeu no período atual sem histórico anterior — não há
+            // base para calcular crescimento (growth_rate = null, tratado à parte)
+            $isNew = $item->valor_anterior <= 0 && $item->valor_atual > 0;
+
+            $growthRate = $item->valor_anterior > 0
+                ? round((($item->valor_atual - $item->valor_anterior) / $item->valor_anterior) * 100, 4)
+                : null;
+
+            return (object) [
+                'product_id' => $item->product_id,
+                'category_id' => $item->category_id,
+                'valor_atual' => $item->valor_atual,
+                'valor_anterior' => $item->valor_anterior,
+                'market_share' => round($marketShare, 4),
+                'growth_rate' => $growthRate,
+                'is_new' => $isNew,
+            ];
+        });
+
+        // Mediana do market_share por categoria — divisor entre alto e baixo share
+        $shareThresholds = $withMetrics->groupBy('category_id')->map(
+            fn ($items) => $this->median($items->pluck('market_share')) ?? 0.0
+        );
+
+        // Mediana do growth_rate por categoria (produtos sem base de comparação ficam
+        // fora) — divisor entre alto e baixo crescimento quando não há limiar fixo
+        $growthThresholds = $withMetrics->groupBy('category_id')->map(
+            fn ($items) => $this->median($items->pluck('growth_rate')->filter(fn ($g) => $g !== null)) ?? 0.0
+        );
+
+        // Classifica cada produto
+        return $withMetrics->map(function ($item) use ($shareThresholds, $growthThresholds) {
+            $shareThreshold = (float) ($shareThresholds->get($item->category_id) ?? 0);
+            $growthThreshold = $this->growthThreshold
+                ?? (float) ($growthThresholds->get($item->category_id) ?? 0);
+
+            $role = $item->is_new
+                ? 'rising'
+                : $this->classifyRole($item->market_share, $item->growth_rate, $shareThreshold, $growthThreshold);
+
+            return [
+                'product_id' => $item->product_id,
+                'category_id' => $item->category_id,
+                'role' => $role,
+                'is_new' => $item->is_new,
+                'market_share' => $item->market_share,
+                'growth_rate' => $item->growth_rate,
+                'growth_threshold' => round($growthThreshold, 4),
+                'share_threshold' => round($shareThreshold, 4),
+                'total_value_current' => $item->valor_atual,
+                'total_value_previous' => $item->valor_anterior,
+            ];
+        })->values();
+    }
+
+    /**
+     * Mediana de uma coleção de números. Retorna null para coleção vazia.
+     */
+    private function median(Collection $values): ?float
+    {
+        $sorted = $values->sort()->values();
+        $count = $sorted->count();
+
+        if ($count === 0) {
+            return null;
+        }
+
+        $mid = intdiv($count, 2);
+
+        return $count % 2 === 0
+            ? ((float) $sorted[$mid - 1] + (float) $sorted[$mid]) / 2
+            : (float) $sorted[$mid];
     }
 
     /**
@@ -266,11 +325,14 @@ class PaperAnalysisService
      *   anchor : share ≥ mediana AND crescimento < limiar  → receita estável
      *   rising : share < mediana AND crescimento ≥ limiar  → potencial de crescimento
      *   lagging: share < mediana AND crescimento < limiar  → candidato à revisão de mix
+     *
+     * growth_rate null aqui significa produto sem venda nos dois períodos (produto
+     * novo é tratado antes, em classifyMetrics) → baixo crescimento por definição.
      */
-    private function classifyRole(float $marketShare, float $growthRate, float $shareThreshold): string
+    private function classifyRole(float $marketShare, ?float $growthRate, float $shareThreshold, float $growthThreshold): string
     {
         $isHighShare = $marketShare >= $shareThreshold;
-        $isHighGrowth = $growthRate >= $this->growthThreshold;
+        $isHighGrowth = $growthRate !== null && $growthRate >= $growthThreshold;
 
         return match (true) {
             $isHighShare && $isHighGrowth => 'leader',
@@ -283,8 +345,9 @@ class PaperAnalysisService
     /**
      * Calcula os filtros do período anterior com base na duração do período atual.
      * O período anterior tem a mesma duração, deslocado para antes do início do período atual.
+     * Protected para permitir teste isolado via subclasse anônima.
      */
-    private function buildPreviousPeriodFilters(array $currentFilters, string $tableType): array
+    protected function buildPreviousPeriodFilters(array $currentFilters, string $tableType): array
     {
         // Mantém todos os filtros exceto as datas — serão recalculadas
         $previous = array_filter($currentFilters, fn ($key) => ! in_array($key, [

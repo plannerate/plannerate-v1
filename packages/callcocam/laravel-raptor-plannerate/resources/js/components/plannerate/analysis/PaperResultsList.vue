@@ -158,7 +158,7 @@ const handleSort = (key: string) => {
     setTimeout(() => { isSorting = false; }, 100);
 };
 
-const formatPercent  = (value: number) => `${value.toFixed(2)}%`;
+const formatPercent  = (value: number | null) => (value !== null ? `${value.toFixed(2)}%` : '—');
 
 const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', {
@@ -306,7 +306,7 @@ const roleLabel = (role: ProductRole): string => {
                                     </TableCell>
                                     <TableCell class="py-2 text-[11px] font-medium">{{ formatPercent(item.market_share) }}</TableCell>
                                     <TableCell class="py-2">
-                                        <span :class="['text-[11px] font-medium', item.growth_rate >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400']">
+                                        <span :class="['text-[11px] font-medium', item.growth_rate === null ? 'text-muted-foreground' : item.growth_rate >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400']">
                                             {{ formatPercent(item.growth_rate) }}
                                         </span>
                                     </TableCell>

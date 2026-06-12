@@ -157,6 +157,14 @@ class Product extends Model
         ]);
     }
 
+    /**
+     * URL pública da imagem; string vazia quando não há imagem.
+     *
+     * ATENÇÃO — duplicação deliberada com comportamento diferente: o Product do
+     * pacote plannerate (Callcocam\...\Models\Product) tem o mesmo accessor mas
+     * devolve uma imagem de FALLBACK (img/fallback/fall4.jpg) para o canvas do
+     * editor nunca renderizar produto sem arte. Se alterar um, avalie o outro.
+     */
     public function getImageUrlAttribute(): string
     {
         if (! $this->url) {

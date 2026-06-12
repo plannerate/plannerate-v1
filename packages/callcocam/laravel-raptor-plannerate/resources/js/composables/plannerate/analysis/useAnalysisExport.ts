@@ -132,7 +132,7 @@ export function useAnalysisExport() {
             item.category_name ?? '',
             roleLabels[item.role] ?? item.role,
             item.market_share.toFixed(2).replace('.', ','),
-            item.growth_rate.toFixed(2).replace('.', ','),
+            item.growth_rate !== null ? item.growth_rate.toFixed(2).replace('.', ',') : 'Novo',
             item.total_value_current.toFixed(2).replace('.', ','),
             item.total_value_previous.toFixed(2).replace('.', ','),
             item.share_threshold.toFixed(2).replace('.', ','),

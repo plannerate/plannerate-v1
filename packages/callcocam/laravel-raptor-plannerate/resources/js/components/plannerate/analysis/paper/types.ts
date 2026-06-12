@@ -23,12 +23,16 @@ export interface PaperResult {
     role: ProductRole
     /** Participação no valor total da categoria no período atual (%) */
     market_share: number
-    /** Variação percentual em relação ao período anterior */
-    growth_rate: number
+    /** Variação percentual em relação ao período anterior — null quando não há base de comparação (produto novo) */
+    growth_rate: number | null
+    /** Produto sem venda no período anterior (item em introdução) */
+    is_new?: boolean
     total_value_current: number
     total_value_previous: number
     /** Mediana de market_share da categoria — linha divisória entre alto e baixo share */
     share_threshold: number
+    /** Mediana de growth_rate da categoria — linha divisória entre alto e baixo crescimento */
+    growth_threshold?: number
 }
 
 export interface PaperSummary {

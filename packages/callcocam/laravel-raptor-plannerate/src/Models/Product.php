@@ -70,6 +70,14 @@ class Product extends Model
         return number_format($this->depth, 2, ',', '.');
     }
 
+    /**
+     * URL pública da imagem com FALLBACK: o canvas do editor sempre precisa
+     * renderizar alguma arte, então produto sem imagem recebe fall4.jpg.
+     *
+     * ATENÇÃO — duplicação deliberada com comportamento diferente: o
+     * App\Models\Product tem o mesmo accessor mas devolve string vazia (páginas
+     * do app tratam ausência de imagem na UI). Se alterar um, avalie o outro.
+     */
     public function getImageUrlAttribute()
     {
         if ($this->url) {
