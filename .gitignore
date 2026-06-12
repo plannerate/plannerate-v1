@@ -10,6 +10,7 @@
 # o build do Vite no CI depende deles e o gerador não roda lá (precisa de artisan).
 # Regenerar localmente: docker compose exec -u root php php artisan wayfinder:generate --with-form
 /vendor
+database/*.sqlite
 .DS_Store
 .env
 .env.backup
