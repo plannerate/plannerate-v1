@@ -1,8 +1,8 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::update
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:148
-* @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slot-defaults'
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:165
+* @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/settings'
 */
 export const update = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update.url(args, options),
@@ -11,13 +11,13 @@ export const update = (args: { planogramTemplate: string | number | { id: string
 
 update.definition = {
     methods: ["put"],
-    url: '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slot-defaults',
+    url: '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/settings',
 } satisfies RouteDefinition<["put"]>
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::update
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:148
-* @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slot-defaults'
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:165
+* @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/settings'
 */
 update.url = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions) => {
     if (Array.isArray(args)) {
@@ -46,8 +46,8 @@ update.url = (args: { planogramTemplate: string | number | { id: string | number
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::update
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:148
-* @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slot-defaults'
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:165
+* @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/settings'
 */
 update.put = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update.url(args, options),
@@ -56,8 +56,8 @@ update.put = (args: { planogramTemplate: string | number | { id: string | number
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::update
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:148
-* @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slot-defaults'
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:165
+* @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/settings'
 */
 const updateForm = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
     action: update.url(args, {
@@ -71,8 +71,8 @@ const updateForm = (args: { planogramTemplate: string | number | { id: string | 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::update
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:148
-* @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slot-defaults'
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:165
+* @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/settings'
 */
 updateForm.put = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
     action: update.url(args, {
@@ -86,8 +86,8 @@ updateForm.put = (args: { planogramTemplate: string | number | { id: string | nu
 
 update.form = updateForm
 
-const slotDefaults = {
+const settings = {
     update: Object.assign(update, update),
 }
 
-export default slotDefaults
+export default settings

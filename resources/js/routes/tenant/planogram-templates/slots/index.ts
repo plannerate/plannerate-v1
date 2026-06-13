@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::index
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:31
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:31
 * @route '/planogram-templates/{planogramTemplate}/slots'
 */
 export const index = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -15,8 +15,8 @@ index.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::index
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:31
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:31
 * @route '/planogram-templates/{planogramTemplate}/slots'
 */
 index.url = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
@@ -48,8 +48,8 @@ index.url = (args: { planogramTemplate: string | number | { id: string | number 
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::index
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:31
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:31
 * @route '/planogram-templates/{planogramTemplate}/slots'
 */
 index.get = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -58,8 +58,8 @@ index.get = (args: { planogramTemplate: string | number | { id: string | number 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::index
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:31
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:31
 * @route '/planogram-templates/{planogramTemplate}/slots'
 */
 index.head = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -68,8 +68,8 @@ index.head = (args: { planogramTemplate: string | number | { id: string | number
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::index
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:31
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:31
 * @route '/planogram-templates/{planogramTemplate}/slots'
 */
 const indexForm = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -78,8 +78,8 @@ const indexForm = (args: { planogramTemplate: string | number | { id: string | n
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::index
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:31
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:31
 * @route '/planogram-templates/{planogramTemplate}/slots'
 */
 indexForm.get = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -88,8 +88,8 @@ indexForm.get = (args: { planogramTemplate: string | number | { id: string | num
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::index
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:31
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:31
 * @route '/planogram-templates/{planogramTemplate}/slots'
 */
 indexForm.head = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -105,8 +105,8 @@ indexForm.head = (args: { planogramTemplate: string | number | { id: string | nu
 index.form = indexForm
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::review
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:43
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::review
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:43
 * @route '/planogram-templates/{planogramTemplate}/review'
 */
 export const review = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -120,8 +120,8 @@ review.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::review
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:43
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::review
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:43
 * @route '/planogram-templates/{planogramTemplate}/review'
 */
 review.url = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
@@ -153,8 +153,8 @@ review.url = (args: { planogramTemplate: string | number | { id: string | number
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::review
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:43
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::review
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:43
 * @route '/planogram-templates/{planogramTemplate}/review'
 */
 review.get = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -163,8 +163,8 @@ review.get = (args: { planogramTemplate: string | number | { id: string | number
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::review
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:43
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::review
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:43
 * @route '/planogram-templates/{planogramTemplate}/review'
 */
 review.head = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -173,8 +173,8 @@ review.head = (args: { planogramTemplate: string | number | { id: string | numbe
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::review
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:43
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::review
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:43
 * @route '/planogram-templates/{planogramTemplate}/review'
 */
 const reviewForm = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -183,8 +183,8 @@ const reviewForm = (args: { planogramTemplate: string | number | { id: string | 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::review
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:43
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::review
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:43
 * @route '/planogram-templates/{planogramTemplate}/review'
 */
 reviewForm.get = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -193,8 +193,8 @@ reviewForm.get = (args: { planogramTemplate: string | number | { id: string | nu
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::review
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:43
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::review
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:43
 * @route '/planogram-templates/{planogramTemplate}/review'
 */
 reviewForm.head = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -210,8 +210,8 @@ reviewForm.head = (args: { planogramTemplate: string | number | { id: string | n
 review.form = reviewForm
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::products
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:235
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::products
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:250
 * @route '/planogram-templates/{planogramTemplate}/slots/products'
 */
 export const products = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -225,8 +225,8 @@ products.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::products
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:235
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::products
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:250
 * @route '/planogram-templates/{planogramTemplate}/slots/products'
 */
 products.url = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
@@ -258,8 +258,8 @@ products.url = (args: { planogramTemplate: string | number | { id: string | numb
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::products
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:235
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::products
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:250
 * @route '/planogram-templates/{planogramTemplate}/slots/products'
 */
 products.get = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -268,8 +268,8 @@ products.get = (args: { planogramTemplate: string | number | { id: string | numb
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::products
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:235
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::products
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:250
 * @route '/planogram-templates/{planogramTemplate}/slots/products'
 */
 products.head = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -278,8 +278,8 @@ products.head = (args: { planogramTemplate: string | number | { id: string | num
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::products
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:235
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::products
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:250
 * @route '/planogram-templates/{planogramTemplate}/slots/products'
 */
 const productsForm = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -288,8 +288,8 @@ const productsForm = (args: { planogramTemplate: string | number | { id: string 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::products
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:235
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::products
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:250
 * @route '/planogram-templates/{planogramTemplate}/slots/products'
 */
 productsForm.get = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -298,8 +298,8 @@ productsForm.get = (args: { planogramTemplate: string | number | { id: string | 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::products
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:235
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::products
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:250
 * @route '/planogram-templates/{planogramTemplate}/slots/products'
 */
 productsForm.head = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -315,8 +315,8 @@ productsForm.head = (args: { planogramTemplate: string | number | { id: string |
 products.form = productsForm
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::analysis
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:264
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::analysis
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:279
 * @route '/planogram-templates/{planogramTemplate}/slots/analysis'
 */
 export const analysis = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -330,8 +330,8 @@ analysis.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::analysis
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:264
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::analysis
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:279
 * @route '/planogram-templates/{planogramTemplate}/slots/analysis'
 */
 analysis.url = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
@@ -363,8 +363,8 @@ analysis.url = (args: { planogramTemplate: string | number | { id: string | numb
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::analysis
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:264
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::analysis
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:279
 * @route '/planogram-templates/{planogramTemplate}/slots/analysis'
 */
 analysis.get = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -373,8 +373,8 @@ analysis.get = (args: { planogramTemplate: string | number | { id: string | numb
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::analysis
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:264
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::analysis
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:279
 * @route '/planogram-templates/{planogramTemplate}/slots/analysis'
 */
 analysis.head = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -383,8 +383,8 @@ analysis.head = (args: { planogramTemplate: string | number | { id: string | num
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::analysis
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:264
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::analysis
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:279
 * @route '/planogram-templates/{planogramTemplate}/slots/analysis'
 */
 const analysisForm = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -393,8 +393,8 @@ const analysisForm = (args: { planogramTemplate: string | number | { id: string 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::analysis
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:264
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::analysis
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:279
 * @route '/planogram-templates/{planogramTemplate}/slots/analysis'
 */
 analysisForm.get = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -403,8 +403,8 @@ analysisForm.get = (args: { planogramTemplate: string | number | { id: string | 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::analysis
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:264
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::analysis
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:279
 * @route '/planogram-templates/{planogramTemplate}/slots/analysis'
 */
 analysisForm.head = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -420,8 +420,8 @@ analysisForm.head = (args: { planogramTemplate: string | number | { id: string |
 analysis.form = analysisForm
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::reorder
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:220
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::reorder
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:235
 * @route '/planogram-templates/{planogramTemplate}/slots/reorder'
 */
 export const reorder = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -435,8 +435,8 @@ reorder.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::reorder
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:220
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::reorder
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:235
 * @route '/planogram-templates/{planogramTemplate}/slots/reorder'
 */
 reorder.url = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
@@ -468,8 +468,8 @@ reorder.url = (args: { planogramTemplate: string | number | { id: string | numbe
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::reorder
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:220
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::reorder
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:235
 * @route '/planogram-templates/{planogramTemplate}/slots/reorder'
 */
 reorder.post = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -478,8 +478,8 @@ reorder.post = (args: { planogramTemplate: string | number | { id: string | numb
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::reorder
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:220
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::reorder
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:235
 * @route '/planogram-templates/{planogramTemplate}/slots/reorder'
 */
 const reorderForm = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -488,8 +488,8 @@ const reorderForm = (args: { planogramTemplate: string | number | { id: string |
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::reorder
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:220
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::reorder
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:235
 * @route '/planogram-templates/{planogramTemplate}/slots/reorder'
 */
 reorderForm.post = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -500,8 +500,8 @@ reorderForm.post = (args: { planogramTemplate: string | number | { id: string | 
 reorder.form = reorderForm
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::syncImages
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:296
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::syncImages
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:311
 * @route '/planogram-templates/{planogramTemplate}/slots/sync-images'
 */
 export const syncImages = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -515,8 +515,8 @@ syncImages.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::syncImages
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:296
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::syncImages
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:311
 * @route '/planogram-templates/{planogramTemplate}/slots/sync-images'
 */
 syncImages.url = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
@@ -548,8 +548,8 @@ syncImages.url = (args: { planogramTemplate: string | number | { id: string | nu
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::syncImages
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:296
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::syncImages
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:311
 * @route '/planogram-templates/{planogramTemplate}/slots/sync-images'
 */
 syncImages.post = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -558,8 +558,8 @@ syncImages.post = (args: { planogramTemplate: string | number | { id: string | n
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::syncImages
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:296
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::syncImages
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:311
 * @route '/planogram-templates/{planogramTemplate}/slots/sync-images'
 */
 const syncImagesForm = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -568,8 +568,8 @@ const syncImagesForm = (args: { planogramTemplate: string | number | { id: strin
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::syncImages
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:296
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::syncImages
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:311
 * @route '/planogram-templates/{planogramTemplate}/slots/sync-images'
 */
 syncImagesForm.post = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -580,8 +580,8 @@ syncImagesForm.post = (args: { planogramTemplate: string | number | { id: string
 syncImages.form = syncImagesForm
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::update
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:194
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::update
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:209
 * @route '/planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}'
 */
 export const update = (args: { planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -595,8 +595,8 @@ update.definition = {
 } satisfies RouteDefinition<["put"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::update
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:194
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::update
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:209
 * @route '/planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}'
 */
 update.url = (args: { planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } ], options?: RouteQueryOptions) => {
@@ -625,8 +625,8 @@ update.url = (args: { planogramTemplate: string | number | { id: string | number
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::update
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:194
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::update
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:209
 * @route '/planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}'
 */
 update.put = (args: { planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -635,8 +635,8 @@ update.put = (args: { planogramTemplate: string | number | { id: string | number
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::update
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:194
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::update
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:209
 * @route '/planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}'
 */
 const updateForm = (args: { planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -650,8 +650,8 @@ const updateForm = (args: { planogramTemplate: string | number | { id: string | 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::update
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:194
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::update
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:209
 * @route '/planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}'
 */
 updateForm.put = (args: { planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -667,8 +667,8 @@ updateForm.put = (args: { planogramTemplate: string | number | { id: string | nu
 update.form = updateForm
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::destroy
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:207
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:222
 * @route '/planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}'
 */
 export const destroy = (args: { planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -682,8 +682,8 @@ destroy.definition = {
 } satisfies RouteDefinition<["delete"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::destroy
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:207
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:222
 * @route '/planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}'
 */
 destroy.url = (args: { planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } ], options?: RouteQueryOptions) => {
@@ -712,8 +712,8 @@ destroy.url = (args: { planogramTemplate: string | number | { id: string | numbe
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::destroy
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:207
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:222
 * @route '/planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}'
 */
 destroy.delete = (args: { planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -722,8 +722,8 @@ destroy.delete = (args: { planogramTemplate: string | number | { id: string | nu
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::destroy
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:207
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:222
 * @route '/planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}'
 */
 const destroyForm = (args: { planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -737,8 +737,8 @@ const destroyForm = (args: { planogramTemplate: string | number | { id: string |
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::destroy
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:207
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:222
 * @route '/planogram-templates/{planogramTemplate}/slots/{planogramTemplateSlot}'
 */
 destroyForm.delete = (args: { planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramTemplateSlot: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -754,8 +754,8 @@ destroyForm.delete = (args: { planogramTemplate: string | number | { id: string 
 destroy.form = destroyForm
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::store
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:160
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:175
 * @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots'
 */
 export const store = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -769,8 +769,8 @@ store.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::store
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:160
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:175
 * @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots'
 */
 store.url = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions) => {
@@ -799,8 +799,8 @@ store.url = (args: { planogramTemplate: string | number | { id: string | number 
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::store
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:160
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:175
 * @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots'
 */
 store.post = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -809,8 +809,8 @@ store.post = (args: { planogramTemplate: string | number | { id: string | number
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::store
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:160
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:175
 * @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots'
 */
 const storeForm = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -819,8 +819,8 @@ const storeForm = (args: { planogramTemplate: string | number | { id: string | n
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::store
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:160
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:175
 * @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots'
 */
 storeForm.post = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -831,8 +831,8 @@ storeForm.post = (args: { planogramTemplate: string | number | { id: string | nu
 store.form = storeForm
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::bulk
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:177
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::bulk
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:192
 * @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots/bulk'
 */
 export const bulk = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -846,8 +846,8 @@ bulk.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::bulk
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:177
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::bulk
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:192
 * @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots/bulk'
 */
 bulk.url = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions) => {
@@ -876,8 +876,8 @@ bulk.url = (args: { planogramTemplate: string | number | { id: string | number }
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::bulk
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:177
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::bulk
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:192
 * @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots/bulk'
 */
 bulk.post = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -886,8 +886,8 @@ bulk.post = (args: { planogramTemplate: string | number | { id: string | number 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::bulk
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:177
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::bulk
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:192
 * @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots/bulk'
 */
 const bulkForm = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -896,8 +896,8 @@ const bulkForm = (args: { planogramTemplate: string | number | { id: string | nu
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\TemplateSlotController::bulk
-* @see app/Http/Controllers/Tenant/TemplateSlotController.php:177
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\TemplateSlotController::bulk
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/TemplateSlotController.php:192
 * @route '/planogram-templates/{planogramTemplate}/subtemplates/{planogramSubtemplate}/slots/bulk'
 */
 bulkForm.post = (args: { planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number }, planogramSubtemplate: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
