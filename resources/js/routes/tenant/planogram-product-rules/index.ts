@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::index
-* @see app/Http/Controllers/PlanogramProductRuleController.php:14
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:15
 * @route '/planogram-product-rules'
 */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -15,8 +15,8 @@ index.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::index
-* @see app/Http/Controllers/PlanogramProductRuleController.php:14
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:15
 * @route '/planogram-product-rules'
 */
 index.url = (options?: RouteQueryOptions) => {
@@ -24,8 +24,8 @@ index.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::index
-* @see app/Http/Controllers/PlanogramProductRuleController.php:14
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:15
 * @route '/planogram-product-rules'
 */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,8 +34,8 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::index
-* @see app/Http/Controllers/PlanogramProductRuleController.php:14
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:15
 * @route '/planogram-product-rules'
 */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,8 +44,8 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::index
-* @see app/Http/Controllers/PlanogramProductRuleController.php:14
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:15
 * @route '/planogram-product-rules'
 */
 const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,8 +54,8 @@ const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => (
 })
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::index
-* @see app/Http/Controllers/PlanogramProductRuleController.php:14
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:15
 * @route '/planogram-product-rules'
 */
 indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -64,8 +64,8 @@ indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::index
-* @see app/Http/Controllers/PlanogramProductRuleController.php:14
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:15
 * @route '/planogram-product-rules'
 */
 indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -81,8 +81,8 @@ indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 index.form = indexForm
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::store
-* @see app/Http/Controllers/PlanogramProductRuleController.php:43
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:44
 * @route '/planogram-product-rules'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -96,8 +96,8 @@ store.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::store
-* @see app/Http/Controllers/PlanogramProductRuleController.php:43
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:44
 * @route '/planogram-product-rules'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -105,8 +105,8 @@ store.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::store
-* @see app/Http/Controllers/PlanogramProductRuleController.php:43
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:44
 * @route '/planogram-product-rules'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -115,8 +115,8 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::store
-* @see app/Http/Controllers/PlanogramProductRuleController.php:43
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:44
 * @route '/planogram-product-rules'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -125,8 +125,8 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 })
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::store
-* @see app/Http/Controllers/PlanogramProductRuleController.php:43
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:44
 * @route '/planogram-product-rules'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -137,8 +137,8 @@ storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => (
 store.form = storeForm
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::destroy
-* @see app/Http/Controllers/PlanogramProductRuleController.php:72
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:73
 * @route '/planogram-product-rules/{planogramProductRule}'
 */
 export const destroy = (args: { planogramProductRule: string | number | { id: string | number } } | [planogramProductRule: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -152,8 +152,8 @@ destroy.definition = {
 } satisfies RouteDefinition<["delete"]>
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::destroy
-* @see app/Http/Controllers/PlanogramProductRuleController.php:72
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:73
 * @route '/planogram-product-rules/{planogramProductRule}'
 */
 destroy.url = (args: { planogramProductRule: string | number | { id: string | number } } | [planogramProductRule: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
@@ -185,8 +185,8 @@ destroy.url = (args: { planogramProductRule: string | number | { id: string | nu
 }
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::destroy
-* @see app/Http/Controllers/PlanogramProductRuleController.php:72
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:73
 * @route '/planogram-product-rules/{planogramProductRule}'
 */
 destroy.delete = (args: { planogramProductRule: string | number | { id: string | number } } | [planogramProductRule: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -195,8 +195,8 @@ destroy.delete = (args: { planogramProductRule: string | number | { id: string |
 })
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::destroy
-* @see app/Http/Controllers/PlanogramProductRuleController.php:72
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:73
 * @route '/planogram-product-rules/{planogramProductRule}'
 */
 const destroyForm = (args: { planogramProductRule: string | number | { id: string | number } } | [planogramProductRule: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -210,8 +210,8 @@ const destroyForm = (args: { planogramProductRule: string | number | { id: strin
 })
 
 /**
-* @see \App\Http\Controllers\PlanogramProductRuleController::destroy
-* @see app/Http/Controllers/PlanogramProductRuleController.php:72
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\PlanogramProductRuleController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/PlanogramProductRuleController.php:73
 * @route '/planogram-product-rules/{planogramProductRule}'
 */
 destroyForm.delete = (args: { planogramProductRule: string | number | { id: string | number } } | [planogramProductRule: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

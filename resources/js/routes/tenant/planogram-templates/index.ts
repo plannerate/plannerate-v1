@@ -2,8 +2,8 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 import slots from './slots'
 import subtemplates from './subtemplates'
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::index
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:25
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:25
 * @route '/planogram-templates'
 */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -17,8 +17,8 @@ index.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::index
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:25
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:25
 * @route '/planogram-templates'
 */
 index.url = (options?: RouteQueryOptions) => {
@@ -26,8 +26,8 @@ index.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::index
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:25
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:25
 * @route '/planogram-templates'
 */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -36,8 +36,8 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::index
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:25
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:25
 * @route '/planogram-templates'
 */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -46,8 +46,8 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::index
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:25
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:25
 * @route '/planogram-templates'
 */
 const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -56,8 +56,8 @@ const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => (
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::index
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:25
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:25
 * @route '/planogram-templates'
 */
 indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -66,8 +66,8 @@ indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::index
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:25
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::index
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:25
 * @route '/planogram-templates'
 */
 indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -83,8 +83,8 @@ indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 index.form = indexForm
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::options
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:52
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::options
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:52
 * @route '/planogram-templates/options'
 */
 export const options = (routeOptions?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -98,8 +98,8 @@ options.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::options
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:52
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::options
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:52
 * @route '/planogram-templates/options'
 */
 options.url = (routeOptions?: RouteQueryOptions) => {
@@ -108,8 +108,8 @@ options.url = (routeOptions?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::options
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:52
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::options
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:52
 * @route '/planogram-templates/options'
 */
 options.get = (routeOptions?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -118,8 +118,8 @@ options.get = (routeOptions?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::options
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:52
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::options
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:52
 * @route '/planogram-templates/options'
 */
 options.head = (routeOptions?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -128,8 +128,8 @@ options.head = (routeOptions?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::options
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:52
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::options
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:52
 * @route '/planogram-templates/options'
 */
 const optionsForm = (routeOptions?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,8 +141,8 @@ const optionsForm = (routeOptions?: RouteQueryOptions): RouteFormDefinition<'get
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::options
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:52
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::options
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:52
 * @route '/planogram-templates/options'
 */
 optionsForm.get = (routeOptions?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -154,8 +154,8 @@ optionsForm.get = (routeOptions?: RouteQueryOptions): RouteFormDefinition<'get'>
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::options
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:52
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::options
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:52
 * @route '/planogram-templates/options'
 */
 optionsForm.head = (routeOptions?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -171,8 +171,8 @@ optionsForm.head = (routeOptions?: RouteQueryOptions): RouteFormDefinition<'get'
 options.form = optionsForm
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::importPage
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:108
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::importPage
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:108
 * @route '/planogram-templates/import'
 */
 export const importPage = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -186,8 +186,8 @@ importPage.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::importPage
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:108
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::importPage
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:108
 * @route '/planogram-templates/import'
 */
 importPage.url = (options?: RouteQueryOptions) => {
@@ -195,8 +195,8 @@ importPage.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::importPage
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:108
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::importPage
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:108
 * @route '/planogram-templates/import'
 */
 importPage.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -205,8 +205,8 @@ importPage.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::importPage
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:108
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::importPage
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:108
 * @route '/planogram-templates/import'
 */
 importPage.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -215,8 +215,8 @@ importPage.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::importPage
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:108
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::importPage
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:108
 * @route '/planogram-templates/import'
 */
 const importPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -225,8 +225,8 @@ const importPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'>
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::importPage
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:108
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::importPage
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:108
 * @route '/planogram-templates/import'
 */
 importPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -235,8 +235,8 @@ importPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> =
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::importPage
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:108
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::importPage
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:108
 * @route '/planogram-templates/import'
 */
 importPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -252,8 +252,8 @@ importPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> 
 importPage.form = importPageForm
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::importMethod
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:115
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::importMethod
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:115
 * @route '/planogram-templates/import'
 */
 export const importMethod = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -267,8 +267,8 @@ importMethod.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::importMethod
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:115
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::importMethod
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:115
 * @route '/planogram-templates/import'
 */
 importMethod.url = (options?: RouteQueryOptions) => {
@@ -276,8 +276,8 @@ importMethod.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::importMethod
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:115
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::importMethod
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:115
 * @route '/planogram-templates/import'
 */
 importMethod.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -286,8 +286,8 @@ importMethod.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::importMethod
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:115
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::importMethod
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:115
 * @route '/planogram-templates/import'
 */
 const importMethodForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -296,8 +296,8 @@ const importMethodForm = (options?: RouteQueryOptions): RouteFormDefinition<'pos
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::importMethod
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:115
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::importMethod
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:115
 * @route '/planogram-templates/import'
 */
 importMethodForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -308,8 +308,8 @@ importMethodForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post
 importMethod.form = importMethodForm
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::exportAll
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:222
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::exportAll
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:226
 * @route '/planogram-templates/export'
 */
 export const exportAll = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -323,8 +323,8 @@ exportAll.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::exportAll
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:222
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::exportAll
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:226
 * @route '/planogram-templates/export'
 */
 exportAll.url = (options?: RouteQueryOptions) => {
@@ -332,8 +332,8 @@ exportAll.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::exportAll
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:222
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::exportAll
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:226
 * @route '/planogram-templates/export'
 */
 exportAll.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -342,8 +342,8 @@ exportAll.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::exportAll
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:222
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::exportAll
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:226
 * @route '/planogram-templates/export'
 */
 exportAll.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -352,8 +352,8 @@ exportAll.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::exportAll
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:222
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::exportAll
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:226
 * @route '/planogram-templates/export'
 */
 const exportAllForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -362,8 +362,8 @@ const exportAllForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::exportAll
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:222
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::exportAll
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:226
 * @route '/planogram-templates/export'
 */
 exportAllForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -372,8 +372,8 @@ exportAllForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> =>
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::exportAll
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:222
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::exportAll
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:226
 * @route '/planogram-templates/export'
 */
 exportAllForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -389,8 +389,8 @@ exportAllForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> =
 exportAll.form = exportAllForm
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::create
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:41
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::create
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:41
 * @route '/planogram-templates/create'
 */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -404,8 +404,8 @@ create.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::create
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:41
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::create
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:41
 * @route '/planogram-templates/create'
 */
 create.url = (options?: RouteQueryOptions) => {
@@ -413,8 +413,8 @@ create.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::create
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:41
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::create
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:41
 * @route '/planogram-templates/create'
 */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -423,8 +423,8 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::create
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:41
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::create
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:41
 * @route '/planogram-templates/create'
 */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -433,8 +433,8 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::create
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:41
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::create
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:41
 * @route '/planogram-templates/create'
 */
 const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -443,8 +443,8 @@ const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::create
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:41
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::create
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:41
 * @route '/planogram-templates/create'
 */
 createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -453,8 +453,8 @@ createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::create
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:41
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::create
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:41
 * @route '/planogram-templates/create'
 */
 createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -470,8 +470,8 @@ createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => (
 create.form = createForm
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::store
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:82
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:82
 * @route '/planogram-templates'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -485,8 +485,8 @@ store.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::store
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:82
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:82
 * @route '/planogram-templates'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -494,8 +494,8 @@ store.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::store
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:82
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:82
 * @route '/planogram-templates'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -504,8 +504,8 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::store
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:82
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:82
 * @route '/planogram-templates'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -514,8 +514,8 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::store
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:82
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::store
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:82
 * @route '/planogram-templates'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -526,8 +526,8 @@ storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => (
 store.form = storeForm
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::show
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:189
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::show
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:189
 * @route '/planogram-templates/{planogramTemplate}'
 */
 export const show = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -541,8 +541,8 @@ show.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::show
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:189
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::show
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:189
 * @route '/planogram-templates/{planogramTemplate}'
 */
 show.url = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
@@ -574,8 +574,8 @@ show.url = (args: { planogramTemplate: string | number | { id: string | number }
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::show
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:189
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::show
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:189
 * @route '/planogram-templates/{planogramTemplate}'
 */
 show.get = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -584,8 +584,8 @@ show.get = (args: { planogramTemplate: string | number | { id: string | number }
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::show
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:189
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::show
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:189
 * @route '/planogram-templates/{planogramTemplate}'
 */
 show.head = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -594,8 +594,8 @@ show.head = (args: { planogramTemplate: string | number | { id: string | number 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::show
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:189
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::show
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:189
 * @route '/planogram-templates/{planogramTemplate}'
 */
 const showForm = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -604,8 +604,8 @@ const showForm = (args: { planogramTemplate: string | number | { id: string | nu
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::show
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:189
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::show
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:189
 * @route '/planogram-templates/{planogramTemplate}'
 */
 showForm.get = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -614,8 +614,8 @@ showForm.get = (args: { planogramTemplate: string | number | { id: string | numb
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::show
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:189
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::show
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:189
 * @route '/planogram-templates/{planogramTemplate}'
 */
 showForm.head = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -631,8 +631,8 @@ showForm.head = (args: { planogramTemplate: string | number | { id: string | num
 show.form = showForm
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::edit
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:146
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::edit
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:146
 * @route '/planogram-templates/{planogramTemplate}/edit'
 */
 export const edit = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -646,8 +646,8 @@ edit.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::edit
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:146
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::edit
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:146
 * @route '/planogram-templates/{planogramTemplate}/edit'
 */
 edit.url = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
@@ -679,8 +679,8 @@ edit.url = (args: { planogramTemplate: string | number | { id: string | number }
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::edit
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:146
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::edit
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:146
 * @route '/planogram-templates/{planogramTemplate}/edit'
 */
 edit.get = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -689,8 +689,8 @@ edit.get = (args: { planogramTemplate: string | number | { id: string | number }
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::edit
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:146
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::edit
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:146
 * @route '/planogram-templates/{planogramTemplate}/edit'
 */
 edit.head = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -699,8 +699,8 @@ edit.head = (args: { planogramTemplate: string | number | { id: string | number 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::edit
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:146
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::edit
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:146
 * @route '/planogram-templates/{planogramTemplate}/edit'
 */
 const editForm = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -709,8 +709,8 @@ const editForm = (args: { planogramTemplate: string | number | { id: string | nu
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::edit
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:146
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::edit
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:146
 * @route '/planogram-templates/{planogramTemplate}/edit'
 */
 editForm.get = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -719,8 +719,8 @@ editForm.get = (args: { planogramTemplate: string | number | { id: string | numb
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::edit
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:146
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::edit
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:146
 * @route '/planogram-templates/{planogramTemplate}/edit'
 */
 editForm.head = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -736,8 +736,8 @@ editForm.head = (args: { planogramTemplate: string | number | { id: string | num
 edit.form = editForm
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::update
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:166
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::update
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:166
 * @route '/planogram-templates/{planogramTemplate}'
 */
 export const update = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -751,8 +751,8 @@ update.definition = {
 } satisfies RouteDefinition<["put"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::update
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:166
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::update
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:166
 * @route '/planogram-templates/{planogramTemplate}'
 */
 update.url = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
@@ -784,8 +784,8 @@ update.url = (args: { planogramTemplate: string | number | { id: string | number
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::update
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:166
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::update
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:166
 * @route '/planogram-templates/{planogramTemplate}'
 */
 update.put = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -794,8 +794,8 @@ update.put = (args: { planogramTemplate: string | number | { id: string | number
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::update
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:166
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::update
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:166
 * @route '/planogram-templates/{planogramTemplate}'
 */
 const updateForm = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -809,8 +809,8 @@ const updateForm = (args: { planogramTemplate: string | number | { id: string | 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::update
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:166
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::update
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:166
 * @route '/planogram-templates/{planogramTemplate}'
 */
 updateForm.put = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -826,8 +826,8 @@ updateForm.put = (args: { planogramTemplate: string | number | { id: string | nu
 update.form = updateForm
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::destroy
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:254
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:258
 * @route '/planogram-templates/{planogramTemplate}'
 */
 export const destroy = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -841,8 +841,8 @@ destroy.definition = {
 } satisfies RouteDefinition<["delete"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::destroy
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:254
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:258
 * @route '/planogram-templates/{planogramTemplate}'
 */
 destroy.url = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
@@ -874,8 +874,8 @@ destroy.url = (args: { planogramTemplate: string | number | { id: string | numbe
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::destroy
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:254
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:258
 * @route '/planogram-templates/{planogramTemplate}'
 */
 destroy.delete = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -884,8 +884,8 @@ destroy.delete = (args: { planogramTemplate: string | number | { id: string | nu
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::destroy
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:254
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:258
 * @route '/planogram-templates/{planogramTemplate}'
 */
 const destroyForm = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -899,8 +899,8 @@ const destroyForm = (args: { planogramTemplate: string | number | { id: string |
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::destroy
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:254
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:258
 * @route '/planogram-templates/{planogramTemplate}'
 */
 destroyForm.delete = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -916,8 +916,8 @@ destroyForm.delete = (args: { planogramTemplate: string | number | { id: string 
 destroy.form = destroyForm
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::exportMethod
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:215
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::exportMethod
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:219
 * @route '/planogram-templates/{planogramTemplate}/export'
 */
 export const exportMethod = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -931,8 +931,8 @@ exportMethod.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::exportMethod
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:215
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::exportMethod
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:219
 * @route '/planogram-templates/{planogramTemplate}/export'
 */
 exportMethod.url = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
@@ -964,8 +964,8 @@ exportMethod.url = (args: { planogramTemplate: string | number | { id: string | 
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::exportMethod
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:215
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::exportMethod
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:219
 * @route '/planogram-templates/{planogramTemplate}/export'
 */
 exportMethod.get = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -974,8 +974,8 @@ exportMethod.get = (args: { planogramTemplate: string | number | { id: string | 
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::exportMethod
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:215
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::exportMethod
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:219
 * @route '/planogram-templates/{planogramTemplate}/export'
 */
 exportMethod.head = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -984,8 +984,8 @@ exportMethod.head = (args: { planogramTemplate: string | number | { id: string |
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::exportMethod
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:215
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::exportMethod
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:219
 * @route '/planogram-templates/{planogramTemplate}/export'
 */
 const exportMethodForm = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -994,8 +994,8 @@ const exportMethodForm = (args: { planogramTemplate: string | number | { id: str
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::exportMethod
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:215
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::exportMethod
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:219
 * @route '/planogram-templates/{planogramTemplate}/export'
 */
 exportMethodForm.get = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1004,8 +1004,8 @@ exportMethodForm.get = (args: { planogramTemplate: string | number | { id: strin
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::exportMethod
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:215
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::exportMethod
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:219
 * @route '/planogram-templates/{planogramTemplate}/export'
 */
 exportMethodForm.head = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1021,8 +1021,8 @@ exportMethodForm.head = (args: { planogramTemplate: string | number | { id: stri
 exportMethod.form = exportMethodForm
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::promote
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:235
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::promote
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:239
 * @route '/planogram-templates/{planogramTemplate}/promote'
 */
 export const promote = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1036,8 +1036,8 @@ promote.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::promote
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:235
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::promote
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:239
 * @route '/planogram-templates/{planogramTemplate}/promote'
 */
 promote.url = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
@@ -1069,8 +1069,8 @@ promote.url = (args: { planogramTemplate: string | number | { id: string | numbe
 }
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::promote
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:235
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::promote
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:239
 * @route '/planogram-templates/{planogramTemplate}/promote'
 */
 promote.post = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1079,8 +1079,8 @@ promote.post = (args: { planogramTemplate: string | number | { id: string | numb
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::promote
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:235
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::promote
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:239
 * @route '/planogram-templates/{planogramTemplate}/promote'
 */
 const promoteForm = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1089,8 +1089,8 @@ const promoteForm = (args: { planogramTemplate: string | number | { id: string |
 })
 
 /**
-* @see \App\Http\Controllers\Tenant\PlanogramTemplateController::promote
-* @see app/Http/Controllers/Tenant/PlanogramTemplateController.php:235
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Templates\PlanogramTemplateController::promote
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Templates/PlanogramTemplateController.php:239
 * @route '/planogram-templates/{planogramTemplate}/promote'
 */
 promoteForm.post = (args: { planogramTemplate: string | number | { id: string | number } } | [planogramTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

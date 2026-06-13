@@ -1,10 +1,12 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 import gondola from './gondola'
 import gondolas from './gondolas'
+import api from './api'
+import planogramTemplates from './planogram-templates'
+import planogramProductRules from './planogram-product-rules'
 import auth from './auth'
 import editor from './editor'
 import planograms from './planograms'
-import api from './api'
 import categories from './categories'
 import products from './products'
 import dimensions from './dimensions'
@@ -13,8 +15,6 @@ import stores from './stores'
 import sales from './sales'
 import clusters from './clusters'
 import providers from './providers'
-import planogramTemplates from './planogram-templates'
-import planogramProductRules from './planogram-product-rules'
 import users from './users'
 import notifications from './notifications'
 import systemLogs from './system-logs'
@@ -108,10 +108,12 @@ dashboard.form = dashboardForm
 const tenant = {
     gondola: Object.assign(gondola, gondola),
     gondolas: Object.assign(gondolas, gondolas),
+    api: Object.assign(api, api),
+    planogramTemplates: Object.assign(planogramTemplates, planogramTemplates),
+    planogramProductRules: Object.assign(planogramProductRules, planogramProductRules),
     auth: Object.assign(auth, auth),
     editor: Object.assign(editor, editor),
     planograms: Object.assign(planograms, planograms),
-    api: Object.assign(api, api),
     dashboard: Object.assign(dashboard, dashboard),
     categories: Object.assign(categories, categories),
     products: Object.assign(products, products),
@@ -121,8 +123,6 @@ const tenant = {
     sales: Object.assign(sales, sales),
     clusters: Object.assign(clusters, clusters),
     providers: Object.assign(providers, providers),
-    planogramTemplates: Object.assign(planogramTemplates, planogramTemplates),
-    planogramProductRules: Object.assign(planogramProductRules, planogramProductRules),
     users: Object.assign(users, users),
     notifications: Object.assign(notifications, notifications),
     systemLogs: Object.assign(systemLogs, systemLogs),

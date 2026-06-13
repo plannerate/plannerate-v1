@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
-* @see \App\Http\Controllers\AutoPlanogramController::destroy
-* @see app/Http/Controllers/AutoPlanogramController.php:265
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:265
 * @route '/api/gondolas/{gondola}/rejected-products/{rejected}'
 */
 export const destroy = (args: { gondola: string | number, rejected: string | number } | [gondola: string | number, rejected: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -15,8 +15,8 @@ destroy.definition = {
 } satisfies RouteDefinition<["delete"]>
 
 /**
-* @see \App\Http\Controllers\AutoPlanogramController::destroy
-* @see app/Http/Controllers/AutoPlanogramController.php:265
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:265
 * @route '/api/gondolas/{gondola}/rejected-products/{rejected}'
 */
 destroy.url = (args: { gondola: string | number, rejected: string | number } | [gondola: string | number, rejected: string | number ], options?: RouteQueryOptions) => {
@@ -41,8 +41,8 @@ destroy.url = (args: { gondola: string | number, rejected: string | number } | [
 }
 
 /**
-* @see \App\Http\Controllers\AutoPlanogramController::destroy
-* @see app/Http/Controllers/AutoPlanogramController.php:265
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:265
 * @route '/api/gondolas/{gondola}/rejected-products/{rejected}'
 */
 destroy.delete = (args: { gondola: string | number, rejected: string | number } | [gondola: string | number, rejected: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -51,8 +51,8 @@ destroy.delete = (args: { gondola: string | number, rejected: string | number } 
 })
 
 /**
-* @see \App\Http\Controllers\AutoPlanogramController::destroy
-* @see app/Http/Controllers/AutoPlanogramController.php:265
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:265
 * @route '/api/gondolas/{gondola}/rejected-products/{rejected}'
 */
 const destroyForm = (args: { gondola: string | number, rejected: string | number } | [gondola: string | number, rejected: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -66,8 +66,8 @@ const destroyForm = (args: { gondola: string | number, rejected: string | number
 })
 
 /**
-* @see \App\Http\Controllers\AutoPlanogramController::destroy
-* @see app/Http/Controllers/AutoPlanogramController.php:265
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\AutoPlanogramController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/AutoPlanogramController.php:265
 * @route '/api/gondolas/{gondola}/rejected-products/{rejected}'
 */
 destroyForm.delete = (args: { gondola: string | number, rejected: string | number } | [gondola: string | number, rejected: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

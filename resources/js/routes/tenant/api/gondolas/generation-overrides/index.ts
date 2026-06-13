@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::upsert
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:22
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::upsert
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:23
 * @route '/api/gondolas/{gondola}/generation-overrides'
 */
 export const upsert = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -15,8 +15,8 @@ upsert.definition = {
 } satisfies RouteDefinition<["put"]>
 
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::upsert
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:22
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::upsert
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:23
 * @route '/api/gondolas/{gondola}/generation-overrides'
 */
 upsert.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -42,8 +42,8 @@ upsert.url = (args: { gondola: string | number } | [gondola: string | number ] |
 }
 
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::upsert
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:22
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::upsert
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:23
 * @route '/api/gondolas/{gondola}/generation-overrides'
 */
 upsert.put = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -52,8 +52,8 @@ upsert.put = (args: { gondola: string | number } | [gondola: string | number ] |
 })
 
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::upsert
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:22
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::upsert
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:23
 * @route '/api/gondolas/{gondola}/generation-overrides'
 */
 const upsertForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -67,8 +67,8 @@ const upsertForm = (args: { gondola: string | number } | [gondola: string | numb
 })
 
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::upsert
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:22
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::upsert
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:23
 * @route '/api/gondolas/{gondola}/generation-overrides'
 */
 upsertForm.put = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -84,8 +84,8 @@ upsertForm.put = (args: { gondola: string | number } | [gondola: string | number
 upsert.form = upsertForm
 
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::destroy
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:65
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:66
 * @route '/api/gondolas/{gondola}/generation-overrides/{categoryId}'
 */
 export const destroy = (args: { gondola: string | number, categoryId: string | number } | [gondola: string | number, categoryId: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -99,8 +99,8 @@ destroy.definition = {
 } satisfies RouteDefinition<["delete"]>
 
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::destroy
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:65
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:66
 * @route '/api/gondolas/{gondola}/generation-overrides/{categoryId}'
 */
 destroy.url = (args: { gondola: string | number, categoryId: string | number } | [gondola: string | number, categoryId: string | number ], options?: RouteQueryOptions) => {
@@ -125,8 +125,8 @@ destroy.url = (args: { gondola: string | number, categoryId: string | number } |
 }
 
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::destroy
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:65
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:66
 * @route '/api/gondolas/{gondola}/generation-overrides/{categoryId}'
 */
 destroy.delete = (args: { gondola: string | number, categoryId: string | number } | [gondola: string | number, categoryId: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -135,8 +135,8 @@ destroy.delete = (args: { gondola: string | number, categoryId: string | number 
 })
 
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::destroy
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:65
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:66
 * @route '/api/gondolas/{gondola}/generation-overrides/{categoryId}'
 */
 const destroyForm = (args: { gondola: string | number, categoryId: string | number } | [gondola: string | number, categoryId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -150,8 +150,8 @@ const destroyForm = (args: { gondola: string | number, categoryId: string | numb
 })
 
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::destroy
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:65
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::destroy
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:66
 * @route '/api/gondolas/{gondola}/generation-overrides/{categoryId}'
 */
 destroyForm.delete = (args: { gondola: string | number, categoryId: string | number } | [gondola: string | number, categoryId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -167,8 +167,8 @@ destroyForm.delete = (args: { gondola: string | number, categoryId: string | num
 destroy.form = destroyForm
 
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::applyToTemplate
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:81
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::applyToTemplate
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:82
 * @route '/api/gondolas/{gondola}/generation-overrides/{categoryId}/apply-to-template'
 */
 export const applyToTemplate = (args: { gondola: string | number, categoryId: string | number } | [gondola: string | number, categoryId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -182,8 +182,8 @@ applyToTemplate.definition = {
 } satisfies RouteDefinition<["post"]>
 
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::applyToTemplate
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:81
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::applyToTemplate
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:82
 * @route '/api/gondolas/{gondola}/generation-overrides/{categoryId}/apply-to-template'
 */
 applyToTemplate.url = (args: { gondola: string | number, categoryId: string | number } | [gondola: string | number, categoryId: string | number ], options?: RouteQueryOptions) => {
@@ -208,8 +208,8 @@ applyToTemplate.url = (args: { gondola: string | number, categoryId: string | nu
 }
 
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::applyToTemplate
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:81
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::applyToTemplate
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:82
 * @route '/api/gondolas/{gondola}/generation-overrides/{categoryId}/apply-to-template'
 */
 applyToTemplate.post = (args: { gondola: string | number, categoryId: string | number } | [gondola: string | number, categoryId: string | number ], options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -218,8 +218,8 @@ applyToTemplate.post = (args: { gondola: string | number, categoryId: string | n
 })
 
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::applyToTemplate
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:81
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::applyToTemplate
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:82
 * @route '/api/gondolas/{gondola}/generation-overrides/{categoryId}/apply-to-template'
 */
 const applyToTemplateForm = (args: { gondola: string | number, categoryId: string | number } | [gondola: string | number, categoryId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -228,8 +228,8 @@ const applyToTemplateForm = (args: { gondola: string | number, categoryId: strin
 })
 
 /**
-* @see \App\Http\Controllers\GondolaSlotOverrideController::applyToTemplate
-* @see app/Http/Controllers/GondolaSlotOverrideController.php:81
+* @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Generation\GondolaSlotOverrideController::applyToTemplate
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Generation/GondolaSlotOverrideController.php:82
 * @route '/api/gondolas/{gondola}/generation-overrides/{categoryId}/apply-to-template'
 */
 applyToTemplateForm.post = (args: { gondola: string | number, categoryId: string | number } | [gondola: string | number, categoryId: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

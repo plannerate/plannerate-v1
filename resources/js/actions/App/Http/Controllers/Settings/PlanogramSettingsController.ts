@@ -82,7 +82,7 @@ edit.form = editForm
 
 /**
 * @see \App\Http\Controllers\Settings\PlanogramSettingsController::update
-* @see app/Http/Controllers/Settings/PlanogramSettingsController.php:60
+* @see app/Http/Controllers/Settings/PlanogramSettingsController.php:58
 * @route '/settings/planogram'
 */
 export const update = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -97,7 +97,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Settings\PlanogramSettingsController::update
-* @see app/Http/Controllers/Settings/PlanogramSettingsController.php:60
+* @see app/Http/Controllers/Settings/PlanogramSettingsController.php:58
 * @route '/settings/planogram'
 */
 update.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ update.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Settings\PlanogramSettingsController::update
-* @see app/Http/Controllers/Settings/PlanogramSettingsController.php:60
+* @see app/Http/Controllers/Settings/PlanogramSettingsController.php:58
 * @route '/settings/planogram'
 */
 update.put = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -116,7 +116,7 @@ update.put = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
 
 /**
 * @see \App\Http\Controllers\Settings\PlanogramSettingsController::update
-* @see app/Http/Controllers/Settings/PlanogramSettingsController.php:60
+* @see app/Http/Controllers/Settings/PlanogramSettingsController.php:58
 * @route '/settings/planogram'
 */
 const updateForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -131,7 +131,7 @@ const updateForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> =>
 
 /**
 * @see \App\Http\Controllers\Settings\PlanogramSettingsController::update
-* @see app/Http/Controllers/Settings/PlanogramSettingsController.php:60
+* @see app/Http/Controllers/Settings/PlanogramSettingsController.php:58
 * @route '/settings/planogram'
 */
 updateForm.put = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

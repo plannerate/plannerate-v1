@@ -225,7 +225,7 @@ paper.form = paperForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clear
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:190
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 export const clear = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -240,7 +240,7 @@ clear.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clear
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:190
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 clear.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -267,7 +267,7 @@ clear.url = (args: { gondola: string | number } | [gondola: string | number ] | 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clear
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:190
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 clear.delete = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -277,7 +277,7 @@ clear.delete = (args: { gondola: string | number } | [gondola: string | number ]
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clear
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:190
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 const clearForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -292,7 +292,7 @@ const clearForm = (args: { gondola: string | number } | [gondola: string | numbe
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaAnalysisController::clear
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:190
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaAnalysisController.php:198
 * @route '/api/editor/gondolas/{gondola}/analysis'
 */
 clearForm.delete = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
