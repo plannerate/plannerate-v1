@@ -194,7 +194,7 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
         <Head :title="pageMeta.headTitle" />
 
         <template #header-actions>
-            <div class="flex items-center justify-end gap-2">
+            <div class="flex flex-wrap items-center justify-end gap-2">
                 <button
                     v-if="props.can_create_gondola && props.selected_planogram"
                     type="button"

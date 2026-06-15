@@ -165,7 +165,7 @@ const pageMeta = useCrudPageMeta({
 
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
-            <div class="flex items-center justify-end gap-2">
+            <div class="flex flex-wrap items-center justify-end gap-2">
                 <button type="button" :disabled="isUpdatingImages || pageEans.length === 0 || productsLoading"
                     class="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                     @click="updateImages">
@@ -218,7 +218,7 @@ const pageMeta = useCrudPageMeta({
                             <ChevronDown v-else class="size-3.5 shrink-0 opacity-50" />
                         </button>
                     </PopoverTrigger>
-                    <PopoverContent class="w-170 p-4" align="start">
+                    <PopoverContent class="w-[90vw] max-w-170 p-4" align="start">
                         <p class="mb-3 text-sm font-medium">{{ t('app.tenant.products.form.sections.category') }}</p>
                         <CategoryCascadeSelect v-model="categoryId" />
                         <div class="mt-4 flex justify-end gap-2">

@@ -72,7 +72,7 @@ const pageMeta = useCrudPageMeta({
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center justify-end gap-2">
                 <Button variant="outline" size="sm" as-child>
                     <WayfinderLink :href="planogramsIndexPath">{{ t('app.actions.back') }}</WayfinderLink>
                 </Button>

@@ -57,7 +57,7 @@ const connConfig = computed(() => {
     <div
         role="dialog"
         aria-label="Painel de notificações"
-        class="absolute top-[calc(100%+8px)] right-0 z-50 w-80 origin-top-right overflow-hidden rounded-xl border border-border bg-popover shadow-xl ring-1 shadow-black/10 ring-border/40"
+        class="absolute top-[calc(100%+8px)] right-0 z-50 w-[calc(100vw-1.5rem)] max-w-80 origin-top-right overflow-hidden rounded-xl border border-border bg-popover shadow-xl ring-1 shadow-black/10 ring-border/40"
     >
         <div
             class="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-3"

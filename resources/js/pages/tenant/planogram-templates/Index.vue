@@ -61,7 +61,7 @@ function handleDelete(id: string): void {
     <AppLayout :breadcrumbs="pageMeta.breadcrumbs" :page-header="pageMeta">
         <Head :title="pageMeta.headTitle" />
         <template #header-actions>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center justify-end gap-2">
                 <NewActionButton :href="PlanogramTemplateController.create.url()">
                     <Plus class="size-4" />
                     {{ t('app.tenant.planogram_templates.actions.create') }}

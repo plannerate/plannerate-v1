@@ -184,7 +184,7 @@ const pageMeta = useCrudPageMeta({
                             <ChevronDown v-else class="size-3.5 shrink-0 opacity-50" />
                         </button>
                     </PopoverTrigger>
-                    <PopoverContent class="w-170 p-4" align="start">
+                    <PopoverContent class="w-[90vw] max-w-170 p-4" align="start">
                         <p class="mb-3 text-sm font-medium">{{ t('app.tenant.categories.fields.category') }}</p>
                         <CategoryCascadeSelect v-model="categoryId" />
                         <div class="mt-4 flex justify-end gap-2">

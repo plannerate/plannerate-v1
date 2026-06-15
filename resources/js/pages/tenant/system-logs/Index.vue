@@ -295,7 +295,7 @@ const pageMeta = useCrudPageMeta({
                 </div>
             </form>
 
-            <div class="overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
+            <div class="overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
                 <table class="w-full text-sm">
                     <thead class="bg-muted/30 text-left text-muted-foreground">
                         <tr>

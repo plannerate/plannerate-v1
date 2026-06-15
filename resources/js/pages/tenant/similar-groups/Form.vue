@@ -485,7 +485,7 @@ function clearDimensionSource(): void {
                                 <InputError :message="errors.product_ids" />
 
                                 <div
-                                    class="overflow-hidden rounded-lg border border-border"
+                                    class="overflow-x-auto rounded-lg border border-border"
                                 >
                                     <table class="w-full text-sm">
                                         <thead
