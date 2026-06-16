@@ -184,7 +184,14 @@ function createEmptySubtemplate(n: number): void {
     router.post(
         `${baseUrl.value}/subtemplates`,
         { num_modules: n },
-        { preserveState: true, only: ['subtemplates'] },
+        {
+            preserveState: true,
+            only: ['subtemplates'],
+            onError: (errs) => {
+                const first = Object.values(errs)[0];
+                if (first) toast.error(first);
+            },
+        },
     );
 }
 
@@ -196,6 +203,10 @@ function cloneSubtemplate(source: PlanogramSubtemplate, targetModules: number): 
         {
             preserveState: true,
             only: ['subtemplates'],
+            onError: (errs) => {
+                const first = Object.values(errs)[0];
+                if (first) toast.error(first);
+            },
             onSuccess: () => {
                 highlightNewModule.value = source.num_modules + 1;
             },
