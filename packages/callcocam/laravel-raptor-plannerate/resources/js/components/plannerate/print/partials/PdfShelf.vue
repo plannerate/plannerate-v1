@@ -101,8 +101,8 @@ const alignmentClass = computed(() => {
     left: 'justify-start',
     right: 'justify-end',
     center: 'justify-center',
-    justify: 'justify-between',
-    default: 'justify-between',
+    justify: 'justify-evenly',
+    default: 'justify-evenly',
   }
 
   return map[align] || map.justify

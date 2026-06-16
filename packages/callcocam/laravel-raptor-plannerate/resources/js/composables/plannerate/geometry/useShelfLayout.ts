@@ -138,7 +138,7 @@ return 1;
             left: 'justify-start',
             right: 'justify-end',
             center: 'justify-center',
-            justify: 'justify-between',
+            justify: 'justify-evenly',
         };
 
         return map[currentAlignment.value] || 'justify-start';

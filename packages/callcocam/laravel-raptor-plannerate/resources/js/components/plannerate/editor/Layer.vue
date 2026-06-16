@@ -78,7 +78,7 @@ const internalAlignmentClass = computed(() => {
     }
 
     if (align === 'justify') {
-        return getQuantity.value <= 1 ? 'justify-center' : 'justify-between';
+        return getQuantity.value <= 1 ? 'justify-center' : 'justify-evenly';
     }
 
     const map: Record<string, string> = {
