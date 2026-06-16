@@ -15,6 +15,7 @@ use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\ProductWidthResolver;
 use Callcocam\LaravelRaptorPlannerate\Enums\FacingExpansion;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
+use Callcocam\LaravelRaptorPlannerate\Models\Shelf;
 use Illuminate\Support\Str;
 
 // ── helpers específicos deste arquivo ─────────────────────────────────────────
@@ -82,7 +83,12 @@ function callExpandFacings(
     $ref = new ReflectionMethod($engine, 'expandFacings');
     $ref->setAccessible(true);
 
-    return $ref->invoke($engine, $placedItems, $slot, $available, $occupied);
+    // Slots deste arquivo não usam use_target_stock; a prateleira é exigida pela assinatura
+    // mas só é lida quando o teto por estoque alvo está ativo.
+    $shelf = new Shelf;
+    $shelf->shelf_depth = 40;
+
+    return $ref->invoke($engine, $placedItems, $slot, $available, $occupied, $shelf);
 }
 
 // ── regressão: todos os limites null → comportamento igual ao atual ────────────

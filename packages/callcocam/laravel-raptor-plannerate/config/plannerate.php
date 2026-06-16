@@ -29,6 +29,20 @@ return [
                 'B' => 5,
                 'C' => 7,
             ],
+
+            /*
+             * Teto de unidades em profundidade ("de fundo") consideradas por frente ao
+             * converter estoque alvo → frentes no placement (use_target_stock).
+             *
+             * A capacidade física pura (floor(shelf_depth / product_depth)) costuma ser
+             * irrealista para exposição (ex.: 8 unidades de fundo numa prateleira de 40cm),
+             * fazendo produtos de alvo baixo travarem em 1 frente e deixarem a prateleira
+             * vazia. Este teto limita a premissa de profundidade a um valor de exposição
+             * típico, gerando mais frentes para alvos pequenos sem deixar de respeitar o alvo.
+             *
+             * null = sem teto (usa a capacidade física pura).
+             */
+            'max_facing_depth' => 3,
         ],
     ],
     'defaults' => [

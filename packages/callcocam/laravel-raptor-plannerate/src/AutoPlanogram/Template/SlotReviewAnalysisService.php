@@ -414,6 +414,12 @@ final readonly class SlotReviewAnalysisService
     /**
      * Expands facings using leftover shelf space, respecting max_facings and participation limits.
      *
+     * NOTA (divergência conhecida): diferente do TemplatePlacementEngine::expandFacings, este
+     * preview NÃO aplica o teto de frentes por estoque alvo (use_target_stock). O serviço de
+     * análise não carrega o targetStockMap, então a contagem de frentes prevista pode ficar
+     * acima da real quando o slot usa estoque alvo. Follow-up: injetar targetStockMap +
+     * profundidade aqui para espelhar o teto do engine.
+     *
      * @param  array<string, array{product: Product, facings: int, singleWidth: float, ordering: int}>  $placedItems
      * @param  array<string, string>  $abcClassMap
      * @return array{0: array<string, array{product: Product, facings: int, singleWidth: float, ordering: int}>, 1: float}

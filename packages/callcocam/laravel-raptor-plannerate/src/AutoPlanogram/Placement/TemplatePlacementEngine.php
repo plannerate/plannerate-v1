@@ -920,13 +920,13 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
         // Phase 2: expand facings with leftover space
         if ($slot->facing_expansion !== FacingExpansion::None && $placedItems !== []) {
-            [$placedItems, $occupied] = $this->expandFacings($placedItems, $slot, $available, $occupied);
+            [$placedItems, $occupied] = $this->expandFacings($placedItems, $slot, $available, $occupied, $shelf);
         }
 
         // Anotar explicações dos produtos posicionados (após expansão de frentes)
         $minFacing = max($slot->min_facings, 1);
         $zone = $this->resolveZoneForShelf($section, $shelf);
-        $placedExplanations = $this->buildPlacedExplanations($placedItems, $slot, $minFacing, $zone);
+        $placedExplanations = $this->buildPlacedExplanations($placedItems, $slot, $minFacing, $zone, $shelf);
 
         // Build readonly PlacedSegment DTOs
         // $x parte de $startPosition para acomodar prateleiras compartilhadas: quando outra
@@ -1350,6 +1350,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                         $rows[$rowIdx]['slot'],
                         $colWidth[$brand],
                         $occupied,
+                        $rows[$rowIdx]['shelf'],
                     );
                 }
             }
@@ -1447,7 +1448,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 $zone = $this->resolveZoneForShelf($section, $row['shelf']);
                 $placedExplanations = array_merge(
                     $placedExplanations,
-                    $this->buildPlacedExplanations($items, $row['slot'], $minFacings, $zone),
+                    $this->buildPlacedExplanations($items, $row['slot'], $minFacings, $zone, $row['shelf']),
                 );
             }
 
@@ -1561,10 +1562,14 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
      * (`max_share_per_sku`, `max_share_per_brand`, `max_share_per_subcategory`) como tetos adicionais.
      * O menor limite entre os dois vence. Limites null são ignorados (comportamento original).
      *
+     * Quando o slot tem `use_target_stock` ligado, aplica também um teto por produto derivado
+     * do estoque alvo (ver `targetStockFacingCap`): a expansão para ao atingir as frentes
+     * necessárias para cobrir o alvo, mesmo que ainda sobre espaço na prateleira.
+     *
      * @param  array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}>  $placedItems
      * @return array{0: array<int, array{product: mixed, facings: int, singleWidth: float, ordering: int}>, 1: float}
      */
-    private function expandFacings(array $placedItems, PlanogramTemplateSlot $slot, float $available, float $occupied): array
+    private function expandFacings(array $placedItems, PlanogramTemplateSlot $slot, float $available, float $occupied, Shelf $shelf): array
     {
         $maxFacings = max($slot->max_facings, 1);
         $remainingWidth = $available - $occupied;
@@ -1576,6 +1581,21 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $expansion = $slot->facing_expansion ?? FacingExpansion::Score;
         $expansionOrder = $this->expansionOrder($placedItems, $expansion);
 
+        // Teto de frentes por estoque alvo (opt-in via use_target_stock). Pré-calculado por
+        // índice para evitar recomputar no laço; produtos sem alvo ficam de fora (sem teto).
+        $minFacings = max($slot->min_facings ?? 1, 1);
+        $facingCap = [];
+
+        if ($slot->use_target_stock) {
+            foreach ($placedItems as $idx => $item) {
+                $cap = $this->targetStockFacingCap($item['product'], $shelf, $minFacings);
+
+                if ($cap !== null) {
+                    $facingCap[$idx] = $cap;
+                }
+            }
+        }
+
         // Round-robin: give +1 facing per pass until space runs out or all hit max_facings
         $changed = true;
 
@@ -1584,6 +1604,11 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
             foreach ($expansionOrder as $idx) {
                 if ($placedItems[$idx]['facings'] >= $maxFacings) {
+                    continue;
+                }
+
+                // Estoque alvo já coberto: não expande mais, mesmo com espaço livre.
+                if (isset($facingCap[$idx]) && $placedItems[$idx]['facings'] >= $facingCap[$idx]) {
                     continue;
                 }
 
@@ -1605,6 +1630,47 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         }
 
         return [$placedItems, $occupied];
+    }
+
+    /**
+     * Calcula o teto de frentes que cobre o estoque alvo de um produto.
+     *
+     * Converte o alvo (em unidades) para frentes pela capacidade de profundidade da prateleira:
+     * cada frente comporta `floor(shelf_depth / product_depth)` unidades em profundidade (mínimo 1).
+     * Sem dados de profundidade válidos (produto ou prateleira), assume 1 unidade por frente.
+     *
+     * A premissa de profundidade é limitada pelo config `auto_planogram.target_stock.max_facing_depth`
+     * (unidades de fundo por frente), pois a capacidade física pura costuma ser irrealista para
+     * exposição (ex.: 8 de fundo) e travaria produtos de alvo baixo em 1 frente, deixando a
+     * prateleira vazia. `null` no config = sem teto (capacidade física pura).
+     *
+     * Retorna `null` quando o produto não tem estoque alvo no mapa (sem teto a aplicar).
+     * O teto nunca fica abaixo de `$minFacings` para não conflitar com a frente mínima do slot.
+     */
+    private function targetStockFacingCap(mixed $product, Shelf $shelf, int $minFacings): ?int
+    {
+        $target = $this->targetStockMap[$product->id] ?? null;
+
+        if ($target === null || $target <= 0) {
+            return null;
+        }
+
+        $productDepth = (float) ($product->depth ?? 0);
+        $shelfDepth = (float) ($shelf->shelf_depth ?? config('plannerate.shelfDepth', 40));
+
+        $unitsPerFacing = ($productDepth > 0 && $shelfDepth > 0)
+            ? max(1, (int) floor($shelfDepth / $productDepth))
+            : 1;
+
+        // Limita a premissa de profundidade a um valor de exposição típico (config), para que
+        // alvos pequenos gerem mais frentes em vez de travar em 1 e esvaziar a prateleira.
+        $maxFacingDepth = config('plannerate.auto_planogram.target_stock.max_facing_depth');
+
+        if ($maxFacingDepth !== null && (int) $maxFacingDepth > 0) {
+            $unitsPerFacing = min($unitsPerFacing, (int) $maxFacingDepth);
+        }
+
+        return max($minFacings, (int) ceil($target / $unitsPerFacing));
     }
 
     /**
@@ -1828,11 +1894,22 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         PlanogramTemplateSlot $slot,
         int $minFacing,
         string $zone,
+        Shelf $shelf,
     ): array {
         $explanations = [];
 
         foreach ($placedItems as $item) {
             $p = $item['product'];
+
+            // Estoque alvo "atendido" = produto atingiu (ou superou) o teto de frentes derivado
+            // do alvo. Só faz sentido quando o slot usa estoque alvo; caso contrário fica false.
+            $targetStockMet = false;
+
+            if ($slot->use_target_stock) {
+                $cap = $this->targetStockFacingCap($p, $shelf, $minFacing);
+                $targetStockMet = $cap !== null && $item['facings'] >= $cap;
+            }
+
             $explanations[] = [
                 'product_id' => $p->id,
                 'product_name' => $p->name ?? '',
@@ -1845,6 +1922,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                 'zone' => $zone,
                 'role' => $slot->effectiveRole()?->value,
                 'has_target_stock' => isset($this->targetStockMap[$p->id]),
+                'target_stock_met' => $targetStockMet,
             ];
         }
 
@@ -1909,8 +1987,10 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             ];
         }
 
+        // Déficit real de estoque alvo: tem alvo, não expandiu frentes E não atingiu o teto do
+        // alvo (faltou espaço). Produtos que pararam por já cobrirem o alvo não contam.
         $targetNotMet = collect($allPlacedExplanations)
-            ->filter(fn ($e) => $e['has_target_stock'] && ! $e['facings_expanded'])
+            ->filter(fn ($e) => $e['has_target_stock'] && ! $e['facings_expanded'] && ! ($e['target_stock_met'] ?? false))
             ->count();
 
         if ($targetNotMet > 0) {
