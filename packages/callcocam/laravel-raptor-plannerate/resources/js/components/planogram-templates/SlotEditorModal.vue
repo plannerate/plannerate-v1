@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -97,6 +98,13 @@ function saveSlot(): void {
 
     if (Object.keys(result).length > 0) {
         errors.value = result;
+
+        // Garante feedback visível mesmo para erros sem campo no formulário
+        // (ex.: module_number / shelf_order), que de outro modo falhariam em silêncio.
+        const first = Object.values(result)[0];
+        if (first) {
+            toast.error(first);
+        }
 
         return;
     }

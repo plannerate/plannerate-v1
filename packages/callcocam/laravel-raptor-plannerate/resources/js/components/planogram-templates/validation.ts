@@ -2,8 +2,16 @@ import { z } from 'zod';
 
 export const slotDraftSchema = z
     .object({
-        module_number: z.number().int().min(1).max(6),
-        shelf_order: z.number().int().min(1).max(10),
+        module_number: z
+            .number({ invalid_type_error: 'Módulo deve ser um número.' })
+            .int()
+            .min(1, 'Módulo mínimo é 1.')
+            .max(20, 'Módulo máximo é 20.'),
+        shelf_order: z
+            .number({ invalid_type_error: 'Prateleira deve ser um número.' })
+            .int()
+            .min(1, 'Prateleira mínima é 1.')
+            .max(10, 'Prateleira máxima é 10.'),
         category_id: z.string().min(1, 'Selecione uma categoria para este slot.').nullable(),
         min_facings: z
             .number({ invalid_type_error: 'Frentes mínimas deve ser um número.' })
