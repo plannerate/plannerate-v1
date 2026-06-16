@@ -23,7 +23,7 @@ final class TemplateSlotService
     private function slotRules(string $prefix = ''): array
     {
         return [
-            "{$prefix}module_number" => ['required', 'integer', 'min:1', 'max:6'],
+            "{$prefix}module_number" => ['required', 'integer', 'min:1', 'max:20'],
             "{$prefix}shelf_order" => ['required', 'integer', 'min:1', 'max:10'],
             "{$prefix}category_id" => ['nullable', 'string', 'max:26'],
             "{$prefix}min_facings" => ['required', 'integer', 'min:1', 'max:20'],

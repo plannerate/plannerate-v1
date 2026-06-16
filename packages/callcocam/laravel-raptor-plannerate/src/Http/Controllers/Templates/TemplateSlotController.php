@@ -98,7 +98,7 @@ class TemplateSlotController extends Controller
         $this->authorize('update', $planogramTemplate);
 
         $validated = $request->validate([
-            'num_modules' => ['required', 'integer', 'min:1', 'max:6'],
+            'num_modules' => ['required', 'integer', 'min:1', 'max:20'],
         ]);
 
         $this->service->createSubtemplate($planogramTemplate, $validated['num_modules'], [
