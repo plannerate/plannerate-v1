@@ -251,9 +251,12 @@
                                         class="text-sm font-bold text-foreground"
                                     >
                                         {{
-                                            Math.round(
-                                                stockInfo.estoque_alvo -
-                                                    toleranceMargin,
+                                            Math.max(
+                                                0,
+                                                Math.round(
+                                                    stockInfo.estoque_alvo -
+                                                        toleranceMargin,
+                                                ),
                                             )
                                         }}
                                         -
