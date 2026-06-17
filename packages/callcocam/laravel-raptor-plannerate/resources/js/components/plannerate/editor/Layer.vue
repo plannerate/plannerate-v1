@@ -1,6 +1,6 @@
 <template>
     <!-- Produtos um do lado do outro (horizontalmente) -->
-    <div class="flex items-center" :class="internalAlignmentClass" :style="distributionContainerStyle">
+    <div class="flex items-center" :style="distributionContainerStyle">
         <div
             v-for="(_, index) in getQuantity"
             :key="index"
@@ -38,8 +38,12 @@ interface Props {
     layer: Layer | undefined;
     scale: number;
     isSelected?: boolean;
-    distributionWidth?: number;
-    internalAlignment?: 'left' | 'right' | 'center' | 'justify';
+    /**
+     * Gap uniforme (px) aplicado como column-gap entre as frentes do produto no
+     * modo justificar. Quando definido, os produtos deste layer ficam espaçados
+     * com o mesmo vão usado entre os segmentos da prateleira.
+     */
+    facingGap?: number;
 }
 
 const props = defineProps<Props>();
@@ -70,33 +74,13 @@ const getQuantity = computed<number>(() => {
     return Math.max(1, Math.min(500, Math.trunc(quantity)));
 });
 
-const internalAlignmentClass = computed(() => {
-    const align = props.internalAlignment;
-
-    if (!align) {
-        return '';
-    }
-
-    if (align === 'justify') {
-        return getQuantity.value <= 1 ? 'justify-center' : 'justify-evenly';
-    }
-
-    const map: Record<string, string> = {
-        left: 'justify-start',
-        right: 'justify-end',
-        center: 'justify-center',
-    };
-
-    return map[align] || '';
-});
-
 const distributionContainerStyle = computed(() => {
-    if (!props.distributionWidth) {
+    if (props.facingGap == null) {
         return undefined;
     }
 
     return {
-        width: `${props.distributionWidth}px`,
+        columnGap: `${props.facingGap}px`,
     };
 });
 

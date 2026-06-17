@@ -2,7 +2,6 @@
     <!-- Segment com drop direto (troca de posições) -->
     <div
         class="relative flex flex-col items-start transition-all duration-200"
-        :style="segmentStyle"
         tabindex="0"
         :class="{
             'ring-3 ring-primary ring-offset-2 bg-primary/20 shadow-xl scale-[1.02] animate-pulse z-50': isSegmentSelected,
@@ -17,7 +16,6 @@
             'cursor-pointer': isDropTarget,
             'scale-105 bg-primary/10 shadow-lg ring-4 ring-primary animate-pulse':
                 isDropTarget,
-            'w-full': props.fillSectionWidth,
         }"
         draggable="true"
         @focus="handleFocusSegment"
@@ -77,8 +75,7 @@
                     :segment="segment"
                     :scale="props.scale"
                     :is-selected="isLayerSelected"
-                    :distribution-width="distributionWidth"
-                    :internal-alignment="props.internalAlignment"
+                    :facing-gap="props.facingGap"
                 />
             </div>
         </div>
@@ -107,9 +104,12 @@ interface Props {
     isFirstInShelf?: boolean;
     isLastInShelf?: boolean;
     shelfDepth?: number;
-    fillSectionWidth?: boolean;
-    sectionWidth?: number;
-    internalAlignment?: 'left' | 'right' | 'center' | 'justify';
+    /**
+     * Gap uniforme (px) para o modo justificar. Quando definido, é repassado ao
+     * layer como column-gap entre as frentes, fazendo os produtos do segmento
+     * se distribuírem com o mesmo espaçamento dos demais segmentos da prateleira.
+     */
+    facingGap?: number;
     highlightGroupingNormalized?: string | null;
 }
 
@@ -156,24 +156,6 @@ const isSegmentSelected = computed(() => {
 
 const isLayerSelected = computed(() => {
     return layer.value ? selection.isLayerSelected(layer.value) : false;
-});
-
-const distributionWidth = computed(() => {
-    if (!props.fillSectionWidth || !props.sectionWidth) {
-        return undefined;
-    }
-
-    return props.sectionWidth;
-});
-
-const segmentStyle = computed(() => {
-    if (!props.fillSectionWidth || !props.sectionWidth) {
-        return undefined;
-    }
-
-    return {
-        width: `${props.sectionWidth}px`,
-    };
 });
 
 // Estado de dragging e drop

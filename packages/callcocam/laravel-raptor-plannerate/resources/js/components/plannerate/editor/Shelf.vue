@@ -28,13 +28,12 @@
         <!-- Segmentos um do lado do outro (horizontalmente) -->
         <div v-if="segments.length > 0" class="absolute right-0 left-0 flex"
             :class="[alignmentClass, isHookType ? 'items-start' : 'items-end']"
-            style="z-index: 50; pointer-events: none" :style="segmentsPositionStyle">
+            style="z-index: 50; pointer-events: none" :style="[segmentsPositionStyle, justifyDistributionStyle]">
             <Segment v-for="(segment, index) in segments" :key="segment.id" :segment="segment" :scale="scale"
-                :sectionWidth="sectionWidth" :shelf-depth="shelf.shelf_depth" :isFirstInShelf="index === 0"
-                :isLastInShelf="index === segments.length - 1" :fill-section-width="isSingleSegmentJustify"
+                :shelf-depth="shelf.shelf_depth" :isFirstInShelf="index === 0"
+                :isLastInShelf="index === segments.length - 1" :facing-gap="justifyGap ?? undefined"
                 :highlightGroupingNormalized="highlightGroupingNormalized"
-                :internal-alignment="isSingleSegmentJustify ? 'justify' : undefined
-                    " style="pointer-events: auto" />
+                style="pointer-events: auto" />
         </div>
 
         <!-- Drag Handle para mover a shelf -->
@@ -161,8 +160,9 @@ const {
     isHookType,
     shelfDisplayNumber,
     shelfZone,
-    isSingleSegmentJustify,
+    justifyGap,
     alignmentClass,
+    justifyDistributionStyle,
     segmentsPositionStyle,
 } = useShelfLayout({
     shelf: shelfRef,

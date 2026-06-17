@@ -128,10 +128,68 @@ return 1;
         () => options.alignment.value ?? 'justify',
     );
 
-    const isSingleSegmentJustify = computed(
-        () =>
-            currentAlignment.value === 'justify' && segments.value.length === 1,
-    );
+    /**
+     * Gap uniforme (em px) usado no modo "justificar".
+     *
+     * Distribui o espaço livre da prateleira igualmente entre TODAS as frentes
+     * (facings) de produto, ignorando o agrupamento por segmento. O resultado
+     * é o mesmo espaçamento entre cada produto e também nas duas bordas — como
+     * se houvesse um único segmento ocupando a prateleira inteira.
+     *
+     * Cálculo: gap = espaçoLivre / (totalDeFrentes + 1), onde espaçoLivre é a
+     * largura da seção menos a soma das larguras de todos os produtos. Esse gap
+     * é aplicado como padding-left do container, column-gap entre segmentos e
+     * column-gap entre as frentes de cada layer, fazendo todos os vãos ficarem
+     * idênticos.
+     *
+     * Retorna null quando não está justificando, quando não há largura
+     * conhecida, ou quando os produtos não cabem (overflow) — nesses casos o
+     * layout cai no fallback `justify-evenly`.
+     */
+    const justifyGap = computed<number | null>(() => {
+        if (currentAlignment.value !== 'justify') {
+            return null;
+        }
+
+        const sectionWidthPx = options.sectionWidth.value;
+
+        if (!sectionWidthPx) {
+            return null;
+        }
+
+        let totalFacings = 0;
+        let totalProductsWidthPx = 0;
+
+        for (const segment of segments.value) {
+            const layer = segment.layer;
+
+            if (!layer) {
+                continue;
+            }
+
+            const facings = Math.max(
+                1,
+                Math.trunc(Number(layer.quantity ?? 1)) || 1,
+            );
+            const facingWidthPx =
+                (Number(layer.product?.width) || 0) * options.scale.value;
+
+            totalFacings += facings;
+            totalProductsWidthPx += facings * facingWidthPx;
+        }
+
+        if (totalFacings === 0) {
+            return null;
+        }
+
+        const freeSpacePx = sectionWidthPx - totalProductsWidthPx;
+
+        if (freeSpacePx <= 0) {
+            return null;
+        }
+
+        return freeSpacePx / (totalFacings + 1);
+    });
 
     const alignmentClass = computed(() => {
         const map: Record<string, string> = {
@@ -141,7 +199,30 @@ return 1;
             justify: 'justify-evenly',
         };
 
+        // No modo justificar com gap calculado, o espaçamento é controlado
+        // manualmente (padding-left + column-gap), então alinhamos ao início.
+        if (currentAlignment.value === 'justify' && justifyGap.value !== null) {
+            return 'justify-start';
+        }
+
         return map[currentAlignment.value] || 'justify-start';
+    });
+
+    /**
+     * Estilo do container dos segmentos quando o gap uniforme está ativo:
+     * padding-left + column-gap iguais ao gap, fazendo a borda esquerda, os
+     * vãos entre segmentos e (por consequência do cálculo) a borda direita
+     * ficarem idênticos.
+     */
+    const justifyDistributionStyle = computed(() => {
+        if (justifyGap.value === null) {
+            return undefined;
+        }
+
+        return {
+            paddingLeft: `${justifyGap.value}px`,
+            columnGap: `${justifyGap.value}px`,
+        };
     });
 
     const segmentsPositionStyle = computed(() =>
@@ -164,8 +245,9 @@ return 1;
         shelfIndexFromTop,
         shelfZone,
         currentAlignment,
-        isSingleSegmentJustify,
+        justifyGap,
         alignmentClass,
+        justifyDistributionStyle,
         segmentsPositionStyle,
     };
 }
