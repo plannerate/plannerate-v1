@@ -50,6 +50,10 @@ class ProductSelectionService
      *                                               slots do template. Restringe o pool a elas
      *                                               (e suas descendentes) em vez do departamento
      *                                               inteiro do planograma.
+     * @param  Collection<int, RankedProductDTO>|null  $removedFromMix  Out-param: preenchido com
+     *                                                                  os produtos retirados do mix pela recomendação
+     *                                                                  do ABC (retirar_do_mix), para que o chamador os
+     *                                                                  registre como rejeitados.
      * @return Collection<RankedProductDTO>
      */
     public function selectAndRankProducts(
@@ -57,6 +61,7 @@ class ProductSelectionService
         AutoGenerateConfigDTO $config,
         bool $requireDimensions = true,
         ?array $scopeCategoryIds = null,
+        ?Collection &$removedFromMix = null,
     ): Collection {
 
         // Resolve store_id para filtro de sortimento: loja direta ou via cluster.
@@ -116,7 +121,14 @@ class ProductSelectionService
             $rankedProducts = $rankedProducts->filter(fn ($p) => $p->salesTotal > 0);
         }
 
-        // 4b. Excluir curva C do pool (quando habilitado), com presença mínima por subcategoria.
+        // 4b. Recomendação explícita do ABC: produtos marcados para retirar do mix
+        //     (retirar_do_mix = true) saem SEMPRE, independente da opção excludeClassC.
+        //     A análise já apontou que não justificam espaço na gôndola. Os removidos são
+        //     expostos via $removedFromMix para o chamador registrá-los como rejeitados.
+        $removedFromMix = $rankedProducts->filter(fn (RankedProductDTO $p) => $p->retirarDoMix)->values();
+        $rankedProducts = $this->removeFlaggedForMixRemoval($rankedProducts);
+
+        // 4c. Exclusão ampla da curva C do pool (opcional), com presença mínima por subcategoria.
         if ($config->excludeClassC) {
             $rankedProducts = $this->excludeClassCWithMinimumPresence($rankedProducts);
         }
@@ -134,6 +146,37 @@ class ProductSelectionService
 
         // 6. Ordenar por score (maior = mais importante)
         return $rankedProducts->sortByDesc('score')->values();
+    }
+
+    /**
+     * Remove do pool os produtos que o ABC marcou explicitamente para retirar do mix
+     * (retirar_do_mix = true) — tipicamente classe C com participação irrelevante.
+     *
+     * É recomendação explícita da análise e vale SEMPRE, independente da opção
+     * excludeClassC — inclusive se a subcategoria ficar sem nenhum produto, pois o ABC
+     * já apontou que esses itens não justificam espaço na gôndola. Por isso NÃO passa
+     * pela regra de presença mínima (que protege subcategorias na exclusão ampla de C).
+     *
+     * @param  Collection<int, RankedProductDTO>  $rankedProducts
+     * @return Collection<int, RankedProductDTO>
+     */
+    protected function removeFlaggedForMixRemoval(Collection $rankedProducts): Collection
+    {
+        $removidos = $rankedProducts->filter(fn (RankedProductDTO $p) => $p->retirarDoMix)->count();
+
+        if ($removidos === 0) {
+            return $rankedProducts;
+        }
+
+        $result = $rankedProducts->reject(fn (RankedProductDTO $p) => $p->retirarDoMix)->values();
+
+        Log::info('ProductSelectionService: produtos retirados do mix (recomendação ABC)', [
+            'antes' => $rankedProducts->count(),
+            'depois' => $result->count(),
+            'removidos' => $removidos,
+        ]);
+
+        return $result;
     }
 
     /**

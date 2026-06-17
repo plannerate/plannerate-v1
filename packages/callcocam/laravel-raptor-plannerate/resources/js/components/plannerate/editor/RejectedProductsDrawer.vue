@@ -5,7 +5,7 @@ import { useRejectedProductsStore } from '@/composables/plannerate/interactions/
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
 import { selectedTemplateCategoryId } from '@/composables/plannerate/core/useGondolaState';
 import type { RejectedProduct } from '@/composables/plannerate/core/useGondolaState';
-import { ArrowLeftRight, ChevronDown, ChevronUp, GripVertical, Layers, Loader2, MoveHorizontal, Ruler, Trash2, X } from 'lucide-vue-next';
+import { ArrowLeftRight, Ban, ChevronDown, ChevronUp, GripVertical, Layers, Loader2, MoveHorizontal, Ruler, Trash2, X } from 'lucide-vue-next';
 import { type Component, computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
@@ -32,11 +32,37 @@ function handleWheel(event: WheelEvent) {
 
 const swapModeActive = computed(() => swapSource.value !== null);
 
-const filteredRejectedProducts = computed(() => {
+// Filtro por motivo de rejeição (null = todos). Combina com o filtro de categoria.
+const selectedReason = ref<string | null>(null);
+
+// Lista após o filtro de categoria (base para os chips de motivo e suas contagens).
+const categoryFilteredProducts = computed(() => {
     const all = editor.rejectedProducts.value;
     const filter = selectedTemplateCategoryId.value;
     if (!filter) return all;
     return all.filter((p) => p.category_id === filter);
+});
+
+// Motivos presentes na seleção atual, com contagem — alimenta os chips de filtro.
+const reasonsPresent = computed(() => {
+    const counts = new Map<string, number>();
+    for (const p of categoryFilteredProducts.value) {
+        counts.set(p.rejection_reason, (counts.get(p.rejection_reason) ?? 0) + 1);
+    }
+    return Array.from(counts.entries()).map(([reason, count]) => ({ reason, count, meta: reasonMeta(reason) }));
+});
+
+const filteredRejectedProducts = computed(() => {
+    const base = categoryFilteredProducts.value;
+    if (!selectedReason.value) return base;
+    return base.filter((p) => p.rejection_reason === selectedReason.value);
+});
+
+// Se o motivo selecionado deixar de existir (ex.: trocou o filtro de categoria), reseta.
+watch(reasonsPresent, (list) => {
+    if (selectedReason.value && !list.some((r) => r.reason === selectedReason.value)) {
+        selectedReason.value = null;
+    }
 });
 
 // ── Cookie utilities ─────────────────────────────────────────────────────────
@@ -106,6 +132,8 @@ const reasonMeta = (
         return { icon: Ruler, label: 'Altura', variant: 'destructive' };
     if (reason === 'manually_removed')
         return { icon: Trash2, label: 'Removido', variant: 'secondary' };
+    if (reason === 'removed_from_mix')
+        return { icon: Ban, label: 'Fora do mix', variant: 'secondary' };
     return { icon: Layers, label: 'Nível', variant: 'secondary' };
 };
 
@@ -316,6 +344,37 @@ defineExpose({
                     <Button variant="ghost" size="sm" class="h-6 gap-1 text-xs" @click="cancelSwapMode">
                         <X class="size-3" /> Cancelar
                     </Button>
+                </div>
+
+                <!-- Reason filter chips -->
+                <div
+                    v-if="reasonsPresent.length > 1"
+                    class="flex flex-wrap items-center gap-1.5 border-b border-border px-3 py-2"
+                >
+                    <span class="mr-0.5 text-xs font-medium text-muted-foreground">Motivo:</span>
+                    <button
+                        type="button"
+                        class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors"
+                        :class="selectedReason === null
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border text-muted-foreground hover:bg-muted'"
+                        @click="selectedReason = null"
+                    >
+                        Todos ({{ categoryFilteredProducts.length }})
+                    </button>
+                    <button
+                        v-for="r in reasonsPresent"
+                        :key="r.reason"
+                        type="button"
+                        class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors"
+                        :class="selectedReason === r.reason
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border text-muted-foreground hover:bg-muted'"
+                        @click="selectedReason = selectedReason === r.reason ? null : r.reason"
+                    >
+                        <component :is="r.meta.icon" class="size-3 shrink-0" />
+                        {{ r.meta.label }} ({{ r.count }})
+                    </button>
                 </div>
 
                 <!-- Empty state -->

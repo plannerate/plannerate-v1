@@ -116,6 +116,7 @@ final class AutoPlanogramService
             sections: $keptSections,
             settings: $updatedSettings,
             planogramCategoryId: $input->planogramCategoryId,
+            preRejectedProducts: $input->preRejectedProducts,
         );
 
         Log::info('AutoPlanogramService: template sintetizado — delegando ao TemplatePlacementEngine', [
@@ -277,10 +278,15 @@ final class AutoPlanogramService
 
         $suggestions = $this->suggestionGenerator->generate($result->slotAnalysis);
 
+        // Rejeitados do engine + rejeitados pré-placement (ex.: retirados do mix pelo ABC).
+        // Os pré-placement entram só na saída/persistência (UI), não na contagem de capacidade
+        // acima — eles não chegaram a disputar espaço em nenhum slot.
+        $rejectedForOutput = $result->rejectedProducts->concat($input->preRejectedProducts);
+
         $templateOutput = new PlanogramOutput(
             gondolaId: $input->gondolaId,
             placedSegments: $allSegments,
-            rejectedProducts: $result->rejectedProducts,
+            rejectedProducts: $rejectedForOutput,
             validationReport: $report,
             scoreType: $scoreType,
             slotAnalysis: $result->slotAnalysis,

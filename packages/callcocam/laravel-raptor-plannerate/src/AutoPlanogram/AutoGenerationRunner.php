@@ -7,6 +7,7 @@ use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\AutoGenerateConfigDTO;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlacementSettings;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO\PlanogramInput;
 use Callcocam\LaravelRaptorPlannerate\AutoPlanogram\Scoring\ScoringWeightsValue;
+use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
 use Callcocam\LaravelRaptorPlannerate\Models\Planogram;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
@@ -63,11 +64,13 @@ final class AutoGenerationRunner
             ? $this->resolveTemplateScopeCategoryIds($templateId, $gondola->sections->count())
             : null;
 
+        $removedFromMix = collect();
         $rankedProducts = $this->productSelection->selectAndRankProducts(
             $planogram,
             $effectiveConfig,
             requireDimensions: $templateId === null,
             scopeCategoryIds: $scopeCategoryIds,
+            removedFromMix: $removedFromMix,
         );
 
         if ($rankedProducts->isEmpty()) {
@@ -75,6 +78,15 @@ final class AutoGenerationRunner
         }
 
         $products = $rankedProducts->map(fn ($dto) => $dto->product);
+
+        // Produtos retirados do mix pela recomendação do ABC entram na lista de rejeitados
+        // (motivo RemovedFromMix), para ficarem visíveis na UI em vez de sumirem silenciosamente.
+        $preRejectedProducts = $removedFromMix
+            ->map(fn ($dto) => [
+                'product' => $dto->product,
+                'reason' => PlacementFailureReason::RemovedFromMix,
+            ])
+            ->values();
 
         $abcClassMap = $rankedProducts
             ->filter(fn ($dto) => $dto->abcClass !== null)
@@ -121,6 +133,7 @@ final class AutoGenerationRunner
             sections: $gondola->sections,
             settings: $settings,
             planogramCategoryId: $planogram->category_id,
+            preRejectedProducts: $preRejectedProducts,
         );
 
         $output = $this->service->generate($input);

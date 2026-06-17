@@ -2,6 +2,7 @@
 
 namespace Callcocam\LaravelRaptorPlannerate\AutoPlanogram\DTO;
 
+use Callcocam\LaravelRaptorPlannerate\Enums\PlacementFailureReason;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Section;
 use Illuminate\Support\Collection;
@@ -39,5 +40,12 @@ final readonly class PlanogramInput
          * Null em contextos legados ou de teste onde o planograma não está disponível.
          */
         public ?string $planogramCategoryId = null,
+        /**
+         * Produtos rejeitados ANTES do placement (ex.: retirados do mix pela recomendação ABC).
+         * Mesclados aos rejeitados do engine na saída final, mas fora da contagem de capacidade.
+         *
+         * @var Collection<int, array{product: Product, reason: PlacementFailureReason}>
+         */
+        public Collection $preRejectedProducts = new Collection,
     ) {}
 }

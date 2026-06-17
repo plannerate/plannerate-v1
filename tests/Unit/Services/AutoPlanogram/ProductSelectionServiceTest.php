@@ -27,6 +27,11 @@ function selectionService(): object
         {
             return $this->excludeClassCWithMinimumPresence($rankedProducts);
         }
+
+        public function exposedMixRemoval(Collection $rankedProducts): Collection
+        {
+            return $this->removeFlaggedForMixRemoval($rankedProducts);
+        }
     };
 }
 
@@ -114,6 +119,65 @@ it('produtos sem classificação ABC não são afetados pelo filtro', function (
     expect($ids)->toContain('x1')
         ->and($ids)->toContain('a1')
         ->and($ids)->not->toContain('c1');
+});
+
+// ── removeFlaggedForMixRemoval: recomendação explícita do ABC, sempre aplicada ──
+
+it('removeFlaggedForMixRemoval retira todos os produtos marcados, independente da classe', function (): void {
+    // Mesmo sem excludeClassC, os marcados (retirar_do_mix=true) saem sempre.
+    $pool = collect([
+        rankedProduct('a1', 'A', 'sub-1', 500.0),
+        rankedProduct('c-keep', 'C', 'sub-1', 50.0),                      // C, mas não marcado → fica
+        rankedProduct('c-out', 'C', 'sub-1', 70.0, retirarDoMix: true),   // marcado → sai
+    ]);
+
+    $result = selectionService()->exposedMixRemoval($pool);
+    $ids = $result->map(fn (RankedProductDTO $p) => $p->product->id)->all();
+
+    expect($ids)->toBe(['a1', 'c-keep']);
+});
+
+it('removeFlaggedForMixRemoval retira mesmo zerando a subcategoria (sem presença mínima)', function (): void {
+    $pool = collect([
+        rankedProduct('a1', 'A', 'sub-1', 500.0),
+        rankedProduct('c1', 'C', 'sub-2', 30.0, retirarDoMix: true),
+        rankedProduct('c2', 'C', 'sub-2', 90.0, retirarDoMix: true),
+    ]);
+
+    $result = selectionService()->exposedMixRemoval($pool);
+    $ids = $result->map(fn (RankedProductDTO $p) => $p->product->id)->all();
+
+    expect($ids)->toBe(['a1']);
+});
+
+it('os removidos do mix são exatamente o complemento dos mantidos', function (): void {
+    // Espelha o que selectAndRankProducts expõe via $removedFromMix:
+    // removidos = pool − mantidos, e todos têm retirar_do_mix = true.
+    $pool = collect([
+        rankedProduct('a1', 'A', 'sub-1', 500.0),
+        rankedProduct('c1', 'C', 'sub-1', 70.0, retirarDoMix: true),
+        rankedProduct('c2', 'C', 'sub-2', 40.0),
+        rankedProduct('c3', 'C', 'sub-2', 20.0, retirarDoMix: true),
+    ]);
+
+    $kept = selectionService()->exposedMixRemoval($pool);
+    $keptIds = $kept->map(fn (RankedProductDTO $p) => $p->product->id)->flip();
+    $removed = $pool->reject(fn (RankedProductDTO $p) => $keptIds->has($p->product->id))->values();
+
+    expect($removed->map(fn (RankedProductDTO $p) => $p->product->id)->all())->toBe(['c1', 'c3'])
+        ->and($removed->every(fn (RankedProductDTO $p) => $p->retirarDoMix))->toBeTrue();
+});
+
+it('removeFlaggedForMixRemoval não altera o pool quando nada está marcado', function (): void {
+    $pool = collect([
+        rankedProduct('a1', 'A', 'sub-1', 500.0),
+        rankedProduct('c1', 'C', 'sub-2', 40.0),
+    ]);
+
+    $result = selectionService()->exposedMixRemoval($pool);
+    $ids = $result->map(fn (RankedProductDTO $p) => $p->product->id)->all();
+
+    expect($ids)->toBe(['a1', 'c1']);
 });
 
 it('presença mínima ignora C com retirar_do_mix ao escolher o sobrevivente', function (): void {

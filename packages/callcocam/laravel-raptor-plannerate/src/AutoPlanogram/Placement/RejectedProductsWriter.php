@@ -66,8 +66,10 @@ final class RejectedProductsWriter
                     'product_height' => $product->height ?? null,
                     'rejection_reason' => $first['reason']->value,
                     'slot_id' => $slotId,
-                    'category_name' => $slotData['category_name'] ?? null,
-                    'category_id' => $slotData['category_id'] ?? null,
+                    // Categoria vem do slot quando o produto disputou um slot; sem slot
+                    // (ex.: retirado do mix antes do placement) cai para a categoria do produto.
+                    'category_name' => $slotData['category_name'] ?? ($product->category->name ?? null),
+                    'category_id' => $slotData['category_id'] ?? ($product->category_id ?? null),
                     'module_number' => $slotData['module_number'] ?? null,
                     'shelf_order' => $slotData['shelf_order'] ?? null,
                     'rejected_shelf_orders' => json_encode($allShelfOrders),

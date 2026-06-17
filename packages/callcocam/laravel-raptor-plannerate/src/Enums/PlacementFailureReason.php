@@ -14,6 +14,8 @@ enum PlacementFailureReason: string
     case MandatoryNoSpace = 'mandatory_no_space';
     /** Produto removido manualmente de gôndola automática ou de template */
     case ManuallyRemoved = 'manually_removed';
+    /** Produto retirado do mix por recomendação explícita do ABC (retirar_do_mix) antes do placement */
+    case RemovedFromMix = 'removed_from_mix';
 
     public function label(): string
     {
@@ -25,7 +27,14 @@ enum PlacementFailureReason: string
             self::Blocked => 'Produto bloqueado por regra',
             self::MandatoryNoSpace => 'Produto obrigatório sem espaço disponível',
             self::ManuallyRemoved => 'Produto removido manualmente',
+            self::RemovedFromMix => 'Retirado do mix pela análise ABC',
         };
+    }
+
+    /** Recomendação da análise (não é falha de placement, mas exclusão deliberada do mix). */
+    public function isMixRecommendation(): bool
+    {
+        return $this === self::RemovedFromMix;
     }
 
     public function isPhysical(): bool
