@@ -372,11 +372,15 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
         // === OVERFLOW PASS ===
         // Produtos definitivamente rejeitados por falta de espaço são reposicionados em
-        // qualquer prateleira da gôndola que ainda tenha espaço disponível, usando 1 frente.
-        // Resolve o caso onde categorias menores (ex.: DE MILHO com 3 produtos) deixam
-        // prateleiras vazias enquanto a categoria dominante (ex.: FAROFA) rejeita produtos
-        // por falta de espaço nos seus próprios slots — o espaço ocioso passa a ser aproveitado.
-        [$placed, $rejected] = $this->placeOverflow($placed, $rejected, $sections);
+        // prateleiras da MESMA categoria que ainda tenham espaço disponível, usando 1 frente.
+        // Resolve o caso onde a categoria ocupa várias prateleiras e um produto rejeitado num
+        // slot pode caber no espaço ocioso de outro slot da mesma categoria.
+        //
+        // Restrição por categoria: o overflow NÃO mistura categorias. Um produto só é realocado
+        // em prateleiras cujos slots pertençam à sua categoria (ou descendente). Categorias
+        // homônimas (mesmo nome, category_id diferente) são tratadas como distintas, por ID.
+        $allowedCategoriesByShelf = $this->buildAllowedCategoriesByShelf($slots, $sections);
+        [$placed, $rejected] = $this->placeOverflow($placed, $rejected, $sections, $allowedCategoriesByShelf);
 
         if ($settings->planogramId !== null) {
             $this->recordSubtemplateUsed($settings->planogramId, $subtemplate->getKey());
@@ -455,12 +459,14 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
      * @param  Collection<int, PlacedSegment>  $placed
      * @param  Collection<int, array>  $rejected
      * @param  Collection<int, Section>  $sections
+     * @param  array<string, array<string, true>>  $allowedCategoriesByShelf  [shelfId => set de category_id permitidos]
      * @return array{0: Collection<int, PlacedSegment>, 1: Collection<int, array>}
      */
     private function placeOverflow(
         Collection $placed,
         Collection $rejected,
         Collection $sections,
+        array $allowedCategoriesByShelf = [],
     ): array {
         // Identifica produtos já posicionados
         $placedIds = $placed
@@ -503,6 +509,7 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                         'remaining' => $remaining,
                         'occupied' => $occupied,
                         'clearance' => (float) ($clearances[$shelf->getKey()] ?? 0.0),
+                        'allowed_categories' => $allowedCategoriesByShelf[$shelf->getKey()] ?? [],
                     ];
                 }
             }
@@ -547,6 +554,15 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
             // Tenta a prateleira com maior espaço disponível
             foreach ($shelfMeta as $i => $meta) {
                 if ($meta['remaining'] < $widthWithFacings) {
+                    continue;
+                }
+
+                // Restrição por categoria: só realoca em prateleira cujo slot pertença à mesma
+                // categoria (ou descendente) do produto. Mapa vazio = prateleira sem slot mapeado,
+                // tratada como não-elegível para preservar a separação por categoria.
+                $productCategoryId = $product->category_id ?? null;
+
+                if ($productCategoryId === null || ! isset($meta['allowed_categories'][$productCategoryId])) {
                     continue;
                 }
 
@@ -613,6 +629,44 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         ]);
 
         return [$placed->merge($overflowPlaced), $updatedRejected];
+    }
+
+    /**
+     * Mapeia cada prateleira física para o conjunto de category_ids que seus slots aceitam.
+     *
+     * Usado pelo overflow pass para restringir a realocação à mesma categoria: uma prateleira
+     * pode ter slots de múltiplas categorias (prateleira compartilhada), por isso o valor é um
+     * set. Cada slot contribui com sua categoria E todos os descendentes — o matching do
+     * placement principal é hierárquico, e o overflow precisa ser consistente.
+     *
+     * @param  Collection<int, PlanogramTemplateSlot>  $slots
+     * @param  Collection<int, Section>  $sections
+     * @return array<string, array<string, true>> [shelfId => [category_id => true]]
+     */
+    private function buildAllowedCategoriesByShelf(Collection $slots, Collection $sections): array
+    {
+        $map = [];
+
+        foreach ($slots as $slot) {
+            if ($slot->category_id === null) {
+                continue;
+            }
+
+            $section = $this->resolveSection($sections, $slot->module_number);
+            $shelf = $section ? $this->resolveShelf($section, $slot->shelf_order) : null;
+
+            if ($shelf === null) {
+                continue;
+            }
+
+            $shelfId = $shelf->getKey();
+
+            foreach ($this->getDescendantsCached($slot->category_id) as $categoryId) {
+                $map[$shelfId][$categoryId] = true;
+            }
+        }
+
+        return $map;
     }
 
     private function resolveSubtemplate(PlacementSettings $settings): ?PlanogramSubtemplate
