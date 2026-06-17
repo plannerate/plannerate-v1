@@ -447,14 +447,17 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
     /**
      * Overflow pass: reposiciona produtos definitivamente rejeitados (NoHorizontalSpace) em
-     * qualquer prateleira da gôndola com espaço disponível, usando apenas 1 frente por produto.
+     * prateleiras da MESMA categoria com espaço disponível.
      *
      * Lógica:
      * 1. Identifica produtos únicos rejeitados por espaço que ainda não foram posicionados.
      * 2. Calcula o espaço ocupado por prateleira a partir dos segmentos já posicionados.
      * 3. Ordena prateleiras por maior espaço disponível (prioriza as mais vazias).
      * 4. Posiciona os produtos ordenados por ABC (A→B→C) nas primeiras prateleiras com espaço.
-     * 5. Retorna as coleções atualizadas de placed e rejected.
+     * 5. Cada produto entra com a frente mínima e, se tiver estoque alvo e ainda houver espaço
+     *    na prateleira de destino, expande as frentes até o teto que cobre o alvo
+     *    (targetStockFacingCap) — paridade com o caminho principal de expansão.
+     * 6. Retorna as coleções atualizadas de placed e rejected.
      *
      * @param  Collection<int, PlacedSegment>  $placed
      * @param  Collection<int, array>  $rejected
@@ -574,25 +577,39 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                     continue;
                 }
 
+                // Expansão por estoque alvo: quando o produto tem alvo definido (targetStockMap)
+                // e ainda há espaço livre na prateleira de destino, adiciona frentes até o teto
+                // que cobre o alvo — mesma regra do caminho principal (targetStockFacingCap).
+                // Sem alvo, ou sem espaço para mais de uma frente, mantém a frente mínima.
+                $facings = $minFacings;
+                $cap = $this->targetStockFacingCap($product, $meta['shelf'], $minFacings);
+
+                if ($cap !== null && $cap > $minFacings && $singleWidth > 0) {
+                    $facingsThatFit = (int) floor($meta['remaining'] / $singleWidth);
+                    $facings = max($minFacings, min($cap, $facingsThatFit));
+                }
+
+                $width = $singleWidth * $facings;
+
                 $overflowPlaced->push(new PlacedSegment(
                     sectionId: $meta['section']->getKey(),
                     shelfId: $meta['shelf']->getKey(),
                     ordering: $orderingOffset++,
                     position: (int) round($meta['occupied']),
-                    width: $widthWithFacings,
-                    distributedWidth: $widthWithFacings,
+                    width: $width,
+                    distributedWidth: $width,
                     layers: collect([
                         new PlacedLayer(
                             productId: $product->id,
                             ean: (string) ($product->ean ?? ''),
-                            quantity: $minFacings,
+                            quantity: $facings,
                             height: 1,
                         ),
                     ]),
                 ));
 
-                $shelfMeta[$i]['occupied'] += $widthWithFacings;
-                $shelfMeta[$i]['remaining'] -= $widthWithFacings;
+                $shelfMeta[$i]['occupied'] += $width;
+                $shelfMeta[$i]['remaining'] -= $width;
                 $this->globalPlacedProductIds[$product->id] = true;
                 $overflowPlacedIds[$product->id] = true;
 

@@ -26,7 +26,7 @@ use Illuminate\Support\Str;
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-function makeOverflowEngine(array $descendantsCache = []): TemplatePlacementEngine
+function makeOverflowEngine(array $descendantsCache = [], array $targetStockMap = []): TemplatePlacementEngine
 {
     $engine = new TemplatePlacementEngine(
         new ProductWidthResolver,
@@ -39,28 +39,36 @@ function makeOverflowEngine(array $descendantsCache = []): TemplatePlacementEngi
     $ref->setAccessible(true);
     $ref->setValue($engine, $descendantsCache);
 
+    if ($targetStockMap !== []) {
+        $mapRef = new ReflectionProperty($engine, 'targetStockMap');
+        $mapRef->setAccessible(true);
+        $mapRef->setValue($engine, $targetStockMap);
+    }
+
     return $engine;
 }
 
-function makeOverflowProduct(string $categoryId, float $width = 10.0): Product
+function makeOverflowProduct(string $categoryId, float $width = 10.0, ?float $depth = null): Product
 {
     $product = new Product;
     $product->id = (string) Str::ulid();
     $product->name = "Produto {$categoryId}";
     $product->ean = '7890000000000';
     $product->width = $width;
+    $product->depth = $depth;
     $product->category_id = $categoryId;
     $product->status = 'published';
 
     return $product;
 }
 
-function makeOverflowSection(float $width, string $shelfId): Section
+function makeOverflowSection(float $width, string $shelfId, float $shelfDepth = 0.0): Section
 {
     $shelf = new Shelf;
     $shelf->id = $shelfId;
     $shelf->shelf_position = 0;
     $shelf->shelf_height = 0.0;
+    $shelf->shelf_depth = $shelfDepth;
 
     $section = new Section;
     $section->id = (string) Str::ulid();
@@ -198,6 +206,122 @@ test('overflow realoca produto de categoria descendente na prateleira do pai', f
 
     expect($resultPlaced)->toHaveCount(2)
         ->and($resultRejected)->toBeEmpty();
+});
+
+test('overflow expande frentes até cobrir o estoque alvo quando há espaço', function (): void {
+    $catA = (string) Str::ulid();
+    // depth null → 1 unidade por frente → teto = alvo (4 frentes)
+    $product = makeOverflowProduct($catA, 10.0);
+    $engine = makeOverflowEngine([$catA => [$catA]], [$product->id => 4.0]);
+
+    $shelf = (string) Str::ulid();
+    $section = makeOverflowSection(100.0, $shelf);
+
+    $rejected = collect([[
+        'product' => $product,
+        'reason' => PlacementFailureReason::NoHorizontalSpace,
+        'slot_id' => 'slot-a',
+    ]]);
+
+    [$resultPlaced, $resultRejected] = callPlaceOverflow(
+        $engine,
+        collect(),
+        $rejected,
+        collect([$section]),
+        [$shelf => [$catA => true]],
+    );
+
+    expect($resultPlaced)->toHaveCount(1)
+        ->and($resultRejected)->toBeEmpty()
+        ->and($resultPlaced->first()->layers->first()->quantity)->toBe(4)
+        ->and($resultPlaced->first()->width)->toBe(40);
+});
+
+test('overflow limita a expansão de estoque alvo ao espaço livre da prateleira', function (): void {
+    $catA = (string) Str::ulid();
+    $product = makeOverflowProduct($catA, 10.0);
+    // Alvo alto (20 frentes), mas só sobram 30cm = 3 frentes de 10cm
+    $engine = makeOverflowEngine([$catA => [$catA]], [$product->id => 20.0]);
+
+    $shelf = (string) Str::ulid();
+    $section = makeOverflowSection(100.0, $shelf);
+    $placed = collect([makeOccupyingSegment($section, $shelf, 70)]);
+
+    $rejected = collect([[
+        'product' => $product,
+        'reason' => PlacementFailureReason::NoHorizontalSpace,
+        'slot_id' => 'slot-a',
+    ]]);
+
+    [$resultPlaced, $resultRejected] = callPlaceOverflow(
+        $engine,
+        $placed,
+        $rejected,
+        collect([$section]),
+        [$shelf => [$catA => true]],
+    );
+
+    expect($resultRejected)->toBeEmpty()
+        ->and($resultPlaced->last()->layers->first()->quantity)->toBe(3)
+        ->and($resultPlaced->last()->width)->toBe(30);
+});
+
+test('overflow converte estoque alvo em frentes pela profundidade (caso Nordeste: alvo 12 → 4 frentes)', function (): void {
+    $catA = (string) Str::ulid();
+    // profundidade 10 / prateleira 40 = 4, limitado a max_facing_depth=3 → 3 un/frente
+    // alvo 12 / 3 = 4 frentes
+    $product = makeOverflowProduct($catA, 10.0, depth: 10.0);
+    $engine = makeOverflowEngine([$catA => [$catA]], [$product->id => 12.0]);
+
+    $shelf = (string) Str::ulid();
+    $section = makeOverflowSection(100.0, $shelf, shelfDepth: 40.0);
+
+    $rejected = collect([[
+        'product' => $product,
+        'reason' => PlacementFailureReason::NoHorizontalSpace,
+        'slot_id' => 'slot-a',
+    ]]);
+
+    [$resultPlaced, $resultRejected] = callPlaceOverflow(
+        $engine,
+        collect(),
+        $rejected,
+        collect([$section]),
+        [$shelf => [$catA => true]],
+    );
+
+    expect($resultPlaced)->toHaveCount(1)
+        ->and($resultRejected)->toBeEmpty()
+        ->and($resultPlaced->first()->layers->first()->quantity)->toBe(4);
+});
+
+test('overflow mantém a frente mínima quando o produto não tem estoque alvo', function (): void {
+    $catA = (string) Str::ulid();
+    $product = makeOverflowProduct($catA, 10.0);
+    // Sem targetStockMap → sem expansão
+    $engine = makeOverflowEngine([$catA => [$catA]]);
+
+    $shelf = (string) Str::ulid();
+    $section = makeOverflowSection(100.0, $shelf);
+
+    $rejected = collect([[
+        'product' => $product,
+        'reason' => PlacementFailureReason::NoHorizontalSpace,
+        'slot_id' => 'slot-a',
+    ]]);
+
+    [$resultPlaced, $resultRejected] = callPlaceOverflow(
+        $engine,
+        collect(),
+        $rejected,
+        collect([$section]),
+        [$shelf => [$catA => true]],
+    );
+
+    expect($resultPlaced)->toHaveCount(1)
+        ->and($resultRejected)->toBeEmpty()
+        ->and($resultPlaced->first()->layers->first()->quantity)->toBe(1)
+        ->and($resultPlaced->first()->width)->toBe(10);
 });
 
 test('buildAllowedCategoriesByShelf mapeia prateleira para categoria do slot e descendentes', function (): void {
