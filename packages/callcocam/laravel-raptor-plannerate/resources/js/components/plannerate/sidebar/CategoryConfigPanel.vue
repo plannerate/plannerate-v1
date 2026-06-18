@@ -24,6 +24,7 @@ const overrideCategoryUrl = (gondolaId: string, categoryId: string) =>
     `/api/gondolas/${gondolaId}/generation-overrides/${categoryId}`;
 const applyToTemplateUrl = (gondolaId: string, categoryId: string) =>
     `/api/gondolas/${gondolaId}/generation-overrides/${categoryId}/apply-to-template`;
+const autoGenerateUrl = (gondolaId: string) => `/api/gondolas/${gondolaId}/auto-generate`;
 
 interface CategoryInfo {
     category_id: string;
@@ -82,10 +83,6 @@ const categories = computed((): CategoryInfo[] => {
                     defaults: {
                         min_facings: slot.min_facings ?? null,
                         max_facings: slot.max_facings ?? null,
-                        price_order: slot.price_order ?? null,
-                        size_order: slot.size_order ?? null,
-                        brand_exposure: slot.brand_exposure ?? null,
-                        flavor_exposure: slot.flavor_exposure ?? null,
                         space_fallback: slot.space_fallback ?? null,
                         facing_expansion: slot.facing_expansion ?? null,
                         use_target_stock: slot.use_target_stock ?? false,
@@ -96,18 +93,33 @@ const categories = computed((): CategoryInfo[] => {
     }
 
     return [...seen.entries()]
-        .map(([categoryId, data]) => ({
-            category_id: categoryId,
-            category_name: data.name,
-            category_full_path: data.full_path,
-            subcategory: data.subcategory,
-            slot_count: data.count,
-            modules: [...data.modules].sort((a, b) => a - b),
-            shelves: [...data.shelves].sort((a, b) => a - b),
-            section_names: [...data.sections].sort(),
-            templateDefaults: data.defaults,
-        }))
-        .sort((a, b) => a.category_name.localeCompare(b.category_name, 'pt-BR'));
+        .map(([categoryId, data]) => {
+            const modules = [...data.modules].sort((a, b) => a - b);
+            const shelves = [...data.shelves].sort((a, b) => a - b);
+
+            return {
+                category_id: categoryId,
+                category_name: data.name,
+                category_full_path: data.full_path,
+                subcategory: data.subcategory,
+                slot_count: data.count,
+                modules,
+                shelves,
+                section_names: [...data.sections].sort(),
+                templateDefaults: data.defaults,
+                // Posição física para ordenação: menor módulo e, dentro dele, menor prateleira
+                sortModule: modules[0] ?? Number.MAX_SAFE_INTEGER,
+                sortShelf: shelves[0] ?? Number.MAX_SAFE_INTEGER,
+            };
+        })
+        // Ordena seguindo a posição física na gôndola (módulo, depois prateleira),
+        // usando o nome apenas como desempate para itens na mesma posição.
+        .sort(
+            (a, b) =>
+                a.sortModule - b.sortModule ||
+                a.sortShelf - b.sortShelf ||
+                a.category_name.localeCompare(b.category_name, 'pt-BR'),
+        );
 });
 
 /** Gera uma cor HSL determinística a partir de uma string (para diferenciar visualmente IDs duplicados) */
@@ -318,13 +330,52 @@ function handleSave(categoryId: string) {
     savingCategory.value = categoryId;
     const payload = { ...getEdit(categoryId), category_id: categoryId };
 
+    // 1. Persiste o override da categoria.
     router.put(overrideUrl(props.gondola.id), payload, {
         preserveState: true,
         preserveScroll: true,
         only: ['record'],
-        onSuccess: () => toast.success('Configuração salva localmente.'),
-        onError: () => toast.error('Erro ao salvar configuração.'),
-        onFinish: () => {
+        onSuccess: () => {
+            // 2. Re-roda a geração REUSANDO o template atual (modo template), não o modo
+            //    automático. Passar template_id evita re-sintetizar o template do zero e
+            //    preserva generation_mode='template' e template_origin='auto' — a gôndola
+            //    continua "Template (auto)" até o usuário Promover, em vez de regredir para
+            //    "Automático" e perder a lista de categorias. Os overrides salvos são
+            //    aplicados pelo placement engine (applySlotOverride) durante a re-geração.
+            const templateId = props.gondola.template_id;
+
+            if (!templateId) {
+                toast.success('Configuração salva.');
+                savingCategory.value = null;
+
+                return;
+            }
+
+            router.post(
+                autoGenerateUrl(props.gondola.id),
+                {
+                    strategy: 'abc',
+                    use_existing_analysis: true,
+                    min_facings: 1,
+                    max_facings: 10,
+                    group_by_subcategory: true,
+                    include_products_without_sales: true,
+                    table_type: 'monthly_summaries',
+                    template_id: templateId,
+                },
+                {
+                    preserveScroll: true,
+                    only: ['record'],
+                    onSuccess: () => toast.success('Configuração salva e aplicada à gôndola.'),
+                    onError: () => toast.error('Salvo, mas houve erro ao aplicar na gôndola.'),
+                    onFinish: () => {
+                        savingCategory.value = null;
+                    },
+                },
+            );
+        },
+        onError: () => {
+            toast.error('Erro ao salvar configuração.');
             savingCategory.value = null;
         },
     });
@@ -476,58 +527,6 @@ function handleReset(categoryId: string) {
                             :model-value="getEdit(cat.category_id).max_facings ?? ''"
                             @update:model-value="(v) => setEditField(cat.category_id, 'max_facings', v ? Number(v) : null)"
                         />
-                    </div>
-
-                    <!-- Ordenação por preço -->
-                    <FormSelectField
-                        :id="`price-order-${cat.category_id}`"
-                        name="price_order"
-                        :label="t('planogram-templates.slot_editor.price_order_label')"
-                        :model-value="getEdit(cat.category_id).price_order ?? 'none'"
-                        @update:model-value="(v) => setEditField(cat.category_id, 'price_order', v)"
-                    >
-                        <option value="none">{{ t('planogram-templates.slot_editor.price_order_options.none') }}</option>
-                        <option value="asc">{{ t('planogram-templates.slot_editor.price_order_options.asc') }}</option>
-                        <option value="desc">{{ t('planogram-templates.slot_editor.price_order_options.desc') }}</option>
-                    </FormSelectField>
-
-                    <!-- Ordenação por tamanho -->
-                    <FormSelectField
-                        :id="`size-order-${cat.category_id}`"
-                        name="size_order"
-                        :label="t('planogram-templates.slot_editor.size_order_label')"
-                        :model-value="getEdit(cat.category_id).size_order ?? 'none'"
-                        @update:model-value="(v) => setEditField(cat.category_id, 'size_order', v)"
-                    >
-                        <option value="none">{{ t('planogram-templates.slot_editor.size_order_options.none') }}</option>
-                        <option value="asc">{{ t('planogram-templates.slot_editor.size_order_options.asc') }}</option>
-                        <option value="desc">{{ t('planogram-templates.slot_editor.size_order_options.desc') }}</option>
-                    </FormSelectField>
-
-                    <!-- Exposição de marca + sabor -->
-                    <div class="grid grid-cols-2 gap-2">
-                        <FormSelectField
-                            :id="`brand-exposure-${cat.category_id}`"
-                            name="brand_exposure"
-                            :label="t('planogram-templates.slot_editor.brand_exposure_label')"
-                            :model-value="getEdit(cat.category_id).brand_exposure ?? 'mixed'"
-                            @update:model-value="(v) => setEditField(cat.category_id, 'brand_exposure', v)"
-                        >
-                            <option value="vertical">{{ t('planogram-templates.slot_editor.exposure_options.vertical') }}</option>
-                            <option value="horizontal">{{ t('planogram-templates.slot_editor.exposure_options.horizontal') }}</option>
-                            <option value="mixed">{{ t('planogram-templates.slot_editor.exposure_options.mixed') }}</option>
-                        </FormSelectField>
-                        <FormSelectField
-                            :id="`flavor-exposure-${cat.category_id}`"
-                            name="flavor_exposure"
-                            :label="t('planogram-templates.slot_editor.flavor_exposure_label')"
-                            :model-value="getEdit(cat.category_id).flavor_exposure ?? 'mixed'"
-                            @update:model-value="(v) => setEditField(cat.category_id, 'flavor_exposure', v)"
-                        >
-                            <option value="vertical">{{ t('planogram-templates.slot_editor.exposure_options.vertical') }}</option>
-                            <option value="horizontal">{{ t('planogram-templates.slot_editor.exposure_options.horizontal') }}</option>
-                            <option value="mixed">{{ t('planogram-templates.slot_editor.exposure_options.mixed') }}</option>
-                        </FormSelectField>
                     </div>
 
                     <!-- Política de falta de espaço -->
