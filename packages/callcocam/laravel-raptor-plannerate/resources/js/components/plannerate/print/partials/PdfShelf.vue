@@ -95,6 +95,52 @@ return 1
   return Math.max(1, sorted.findIndex((shelf) => shelf.id === props.shelf.id) + 1)
 })
 
+/**
+ * Gap uniforme (px) usado no modo "justificar" — mesma lógica do editor
+ * (useShelfLayout). Distribui o espaço livre da prateleira igualmente entre
+ * TODAS as frentes de produto, ignorando o agrupamento por segmento, de modo
+ * que cada produto e ambas as bordas fiquem com o mesmo espaçamento.
+ *
+ * Retorna null quando não está justificando, sem largura conhecida ou em
+ * overflow — nesses casos cai no fallback `justify-evenly`.
+ */
+const justifyGap = computed<number | null>(() => {
+  const align = props.alignment || 'justify'
+
+  if (align !== 'justify' || !props.sectionWidth) {
+    return null
+  }
+
+  let totalFacings = 0
+  let totalProductsWidthPx = 0
+
+  for (const segment of segments.value) {
+    const layer = segment.layer
+
+    if (!layer) {
+      continue
+    }
+
+    const facings = Math.max(1, Math.trunc(Number(layer.quantity ?? 1)) || 1)
+    const facingWidthPx = (Number(layer.product?.width) || 0) * props.scaleFactor
+
+    totalFacings += facings
+    totalProductsWidthPx += facings * facingWidthPx
+  }
+
+  if (totalFacings === 0) {
+    return null
+  }
+
+  const freeSpacePx = props.sectionWidth - totalProductsWidthPx
+
+  if (freeSpacePx <= 0) {
+    return null
+  }
+
+  return freeSpacePx / (totalFacings + 1)
+})
+
 const alignmentClass = computed(() => {
   const align = props.alignment || 'justify'
   const map: Record<string, string> = {
@@ -105,30 +151,47 @@ const alignmentClass = computed(() => {
     default: 'justify-evenly',
   }
 
+  // No modo justificar com gap calculado, o espaçamento é controlado
+  // manualmente (padding-left + column-gap), então alinhamos ao início.
+  if (align === 'justify' && justifyGap.value !== null) {
+    return 'justify-start'
+  }
+
   return map[align] || map.justify
+})
+
+/**
+ * Estilo do container dos segmentos: posição vertical (top para hook, bottom
+ * para prateleira) acrescida do padding-left + column-gap uniformes quando o
+ * gap do modo justificar está ativo.
+ */
+const segmentsContainerStyle = computed(() => {
+  const style: Record<string, string> = isHookType.value
+    ? { top: `${shelfBasePosition.value + shelfHeight.value}px` }
+    : { bottom: `${shelfArea.value.areaHeightCm * props.scaleFactor - shelfBasePosition.value}px` }
+
+  if (justifyGap.value !== null) {
+    style.paddingLeft = `${justifyGap.value}px`
+    style.columnGap = `${justifyGap.value}px`
+  }
+
+  return style
 })
 </script>
 
 <template>
   <div class="absolute z-[50]" data-shelf-area="true" :style="shelfAreaStyle">
     <!-- Container dos segmentos -->
-    <div class="absolute right-0 left-0 flex gap-0 z-[1] pointer-events-none"
+    <div class="absolute right-0 left-0 flex z-[1] pointer-events-none"
       :class="[alignmentClass, isHookType ? 'items-start' : 'items-end']"
-      :style="
-        isHookType
-          ? {
-              top: `${shelfBasePosition + shelfHeight}px`,
-            }
-          : {
-              bottom: `${shelfArea.areaHeightCm * scaleFactor - shelfBasePosition}px`,
-            }
-      ">
+      :style="segmentsContainerStyle">
       <PdfSegment
         v-for="segment in segments"
         :key="segment.id"
         :segment="segment"
         :scale-factor="scaleFactor"
         :shelf-depth="shelf.shelf_depth"
+        :facing-gap="justifyGap ?? undefined"
         :is-share="isShare"
       />
     </div>

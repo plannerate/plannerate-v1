@@ -12,6 +12,12 @@ interface Props {
   segment: Segment
   scaleFactor: number
   shelfDepth?: number
+  /**
+   * Gap uniforme (px) do modo justificar. Repassado ao layer como column-gap
+   * entre as frentes, para os produtos do segmento se distribuírem com o mesmo
+   * espaçamento dos demais segmentos da prateleira.
+   */
+  facingGap?: number
   isShare?: boolean
 }
 
@@ -59,7 +65,7 @@ function handleClick() {
     <div v-for="i in segment.quantity" :key="i" class="flex flex-col">
       <div class="flex items-center relative transition-shadow duration-200"
         :class="isHovered && segment.layer?.product ? 'shadow-lg' : 'shadow-none'">
-        <PdfLayer :segment="segment" :layer="segment.layer" :scale="scaleFactor" />
+        <PdfLayer :segment="segment" :layer="segment.layer" :scale="scaleFactor" :facing-gap="facingGap" />
       </div>
     </div>
   </div>

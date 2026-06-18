@@ -1,5 +1,5 @@
 <template>
-    <div class="flex items-center">
+    <div class="flex items-center" :style="containerStyle">
         <div v-for="(_, index) in getQuantity" :key="index" class="z-20 cursor-pointer transition-all">
             <img v-if="product?.image_url_encoded" :src="product.image_url_encoded" :alt="product.name" :style="style"
                 class="z-20 object-cover" />
@@ -22,12 +22,27 @@ interface Props {
     layer: Layer | undefined;
     scale: number;
     isSelected?: boolean;
+    /**
+     * Gap uniforme (px) aplicado como column-gap entre as frentes do produto no
+     * modo justificar — alinhado ao espaçamento usado entre os segmentos.
+     */
+    facingGap?: number;
 }
 
 const props = defineProps<Props>();
 const { t } = useT();
 
 const product = computed<Product | undefined>(() => props.layer?.product);
+
+const containerStyle = computed(() => {
+    if (props.facingGap == null) {
+        return undefined;
+    }
+
+    return {
+        columnGap: `${props.facingGap}px`,
+    };
+});
 
 
 const getQuantity = computed(() => props.layer?.quantity || 1);
