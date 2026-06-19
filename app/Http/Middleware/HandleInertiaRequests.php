@@ -107,6 +107,9 @@ class HandleInertiaRequests extends Middleware
                 'slug' => fn (): ?string => $this->resolveTenantFromContext($request)?->slug,
                 'active_modules' => fn (): array => $this->resolveActiveTenantModules($request),
                 'socialite_providers' => fn (): array => $this->resolveActiveSocialiteProviders($request),
+                // Padrão de gôndola por tenant (settings.gondola) — pré-preenche a
+                // criação de gôndolas no Index/Kanban dos planogramas.
+                'settings' => fn (): ?array => $this->resolveTenantFromContext($request)?->settings,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'navigation' => app(SidebarNavigationService::class)->build($request),

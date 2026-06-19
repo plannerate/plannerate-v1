@@ -38,6 +38,7 @@ class Tenant extends ModelsTenant
         'plan_id',
         'provisioned_at',
         'provisioning_error',
+        'settings',
     ];
 
     /**
@@ -49,6 +50,7 @@ class Tenant extends ModelsTenant
     {
         return [
             'provisioned_at' => 'datetime',
+            'settings' => 'array',
         ];
     }
 

@@ -22,7 +22,6 @@ import {
 import {
     DEFAULT_GONDOLA_FIELDS,
     generateGondolaCode,
-    getInitialGondolaFields,
 } from '@/composables/plannerate/fields/useGondolaFields';
 import { DEFAULT_SECTION_FIELDS } from '@/composables/plannerate/fields/useSectionFields';
 import { DEFAULT_SHELF_FIELDS } from '@/composables/plannerate/fields/useShelfFields';
@@ -76,6 +75,10 @@ const page = usePage<{
     subdomain?: string;
     tenant?: {
         active_modules?: string[];
+        /** Padrão de gôndola do tenant (settings.gondola) — pré-preenche o stepper */
+        settings?: {
+            gondola?: Record<string, unknown>;
+        };
     };
     record?: {
         planogram_id?: string;
@@ -93,6 +96,27 @@ const page = usePage<{
 const activeModules = computed<string[]>(
     () => page.props.tenant?.active_modules ?? [],
 );
+
+/**
+ * Padrão de gôndola configurado pelo landlord para o tenant.
+ * Prioridade: shared prop tenant.settings.gondola > prop gondolaSettings (editor) > vazio.
+ * As chaves seguem o mesmo camelCase dos campos do formulário (height, baseHeight, etc.).
+ */
+const tenantGondolaStandard = computed<Record<string, unknown>>(
+    () =>
+        page.props.tenant?.settings?.gondola ??
+        (props.gondolaSettings as Record<string, unknown> | undefined) ??
+        {},
+);
+
+/**
+ * Lê um campo do padrão do tenant, caindo no default do pacote quando ausente.
+ */
+const standardValue = <T,>(key: string, fallback: T): T => {
+    const value = tenantGondolaStandard.value[key];
+
+    return value === undefined || value === null ? fallback : (value as T);
+};
 
 /**
  * Modo automático disponível apenas quando o tenant tem o módulo planogram-automatic.
@@ -212,25 +236,20 @@ const saveScaleToLocalStorage = (scale: number) => {
     }
 };
 
-// Form initialization usando composables
+// Form initialization — aplica o padrão de gôndola do tenant a todos os passos,
+// caindo nos defaults do pacote quando o tenant não tem um padrão configurado.
 const getInitialFormData = () => {
     const savedScale = loadScaleFromLocalStorage();
 
-    const gondolaFields = getInitialGondolaFields(null, props.gondolaSettings);
-
-    if (savedScale) {
-        gondolaFields.scaleFactor = savedScale;
-    }
-
     return {
         // Step 1: Gondola Basic Info
-        gondolaName: gondolaFields.gondolaName || generateGondolaCode(),
-        location: gondolaFields.location || DEFAULT_GONDOLA_FIELDS.location,
-        side: gondolaFields.side || DEFAULT_GONDOLA_FIELDS.side,
+        gondolaName: generateGondolaCode(),
+        location: standardValue('location', DEFAULT_GONDOLA_FIELDS.location),
+        side: standardValue('side', DEFAULT_GONDOLA_FIELDS.side),
         scaleFactor:
-            gondolaFields.scaleFactor || DEFAULT_GONDOLA_FIELDS.scaleFactor,
-        flow: gondolaFields.flow || DEFAULT_GONDOLA_FIELDS.flow,
-        status: gondolaFields.status || DEFAULT_GONDOLA_FIELDS.status,
+            savedScale ?? standardValue('scaleFactor', DEFAULT_GONDOLA_FIELDS.scaleFactor),
+        flow: standardValue('flow', DEFAULT_GONDOLA_FIELDS.flow),
+        status: DEFAULT_GONDOLA_FIELDS.status,
 
         // Step 1: Modo de geração (manual por padrão)
         mode: 'manual' as 'manual' | 'template' | 'automatic',
@@ -238,27 +257,27 @@ const getInitialFormData = () => {
         subtemplate_id: null as string | null,
 
         // Step 2: Module Configuration
-        height: DEFAULT_SECTION_FIELDS.height,
-        width: DEFAULT_SECTION_FIELDS.width,
-        numModules: DEFAULT_GONDOLA_FIELDS.numModules,
+        height: standardValue('height', DEFAULT_SECTION_FIELDS.height),
+        width: standardValue('width', DEFAULT_SECTION_FIELDS.width),
+        numModules: standardValue('numModules', DEFAULT_GONDOLA_FIELDS.numModules),
 
         // Step 3: Base Configuration
-        baseHeight: DEFAULT_SECTION_FIELDS.baseHeight,
-        baseWidth: DEFAULT_SECTION_FIELDS.baseWidth,
-        baseDepth: DEFAULT_SECTION_FIELDS.baseDepth,
+        baseHeight: standardValue('baseHeight', DEFAULT_SECTION_FIELDS.baseHeight),
+        baseWidth: standardValue('baseWidth', DEFAULT_SECTION_FIELDS.baseWidth),
+        baseDepth: standardValue('baseDepth', DEFAULT_SECTION_FIELDS.baseDepth),
 
         // Step 4: Cremalheira Configuration
-        rackWidth: DEFAULT_SECTION_FIELDS.rackWidth,
-        holeHeight: DEFAULT_SECTION_FIELDS.holeHeight,
-        holeWidth: DEFAULT_SECTION_FIELDS.holeWidth,
-        holeSpacing: DEFAULT_SECTION_FIELDS.holeSpacing,
+        rackWidth: standardValue('rackWidth', DEFAULT_SECTION_FIELDS.rackWidth),
+        holeHeight: standardValue('holeHeight', DEFAULT_SECTION_FIELDS.holeHeight),
+        holeWidth: standardValue('holeWidth', DEFAULT_SECTION_FIELDS.holeWidth),
+        holeSpacing: standardValue('holeSpacing', DEFAULT_SECTION_FIELDS.holeSpacing),
 
         // Step 5: Shelves Default Configuration
-        shelfHeight: DEFAULT_SHELF_FIELDS.shelfHeight,
-        shelfWidth: DEFAULT_SHELF_FIELDS.shelfWidth,
-        shelfDepth: DEFAULT_SHELF_FIELDS.shelfDepth,
-        numShelves: DEFAULT_SHELF_FIELDS.numShelves,
-        productType: DEFAULT_SHELF_FIELDS.productType,
+        shelfHeight: standardValue('shelfHeight', DEFAULT_SHELF_FIELDS.shelfHeight),
+        shelfWidth: standardValue('shelfWidth', DEFAULT_SHELF_FIELDS.shelfWidth),
+        shelfDepth: standardValue('shelfDepth', DEFAULT_SHELF_FIELDS.shelfDepth),
+        numShelves: standardValue('numShelves', DEFAULT_SHELF_FIELDS.numShelves),
+        productType: standardValue('productType', DEFAULT_SHELF_FIELDS.productType),
 
         // Step 6: Workflow Configuration
         autoStartWorkflow: true,
@@ -584,6 +603,10 @@ const validateByKey: Record<StepKey, () => boolean> = {
             facing_expansion: form.facing_expansion,
             space_fallback: form.space_fallback,
             use_target_stock: form.use_target_stock,
+            hot_zone_priority: form.hot_zone_priority,
+            cold_zone_priority: form.cold_zone_priority,
+            flow_direction: form.flow_direction,
+            layout_orientation: form.layout_orientation,
         }),
     workflow: () => validateStep6(),
 };
@@ -753,7 +776,7 @@ const handleSubmit = () => {
 
                     <StepGeneration
                         v-if="currentStepKey === 'generation'"
-                        :form="form"
+                        :form="form.data()"
                         :errors="form.errors"
                         :root-category-id="resolvedPlanogramCategoryId"
                     />

@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Broadcast;
 use App\Http\Controllers\Landlord;
 use App\Http\Middleware\SetPermissionTeamContext;
 use App\Support\Modules\ModuleSlug;
+use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Route;
 
 // ── LANDLORD (rota raiz, sem tenant) ──────────────────────────
 Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPermissionTeamContext::class])->group(function (): void {
@@ -99,6 +99,11 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::patch('tenants/{tenant}/access/users/{userId}/restore', [Landlord\TenantUserAccessController::class, 'restore'])
         ->name('landlord.tenants.access.users.restore');
 
+    Route::get('tenants/{tenant}/gondola-defaults', [Landlord\TenantGondolaDefaultsController::class, 'edit'])
+        ->name('landlord.tenants.gondola-defaults.edit');
+    Route::put('tenants/{tenant}/gondola-defaults', [Landlord\TenantGondolaDefaultsController::class, 'update'])
+        ->name('landlord.tenants.gondola-defaults.update');
+
     Route::put('tenants/{tenant}/socialite-provider', [Landlord\TenantSocialiteProviderController::class, 'update'])
         ->name('landlord.tenants.socialite-provider.update');
     Route::delete('tenants/{tenant}/socialite-provider', [Landlord\TenantSocialiteProviderController::class, 'destroy'])
@@ -115,7 +120,7 @@ Route::domain(config('app.landlord_domain'))->middleware(['web', 'auth', SetPerm
     Route::delete('tenants/{tenant}/integration', [Landlord\TenantIntegrationController::class, 'destroy'])
         ->name('landlord.tenants.integration.destroy');
 
-    Route::middleware('tenant.module.active:' . ModuleSlug::KANBAN)->group(function (): void {
+    Route::middleware('tenant.module.active:'.ModuleSlug::KANBAN)->group(function (): void {
         Route::get('tenants/{tenant}/kanban/templates', [Landlord\WorkflowTemplateController::class, 'index'])
             ->name('landlord.tenants.kanban.templates.index');
         Route::get('tenants/{tenant}/kanban/templates/create', [Landlord\WorkflowTemplateController::class, 'create'])
