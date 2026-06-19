@@ -11,6 +11,7 @@ import UsefulLinkController from './UsefulLinkController'
 import NotificationController from './NotificationController'
 import TenantCloudflareController from './TenantCloudflareController'
 import TenantUserAccessController from './TenantUserAccessController'
+import TenantGondolaDefaultsController from './TenantGondolaDefaultsController'
 import TenantSocialiteProviderController from './TenantSocialiteProviderController'
 import TenantIntegrationController from './TenantIntegrationController'
 import WorkflowTemplateController from './WorkflowTemplateController'
@@ -29,6 +30,7 @@ const Landlord = {
     NotificationController: Object.assign(NotificationController, NotificationController),
     TenantCloudflareController: Object.assign(TenantCloudflareController, TenantCloudflareController),
     TenantUserAccessController: Object.assign(TenantUserAccessController, TenantUserAccessController),
+    TenantGondolaDefaultsController: Object.assign(TenantGondolaDefaultsController, TenantGondolaDefaultsController),
     TenantSocialiteProviderController: Object.assign(TenantSocialiteProviderController, TenantSocialiteProviderController),
     TenantIntegrationController: Object.assign(TenantIntegrationController, TenantIntegrationController),
     WorkflowTemplateController: Object.assign(WorkflowTemplateController, WorkflowTemplateController),

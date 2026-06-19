@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { KeyRound, Layers, Link2, Users } from 'lucide-vue-next';
+import { KeyRound, Layers, Link2, Ruler, Users } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import TenantController from '@/actions/App/Http/Controllers/Landlord/TenantController';
+import TenantGondolaDefaultsController from '@/actions/App/Http/Controllers/Landlord/TenantGondolaDefaultsController';
 import TenantIntegrationController from '@/actions/App/Http/Controllers/Landlord/TenantIntegrationController';
 import TenantUserAccessController from '@/actions/App/Http/Controllers/Landlord/TenantUserAccessController';
 import WorkflowTemplateController from '@/actions/App/Http/Controllers/Landlord/WorkflowTemplateController';
@@ -340,6 +341,24 @@ function openSsoSheet(tenant: TenantRow): void {
                                             <Users class="size-4" />
                                             {{
                                                 t('app.landlord.common.access')
+                                            }}
+                                        </Link>
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="
+                                                tenantWayfinderPath(TenantGondolaDefaultsController.edit.url(
+                                                    tenant.id,
+                                                ))
+                                            "
+                                        >
+                                            <Ruler class="size-4" />
+                                            {{
+                                                t('app.landlord.tenants.gondola_defaults.navigation')
                                             }}
                                         </Link>
                                     </Button>
