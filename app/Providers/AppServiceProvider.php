@@ -46,6 +46,7 @@ use App\Policies\WorkflowTemplatePolicy;
 use App\Services\OpenAiProductImageEditor;
 use App\Support\Navigation\Menu\Contracts\ResolvesMenuAuthorization;
 use App\Support\Navigation\Menu\MenuAuthorizationResolver;
+use App\Support\Translation\MergingFileLoader;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
 use Carbon\CarbonImmutable;
 use Illuminate\Notifications\Events\NotificationSent;
@@ -54,6 +55,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Translation\FileLoader;
 use Illuminate\Validation\Rules\Password;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 
@@ -66,6 +68,32 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(ResolvesMenuAuthorization::class, MenuAuthorizationResolver::class);
         $this->app->bind(ProductImageAiEditor::class, OpenAiProductImageEditor::class);
+        $this->registerTranslationLoader();
+    }
+
+    /**
+     * Substitui o loader de traduções por um que mescla subdiretórios homônimos
+     * em cada grupo, preservando os caminhos e namespaces configurados pelo
+     * framework e pacotes. Permite dividir traduções grandes (app, plannerate)
+     * em vários arquivos sem alterar a notação de ponto usada no código.
+     */
+    protected function registerTranslationLoader(): void
+    {
+        $this->app->extend('translation.loader', function (FileLoader $loader, $app): MergingFileLoader {
+            $read = fn (string $property) => (fn () => $this->{$property})->call($loader);
+
+            $merging = new MergingFileLoader($app['files'], $read('paths'));
+
+            foreach ($read('jsonPaths') as $jsonPath) {
+                $merging->addJsonPath($jsonPath);
+            }
+
+            foreach ($loader->namespaces() as $namespace => $hint) {
+                $merging->addNamespace($namespace, $hint);
+            }
+
+            return $merging;
+        });
     }
 
     /**

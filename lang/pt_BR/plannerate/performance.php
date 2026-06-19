@@ -1,0 +1,48 @@
+<?php
+
+return [
+    'title' => 'Analise de Performance',
+    'description' => 'Visualize metricas de Sortimento, Estoque Alvo e Papel para os produtos da gondola',
+    'target_stock' => 'Estoque Alvo',
+    'abc_tab' => 'Sortimento',
+    'paper_tab' => 'Papel',
+    'paper_title' => 'Analise de Papel',
+    'soon' => 'Em breve',
+    'common' => [
+        'type' => 'Tipo',
+        'sales' => 'Vendas',
+        'monthly_summary' => 'Resumo Mensal',
+        'start' => 'Inicial',
+        'end' => 'Final',
+        'start_month' => 'Mes inicial',
+        'end_month' => 'Mes final',
+        'configure' => 'Ajustar parametros',
+        'configure_and_calculate' => 'Configurar e Calcular',
+        'no_results' => 'Nenhum resultado encontrado',
+        'not_defined' => 'Nao definido',
+        'not_defined_feminine' => 'Nao definida',
+    ],
+    'abc' => [
+        'loading' => 'Calculando analise de Sortimento...',
+        'analysis_parameters' => 'Parametros de Analise de Sortimento',
+        'weights' => 'Pesos',
+        'empty_description' => 'Configure os parametros e execute a analise para ver os resultados.',
+        'no_analysis' => 'Nenhuma analise calculada',
+        'no_analysis_description' => 'Configure os parametros e execute a analise de Sortimento.',
+    ],
+    'target_stock_tab' => [
+        'loading' => 'Calculando estoque alvo...',
+        'parameters' => 'Parametros de Estoque Alvo',
+        'empty_description' => 'Configure os parametros e execute o calculo para ver os resultados.',
+        'no_calculation' => 'Nenhum calculo realizado',
+        'no_calculation_description' => 'Configure os parametros e execute o calculo de estoque alvo.',
+    ],
+    'paper' => [
+        'loading' => 'Calculando Analise de Papel...',
+        'analysis_parameters' => 'Parametros da Analise de Papel',
+        'empty_description' => 'Configure os periodos e execute a analise para ver os resultados.',
+        'no_analysis' => 'Nenhuma Analise de Papel calculada',
+        'no_analysis_description' => 'Configure os periodos atual e anterior para calcular a Analise de Papel.',
+        'configure_and_calculate' => 'Configurar e Calcular',
+    ],
+];

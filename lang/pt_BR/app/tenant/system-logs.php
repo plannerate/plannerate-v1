@@ -1,0 +1,41 @@
+<?php
+
+return [
+    'navigation' => 'Logs do sistema',
+    'title' => 'Logs do sistema',
+    'description' => 'Visualize eventos críticos e limpe o arquivo de log do sistema.',
+    'description_legacy' => 'Visualize os logs de atividades e eventos do sistema.',
+    'summary_total' => 'Total: :total',
+    'summary_filtered' => 'Exibidos: :filtered',
+    'clear_button' => 'Limpar logs',
+    'download_button' => 'Baixar logs',
+    'copy_button' => 'Copiar logs',
+    'copied_feedback' => 'Copiado!',
+    'preset_24h' => 'Últimas 24h',
+    'preset_7d' => 'Últimos 7 dias',
+    'preset_30d' => 'Últimos 30 dias',
+    'search_placeholder' => 'Buscar por termo (SQLSTATE, sync, exception...)',
+    'level_all' => 'Todos os níveis',
+    'key_only_label' => 'Só pontos-chave',
+    'filters' => [
+        'search' => 'Buscar por usuario, acao ou descricao...',
+        'submit' => 'Filtrar',
+        'clear' => 'Limpar',
+        'event_type' => 'Tipo de evento',
+        'all_event_types' => 'Todos os tipos',
+        'date_range' => 'Intervalo de datas',
+    ],
+    'table' => [
+        'timestamp' => 'Data e hora',
+        'date' => 'Data',
+        'level' => 'Nível',
+        'environment' => 'Ambiente',
+        'message' => 'Mensagem',
+        'user' => 'Usuario',
+        'action' => 'Acao',
+        'description' => 'Descricao',
+    ],
+    'messages' => [
+        'no_logs' => 'Nenhum log encontrado para os filtros aplicados.',
+    ],
+];
