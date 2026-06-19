@@ -208,6 +208,95 @@ test('overflow realoca produto de categoria descendente na prateleira do pai', f
         ->and($resultRejected)->toBeEmpty();
 });
 
+test('overflow ocupa prateleira sobrando (sem slot) dedicando-a à categoria', function (): void {
+    $catA = (string) Str::ulid();
+    $engine = makeOverflowEngine([$catA => [$catA]]);
+
+    $ownShelf = (string) Str::ulid();
+    $leftoverShelf = (string) Str::ulid();
+
+    // Prateleira da categoria cheia; prateleira sobrando (sem slot) vazia.
+    $sectionOwn = makeOverflowSection(100.0, $ownShelf);
+    $sectionLeftover = makeOverflowSection(100.0, $leftoverShelf);
+    $placed = collect([makeOccupyingSegment($sectionOwn, $ownShelf, 95)]);
+
+    $product = makeOverflowProduct($catA, 10.0);
+    $rejected = collect([[
+        'product' => $product,
+        'reason' => PlacementFailureReason::NoHorizontalSpace,
+        'slot_id' => 'slot-own',
+    ]]);
+
+    // leftoverShelf NÃO está no mapa → prateleira sem slot designado.
+    [$resultPlaced, $resultRejected] = callPlaceOverflow(
+        $engine,
+        $placed,
+        $rejected,
+        collect([$sectionOwn, $sectionLeftover]),
+        [$ownShelf => [$catA => true]],
+    );
+
+    expect($resultRejected)->toBeEmpty()
+        ->and($resultPlaced->last()->shelfId)->toBe($leftoverShelf);
+});
+
+test('overflow não mistura categorias numa prateleira sobrando reivindicada', function (): void {
+    $catA = (string) Str::ulid();
+    $catB = (string) Str::ulid();
+    $engine = makeOverflowEngine([$catA => [$catA], $catB => [$catB]]);
+
+    $leftoverShelf = (string) Str::ulid();
+    $section = makeOverflowSection(100.0, $leftoverShelf); // única prateleira, vazia e sem slot
+
+    $pa = makeOverflowProduct($catA, 30.0);
+    $pb = makeOverflowProduct($catB, 30.0);
+    $rejected = collect([
+        ['product' => $pa, 'reason' => PlacementFailureReason::NoHorizontalSpace, 'slot_id' => 'slot-a'],
+        ['product' => $pb, 'reason' => PlacementFailureReason::NoHorizontalSpace, 'slot_id' => 'slot-b'],
+    ]);
+
+    // Sem slots designados em nenhuma prateleira.
+    [$resultPlaced, $resultRejected] = callPlaceOverflow(
+        $engine,
+        collect(),
+        $rejected,
+        collect([$section]),
+        [],
+    );
+
+    // A primeira categoria reivindica a prateleira; a outra NÃO entra na mesma (sem mistura).
+    expect($resultPlaced)->toHaveCount(1)
+        ->and($resultPlaced->first()->shelfId)->toBe($leftoverShelf)
+        ->and($resultRejected->pluck('product.id'))->toContain($pb->id);
+});
+
+test('overflow preenche a mesma prateleira sobrando com vários produtos da MESMA categoria', function (): void {
+    $catA = (string) Str::ulid();
+    $engine = makeOverflowEngine([$catA => [$catA]]);
+
+    $leftoverShelf = (string) Str::ulid();
+    $section = makeOverflowSection(100.0, $leftoverShelf);
+
+    $p1 = makeOverflowProduct($catA, 30.0);
+    $p2 = makeOverflowProduct($catA, 30.0);
+    $rejected = collect([
+        ['product' => $p1, 'reason' => PlacementFailureReason::NoHorizontalSpace, 'slot_id' => 'slot-a'],
+        ['product' => $p2, 'reason' => PlacementFailureReason::NoHorizontalSpace, 'slot_id' => 'slot-a'],
+    ]);
+
+    [$resultPlaced, $resultRejected] = callPlaceOverflow(
+        $engine,
+        collect(),
+        $rejected,
+        collect([$section]),
+        [],
+    );
+
+    expect($resultRejected)->toBeEmpty()
+        ->and($resultPlaced)->toHaveCount(2)
+        ->and($resultPlaced->every(fn ($seg) => $seg->shelfId === $leftoverShelf))->toBeTrue();
+});
+
 test('overflow expande frentes até cobrir o estoque alvo quando há espaço', function (): void {
     $catA = (string) Str::ulid();
     // depth null → 1 unidade por frente → teto = alvo (4 frentes)
@@ -293,6 +382,47 @@ test('overflow converte estoque alvo em frentes pela profundidade (caso Nordeste
     expect($resultPlaced)->toHaveCount(1)
         ->and($resultRejected)->toBeEmpty()
         ->and($resultPlaced->first()->layers->first()->quantity)->toBe(4);
+});
+
+test('overflow prioriza variedade: coloca todos os SKUs antes de expandir por estoque alvo', function (): void {
+    // 4 produtos da mesma categoria, cada um com alvo que pediria 3 frentes, numa prateleira
+    // que só comporta 5 frentes no total. Sem a regra de variedade, o 1º produto expandiria
+    // para 3 frentes e sufocaria os demais. Com ela, todos os 4 entram (frente mínima) e a
+    // expansão usa só o que sobrar.
+    $catA = (string) Str::ulid();
+    $shelf = (string) Str::ulid();
+    $section = makeOverflowSection(100.0, $shelf); // 100cm → 5 frentes de 20cm
+
+    $products = [];
+    $targetMap = [];
+    for ($i = 0; $i < 4; $i++) {
+        $p = makeOverflowProduct($catA, 20.0); // depth null → 1 un/frente → cap = alvo
+        $products[] = $p;
+        $targetMap[$p->id] = 3.0; // cap = 3 frentes
+    }
+
+    $engine = makeOverflowEngine([$catA => [$catA]], $targetMap);
+
+    $rejected = collect(array_map(fn ($p) => [
+        'product' => $p,
+        'reason' => PlacementFailureReason::NoHorizontalSpace,
+        'slot_id' => 'slot-a',
+    ], $products));
+
+    [$resultPlaced, $resultRejected] = callPlaceOverflow(
+        $engine,
+        collect(),
+        $rejected,
+        collect([$section]),
+        [$shelf => [$catA => true]],
+    );
+
+    // Todos os 4 SKUs posicionados (variedade preservada), nenhum rejeitado.
+    $placedProductIds = $resultPlaced->flatMap(fn ($seg) => $seg->layers->map(fn ($l) => $l->productId))->unique();
+    expect($resultRejected)->toBeEmpty()
+        ->and($placedProductIds)->toHaveCount(4)
+        // Espaço sobrante (100 − 4×20 = 20) vira no máximo 1 frente extra: nenhum produto monopoliza.
+        ->and($resultPlaced->max(fn ($seg) => $seg->layers->first()->quantity))->toBe(2);
 });
 
 test('overflow mantém a frente mínima quando o produto não tem estoque alvo', function (): void {

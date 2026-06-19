@@ -447,13 +447,18 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
 
     /**
      * Overflow pass: reposiciona produtos definitivamente rejeitados (NoHorizontalSpace) em
-     * prateleiras da MESMA categoria com espaço disponível.
+     * prateleiras da MESMA categoria com espaço — ou em prateleiras inteiramente vazias, que
+     * passam a ser dedicadas à categoria que transbordou.
      *
      * Lógica:
      * 1. Identifica produtos únicos rejeitados por espaço que ainda não foram posicionados.
      * 2. Calcula o espaço ocupado por prateleira a partir dos segmentos já posicionados.
      * 3. Ordena prateleiras por maior espaço disponível (prioriza as mais vazias).
-     * 4. Posiciona os produtos ordenados por ABC (A→B→C) nas primeiras prateleiras com espaço.
+     * 4. Posiciona os produtos ordenados por ABC (A→B→C). Uma prateleira é elegível quando:
+     *    seu slot é da mesma categoria do produto, OU está inteiramente vazia — neste caso a
+     *    prateleira é "reivindicada" e fica dedicada a essa categoria (uma categoria por
+     *    prateleira, sem misturar). Isso aproveita prateleiras sobrando para dar mais espaço
+     *    à mesma categoria em vez de rejeitar produtos.
      * 5. Cada produto entra com a frente mínima e, se tiver estoque alvo e ainda houver espaço
      *    na prateleira de destino, expande as frentes até o teto que cobre o alvo
      *    (targetStockFacingCap) — paridade com o caminho principal de expansão.
@@ -513,6 +518,9 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                         'occupied' => $occupied,
                         'clearance' => (float) ($clearances[$shelf->getKey()] ?? 0.0),
                         'allowed_categories' => $allowedCategoriesByShelf[$shelf->getKey()] ?? [],
+                        // Prateleira sem nenhum segmento posicionado: pode ser dedicada inteira a uma
+                        // categoria que transbordou (sem misturar — uma categoria por prateleira).
+                        'is_empty' => $occupied <= 0.01,
                     ];
                 }
             }
@@ -539,6 +547,20 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
         $overflowPlacedIds = [];
         $orderingOffset = $placed->count();
 
+        // Prateleiras vazias já reivindicadas por uma categoria nesta passada de overflow
+        // (shelfId => category_id). Garante "uma categoria por prateleira": depois que uma
+        // categoria ocupa uma prateleira vazia, só produtos dela continuam ali.
+        $claimedEmptyShelves = [];
+
+        // Registros de colocação antes de construir os segmentos. O overflow roda em duas fases:
+        //  A) variedade — coloca TODOS os SKUs rejeitados com a frente mínima;
+        //  B) profundidade — só então expande frentes até o estoque alvo com o espaço que sobrar.
+        // Sem isso, a expansão do primeiro produto consumiria o espaço que caberia a outros
+        // SKUs da mesma categoria, deixando-os rejeitados (variedade < profundidade — errado).
+        /** @var list<array{product: mixed, shelf_key: string, section_key: string, single_width: int, facings: int, cap: int|null}> $placements */
+        $placements = [];
+
+        // === PASSE A: variedade — cada produto rejeitado entra com a frente mínima ===
         foreach ($retryOrdered as $item) {
             $product = $item['product'];
             $singleWidth = (int) round($this->widthResolver->resolve($product));
@@ -560,12 +582,32 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                     continue;
                 }
 
-                // Restrição por categoria: só realoca em prateleira cujo slot pertença à mesma
-                // categoria (ou descendente) do produto. Mapa vazio = prateleira sem slot mapeado,
-                // tratada como não-elegível para preservar a separação por categoria.
                 $productCategoryId = $product->category_id ?? null;
 
-                if ($productCategoryId === null || ! isset($meta['allowed_categories'][$productCategoryId])) {
+                if ($productCategoryId === null) {
+                    continue;
+                }
+
+                // Prateleira vazia já reivindicada por OUTRA categoria: bloqueada (não mistura).
+                $shelfKey = $meta['shelf']->getKey();
+                $claimedBy = $claimedEmptyShelves[$shelfKey] ?? null;
+
+                if ($claimedBy !== null && $claimedBy !== $productCategoryId) {
+                    continue;
+                }
+
+                // Elegibilidade:
+                //  - prateleira cujo slot é da mesma categoria (ou descendente) do produto; OU
+                //  - prateleira sobrando (vazia E sem nenhum slot designado), que passa a ser
+                //    dedicada a esta categoria.
+                // Só prateleiras realmente livres são reivindicadas — uma prateleira designada a
+                // outra categoria (mesmo que vazia) é preservada para ela. Assim aproveitamos as
+                // prateleiras que sobraram sem misturar categorias.
+                $ownedBySlot = isset($meta['allowed_categories'][$productCategoryId]);
+                $isLeftoverShelf = $meta['is_empty'] && $meta['allowed_categories'] === [];
+                $claimableEmpty = $isLeftoverShelf || $claimedBy === $productCategoryId;
+
+                if (! $ownedBySlot && ! $claimableEmpty) {
                     continue;
                 }
 
@@ -577,47 +619,92 @@ final class TemplatePlacementEngine implements PlacementEngineInterface
                     continue;
                 }
 
-                // Expansão por estoque alvo: quando o produto tem alvo definido (targetStockMap)
-                // e ainda há espaço livre na prateleira de destino, adiciona frentes até o teto
-                // que cobre o alvo — mesma regra do caminho principal (targetStockFacingCap).
-                // Sem alvo, ou sem espaço para mais de uma frente, mantém a frente mínima.
-                $facings = $minFacings;
-                $cap = $this->targetStockFacingCap($product, $meta['shelf'], $minFacings);
+                // Coloca apenas com a frente mínima nesta fase (variedade primeiro). A expansão
+                // por estoque alvo acontece no passe B, com o espaço remanescente.
+                $placements[] = [
+                    'product' => $product,
+                    'shelf_key' => $shelfKey,
+                    'section_key' => $meta['section']->getKey(),
+                    'single_width' => $singleWidth,
+                    'facings' => $minFacings,
+                    'cap' => $this->targetStockFacingCap($product, $meta['shelf'], $minFacings),
+                ];
 
-                if ($cap !== null && $cap > $minFacings && $singleWidth > 0) {
-                    $facingsThatFit = (int) floor($meta['remaining'] / $singleWidth);
-                    $facings = max($minFacings, min($cap, $facingsThatFit));
-                }
-
-                $width = $singleWidth * $facings;
-
-                $overflowPlaced->push(new PlacedSegment(
-                    sectionId: $meta['section']->getKey(),
-                    shelfId: $meta['shelf']->getKey(),
-                    ordering: $orderingOffset++,
-                    position: (int) round($meta['occupied']),
-                    width: $width,
-                    distributedWidth: $width,
-                    layers: collect([
-                        new PlacedLayer(
-                            productId: $product->id,
-                            ean: (string) ($product->ean ?? ''),
-                            quantity: $facings,
-                            height: 1,
-                        ),
-                    ]),
-                ));
-
-                $shelfMeta[$i]['occupied'] += $width;
-                $shelfMeta[$i]['remaining'] -= $width;
+                $shelfMeta[$i]['occupied'] += $widthWithFacings;
+                $shelfMeta[$i]['remaining'] -= $widthWithFacings;
+                $shelfMeta[$i]['is_empty'] = false;
                 $this->globalPlacedProductIds[$product->id] = true;
                 $overflowPlacedIds[$product->id] = true;
+
+                // Reivindica a prateleira para esta categoria quando não era de um slot dela
+                // (prateleira vazia dedicada): impede que outra categoria a ocupe depois.
+                if (! $ownedBySlot) {
+                    $claimedEmptyShelves[$shelfKey] = $productCategoryId;
+                }
 
                 // Re-ordena por espaço disponível após cada alocação (greedy)
                 usort($shelfMeta, fn ($a, $b) => $b['remaining'] <=> $a['remaining']);
 
                 break;
             }
+        }
+
+        if ($placements === []) {
+            return [$placed, $rejected];
+        }
+
+        // === PASSE B: profundidade — expande frentes até o estoque alvo com o espaço que sobrou ===
+        $remainingByShelf = [];
+        foreach ($shelfMeta as $meta) {
+            $remainingByShelf[$meta['shelf']->getKey()] = $meta['remaining'];
+        }
+
+        // Round-robin: +1 frente por vez enquanto houver espaço e o alvo não tiver sido atingido.
+        // Distribui o espaço sobrante de forma equilibrada entre os produtos da prateleira.
+        $changed = true;
+        while ($changed) {
+            $changed = false;
+
+            foreach ($placements as $idx => $p) {
+                if ($p['cap'] === null || $p['facings'] >= $p['cap']) {
+                    continue;
+                }
+
+                if (($remainingByShelf[$p['shelf_key']] ?? 0.0) < $p['single_width']) {
+                    continue;
+                }
+
+                $placements[$idx]['facings']++;
+                $remainingByShelf[$p['shelf_key']] -= $p['single_width'];
+                $changed = true;
+            }
+        }
+
+        // === Constrói os segmentos com as frentes finais, em sequência por prateleira ===
+        $shelfCursor = [];
+        foreach ($placements as $p) {
+            $shelfKey = $p['shelf_key'];
+            $start = $shelfCursor[$shelfKey] ?? (float) $occupiedPerShelf->get($shelfKey, 0.0);
+            $width = $p['single_width'] * $p['facings'];
+
+            $overflowPlaced->push(new PlacedSegment(
+                sectionId: $p['section_key'],
+                shelfId: $shelfKey,
+                ordering: $orderingOffset++,
+                position: (int) round($start),
+                width: $width,
+                distributedWidth: $width,
+                layers: collect([
+                    new PlacedLayer(
+                        productId: $p['product']->id,
+                        ean: (string) ($p['product']->ean ?? ''),
+                        quantity: $p['facings'],
+                        height: 1,
+                    ),
+                ]),
+            ));
+
+            $shelfCursor[$shelfKey] = $start + $width;
         }
 
         if ($overflowPlaced->isEmpty()) {
