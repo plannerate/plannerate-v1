@@ -7,6 +7,7 @@ use App\Models\WorkflowGondolaExecution;
 use App\Support\Modules\ModuleSlug;
 use App\Support\Modules\TenantModuleService;
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
+use Callcocam\LaravelRaptorPlannerate\Models\PlanogramSubtemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplate;
 use Callcocam\LaravelRaptorPlannerate\Models\PlanogramTemplateSlot;
 use Callcocam\LaravelRaptorPlannerate\Models\Store;
@@ -329,16 +330,26 @@ class GondolaPayloadService
             return [];
         }
 
-        $subtemplateId = $gondola->planogram->subtemplate_id;
+        // Resolve o subtemplate PELA GÔNDOLA (template_id + nº de módulos dela), e não pelo
+        // planogram.subtemplate_id — este é compartilhado por todas as gôndolas do planograma
+        // e o último gerado sobrescreve o ponteiro, esvaziando os slots das demais gôndolas.
+        // Mesma lógica do placement engine e do GondolaSlotOverrideController::resolveSubtemplate.
+        $numModules = $gondola->relationLoaded('sections')
+            ? $gondola->sections->count()
+            : $gondola->sections()->count();
 
-        $slotsQuery = PlanogramTemplateSlot::query()
-            ->whereHas('subtemplate', fn ($query) => $query->where('template_id', $gondola->template_id));
+        $subtemplate = PlanogramSubtemplate::query()
+            ->where('template_id', $gondola->template_id)
+            ->where('num_modules', '<=', $numModules)
+            ->orderByDesc('num_modules')
+            ->first();
 
-        if (is_string($subtemplateId) && trim($subtemplateId) !== '') {
-            $slotsQuery->where('subtemplate_id', $subtemplateId);
+        if (! $subtemplate) {
+            return [];
         }
 
-        return $slotsQuery
+        return PlanogramTemplateSlot::query()
+            ->where('subtemplate_id', $subtemplate->getKey())
             ->with(['category:id,name,full_path'])
             ->get()
             ->mapWithKeys(fn (PlanogramTemplateSlot $slot): array => [
