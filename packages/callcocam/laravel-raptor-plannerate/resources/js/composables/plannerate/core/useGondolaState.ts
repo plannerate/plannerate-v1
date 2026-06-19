@@ -3,8 +3,25 @@
 // Refs compartilhados entre todas as instâncias do editor
 // ============================================================================
 
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import type { Gondola } from '@/types/planogram';
+
+/** Chave de persistência do estado de exibição das zonas de exposição */
+const STORAGE_KEY_ZONE_INDICATORS = 'plannerate:showZoneIndicators';
+
+/**
+ * Lê o estado inicial das zonas de exposição do localStorage.
+ * Retorna `true` (default) quando não há valor salvo ou fora do browser.
+ */
+function readZoneIndicatorsFromStorage(): boolean {
+    if (typeof window === 'undefined') {
+        return true;
+    }
+
+    const stored = window.localStorage.getItem(STORAGE_KEY_ZONE_INDICATORS);
+
+    return stored === null ? true : stored === 'true';
+}
 
 // Estado da gôndola atual
 export const currentGondola = ref<Gondola | null>(null);
@@ -23,7 +40,14 @@ export const showPropertiesPanel = ref(false);
 // Estados de UI
 export const showPerformanceModal = ref(false);
 export const showGrid = ref(false);
-export const showZoneIndicators = ref(true);
+export const showZoneIndicators = ref(readZoneIndicatorsFromStorage());
+
+// Persiste no localStorage sempre que o estado das zonas mudar
+watch(showZoneIndicators, (value) => {
+    if (typeof window !== 'undefined') {
+        window.localStorage.setItem(STORAGE_KEY_ZONE_INDICATORS, String(value));
+    }
+});
 
 // Busca de produto por EAN na gondola atual
 export const eanSearchQuery = ref('');

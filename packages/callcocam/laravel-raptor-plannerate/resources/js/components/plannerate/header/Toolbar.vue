@@ -604,9 +604,9 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     </ButtonWithTooltip>
 
                     <ButtonWithTooltip :variant="editor.showZoneIndicators.value ? 'default' : 'ghost'" size="sm"
-                        tooltip="Zonas de exposição" @click="editor.toggleZoneIndicators()">
+                        :tooltip="t('plannerate.toolbar.toggle_zones')" @click="editor.toggleZoneIndicators()">
                         <Thermometer class="mr-2 size-4" />
-                        Zonas
+                        {{ t('plannerate.toolbar.zones') }}
                     </ButtonWithTooltip>
 
                     <Separator orientation="vertical" class="h-5" />

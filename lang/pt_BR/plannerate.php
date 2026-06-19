@@ -289,6 +289,8 @@ return [
         'clear_ean_search' => 'Limpar busca por EAN',
         'toggle_grid' => 'Exibir/ocultar grade',
         'grid' => 'Grade',
+        'toggle_zones' => 'Zonas de exposição',
+        'zones' => 'Zonas',
         'align_left_tooltip' => 'Alinhar produtos a esquerda',
         'align_left_sr' => 'Alinhar esquerda',
         'align_center_tooltip' => 'Centralizar produtos',
