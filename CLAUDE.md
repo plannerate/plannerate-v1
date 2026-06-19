@@ -247,12 +247,14 @@ docker compose exec php php artisan test --compact --filter=NomeDoTeste
 
 **NUNCA** rodar `npm run build` diretamente — não funciona neste projeto.
 
+**NUNCA usar `-u root` no `wayfinder:generate`.** O container `php` já roda como UID 1000 (= usuário host). Rodar com `-u root` deixa `resources/js/actions` e `resources/js/routes` inteiros como `root:root`, o que quebra git/merge (o usuário host não consegue sobrescrever os arquivos → conflitos e checkout falha) e força usar `-u root` de novo. Se a árvore já estiver root (de runs antigos), corrigir UMA vez: `docker compose exec -u root php chown -R 1000:1000 resources/js/actions resources/js/routes` e regenerar sem `-u root`.
+
 ```bash
 # Só gerar actions TypeScript (sem rebuild)
-docker compose exec -u root php php artisan wayfinder:generate --with-form
+docker compose exec php php artisan wayfinder:generate --with-form
 
 # Gerar actions + rebuild (para mudanças aparecerem no browser)
-docker compose exec -u root php php artisan wayfinder:generate --with-form && VITE_ENABLE_WAYFINDER=false npm run build
+docker compose exec php php artisan wayfinder:generate --with-form && VITE_ENABLE_WAYFINDER=false npm run build
 ```
 
 ### Migrations
