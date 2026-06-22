@@ -1,7 +1,7 @@
 <template>
     <div
         :style="sectionStyle"
-        class="relative transition-all"
+        class="relative transition-[box-shadow,background-color]"
         :class="{
             'ring-1 ring-primary ring-offset-1': isSelected,
             'hover:bg-accent/5': !isSelected,

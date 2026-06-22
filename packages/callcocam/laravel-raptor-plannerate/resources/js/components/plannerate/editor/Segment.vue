@@ -46,7 +46,7 @@
         <!-- Indicador visual de drop -->
         <div
             v-if="isDropTarget"
-            class="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded bg-primary/20 backdrop-blur-sm"
+            class="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded bg-primary/30"
         >
             <div class="rounded-full bg-primary p-2 shadow-lg">
                 <svg
@@ -85,6 +85,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, onUpdated, ref } from 'vue';
 import {
+    draggingSegmentId,
     draggingSegmentShelfId,
     eanSearchApplied,
 } from '../../../composables/plannerate/core/useGondolaState';
@@ -229,8 +230,10 @@ function handleDragStart(event: DragEvent) {
     event.stopPropagation();
     isDragging.value = true;
 
-    // Armazena o shelf_id globalmente para que outras shelves possam verificar
+    // Armazena shelf_id e id globalmente para que os handlers de dragover
+    // identifiquem origem e o próprio segmento sem ler dataTransfer.getData()
     draggingSegmentShelfId.value = props.segment.shelf_id || null;
+    draggingSegmentId.value = props.segment.id;
 
     if (event.dataTransfer) {
         // Copy se Ctrl estiver pressionado, senão move (contrato em dnd/transfer)
@@ -253,41 +256,46 @@ function handleDragStart(event: DragEvent) {
 function handleDragEnd() {
     isDragging.value = false;
     isDropTarget.value = false;
-    // Limpa o shelf_id global
+    // Limpa o estado global de arraste
     draggingSegmentShelfId.value = null;
+    draggingSegmentId.value = null;
+}
+
+/**
+ * Atualiza isDropTarget só quando o valor muda — evita disparar o setter
+ * reativo (e potencial re-render) a cada dragover (~60×/s).
+ */
+function setDropTarget(value: boolean): void {
+    if (isDropTarget.value !== value) {
+        isDropTarget.value = value;
+    }
 }
 
 // Handler para dragover - aceita segments da mesma shelf
 function handleDragOver(event: DragEvent) {
     if (!event.dataTransfer) {
-return;
-}
+        return;
+    }
 
     if (!hasSegmentData(event.dataTransfer)) {
-        isDropTarget.value = false;
+        setDropTarget(false);
 
         return;
     }
 
-    // Só aceita segments (não produtos) da mesma shelf usando o estado global
-    const draggedSegmentId = event.dataTransfer.getData(DND_KEYS.SEGMENT_ID);
+    // Identifica origem pelo estado global (getData retorna vazio no dragover).
+    // Nunca marca o próprio segmento como alvo, e só aceita da mesma shelf.
+    const isOwnSegment = draggingSegmentId.value === props.segment.id;
+    const isSameShelf = draggingSegmentShelfId.value === props.segment.shelf_id;
 
-    // Nunca marca o próprio segmento como alvo
-    if (draggedSegmentId === props.segment.id) {
-        isDropTarget.value = false;
-
-        return;
-    }
-
-    // Verifica se é da mesma shelf usando o estado global
-    if (draggingSegmentShelfId.value === props.segment.shelf_id) {
+    if (!isOwnSegment && isSameShelf) {
         event.dataTransfer.dropEffect = 'move';
-        isDropTarget.value = true;
+        setDropTarget(true);
 
         return;
     }
 
-    isDropTarget.value = false;
+    setDropTarget(false);
 }
 
 function handleDragLeave(event: DragEvent) {
@@ -299,15 +307,9 @@ function handleDragLeave(event: DragEvent) {
         return;
     }
 
-    const rect = target.getBoundingClientRect();
-    const x = event.clientX;
-    const y = event.clientY;
-    const isOutside = x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom;
-
-    // Alguns browsers podem reportar 0/0 em dragleave; trate como saída
-    if (isOutside || (x === 0 && y === 0)) {
-        isDropTarget.value = false;
-    }
+    // Saiu do segmento (ou da janela, quando relatedTarget é null) — sem ler
+    // geometria (getBoundingClientRect força reflow síncrono no hot path).
+    setDropTarget(false);
 }
 
 // Handler para drop - troca de posições

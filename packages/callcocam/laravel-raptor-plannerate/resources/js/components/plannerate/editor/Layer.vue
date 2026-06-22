@@ -4,7 +4,7 @@
         <div
             v-for="(_, index) in getQuantity"
             :key="index"
-            class="z-20 cursor-pointer transition-all"
+            class="z-20 cursor-pointer"
         >
             <img
                 v-if="displayImageUrl"

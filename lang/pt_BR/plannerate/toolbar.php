@@ -24,6 +24,8 @@ return [
     'add_module' => 'Adicionar Modulo',
     'transfer_section_tooltip' => 'Transferir secao entre gondolas',
     'transfer_section' => 'Transferir Secao',
+    'transfer_module_tooltip' => 'Transferir modulo entre gondolas',
+    'transfer_module' => 'Transferir Modulo',
     'map_link_tooltip' => 'Vincular gondola a uma posicao no mapa da loja',
     'map_remove' => 'Remover do Mapa',
     'map_store' => 'Mapa da Loja',

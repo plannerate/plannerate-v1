@@ -16,7 +16,7 @@
             <Tooltip>
                 <TooltipTrigger as-child>
                     <div
-                        class="absolute top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-white/95 shadow-sm backdrop-blur-sm transition-transform hover:scale-105"
+                        class="absolute top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-white shadow-sm transition-transform hover:scale-105"
                         :style="{ padding: `${iconPadding}px` }"
                         :class="{
                             'border border-red-500/70':

@@ -3,7 +3,7 @@
 // Refs compartilhados entre todas as instâncias do editor
 // ============================================================================
 
-import { ref, watch } from 'vue';
+import { ref, shallowRef, triggerRef, watch } from 'vue';
 import type { Gondola } from '@/types/planogram';
 
 /** Chave de persistência do estado de exibição das zonas de exposição */
@@ -23,11 +23,44 @@ function readZoneIndicatorsFromStorage(): boolean {
     return stored === null ? true : stored === 'true';
 }
 
-// Estado da gôndola atual
-export const currentGondola = ref<Gondola | null>(null);
+/**
+ * Estado da gôndola atual.
+ *
+ * Usa `shallowRef` (e NÃO `ref`) deliberadamente: a árvore da gôndola
+ * (sections → shelves → segments → layers → products) tem milhares de nós, e um
+ * `ref` profundo envolveria cada um num Proxy reativo, amplificando o custo de
+ * toda mutação e do load inicial. Com `shallowRef`, só a troca de identidade de
+ * `.value` é rastreada automaticamente.
+ *
+ * Por isso, mutações que alteram nós ANINHADOS (ex.: reatribuir
+ * `currentGondola.value.sections = [...]`) precisam chamar `commitGondola()`
+ * logo em seguida para notificar os computeds/templates. O código já reatribui
+ * referências de array como idioma de "forçar reatividade"; `commitGondola()` é
+ * o gatilho explícito que torna esse idioma efetivo sob `shallowRef`.
+ *
+ * Reatribuir a raiz inteira (`currentGondola.value = ...`) NÃO precisa de
+ * `commitGondola()` — `shallowRef` já dispara nesse caso.
+ */
+export const currentGondola = shallowRef<Gondola | null>(null);
+
+/**
+ * Notifica reativamente os consumidores de `currentGondola` após uma mutação de
+ * nó aninhado (que `shallowRef` não detecta sozinho). Chamar UMA vez ao final de
+ * cada operação de escrita, depois de aplicar todas as mutações da árvore.
+ */
+export function commitGondola(): void {
+    triggerRef(currentGondola);
+}
 
 // Estado de drag & drop
 export const draggingSegmentShelfId = ref<string | null>(null);
+/**
+ * ID do segmento sendo arrastado. Mantido globalmente para que os handlers de
+ * `dragover` possam identificar o próprio segmento sem chamar
+ * `dataTransfer.getData()` — que retorna string vazia durante o dragover (o drag
+ * data store fica em "protected mode" por spec) e é trabalho desperdiçado ~60×/s.
+ */
+export const draggingSegmentId = ref<string | null>(null);
 export const draggingShelfId = ref<string | null>(null);
 export const draggingShelfSectionId = ref<string | null>(null);
 export const draggingShelfOffset = ref(0); // Offset em pixels de onde clicou na shelf

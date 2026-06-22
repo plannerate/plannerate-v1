@@ -10,6 +10,7 @@ import {
     AlignHorizontalDistributeCenter,
     AlignLeft,
     AlignRight,
+    ArrowRightLeft,
     Check,
     ChevronDown,
     FlipHorizontal,
@@ -65,6 +66,8 @@ import { useT } from '@/composables/useT';
 // Vue
 import type { Gondola } from '@/types/planogram';
 import DropdownActions from '../DropdownActions.vue';
+import DropdownDistribution from '../DropdownDistribution.vue';
+import DropdownReports from '../DropdownReports.vue';
 import DropdownPerformance from '../DropdownPerformance.vue';
 import AutomaticGenerateModal from './AutomaticGenerateModal.vue';
 import ConfirmDeleteGondolaDialog from './ConfirmDeleteGondolaDialog.vue';
@@ -663,6 +666,14 @@ const handleMapRegionSelect = (regionId: string | null) => {
                         {{ t('plannerate.toolbar.invert') }}
                     </ButtonWithTooltip>
 
+
+                    <!-- Botão Transferir Módulo -->
+                    <ButtonWithTooltip variant="ghost" size="sm"
+                        :tooltip="t('plannerate.toolbar.transfer_module_tooltip')"
+                        @click="showTransferSectionDialog = true">
+                        <ArrowRightLeft class="mr-2 size-4" />
+                        {{ t('plannerate.toolbar.transfer_module') }}
+                    </ButtonWithTooltip>
                     <Separator orientation="vertical" class="h-5" />
 
                     <!-- ============================================================
@@ -715,7 +726,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
                         <Save class="mr-2 size-4" :class="{ 'animate-pulse': isSaving }" />
                         <span v-if="isSaving">{{ t('plannerate.toolbar.saving') }}</span>
                         <span v-else-if="hasChanges">{{ t('plannerate.toolbar.save', { count: String(changeCount) })
-                        }}</span>
+                            }}</span>
                         <span v-else>{{ t('plannerate.toolbar.saved') }}</span>
                     </Button>
 
@@ -746,37 +757,35 @@ const handleMapRegionSelect = (regionId: string | null) => {
                         {{ t('plannerate.toolbar.auto_generate') }}</span>
                 </ButtonWithTooltip>
 
-                <!-- Dropdown Ações -->
+                <!-- Dropdown Ações (Adicionar módulo, Mapa, Remover Gôndola) -->
                 <DropdownActions :can-remove-gondola="permissions.can_remove_gondola" :has-store="hasStore"
                     :current-map-region-id="currentMapRegionId" :on-add-module="() => editor.addModule()"
-                    :on-transfer-section="() => (showTransferSectionDialog = true)"
                     :on-open-map="() => (showMapRegionSelector = true)"
                     :on-remove-gondola="() => editor.removeGondola()" />
+
+                <!-- Dropdown Distribuição (Repositor, Visualizar/Baixar PDF, QR Code) -->
+                <DropdownDistribution />
+
+                <!-- Dropdown Relatórios (Compra, Reposição — Excel/PDF) -->
+                <DropdownReports />
 
             </div>
         </div>
 
         <!-- Modal de geração por template -->
-        <TemplateGenerateModal
-            v-if="autoGenerateEnabled && permissions.can_autogenate_gondola"
-            :open="showTemplateModal"
-            :gondola="currentGondola as Gondola"
+        <TemplateGenerateModal v-if="autoGenerateEnabled && permissions.can_autogenate_gondola"
+            :open="showTemplateModal" :gondola="currentGondola as Gondola"
             :start-date="(currentGondola?.planogram as any)?.start_date"
-            :end-date="(currentGondola?.planogram as any)?.end_date"
-            :planogram-templates="planogramTemplates"
-            @update:open="(v: boolean) => (showTemplateModal = v)"
-        />
+            :end-date="(currentGondola?.planogram as any)?.end_date" :planogram-templates="planogramTemplates"
+            @update:open="(v: boolean) => (showTemplateModal = v)" />
 
         <!-- Modal de geração automática -->
-        <AutomaticGenerateModal
-            v-if="autoGenerateEnabled && permissions.can_autogenate_gondola"
-            :open="showAutomaticModal"
-            :gondola="currentGondola as Gondola"
+        <AutomaticGenerateModal v-if="autoGenerateEnabled && permissions.can_autogenate_gondola"
+            :open="showAutomaticModal" :gondola="currentGondola as Gondola"
             :category-id="(currentGondola?.planogram as any)?.category_id"
             :start-date="(currentGondola?.planogram as any)?.start_date"
             :end-date="(currentGondola?.planogram as any)?.end_date"
-            @update:open="(v: boolean) => (showAutomaticModal = v)"
-        />
+            @update:open="(v: boolean) => (showAutomaticModal = v)" />
         <!-- ============================================================
          MODAL DE CONFIRMAÇÃO DE REMOÇÃO DE GÔNDOLA
          ============================================================ -->

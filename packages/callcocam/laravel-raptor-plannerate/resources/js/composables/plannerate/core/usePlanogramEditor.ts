@@ -13,6 +13,7 @@ import { useT } from '@/composables/useT';
 import type { Gondola, Product, Section, Shelf } from '@/types/planogram';
 
 import {
+    commitGondola,
     currentGondola,
     isLoadingRejectedProducts,
     rejectedProducts,
@@ -50,6 +51,15 @@ import { captureElementAsCanvas } from '../export/useCanvasCapture';
 
 const isBrowser = typeof window !== 'undefined';
 
+/**
+ * Guard de módulo: o watch de auto-refresh de rejeitados deve ser registrado
+ * UMA única vez, não a cada chamada de usePlanogramEditor(). Como o composable é
+ * chamado em ~220 Segments + Shelves + outros componentes (direta ou
+ * indiretamente via usePlanogramSelection), sem este guard havia centenas de
+ * watchers duplicados — cada save com remoções disparava N fetchRejectedProducts.
+ */
+let rejectedRefreshWatcherInstalled = false;
+
 export function usePlanogramEditor() {
     const { t } = useT();
     const history = usePlanogramHistory();
@@ -82,16 +92,20 @@ export function usePlanogramEditor() {
      * save bem-sucedido; `lastSaveHadRemovals` indica se havia remoções naquele
      * batch, e é zerado no próximo save que não contenha remoções.
      */
-    watch(
-        () => changes.lastSavedAt.value,
-        (savedAt) => {
-            if (!savedAt) return;
-            if (!changes.lastSaveHadRemovals.value) return;
-            if (!currentGondola.value?.id) return;
+    if (!rejectedRefreshWatcherInstalled) {
+        rejectedRefreshWatcherInstalled = true;
 
-            void rejectedOps.fetchRejectedProducts(currentGondola.value.id);
-        },
-    );
+        watch(
+            () => changes.lastSavedAt.value,
+            (savedAt) => {
+                if (!savedAt) return;
+                if (!changes.lastSaveHadRemovals.value) return;
+                if (!currentGondola.value?.id) return;
+
+                void rejectedOps.fetchRejectedProducts(currentGondola.value.id);
+            },
+        );
+    }
 
     // ========================================================================
     // OPERAÇÕES COM SEGMENTOS (delega a useSegmentOperations)
@@ -384,6 +398,8 @@ export function usePlanogramEditor() {
                     }
                 }
 
+                commitGondola();
+
                 return currentGondola.value;
             },
             historySnapshot: {
@@ -525,6 +541,8 @@ export function usePlanogramEditor() {
                     currentGondola.value.sections = [...currentGondola.value.sections];
                 }
 
+                commitGondola();
+
                 sectionIds.forEach(sectionId => {
                     if (newOrderings[sectionId] !== undefined) {
                         recordChange({
@@ -579,6 +597,8 @@ export function usePlanogramEditor() {
                         currentGondola.value.sections = updatedSections;
                     }
                 }
+
+                commitGondola();
 
                 return segment;
             },
@@ -859,7 +879,7 @@ export function usePlanogramEditor() {
         }
 
         const result = commitOptimistic({
-            apply: () => { currentGondola.value!.alignment = alignment; return true; },
+            apply: () => { currentGondola.value!.alignment = alignment; commitGondola(); return true; },
             historySnapshot: {
                 type: 'gondola_alignment',
                 description: `Alterar alinhamento para ${alignment}`,
@@ -894,7 +914,7 @@ export function usePlanogramEditor() {
         const flowLabel = flow === 'left_to_right' ? 'Esquerda → Direita' : 'Direita → Esquerda';
 
         const result = commitOptimistic({
-            apply: () => { currentGondola.value!.flow = flow; return true; },
+            apply: () => { currentGondola.value!.flow = flow; commitGondola(); return true; },
             historySnapshot: {
                 type: 'gondola_flow',
                 description: `Alterar direção para ${flowLabel}`,

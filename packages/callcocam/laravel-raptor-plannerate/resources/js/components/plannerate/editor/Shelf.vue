@@ -41,11 +41,11 @@
         <!-- Drag Handle para mover a shelf -->
 
         <!-- Área de Drop Personalizada -->
-        <Transition enter-active-class="transition-all duration-200 ease-out" enter-from-class="opacity-0 scale-95"
-            enter-to-class="opacity-100 scale-100" leave-active-class="transition-all duration-150 ease-in"
-            leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
+        <Transition enter-active-class="transition-opacity duration-75 ease-out" enter-from-class="opacity-0"
+            enter-to-class="opacity-100" leave-active-class="transition-opacity duration-75 ease-in"
+            leave-from-class="opacity-100" leave-to-class="opacity-0">
             <div v-if="isDropTarget"
-                class="pointer-events-none absolute inset-0  flex flex-col items-center justify-center gap-2 rounded-sm border-2 border-dashed border-primary bg-primary/10 backdrop-blur-sm"
+                class="pointer-events-none absolute inset-0  flex flex-col items-center justify-center gap-2 rounded-sm border-2 border-dashed border-primary bg-primary/15"
                 :style="{
                     zIndex: 140,
                 }">

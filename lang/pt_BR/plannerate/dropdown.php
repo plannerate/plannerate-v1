@@ -9,6 +9,20 @@ return [
         'download_pdf' => 'Baixar PDF',
         'reports' => 'Relatorios',
     ],
+    'distribution' => [
+        'title' => 'Distribuição',
+        'share_view' => 'Visualizar como Repositor',
+        'preview_pdf' => 'Visualizar PDF',
+        'download_pdf' => 'Baixar PDF',
+        'share_qr' => 'QR Code',
+    ],
+    'reports' => [
+        'title' => 'Relatórios',
+        'purchase_excel' => 'Relatório de Compra (Excel)',
+        'purchase_pdf' => 'Relatório de Compra (PDF)',
+        'restock_excel' => 'Reposição (Excel)',
+        'restock_pdf' => 'Reposição (PDF)',
+    ],
     'performance' => [
         'title' => 'Performance',
         'open_analyses' => 'Abrir Analises',

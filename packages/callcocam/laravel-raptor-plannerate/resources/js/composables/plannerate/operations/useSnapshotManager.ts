@@ -8,6 +8,7 @@
 import type { usePlanogramChanges } from '../core/usePlanogramChanges';
 import type { usePlanogramHistory } from '../core/usePlanogramHistory';
 import {
+    commitGondola,
     currentGondola,
     rejectedProducts,
 } from '../core/useGondolaState';
@@ -407,6 +408,12 @@ export function useSnapshotManager(
 
                     return false;
             }
+
+            // Notifica reativamente uma única vez para todos os tipos de snapshot.
+            // As funções applyXSnapshot mutam nós aninhados in-place (Object.assign,
+            // reatribuição de .segments/.shelves), que sob shallowRef não disparam
+            // reatividade sozinhas — ver useGondolaState.commitGondola.
+            commitGondola();
 
             return true;
         } catch (error) {
