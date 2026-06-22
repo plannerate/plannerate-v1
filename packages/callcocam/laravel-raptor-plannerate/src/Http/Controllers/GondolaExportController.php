@@ -16,7 +16,8 @@ class GondolaExportController extends Controller
 
     public function generateQrCode(Request $request, string $gondolaId): JsonResponse
     {
-        $qrCode = $this->qrCodeService->generateForGondola($gondolaId);
+        // Usa o host do request atual (subdomínio do tenant), não o config('app.url') (domínio base)
+        $qrCode = $this->qrCodeService->generateForGondola($gondolaId, $request->getSchemeAndHttpHost());
 
         return response()->json([
             'success' => true,
@@ -26,7 +27,8 @@ class GondolaExportController extends Controller
 
     public function generateSectionQrCode(Request $request, string $sectionId): JsonResponse
     {
-        $qrCode = $this->qrCodeService->generateForSection($sectionId);
+        // Usa o host do request atual (subdomínio do tenant), não o config('app.url') (domínio base)
+        $qrCode = $this->qrCodeService->generateForSection($sectionId, $request->getSchemeAndHttpHost());
 
         return response()->json([
             'success' => true,
