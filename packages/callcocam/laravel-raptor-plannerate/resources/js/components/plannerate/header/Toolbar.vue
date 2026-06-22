@@ -70,8 +70,7 @@ import DropdownDistribution from '../DropdownDistribution.vue';
 import DropdownReports from '../DropdownReports.vue';
 import DropdownPerformance from '../DropdownPerformance.vue';
 import AutomaticGenerateModal from './AutomaticGenerateModal.vue';
-import ConfirmDeleteGondolaDialog from './ConfirmDeleteGondolaDialog.vue';
-import MapRegionSelectorModal from './MapRegionSelectorModal.vue';
+// ConfirmDeleteGondolaDialog e MapRegionSelectorModal movidos para header/Header.vue
 import TemplateGenerateModal from './TemplateGenerateModal.vue';
 import TransferSectionDialog from './partials/TransferSectionDialog.vue';
 import Performance from './Performance.vue';
@@ -234,20 +233,8 @@ const alignment = computed<'left' | 'right' | 'center' | 'justify' | undefined>(
     () => editor.currentGondola.value?.alignment || undefined,
 );
 
-/**
- * Estado da modal de confirmação de delete
- */
-const showDeleteConfirmation = computed({
-    get: () => editor.showDeleteConfirmation.value,
-    set: (val) => (editor.showDeleteConfirmation.value = val),
-});
-
-/**
- * Nome da gôndola atual para o dialog
- */
-const currentGondolaName = computed(
-    () => editor.currentGondola.value?.name || '',
-);
+// showDeleteConfirmation e currentGondolaName movidos para header/Header.vue
+// (junto com o ConfirmDeleteGondolaDialog)
 
 /**
  * Estado do drawer de adicionar módulo
@@ -362,51 +349,8 @@ const selectedSection = computed(() => {
     return null;
 });
 
-/**
- * Estado do modal de seleção de região do mapa
- */
-const showMapRegionSelector = ref(false);
-
-/**
- * Verifica se o planograma tem loja associada (store_id)
- */
-const hasStore = computed(() => {
-    const planogram = currentGondola.value?.planogram as any;
-
-    return !!planogram?.store_id;
-});
-
-/**
- * Dados da loja para o mapa
- */
-const storeData = computed(() => {
-    const planogram = currentGondola.value?.planogram as any;
-
-    return planogram?.store || null;
-});
-
-/**
- * URL da imagem do mapa da loja
- */
-const mapImageUrl = computed(() => {
-    const store = storeData.value;
-
-    if (!store?.map_image_path) {
-        return null;
-    }
-
-    // Retorna a URL pública do storage
-    return `/storage/${store.map_image_path}`;
-});
-
-/**
- * Regiões do mapa da loja
- */
-const mapRegions = computed(() => {
-    const store = storeData.value;
-
-    return store?.map_regions || [];
-});
+// Estado e computeds do mapa (showMapRegionSelector, hasStore, storeData,
+// mapImageUrl, mapRegions) movidos para header/Header.vue
 
 /**
  * Busca por EAN para localizar produto na gondola
@@ -495,33 +439,11 @@ function clearEanSearch(): void {
     eanSearchApplied.value = '';
 }
 
-/**
- * ID da região vinculada à gôndola atual
- */
-const currentMapRegionId = computed(() => {
-    return currentGondola.value?.linked_map_gondola_id || null;
-});
+// currentMapRegionId e handleMapRegionSelect movidos para header/Header.vue
 
 function gondolaHref(gondola: Gondola): string {
     return gondola.route_gondolas || currentPageUrl.value;
 }
-
-/**
- * Handler para quando uma região é selecionada
- */
-const handleMapRegionSelect = (regionId: string | null) => {
-    if (!currentGondola.value) {
-        return;
-    }
-
-    // Busca a região para obter o tipo
-    const region = mapRegions.value.find((r: any) => r.id === regionId);
-    // Atualiza a gôndola com linked_map_gondola_id e category
-    editor.updateGondola({
-        linked_map_gondola_id: regionId,
-        linked_map_gondola_category: region?.type || null,
-    });
-};
 </script>
 
 <template>
@@ -574,9 +496,6 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-
-
-
                 <div class="flex h-8 items-center gap-1 rounded-md border bg-background px-2">
                     <Search class="size-3.5 text-muted-foreground" />
                     <Input v-model="eanSearchModel" :placeholder="t('plannerate.toolbar.search_ean_placeholder')"
@@ -591,7 +510,52 @@ const handleMapRegionSelect = (regionId: string | null) => {
                         <Search class="size-3.5" />
                     </ButtonWithTooltip>
                 </div>
+
+
+                <!-- ============================================================
+             AÇÕES FINAIS
+             Auto-save, Salvar (com contador de mudanças), Performance, Imprimir, Relatórios
+             ============================================================ -->
+
+                <!-- Toggle Auto-save -->
+                <ButtonGroup aria-label="Salvar e salvamento automático"
+                    class="h-8 border-primary/40 bg-primary/5 *:h-full *:rounded-none">
+                    <Button variant="ghost" size="sm" class="h-full rounded-none border-0 hover:bg-primary/10" :title="hasChanges
+                        ? t(
+                            changeCount === 1
+                                ? 'plannerate.toolbar.save_tooltip_single'
+                                : 'plannerate.toolbar.save_tooltip_plural',
+                            { count: String(changeCount) },
+                        )
+                        : t('plannerate.toolbar.save_none')
+                        " :disabled="!isMounted || !hasChanges || isSaving" @click="editor.save()">
+                        <Save class="size-4" :class="{ 'animate-pulse': isSaving }" />
+                        <span v-if="isSaving">{{ t('plannerate.toolbar.saving') }}</span>
+                        <span v-else-if="hasChanges">{{ t('plannerate.toolbar.save', { count: String(changeCount) })
+                        }}</span>
+                        <span v-else>{{ t('plannerate.toolbar.saved') }}</span>
+                    </Button>
+
+                    <div class="flex h-full items-center border-l border-primary/30 px-2 hover:bg-primary/10"
+                        :title="t('plannerate.toolbar.auto_save')">
+                        <Switch :id="'auto-save-toggle'" v-model="autoSaveEnabled"
+                            @update:model-value="changes.toggleAutoSave()" />
+                    </div>
+                </ButtonGroup>
+
+                <ButtonWithTooltip :variant="editor.showGrid.value ? 'default' : 'ghost'" size="sm"
+                    :tooltip="t('plannerate.toolbar.toggle_grid')" @click="editor.toggleGrid()">
+                    <Grid3x3 class="size-4" />
+                    {{ t('plannerate.toolbar.grid') }}
+                </ButtonWithTooltip>
+
+                <ButtonWithTooltip :variant="editor.showZoneIndicators.value ? 'default' : 'ghost'" size="sm"
+                    :tooltip="t('plannerate.toolbar.toggle_zones')" @click="editor.toggleZoneIndicators()">
+                    <Thermometer class="size-4" />
+                    {{ t('plannerate.toolbar.zones') }}
+                </ButtonWithTooltip>
                 <Separator orientation="vertical" class="h-8" />
+
                 <!-- ============================================================
              CONTROLES DE ZOOM/ESCALA
              Diminuir, Input (readonly), Aumentar
@@ -614,19 +578,6 @@ const handleMapRegionSelect = (regionId: string | null) => {
              Grade, Alinhar Esquerda/Direita/Centro, Justificar
              ============================================================ -->
                 <div class="flex h-8 items-center gap-1 rounded-md bg-muted/60 px-1">
-                    <ButtonWithTooltip :variant="editor.showGrid.value ? 'default' : 'ghost'" size="sm"
-                        :tooltip="t('plannerate.toolbar.toggle_grid')" @click="editor.toggleGrid()">
-                        <Grid3x3 class="mr-2 size-4" />
-                        {{ t('plannerate.toolbar.grid') }}
-                    </ButtonWithTooltip>
-
-                    <ButtonWithTooltip :variant="editor.showZoneIndicators.value ? 'default' : 'ghost'" size="sm"
-                        :tooltip="t('plannerate.toolbar.toggle_zones')" @click="editor.toggleZoneIndicators()">
-                        <Thermometer class="mr-2 size-4" />
-                        {{ t('plannerate.toolbar.zones') }}
-                    </ButtonWithTooltip>
-
-                    <Separator orientation="vertical" class="h-5" />
 
                     <ButtonWithTooltip :variant="alignment === 'left' ? 'default' : 'ghost'" size="sm"
                         :tooltip="t('plannerate.toolbar.align_left_tooltip')" @click="editor.alignLeft()">
@@ -651,29 +602,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
                         <AlignHorizontalDistributeCenter class="size-4" />
                         <span class="sr-only">{{ t('plannerate.toolbar.align_justify_sr') }}</span>
                     </ButtonWithTooltip>
-                </div>
 
-                <Separator orientation="vertical" class="h-8" />
-
-                <!-- ============================================================
-             AÇÕES DE EDIÇÃO
-             Inverter, Adicionar Módulo, Remover Gôndola
-             ============================================================ -->
-                <div class="flex h-8 items-center gap-1 rounded-md bg-muted/60 px-1">
-                    <ButtonWithTooltip variant="ghost" size="sm" :tooltip="t('plannerate.toolbar.invert_tooltip')"
-                        @click="editor.toggleFlow()">
-                        <FlipHorizontal class="mr-2 size-4" />
-                        {{ t('plannerate.toolbar.invert') }}
-                    </ButtonWithTooltip>
-
-
-                    <!-- Botão Transferir Módulo -->
-                    <ButtonWithTooltip variant="ghost" size="sm"
-                        :tooltip="t('plannerate.toolbar.transfer_module_tooltip')"
-                        @click="showTransferSectionDialog = true">
-                        <ArrowRightLeft class="mr-2 size-4" />
-                        {{ t('plannerate.toolbar.transfer_module') }}
-                    </ButtonWithTooltip>
                     <Separator orientation="vertical" class="h-5" />
 
                     <!-- ============================================================
@@ -697,47 +626,56 @@ const handleMapRegionSelect = (regionId: string | null) => {
 
                     <Separator orientation="vertical" class="h-5" />
 
-                    <ButtonWithTooltip variant="ghost" size="sm" :disabled="!isMounted || !hasSelection"
+                    <!-- <ButtonWithTooltip variant="ghost" size="sm" :disabled="!isMounted || !hasSelection"
                         tooltip="Limpar categoria selecionada" @click="selectedTemplateCategoryId = null">
-                        <X class="mr-1.5 size-4" />
-                        Seleção
+                        <X class=" size-4" />
+                        {{ t('plannerate.toolbar.clear_selection') }}
+                    </ButtonWithTooltip> -->
+                </div>
+
+                <Separator orientation="vertical" class="h-8" />
+
+
+                <!-- Geração Automática (Feature Flag + modo template/automatic) -->
+                <ButtonWithTooltip v-if="canAutoGenerate" variant="ghost" size="sm"
+                    :tooltip="t('plannerate.toolbar.auto_generate_tooltip')" @click="openGenerateFlow()">
+                    <Sparkles class="size-4" />
+                    <span class="max-w-24 truncate">
+                        {{ t('plannerate.toolbar.auto_generate') }}</span>
+                </ButtonWithTooltip>
+                <!-- ============================================================
+             AÇÕES DE EDIÇÃO
+             Inverter, Adicionar Módulo, Remover Gôndola
+             ============================================================ -->
+                <div class="flex h-8 items-center gap-1 rounded-md bg-muted/60 px-1">
+                    <ButtonWithTooltip variant="ghost" size="sm" :tooltip="t('plannerate.toolbar.invert_tooltip')"
+                        @click="editor.toggleFlow()">
+                        <FlipHorizontal class="size-4" />
+                        {{ t('plannerate.toolbar.invert') }}
+                    </ButtonWithTooltip>
+
+
+                    <!-- Botão Transferir Módulo -->
+                    <ButtonWithTooltip variant="ghost" size="sm"
+                        :tooltip="t('plannerate.toolbar.transfer_module_tooltip')"
+                        @click="showTransferSectionDialog = true">
+                        <ArrowRightLeft class="size-4" />
+                        {{ t('plannerate.toolbar.transfer_module') }}
                     </ButtonWithTooltip>
                 </div>
 
                 <Separator orientation="vertical" class="h-8" />
 
-                <!-- ============================================================
-             AÇÕES FINAIS
-             Auto-save, Salvar (com contador de mudanças), Performance, Imprimir, Relatórios
-             ============================================================ -->
 
-                <!-- Toggle Auto-save -->
-                <ButtonGroup aria-label="Salvar e salvamento automático"
-                    class="h-8 border-primary/40 bg-primary/5 *:h-full *:rounded-none">
-                    <Button variant="ghost" size="sm" class="h-full rounded-none border-0 hover:bg-primary/10" :title="hasChanges
-                        ? t(
-                            changeCount === 1
-                                ? 'plannerate.toolbar.save_tooltip_single'
-                                : 'plannerate.toolbar.save_tooltip_plural',
-                            { count: String(changeCount) },
-                        )
-                        : t('plannerate.toolbar.save_none')
-                        " :disabled="!isMounted || !hasChanges || isSaving" @click="editor.save()">
-                        <Save class="mr-2 size-4" :class="{ 'animate-pulse': isSaving }" />
-                        <span v-if="isSaving">{{ t('plannerate.toolbar.saving') }}</span>
-                        <span v-else-if="hasChanges">{{ t('plannerate.toolbar.save', { count: String(changeCount) })
-                            }}</span>
-                        <span v-else>{{ t('plannerate.toolbar.saved') }}</span>
-                    </Button>
-
-                    <div class="flex h-full items-center border-l border-primary/30 px-2 hover:bg-primary/10"
-                        :title="t('plannerate.toolbar.auto_save')">
-                        <Switch :id="'auto-save-toggle'" v-model="autoSaveEnabled"
-                            @update:model-value="changes.toggleAutoSave()" />
-                    </div>
-                </ButtonGroup>
 
                 <!-- Indicadores de Análises -->
+
+
+                <!-- Dropdown Ações (Adicionar módulo). Mapa e Remover Gôndola movidos para header/Header.vue -->
+                <!-- <DropdownActions :on-add-module="() => editor.addModule()" /> -->
+
+                <!-- Dropdown Distribuição (Repositor, Visualizar/Baixar PDF, QR Code) -->
+                <DropdownDistribution />
 
                 <!-- Dropdown Performance -->
                 <DropdownPerformance :analysis="analysis" :gondola="currentGondola as Gondola" />
@@ -748,24 +686,6 @@ const handleMapRegionSelect = (regionId: string | null) => {
                     " @update:open="
                         (value: boolean) => (showPerformanceModal = value)
                     " />
-
-                <!-- Geração Automática (Feature Flag + modo template/automatic) -->
-                <ButtonWithTooltip v-if="canAutoGenerate" variant="default" size="sm"
-                    :tooltip="t('plannerate.toolbar.auto_generate_tooltip')" @click="openGenerateFlow()">
-                    <Sparkles class="mr-2 size-4" />
-                    <span class="max-w-24 truncate">
-                        {{ t('plannerate.toolbar.auto_generate') }}</span>
-                </ButtonWithTooltip>
-
-                <!-- Dropdown Ações (Adicionar módulo, Mapa, Remover Gôndola) -->
-                <DropdownActions :can-remove-gondola="permissions.can_remove_gondola" :has-store="hasStore"
-                    :current-map-region-id="currentMapRegionId" :on-add-module="() => editor.addModule()"
-                    :on-open-map="() => (showMapRegionSelector = true)"
-                    :on-remove-gondola="() => editor.removeGondola()" />
-
-                <!-- Dropdown Distribuição (Repositor, Visualizar/Baixar PDF, QR Code) -->
-                <DropdownDistribution />
-
                 <!-- Dropdown Relatórios (Compra, Reposição — Excel/PDF) -->
                 <DropdownReports />
 
@@ -786,11 +706,7 @@ const handleMapRegionSelect = (regionId: string | null) => {
             :start-date="(currentGondola?.planogram as any)?.start_date"
             :end-date="(currentGondola?.planogram as any)?.end_date"
             @update:open="(v: boolean) => (showAutomaticModal = v)" />
-        <!-- ============================================================
-         MODAL DE CONFIRMAÇÃO DE REMOÇÃO DE GÔNDOLA
-         ============================================================ -->
-        <ConfirmDeleteGondolaDialog v-model:open="showDeleteConfirmation" :gondola-name="currentGondolaName"
-            @confirm="editor.confirmRemoveGondola()" />
+        <!-- MODAL DE CONFIRMAÇÃO DE REMOÇÃO DE GÔNDOLA movido para header/Header.vue -->
 
         <!-- ============================================================
          SHEET DE ADICIONAR MÓDULO
@@ -803,12 +719,6 @@ const handleMapRegionSelect = (regionId: string | null) => {
          ============================================================ -->
         <TransferSectionDialog v-model:open="showTransferSectionDialog" :section="selectedSection" />
 
-        <!-- ============================================================
-         MODAL DE SELEÇÃO DE REGIÃO DO MAPA
-         ============================================================ -->
-        <MapRegionSelectorModal v-model:open="showMapRegionSelector" :store-id="storeData?.id"
-            :store-name="storeData?.name" :map-image-url="mapImageUrl" :map-regions="mapRegions"
-            :current-region-id="currentMapRegionId" :gondola-id="currentGondola?.id"
-            :gondola-name="currentGondola?.name" @select="handleMapRegionSelect" />
+        <!-- MODAL DE SELEÇÃO DE REGIÃO DO MAPA movido para header/Header.vue -->
     </div>
 </template>

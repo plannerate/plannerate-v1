@@ -12,7 +12,8 @@
                 <Plus class="mr-2 size-4" />
                 {{ t('plannerate.toolbar.add_module') }}
             </DropdownMenuItem>
-            <DropdownMenuItem v-if="props.hasStore" @click="props.onOpenMap?.()">
+            <!-- Movido para header/Header.vue -->
+            <!-- <DropdownMenuItem v-if="props.hasStore" @click="props.onOpenMap?.()">
                 <MapPin class="mr-2 size-4" />
                 {{ props.currentMapRegionId ? t('plannerate.toolbar.map_remove') : t('plannerate.toolbar.map_store') }}
             </DropdownMenuItem>
@@ -22,30 +23,31 @@
                     <Trash2 class="mr-2 size-4" />
                     {{ t('plannerate.toolbar.remove_gondola') }}
                 </DropdownMenuItem>
-            </template>
+            </template> -->
         </DropdownMenuContent>
     </DropdownMenu>
 </template>
 <script setup lang="ts">
-import { ChevronDown, MapPin, MoreVertical, Plus, Trash2 } from 'lucide-vue-next';
+import { ChevronDown, MoreVertical, Plus } from 'lucide-vue-next';
+// MapPin, Trash2, DropdownMenuSeparator usados pelos itens movidos para Header.vue
 
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useT } from '@/composables/useT';
 
 const props = defineProps<{
-    canRemoveGondola?: boolean;
-    hasStore?: boolean;
-    currentMapRegionId?: string | null;
+    // Props dos itens movidos para Header.vue (mantidas comentadas por ora)
+    // canRemoveGondola?: boolean;
+    // hasStore?: boolean;
+    // currentMapRegionId?: string | null;
     onAddModule?: () => void;
-    onOpenMap?: () => void;
-    onRemoveGondola?: () => void;
+    // onOpenMap?: () => void;
+    // onRemoveGondola?: () => void;
 }>();
 
 const { t } = useT();
