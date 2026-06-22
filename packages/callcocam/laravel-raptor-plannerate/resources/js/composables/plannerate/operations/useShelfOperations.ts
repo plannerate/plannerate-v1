@@ -2,7 +2,7 @@ import { ulid } from 'ulid';
 import { toast } from 'vue-sonner';
 import type { Layer, Segment, Shelf } from '@/types/planogram';
 import { validateShelfWidth } from '@plannerate/libs/validation';
-import { commitGondola, currentGondola } from '../core/useGondolaState';
+import { currentGondola } from '../core/useGondolaState';
 import { findSectionById, findShelfById } from '../core/useLookupHelpers';
 import {
     reorderShelvesByPosition,
@@ -55,8 +55,6 @@ section.shelves = [];
         if (currentGondola.value?.sections) {
             currentGondola.value.sections = [...currentGondola.value.sections];
         }
-
-        commitGondola();
 
         // Registra mudança
         recordChange({
@@ -139,8 +137,6 @@ targetSection.shelves = [];
                     ...currentGondola.value.sections,
                 ];
             }
-
-            commitGondola();
 
             // Registra mudança
             recordChange({
@@ -257,8 +253,6 @@ targetSection.shelves = [];
         if (currentGondola.value?.sections) {
             currentGondola.value.sections = [...currentGondola.value.sections];
         }
-
-        commitGondola();
 
         // Registra mudança individual para cada prateleira
         reordered.forEach((shelf: any) => {
@@ -398,8 +392,6 @@ targetSection.shelves = [];
             }
         }
 
-        commitGondola();
-
         // Notifica que produto foi usado (remove da lista)
         if (onProductUsed) {
             onProductUsed(productId);
@@ -440,7 +432,6 @@ return false;
 
         // Força reatividade
         section.shelves = [...(section.shelves || [])];
-        commitGondola();
 
         // Registra mudança
         recordChange({
@@ -511,8 +502,6 @@ targetSection.shelves = [];
             currentGondola.value.sections = [...currentGondola.value.sections];
         }
 
-        commitGondola();
-
         // Registra mudança
         recordChange({
             type: 'shelf_transfer',
@@ -570,7 +559,6 @@ targetSection.shelves = [];
         });
         shelf.segments = [...shelf.segments];
         section.shelves = [...section.shelves];
-        commitGondola();
 
         // Registra mudança para cada segmento reordenado
         reversed.forEach((segment) => {

@@ -1,6 +1,6 @@
 import { ulid } from 'ulid';
 import type { Section } from '@/types/planogram';
-import { commitGondola, currentGondola } from '../core/useGondolaState';
+import { currentGondola } from '../core/useGondolaState';
 
 /**
  * Operações relacionadas a Sections
@@ -46,7 +46,6 @@ export function useSectionOperations() {
 
         // Força reatividade
         currentGondola.value.sections = [...currentGondola.value.sections];
-        commitGondola();
 
         // Registra mudança
         recordChange({
@@ -131,7 +130,6 @@ return;
 
         if (hasChanges) {
             gondola.sections = [...gondola.sections];
-            commitGondola();
         }
     }
 

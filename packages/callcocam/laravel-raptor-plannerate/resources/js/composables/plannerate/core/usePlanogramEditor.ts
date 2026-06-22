@@ -13,7 +13,6 @@ import { useT } from '@/composables/useT';
 import type { Gondola, Product, Section, Shelf } from '@/types/planogram';
 
 import {
-    commitGondola,
     currentGondola,
     isLoadingRejectedProducts,
     rejectedProducts,
@@ -398,8 +397,6 @@ export function usePlanogramEditor() {
                     }
                 }
 
-                commitGondola();
-
                 return currentGondola.value;
             },
             historySnapshot: {
@@ -541,8 +538,6 @@ export function usePlanogramEditor() {
                     currentGondola.value.sections = [...currentGondola.value.sections];
                 }
 
-                commitGondola();
-
                 sectionIds.forEach(sectionId => {
                     if (newOrderings[sectionId] !== undefined) {
                         recordChange({
@@ -597,8 +592,6 @@ export function usePlanogramEditor() {
                         currentGondola.value.sections = updatedSections;
                     }
                 }
-
-                commitGondola();
 
                 return segment;
             },
@@ -879,7 +872,7 @@ export function usePlanogramEditor() {
         }
 
         const result = commitOptimistic({
-            apply: () => { currentGondola.value!.alignment = alignment; commitGondola(); return true; },
+            apply: () => { currentGondola.value!.alignment = alignment; return true; },
             historySnapshot: {
                 type: 'gondola_alignment',
                 description: `Alterar alinhamento para ${alignment}`,
@@ -914,7 +907,7 @@ export function usePlanogramEditor() {
         const flowLabel = flow === 'left_to_right' ? 'Esquerda → Direita' : 'Direita → Esquerda';
 
         const result = commitOptimistic({
-            apply: () => { currentGondola.value!.flow = flow; commitGondola(); return true; },
+            apply: () => { currentGondola.value!.flow = flow; return true; },
             historySnapshot: {
                 type: 'gondola_flow',
                 description: `Alterar direção para ${flowLabel}`,

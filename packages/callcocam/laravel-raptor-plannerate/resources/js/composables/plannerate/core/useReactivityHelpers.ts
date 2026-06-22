@@ -2,7 +2,7 @@
 // HELPERS DE REATIVIDADE - Garantem que Vue detecta mudanças
 // ============================================================================
 
-import { commitGondola, currentGondola } from './useGondolaState';
+import { currentGondola } from './useGondolaState';
 
 /**
  * Reordena as prateleiras de uma seção otimisticamente com base na shelf_position
@@ -42,7 +42,6 @@ export function reorderShelvesByPosition(section: any): void {
             currentGondola.value.sections = [...currentGondola.value.sections];
         }
 
-        commitGondola();
     }
 }
 
@@ -74,7 +73,6 @@ export function updateShelfReactive(
         reorderShelvesByPosition(section);
     }
 
-    commitGondola();
 }
 
 /**
@@ -114,7 +112,6 @@ return;
         }
     }
 
-    commitGondola();
 }
 
 /**
@@ -152,5 +149,4 @@ export function updateSegmentReactive(
         currentGondola.value.sections = [...currentGondola.value.sections];
     }
 
-    commitGondola();
 }

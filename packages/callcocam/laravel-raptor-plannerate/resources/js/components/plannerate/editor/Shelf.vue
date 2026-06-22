@@ -121,6 +121,8 @@ interface Props {
     lastShelf?: ShelfType;
     isLast?: boolean;
     highlightGroupingNormalized?: string | null;
+    /** Número de exibição ("Prat #N") pré-calculado por Shelves.vue (evita sort O(S) por shelf) */
+    displayNumber?: number;
 }
 
 const props = defineProps<Props>();
@@ -135,6 +137,7 @@ const sectionRef = toRef(props, 'section');
 const previousShelfRef = toRef(props, 'previousShelf');
 const sectionWidthRef = toRef(props, 'sectionWidth');
 const cremalheiraWidthRef = toRef(props, 'cremalheiraWidth');
+const displayNumberRef = toRef(props, 'displayNumber');
 
 // Usa composable para drag & drop de produtos/segments apenas
 const {
@@ -174,6 +177,7 @@ const {
     sectionWidth: sectionWidthRef,
     cremalheiraWidth: cremalheiraWidthRef,
     alignment: computed(() => editor.currentGondola.value?.alignment),
+    displayNumber: displayNumberRef,
 });
 
 const isSelected = computed(() => selection.isShelfSelected(shelfRef.value));

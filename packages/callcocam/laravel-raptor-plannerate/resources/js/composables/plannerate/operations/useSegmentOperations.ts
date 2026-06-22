@@ -6,7 +6,7 @@ import { ulid } from 'ulid';
 import { toast } from 'vue-sonner';
 import type { Segment } from '@/types/planogram';
 import { validateShelfWidth } from '@plannerate/libs/validation';
-import { commitGondola, currentGondola } from '../core/useGondolaState';
+import { currentGondola } from '../core/useGondolaState';
 import { findSegmentById } from '../core/useLookupHelpers';
 
 /**
@@ -149,8 +149,6 @@ break;
         currentGondola.value.sections = [...currentGondola.value.sections];
     }
 
-    commitGondola();
-
     // Registra mudança
     recordChange({
         type: 'segment_transfer',
@@ -290,8 +288,6 @@ break;
         currentGondola.value.sections = [...currentGondola.value.sections];
     }
 
-    commitGondola();
-
     // Registra mudança
     recordChange({
         type: 'segment_copy',
@@ -354,7 +350,6 @@ export function swapSegmentPositions(
 
     // Força reatividade
     shelf1.segments = [...segments];
-    commitGondola();
 
     // Registra mudanças para ambos os segments
     recordChange({

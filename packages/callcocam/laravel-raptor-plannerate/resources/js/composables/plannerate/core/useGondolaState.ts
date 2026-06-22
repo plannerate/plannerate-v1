@@ -3,7 +3,7 @@
 // Refs compartilhados entre todas as instâncias do editor
 // ============================================================================
 
-import { ref, shallowRef, triggerRef, watch } from 'vue';
+import { ref, watch } from 'vue';
 import type { Gondola } from '@/types/planogram';
 
 /** Chave de persistência do estado de exibição das zonas de exposição */
@@ -26,31 +26,17 @@ function readZoneIndicatorsFromStorage(): boolean {
 /**
  * Estado da gôndola atual.
  *
- * Usa `shallowRef` (e NÃO `ref`) deliberadamente: a árvore da gôndola
- * (sections → shelves → segments → layers → products) tem milhares de nós, e um
- * `ref` profundo envolveria cada um num Proxy reativo, amplificando o custo de
- * toda mutação e do load inicial. Com `shallowRef`, só a troca de identidade de
- * `.value` é rastreada automaticamente.
- *
- * Por isso, mutações que alteram nós ANINHADOS (ex.: reatribuir
- * `currentGondola.value.sections = [...]`) precisam chamar `commitGondola()`
- * logo em seguida para notificar os computeds/templates. O código já reatribui
- * referências de array como idioma de "forçar reatividade"; `commitGondola()` é
- * o gatilho explícito que torna esse idioma efetivo sob `shallowRef`.
- *
- * Reatribuir a raiz inteira (`currentGondola.value = ...`) NÃO precisa de
- * `commitGondola()` — `shallowRef` já dispara nesse caso.
+ * Usa `ref` PROFUNDO (não `shallowRef`) intencionalmente: a árvore de
+ * componentes (Section/Shelf/Segment/Layer) depende da reatividade profunda para
+ * re-renderizar quando seu pedaço aninhado da árvore muda. Computeds como
+ * `Section.sortedShelves` leem `props.section.shelves` e só recalculam porque o
+ * acesso aninhado é rastreado pelo Proxy reativo. Sob `shallowRef`, esses
+ * acessos deixariam de ser rastreados e nada re-renderizaria sem trocar a
+ * identidade de prop em todo o caminho raiz→folha — o que as operações de
+ * move/swap não fazem (uma tentativa de `shallowRef` foi revertida por quebrar o
+ * drag-and-drop).
  */
-export const currentGondola = shallowRef<Gondola | null>(null);
-
-/**
- * Notifica reativamente os consumidores de `currentGondola` após uma mutação de
- * nó aninhado (que `shallowRef` não detecta sozinho). Chamar UMA vez ao final de
- * cada operação de escrita, depois de aplicar todas as mutações da árvore.
- */
-export function commitGondola(): void {
-    triggerRef(currentGondola);
-}
+export const currentGondola = ref<Gondola | null>(null);
 
 // Estado de drag & drop
 export const draggingSegmentShelfId = ref<string | null>(null);
