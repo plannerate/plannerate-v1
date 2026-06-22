@@ -83,7 +83,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, onUpdated, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, ref } from 'vue';
 import {
     draggingSegmentId,
     draggingSegmentShelfId,
@@ -119,6 +119,43 @@ function _trackRender(): void {
         _renderCount = 0;
         _flushTimer = null;
     }, 300);
+}
+// ──────────────────────────────────────────────────────────────────────────
+
+// ─── Diagnóstico: cronometra o custo de cada clique de seleção ───────────────
+// Ativar: localStorage.setItem('perf:click', '1') e recarregar.
+// Mede 3 marcos a partir do clique:
+//   • sync   = tempo do handler síncrono (selectItem)
+//   • patch  = até o Vue terminar de atualizar o DOM (nextTick)
+//   • paint  = até o próximo frame pintar na tela
+// e o intervalo desde o clique anterior (responsividade percebida).
+const PERF_CLICK = typeof window !== 'undefined' && window.localStorage.getItem('perf:click') === '1';
+let _lastClickTs = 0;
+
+/** Cronometra `fn` (a seleção) e loga sync/patch/paint + intervalo entre cliques. */
+function _measureClick(fn: () => void): void {
+    if (!PERF_CLICK) {
+        fn();
+        return;
+    }
+    const t0 = performance.now();
+    const sinceLast = _lastClickTs ? t0 - _lastClickTs : 0;
+    _lastClickTs = t0;
+
+    fn();
+    const sync = performance.now() - t0;
+
+    nextTick(() => {
+        const patch = performance.now() - t0;
+        requestAnimationFrame(() => {
+            const paint = performance.now() - t0;
+            console.log(
+                `%c[click] sync=${sync.toFixed(1)}ms · patch=${patch.toFixed(1)}ms · paint=${paint.toFixed(1)}ms` +
+                    (sinceLast ? ` · desde último=${sinceLast.toFixed(0)}ms` : ''),
+                'color:#2563eb;font-weight:bold',
+            );
+        });
+    });
 }
 // ──────────────────────────────────────────────────────────────────────────
 
@@ -223,7 +260,9 @@ function handleFocusSegment() {
 
 function handleSegmentClick(event: MouseEvent) {
     event.stopPropagation();
-    selection.selectItem('segment', props.segment.id, props.segment);
+    _measureClick(() => {
+        selection.selectItem('segment', props.segment.id, props.segment);
+    });
 }
 
 function handleDragStart(event: DragEvent) {
