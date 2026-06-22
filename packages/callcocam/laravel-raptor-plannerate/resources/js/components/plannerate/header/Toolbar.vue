@@ -47,6 +47,7 @@ import { Switch } from '@/components/ui/switch';
 import {
     currentGondola,
     eanSearchQuery,
+    eanSearchDebounced,
     selectedTemplateCategoryId,
     showPerformanceModal,
 } from '@/composables/plannerate/core/useGondolaState';
@@ -438,7 +439,7 @@ watch(
 );
 
 watch(
-    () => eanSearchQuery.value,
+    () => eanSearchDebounced.value,
     (query) => {
         if (syncingEanFromSelection.value) {
             syncingEanFromSelection.value = false;

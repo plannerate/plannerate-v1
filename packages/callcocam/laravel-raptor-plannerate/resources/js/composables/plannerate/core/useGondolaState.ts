@@ -49,8 +49,34 @@ watch(showZoneIndicators, (value) => {
     }
 });
 
-// Busca de produto por EAN na gondola atual
+// Busca de produto por EAN na gondola atual.
+// Bound diretamente ao <Input> — atualiza a cada tecla (digitação instantânea).
 export const eanSearchQuery = ref('');
+
+/**
+ * Versão "debounced" de eanSearchQuery, usada pelas reações CARAS:
+ * - o highlight `isEanMatch` em cada Segment
+ * - o watcher que percorre a gondola e seleciona o produto encontrado
+ *
+ * Sem isto, cada tecla recalculava o highlight de centenas de segmentos e
+ * percorria a gondola inteira. Pior: EANs brasileiros começam todos com "789",
+ * então prefixos curtos casam com quase todos os produtos, ligando centenas de
+ * transições CSS de uma vez. O debounce faz a reação cara rodar só ~250ms após
+ * o usuário parar de digitar.
+ */
+export const eanSearchDebounced = ref('');
+
+let _eanDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+watch(eanSearchQuery, (value) => {
+    if (_eanDebounceTimer) {
+        clearTimeout(_eanDebounceTimer);
+    }
+
+    _eanDebounceTimer = setTimeout(() => {
+        eanSearchDebounced.value = value;
+    }, 250);
+});
 
 /** category_id da categoria de template selecionada para highlight no canvas */
 export const selectedTemplateCategoryId = ref<string | null>(null);

@@ -33,6 +33,8 @@
                 :shelf-depth="shelf.shelf_depth" :isFirstInShelf="index === 0"
                 :isLastInShelf="index === segments.length - 1" :facing-gap="justifyGap ?? undefined"
                 :highlightGroupingNormalized="highlightGroupingNormalized"
+                :selected-from-parent="segment.id === selectedSegmentId || multiSelectedSegmentIds.has(segment.id)"
+                :layer-selected-from-parent="!!(segment.layer?.id && segment.layer.id === selectedLayerId)"
                 style="pointer-events: auto" />
         </div>
 
@@ -175,6 +177,30 @@ const {
 });
 
 const isSelected = computed(() => selection.isShelfSelected(shelfRef.value));
+
+// ── Seleção de segmentos calculada aqui (nível Shelf) ────────────────────────
+// Antes, cada Segment subscrevia individualmente a selectedId e selectedItems,
+// causando uma cascata de N recomputações por clique (N = nº de segmentos).
+// Agora apenas a Shelf subscreve; apenas os 2 segmentos cujos props mudam
+// (anterior e novo selecionado) recebem re-render do Vue.
+
+/** ID do segmento atualmente selecionado em single-select */
+const selectedSegmentId = computed<string | null>(() =>
+    selection.selectedType.value === 'segment' ? selection.selectedId.value : null,
+);
+
+/** IDs em multi-select (Set para lookup O(1)) */
+const multiSelectedSegmentIds = computed<Set<string>>(() => {
+    const items = selection.selectedItems.value;
+    if (!items.length) return new Set();
+    return new Set(items.filter((i) => i.type === 'segment').map((i) => i.id));
+});
+
+/** ID da layer atualmente selecionada */
+const selectedLayerId = computed<string | null>(() =>
+    selection.selectedType.value === 'layer' ? selection.selectedId.value : null,
+);
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Verdadeiro quando a categoria do template_slot desta prateleira bate com a

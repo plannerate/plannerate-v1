@@ -1,23 +1,24 @@
 <template>
     <!-- Segment com drop direto (troca de posições) -->
     <div
-        class="relative flex flex-col items-start transition-all duration-200"
+        class="relative flex flex-col items-start transition-[transform,box-shadow] duration-200"
         tabindex="0"
         :class="{
-            'ring-3 ring-primary ring-offset-2 bg-primary/20 shadow-xl scale-[1.02] animate-pulse z-50': isSegmentSelected,
+            'ring-3 ring-primary ring-offset-2 bg-primary/20 shadow-xl scale-[1.02] z-50': isSegmentSelected,
             'ring-2 ring-amber-500/70 ring-offset-1 bg-amber-100/50 shadow-lg z-40':
                 isEanMatch && !isSegmentSelected && !isDropTarget,
-            'ring-2 ring-emerald-500 ring-offset-1 bg-emerald-50/70 shadow-lg z-40 animate-pulse':
+            'ring-2 ring-emerald-500 ring-offset-1 bg-emerald-50/70 shadow-lg z-40':
                 isGroupingMatch && !isSegmentSelected && !isDropTarget,
             'hover:opacity-90':
                 !isSegmentSelected && !isDragging && !isDropTarget,
             'cursor-grabbing opacity-40': isDragging,
             'cursor-grab': !isDragging && !isDropTarget,
             'cursor-pointer': isDropTarget,
-            'scale-105 bg-primary/10 shadow-lg ring-4 ring-primary animate-pulse':
+            'scale-105 bg-primary/10 shadow-lg ring-4 ring-primary':
                 isDropTarget,
         }"
         draggable="true"
+        @mousedown="handleMouseDown"
         @focus="handleFocusSegment"
         @click="handleSegmentClick"
         @dragstart="handleDragStart"
@@ -41,7 +42,7 @@
 
         <!-- Indicador visual de estoque alvo -->
         <StockIndicator :segment="segment" :shelf-depth="shelfDepth" :scale="props.scale" @click="handleSegmentClick" />
-     
+
         <!-- Indicador visual de drop -->
         <div
             v-if="isDropTarget"
@@ -82,10 +83,10 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, onUpdated, ref } from 'vue';
 import {
     draggingSegmentShelfId,
-    eanSearchQuery,
+    eanSearchDebounced,
 } from '../../../composables/plannerate/core/useGondolaState';
 import { DND_KEYS, hasSegmentData, setSegmentDragData } from '../../../composables/plannerate/dnd/transfer';
 import { useAbcClassification } from '../../../composables/plannerate/analysis/useAbcClassification';
@@ -97,6 +98,28 @@ import AbcBadge from './AbcBadge.vue';
 import PaperRoleBadge from './PaperRoleBadge.vue';
 import LayerRenderer from './Layer.vue';
 import StockIndicator from './StockIndicator.vue';
+
+// ─── Diagnóstico: conta quantos Segment re-renderizam por interação ──────────
+// Ativar: localStorage.setItem('perf:segment', '1') e recarregar.
+// Contador em nível de MÓDULO (compartilhado por todas as instâncias) — agrega
+// corretamente o total de re-renders disparados por um único clique.
+const PERF_ENABLED = typeof window !== 'undefined' && window.localStorage.getItem('perf:segment') === '1';
+let _renderCount = 0;
+let _flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Acumula um re-render e agenda o relatório agregado (300ms de debounce). */
+function _trackRender(): void {
+    if (!PERF_ENABLED) return;
+    _renderCount++;
+    if (_flushTimer) clearTimeout(_flushTimer);
+    _flushTimer = setTimeout(() => {
+        console.log(`%c[Segment] ${_renderCount} re-render(s) na última interação`,
+            'color:#e11d48;font-weight:bold');
+        _renderCount = 0;
+        _flushTimer = null;
+    }, 300);
+}
+// ──────────────────────────────────────────────────────────────────────────
 
 interface Props {
     segment: Segment;
@@ -111,6 +134,15 @@ interface Props {
      */
     facingGap?: number;
     highlightGroupingNormalized?: string | null;
+    /**
+     * Pré-computado pela Shelf pai — evita que cada Segment subscreva diretamente
+     * ao estado global de seleção (selectedId / selectedItems), eliminando a cascata
+     * de N recomputações por clique. Quando o selectedId muda, apenas a Shelf
+     * re-renderiza; o vdom diff do Vue atualiza somente os 2 segmentos cujos
+     * props realmente mudaram (anterior + novo selecionado).
+     */
+    selectedFromParent?: boolean;
+    layerSelectedFromParent?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -129,34 +161,27 @@ const abcClassification = computed(() => getClassification(layer.value?.product?
 const paperRole = computed(() => getPaperRole(layer.value?.product?.ean));
 
 const isEanMatch = computed(() => {
-    const query = eanSearchQuery.value.trim();
+    const query = eanSearchDebounced.value.trim();
     const productEan = String(layer.value?.product?.ean ?? '').trim();
-
-    if (!query || !productEan) {
-        return false;
-    }
-
-    return productEan.includes(query);
+    return !!(query && productEan && productEan.includes(query));
 });
 
 const isGroupingMatch = computed(() => {
     const targetGrouping = (props.highlightGroupingNormalized ?? '').trim();
     const productGrouping = String(layer.value?.product?.category_id ?? '').trim();
-
-    if (!targetGrouping || !productGrouping) {
-        return false;
-    }
-
-    return targetGrouping === productGrouping;
+    return !!(targetGrouping && productGrouping && targetGrouping === productGrouping);
 });
 
-const isSegmentSelected = computed(() => {
-    return selection.isSegmentSelected(props.segment);
-});
+/**
+ * Recebido como prop da Shelf pai — não depende mais do estado global aqui.
+ * Garante que apenas os segmentos cujo estado de seleção mudou re-renderizam.
+ */
+const isSegmentSelected = computed(() => props.selectedFromParent ?? false);
 
-const isLayerSelected = computed(() => {
-    return layer.value ? selection.isLayerSelected(layer.value) : false;
-});
+/**
+ * Recebido como prop da Shelf pai — idem ao isSegmentSelected.
+ */
+const isLayerSelected = computed(() => props.layerSelectedFromParent ?? false);
 
 // Estado de dragging e drop
 const isDragging = ref(false);
@@ -164,6 +189,20 @@ const isDropTarget = ref(false);
 const clearDropTarget = () => {
     isDropTarget.value = false;
 };
+
+// Previne double-fire: ao clicar, o browser dispara @focus ANTES de @click.
+// Sem essa flag, selectItem() seria chamado duas vezes no mesmo clique,
+// dobrando a cascata de atualizações para todos os segmentos na tela.
+let _skipFocusFromMouse = false;
+
+function handleMouseDown() {
+    _skipFocusFromMouse = true;
+    // Reset após o clique completar (focus + click acontecem em < 50ms)
+    setTimeout(() => { _skipFocusFromMouse = false; }, 50);
+}
+
+// Diagnóstico: cada re-render deste componente incrementa o contador global
+onUpdated(_trackRender);
 
 onMounted(() => {
     window.addEventListener('dragend', clearDropTarget, true);
@@ -176,6 +215,8 @@ onBeforeUnmount(() => {
 });
 
 function handleFocusSegment() {
+    // Ignora focus gerado por mouse — o @click vai tratar a seleção
+    if (_skipFocusFromMouse) return;
     selection.selectItem('segment', props.segment.id, props.segment);
 }
 
