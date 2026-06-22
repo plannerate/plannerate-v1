@@ -88,9 +88,28 @@ function setCookie(name: string, value: string, days: number = 30): void {
 let clickTimer: ReturnType<typeof setTimeout> | null = null;
 const clickDelay = 250;
 
-function isProductSelected(product: RejectedProduct): boolean {
-    return selection.isSelected('product', product.product_id);
-}
+/**
+ * IDs dos produtos atualmente selecionados (única + múltipla), como Set para
+ * lookup O(1) no template. Calculado UMA vez por mudança de seleção — antes,
+ * cada card chamava `selection.isSelected('product', id)` a cada re-render do
+ * drawer (que ocorre a todo clique na gôndola), repetindo a varredura para
+ * todos os cards. Agora o card só faz `selectedProductIds.has(id)`.
+ */
+const selectedProductIds = computed<Set<string>>(() => {
+    const ids = new Set<string>();
+
+    if (selection.selectedType.value === 'product' && selection.selectedId.value) {
+        ids.add(selection.selectedId.value);
+    }
+
+    for (const item of selection.selectedItems.value) {
+        if (item.type === 'product') {
+            ids.add(item.id);
+        }
+    }
+
+    return ids;
+});
 
 function handleCardClick(_event: MouseEvent, product: RejectedProduct) {
     if (clickTimer) {
@@ -123,9 +142,17 @@ function handleCardClick(_event: MouseEvent, product: RejectedProduct) {
 }
 
 // ── Reason badge ─────────────────────────────────────────────────────────────
-const reasonMeta = (
-    reason: string,
-): { icon: Component; label: string; variant: 'outline' | 'destructive' | 'secondary' } => {
+type ReasonMeta = { icon: Component; label: string; variant: 'outline' | 'destructive' | 'secondary' };
+
+/**
+ * Cache de metadados por motivo. O template chama `reasonMeta` 3× por card; sem
+ * cache, cada chamada alocava um objeto novo (centenas de alocações por clique,
+ * pressionando o GC). Como os motivos são um conjunto fixo e pequeno, retornar
+ * sempre a MESMA referência elimina alocações e ajuda o Vue a evitar trabalho.
+ */
+const _reasonMetaCache = new Map<string, ReasonMeta>();
+
+function buildReasonMeta(reason: string): ReasonMeta {
     if (reason === 'no_horizontal_space')
         return { icon: MoveHorizontal, label: 'Sem espaço', variant: 'outline' };
     if (reason === 'height_exceeds_shelf')
@@ -135,6 +162,17 @@ const reasonMeta = (
     if (reason === 'removed_from_mix')
         return { icon: Ban, label: 'Fora do mix', variant: 'secondary' };
     return { icon: Layers, label: 'Nível', variant: 'secondary' };
+}
+
+const reasonMeta = (reason: string): ReasonMeta => {
+    let cached = _reasonMetaCache.get(reason);
+
+    if (!cached) {
+        cached = buildReasonMeta(reason);
+        _reasonMetaCache.set(reason, cached);
+    }
+
+    return cached;
 };
 
 // ── Build product object compatible with addProductToShelf ───────────────────
@@ -397,8 +435,8 @@ defineExpose({
                         class="flex w-36 shrink-0 flex-col gap-1.5 rounded-lg border p-2 transition-all select-none"
                         :class="{
                             'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200 dark:bg-blue-950/20 dark:ring-blue-900':
-                                isProductSelected(product) && !swapModeActive,
-                            'border-border bg-card': !isProductSelected(product),
+                                selectedProductIds.has(product.product_id) && !swapModeActive,
+                            'border-border bg-card': !selectedProductIds.has(product.product_id),
                             'ring-2 ring-amber-400 border-amber-400': swapSource?.id === product.id,
                             'opacity-40': swapModeActive && swapSource?.id !== product.id,
                             'cursor-grabbing opacity-50 ring-2 ring-primary': draggingId === product.id,

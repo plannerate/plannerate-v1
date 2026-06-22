@@ -49,34 +49,23 @@ watch(showZoneIndicators, (value) => {
     }
 });
 
-// Busca de produto por EAN na gondola atual.
-// Bound diretamente ao <Input> — atualiza a cada tecla (digitação instantânea).
+// Valor do campo de busca por EAN. Bound ao <Input> e preenchido automaticamente
+// ao clicar num produto. NÃO dispara o highlight sozinho — apenas reflete o que
+// está digitado/preenchido no campo.
 export const eanSearchQuery = ref('');
 
 /**
- * Versão "debounced" de eanSearchQuery, usada pelas reações CARAS:
+ * Busca efetivamente APLICADA — só muda quando o usuário clica em "Buscar"
+ * (ou tecla Enter no campo). É esta ref que dispara as reações CARAS:
  * - o highlight `isEanMatch` em cada Segment
- * - o watcher que percorre a gondola e seleciona o produto encontrado
+ * - a varredura da gôndola que seleciona o produto encontrado
  *
- * Sem isto, cada tecla recalculava o highlight de centenas de segmentos e
- * percorria a gondola inteira. Pior: EANs brasileiros começam todos com "789",
- * então prefixos curtos casam com quase todos os produtos, ligando centenas de
- * transições CSS de uma vez. O debounce faz a reação cara rodar só ~250ms após
- * o usuário parar de digitar.
+ * Separar o "campo" da "busca aplicada" evita que cada tecla (ou cada clique
+ * que preenche o campo) recalcule o highlight de centenas de segmentos e
+ * percorra a gôndola inteira — especialmente porque EANs brasileiros começam
+ * todos com "789", então prefixos curtos casariam com quase todos os produtos.
  */
-export const eanSearchDebounced = ref('');
-
-let _eanDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-watch(eanSearchQuery, (value) => {
-    if (_eanDebounceTimer) {
-        clearTimeout(_eanDebounceTimer);
-    }
-
-    _eanDebounceTimer = setTimeout(() => {
-        eanSearchDebounced.value = value;
-    }, 250);
-});
+export const eanSearchApplied = ref('');
 
 /** category_id da categoria de template selecionada para highlight no canvas */
 export const selectedTemplateCategoryId = ref<string | null>(null);

@@ -86,7 +86,7 @@
 import { computed, onBeforeUnmount, onMounted, onUpdated, ref } from 'vue';
 import {
     draggingSegmentShelfId,
-    eanSearchDebounced,
+    eanSearchApplied,
 } from '../../../composables/plannerate/core/useGondolaState';
 import { DND_KEYS, hasSegmentData, setSegmentDragData } from '../../../composables/plannerate/dnd/transfer';
 import { useAbcClassification } from '../../../composables/plannerate/analysis/useAbcClassification';
@@ -161,7 +161,7 @@ const abcClassification = computed(() => getClassification(layer.value?.product?
 const paperRole = computed(() => getPaperRole(layer.value?.product?.ean));
 
 const isEanMatch = computed(() => {
-    const query = eanSearchDebounced.value.trim();
+    const query = eanSearchApplied.value.trim();
     const productEan = String(layer.value?.product?.ean ?? '').trim();
     return !!(query && productEan && productEan.includes(query));
 });

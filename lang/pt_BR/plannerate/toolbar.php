@@ -5,6 +5,7 @@ return [
     'zoom_in' => 'Aumentar zoom',
     'search_ean_placeholder' => 'Buscar EAN na gondola',
     'clear_ean_search' => 'Limpar busca por EAN',
+    'search_ean' => 'Buscar EAN',
     'toggle_grid' => 'Exibir/ocultar grade',
     'grid' => 'Grade',
     'toggle_zones' => 'Zonas de exposição',

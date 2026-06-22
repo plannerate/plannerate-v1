@@ -47,7 +47,7 @@ import { Switch } from '@/components/ui/switch';
 import {
     currentGondola,
     eanSearchQuery,
-    eanSearchDebounced,
+    eanSearchApplied,
     selectedTemplateCategoryId,
     showPerformanceModal,
 } from '@/composables/plannerate/core/useGondolaState';
@@ -415,8 +415,12 @@ const eanSearchModel = computed({
     },
 });
 
-const syncingEanFromSelection = ref(false);
-
+/**
+ * Preenche o campo de busca com o EAN do produto ao selecionar um segmento
+ * (clique/tab). Apenas PREENCHE o campo — não dispara a busca/highlight, que só
+ * ocorre quando o usuário clica em "Buscar" (ou tecla Enter). Assim selecionar
+ * um produto fica barato (sem varrer a gôndola nem recalcular highlight).
+ */
 watch(
     () => selection.selectedItem.value,
     (selected) => {
@@ -424,65 +428,69 @@ watch(
             return;
         }
 
-        const selectedSegment = selected.item as any;
-        const selectedEan = String(
-            selectedSegment?.layer?.product?.ean ?? '',
+        const ean = String(
+            (selected.item as any)?.layer?.product?.ean ?? '',
         ).replace(/\D/g, '');
 
-        if (!selectedEan || selectedEan === eanSearchQuery.value) {
-            return;
+        if (ean && ean !== eanSearchQuery.value) {
+            eanSearchQuery.value = ean;
         }
-
-        syncingEanFromSelection.value = true;
-        eanSearchQuery.value = selectedEan;
     },
 );
 
-watch(
-    () => eanSearchDebounced.value,
-    (query) => {
-        if (syncingEanFromSelection.value) {
-            syncingEanFromSelection.value = false;
+/**
+ * Aplica a busca por EAN: liga o highlight (`eanSearchApplied`) e percorre a
+ * gôndola selecionando o primeiro segmento cujo produto casa com a query.
+ * Chamado pelo botão "Buscar" e pela tecla Enter no campo — nunca reativo.
+ */
+function runEanSearch(): void {
+    const normalizedQuery = eanSearchQuery.value.trim();
 
-            return;
+    // Dispara (ou limpa) o highlight nos segmentos
+    eanSearchApplied.value = normalizedQuery;
+
+    const gondola = currentGondola.value;
+
+    if (!normalizedQuery || !gondola?.sections) {
+        return;
+    }
+
+    for (const section of gondola.sections) {
+        if (!section?.shelves) {
+            continue;
         }
 
-        const normalizedQuery = query.trim();
-        const gondola = currentGondola.value;
-
-        if (!normalizedQuery || !gondola?.sections) {
-            return;
-        }
-
-        for (const section of gondola.sections) {
-            if (!section?.shelves) {
+        for (const shelf of section.shelves) {
+            if (!shelf?.segments) {
                 continue;
             }
 
-            for (const shelf of section.shelves) {
-                if (!shelf?.segments) {
+            for (const segment of shelf.segments) {
+                const productEan = String(
+                    segment?.layer?.product?.ean ?? '',
+                ).trim();
+
+                if (!segment?.id || !productEan.includes(normalizedQuery)) {
                     continue;
                 }
 
-                for (const segment of shelf.segments) {
-                    const productEan = String(
-                        segment?.layer?.product?.ean ?? '',
-                    ).trim();
+                selection.selectItem('segment', segment.id, segment, {
+                    shelf,
+                });
 
-                    if (!segment?.id || !productEan.includes(normalizedQuery)) {
-                        continue;
-                    }
-
-                    selection.selectItem('segment', segment.id, segment, {
-                        shelf,
-                    });
-
-                    return;
-                }
+                return;
             }
         }
-    },
-);
+    }
+}
+
+/**
+ * Limpa o campo de busca e remove o highlight aplicado.
+ */
+function clearEanSearch(): void {
+    eanSearchQuery.value = '';
+    eanSearchApplied.value = '';
+}
 
 /**
  * ID da região vinculada à gôndola atual
@@ -569,10 +577,15 @@ const handleMapRegionSelect = (regionId: string | null) => {
                 <div class="flex h-8 items-center gap-1 rounded-md border bg-background px-2">
                     <Search class="size-3.5 text-muted-foreground" />
                     <Input v-model="eanSearchModel" :placeholder="t('plannerate.toolbar.search_ean_placeholder')"
-                        class="h-7 w-40 border-0 px-1 text-xs shadow-none focus-visible:ring-0" />
+                        class="h-7 w-40 border-0 px-1 text-xs shadow-none focus-visible:ring-0"
+                        @keydown.enter.prevent="runEanSearch" />
                     <ButtonWithTooltip v-if="eanSearchModel" variant="ghost" size="icon-sm" class="size-7"
-                        :tooltip="t('plannerate.toolbar.clear_ean_search')" @click="eanSearchModel = ''">
+                        :tooltip="t('plannerate.toolbar.clear_ean_search')" @click="clearEanSearch">
                         <X class="size-3.5" />
+                    </ButtonWithTooltip>
+                    <ButtonWithTooltip variant="ghost" size="icon-sm" class="size-7"
+                        :tooltip="t('plannerate.toolbar.search_ean')" @click="runEanSearch">
+                        <Search class="size-3.5" />
                     </ButtonWithTooltip>
                 </div>
                 <Separator orientation="vertical" class="h-8" />
