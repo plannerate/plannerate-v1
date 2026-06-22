@@ -182,28 +182,73 @@ const {
 
 const isSelected = computed(() => selection.isShelfSelected(shelfRef.value));
 
-// ── Seleção de segmentos calculada aqui (nível Shelf) ────────────────────────
+// ── Seleção de segmentos calculada aqui (nível Shelf), ESCOPADA a esta shelf ──
 // Antes, cada Segment subscrevia individualmente a selectedId e selectedItems,
 // causando uma cascata de N recomputações por clique (N = nº de segmentos).
-// Agora apenas a Shelf subscreve; apenas os 2 segmentos cujos props mudam
-// (anterior e novo selecionado) recebem re-render do Vue.
+// O passo anterior moveu a subscrição para a Shelf, mas os computeds devolviam o
+// ID GLOBAL — logo o valor mudava para TODAS as shelves a cada clique, forçando
+// todas a re-renderizar o v-for de segmentos (o lag perceptível).
+//
+// Agora os computeds só devolvem o ID quando o item selecionado pertence a ESTA
+// shelf; caso contrário devolvem null/Set vazio ESTÁVEIS. Assim o valor só muda
+// nas 2 shelves envolvidas (a que perde e a que ganha a seleção) — todas as
+// outras mantêm o mesmo valor e o Vue pula o re-render delas. O comportamento é
+// idêntico: o binding nunca compara IDs de outra shelf.
 
-/** ID do segmento atualmente selecionado em single-select */
-const selectedSegmentId = computed<string | null>(() =>
-    selection.selectedType.value === 'segment' ? selection.selectedId.value : null,
+// Set estável reutilizado quando esta shelf não tem nenhum item multi-selecionado.
+// Manter a MESMA referência evita que o computed "mude" de valor (Set é comparado
+// por identidade) e dispare re-render desnecessário.
+const EMPTY_ID_SET: ReadonlySet<string> = new Set();
+
+/** IDs dos segmentos desta shelf — recalcula só quando os segmentos mudam (não na seleção). */
+const shelfSegmentIdSet = computed<Set<string>>(
+    () => new Set(segments.value.map((s) => s.id)),
 );
 
-/** IDs em multi-select (Set para lookup O(1)) */
-const multiSelectedSegmentIds = computed<Set<string>>(() => {
-    const items = selection.selectedItems.value;
-    if (!items.length) return new Set();
-    return new Set(items.filter((i) => i.type === 'segment').map((i) => i.id));
+/** IDs das layers desta shelf — idem, independente da seleção. */
+const shelfLayerIdSet = computed<Set<string>>(() => {
+    const ids = new Set<string>();
+    for (const s of segments.value) {
+        if (s.layer?.id) {
+            ids.add(s.layer.id);
+        }
+    }
+    return ids;
 });
 
-/** ID da layer atualmente selecionada */
-const selectedLayerId = computed<string | null>(() =>
-    selection.selectedType.value === 'layer' ? selection.selectedId.value : null,
-);
+/** ID do segmento em single-select SE pertencer a esta shelf; senão null estável. */
+const selectedSegmentId = computed<string | null>(() => {
+    if (selection.selectedType.value !== 'segment') {
+        return null;
+    }
+    const id = selection.selectedId.value;
+    return id && shelfSegmentIdSet.value.has(id) ? id : null;
+});
+
+/** IDs em multi-select restritos a esta shelf (Set para lookup O(1)). */
+const multiSelectedSegmentIds = computed<ReadonlySet<string>>(() => {
+    const items = selection.selectedItems.value;
+    if (!items.length) {
+        return EMPTY_ID_SET;
+    }
+    const own = shelfSegmentIdSet.value;
+    let mine: Set<string> | null = null;
+    for (const i of items) {
+        if (i.type === 'segment' && own.has(i.id)) {
+            (mine ??= new Set()).add(i.id);
+        }
+    }
+    return mine ?? EMPTY_ID_SET;
+});
+
+/** ID da layer selecionada SE pertencer a esta shelf; senão null estável. */
+const selectedLayerId = computed<string | null>(() => {
+    if (selection.selectedType.value !== 'layer') {
+        return null;
+    }
+    const id = selection.selectedId.value;
+    return id && shelfLayerIdSet.value.has(id) ? id : null;
+});
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
