@@ -3,8 +3,8 @@
 return [
     'period' => [
         'table_type' => 'Tipo de Tabela',
-        'sales' => 'Vendas (Sales)',
-        'monthly_summary' => 'Resumo Mensal (Monthly Summaries)',
+        'sales' => 'Vendas Diárias',
+        'monthly_summary' => 'Vendas Sumarizadas por Mês',
         'sales_period' => 'Período de Vendas',
         'start_date' => 'Data Inicial',
         'end_date' => 'Data Final',
