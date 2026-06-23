@@ -42,6 +42,9 @@ return [
     ],
     'rejected_products' => [
         'title' => 'Produtos rejeitados',
+        'load' => 'Carregar produtos rejeitados',
+        'refresh' => 'Recarregar',
+        'not_loaded' => 'Clique para carregar os produtos rejeitados desta geração.',
         'no_image' => 'Sem imagem',
         'clear_filter' => 'Limpar filtro',
         'clear_selection' => 'Limpar seleção',

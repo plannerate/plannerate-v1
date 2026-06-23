@@ -5,7 +5,7 @@ import { useRejectedProductsStore } from '@/composables/plannerate/interactions/
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
 import { selectedTemplateCategoryId } from '@/composables/plannerate/core/useGondolaState';
 import type { RejectedProduct } from '@/composables/plannerate/core/useGondolaState';
-import { ArrowLeftRight, Ban, ChevronDown, ChevronUp, GripVertical, Layers, Loader2, MoveHorizontal, Ruler, Trash2, X } from 'lucide-vue-next';
+import { ArrowLeftRight, Ban, ChevronDown, ChevronUp, GripVertical, Layers, Loader2, MoveHorizontal, RefreshCw, Ruler, Trash2, X } from 'lucide-vue-next';
 import { type Component, computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,9 @@ const rejectedStore = useRejectedProductsStore();
 
 const isOpen = ref(false);
 const isSwapping = ref(false);
+// Controla se a lista de rejeitados já foi carregada sob demanda (via botão).
+// Enquanto false, o corpo mostra o botão "Carregar" em vez de cards/empty-state.
+const hasLoaded = ref(false);
 const draggingId = ref<string | null>(null);
 const swapSource = ref<RejectedProduct | null>(null);
 const cardsContainer = ref<HTMLElement | null>(null);
@@ -274,21 +277,27 @@ watch(
     },
 );
 
+// ── Carregamento sob demanda ─────────────────────────────────────────────────
+/**
+ * Busca (ou recarrega) a lista de produtos rejeitados a pedido do usuário.
+ * Nada é carregado no mount nem em saves — só quando este método é chamado
+ * pelo botão de carregar/recarregar.
+ */
+async function loadRejected() {
+    await editor.fetchRejectedProducts(props.gondolaId);
+    hasLoaded.value = true;
+}
+
 onMounted(() => {
+    // Apenas restaura a preferência de aberto/fechado do cookie. Sem buscar
+    // rejeitados e sem auto-abrir por dados — o carregamento é explícito.
     const savedState = getCookie(DRAWER_STATE_COOKIE);
-    const hasUserPreference = savedState !== null;
 
     if (savedState === 'open') {
         isOpen.value = true;
     } else if (savedState === 'closed') {
         isOpen.value = false;
     }
-
-    void editor.fetchRejectedProducts(props.gondolaId).then(() => {
-        if (!hasUserPreference && editor.rejectedProducts.value.length > 0) {
-            isOpen.value = true;
-        }
-    });
 });
 
 watch(
@@ -301,7 +310,7 @@ watch(
 onUnmounted(() => rejectedStore.clearOnProductPlaced());
 
 defineExpose({
-    fetchRejected: () => editor.fetchRejectedProducts(props.gondolaId),
+    fetchRejected: () => loadRejected(),
 });
 </script>
 
@@ -354,6 +363,28 @@ defineExpose({
                     <X class="size-3" />
                     {{ t('plannerate.editor.rejected_products.clear_selection') }}
                 </Button>
+                <TooltipProvider :delay-duration="200">
+                    <Tooltip>
+                        <TooltipTrigger as-child>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                class="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                                :disabled="editor.isLoadingRejectedProducts.value"
+                                @click.stop="loadRejected()"
+                            >
+                                <RefreshCw
+                                    class="size-3.5"
+                                    :class="{ 'animate-spin': editor.isLoadingRejectedProducts.value }"
+                                />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            {{ t('plannerate.editor.rejected_products.refresh') }}
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
                 <ChevronUp v-if="isOpen" class="size-4 text-muted-foreground" />
                 <ChevronDown v-else class="size-4 text-muted-foreground" />
             </div>
@@ -417,9 +448,30 @@ defineExpose({
                     </button>
                 </div>
 
+                <!-- Not loaded state: botão de carregar sob demanda -->
+                <div
+                    v-if="!hasLoaded"
+                    class="flex h-32 flex-col items-center justify-center gap-3 px-4 text-center"
+                >
+                    <p class="text-sm text-muted-foreground">
+                        {{ t('plannerate.editor.rejected_products.not_loaded') }}
+                    </p>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        class="gap-2"
+                        :disabled="editor.isLoadingRejectedProducts.value"
+                        @click="loadRejected()"
+                    >
+                        <Loader2 v-if="editor.isLoadingRejectedProducts.value" class="size-4 animate-spin" />
+                        <RefreshCw v-else class="size-4" />
+                        {{ t('plannerate.editor.rejected_products.load') }}
+                    </Button>
+                </div>
+
                 <!-- Empty state -->
                 <div
-                    v-if="!editor.isLoadingRejectedProducts.value && filteredRejectedProducts.length === 0"
+                    v-else-if="!editor.isLoadingRejectedProducts.value && filteredRejectedProducts.length === 0"
                     class="flex h-20 items-center justify-center text-sm text-muted-foreground"
                 >
                     <span v-if="selectedTemplateCategoryId && editor.rejectedProducts.value.length > 0">

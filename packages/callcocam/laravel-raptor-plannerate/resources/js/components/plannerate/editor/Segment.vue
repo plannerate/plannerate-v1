@@ -1,10 +1,10 @@
 <template>
     <!-- Segment com drop direto (troca de posições) -->
     <div
-        class="relative flex flex-col items-start transition-[transform,box-shadow] duration-200"
+        class="relative flex flex-col items-start transition-shadow duration-75"
         tabindex="0"
         :class="{
-            'ring-3 ring-primary ring-offset-2 bg-primary/20 shadow-xl scale-[1.02] z-50': isSegmentSelected,
+            'ring-3 ring-primary ring-offset-2 bg-primary/20 shadow-xl z-50': isSegmentSelected,
             'ring-2 ring-amber-500/70 ring-offset-1 bg-amber-100/50 shadow-lg z-40':
                 isEanMatch && !isSegmentSelected && !isDropTarget,
             'ring-2 ring-emerald-500 ring-offset-1 bg-emerald-50/70 shadow-lg z-40':

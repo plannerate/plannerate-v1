@@ -447,21 +447,11 @@ function gondolaHref(gondola: Gondola): string {
 </script>
 
 <template>
-    <!-- ========================================================================
-       TOOLBAR PRINCIPAL
-       Barra de ferramentas com controles de edição, zoom, alinhamento
-       ======================================================================== -->
+    <!-- Toolbar principal: edição, zoom, alinhamento e ações da gôndola -->
     <div class="border-b bg-muted/50">
         <div class="space-y-4 p-4">
-            <!-- ==================================================================
-           CONTROLES E FERRAMENTAS
-           Organizados em grupos: Zoom, Alinhamento, Ações, Histórico, Salvar
-           ================================================================== -->
             <div class="flex flex-wrap items-center gap-2" data-toolbar>
-                <!-- ==================================================================
-           NAVEGAÇÃO ENTRE GÔNDOLAS
-           Dropdown para selecionar a gôndola ativa
-           ================================================================== -->
+                <!-- Navegação entre gôndolas -->
                 <DropdownMenu>
                     <DropdownMenuTrigger as-child>
                         <Button variant="outline" class="h-8 min-w-48 justify-between gap-2 px-3 font-medium">
@@ -496,6 +486,7 @@ function gondolaHref(gondola: Gondola): string {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
+                <!-- Busca por EAN -->
                 <div class="flex h-8 items-center gap-1 rounded-md border bg-background px-2">
                     <Search class="size-3.5 text-muted-foreground" />
                     <Input v-model="eanSearchModel" :placeholder="t('plannerate.toolbar.search_ean_placeholder')"
@@ -511,13 +502,7 @@ function gondolaHref(gondola: Gondola): string {
                     </ButtonWithTooltip>
                 </div>
 
-
-                <!-- ============================================================
-             AÇÕES FINAIS
-             Auto-save, Salvar (com contador de mudanças), Performance, Imprimir, Relatórios
-             ============================================================ -->
-
-                <!-- Toggle Auto-save -->
+                <!-- Salvar + auto-save -->
                 <ButtonGroup aria-label="Salvar e salvamento automático"
                     class="h-8 border-primary/40 bg-primary/5 *:h-full *:rounded-none">
                     <Button variant="ghost" size="sm" class="h-full rounded-none border-0 hover:bg-primary/10" :title="hasChanges
@@ -543,23 +528,23 @@ function gondolaHref(gondola: Gondola): string {
                     </div>
                 </ButtonGroup>
 
+                <!-- Grade -->
                 <ButtonWithTooltip :variant="editor.showGrid.value ? 'default' : 'ghost'" size="sm"
                     :tooltip="t('plannerate.toolbar.toggle_grid')" @click="editor.toggleGrid()">
                     <Grid3x3 class="size-4" />
                     {{ t('plannerate.toolbar.grid') }}
                 </ButtonWithTooltip>
 
+                <!-- Zonas (mapa de calor) -->
                 <ButtonWithTooltip :variant="editor.showZoneIndicators.value ? 'default' : 'ghost'" size="sm"
                     :tooltip="t('plannerate.toolbar.toggle_zones')" @click="editor.toggleZoneIndicators()">
                     <Thermometer class="size-4" />
                     {{ t('plannerate.toolbar.zones') }}
                 </ButtonWithTooltip>
+
                 <Separator orientation="vertical" class="h-8" />
 
-                <!-- ============================================================
-             CONTROLES DE ZOOM/ESCALA
-             Diminuir, Input (readonly), Aumentar
-             ============================================================ -->
+                <!-- Zoom / escala -->
                 <div class="flex h-8 items-center gap-1 rounded-md border bg-background px-1">
                     <ButtonWithTooltip variant="ghost" size="icon" class="size-7"
                         :tooltip="t('plannerate.toolbar.zoom_out')" @click="editor.decreaseScale()">
@@ -573,12 +558,9 @@ function gondolaHref(gondola: Gondola): string {
                         <Plus class="size-4" />
                     </ButtonWithTooltip>
                 </div>
-                <!-- ============================================================
-             FERRAMENTAS DE ALINHAMENTO E GRADE
-             Grade, Alinhar Esquerda/Direita/Centro, Justificar
-             ============================================================ -->
-                <div class="flex h-8 items-center gap-1 rounded-md bg-muted/60 px-1">
 
+                <!-- Alinhamento e histórico (undo / redo) -->
+                <div class="flex h-8 items-center gap-1 rounded-md bg-muted/60 px-1">
                     <ButtonWithTooltip :variant="alignment === 'left' ? 'default' : 'ghost'" size="sm"
                         :tooltip="t('plannerate.toolbar.align_left_tooltip')" @click="editor.alignLeft()">
                         <AlignLeft class="size-4" />
@@ -605,10 +587,7 @@ function gondolaHref(gondola: Gondola): string {
 
                     <Separator orientation="vertical" class="h-5" />
 
-                    <!-- ============================================================
-             HISTÓRICO (UNDO/REDO)
-             Integrado com usePlanogramHistory composable
-             ============================================================ -->
+                    <!-- Histórico: desfazer / refazer / limpar -->
                     <ButtonWithTooltip variant="ghost" size="icon-sm" :disabled="!isMounted || !canUndo"
                         :tooltip="t('plannerate.toolbar.undo')" @click="editor.undo()">
                         <Undo2 class="size-4" />
@@ -624,8 +603,7 @@ function gondolaHref(gondola: Gondola): string {
                         <Trash2 class="size-4" />
                     </ButtonWithTooltip>
 
-                    <Separator orientation="vertical" class="h-5" />
-
+                    <!-- Limpar categoria selecionada (desativado) -->
                     <!-- <ButtonWithTooltip variant="ghost" size="sm" :disabled="!isMounted || !hasSelection"
                         tooltip="Limpar categoria selecionada" @click="selectedTemplateCategoryId = null">
                         <X class=" size-4" />
@@ -635,27 +613,24 @@ function gondolaHref(gondola: Gondola): string {
 
                 <Separator orientation="vertical" class="h-8" />
 
-
-                <!-- Geração Automática (Feature Flag + modo template/automatic) -->
+                <!-- Geração automática (feature flag + modo template/automatic) -->
                 <ButtonWithTooltip v-if="canAutoGenerate" variant="ghost" size="sm"
                     :tooltip="t('plannerate.toolbar.auto_generate_tooltip')" @click="openGenerateFlow()">
                     <Sparkles class="size-4" />
                     <span class="max-w-24 truncate">
                         {{ t('plannerate.toolbar.auto_generate') }}</span>
                 </ButtonWithTooltip>
-                <!-- ============================================================
-             AÇÕES DE EDIÇÃO
-             Inverter, Adicionar Módulo, Remover Gôndola
-             ============================================================ -->
+
+                <!-- Ações de edição: inverter fluxo e transferir módulo -->
                 <div class="flex h-8 items-center gap-1 rounded-md bg-muted/60 px-1">
+                    <!-- Inverter fluxo -->
                     <ButtonWithTooltip variant="ghost" size="sm" :tooltip="t('plannerate.toolbar.invert_tooltip')"
                         @click="editor.toggleFlow()">
                         <FlipHorizontal class="size-4" />
                         {{ t('plannerate.toolbar.invert') }}
                     </ButtonWithTooltip>
 
-
-                    <!-- Botão Transferir Módulo -->
+                    <!-- Transferir módulo -->
                     <ButtonWithTooltip variant="ghost" size="sm"
                         :tooltip="t('plannerate.toolbar.transfer_module_tooltip')"
                         @click="showTransferSectionDialog = true">
@@ -666,18 +641,10 @@ function gondolaHref(gondola: Gondola): string {
 
                 <Separator orientation="vertical" class="h-8" />
 
-
-
-                <!-- Indicadores de Análises -->
-
-
-                <!-- Dropdown Ações (Adicionar módulo). Mapa e Remover Gôndola movidos para header/Header.vue -->
-                <!-- <DropdownActions :on-add-module="() => editor.addModule()" /> -->
-
-                <!-- Dropdown Distribuição (Repositor, Visualizar/Baixar PDF, QR Code) -->
+                <!-- Dropdowns: distribuição, performance e relatórios -->
+                <!-- DropdownActions (adicionar módulo), Mapa e Remover Gôndola movidos para header/Header.vue -->
                 <DropdownDistribution />
 
-                <!-- Dropdown Performance -->
                 <DropdownPerformance :analysis="analysis" :gondola="currentGondola as Gondola" />
 
                 <Performance :open="showPerformanceModal" :gondola-id="currentGondolaId" :planogram="currentGondola?.planogram
@@ -686,9 +653,8 @@ function gondolaHref(gondola: Gondola): string {
                     " @update:open="
                         (value: boolean) => (showPerformanceModal = value)
                     " />
-                <!-- Dropdown Relatórios (Compra, Reposição — Excel/PDF) -->
-                <DropdownReports />
 
+                <DropdownReports />
             </div>
         </div>
 
