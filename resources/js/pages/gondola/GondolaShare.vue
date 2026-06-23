@@ -79,6 +79,7 @@ function shelvesWithProducts(section: Section) {
             // das frentes de todos os segmentos onde ele aparece.
             const byProduct = new Map<string, {
                 id: string;
+                code: string;
                 name: string;
                 brand: string;
                 ean: string;
@@ -98,6 +99,7 @@ function shelvesWithProducts(section: Section) {
                     } else {
                         byProduct.set(product.id, {
                             id: product.id,
+                            code: product.codigo_erp ?? '—',
                             name: product.name ?? '—',
                             brand: product.brand ?? '—',
                             ean: product.ean ?? '—',
@@ -211,13 +213,22 @@ function shelvesWithProducts(section: Section) {
                             <span class="font-normal">({{ t('plannerate.print.labels.height_short') }}: {{ shelf.shelf_position }}mm)</span>
                         </p>
                         <div class="overflow-x-auto">
-                            <table class="w-full min-w-[480px] border-collapse text-xs">
+                            <!-- table-fixed + colgroup: larguras iguais em todas as prateleiras -->
+                            <table class="w-full min-w-[560px] table-fixed border-collapse text-xs">
+                                <colgroup>
+                                    <col class="w-24" />
+                                    <col class="w-32" />
+                                    <col />
+                                    <col class="w-40" />
+                                    <col class="w-16" />
+                                </colgroup>
                                 <thead>
                                     <tr class="bg-slate-50 text-left text-[10px] text-slate-500 uppercase tracking-wider">
-                                        <th class="border border-slate-100 px-2 py-1.5 font-semibold w-32">{{ t('plannerate.print.share.ean') }}</th>
+                                        <th class="border border-slate-100 px-2 py-1.5 font-semibold">{{ t('plannerate.print.share.code') }}</th>
+                                        <th class="border border-slate-100 px-2 py-1.5 font-semibold">{{ t('plannerate.print.share.ean') }}</th>
                                         <th class="border border-slate-100 px-2 py-1.5 font-semibold">{{ t('plannerate.print.share.product_list') }}</th>
                                         <th class="border border-slate-100 px-2 py-1.5 font-semibold">{{ t('plannerate.print.share.brand') }}</th>
-                                        <th class="border border-slate-100 px-2 py-1.5 font-semibold w-16 text-center">{{ t('plannerate.print.share.facings') }}</th>
+                                        <th class="border border-slate-100 px-2 py-1.5 font-semibold text-center">{{ t('plannerate.print.share.facings') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -226,6 +237,9 @@ function shelvesWithProducts(section: Section) {
                                         :key="product.id"
                                         class="even:bg-slate-50/60 hover:bg-blue-50/40"
                                     >
+                                        <td class="border border-slate-100 px-2 py-1.5 font-mono text-slate-500">
+                                            {{ product.code }}
+                                        </td>
                                         <td class="border border-slate-100 px-2 py-1.5 font-mono text-slate-500">
                                             {{ product.ean }}
                                         </td>

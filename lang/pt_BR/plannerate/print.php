@@ -76,6 +76,7 @@ return [
         'date' => 'Data de Implantação',
         'observation' => 'Observações',
         'product_list' => 'Produtos da Prateleira',
+        'code' => 'Código',
         'ean' => 'EAN',
         'brand' => 'Marca',
         'shelf' => 'Prateleira',
