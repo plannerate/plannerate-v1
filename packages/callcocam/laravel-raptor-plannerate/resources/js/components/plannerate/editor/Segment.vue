@@ -83,7 +83,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import {
     draggingSegmentId,
     draggingSegmentShelfId,
@@ -99,65 +99,6 @@ import AbcBadge from './AbcBadge.vue';
 import PaperRoleBadge from './PaperRoleBadge.vue';
 import LayerRenderer from './Layer.vue';
 import StockIndicator from './StockIndicator.vue';
-
-// ─── Diagnóstico: conta quantos Segment re-renderizam por interação ──────────
-// Ativar: localStorage.setItem('perf:segment', '1') e recarregar.
-// Contador em nível de MÓDULO (compartilhado por todas as instâncias) — agrega
-// corretamente o total de re-renders disparados por um único clique.
-const PERF_ENABLED = typeof window !== 'undefined' && window.localStorage.getItem('perf:segment') === '1';
-let _renderCount = 0;
-let _flushTimer: ReturnType<typeof setTimeout> | null = null;
-
-/** Acumula um re-render e agenda o relatório agregado (300ms de debounce). */
-function _trackRender(): void {
-    if (!PERF_ENABLED) return;
-    _renderCount++;
-    if (_flushTimer) clearTimeout(_flushTimer);
-    _flushTimer = setTimeout(() => {
-        console.log(`%c[Segment] ${_renderCount} re-render(s) na última interação`,
-            'color:#e11d48;font-weight:bold');
-        _renderCount = 0;
-        _flushTimer = null;
-    }, 300);
-}
-// ──────────────────────────────────────────────────────────────────────────
-
-// ─── Diagnóstico: cronometra o custo de cada clique de seleção ───────────────
-// Ativar: localStorage.setItem('perf:click', '1') e recarregar.
-// Mede 3 marcos a partir do clique:
-//   • sync   = tempo do handler síncrono (selectItem)
-//   • patch  = até o Vue terminar de atualizar o DOM (nextTick)
-//   • paint  = até o próximo frame pintar na tela
-// e o intervalo desde o clique anterior (responsividade percebida).
-const PERF_CLICK = typeof window !== 'undefined' && window.localStorage.getItem('perf:click') === '1';
-let _lastClickTs = 0;
-
-/** Cronometra `fn` (a seleção) e loga sync/patch/paint + intervalo entre cliques. */
-function _measureClick(fn: () => void): void {
-    if (!PERF_CLICK) {
-        fn();
-        return;
-    }
-    const t0 = performance.now();
-    const sinceLast = _lastClickTs ? t0 - _lastClickTs : 0;
-    _lastClickTs = t0;
-
-    fn();
-    const sync = performance.now() - t0;
-
-    nextTick(() => {
-        const patch = performance.now() - t0;
-        requestAnimationFrame(() => {
-            const paint = performance.now() - t0;
-            console.log(
-                `%c[click] sync=${sync.toFixed(1)}ms · patch=${patch.toFixed(1)}ms · paint=${paint.toFixed(1)}ms` +
-                    (sinceLast ? ` · desde último=${sinceLast.toFixed(0)}ms` : ''),
-                'color:#2563eb;font-weight:bold',
-            );
-        });
-    });
-}
-// ──────────────────────────────────────────────────────────────────────────
 
 interface Props {
     segment: Segment;
@@ -239,9 +180,6 @@ function handleMouseDown() {
     setTimeout(() => { _skipFocusFromMouse = false; }, 50);
 }
 
-// Diagnóstico: cada re-render deste componente incrementa o contador global
-onUpdated(_trackRender);
-
 onMounted(() => {
     window.addEventListener('dragend', clearDropTarget, true);
     window.addEventListener('drop', clearDropTarget, true);
@@ -260,9 +198,7 @@ function handleFocusSegment() {
 
 function handleSegmentClick(event: MouseEvent) {
     event.stopPropagation();
-    _measureClick(() => {
-        selection.selectItem('segment', props.segment.id, props.segment);
-    });
+    selection.selectItem('segment', props.segment.id, props.segment);
 }
 
 function handleDragStart(event: DragEvent) {

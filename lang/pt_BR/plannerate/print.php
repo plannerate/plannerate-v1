@@ -5,6 +5,7 @@ return [
         'approval_date' => 'Data de Aprovação',
         'approved_by' => 'Aprovado Por',
         'category' => 'Categoria',
+        'depth_short' => 'P',
         'execution_level' => 'Nível de Execução',
         'flow' => 'Fluxo',
         'gondola_flow' => 'Fluxo da Gôndola',

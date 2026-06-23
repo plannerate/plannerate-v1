@@ -60,16 +60,42 @@ function shelvesWithProducts(section: Section) {
 
     return shelves
         .map((shelf) => {
-            const products = (shelf.segments ?? [])
+            // Agrupa por produto somando as frentes (layer.quantity = nº de frentes
+            // lado a lado). O total de frentes da prateleira para um produto é a soma
+            // das frentes de todos os segmentos onde ele aparece.
+            const byProduct = new Map<string, {
+                id: string;
+                name: string;
+                brand: string;
+                ean: string;
+                facings: number;
+                position: number;
+            }>();
+
+            (shelf.segments ?? [])
                 .filter((seg) => !seg.deleted_at && seg.layer?.product)
-                .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-                .map((seg) => ({
-                    id: seg.layer!.product!.id,
-                    name: seg.layer!.product!.name ?? '—',
-                    brand: seg.layer!.product!.brand ?? '—',
-                    ean: seg.layer!.product!.ean ?? '—',
-                    quantity: seg.quantity ?? 1,
-                }));
+                .forEach((seg) => {
+                    const product = seg.layer!.product!;
+                    const facings = Math.max(1, Math.trunc(Number(seg.layer!.quantity ?? 1)) || 1);
+                    const existing = byProduct.get(product.id);
+
+                    if (existing) {
+                        existing.facings += facings;
+                    } else {
+                        byProduct.set(product.id, {
+                            id: product.id,
+                            name: product.name ?? '—',
+                            brand: product.brand ?? '—',
+                            ean: product.ean ?? '—',
+                            facings,
+                            position: seg.position ?? 0,
+                        });
+                    }
+                });
+
+            const products = Array.from(byProduct.values()).sort(
+                (a, b) => a.position - b.position,
+            );
 
             return { shelf, products };
         })
@@ -132,8 +158,9 @@ function shelvesWithProducts(section: Section) {
                         </span>
                     </div>
                     <span class="text-[10px] text-slate-400">
+                        {{ t('plannerate.print.labels.height_short') }}: {{ section.height }}mm ·
                         {{ t('plannerate.print.labels.width_short') }}: {{ section.width }}mm ·
-                        {{ t('plannerate.print.labels.height_short') }}: {{ section.height }}mm
+                        {{ t('plannerate.print.labels.depth_short') }}: {{ section.base_depth }}mm
                     </span>
                 </div>
 
@@ -173,9 +200,9 @@ function shelvesWithProducts(section: Section) {
                             <table class="w-full min-w-[480px] border-collapse text-xs">
                                 <thead>
                                     <tr class="bg-slate-50 text-left text-[10px] text-slate-500 uppercase tracking-wider">
+                                        <th class="border border-slate-100 px-2 py-1.5 font-semibold w-32">{{ t('plannerate.print.share.ean') }}</th>
                                         <th class="border border-slate-100 px-2 py-1.5 font-semibold">{{ t('plannerate.print.share.product_list') }}</th>
                                         <th class="border border-slate-100 px-2 py-1.5 font-semibold">{{ t('plannerate.print.share.brand') }}</th>
-                                        <th class="border border-slate-100 px-2 py-1.5 font-semibold w-32">{{ t('plannerate.print.share.ean') }}</th>
                                         <th class="border border-slate-100 px-2 py-1.5 font-semibold w-16 text-center">{{ t('plannerate.print.share.facings') }}</th>
                                     </tr>
                                 </thead>
@@ -185,17 +212,17 @@ function shelvesWithProducts(section: Section) {
                                         :key="product.id"
                                         class="even:bg-slate-50/60 hover:bg-blue-50/40"
                                     >
+                                        <td class="border border-slate-100 px-2 py-1.5 font-mono text-slate-500">
+                                            {{ product.ean }}
+                                        </td>
                                         <td class="border border-slate-100 px-2 py-1.5 font-medium text-slate-800">
                                             {{ product.name }}
                                         </td>
                                         <td class="border border-slate-100 px-2 py-1.5 text-slate-600">
                                             {{ product.brand }}
                                         </td>
-                                        <td class="border border-slate-100 px-2 py-1.5 font-mono text-slate-500">
-                                            {{ product.ean }}
-                                        </td>
                                         <td class="border border-slate-100 px-2 py-1.5 text-center text-slate-600">
-                                            {{ product.quantity }}
+                                            {{ product.facings }}
                                         </td>
                                     </tr>
                                 </tbody>
