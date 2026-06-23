@@ -91,7 +91,8 @@ class GondolaService
             'height' => $data['height'] ?? 0,
             'base_height' => $data['baseHeight'] ?? 0,
             'base_width' => $data['baseWidth'] ?? 0,
-            'base_depth' => $data['baseDepth'] ?? 0,
+            // Profundidade da base acompanha a profundidade da prateleira; usa baseDepth como fallback.
+            'base_depth' => $data['shelfDepth'] ?? $data['baseDepth'] ?? 0,
             'cremalheira_width' => $data['rackWidth'] ?? 4,
             'hole_height' => $data['holeHeight'] ?? 2,
             'hole_width' => $data['holeWidth'] ?? 2,

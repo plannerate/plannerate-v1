@@ -13,6 +13,7 @@ import { useProductSales } from '@/composables/plannerate/products/useProductSal
 import { useTargetStockAnalysis } from '@/composables/plannerate/analysis/useTargetStockAnalysis'
 import { useT } from '@/composables/useT'
 import type { Product } from '@/types/planogram'
+import ProductPositioning from './ProductPositioning.vue'
 
 interface SegmentNoteItem {
   id: string
@@ -300,29 +301,13 @@ function handleClose() {
               <Tag class="h-3.5 w-3.5 text-muted-foreground" />
               <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.positioning') }}</span>
             </div>
-            <!-- Posicionamento inline com sobreescrito -->
-            <div class="flex items-end gap-3 rounded border bg-muted/20 px-3 py-2">
-              <div class="flex flex-col items-start">
-                <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.fronts') }}</span>
-                <span class="text-xl font-bold leading-none tabular-nums">
-                  {{ segmentQuantity ?? 1 }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">un.</sup>
-                </span>
-              </div>
-              <span class="text-muted-foreground text-base pb-0.5">×</span>
-              <div class="flex flex-col items-start">
-                <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.stacking') }}</span>
-                <span class="text-xl font-bold leading-none tabular-nums">
-                  {{ layerQuantity ?? 1 }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">un.</sup>
-                </span>
-              </div>
-              <span class="text-muted-foreground text-base pb-0.5">=</span>
-              <div class="flex flex-col items-start">
-                <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.total') }}</span>
-                <span class="text-xl font-bold leading-none tabular-nums text-primary">
-                  {{ totalQuantity }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">un.</sup>
-                </span>
-              </div>
-            </div>
+            <!-- Posicionamento: frentes × empilhamento × profundidade = total -->
+            <ProductPositioning
+              :layer-quantity="layerQuantity"
+              :segment-quantity="segmentQuantity"
+              :product-depth="product.depth"
+              :shelf-depth="shelfDepth"
+            />
 
             <!-- Peso / Volume se disponíveis -->
             <div v-if="product.weight || product.volume" class="flex items-end gap-3 rounded border bg-muted/20 px-3 py-2 mt-2">

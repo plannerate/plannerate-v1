@@ -51,6 +51,20 @@ const flowLabel = computed(() =>
 const totalModules = computed(() => props.sections.length);
 
 /**
+ * Profundidade do módulo: usa a maior shelf_depth das prateleiras;
+ * fallback para base_depth da seção quando não houver prateleiras.
+ */
+function sectionDepth(section: Section): number {
+    const shelfDepths = (section.shelves ?? [])
+        .filter((s) => !s.deleted_at)
+        .map((s) => s.shelf_depth ?? 0);
+
+    return shelfDepths.length > 0
+        ? Math.max(...shelfDepths)
+        : (section.base_depth ?? 0);
+}
+
+/**
  * Retorna todos os produtos de uma seção, organizados por prateleira (shelf_position desc = topo primeiro).
  */
 function shelvesWithProducts(section: Section) {
@@ -160,7 +174,7 @@ function shelvesWithProducts(section: Section) {
                     <span class="text-[10px] text-slate-400">
                         {{ t('plannerate.print.labels.height_short') }}: {{ section.height }}mm ·
                         {{ t('plannerate.print.labels.width_short') }}: {{ section.width }}mm ·
-                        {{ t('plannerate.print.labels.depth_short') }}: {{ section.base_depth }}mm
+                        {{ t('plannerate.print.labels.depth_short') }}: {{ sectionDepth(section) }}mm
                     </span>
                 </div>
 

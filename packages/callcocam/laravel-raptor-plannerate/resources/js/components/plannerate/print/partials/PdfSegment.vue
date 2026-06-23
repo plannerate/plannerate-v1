@@ -77,6 +77,7 @@ function handleClick() {
     :product="segment.layer?.product"
     :segment-quantity="segment.quantity"
     :layer-quantity="segment.layer?.quantity"
+    :shelf-depth="shelfDepth"
   />
   <ProductDetailModal
     v-else
