@@ -130,9 +130,9 @@ async function submitNote() {
       const json = await res.json()
       notes.value.unshift(json.data)
       noteContent.value = ''
-      toast.success('Nota adicionada com sucesso.')
+      toast.success(t('plannerate.print.product_detail.note_added_success'))
     } else {
-      toast.error('Não foi possível salvar a nota.')
+      toast.error(t('plannerate.print.product_detail.note_save_error'))
     }
   } finally {
     noteSending.value = false
@@ -175,7 +175,7 @@ function handleClose() {
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div class="rounded-lg border bg-muted/40 p-2 flex items-center gap-2">
             <div class="flex-1 min-w-0">
-              <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Classificação</p>
+              <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.classification') }}</p>
               <div class="flex items-center gap-1 mt-0.5">
                 <Badge v-if="abcClassification" :class="abcBadgeClass" class="text-xs px-2 py-0">
                   ABC {{ abcClassification }}
@@ -187,18 +187,18 @@ function handleClose() {
 
           <div class="rounded-lg border bg-muted/40 p-2 flex items-center gap-2">
             <div class="flex-1 min-w-0">
-              <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Status Espaço</p>
+              <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.space_status') }}</p>
               <div class="flex items-center gap-1 mt-0.5">
                 <Badge v-if="stockStatusInfo" :class="stockStatusInfo.class" class="text-xs px-2 py-0">
                   {{ stockStatusInfo.icon }} {{ stockStatusInfo.label }}
                 </Badge>
-                <span v-else class="text-xs text-muted-foreground">Sem análise</span>
+                <span v-else class="text-xs text-muted-foreground">{{ t('plannerate.print.product_detail.no_analysis') }}</span>
               </div>
             </div>
           </div>
 
           <div class="rounded-lg border bg-muted/40 p-2">
-            <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Capacidade / Alvo</p>
+            <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.capacity_target') }}</p>
             <p class="text-sm font-bold mt-0.5" :class="stockStatusInfo?.color ?? 'text-foreground'">
               <template v-if="targetStockData">
                 {{ segmentCapacity }} / {{ targetStockData.estoque_alvo }} un.
@@ -209,7 +209,7 @@ function handleClose() {
           </div>
 
           <div class="rounded-lg border bg-muted/40 p-2">
-            <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Faturamento</p>
+            <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.revenue') }}</p>
             <p class="text-sm font-bold mt-0.5 text-green-600 dark:text-green-500">
               <template v-if="salesLoading">
                 <Loader2 class="h-3 w-3 animate-spin inline" />
@@ -240,7 +240,7 @@ function handleClose() {
           <div class="space-y-2">
             <div class="flex items-center gap-1.5 mb-1">
               <Package class="h-3.5 w-3.5 text-muted-foreground" />
-              <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Identificação</span>
+              <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.identification') }}</span>
             </div>
             <div>
               <p class="text-[10px] text-muted-foreground">{{ t('plannerate.print.product_detail.name') }}</p>
@@ -252,16 +252,16 @@ function handleClose() {
                 <p class="font-mono text-xs">{{ product.ean || '—' }}</p>
               </div>
               <div>
-                <p class="text-[10px] text-muted-foreground">Código</p>
+                <p class="text-[10px] text-muted-foreground">{{ t('plannerate.print.product_detail.code') }}</p>
                 <p class="font-mono text-xs">{{ product.codigo_erp || '—' }}</p>
               </div>
             </div>
             <div>
-              <p class="text-[10px] text-muted-foreground">Marca</p>
+              <p class="text-[10px] text-muted-foreground">{{ t('plannerate.print.product_detail.brand') }}</p>
               <p class="text-sm">{{ product.brand || '—' }}</p>
             </div>
             <div>
-              <p class="text-[10px] text-muted-foreground">Categoria</p>
+              <p class="text-[10px] text-muted-foreground">{{ t('plannerate.print.product_detail.category') }}</p>
               <p class="text-xs leading-tight">{{ product.category_full_path ?? product.category ?? '—' }}</p>
             </div>
           </div>
@@ -270,21 +270,21 @@ function handleClose() {
           <div class="space-y-2">
             <div class="flex items-center gap-1.5 mb-2">
               <Ruler class="h-3.5 w-3.5 text-muted-foreground" />
-              <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Dimensões</span>
+              <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.dimensions') }}</span>
             </div>
-            <!-- Dimensões inline com sobreescrito -->
+            <!-- Dimensões inline com sobreescrito (ordem: Altura, Largura, Profundidade) -->
             <div class="flex items-end gap-3 rounded border bg-muted/20 px-3 py-2">
-              <div class="flex flex-col items-start">
-                <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.width') }}</span>
-                <span class="text-xl font-bold leading-none tabular-nums">
-                  {{ product.width ?? '—' }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">cm</sup>
-                </span>
-              </div>
-              <span class="text-muted-foreground text-base pb-0.5">×</span>
               <div class="flex flex-col items-start">
                 <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.height') }}</span>
                 <span class="text-xl font-bold leading-none tabular-nums">
                   {{ product.height ?? '—' }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">cm</sup>
+                </span>
+              </div>
+              <span class="text-muted-foreground text-base pb-0.5">×</span>
+              <div class="flex flex-col items-start">
+                <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.width') }}</span>
+                <span class="text-xl font-bold leading-none tabular-nums">
+                  {{ product.width ?? '—' }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">cm</sup>
                 </span>
               </div>
               <span class="text-muted-foreground text-base pb-0.5">×</span>
@@ -298,7 +298,7 @@ function handleClose() {
 
             <div class="flex items-center gap-1.5 mt-3 mb-2">
               <Tag class="h-3.5 w-3.5 text-muted-foreground" />
-              <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Posicionamento</span>
+              <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.positioning') }}</span>
             </div>
             <!-- Posicionamento inline com sobreescrito -->
             <div class="flex items-end gap-3 rounded border bg-muted/20 px-3 py-2">
@@ -317,7 +317,7 @@ function handleClose() {
               </div>
               <span class="text-muted-foreground text-base pb-0.5">=</span>
               <div class="flex flex-col items-start">
-                <span class="text-[9px] text-muted-foreground leading-none mb-0.5">Total</span>
+                <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.total') }}</span>
                 <span class="text-xl font-bold leading-none tabular-nums text-primary">
                   {{ totalQuantity }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">un.</sup>
                 </span>
@@ -327,13 +327,13 @@ function handleClose() {
             <!-- Peso / Volume se disponíveis -->
             <div v-if="product.weight || product.volume" class="flex items-end gap-3 rounded border bg-muted/20 px-3 py-2 mt-2">
               <div v-if="product.weight" class="flex flex-col items-start">
-                <span class="text-[9px] text-muted-foreground leading-none mb-0.5">Peso</span>
+                <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.weight') }}</span>
                 <span class="text-xl font-bold leading-none tabular-nums">
                   {{ product.weight }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">kg</sup>
                 </span>
               </div>
               <div v-if="product.volume" class="flex flex-col items-start">
-                <span class="text-[9px] text-muted-foreground leading-none mb-0.5">Volume</span>
+                <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.volume') }}</span>
                 <span class="text-xl font-bold leading-none tabular-nums">
                   {{ product.volume }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">L</sup>
                 </span>
@@ -349,7 +349,7 @@ function handleClose() {
           <TabsList class="w-full grid grid-cols-3 h-8">
             <TabsTrigger value="notes" class="text-xs gap-1">
               <MessageSquare class="h-3 w-3" />
-              Notas
+              {{ t('plannerate.print.product_detail.notes') }}
               <span v-if="notes.length" class="ml-1 rounded-full bg-primary/20 px-1.5 text-[9px] font-bold text-primary leading-none py-0.5">{{ notes.length }}</span>
             </TabsTrigger>
             <TabsTrigger value="stock" class="text-xs gap-1">
@@ -358,7 +358,7 @@ function handleClose() {
             </TabsTrigger>
             <TabsTrigger value="sales" class="text-xs gap-1">
               <ShoppingCart class="h-3 w-3" />
-              Vendas
+              {{ t('plannerate.print.product_detail.sales') }}
             </TabsTrigger>
           </TabsList>
 
@@ -369,13 +369,13 @@ function handleClose() {
             <div v-if="segmentId" class="space-y-2">
               <Textarea
                 v-model="noteContent"
-                placeholder="Adicione uma orientação ou observação sobre este segmento..."
+                :placeholder="t('plannerate.print.product_detail.note_placeholder')"
                 class="resize-none text-sm min-h-[72px]"
                 :disabled="noteSending"
                 @keydown.ctrl.enter="submitNote"
               />
               <div class="flex items-center justify-between">
-                <span class="text-[10px] text-muted-foreground">Ctrl+Enter para enviar</span>
+                <span class="text-[10px] text-muted-foreground">{{ t('plannerate.print.product_detail.ctrl_enter_to_send') }}</span>
                 <Button
                   size="sm"
                   class="h-7 gap-1.5 text-xs"
@@ -384,7 +384,7 @@ function handleClose() {
                 >
                   <Send v-if="!noteSending" class="h-3 w-3" />
                   <Loader2 v-else class="h-3 w-3 animate-spin" />
-                  Enviar
+                  {{ t('plannerate.print.product_detail.send') }}
                 </Button>
               </div>
             </div>
@@ -398,8 +398,8 @@ function handleClose() {
 
             <div v-else-if="notes.length === 0" class="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <StickyNote class="h-8 w-8 mb-2 opacity-40" />
-              <p class="text-sm">Nenhuma nota para este segmento</p>
-              <p class="text-xs">Adicione orientações ou observações acima</p>
+              <p class="text-sm">{{ t('plannerate.print.product_detail.no_notes_title') }}</p>
+              <p class="text-xs">{{ t('plannerate.print.product_detail.no_notes_description') }}</p>
             </div>
 
             <div v-else class="space-y-2">
@@ -466,7 +466,7 @@ function handleClose() {
               <!-- Barra de progresso capacidade vs alvo -->
               <div v-if="capacityPercent !== null" class="space-y-1">
                 <div class="flex justify-between text-[10px] text-muted-foreground">
-                  <span>Ocupação do espaço alvo</span>
+                  <span>{{ t('plannerate.print.product_detail.target_space_occupation') }}</span>
                   <span>{{ capacityPercent }}%</span>
                 </div>
                 <div class="h-1.5 rounded-full bg-muted overflow-hidden">
@@ -484,13 +484,13 @@ function handleClose() {
 
               <!-- Recomendação permite frentes -->
               <div v-if="targetStockData.permite_frentes" class="rounded border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                <span class="font-medium text-foreground">Frentes recomendadas:</span> {{ targetStockData.permite_frentes }}
+                <span class="font-medium text-foreground">{{ t('plannerate.print.product_detail.recommended_fronts') }}</span> {{ targetStockData.permite_frentes }}
               </div>
             </div>
 
             <div v-else class="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <BarChart3 class="h-8 w-8 mb-2 opacity-40" />
-              <p class="text-sm">Nenhuma análise de estoque disponível</p>
+              <p class="text-sm">{{ t('plannerate.print.product_detail.no_stock_analysis') }}</p>
             </div>
           </TabsContent>
 

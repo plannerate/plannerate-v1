@@ -11,9 +11,11 @@ import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useT } from '@/composables/useT';
 
 const props = defineProps<{ gondolaId: string }>();
 
+const { t } = useT();
 const editor = usePlanogramEditor();
 const selection = usePlanogramSelection();
 const rejectedStore = useRejectedProductsStore();
@@ -154,14 +156,14 @@ const _reasonMetaCache = new Map<string, ReasonMeta>();
 
 function buildReasonMeta(reason: string): ReasonMeta {
     if (reason === 'no_horizontal_space')
-        return { icon: MoveHorizontal, label: 'Sem espaço', variant: 'outline' };
+        return { icon: MoveHorizontal, label: t('plannerate.editor.rejected_products.reasons.no_horizontal_space'), variant: 'outline' };
     if (reason === 'height_exceeds_shelf')
-        return { icon: Ruler, label: 'Altura', variant: 'destructive' };
+        return { icon: Ruler, label: t('plannerate.editor.rejected_products.reasons.height_exceeds_shelf'), variant: 'destructive' };
     if (reason === 'manually_removed')
-        return { icon: Trash2, label: 'Removido', variant: 'secondary' };
+        return { icon: Trash2, label: t('plannerate.editor.rejected_products.reasons.manually_removed'), variant: 'secondary' };
     if (reason === 'removed_from_mix')
-        return { icon: Ban, label: 'Fora do mix', variant: 'secondary' };
-    return { icon: Layers, label: 'Nível', variant: 'secondary' };
+        return { icon: Ban, label: t('plannerate.editor.rejected_products.reasons.removed_from_mix'), variant: 'secondary' };
+    return { icon: Layers, label: t('plannerate.editor.rejected_products.reasons.level'), variant: 'secondary' };
 }
 
 const reasonMeta = (reason: string): ReasonMeta => {
@@ -206,16 +208,16 @@ function handleDragEnd() {
 // ── Double-click: add to selected shelf ──────────────────────────────────────
 function handleDoubleClick(product: RejectedProduct) {
     if (selection.selectedType.value !== 'shelf' || !selection.selectedId.value) {
-        toast.error('Selecione uma prateleira primeiro (clique nela uma vez).');
+        toast.error(t('plannerate.editor.rejected_products.select_shelf_first'));
         return;
     }
     if (!product.product_width || !product.product_height) {
-        toast.error(`"${product.product_name}" não tem dimensões cadastradas.`);
+        toast.error(t('plannerate.editor.rejected_products.no_dimensions', { product: product.product_name }));
         return;
     }
     const placed = editor.placeFromRejected(product, selection.selectedId.value);
     if (placed) {
-        toast.success(`"${product.product_name}" adicionado à prateleira.`);
+        toast.success(t('plannerate.editor.rejected_products.added_to_shelf', { product: product.product_name }));
     }
 }
 
@@ -230,7 +232,7 @@ rejectedStore.setOnProductPlaced((productId: string) => {
 // ── Swap mode ────────────────────────────────────────────────────────────────
 function enterSwapMode(product: RejectedProduct) {
     swapSource.value = product;
-    toast.info(`Clique em um produto na gôndola para trocar com "${product.product_name}".`, {
+    toast.info(t('plannerate.editor.rejected_products.swap_hint', { product: product.product_name }), {
         duration: 8000,
     });
 }
@@ -249,11 +251,11 @@ async function executeSwap(layerId: string) {
     const success = await editor.swapRejectedProduct(source, layerId);
 
     if (success) {
-        toast.success(`"${source.product_name}" posicionado na gôndola.`);
+        toast.success(t('plannerate.editor.rejected_products.positioned', { product: source.product_name }));
         selection.clearSelection();
     } else {
         swapSource.value = source;
-        toast.error('Não foi possível realizar a troca. Tente novamente.');
+        toast.error(t('plannerate.editor.rejected_products.swap_failed'));
     }
 
     isSwapping.value = false;
@@ -265,7 +267,7 @@ watch(
         if (!swapModeActive.value || !item || item.type !== 'segment') return;
         const layerId: string | undefined = (item.item as any)?.layer?.id;
         if (!layerId) {
-            toast.warning('Este segmento não tem layer. Clique em outro produto.');
+            toast.warning(t('plannerate.editor.rejected_products.segment_no_layer'));
             return;
         }
         void executeSwap(layerId);
@@ -318,7 +320,7 @@ defineExpose({
         >
             <div class="flex items-center gap-2">
                 <ArrowLeftRight class="size-4 text-muted-foreground" />
-                <span>Produtos rejeitados</span>
+                <span>{{ t('plannerate.editor.rejected_products.title') }}</span>
                 <Badge v-if="editor.rejectedProducts.value.length > 0" variant="destructive" class="h-5 px-1.5 text-xs">
                     <template v-if="selectedTemplateCategoryId && filteredRejectedProducts.length !== editor.rejectedProducts.value.length">
                         {{ filteredRejectedProducts.length }}/{{ editor.rejectedProducts.value.length }}
@@ -339,7 +341,7 @@ defineExpose({
                     @click.stop="selectedTemplateCategoryId = null"
                 >
                     <X class="size-3" />
-                    Limpar filtro
+                    {{ t('plannerate.editor.rejected_products.clear_filter') }}
                 </Button>
                 <Button
                     v-if="selection.selectedId.value"
@@ -350,7 +352,7 @@ defineExpose({
                     @click.stop="selection.clearSelection()"
                 >
                     <X class="size-3" />
-                    Limpar seleção
+                    {{ t('plannerate.editor.rejected_products.clear_selection') }}
                 </Button>
                 <ChevronUp v-if="isOpen" class="size-4 text-muted-foreground" />
                 <ChevronDown v-else class="size-4 text-muted-foreground" />
@@ -376,11 +378,11 @@ defineExpose({
                     class="flex items-center justify-between bg-amber-50 px-4 py-2 text-sm dark:bg-amber-950/30"
                 >
                     <span class="font-medium text-amber-700 dark:text-amber-400">
-                        Clique em um produto na gôndola para trocar com
+                        {{ t('plannerate.editor.rejected_products.swap_banner') }}
                         <strong>{{ swapSource?.product_name }}</strong>
                     </span>
                     <Button variant="ghost" size="sm" class="h-6 gap-1 text-xs" @click="cancelSwapMode">
-                        <X class="size-3" /> Cancelar
+                        <X class="size-3" /> {{ t('plannerate.editor.rejected_products.cancel') }}
                     </Button>
                 </div>
 
@@ -389,7 +391,7 @@ defineExpose({
                     v-if="reasonsPresent.length > 1"
                     class="flex flex-wrap items-center gap-1.5 border-b border-border px-3 py-2"
                 >
-                    <span class="mr-0.5 text-xs font-medium text-muted-foreground">Motivo:</span>
+                    <span class="mr-0.5 text-xs font-medium text-muted-foreground">{{ t('plannerate.editor.rejected_products.reason_label') }}</span>
                     <button
                         type="button"
                         class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors"
@@ -398,7 +400,7 @@ defineExpose({
                             : 'border-border text-muted-foreground hover:bg-muted'"
                         @click="selectedReason = null"
                     >
-                        Todos ({{ categoryFilteredProducts.length }})
+                        {{ t('plannerate.editor.rejected_products.all') }} ({{ categoryFilteredProducts.length }})
                     </button>
                     <button
                         v-for="r in reasonsPresent"
@@ -421,9 +423,9 @@ defineExpose({
                     class="flex h-20 items-center justify-center text-sm text-muted-foreground"
                 >
                     <span v-if="selectedTemplateCategoryId && editor.rejectedProducts.value.length > 0">
-                        Nenhum produto rejeitado neste grouping.
+                        {{ t('plannerate.editor.rejected_products.empty_grouping') }}
                     </span>
-                    <span v-else>Nenhum produto rejeitado nesta geração.</span>
+                    <span v-else>{{ t('plannerate.editor.rejected_products.empty_generation') }}</span>
                 </div>
 
                 <!-- Product cards -->
@@ -456,7 +458,7 @@ defineExpose({
                                 :alt="product.product_name"
                                 class="max-h-full max-w-full object-contain"
                             />
-                            <span v-else class="text-xs text-muted-foreground">Sem imagem</span>
+                            <span v-else class="text-xs text-muted-foreground">{{ t('plannerate.editor.rejected_products.no_image') }}</span>
                         </div>
 
                         <!-- Product name -->
@@ -492,7 +494,7 @@ defineExpose({
                         >
                             <Loader2 v-if="isSwapping && swapSource?.id === product.id" class="size-3 animate-spin" />
                             <ArrowLeftRight v-else class="size-3" />
-                            {{ swapSource?.id === product.id ? 'Cancelar' : 'Trocar' }}
+                            {{ swapSource?.id === product.id ? t('plannerate.editor.rejected_products.cancel') : t('plannerate.editor.rejected_products.swap') }}
                         </Button>
                     </div>
                 </div>

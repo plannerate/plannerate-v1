@@ -82,18 +82,19 @@ function handleClose() {
               {{ t('plannerate.print.product_detail.dimensions') }}
             </span>
           </div>
+          <!-- ordem: Altura, Largura, Profundidade -->
           <div class="flex items-end gap-3 rounded border bg-muted/20 px-3 py-2">
-            <div class="flex flex-col items-start">
-              <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.width') }}</span>
-              <span class="text-xl font-bold leading-none tabular-nums">
-                {{ product.width ?? '—' }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">cm</sup>
-              </span>
-            </div>
-            <span class="text-muted-foreground text-base pb-0.5">×</span>
             <div class="flex flex-col items-start">
               <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.height') }}</span>
               <span class="text-xl font-bold leading-none tabular-nums">
                 {{ product.height ?? '—' }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">cm</sup>
+              </span>
+            </div>
+            <span class="text-muted-foreground text-base pb-0.5">×</span>
+            <div class="flex flex-col items-start">
+              <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.width') }}</span>
+              <span class="text-xl font-bold leading-none tabular-nums">
+                {{ product.width ?? '—' }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">cm</sup>
               </span>
             </div>
             <span class="text-muted-foreground text-base pb-0.5">×</span>
@@ -130,7 +131,7 @@ function handleClose() {
             </div>
             <span class="text-muted-foreground text-base pb-0.5">=</span>
             <div class="flex flex-col items-start">
-              <span class="text-[9px] text-muted-foreground leading-none mb-0.5">Total</span>
+              <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.total') }}</span>
               <span class="text-xl font-bold leading-none tabular-nums text-primary">
                 {{ totalQuantity }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">un.</sup>
               </span>
