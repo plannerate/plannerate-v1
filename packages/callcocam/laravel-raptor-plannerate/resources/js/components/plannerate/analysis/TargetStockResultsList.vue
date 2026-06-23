@@ -134,7 +134,7 @@ const activePlacement = computed(() => matchingPlacements.value[0] ?? null);
 const segmentQuantity = computed(() => activePlacement.value?.segment?.quantity ?? 0);
 const layerQuantity = computed(() => activePlacement.value?.segment?.layer?.quantity ?? 0);
 const productDepth = computed(() => activePlacement.value?.segment?.layer?.product?.depth ?? 0);
-const shelfDepth = computed(() => activePlacement.value?.shelf?.depth ?? 0);
+const shelfDepth = computed(() => activePlacement.value?.shelf?.shelf_depth ?? 0);
 
 const itemsInDepth = computed(() => {
     if (!productDepth.value || !shelfDepth.value || productDepth.value <= 0) {

@@ -46,9 +46,9 @@
                     <p class="text-[11px] font-semibold text-muted-foreground">{{ t('plannerate.analysis.target_stock_selection.segment_capacity') }}</p>
                     <div class="mt-1.5 grid grid-cols-2 gap-x-2.5 gap-y-1 text-xs">
                         <div class="text-muted-foreground">{{ t('plannerate.analysis.target_stock_selection.fronts') }}</div>
-                        <div class=" font-semibold text-foreground">{{ segmentQuantity }}</div>
-                        <div class="text-muted-foreground">{{ t('plannerate.analysis.target_stock_selection.height') }}</div>
                         <div class=" font-semibold text-foreground">{{ layerQuantity }}</div>
+                        <div class="text-muted-foreground">{{ t('plannerate.analysis.target_stock_selection.height') }}</div>
+                        <div class=" font-semibold text-foreground">{{ segmentQuantity }}</div>
                         <div class="text-muted-foreground">{{ t('plannerate.analysis.target_stock_selection.depth') }}</div>
                         <div class=" font-semibold text-foreground">{{ itemsInDepth }} un.</div>
                         <div class="border-t border-border pt-1 text-foreground font-semibold">{{ t('plannerate.analysis.target_stock_selection.total') }}</div>

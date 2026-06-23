@@ -100,7 +100,7 @@
                                         >
                                         <span
                                             class="font-semibold text-foreground"
-                                            >{{ layerQuantity || 0 }}</span
+                                            >{{ segmentQuantity || 0 }}</span
                                         >
                                     </div>
                                     <div
@@ -111,7 +111,7 @@
                                         >
                                         <span
                                             class="font-semibold text-foreground"
-                                            >{{ segmentQuantity || 0 }}</span
+                                            >{{ layerQuantity || 0 }}</span
                                         >
                                     </div>
                                     <div
@@ -380,10 +380,10 @@ const productImageUrl = computed(() => {
     return props.segment?.layer?.product?.image_url ?? null;
 });
 
-// Quantidade de frentes (segment quantity)
+// Empilhamento vertical / altura (segment.quantity)
 const segmentQuantity = computed(() => props.segment?.quantity ?? 0);
 
-// Quantidade de produtos por frente (layer quantity)
+// Frentes lado a lado (layer.quantity)
 const layerQuantity = computed(() => props.segment?.layer?.quantity ?? 0);
 
 // Profundidade do produto (agora está diretamente no produto)
