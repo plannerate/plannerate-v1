@@ -126,12 +126,14 @@ const flowDirection = computed(
     () => editor.currentGondola.value?.flow || 'left_to_right',
 );
 const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
-const selectedGroupingNormalized = selectedTemplateCategoryId;
 
+// Ao trocar de template, limpa o destaque de categoria. O highlight é lido
+// direto de `selectedTemplateCategoryId` dentro de Shelf/Segment (sem prop
+// drilada pela árvore), então o Canvas não precisa mais repassar nada.
 watch(
     () => props.record?.template_id,
     () => {
-        selectedGroupingNormalized.value = null;
+        selectedTemplateCategoryId.value = null;
     },
 );
 </script>
@@ -153,7 +155,6 @@ watch(
                 <Sections
                     :sections="sortedSections"
                     :scale="editor.scaleFactor.value"
-                    :highlightGroupingNormalized="selectedGroupingNormalized"
                 />
             </div>
 

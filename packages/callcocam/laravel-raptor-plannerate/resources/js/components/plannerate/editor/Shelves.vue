@@ -5,7 +5,6 @@
         :shelf="shelf"
         :section="section"
         :scale="scale"
-        :highlightGroupingNormalized="highlightGroupingNormalized"
         :sectionWidth="sectionWidth"
         :sectionHeight="sectionHeight"
         :cremalheiraWidth="cremalheiraWidth"
@@ -33,7 +32,6 @@ interface Props {
     sectionHeight?: number;
     cremalheiraWidth?: number;
     holes: any[];
-    highlightGroupingNormalized?: string | null;
 }
 const props = defineProps<Props>();
 

@@ -88,6 +88,7 @@ import {
     draggingSegmentId,
     draggingSegmentShelfId,
     eanSearchApplied,
+    selectedTemplateCategoryId,
 } from '../../../composables/plannerate/core/useGondolaState';
 import { DND_KEYS, hasSegmentData, setSegmentDragData } from '../../../composables/plannerate/dnd/transfer';
 import { useAbcClassification } from '../../../composables/plannerate/analysis/useAbcClassification';
@@ -112,7 +113,6 @@ interface Props {
      * se distribuírem com o mesmo espaçamento dos demais segmentos da prateleira.
      */
     facingGap?: number;
-    highlightGroupingNormalized?: string | null;
     /**
      * Pré-computado pela Shelf pai — evita que cada Segment subscreva diretamente
      * ao estado global de seleção (selectedId / selectedItems), eliminando a cascata
@@ -145,8 +145,12 @@ const isEanMatch = computed(() => {
     return !!(query && productEan && productEan.includes(query));
 });
 
+// Lê a categoria destacada direto do estado global (em vez de receber via prop
+// drilada por toda a árvore). Assim, ao trocar a categoria, o Vue só dispara
+// re-render dos segments cujo resultado booleano realmente muda — Canvas,
+// Sections, Section e Shelves deixam de re-renderizar em cascata.
 const isGroupingMatch = computed(() => {
-    const targetGrouping = (props.highlightGroupingNormalized ?? '').trim();
+    const targetGrouping = (selectedTemplateCategoryId.value ?? '').trim();
     const productGrouping = String(layer.value?.product?.category_id ?? '').trim();
     return !!(targetGrouping && productGrouping && targetGrouping === productGrouping);
 });

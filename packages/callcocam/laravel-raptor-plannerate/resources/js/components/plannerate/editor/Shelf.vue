@@ -32,7 +32,6 @@
             <Segment v-for="(segment, index) in segments" :key="segment.id" :segment="segment" :scale="scale"
                 :shelf-depth="shelf.shelf_depth" :isFirstInShelf="index === 0"
                 :isLastInShelf="index === segments.length - 1" :facing-gap="justifyGap ?? undefined"
-                :highlightGroupingNormalized="highlightGroupingNormalized"
                 :selected-from-parent="segment.id === selectedSegmentId || multiSelectedSegmentIds.has(segment.id)"
                 :layer-selected-from-parent="!!(segment.layer?.id && segment.layer.id === selectedLayerId)"
                 style="pointer-events: auto" />
@@ -120,7 +119,6 @@ interface Props {
     firstShelf?: ShelfType;
     lastShelf?: ShelfType;
     isLast?: boolean;
-    highlightGroupingNormalized?: string | null;
     /** Número de exibição ("Prat #N") pré-calculado por Shelves.vue (evita sort O(S) por shelf) */
     displayNumber?: number;
 }
@@ -255,12 +253,16 @@ const selectedLayerId = computed<string | null>(() => {
  * Verdadeiro quando a categoria do template_slot desta prateleira bate com a
  * categoria selecionada no CategoryConfigPanel.
  * Usado para destaque visual bidirecional (categoria ↔ prateleira).
+ *
+ * Lê `selectedTemplateCategoryId` direto do estado global (em vez de receber via
+ * prop drilada). Só as shelves cujo booleano vira re-renderizam ao trocar a
+ * categoria; Canvas/Sections/Section/Shelves não re-renderizam mais em cascata.
  */
 const isCategoryHighlighted = computed(
     () =>
-        props.highlightGroupingNormalized != null &&
+        selectedTemplateCategoryId.value != null &&
         !!props.shelf.template_slot?.category_id &&
-        props.shelf.template_slot.category_id === props.highlightGroupingNormalized,
+        props.shelf.template_slot.category_id === selectedTemplateCategoryId.value,
 );
 
 function handleFocusShelf() {
