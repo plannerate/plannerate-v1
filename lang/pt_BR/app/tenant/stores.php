@@ -16,11 +16,11 @@ return [
     'fields' => [
         'name' => 'Nome',
         'document' => 'Documento',
-        'code' => 'Codigo',
+        'code' => 'Código',
         'phone' => 'Telefone',
         'email' => 'E-mail',
         'status' => 'Status',
-        'description' => 'Descricao',
+        'description' => 'Descrição',
         'map' => 'Mapa Da Loja',
     ],
     'status_draft' => 'Rascunho',

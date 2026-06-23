@@ -65,8 +65,8 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`);
     <div
         class="fixed top-0 right-0 left-0 z-[500] border-b-2 border-primary bg-white/95 shadow-sm backdrop-blur dark:bg-slate-900/95"
     >
-        <!-- Linha 1: logo + metadados + ações -->
-        <div class="flex items-center justify-between gap-4 px-4 py-2">
+        <!-- Linha 1: logo + metadados + ações (faz wrap em telas menores p/ não esconder botões) -->
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2">
             <!-- Logo -->
             <div class="shrink-0">
                 <img
@@ -99,7 +99,7 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`);
 
             <!-- Separador + metadados compactos -->
             <div class="h-8 w-px shrink-0 bg-slate-200 dark:bg-slate-700"></div>
-            <div class="flex-1">
+            <div class="min-w-0 flex-1">
                 <PdfPageHeader
                     :gondola="gondola"
                     :tenant-name="tenantName"
@@ -109,7 +109,7 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`);
             </div>
 
             <!-- Ações -->
-            <div class="flex shrink-0 items-center gap-1.5">
+            <div class="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5">
                 <!-- Zoom -->
                 <div
                     class="flex items-center gap-0.5 rounded-md border bg-background px-0.5 py-0.5"

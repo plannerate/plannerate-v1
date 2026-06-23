@@ -18,7 +18,7 @@ return [
     'level_all' => 'Todos os níveis',
     'key_only_label' => 'Só pontos-chave',
     'filters' => [
-        'search' => 'Buscar por usuario, acao ou descricao...',
+        'search' => 'Buscar por usuário, ação ou descrição...',
         'submit' => 'Filtrar',
         'clear' => 'Limpar',
         'event_type' => 'Tipo de evento',
@@ -31,9 +31,9 @@ return [
         'level' => 'Nível',
         'environment' => 'Ambiente',
         'message' => 'Mensagem',
-        'user' => 'Usuario',
-        'action' => 'Acao',
-        'description' => 'Descricao',
+        'user' => 'Usuário',
+        'action' => 'Ação',
+        'description' => 'Descrição',
     ],
     'messages' => [
         'no_logs' => 'Nenhum log encontrado para os filtros aplicados.',

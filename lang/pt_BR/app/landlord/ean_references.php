@@ -1,17 +1,17 @@
 <?php
 
 return [
-    'navigation' => 'Referencias EAN',
-    'title' => 'Referencias EAN',
-    'description' => 'Gerencie o catalogo global de referencias por EAN.',
+    'navigation' => 'Referências EAN',
+    'title' => 'Referências EAN',
+    'description' => 'Gerencie o catálogo global de referências por EAN.',
     'actions' => [
-        'new' => 'Nova referencia',
-        'edit' => 'Editar referencia',
+        'new' => 'Nova referência',
+        'edit' => 'Editar referência',
     ],
     'fields' => [
         'ean' => 'EAN',
         'image_front_url' => 'Imagem',
-        'reference_description' => 'Descricao de referencia',
+        'reference_description' => 'Descrição de referência',
         'brand' => 'Marca',
         'subbrand' => 'Submarca',
         'packaging_type' => 'Tipo de embalagem',
@@ -19,8 +19,8 @@ return [
         'measurement_unit' => 'Unidade de medida',
     ],
     'messages' => [
-        'created' => 'Referencia EAN criada com sucesso.',
-        'updated' => 'Referencia EAN atualizada com sucesso.',
-        'deleted' => 'Referencia EAN removida com sucesso.',
+        'created' => 'Referência EAN criada com sucesso.',
+        'updated' => 'Referência EAN atualizada com sucesso.',
+        'deleted' => 'Referência EAN removida com sucesso.',
     ],
 ];

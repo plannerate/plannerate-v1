@@ -5,7 +5,7 @@ return [
     'empty' => 'Nenhum registro encontrado.',
     'all' => 'Todos',
     'yes' => 'Sim',
-    'no' => 'Nao',
+    'no' => 'Não',
     'active' => 'Ativo',
     'inactive' => 'Inativo',
     'edit' => 'Editar',

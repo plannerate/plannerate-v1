@@ -109,7 +109,7 @@ function scrollToModule(anchorId: string): void {
                             class="hidden h-12 w-auto dark:block"
                         />
                     </div>
-                    <div class="border-l border-slate-200 pl-3">
+                    <!-- <div class="border-l border-slate-200 pl-3">
                         <p
                             v-if="tenantName"
                             class="mb-0.5 text-[10px] leading-none font-bold tracking-widest text-slate-500 uppercase"
@@ -126,7 +126,7 @@ function scrollToModule(anchorId: string): void {
                         >
                             {{ t('plannerate.print.module_page.tagline') }}
                         </p>
-                    </div>
+                    </div> -->
                 </div>
 
                 <!-- Campos informativos: data / loja / cód. loja -->

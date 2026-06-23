@@ -1,18 +1,18 @@
 <?php
 
 return [
-    'navigation' => 'Gondolas',
-    'title' => 'Gondolas',
-    'description' => 'Gerencie as gondolas vinculadas ao planograma.',
+    'navigation' => 'Gôndolas',
+    'title' => 'Gôndolas',
+    'description' => 'Gerencie as gôndolas vinculadas ao planograma.',
     'planogram_prefix' => 'Planograma',
     'actions' => [
-        'new' => 'Nova gondola',
-        'edit' => 'Editar gondola',
+        'new' => 'Nova gôndola',
+        'edit' => 'Editar gôndola',
     ],
     'fields' => [
         'name' => 'Nome',
-        'modules' => 'Modulos',
-        'location' => 'Localizacao',
+        'modules' => 'Módulos',
+        'location' => 'Localização',
         'side' => 'Lado',
         'flow' => 'Fluxo',
         'alignment' => 'Alinhamento',
@@ -22,8 +22,8 @@ return [
     'status_draft' => 'Rascunho',
     'status_published' => 'Publicado',
     'messages' => [
-        'created' => 'Gondola criada com sucesso.',
-        'updated' => 'Gondola atualizada com sucesso.',
-        'deleted' => 'Gondola removida com sucesso.',
+        'created' => 'Gôndola criada com sucesso.',
+        'updated' => 'Gôndola atualizada com sucesso.',
+        'deleted' => 'Gôndola removida com sucesso.',
     ],
 ];

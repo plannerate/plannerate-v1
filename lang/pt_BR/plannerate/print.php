@@ -63,6 +63,8 @@ return [
         'in_column' => 'Em Coluna',
         'downloading' => 'Baixando...',
         'download_pdf' => 'Baixar PDF',
+        'info' => 'Informações',
+        'client' => 'Cliente',
     ],
     'share' => [
         'title' => 'Visualização da Gôndola',

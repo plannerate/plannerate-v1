@@ -1,16 +1,16 @@
 <?php
 
 return [
-    'navigation' => 'Referencias EAN',
-    'title' => 'Referencias EAN',
-    'description' => 'Gerencie as referencias por EAN para apoio a padronizacao de produtos.',
+    'navigation' => 'Referências EAN',
+    'title' => 'Referências EAN',
+    'description' => 'Gerencie as referências por EAN para apoio a padronização de produtos.',
     'actions' => [
-        'new' => 'Nova referencia EAN',
-        'edit' => 'Editar referencia EAN',
+        'new' => 'Nova referência EAN',
+        'edit' => 'Editar referência EAN',
     ],
     'fields' => [
         'ean' => 'EAN',
-        'reference_description' => 'Descricao de referencia',
+        'reference_description' => 'Descrição de referência',
         'brand' => 'Marca',
         'subbrand' => 'Submarca',
         'packaging_type' => 'Tipo de embalagem',
@@ -26,8 +26,8 @@ return [
         'dimensions_column' => 'Medidas',
     ],
     'messages' => [
-        'created' => 'Referencia EAN criada com sucesso.',
-        'updated' => 'Referencia EAN atualizada com sucesso.',
-        'deleted' => 'Referencia EAN removida com sucesso.',
+        'created' => 'Referência EAN criada com sucesso.',
+        'updated' => 'Referência EAN atualizada com sucesso.',
+        'deleted' => 'Referência EAN removida com sucesso.',
     ],
 ];

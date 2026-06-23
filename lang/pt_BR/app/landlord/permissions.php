@@ -1,21 +1,21 @@
 <?php
 
 return [
-    'navigation' => 'Permissoes',
-    'title' => 'Permissoes',
-    'description' => 'Gerencie o catalogo global de permissoes.',
+    'navigation' => 'Permissões',
+    'title' => 'Permissões',
+    'description' => 'Gerencie o catálogo global de permissões.',
     'actions' => [
-        'new' => 'Nova permissao',
-        'edit' => 'Editar permissao',
+        'new' => 'Nova permissão',
+        'edit' => 'Editar permissão',
     ],
     'fields' => [
         'name' => 'Nome',
         'type' => 'Tipo',
     ],
     'messages' => [
-        'created' => 'Permissao criada com sucesso.',
-        'updated' => 'Permissao atualizada com sucesso.',
-        'deleted' => 'Permissao removida com sucesso.',
-        'protected' => 'Esta permissao e protegida e nao pode ser alterada.',
+        'created' => 'Permissão criada com sucesso.',
+        'updated' => 'Permissão atualizada com sucesso.',
+        'deleted' => 'Permissão removida com sucesso.',
+        'protected' => 'Esta permissão é protegida e não pode ser alterada.',
     ],
 ];

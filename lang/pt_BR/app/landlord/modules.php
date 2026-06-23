@@ -1,23 +1,23 @@
 <?php
 
 return [
-    'navigation' => 'Modulos',
-    'title' => 'Modulos',
-    'description' => 'Gerencie os modulos disponiveis para os tenants.',
+    'navigation' => 'Módulos',
+    'title' => 'Módulos',
+    'description' => 'Gerencie os módulos disponíveis para os tenants.',
     'actions' => [
-        'new' => 'Novo modulo',
-        'edit' => 'Editar modulo',
+        'new' => 'Novo módulo',
+        'edit' => 'Editar módulo',
     ],
     'fields' => [
         'name' => 'Nome',
-        'description' => 'Descricao',
+        'description' => 'Descrição',
         'is_active' => 'Ativo',
         'tenants_count' => 'Tenants',
     ],
     'messages' => [
-        'created' => 'Modulo criado com sucesso.',
-        'updated' => 'Modulo atualizado com sucesso.',
-        'deleted' => 'Modulo removido com sucesso.',
-        'in_use' => 'Nao e possivel excluir um modulo que possui tenants vinculados.',
+        'created' => 'Módulo criado com sucesso.',
+        'updated' => 'Módulo atualizado com sucesso.',
+        'deleted' => 'Módulo removido com sucesso.',
+        'in_use' => 'Não é possível excluir um módulo que possui tenants vinculados.',
     ],
 ];
