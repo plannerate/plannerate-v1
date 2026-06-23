@@ -106,6 +106,10 @@ return [
     'product_image_card' => [
         'no_image' => 'Sem imagem',
         'no_ean' => 'Sem EAN',
+        'name' => 'Produto',
+        'product_code' => 'Código',
+        'ean' => 'EAN',
+        'category' => 'Categoria',
         'download_and_update' => 'Baixar e atualizar imagem do servidor',
         'product_without_ean' => 'Produto sem EAN',
         'manual_upload' => 'Upload manual de imagem',
@@ -183,7 +187,7 @@ return [
         'right' => 'Direita',
     ],
     'segment_details' => [
-        'layer_product' => 'Layer / Produto',
+        'layer_product' => 'Produto',
         'layer_height' => 'Altura Layer (cm)',
         'alignment' => 'Alinhamento',
         'move_left_tooltip' => 'Mover para esquerda (Ctrl+ ←)',

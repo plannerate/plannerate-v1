@@ -78,7 +78,7 @@
 
         <!-- Informações da Layer se existir -->
         <div v-if="segment.layer" class="mt-4 space-y-3">
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-1 gap-2">
                 <div class="space-y-2">
                     <Label for="layer-quantity">{{ t('plannerate.print.product_detail.fronts') }}</Label>
                     <Input
@@ -91,7 +91,7 @@
                         min="1"
                     />
                 </div>
-                <div class="space-y-2">
+                <!-- <div class="space-y-2">
                     <Label for="layer-height">{{ t('plannerate.sidebar.segment_details.layer_height') }}</Label>
                     <Input
                         id="layer-height"
@@ -102,10 +102,21 @@
                         type="number"
                         step="0.1"
                     />
-                </div>
+                </div> -->
             </div>
 
-            <div class="grid grid-cols-2 gap-2">
+            <!-- Posicionamento: frentes × empilhamento × profundidade = total -->
+            <div class="space-y-2">
+                <Label>{{ t('plannerate.print.product_detail.positioning') }}</Label>
+                <ProductPositioning
+                    :layer-quantity="segment.layer.quantity"
+                    :segment-quantity="segment.quantity"
+                    :product-depth="product?.depth"
+                    :shelf-depth="shelf?.shelf_depth"
+                />
+            </div>
+
+            <!-- <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
                     <Label for="layer-spacing">{{ t('plannerate.sidebar.section_details.hole_spacing') }}</Label>
                     <Input
@@ -128,7 +139,7 @@
                         "
                     />
                 </div>
-            </div>
+            </div> -->
         </div>
         <!-- Product Sales Summary -->
         <ProductSalesSummary :product-id="product.id" />
@@ -189,6 +200,7 @@ import { useSegmentActions } from '@/composables/plannerate/actions/useSegmentAc
 import { useT } from '@/composables/useT';
 import type { Segment } from '@/types/planogram';
 import { wayfinderPath } from '../../../../../libs/wayfinderPath';
+import ProductPositioning from '../../../print/partials/ProductPositioning.vue';
 import ProductDimensionsEditor from './ProductDimensionsEditor.vue';
 import ProductImageCard from './ProductImageCard.vue';
 import ProductImageUpload from './ProductImageUpload.vue';

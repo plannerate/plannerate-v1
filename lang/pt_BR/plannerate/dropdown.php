@@ -28,7 +28,7 @@ return [
         'open_analyses' => 'Abrir Análises',
         'show' => 'Mostrar',
         'hide' => 'Esconder',
-        'assortment_analysis' => 'Análise de Assortimento',
+        'assortment_analysis' => 'Análise de Sortimento',
         'target_stock' => 'Estoque Alvo',
         'all' => 'Todos',
         'clear_all' => 'Limpar Todas as Análises',
