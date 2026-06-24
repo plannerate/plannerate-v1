@@ -16,8 +16,7 @@
                 loading="lazy"
                 :data-module="moduleNumber"
                 :data-shelf="shelfNumber"
-                :data-ean="product?.ean"
-                v-on:error="getDefaultImage"
+                :data-ean="product?.ean" 
             />
             <div
                 v-else
