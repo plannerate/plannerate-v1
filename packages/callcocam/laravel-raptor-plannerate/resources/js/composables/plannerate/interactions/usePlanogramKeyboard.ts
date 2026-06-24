@@ -561,10 +561,14 @@ return;
         // Cria estrutura da nova shelf (sem ID - será gerado pelo backend)
         const newShelf = {
             id: shelfId,
+            // Gera código no mesmo padrão do backend: SHELF-{timestamp_segundos}
+            code: `SHELF-${Math.floor(Date.now() / 1000)}`,
             section_id: section.id,
             shelf_position: newPosition,
             shelf_height: originalShelf.shelf_height,
+            shelf_width: originalShelf.shelf_width,
             shelf_depth: originalShelf.shelf_depth,
+            product_type: originalShelf.product_type,
             shelf_thickness: originalShelf.shelf_thickness,
             shelf_color: originalShelf.shelf_color,
             updated_at: new Date(),

@@ -238,7 +238,7 @@ class GondolaPayloadService
                         'id' => $store->id,
                         'name' => $store->name,
                         'map_image_path' => $store->map_image_path,
-                        'map_regions' => $store->map_regions,
+                        'map_regions' => $this->mapRegionsWithGondolaLinks($store, $planogram->store_id),
                     ];
                 }
             }
@@ -252,6 +252,34 @@ class GondolaPayloadService
         ];
 
         return $recordData;
+    }
+
+    /**
+     * Enriquece as regiões do mapa da loja com o `gondola_id` que as ocupa.
+     *
+     * A vinculação real vive em `gondolas.linked_map_gondola_id` (não no JSON do mapa),
+     * então cruzamos as gôndolas da mesma loja para informar ao frontend quais regiões
+     * já estão ocupadas — permitindo bloquear a seleção de um espaço já vinculado.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapRegionsWithGondolaLinks(Store $store, string $storeId): array
+    {
+        // [regionId => gondolaId] das gôndolas da loja com vínculo de mapa ativo.
+        $linkedByRegion = Gondola::query()
+            ->whereHas('planogram', fn ($query) => $query->where('store_id', $storeId))
+            ->whereNotNull('linked_map_gondola_id')
+            ->pluck('id', 'linked_map_gondola_id');
+
+        return collect($store->map_regions ?? [])
+            ->map(function (mixed $region) use ($linkedByRegion): mixed {
+                if (is_array($region) && isset($region['id'])) {
+                    $region['gondola_id'] = $linkedByRegion->get($region['id']);
+                }
+
+                return $region;
+            })
+            ->all();
     }
 
     /**

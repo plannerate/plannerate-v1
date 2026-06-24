@@ -4,9 +4,9 @@
         data-shelf-area="true"
         class="group/shelf absolute hover:bg-primary/10"
         :class="[
-            isSelected ? 'bg-primary/10 ring-2 ring-inset ring-primary' : '',
+            isSelected ? 'bg-primary/5 ring-1 ring-inset ring-primary/60' : '',
             showZoneIndicators ? shelfZone.bgClass : '',
-            isCategoryHighlighted && !isSelected ? 'ring-2 ring-inset ring-green-500' : '',
+            isCategoryHighlighted && !isSelected ? 'ring-4 ring-inset ring-blue-500 bg-blue-500/5' : '',
         ]"
         :style="shelfAreaStyle"
         tabindex="0"
@@ -77,7 +77,7 @@
                     isDraggingShelf,
                 'hover:border-slate-600 hover:bg-slate-700/95 hover:ring-1 hover:ring-slate-500':
                     !isDraggingShelf,
-                'ring-2 ring-inset ring-green-500': isCategoryHighlighted,
+                'ring-2 ring-inset ring-blue-500': isCategoryHighlighted,
             }" @mousedown="handleMouseDown" @dragstart.stop="handleShelfDragStart" @dragend.stop="handleShelfDragEnd"
             @click.stop="handleSelectShelf">
             <!-- Shelf label -->

@@ -41,18 +41,6 @@
 
             <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
-                    <Label for="shelf-width">{{ t('plannerate.print.product_detail.width') }} (cm)</Label>
-                    <Input
-                        id="shelf-width"
-                        :model-value="shelf.shelf_width"
-                        @update:model-value="
-                            handleUpdate('shelf_width', Number($event))
-                        "
-                        type="number"
-                        step="0.1"
-                    />
-                </div>
-                <div class="space-y-2">
                     <Label for="shelf-height">{{ t('plannerate.print.product_detail.height') }} (cm)</Label>
                     <Input
                         id="shelf-height"
@@ -64,9 +52,6 @@
                         step="0.1"
                     />
                 </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
                     <Label for="shelf-depth">{{ t('plannerate.print.product_detail.depth') }} (cm)</Label>
                     <Input
@@ -79,6 +64,9 @@
                         step="0.1"
                     />
                 </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
                     <Label for="shelf-position">{{ t('plannerate.sidebar.shelf_details.position') }} (cm)</Label>
                     <Input
@@ -201,6 +189,17 @@
                         {{ t('plannerate.sidebar.shelf_details.invert_products') }}
                     </ButtonWithTooltip>
                     <ButtonWithTooltip
+                        variant="outline"
+                        size="sm"
+                        @click="handleApplyToAllShelves"
+                        :disabled="otherShelves.length === 0"
+                        class="col-span-2"
+                        :tooltip="t('plannerate.sidebar.shelf_details.apply_to_all_tooltip')"
+                    >
+                        <CopyCheck class="mr-2 size-4" />
+                        {{ t('plannerate.sidebar.shelf_details.apply_to_all') }}
+                    </ButtonWithTooltip>
+                    <ButtonWithTooltip
                         variant="destructive"
                         size="sm"
                         @click="handleDelete"
@@ -224,9 +223,11 @@ import {
     ArrowUp,
     ArrowUpDown,
     Box,
+    CopyCheck,
     Trash2,
 } from 'lucide-vue-next';
 import { computed, watch } from 'vue';
+import { toast } from 'vue-sonner';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -300,6 +301,44 @@ return false;
 
     return activeSegments.length >= 2;
 });
+
+/** Demais prateleiras do mesmo módulo (excluindo a atual e deletadas) */
+const otherShelves = computed(() => {
+    if (!section.value?.shelves) {
+        return [];
+    }
+
+    return section.value.shelves.filter(
+        (s: any) => !s.deleted_at && s.id !== shelf.value.id,
+    );
+});
+
+/**
+ * Aplica espessura, profundidade e tipo desta prateleira a todas as outras do módulo.
+ * Largura é excluída pois segue a largura da seção.
+ * Posição é excluída pois é única por prateleira.
+ */
+function handleApplyToAllShelves() {
+    const targets = otherShelves.value;
+
+    if (targets.length === 0) {
+        return;
+    }
+
+    const fields = {
+        shelf_height: shelf.value.shelf_height,
+        shelf_depth: shelf.value.shelf_depth,
+        product_type: shelf.value.product_type,
+    };
+
+    targets.forEach((s: any) => editor.updateShelf(s.id, fields));
+
+    toast.success(
+        t('plannerate.sidebar.shelf_details.apply_to_all_success', {
+            count: targets.length,
+        }),
+    );
+}
 
 /**
  * Atualiza propriedade da prateleira de forma reativa

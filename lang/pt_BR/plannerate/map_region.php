@@ -11,6 +11,8 @@ return [
     'unnamed_area' => 'Área sem nome',
     'click_to_select' => 'Clique em uma área para selecionar',
     'unlink' => 'Desvincular',
+    'already_linked' => 'Esta área do mapa já está vinculada a outra gôndola.',
+    'store_change_blocked' => 'Desvincule as gôndolas do mapa da loja atual antes de trocar a loja do planograma.',
     'types' => [
         'gondola' => 'Gôndola',
         'island' => 'Ilha',

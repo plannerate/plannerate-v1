@@ -160,11 +160,50 @@ class GondolaService
             return false;
         }
 
+        // Impede vincular a gôndola a uma região do mapa já ocupada por outra gôndola da mesma loja.
+        if (! empty($updates['linked_map_gondola_id'] ?? null)
+            && ! $this->mapRegionAvailable($gondolaId, $updates['linked_map_gondola_id'])) {
+            Log::warning('Tentativa de vincular gôndola a região de mapa já ocupada', [
+                'gondolaId' => $gondolaId,
+                'regionId' => $updates['linked_map_gondola_id'],
+            ]);
+
+            // Descarta apenas o vínculo conflitante; demais campos continuam sendo aplicados.
+            unset($updates['linked_map_gondola_id'], $updates['linked_map_gondola_category']);
+
+            if (empty($updates)) {
+                return false;
+            }
+        }
+
         $updates['updated_at'] = now();
 
         $updated = $this->plannerateTenantTable('gondolas')->where('id', $gondolaId)->update($updates);
 
         return $updated > 0;
+    }
+
+    /**
+     * Verifica se uma região do mapa está livre para ser vinculada à gôndola informada.
+     *
+     * Uma região só pode pertencer a uma única gôndola dentro da mesma loja. Gôndolas
+     * sem loja associada não compartilham mapa, portanto nunca conflitam.
+     */
+    private function mapRegionAvailable(string $gondolaId, string $regionId): bool
+    {
+        $storeId = Gondola::query()
+            ->with('planogram:id,store_id')
+            ->find($gondolaId)?->planogram?->store_id;
+
+        if (! $storeId) {
+            return true;
+        }
+
+        return ! Gondola::query()
+            ->whereHas('planogram', fn ($query) => $query->where('store_id', $storeId))
+            ->where('linked_map_gondola_id', $regionId)
+            ->whereKeyNot($gondolaId)
+            ->exists();
     }
 
     /**

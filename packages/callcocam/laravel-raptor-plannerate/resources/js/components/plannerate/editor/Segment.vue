@@ -4,11 +4,9 @@
         class="relative flex flex-col items-start"
         tabindex="0"
         :class="{
-            'ring-3 ring-primary ring-offset-2 bg-primary/20 animate-pulse z-50': isSegmentSelected,
+            'ring-2 ring-primary/70 ring-offset-1 bg-primary/10 z-50': isSegmentSelected,
             'ring-2 ring-amber-500/70 ring-offset-1 bg-amber-100/50 z-40':
                 isEanMatch && !isSegmentSelected && !isDropTarget,
-            'ring-2 ring-emerald-500 ring-offset-1 bg-emerald-50/70 z-40':
-                isGroupingMatch && !isSegmentSelected && !isDropTarget,
             'hover:opacity-90':
                 !isSegmentSelected && !isDragging && !isDropTarget,
             'cursor-grabbing opacity-40': isDragging,
@@ -92,7 +90,6 @@ import {
     draggingSegmentId,
     draggingSegmentShelfId,
     eanSearchApplied,
-    selectedTemplateCategoryId,
 } from '../../../composables/plannerate/core/useGondolaState';
 import { DND_KEYS, hasSegmentData, setSegmentDragData } from '../../../composables/plannerate/dnd/transfer';
 import { useAbcClassification } from '../../../composables/plannerate/analysis/useAbcClassification';
@@ -151,16 +148,6 @@ const isEanMatch = computed(() => {
     const query = eanSearchApplied.value.trim();
     const productEan = String(layer.value?.product?.ean ?? '').trim();
     return !!(query && productEan && productEan.includes(query));
-});
-
-// Lê a categoria destacada direto do estado global (em vez de receber via prop
-// drilada por toda a árvore). Assim, ao trocar a categoria, o Vue só dispara
-// re-render dos segments cujo resultado booleano realmente muda — Canvas,
-// Sections, Section e Shelves deixam de re-renderizar em cascata.
-const isGroupingMatch = computed(() => {
-    const targetGrouping = (selectedTemplateCategoryId.value ?? '').trim();
-    const productGrouping = String(layer.value?.product?.category_id ?? '').trim();
-    return !!(targetGrouping && productGrouping && targetGrouping === productGrouping);
 });
 
 /**

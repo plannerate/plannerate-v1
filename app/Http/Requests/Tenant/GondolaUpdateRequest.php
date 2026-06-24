@@ -37,7 +37,7 @@ class GondolaUpdateRequest extends FormRequest
 
         return [
             'planogram_id' => ['required', Rule::in([$gondola->planogram_id])],
-            'linked_map_gondola_id' => ['nullable', 'ulid'],
+            'linked_map_gondola_id' => ['nullable', 'ulid', $this->mapRegionNotTakenRule($gondola)],
             'linked_map_gondola_category' => ['nullable', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique($gondolasTable, 'slug')->where('tenant_id', $tenantId)->ignore($gondola)],
@@ -49,5 +49,37 @@ class GondolaUpdateRequest extends FormRequest
             'scale_factor' => ['required', 'numeric', 'min:0'],
             'status' => ['required', Rule::in(['draft', 'published'])],
         ];
+    }
+
+    /**
+     * Garante que a região do mapa não esteja vinculada a outra gôndola da mesma loja.
+     *
+     * Uma região do mapa só pode pertencer a uma única gôndola dentro da loja; o vínculo
+     * real vive em `gondolas.linked_map_gondola_id` (não no JSON do mapa).
+     */
+    private function mapRegionNotTakenRule(Gondola $gondola): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($gondola): void {
+            if (! is_string($value) || $value === '') {
+                return;
+            }
+
+            $storeId = $gondola->planogram?->store_id;
+
+            // Sem loja associada não há mapa compartilhado para conflitar.
+            if (! $storeId) {
+                return;
+            }
+
+            $taken = Gondola::query()
+                ->whereHas('planogram', fn ($query) => $query->where('store_id', $storeId))
+                ->where('linked_map_gondola_id', $value)
+                ->whereKeyNot($gondola->getKey())
+                ->exists();
+
+            if ($taken) {
+                $fail(__('plannerate.map_region.already_linked'));
+            }
+        };
     }
 }
