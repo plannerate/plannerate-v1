@@ -221,46 +221,26 @@ const selection = usePlanogramSelection();
 const showImageUploadDialog = ref(false);
 const deleteImageAction = deleteImage;
 
-// Busca o segmento diretamente do gondola para garantir reatividade
-const segment = computed(() => {
-    const currentGondola = editor.currentGondola.value;
+// Resolve o segmento + a prateleira numa ÚNICA travessia da árvore.
+// Antes, `segment` varria toda a estrutura do gôndola e `shelf` varria de novo
+// via findSegmentById — duas varreduras O(N) por seleção (com o painel aberto,
+// rodavam a cada clique em produto). Agora é uma só, memoizada pelo computed.
+const located = computed(() => {
+    // Se o item for uma layer, busca pelo segment_id; senão pelo próprio id.
+    const searchId = props.item?.segment_id || props.item?.id;
 
-    if (!currentGondola?.sections || !props.item?.id) {
-return props.item;
-}
-
-    // Se o item for uma layer, busca pelo segment_id
-    const searchId = props.item.segment_id || props.item.id;
-
-    // Busca o segmento na estrutura do gondola
-    for (const section of currentGondola.sections) {
-        if (!section.shelves) {
-continue;
-}
-
-        for (const shelf of section.shelves) {
-            if (!shelf.segments) {
-continue;
-}
-
-            const seg = shelf.segments.find((s: any) => s.id === searchId);
-
-            if (seg) {
-return seg;
-}
-        }
+    if (!searchId) {
+        return null;
     }
 
-    // Fallback para o item original
-    return props.item;
+    return editor.findSegmentById(searchId);
 });
 
-// Busca a prateleira do segmento
-const shelf = computed(() => {
-    const found = editor.findSegmentById(segment.value.id);
+// Segmento reativo (fallback para o item original quando não encontrado).
+const segment = computed(() => located.value?.segment ?? props.item);
 
-    return found?.shelf;
-});
+// Prateleira do segmento, derivada da mesma travessia.
+const shelf = computed(() => located.value?.shelf);
 
 // Usa composable compartilhado para ações de segmento
 const segmentActions = useSegmentActions(

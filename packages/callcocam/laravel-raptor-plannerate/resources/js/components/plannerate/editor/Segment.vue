@@ -18,7 +18,7 @@
                 isDropTarget,
         }"
         draggable="true"
-        @mousedown="handleMouseDown"
+        @pointerdown="handlePointerDown"
         @focus="handleFocusSegment"
         @click="handleSegmentClick"
         @dragstart="handleDragStart"
@@ -178,10 +178,39 @@ const clearDropTarget = () => {
 // dobrando a cascata de atualizações para todos os segmentos na tela.
 let _skipFocusFromMouse = false;
 
-function handleMouseDown() {
+/**
+ * Seleciona ESTE segmento, evitando re-selecionar o que já está ativo.
+ * Re-selecionar recria `selectedItem` e dispara re-render desnecessário do
+ * painel de propriedades — o guard abaixo elimina esse custo no re-clique.
+ */
+function selectThisSegment() {
+    if (
+        selection.selectedType.value === 'segment' &&
+        selection.selectedId.value === props.segment.id
+    ) {
+        return;
+    }
+    selection.selectItem('segment', props.segment.id, props.segment);
+}
+
+/**
+ * Seleciona já no `pointerdown` (não no `click`).
+ *
+ * O atributo `draggable="true"` faz o browser converter um micro-movimento
+ * durante o clique em `dragstart` e ENGOLE o evento `click` — então a seleção
+ * "não pegava" e o usuário precisava reclicar (a sensação de "demora pra
+ * liberar o clique"). O `pointerdown` sempre dispara antes de qualquer drag,
+ * garantindo que todo clique registre de primeira.
+ */
+function handlePointerDown(event: PointerEvent) {
+    // Só botão primário do mouse / toque — ignora botão direito/auxiliar.
+    if (event.button !== 0) {
+        return;
+    }
     _skipFocusFromMouse = true;
-    // Reset após o clique completar (focus + click acontecem em < 50ms)
+    // Reset após o clique completar (focus acontece em < 50ms)
     setTimeout(() => { _skipFocusFromMouse = false; }, 50);
+    selectThisSegment();
 }
 
 onMounted(() => {
@@ -195,14 +224,16 @@ onBeforeUnmount(() => {
 });
 
 function handleFocusSegment() {
-    // Ignora focus gerado por mouse — o @click vai tratar a seleção
+    // Ignora focus gerado por mouse — o pointerdown já tratou a seleção.
+    // Só seleciona em focus por teclado (Tab).
     if (_skipFocusFromMouse) return;
-    selection.selectItem('segment', props.segment.id, props.segment);
+    selectThisSegment();
 }
 
 function handleSegmentClick(event: MouseEvent) {
+    // A seleção já ocorreu no pointerdown; aqui só impedimos o clique de
+    // borbulhar para a área da prateleira (que selecionaria a shelf).
     event.stopPropagation();
-    selection.selectItem('segment', props.segment.id, props.segment);
 }
 
 function handleDragStart(event: DragEvent) {
