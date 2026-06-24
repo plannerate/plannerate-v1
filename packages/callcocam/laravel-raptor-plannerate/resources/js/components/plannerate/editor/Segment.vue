@@ -4,7 +4,7 @@
         class="relative flex flex-col items-start"
         tabindex="0"
         :class="{
-            'ring-3 ring-primary ring-offset-2 bg-primary/20 z-50': isSegmentSelected,
+            'ring-3 ring-primary ring-offset-2 bg-primary/20 animate-pulse z-50': isSegmentSelected,
             'ring-2 ring-amber-500/70 ring-offset-1 bg-amber-100/50 z-40':
                 isEanMatch && !isSegmentSelected && !isDropTarget,
             'ring-2 ring-emerald-500 ring-offset-1 bg-emerald-50/70 z-40':

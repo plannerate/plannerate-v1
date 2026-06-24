@@ -13,7 +13,6 @@
                 :style="style"
                 class="z-20 object-cover"
                 decoding="async"
-                loading="lazy"
                 :data-module="moduleNumber"
                 :data-shelf="shelfNumber"
                 :data-ean="product?.ean" 

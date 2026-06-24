@@ -27,7 +27,7 @@ import {
     Undo2,
     X,
 } from 'lucide-vue-next';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import AddModuleSheet from '@/components/plannerate/form/AddModuleSheet.vue';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
@@ -363,10 +363,18 @@ const eanSearchModel = computed({
 });
 
 /**
- * Preenche o campo de busca com o EAN do produto ao selecionar um segmento
- * (clique/tab). Apenas PREENCHE o campo — não dispara a busca/highlight, que só
- * ocorre quando o usuário clica em "Buscar" (ou tecla Enter). Assim selecionar
- * um produto fica barato (sem varrer a gôndola nem recalcular highlight).
+ * Flag: o campo de busca foi preenchido a partir de uma SELEÇÃO (clique/tab),
+ * e não pela digitação do usuário. Usada para que a auto-busca com debounce NÃO
+ * dispare nesse caso — senão clicar num produto pularia a seleção para o
+ * primeiro match com o mesmo EAN.
+ */
+const syncingEanFromSelection = ref(false);
+
+/**
+ * Ao selecionar um segmento (clique/tab): marca AUTOMATICAMENTE os produtos
+ * iguais na gôndola (liga o highlight via `eanSearchApplied`) e preenche o campo
+ * de busca com o EAN. O flag `syncingEanFromSelection` evita que esse
+ * preenchimento dispare de novo a auto-busca com debounce (que faria o mesmo).
  */
 watch(
     () => selection.selectedItem.value,
@@ -379,22 +387,72 @@ watch(
             (selected.item as any)?.layer?.product?.ean ?? '',
         ).replace(/\D/g, '');
 
+        // Marca os produtos iguais na gôndola (ou limpa o highlight se sem EAN).
+        eanSearchApplied.value = ean;
+
         if (ean && ean !== eanSearchQuery.value) {
+            syncingEanFromSelection.value = true;
             eanSearchQuery.value = ean;
         }
     },
 );
 
 /**
+ * Auto-busca por EAN com debounce ao DIGITAR: após o usuário parar de digitar,
+ * percorre a gôndola, liga o highlight e marca os produtos iguais
+ * automaticamente (mesmo comportamento do botão "Buscar"). Preencher o campo a
+ * partir de uma seleção não dispara (flag `syncingEanFromSelection`).
+ */
+const EAN_SEARCH_DEBOUNCE_MS = 350;
+let eanSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+watch(
+    () => eanSearchQuery.value,
+    () => {
+        // Preenchimento vindo de seleção: não dispara a busca.
+        if (syncingEanFromSelection.value) {
+            syncingEanFromSelection.value = false;
+
+            return;
+        }
+
+        if (eanSearchDebounceTimer) {
+            clearTimeout(eanSearchDebounceTimer);
+        }
+
+        eanSearchDebounceTimer = setTimeout(() => {
+            // Auto-busca: apenas liga o highlight (marca os produtos iguais).
+            // O "pular para o primeiro match" fica reservado ao Enter/botão.
+            applyEanHighlight();
+        }, EAN_SEARCH_DEBOUNCE_MS);
+    },
+);
+
+onBeforeUnmount(() => {
+    if (eanSearchDebounceTimer) {
+        clearTimeout(eanSearchDebounceTimer);
+    }
+});
+
+/**
+ * Liga (ou limpa) apenas o highlight por EAN nos segmentos — marca todos os
+ * produtos iguais na gôndola sem mexer na seleção. Usado pela auto-busca com
+ * debounce ao digitar.
+ */
+function applyEanHighlight(): void {
+    eanSearchApplied.value = eanSearchQuery.value.trim();
+}
+
+/**
  * Aplica a busca por EAN: liga o highlight (`eanSearchApplied`) e percorre a
  * gôndola selecionando o primeiro segmento cujo produto casa com a query.
- * Chamado pelo botão "Buscar" e pela tecla Enter no campo — nunca reativo.
+ * Chamado pelo botão "Buscar" e pela tecla Enter no campo.
  */
 function runEanSearch(): void {
     const normalizedQuery = eanSearchQuery.value.trim();
 
     // Dispara (ou limpa) o highlight nos segmentos
-    eanSearchApplied.value = normalizedQuery;
+    applyEanHighlight();
 
     const gondola = currentGondola.value;
 
