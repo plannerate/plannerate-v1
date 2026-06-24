@@ -14,6 +14,13 @@ interface UseShelfLayoutOptions {
     sectionWidth: Ref<number | undefined>;
     cremalheiraWidth: Ref<number | undefined>;
     alignment: Ref<string | undefined>;
+    /**
+     * Número de exibição da prateleira ("Prat #N"), pré-calculado UMA vez pelo
+     * pai (Shelves.vue) e passado por prop. Quando fornecido, evita o sort O(S)
+     * por instância de Shelf — ver `shelfDisplayNumber`. Opcional para manter
+     * compatibilidade com callers que não fornecem o mapa (ex.: PDF).
+     */
+    displayNumber?: Ref<number | undefined>;
 }
 
 export function useShelfLayout(options: UseShelfLayoutOptions) {
@@ -23,18 +30,21 @@ export function useShelfLayout(options: UseShelfLayoutOptions) {
         () => options.shelf.value.shelf_height * options.scale.value,
     );
 
-    const shelfAreaStyle = computed(() => {
-        // Força reatividade: acessa as posições como dependências explícitas
-        // (não são usadas diretamente, mas garantem que o computed recalcule)
-        void options.shelf.value.shelf_position;
-        void options.previousShelf.value?.shelf_position;
-        void options.previousShelf.value?.shelf_height;
-
-        const { areaStartCm, areaHeightCm } = calculateShelfArea({
+    /**
+     * Área da prateleira (início/altura em cm) memoizada num único computed.
+     * Antes `calculateShelfArea` era chamado 2× (em `shelfAreaStyle` e
+     * `shelfBasePosition`); agora ambos leem deste cache compartilhado.
+     */
+    const shelfArea = computed(() =>
+        calculateShelfArea({
             shelf: options.shelf.value,
             previousShelf: options.previousShelf.value,
             scale: options.scale.value,
-        });
+        }),
+    );
+
+    const shelfAreaStyle = computed(() => {
+        const { areaStartCm, areaHeightCm } = shelfArea.value;
 
         return {
             top: `${areaStartCm * options.scale.value}px`,
@@ -46,11 +56,7 @@ export function useShelfLayout(options: UseShelfLayoutOptions) {
     });
 
     const shelfBasePosition = computed(() => {
-        const { areaStartCm } = calculateShelfArea({
-            shelf: options.shelf.value,
-            previousShelf: options.previousShelf.value,
-            scale: options.scale.value,
-        });
+        const { areaStartCm } = shelfArea.value;
 
         const holePositions = calculateHolePositions(options.section.value);
 
@@ -97,6 +103,17 @@ export function useShelfLayout(options: UseShelfLayoutOptions) {
     );
 
     const shelfDisplayNumber = computed(() => {
+        // Caminho rápido: número fornecido pelo pai (Shelves.vue calcula o mapa
+        // id→número UMA vez por seção). Evita o sort O(S) por instância de Shelf
+        // — que tornava a renderização da seção O(S²) e reinvalidava todas as
+        // shelves a cada mutação de segmento (pois section.shelves é reatribuído).
+        const provided = options.displayNumber?.value;
+
+        if (provided !== undefined && provided !== null) {
+            return provided;
+        }
+
+        // Fallback (callers sem o mapa, ex.: PDF): cálculo local original.
         if (!options.section.value?.shelves) {
 return 1;
 }

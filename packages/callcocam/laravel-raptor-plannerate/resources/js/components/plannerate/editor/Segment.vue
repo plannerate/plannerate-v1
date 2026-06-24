@@ -1,23 +1,24 @@
 <template>
     <!-- Segment com drop direto (troca de posições) -->
     <div
-        class="relative flex flex-col items-start transition-all duration-200"
+        class="relative flex flex-col items-start"
         tabindex="0"
         :class="{
-            'ring-3 ring-primary ring-offset-2 bg-primary/20 shadow-xl scale-[1.02] animate-pulse z-50': isSegmentSelected,
-            'ring-2 ring-amber-500/70 ring-offset-1 bg-amber-100/50 shadow-lg z-40':
+            'ring-3 ring-primary ring-offset-2 bg-primary/20 z-50': isSegmentSelected,
+            'ring-2 ring-amber-500/70 ring-offset-1 bg-amber-100/50 z-40':
                 isEanMatch && !isSegmentSelected && !isDropTarget,
-            'ring-2 ring-emerald-500 ring-offset-1 bg-emerald-50/70 shadow-lg z-40 animate-pulse':
+            'ring-2 ring-emerald-500 ring-offset-1 bg-emerald-50/70 z-40':
                 isGroupingMatch && !isSegmentSelected && !isDropTarget,
             'hover:opacity-90':
                 !isSegmentSelected && !isDragging && !isDropTarget,
             'cursor-grabbing opacity-40': isDragging,
             'cursor-grab': !isDragging && !isDropTarget,
             'cursor-pointer': isDropTarget,
-            'scale-105 bg-primary/10 shadow-lg ring-4 ring-primary animate-pulse':
+            'scale-105 bg-primary/10 shadow-lg ring-4 ring-primary':
                 isDropTarget,
         }"
         draggable="true"
+        @pointerdown="handlePointerDown"
         @focus="handleFocusSegment"
         @click="handleSegmentClick"
         @dragstart="handleDragStart"
@@ -27,6 +28,8 @@
         @drop.prevent="handleDrop"
         :data-segment-id="segment.id"
         :data-layer-id="layer?.id"
+        :data-module="moduleNumber"
+        :data-shelf="shelfNumber"
         data-segment="true"
     >
 
@@ -41,11 +44,11 @@
 
         <!-- Indicador visual de estoque alvo -->
         <StockIndicator :segment="segment" :shelf-depth="shelfDepth" :scale="props.scale" @click="handleSegmentClick" />
-     
+
         <!-- Indicador visual de drop -->
         <div
             v-if="isDropTarget"
-            class="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded bg-primary/20 backdrop-blur-sm"
+            class="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded bg-primary/30"
         >
             <div class="rounded-full bg-primary p-2 shadow-lg">
                 <svg
@@ -76,6 +79,8 @@
                     :scale="props.scale"
                     :is-selected="isLayerSelected"
                     :facing-gap="props.facingGap"
+                    :module-number="props.moduleNumber"
+                    :shelf-number="props.shelfNumber"
                 />
             </div>
         </div>
@@ -84,8 +89,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import {
+    draggingSegmentId,
     draggingSegmentShelfId,
-    eanSearchQuery,
+    eanSearchApplied,
+    selectedTemplateCategoryId,
 } from '../../../composables/plannerate/core/useGondolaState';
 import { DND_KEYS, hasSegmentData, setSegmentDragData } from '../../../composables/plannerate/dnd/transfer';
 import { useAbcClassification } from '../../../composables/plannerate/analysis/useAbcClassification';
@@ -110,7 +117,19 @@ interface Props {
      * se distribuírem com o mesmo espaçamento dos demais segmentos da prateleira.
      */
     facingGap?: number;
-    highlightGroupingNormalized?: string | null;
+    /**
+     * Pré-computado pela Shelf pai — evita que cada Segment subscreva diretamente
+     * ao estado global de seleção (selectedId / selectedItems), eliminando a cascata
+     * de N recomputações por clique. Quando o selectedId muda, apenas a Shelf
+     * re-renderiza; o vdom diff do Vue atualiza somente os 2 segmentos cujos
+     * props realmente mudaram (anterior + novo selecionado).
+     */
+    selectedFromParent?: boolean;
+    layerSelectedFromParent?: boolean;
+    /** Diagnóstico: nº do módulo (section.ordering) e nº da prateleira ("Prat #N"),
+     *  repassados às imagens como data-attrs para correlacionar lentidão no profiling. */
+    moduleNumber?: number | string;
+    shelfNumber?: number | string;
 }
 
 const props = defineProps<Props>();
@@ -129,34 +148,31 @@ const abcClassification = computed(() => getClassification(layer.value?.product?
 const paperRole = computed(() => getPaperRole(layer.value?.product?.ean));
 
 const isEanMatch = computed(() => {
-    const query = eanSearchQuery.value.trim();
+    const query = eanSearchApplied.value.trim();
     const productEan = String(layer.value?.product?.ean ?? '').trim();
-
-    if (!query || !productEan) {
-        return false;
-    }
-
-    return productEan.includes(query);
+    return !!(query && productEan && productEan.includes(query));
 });
 
+// Lê a categoria destacada direto do estado global (em vez de receber via prop
+// drilada por toda a árvore). Assim, ao trocar a categoria, o Vue só dispara
+// re-render dos segments cujo resultado booleano realmente muda — Canvas,
+// Sections, Section e Shelves deixam de re-renderizar em cascata.
 const isGroupingMatch = computed(() => {
-    const targetGrouping = (props.highlightGroupingNormalized ?? '').trim();
+    const targetGrouping = (selectedTemplateCategoryId.value ?? '').trim();
     const productGrouping = String(layer.value?.product?.category_id ?? '').trim();
-
-    if (!targetGrouping || !productGrouping) {
-        return false;
-    }
-
-    return targetGrouping === productGrouping;
+    return !!(targetGrouping && productGrouping && targetGrouping === productGrouping);
 });
 
-const isSegmentSelected = computed(() => {
-    return selection.isSegmentSelected(props.segment);
-});
+/**
+ * Recebido como prop da Shelf pai — não depende mais do estado global aqui.
+ * Garante que apenas os segmentos cujo estado de seleção mudou re-renderizam.
+ */
+const isSegmentSelected = computed(() => props.selectedFromParent ?? false);
 
-const isLayerSelected = computed(() => {
-    return layer.value ? selection.isLayerSelected(layer.value) : false;
-});
+/**
+ * Recebido como prop da Shelf pai — idem ao isSegmentSelected.
+ */
+const isLayerSelected = computed(() => props.layerSelectedFromParent ?? false);
 
 // Estado de dragging e drop
 const isDragging = ref(false);
@@ -164,6 +180,46 @@ const isDropTarget = ref(false);
 const clearDropTarget = () => {
     isDropTarget.value = false;
 };
+
+// Previne double-fire: ao clicar, o browser dispara @focus ANTES de @click.
+// Sem essa flag, selectItem() seria chamado duas vezes no mesmo clique,
+// dobrando a cascata de atualizações para todos os segmentos na tela.
+let _skipFocusFromMouse = false;
+
+/**
+ * Seleciona ESTE segmento, evitando re-selecionar o que já está ativo.
+ * Re-selecionar recria `selectedItem` e dispara re-render desnecessário do
+ * painel de propriedades — o guard abaixo elimina esse custo no re-clique.
+ */
+function selectThisSegment() {
+    if (
+        selection.selectedType.value === 'segment' &&
+        selection.selectedId.value === props.segment.id
+    ) {
+        return;
+    }
+    selection.selectItem('segment', props.segment.id, props.segment);
+}
+
+/**
+ * Seleciona já no `pointerdown` (não no `click`).
+ *
+ * O atributo `draggable="true"` faz o browser converter um micro-movimento
+ * durante o clique em `dragstart` e ENGOLE o evento `click` — então a seleção
+ * "não pegava" e o usuário precisava reclicar (a sensação de "demora pra
+ * liberar o clique"). O `pointerdown` sempre dispara antes de qualquer drag,
+ * garantindo que todo clique registre de primeira.
+ */
+function handlePointerDown(event: PointerEvent) {
+    // Só botão primário do mouse / toque — ignora botão direito/auxiliar.
+    if (event.button !== 0) {
+        return;
+    }
+    _skipFocusFromMouse = true;
+    // Reset após o clique completar (focus acontece em < 50ms)
+    setTimeout(() => { _skipFocusFromMouse = false; }, 50);
+    selectThisSegment();
+}
 
 onMounted(() => {
     window.addEventListener('dragend', clearDropTarget, true);
@@ -176,20 +232,26 @@ onBeforeUnmount(() => {
 });
 
 function handleFocusSegment() {
-    selection.selectItem('segment', props.segment.id, props.segment);
+    // Ignora focus gerado por mouse — o pointerdown já tratou a seleção.
+    // Só seleciona em focus por teclado (Tab).
+    if (_skipFocusFromMouse) return;
+    selectThisSegment();
 }
 
 function handleSegmentClick(event: MouseEvent) {
+    // A seleção já ocorreu no pointerdown; aqui só impedimos o clique de
+    // borbulhar para a área da prateleira (que selecionaria a shelf).
     event.stopPropagation();
-    selection.selectItem('segment', props.segment.id, props.segment);
 }
 
 function handleDragStart(event: DragEvent) {
     event.stopPropagation();
     isDragging.value = true;
 
-    // Armazena o shelf_id globalmente para que outras shelves possam verificar
+    // Armazena shelf_id e id globalmente para que os handlers de dragover
+    // identifiquem origem e o próprio segmento sem ler dataTransfer.getData()
     draggingSegmentShelfId.value = props.segment.shelf_id || null;
+    draggingSegmentId.value = props.segment.id;
 
     if (event.dataTransfer) {
         // Copy se Ctrl estiver pressionado, senão move (contrato em dnd/transfer)
@@ -212,41 +274,46 @@ function handleDragStart(event: DragEvent) {
 function handleDragEnd() {
     isDragging.value = false;
     isDropTarget.value = false;
-    // Limpa o shelf_id global
+    // Limpa o estado global de arraste
     draggingSegmentShelfId.value = null;
+    draggingSegmentId.value = null;
+}
+
+/**
+ * Atualiza isDropTarget só quando o valor muda — evita disparar o setter
+ * reativo (e potencial re-render) a cada dragover (~60×/s).
+ */
+function setDropTarget(value: boolean): void {
+    if (isDropTarget.value !== value) {
+        isDropTarget.value = value;
+    }
 }
 
 // Handler para dragover - aceita segments da mesma shelf
 function handleDragOver(event: DragEvent) {
     if (!event.dataTransfer) {
-return;
-}
+        return;
+    }
 
     if (!hasSegmentData(event.dataTransfer)) {
-        isDropTarget.value = false;
+        setDropTarget(false);
 
         return;
     }
 
-    // Só aceita segments (não produtos) da mesma shelf usando o estado global
-    const draggedSegmentId = event.dataTransfer.getData(DND_KEYS.SEGMENT_ID);
+    // Identifica origem pelo estado global (getData retorna vazio no dragover).
+    // Nunca marca o próprio segmento como alvo, e só aceita da mesma shelf.
+    const isOwnSegment = draggingSegmentId.value === props.segment.id;
+    const isSameShelf = draggingSegmentShelfId.value === props.segment.shelf_id;
 
-    // Nunca marca o próprio segmento como alvo
-    if (draggedSegmentId === props.segment.id) {
-        isDropTarget.value = false;
-
-        return;
-    }
-
-    // Verifica se é da mesma shelf usando o estado global
-    if (draggingSegmentShelfId.value === props.segment.shelf_id) {
+    if (!isOwnSegment && isSameShelf) {
         event.dataTransfer.dropEffect = 'move';
-        isDropTarget.value = true;
+        setDropTarget(true);
 
         return;
     }
 
-    isDropTarget.value = false;
+    setDropTarget(false);
 }
 
 function handleDragLeave(event: DragEvent) {
@@ -258,15 +325,9 @@ function handleDragLeave(event: DragEvent) {
         return;
     }
 
-    const rect = target.getBoundingClientRect();
-    const x = event.clientX;
-    const y = event.clientY;
-    const isOutside = x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom;
-
-    // Alguns browsers podem reportar 0/0 em dragleave; trate como saída
-    if (isOutside || (x === 0 && y === 0)) {
-        isDropTarget.value = false;
-    }
+    // Saiu do segmento (ou da janela, quando relatedTarget é null) — sem ler
+    // geometria (getBoundingClientRect força reflow síncrono no hot path).
+    setDropTarget(false);
 }
 
 // Handler para drop - troca de posições

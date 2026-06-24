@@ -1,8 +1,8 @@
 <?php
 
 return [
-    'navigation' => 'Links uteis',
-    'title' => 'Links uteis',
+    'navigation' => 'Links úteis',
+    'title' => 'Links úteis',
     'description' => 'Gerencie links que podem ser exibidos no dashboard dos tenants.',
     'actions' => [
         'new' => 'Novo link',
@@ -12,12 +12,12 @@ return [
         'name' => 'Nome',
         'url' => 'Link',
         'logo' => 'Logo',
-        'description' => 'Descricao',
+        'description' => 'Descrição',
         'show_on_tenant_dashboard' => 'Mostrar para tenants',
     ],
     'messages' => [
-        'created' => 'Link util criado com sucesso.',
-        'updated' => 'Link util atualizado com sucesso.',
-        'deleted' => 'Link util removido com sucesso.',
+        'created' => 'Link útil criado com sucesso.',
+        'updated' => 'Link útil atualizado com sucesso.',
+        'deleted' => 'Link útil removido com sucesso.',
     ],
 ];

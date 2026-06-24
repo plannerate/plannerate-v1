@@ -22,6 +22,15 @@ const localStorageKey = 'plannerate_history';
 const localStorageMaxSize = 15; // Máximo de 15 itens no localStorage (mais seguro)
 const isBrowser = typeof window !== 'undefined';
 
+/**
+ * Timer (módulo-global) do debounce de persistência no localStorage. Global para
+ * coalescer chamadas de TODAS as instâncias do composable — a persistência é cara
+ * (JSON.stringify de até 15 snapshots) e era feita sincronamente a cada ação,
+ * adicionando latência no mouseup/drop. Ver `scheduleSaveToLocalStorage`.
+ */
+let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+const SAVE_DEBOUNCE_MS = 500;
+
 export function usePlanogramHistory() {
     // Flags computadas baseadas no estado global
     const canUndo = computed(() => currentIndex.value >= 0);
@@ -72,6 +81,29 @@ export function usePlanogramHistory() {
                 console.error('❌ Falha ao salvar histórico mesmo no modo reduzido');
             }
         }
+    }
+
+    /**
+     * Agenda a persistência no localStorage com debounce (~500ms).
+     *
+     * Em sequências rápidas de ações (vários drops seguidos) evita pagar um
+     * JSON.stringify completo a cada uma — só persiste após a inatividade. O
+     * histórico no localStorage é apenas um cache de conveniência (TTL 24h), então
+     * a pequena janela em que o disco fica desatualizado é aceitável.
+     */
+    function scheduleSaveToLocalStorage() {
+        if (!isBrowser) {
+            return;
+        }
+
+        if (saveDebounceTimer) {
+            clearTimeout(saveDebounceTimer);
+        }
+
+        saveDebounceTimer = setTimeout(() => {
+            saveDebounceTimer = null;
+            saveToLocalStorage();
+        }, SAVE_DEBOUNCE_MS);
     }
 
     /**
@@ -133,6 +165,13 @@ return false;
             return;
         }
 
+        // Cancela qualquer persistência debounced pendente para que não re-grave
+        // histórico obsoleto logo após a limpeza.
+        if (saveDebounceTimer) {
+            clearTimeout(saveDebounceTimer);
+            saveDebounceTimer = null;
+        }
+
         try {
             window.localStorage.removeItem(localStorageKey);
         } catch (error) {
@@ -159,7 +198,15 @@ return false;
 return null;
 }
 
-        return JSON.parse(JSON.stringify(state));
+        // structuredClone é nativo e bem mais rápido que o round-trip JSON para
+        // objetos grandes (árvore de snapshot). Faz fallback para JSON quando o
+        // estado contém valores não-clonáveis (ex.: funções) — caso em que o JSON
+        // simplesmente os descarta, preservando o comportamento anterior.
+        try {
+            return structuredClone(state);
+        } catch {
+            return JSON.parse(JSON.stringify(state));
+        }
     }
 
     /**
@@ -189,8 +236,8 @@ return null;
             currentIndex.value++;
         }
 
-        // Salva no localStorage após registrar
-        saveToLocalStorage();
+        // Persiste no localStorage (debounced) após registrar
+        scheduleSaveToLocalStorage();
     }
 
     /**
@@ -206,8 +253,8 @@ return null;
         const action = historyStack.value[currentIndex.value];
         currentIndex.value--;
 
-        // Salva no localStorage após undo
-        saveToLocalStorage();
+        // Persiste no localStorage (debounced) após undo
+        scheduleSaveToLocalStorage();
 
         return action;
     }
@@ -225,8 +272,8 @@ return null;
         currentIndex.value++;
         const action = historyStack.value[currentIndex.value];
 
-        // Salva no localStorage após redo
-        saveToLocalStorage();
+        // Persiste no localStorage (debounced) após redo
+        scheduleSaveToLocalStorage();
 
         return action;
     }
@@ -265,7 +312,7 @@ return null;
             Object.assign(current.beforeState, data);
         }
 
-        saveToLocalStorage();
+        scheduleSaveToLocalStorage();
     }
 
     return {

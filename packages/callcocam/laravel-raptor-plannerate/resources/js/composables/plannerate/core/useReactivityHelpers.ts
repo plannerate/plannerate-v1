@@ -41,6 +41,7 @@ export function reorderShelvesByPosition(section: any): void {
         if (currentGondola.value?.sections) {
             currentGondola.value.sections = [...currentGondola.value.sections];
         }
+
     }
 }
 
@@ -71,6 +72,7 @@ export function updateShelfReactive(
     if (positionChanged || wasDeleted || wasRestored) {
         reorderShelvesByPosition(section);
     }
+
 }
 
 /**
@@ -109,6 +111,7 @@ return;
             };
         }
     }
+
 }
 
 /**
@@ -145,4 +148,5 @@ export function updateSegmentReactive(
     if (currentGondola.value?.sections) {
         currentGondola.value.sections = [...currentGondola.value.sections];
     }
+
 }

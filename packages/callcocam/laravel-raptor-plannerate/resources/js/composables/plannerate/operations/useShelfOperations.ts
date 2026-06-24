@@ -391,7 +391,6 @@ targetSection.shelves = [];
                 ];
             }
         }
- 
 
         // Notifica que produto foi usado (remove da lista)
         if (onProductUsed) {

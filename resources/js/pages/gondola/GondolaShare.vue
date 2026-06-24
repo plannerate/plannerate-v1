@@ -51,6 +51,20 @@ const flowLabel = computed(() =>
 const totalModules = computed(() => props.sections.length);
 
 /**
+ * Profundidade do módulo: usa a maior shelf_depth das prateleiras;
+ * fallback para base_depth da seção quando não houver prateleiras.
+ */
+function sectionDepth(section: Section): number {
+    const shelfDepths = (section.shelves ?? [])
+        .filter((s) => !s.deleted_at)
+        .map((s) => s.shelf_depth ?? 0);
+
+    return shelfDepths.length > 0
+        ? Math.max(...shelfDepths)
+        : (section.base_depth ?? 0);
+}
+
+/**
  * Retorna todos os produtos de uma seção, organizados por prateleira (shelf_position desc = topo primeiro).
  */
 function shelvesWithProducts(section: Section) {
@@ -60,16 +74,44 @@ function shelvesWithProducts(section: Section) {
 
     return shelves
         .map((shelf) => {
-            const products = (shelf.segments ?? [])
+            // Agrupa por produto somando as frentes (layer.quantity = nº de frentes
+            // lado a lado). O total de frentes da prateleira para um produto é a soma
+            // das frentes de todos os segmentos onde ele aparece.
+            const byProduct = new Map<string, {
+                id: string;
+                code: string;
+                name: string;
+                brand: string;
+                ean: string;
+                facings: number;
+                position: number;
+            }>();
+
+            (shelf.segments ?? [])
                 .filter((seg) => !seg.deleted_at && seg.layer?.product)
-                .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-                .map((seg) => ({
-                    id: seg.layer!.product!.id,
-                    name: seg.layer!.product!.name ?? '—',
-                    brand: seg.layer!.product!.brand ?? '—',
-                    ean: seg.layer!.product!.ean ?? '—',
-                    quantity: seg.quantity ?? 1,
-                }));
+                .forEach((seg) => {
+                    const product = seg.layer!.product!;
+                    const facings = Math.max(1, Math.trunc(Number(seg.layer!.quantity ?? 1)) || 1);
+                    const existing = byProduct.get(product.id);
+
+                    if (existing) {
+                        existing.facings += facings;
+                    } else {
+                        byProduct.set(product.id, {
+                            id: product.id,
+                            code: product.codigo_erp ?? '—',
+                            name: product.name ?? '—',
+                            brand: product.brand ?? '—',
+                            ean: product.ean ?? '—',
+                            facings,
+                            position: seg.position ?? 0,
+                        });
+                    }
+                });
+
+            const products = Array.from(byProduct.values()).sort(
+                (a, b) => a.position - b.position,
+            );
 
             return { shelf, products };
         })
@@ -132,8 +174,9 @@ function shelvesWithProducts(section: Section) {
                         </span>
                     </div>
                     <span class="text-[10px] text-slate-400">
+                        {{ t('plannerate.print.labels.height_short') }}: {{ section.height }}mm ·
                         {{ t('plannerate.print.labels.width_short') }}: {{ section.width }}mm ·
-                        {{ t('plannerate.print.labels.height_short') }}: {{ section.height }}mm
+                        {{ t('plannerate.print.labels.depth_short') }}: {{ sectionDepth(section) }}mm
                     </span>
                 </div>
 
@@ -170,13 +213,22 @@ function shelvesWithProducts(section: Section) {
                             <span class="font-normal">({{ t('plannerate.print.labels.height_short') }}: {{ shelf.shelf_position }}mm)</span>
                         </p>
                         <div class="overflow-x-auto">
-                            <table class="w-full min-w-[480px] border-collapse text-xs">
+                            <!-- table-fixed + colgroup: larguras iguais em todas as prateleiras -->
+                            <table class="w-full min-w-[560px] table-fixed border-collapse text-xs">
+                                <colgroup>
+                                    <col class="w-24" />
+                                    <col class="w-32" />
+                                    <col />
+                                    <col class="w-40" />
+                                    <col class="w-16" />
+                                </colgroup>
                                 <thead>
                                     <tr class="bg-slate-50 text-left text-[10px] text-slate-500 uppercase tracking-wider">
+                                        <th class="border border-slate-100 px-2 py-1.5 font-semibold">{{ t('plannerate.print.share.code') }}</th>
+                                        <th class="border border-slate-100 px-2 py-1.5 font-semibold">{{ t('plannerate.print.share.ean') }}</th>
                                         <th class="border border-slate-100 px-2 py-1.5 font-semibold">{{ t('plannerate.print.share.product_list') }}</th>
                                         <th class="border border-slate-100 px-2 py-1.5 font-semibold">{{ t('plannerate.print.share.brand') }}</th>
-                                        <th class="border border-slate-100 px-2 py-1.5 font-semibold w-32">{{ t('plannerate.print.share.ean') }}</th>
-                                        <th class="border border-slate-100 px-2 py-1.5 font-semibold w-16 text-center">{{ t('plannerate.print.share.facings') }}</th>
+                                        <th class="border border-slate-100 px-2 py-1.5 font-semibold text-center">{{ t('plannerate.print.share.facings') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -185,17 +237,20 @@ function shelvesWithProducts(section: Section) {
                                         :key="product.id"
                                         class="even:bg-slate-50/60 hover:bg-blue-50/40"
                                     >
+                                        <td class="border border-slate-100 px-2 py-1.5 font-mono text-slate-500">
+                                            {{ product.code }}
+                                        </td>
+                                        <td class="border border-slate-100 px-2 py-1.5 font-mono text-slate-500">
+                                            {{ product.ean }}
+                                        </td>
                                         <td class="border border-slate-100 px-2 py-1.5 font-medium text-slate-800">
                                             {{ product.name }}
                                         </td>
                                         <td class="border border-slate-100 px-2 py-1.5 text-slate-600">
                                             {{ product.brand }}
                                         </td>
-                                        <td class="border border-slate-100 px-2 py-1.5 font-mono text-slate-500">
-                                            {{ product.ean }}
-                                        </td>
                                         <td class="border border-slate-100 px-2 py-1.5 text-center text-slate-600">
-                                            {{ product.quantity }}
+                                            {{ product.facings }}
                                         </td>
                                     </tr>
                                 </tbody>

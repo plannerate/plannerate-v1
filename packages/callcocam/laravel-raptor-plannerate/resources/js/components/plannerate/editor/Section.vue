@@ -1,7 +1,7 @@
 <template>
     <div
         :style="sectionStyle"
-        class="relative transition-all"
+        class="relative transition-[box-shadow,background-color]"
         :class="{
             'ring-1 ring-primary ring-offset-1': isSelected,
             'hover:bg-accent/5': !isSelected,
@@ -20,7 +20,6 @@
             :shelves="sortedShelves"
             :section="section"
             :scale="scale"
-            :highlightGroupingNormalized="highlightGroupingNormalized"
             :sectionWidth="sectionWidth"
             :sectionHeight="sectionHeight"
             :holes="holes"
@@ -64,7 +63,6 @@ interface Props {
     lastSection?: boolean;
     firstSection?: boolean;
     scale: number;
-    highlightGroupingNormalized?: string | null;
 }
 
 const props = defineProps<Props>();

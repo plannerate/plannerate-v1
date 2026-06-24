@@ -99,10 +99,10 @@ return null;
     return getTargetStockData(ean);
 });
 
-// Quantidade de frentes (segment quantity)
+// Empilhamento vertical / altura (segment.quantity)
 const segmentQuantity = computed(() => props.segment?.quantity ?? 0);
 
-// Quantidade de produtos por frente (layer quantity)
+// Frentes lado a lado (layer.quantity)
 const layerQuantity = computed(() => props.segment?.layer?.quantity ?? 0);
 
 // Profundidade do produto

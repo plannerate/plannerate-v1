@@ -5,21 +5,26 @@ import { useRejectedProductsStore } from '@/composables/plannerate/interactions/
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
 import { selectedTemplateCategoryId } from '@/composables/plannerate/core/useGondolaState';
 import type { RejectedProduct } from '@/composables/plannerate/core/useGondolaState';
-import { ArrowLeftRight, Ban, ChevronDown, ChevronUp, GripVertical, Layers, Loader2, MoveHorizontal, Ruler, Trash2, X } from 'lucide-vue-next';
+import { ArrowLeftRight, Ban, ChevronDown, ChevronUp, GripVertical, Layers, Loader2, MoveHorizontal, RefreshCw, Ruler, Trash2, X } from 'lucide-vue-next';
 import { type Component, computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useT } from '@/composables/useT';
 
 const props = defineProps<{ gondolaId: string }>();
 
+const { t } = useT();
 const editor = usePlanogramEditor();
 const selection = usePlanogramSelection();
 const rejectedStore = useRejectedProductsStore();
 
 const isOpen = ref(false);
 const isSwapping = ref(false);
+// Controla se a lista de rejeitados já foi carregada sob demanda (via botão).
+// Enquanto false, o corpo mostra o botão "Carregar" em vez de cards/empty-state.
+const hasLoaded = ref(false);
 const draggingId = ref<string | null>(null);
 const swapSource = ref<RejectedProduct | null>(null);
 const cardsContainer = ref<HTMLElement | null>(null);
@@ -88,9 +93,28 @@ function setCookie(name: string, value: string, days: number = 30): void {
 let clickTimer: ReturnType<typeof setTimeout> | null = null;
 const clickDelay = 250;
 
-function isProductSelected(product: RejectedProduct): boolean {
-    return selection.isSelected('product', product.product_id);
-}
+/**
+ * IDs dos produtos atualmente selecionados (única + múltipla), como Set para
+ * lookup O(1) no template. Calculado UMA vez por mudança de seleção — antes,
+ * cada card chamava `selection.isSelected('product', id)` a cada re-render do
+ * drawer (que ocorre a todo clique na gôndola), repetindo a varredura para
+ * todos os cards. Agora o card só faz `selectedProductIds.has(id)`.
+ */
+const selectedProductIds = computed<Set<string>>(() => {
+    const ids = new Set<string>();
+
+    if (selection.selectedType.value === 'product' && selection.selectedId.value) {
+        ids.add(selection.selectedId.value);
+    }
+
+    for (const item of selection.selectedItems.value) {
+        if (item.type === 'product') {
+            ids.add(item.id);
+        }
+    }
+
+    return ids;
+});
 
 function handleCardClick(_event: MouseEvent, product: RejectedProduct) {
     if (clickTimer) {
@@ -123,18 +147,37 @@ function handleCardClick(_event: MouseEvent, product: RejectedProduct) {
 }
 
 // ── Reason badge ─────────────────────────────────────────────────────────────
-const reasonMeta = (
-    reason: string,
-): { icon: Component; label: string; variant: 'outline' | 'destructive' | 'secondary' } => {
+type ReasonMeta = { icon: Component; label: string; variant: 'outline' | 'destructive' | 'secondary' };
+
+/**
+ * Cache de metadados por motivo. O template chama `reasonMeta` 3× por card; sem
+ * cache, cada chamada alocava um objeto novo (centenas de alocações por clique,
+ * pressionando o GC). Como os motivos são um conjunto fixo e pequeno, retornar
+ * sempre a MESMA referência elimina alocações e ajuda o Vue a evitar trabalho.
+ */
+const _reasonMetaCache = new Map<string, ReasonMeta>();
+
+function buildReasonMeta(reason: string): ReasonMeta {
     if (reason === 'no_horizontal_space')
-        return { icon: MoveHorizontal, label: 'Sem espaço', variant: 'outline' };
+        return { icon: MoveHorizontal, label: t('plannerate.editor.rejected_products.reasons.no_horizontal_space'), variant: 'outline' };
     if (reason === 'height_exceeds_shelf')
-        return { icon: Ruler, label: 'Altura', variant: 'destructive' };
+        return { icon: Ruler, label: t('plannerate.editor.rejected_products.reasons.height_exceeds_shelf'), variant: 'destructive' };
     if (reason === 'manually_removed')
-        return { icon: Trash2, label: 'Removido', variant: 'secondary' };
+        return { icon: Trash2, label: t('plannerate.editor.rejected_products.reasons.manually_removed'), variant: 'secondary' };
     if (reason === 'removed_from_mix')
-        return { icon: Ban, label: 'Fora do mix', variant: 'secondary' };
-    return { icon: Layers, label: 'Nível', variant: 'secondary' };
+        return { icon: Ban, label: t('plannerate.editor.rejected_products.reasons.removed_from_mix'), variant: 'secondary' };
+    return { icon: Layers, label: t('plannerate.editor.rejected_products.reasons.level'), variant: 'secondary' };
+}
+
+const reasonMeta = (reason: string): ReasonMeta => {
+    let cached = _reasonMetaCache.get(reason);
+
+    if (!cached) {
+        cached = buildReasonMeta(reason);
+        _reasonMetaCache.set(reason, cached);
+    }
+
+    return cached;
 };
 
 // ── Build product object compatible with addProductToShelf ───────────────────
@@ -168,16 +211,16 @@ function handleDragEnd() {
 // ── Double-click: add to selected shelf ──────────────────────────────────────
 function handleDoubleClick(product: RejectedProduct) {
     if (selection.selectedType.value !== 'shelf' || !selection.selectedId.value) {
-        toast.error('Selecione uma prateleira primeiro (clique nela uma vez).');
+        toast.error(t('plannerate.editor.rejected_products.select_shelf_first'));
         return;
     }
     if (!product.product_width || !product.product_height) {
-        toast.error(`"${product.product_name}" não tem dimensões cadastradas.`);
+        toast.error(t('plannerate.editor.rejected_products.no_dimensions', { product: product.product_name }));
         return;
     }
     const placed = editor.placeFromRejected(product, selection.selectedId.value);
     if (placed) {
-        toast.success(`"${product.product_name}" adicionado à prateleira.`);
+        toast.success(t('plannerate.editor.rejected_products.added_to_shelf', { product: product.product_name }));
     }
 }
 
@@ -192,7 +235,7 @@ rejectedStore.setOnProductPlaced((productId: string) => {
 // ── Swap mode ────────────────────────────────────────────────────────────────
 function enterSwapMode(product: RejectedProduct) {
     swapSource.value = product;
-    toast.info(`Clique em um produto na gôndola para trocar com "${product.product_name}".`, {
+    toast.info(t('plannerate.editor.rejected_products.swap_hint', { product: product.product_name }), {
         duration: 8000,
     });
 }
@@ -211,11 +254,11 @@ async function executeSwap(layerId: string) {
     const success = await editor.swapRejectedProduct(source, layerId);
 
     if (success) {
-        toast.success(`"${source.product_name}" posicionado na gôndola.`);
+        toast.success(t('plannerate.editor.rejected_products.positioned', { product: source.product_name }));
         selection.clearSelection();
     } else {
         swapSource.value = source;
-        toast.error('Não foi possível realizar a troca. Tente novamente.');
+        toast.error(t('plannerate.editor.rejected_products.swap_failed'));
     }
 
     isSwapping.value = false;
@@ -227,28 +270,34 @@ watch(
         if (!swapModeActive.value || !item || item.type !== 'segment') return;
         const layerId: string | undefined = (item.item as any)?.layer?.id;
         if (!layerId) {
-            toast.warning('Este segmento não tem layer. Clique em outro produto.');
+            toast.warning(t('plannerate.editor.rejected_products.segment_no_layer'));
             return;
         }
         void executeSwap(layerId);
     },
 );
 
+// ── Carregamento sob demanda ─────────────────────────────────────────────────
+/**
+ * Busca (ou recarrega) a lista de produtos rejeitados a pedido do usuário.
+ * Nada é carregado no mount nem em saves — só quando este método é chamado
+ * pelo botão de carregar/recarregar.
+ */
+async function loadRejected() {
+    await editor.fetchRejectedProducts(props.gondolaId);
+    hasLoaded.value = true;
+}
+
 onMounted(() => {
+    // Apenas restaura a preferência de aberto/fechado do cookie. Sem buscar
+    // rejeitados e sem auto-abrir por dados — o carregamento é explícito.
     const savedState = getCookie(DRAWER_STATE_COOKIE);
-    const hasUserPreference = savedState !== null;
 
     if (savedState === 'open') {
         isOpen.value = true;
     } else if (savedState === 'closed') {
         isOpen.value = false;
     }
-
-    void editor.fetchRejectedProducts(props.gondolaId).then(() => {
-        if (!hasUserPreference && editor.rejectedProducts.value.length > 0) {
-            isOpen.value = true;
-        }
-    });
 });
 
 watch(
@@ -261,7 +310,7 @@ watch(
 onUnmounted(() => rejectedStore.clearOnProductPlaced());
 
 defineExpose({
-    fetchRejected: () => editor.fetchRejectedProducts(props.gondolaId),
+    fetchRejected: () => loadRejected(),
 });
 </script>
 
@@ -280,7 +329,7 @@ defineExpose({
         >
             <div class="flex items-center gap-2">
                 <ArrowLeftRight class="size-4 text-muted-foreground" />
-                <span>Produtos rejeitados</span>
+                <span>{{ t('plannerate.editor.rejected_products.title') }}</span>
                 <Badge v-if="editor.rejectedProducts.value.length > 0" variant="destructive" class="h-5 px-1.5 text-xs">
                     <template v-if="selectedTemplateCategoryId && filteredRejectedProducts.length !== editor.rejectedProducts.value.length">
                         {{ filteredRejectedProducts.length }}/{{ editor.rejectedProducts.value.length }}
@@ -301,7 +350,7 @@ defineExpose({
                     @click.stop="selectedTemplateCategoryId = null"
                 >
                     <X class="size-3" />
-                    Limpar filtro
+                    {{ t('plannerate.editor.rejected_products.clear_filter') }}
                 </Button>
                 <Button
                     v-if="selection.selectedId.value"
@@ -312,8 +361,30 @@ defineExpose({
                     @click.stop="selection.clearSelection()"
                 >
                     <X class="size-3" />
-                    Limpar seleção
+                    {{ t('plannerate.editor.rejected_products.clear_selection') }}
                 </Button>
+                <TooltipProvider :delay-duration="200">
+                    <Tooltip>
+                        <TooltipTrigger as-child>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                class="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                                :disabled="editor.isLoadingRejectedProducts.value"
+                                @click.stop="loadRejected()"
+                            >
+                                <RefreshCw
+                                    class="size-3.5"
+                                    :class="{ 'animate-spin': editor.isLoadingRejectedProducts.value }"
+                                />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            {{ t('plannerate.editor.rejected_products.refresh') }}
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
                 <ChevronUp v-if="isOpen" class="size-4 text-muted-foreground" />
                 <ChevronDown v-else class="size-4 text-muted-foreground" />
             </div>
@@ -338,11 +409,11 @@ defineExpose({
                     class="flex items-center justify-between bg-amber-50 px-4 py-2 text-sm dark:bg-amber-950/30"
                 >
                     <span class="font-medium text-amber-700 dark:text-amber-400">
-                        Clique em um produto na gôndola para trocar com
+                        {{ t('plannerate.editor.rejected_products.swap_banner') }}
                         <strong>{{ swapSource?.product_name }}</strong>
                     </span>
                     <Button variant="ghost" size="sm" class="h-6 gap-1 text-xs" @click="cancelSwapMode">
-                        <X class="size-3" /> Cancelar
+                        <X class="size-3" /> {{ t('plannerate.editor.rejected_products.cancel') }}
                     </Button>
                 </div>
 
@@ -351,7 +422,7 @@ defineExpose({
                     v-if="reasonsPresent.length > 1"
                     class="flex flex-wrap items-center gap-1.5 border-b border-border px-3 py-2"
                 >
-                    <span class="mr-0.5 text-xs font-medium text-muted-foreground">Motivo:</span>
+                    <span class="mr-0.5 text-xs font-medium text-muted-foreground">{{ t('plannerate.editor.rejected_products.reason_label') }}</span>
                     <button
                         type="button"
                         class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors"
@@ -360,7 +431,7 @@ defineExpose({
                             : 'border-border text-muted-foreground hover:bg-muted'"
                         @click="selectedReason = null"
                     >
-                        Todos ({{ categoryFilteredProducts.length }})
+                        {{ t('plannerate.editor.rejected_products.all') }} ({{ categoryFilteredProducts.length }})
                     </button>
                     <button
                         v-for="r in reasonsPresent"
@@ -377,15 +448,36 @@ defineExpose({
                     </button>
                 </div>
 
+                <!-- Not loaded state: botão de carregar sob demanda -->
+                <div
+                    v-if="!hasLoaded"
+                    class="flex h-32 flex-col items-center justify-center gap-3 px-4 text-center"
+                >
+                    <p class="text-sm text-muted-foreground">
+                        {{ t('plannerate.editor.rejected_products.not_loaded') }}
+                    </p>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        class="gap-2"
+                        :disabled="editor.isLoadingRejectedProducts.value"
+                        @click="loadRejected()"
+                    >
+                        <Loader2 v-if="editor.isLoadingRejectedProducts.value" class="size-4 animate-spin" />
+                        <RefreshCw v-else class="size-4" />
+                        {{ t('plannerate.editor.rejected_products.load') }}
+                    </Button>
+                </div>
+
                 <!-- Empty state -->
                 <div
-                    v-if="!editor.isLoadingRejectedProducts.value && filteredRejectedProducts.length === 0"
+                    v-else-if="!editor.isLoadingRejectedProducts.value && filteredRejectedProducts.length === 0"
                     class="flex h-20 items-center justify-center text-sm text-muted-foreground"
                 >
                     <span v-if="selectedTemplateCategoryId && editor.rejectedProducts.value.length > 0">
-                        Nenhum produto rejeitado neste grouping.
+                        {{ t('plannerate.editor.rejected_products.empty_grouping') }}
                     </span>
-                    <span v-else>Nenhum produto rejeitado nesta geração.</span>
+                    <span v-else>{{ t('plannerate.editor.rejected_products.empty_generation') }}</span>
                 </div>
 
                 <!-- Product cards -->
@@ -397,8 +489,8 @@ defineExpose({
                         class="flex w-36 shrink-0 flex-col gap-1.5 rounded-lg border p-2 transition-all select-none"
                         :class="{
                             'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200 dark:bg-blue-950/20 dark:ring-blue-900':
-                                isProductSelected(product) && !swapModeActive,
-                            'border-border bg-card': !isProductSelected(product),
+                                selectedProductIds.has(product.product_id) && !swapModeActive,
+                            'border-border bg-card': !selectedProductIds.has(product.product_id),
                             'ring-2 ring-amber-400 border-amber-400': swapSource?.id === product.id,
                             'opacity-40': swapModeActive && swapSource?.id !== product.id,
                             'cursor-grabbing opacity-50 ring-2 ring-primary': draggingId === product.id,
@@ -418,7 +510,7 @@ defineExpose({
                                 :alt="product.product_name"
                                 class="max-h-full max-w-full object-contain"
                             />
-                            <span v-else class="text-xs text-muted-foreground">Sem imagem</span>
+                            <span v-else class="text-xs text-muted-foreground">{{ t('plannerate.editor.rejected_products.no_image') }}</span>
                         </div>
 
                         <!-- Product name -->
@@ -454,7 +546,7 @@ defineExpose({
                         >
                             <Loader2 v-if="isSwapping && swapSource?.id === product.id" class="size-3 animate-spin" />
                             <ArrowLeftRight v-else class="size-3" />
-                            {{ swapSource?.id === product.id ? 'Cancelar' : 'Trocar' }}
+                            {{ swapSource?.id === product.id ? t('plannerate.editor.rejected_products.cancel') : t('plannerate.editor.rejected_products.swap') }}
                         </Button>
                     </div>
                 </div>

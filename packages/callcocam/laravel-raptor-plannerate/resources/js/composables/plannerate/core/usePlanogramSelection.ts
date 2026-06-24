@@ -60,8 +60,10 @@ export function usePlanogramSelection() {
             context,
         };
 
-        // Limpa seleção múltipla ao selecionar único item
-        selectedItems.value = [];
+        // Só reseta se havia itens — evita criar novo array e disparar reatividade desnecessária
+        if (selectedItems.value.length > 0) {
+            selectedItems.value = [];
+        }
     }
 
     /**

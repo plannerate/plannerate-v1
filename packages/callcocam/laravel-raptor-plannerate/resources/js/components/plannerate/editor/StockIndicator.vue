@@ -16,7 +16,7 @@
             <Tooltip>
                 <TooltipTrigger as-child>
                     <div
-                        class="absolute top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-white/95 shadow-sm backdrop-blur-sm transition-transform hover:scale-105"
+                        class="absolute top-1/2 left-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-white shadow-sm transition-transform hover:scale-105"
                         :style="{ padding: `${iconPadding}px` }"
                         :class="{
                             'border border-red-500/70':
@@ -96,7 +96,7 @@
                                         class="flex items-center justify-between text-xs"
                                     >
                                         <span class="text-muted-foreground"
-                                            >{{ t('plannerate.print.product_detail.fronts') }}:</span
+                                            >{{ t('plannerate.print.product_detail.height') }}:</span
                                         >
                                         <span
                                             class="font-semibold text-foreground"
@@ -107,7 +107,7 @@
                                         class="flex items-center justify-between text-xs"
                                     >
                                         <span class="text-muted-foreground"
-                                            >{{ t('plannerate.print.product_detail.height') }}:</span
+                                            >{{ t('plannerate.print.product_detail.fronts') }}:</span
                                         >
                                         <span
                                             class="font-semibold text-foreground"
@@ -152,7 +152,7 @@
                                 <p
                                     class="text-[11px] font-semibold text-muted-foreground"
                                 >
-                                    Estoque
+                                    {{ t('plannerate.editor.stock_indicator.stock') }}
                                 </p>
                                 <div class="grid grid-cols-3 gap-2">
                                     <div
@@ -161,7 +161,7 @@
                                         <p
                                             class="text-[10px] font-medium text-muted-foreground"
                                         >
-                                            Alvo
+                                            {{ t('plannerate.editor.stock_indicator.target') }}
                                         </p>
                                         <p
                                             class="text-sm font-bold text-foreground"
@@ -199,7 +199,7 @@
                                         <p
                                             class="text-[10px] font-medium text-muted-foreground"
                                         >
-                                            Atual
+                                            {{ t('plannerate.editor.stock_indicator.current') }}
                                         </p>
                                         <p
                                             class="text-sm font-bold text-foreground"
@@ -380,10 +380,10 @@ const productImageUrl = computed(() => {
     return props.segment?.layer?.product?.image_url ?? null;
 });
 
-// Quantidade de frentes (segment quantity)
+// Empilhamento vertical / altura (segment.quantity)
 const segmentQuantity = computed(() => props.segment?.quantity ?? 0);
 
-// Quantidade de produtos por frente (layer quantity)
+// Frentes lado a lado (layer.quantity)
 const layerQuantity = computed(() => props.segment?.layer?.quantity ?? 0);
 
 // Profundidade do produto (agora está diretamente no produto)

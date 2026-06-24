@@ -2,6 +2,6 @@
 
 return [
     'yes' => 'Sim',
-    'no' => 'Nao',
+    'no' => 'Não',
     'cancel' => 'Cancelar',
 ];

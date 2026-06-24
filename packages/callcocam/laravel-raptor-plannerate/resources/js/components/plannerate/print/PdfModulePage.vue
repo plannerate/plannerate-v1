@@ -44,10 +44,20 @@ const moduleAnchorId = computed(() => `pdf-module-${props.index + 1}`);
 const isLeftToRight = computed(() => props.gondola.flow !== 'right_to_left');
 
 const dimensionsLabel = computed(() => {
-    const w = props.section.width ?? 0;
     const h = props.section.height ?? 0;
+    const w = props.section.width ?? 0;
 
-    return `${t('plannerate.print.labels.width_short')}: ${w}  ${t('plannerate.print.labels.height_short')}: ${h}`;
+    // Profundidade vem da prateleira (maior shelf_depth do módulo);
+    // fallback para base_depth da seção se não houver prateleiras.
+    const shelfDepths = (props.section.shelves ?? [])
+        .filter((s) => !s.deleted_at)
+        .map((s) => s.shelf_depth ?? 0);
+    const d = shelfDepths.length > 0
+        ? Math.max(...shelfDepths)
+        : (props.section.base_depth ?? 0);
+
+    // Ordem padrão: Altura, Largura, Profundidade
+    return `${t('plannerate.print.labels.height_short')}: ${h}  ${t('plannerate.print.labels.width_short')}: ${w}  ${t('plannerate.print.labels.depth_short')}: ${d}`;
 });
 
 const flowPositions = computed(() =>
@@ -109,7 +119,7 @@ function scrollToModule(anchorId: string): void {
                             class="hidden h-12 w-auto dark:block"
                         />
                     </div>
-                    <div class="border-l border-slate-200 pl-3">
+                    <!-- <div class="border-l border-slate-200 pl-3">
                         <p
                             v-if="tenantName"
                             class="mb-0.5 text-[10px] leading-none font-bold tracking-widest text-slate-500 uppercase"
@@ -126,7 +136,7 @@ function scrollToModule(anchorId: string): void {
                         >
                             {{ t('plannerate.print.module_page.tagline') }}
                         </p>
-                    </div>
+                    </div> -->
                 </div>
 
                 <!-- Campos informativos: data / loja / cód. loja -->

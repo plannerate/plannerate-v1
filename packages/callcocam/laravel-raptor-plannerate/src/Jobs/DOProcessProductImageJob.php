@@ -123,6 +123,11 @@ class DOProcessProductImageJob implements NotTenantAware, ShouldQueue
         $pixelMultiplier = 7;
         // Qualidade da imagem WebP (0 a 100). 90 é alta qualidade.
         $quality = 90;
+        // Teto de dimensão (px) do lado maior. Sem esse limite, produtos sem
+        // width/height cadastrados recaíam na resolução ORIGINAL (ex.: 5750px),
+        // gerando WebP de 2-5 MP que travam a decodificação no canvas (~1s por
+        // módulo). O canvas exibe a no máximo ~300px, então 512px cobre o zoom.
+        $maxSide = 512;
 
         try {
             // Dimensões agora estão diretamente no produto (tabela dimensions foi removida)
@@ -152,6 +157,16 @@ class DOProcessProductImageJob implements NotTenantAware, ShouldQueue
             // Calcula o tamanho que a imagem deve ter.
             $targetWidth = (int) ($width * $pixelMultiplier);
             $targetHeight = (int) ($height * $pixelMultiplier);
+
+            // Aplica o teto de dimensão preservando a proporção: evita gerar
+            // imagens enormes quando o cálculo acima recai na resolução original.
+            if ($targetWidth > $maxSide || $targetHeight > $maxSide) {
+                $clampScale = $maxSide / max($targetWidth, $targetHeight);
+                $targetWidth = (int) round($targetWidth * $clampScale);
+                $targetHeight = (int) round($targetHeight * $clampScale);
+            }
+            $targetWidth = max(1, $targetWidth);
+            $targetHeight = max(1, $targetHeight);
 
             // Usa resize(): Força a imagem a ter o tamanho alvo, garantindo a proporção visual.
             $image->resize($targetWidth, $targetHeight);

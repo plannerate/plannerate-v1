@@ -3,7 +3,7 @@
 return [
     'navigation' => 'Perfis de acesso',
     'title' => 'Perfis de acesso',
-    'description' => 'Gerencie os perfis globais e suas permissoes.',
+    'description' => 'Gerencie os perfis globais e suas permissões.',
     'types' => [
         'landlord' => 'Landlord',
         'tenant' => 'Tenant',
@@ -16,14 +16,14 @@ return [
         'name' => 'Nome',
         'system_name' => 'Nome do sistema',
         'type' => 'Tipo',
-        'permissions' => 'Permissoes',
-        'permissions_count' => 'Permissoes',
+        'permissions' => 'Permissões',
+        'permissions_count' => 'Permissões',
     ],
     'messages' => [
         'created' => 'Perfil criado com sucesso.',
         'updated' => 'Perfil atualizado com sucesso.',
         'deleted' => 'Perfil removido com sucesso.',
-        'in_use' => 'Nao e possivel excluir um perfil com usuarios vinculados.',
-        'protected' => 'Este perfil e protegido e nao pode ser alterado.',
+        'in_use' => 'Não é possível excluir um perfil com usuários vinculados.',
+        'protected' => 'Este perfil é protegido e não pode ser alterado.',
     ],
 ];

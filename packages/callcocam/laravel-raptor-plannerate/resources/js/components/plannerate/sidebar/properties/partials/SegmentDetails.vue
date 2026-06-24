@@ -78,7 +78,7 @@
 
         <!-- Informações da Layer se existir -->
         <div v-if="segment.layer" class="mt-4 space-y-3">
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-1 gap-2">
                 <div class="space-y-2">
                     <Label for="layer-quantity">{{ t('plannerate.print.product_detail.fronts') }}</Label>
                     <Input
@@ -91,7 +91,7 @@
                         min="1"
                     />
                 </div>
-                <div class="space-y-2">
+                <!-- <div class="space-y-2">
                     <Label for="layer-height">{{ t('plannerate.sidebar.segment_details.layer_height') }}</Label>
                     <Input
                         id="layer-height"
@@ -102,10 +102,21 @@
                         type="number"
                         step="0.1"
                     />
-                </div>
+                </div> -->
             </div>
 
-            <div class="grid grid-cols-2 gap-2">
+            <!-- Posicionamento: frentes × empilhamento × profundidade = total -->
+            <div class="space-y-2">
+                <Label>{{ t('plannerate.print.product_detail.positioning') }}</Label>
+                <ProductPositioning
+                    :layer-quantity="segment.layer.quantity"
+                    :segment-quantity="segment.quantity"
+                    :product-depth="product?.depth"
+                    :shelf-depth="shelf?.shelf_depth"
+                />
+            </div>
+
+            <!-- <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
                     <Label for="layer-spacing">{{ t('plannerate.sidebar.section_details.hole_spacing') }}</Label>
                     <Input
@@ -128,7 +139,7 @@
                         "
                     />
                 </div>
-            </div>
+            </div> -->
         </div>
         <!-- Product Sales Summary -->
         <ProductSalesSummary :product-id="product.id" />
@@ -189,6 +200,7 @@ import { useSegmentActions } from '@/composables/plannerate/actions/useSegmentAc
 import { useT } from '@/composables/useT';
 import type { Segment } from '@/types/planogram';
 import { wayfinderPath } from '../../../../../libs/wayfinderPath';
+import ProductPositioning from '../../../print/partials/ProductPositioning.vue';
 import ProductDimensionsEditor from './ProductDimensionsEditor.vue';
 import ProductImageCard from './ProductImageCard.vue';
 import ProductImageUpload from './ProductImageUpload.vue';
@@ -209,46 +221,26 @@ const selection = usePlanogramSelection();
 const showImageUploadDialog = ref(false);
 const deleteImageAction = deleteImage;
 
-// Busca o segmento diretamente do gondola para garantir reatividade
-const segment = computed(() => {
-    const currentGondola = editor.currentGondola.value;
+// Resolve o segmento + a prateleira numa ÚNICA travessia da árvore.
+// Antes, `segment` varria toda a estrutura do gôndola e `shelf` varria de novo
+// via findSegmentById — duas varreduras O(N) por seleção (com o painel aberto,
+// rodavam a cada clique em produto). Agora é uma só, memoizada pelo computed.
+const located = computed(() => {
+    // Se o item for uma layer, busca pelo segment_id; senão pelo próprio id.
+    const searchId = props.item?.segment_id || props.item?.id;
 
-    if (!currentGondola?.sections || !props.item?.id) {
-return props.item;
-}
-
-    // Se o item for uma layer, busca pelo segment_id
-    const searchId = props.item.segment_id || props.item.id;
-
-    // Busca o segmento na estrutura do gondola
-    for (const section of currentGondola.sections) {
-        if (!section.shelves) {
-continue;
-}
-
-        for (const shelf of section.shelves) {
-            if (!shelf.segments) {
-continue;
-}
-
-            const seg = shelf.segments.find((s: any) => s.id === searchId);
-
-            if (seg) {
-return seg;
-}
-        }
+    if (!searchId) {
+        return null;
     }
 
-    // Fallback para o item original
-    return props.item;
+    return editor.findSegmentById(searchId);
 });
 
-// Busca a prateleira do segmento
-const shelf = computed(() => {
-    const found = editor.findSegmentById(segment.value.id);
+// Segmento reativo (fallback para o item original quando não encontrado).
+const segment = computed(() => located.value?.segment ?? props.item);
 
-    return found?.shelf;
-});
+// Prateleira do segmento, derivada da mesma travessia.
+const shelf = computed(() => located.value?.shelf);
 
 // Usa composable compartilhado para ações de segmento
 const segmentActions = useSegmentActions(

@@ -2,7 +2,7 @@
 
 return [
     'messages' => [
-        'updated' => 'Configuracao SSO salva com sucesso.',
-        'deleted' => 'Configuracao SSO removida com sucesso.',
+        'updated' => 'Configuração SSO salva com sucesso.',
+        'deleted' => 'Configuração SSO removida com sucesso.',
     ],
 ];

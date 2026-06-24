@@ -32,18 +32,20 @@
             <Segment v-for="(segment, index) in segments" :key="segment.id" :segment="segment" :scale="scale"
                 :shelf-depth="shelf.shelf_depth" :isFirstInShelf="index === 0"
                 :isLastInShelf="index === segments.length - 1" :facing-gap="justifyGap ?? undefined"
-                :highlightGroupingNormalized="highlightGroupingNormalized"
+                :selected-from-parent="segment.id === selectedSegmentId || multiSelectedSegmentIds.has(segment.id)"
+                :layer-selected-from-parent="!!(segment.layer?.id && segment.layer.id === selectedLayerId)"
+                :module-number="section.ordering" :shelf-number="shelfDisplayNumber"
                 style="pointer-events: auto" />
         </div>
 
         <!-- Drag Handle para mover a shelf -->
 
         <!-- Área de Drop Personalizada -->
-        <Transition enter-active-class="transition-all duration-200 ease-out" enter-from-class="opacity-0 scale-95"
-            enter-to-class="opacity-100 scale-100" leave-active-class="transition-all duration-150 ease-in"
-            leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
+        <Transition enter-active-class="transition-opacity duration-75 ease-out" enter-from-class="opacity-0"
+            enter-to-class="opacity-100" leave-active-class="transition-opacity duration-75 ease-in"
+            leave-from-class="opacity-100" leave-to-class="opacity-0">
             <div v-if="isDropTarget"
-                class="pointer-events-none absolute inset-0  flex flex-col items-center justify-center gap-2 rounded-sm border-2 border-dashed border-primary bg-primary/10 backdrop-blur-sm"
+                class="pointer-events-none absolute inset-0  flex flex-col items-center justify-center gap-2 rounded-sm border-2 border-dashed border-primary bg-primary/15"
                 :style="{
                     zIndex: 140,
                 }">
@@ -118,7 +120,8 @@ interface Props {
     firstShelf?: ShelfType;
     lastShelf?: ShelfType;
     isLast?: boolean;
-    highlightGroupingNormalized?: string | null;
+    /** Número de exibição ("Prat #N") pré-calculado por Shelves.vue (evita sort O(S) por shelf) */
+    displayNumber?: number;
 }
 
 const props = defineProps<Props>();
@@ -133,6 +136,7 @@ const sectionRef = toRef(props, 'section');
 const previousShelfRef = toRef(props, 'previousShelf');
 const sectionWidthRef = toRef(props, 'sectionWidth');
 const cremalheiraWidthRef = toRef(props, 'cremalheiraWidth');
+const displayNumberRef = toRef(props, 'displayNumber');
 
 // Usa composable para drag & drop de produtos/segments apenas
 const {
@@ -172,20 +176,94 @@ const {
     sectionWidth: sectionWidthRef,
     cremalheiraWidth: cremalheiraWidthRef,
     alignment: computed(() => editor.currentGondola.value?.alignment),
+    displayNumber: displayNumberRef,
 });
 
 const isSelected = computed(() => selection.isShelfSelected(shelfRef.value));
+
+// ── Seleção de segmentos calculada aqui (nível Shelf), ESCOPADA a esta shelf ──
+// Antes, cada Segment subscrevia individualmente a selectedId e selectedItems,
+// causando uma cascata de N recomputações por clique (N = nº de segmentos).
+// O passo anterior moveu a subscrição para a Shelf, mas os computeds devolviam o
+// ID GLOBAL — logo o valor mudava para TODAS as shelves a cada clique, forçando
+// todas a re-renderizar o v-for de segmentos (o lag perceptível).
+//
+// Agora os computeds só devolvem o ID quando o item selecionado pertence a ESTA
+// shelf; caso contrário devolvem null/Set vazio ESTÁVEIS. Assim o valor só muda
+// nas 2 shelves envolvidas (a que perde e a que ganha a seleção) — todas as
+// outras mantêm o mesmo valor e o Vue pula o re-render delas. O comportamento é
+// idêntico: o binding nunca compara IDs de outra shelf.
+
+// Set estável reutilizado quando esta shelf não tem nenhum item multi-selecionado.
+// Manter a MESMA referência evita que o computed "mude" de valor (Set é comparado
+// por identidade) e dispare re-render desnecessário.
+const EMPTY_ID_SET: ReadonlySet<string> = new Set();
+
+/** IDs dos segmentos desta shelf — recalcula só quando os segmentos mudam (não na seleção). */
+const shelfSegmentIdSet = computed<Set<string>>(
+    () => new Set(segments.value.map((s) => s.id)),
+);
+
+/** IDs das layers desta shelf — idem, independente da seleção. */
+const shelfLayerIdSet = computed<Set<string>>(() => {
+    const ids = new Set<string>();
+    for (const s of segments.value) {
+        if (s.layer?.id) {
+            ids.add(s.layer.id);
+        }
+    }
+    return ids;
+});
+
+/** ID do segmento em single-select SE pertencer a esta shelf; senão null estável. */
+const selectedSegmentId = computed<string | null>(() => {
+    if (selection.selectedType.value !== 'segment') {
+        return null;
+    }
+    const id = selection.selectedId.value;
+    return id && shelfSegmentIdSet.value.has(id) ? id : null;
+});
+
+/** IDs em multi-select restritos a esta shelf (Set para lookup O(1)). */
+const multiSelectedSegmentIds = computed<ReadonlySet<string>>(() => {
+    const items = selection.selectedItems.value;
+    if (!items.length) {
+        return EMPTY_ID_SET;
+    }
+    const own = shelfSegmentIdSet.value;
+    let mine: Set<string> | null = null;
+    for (const i of items) {
+        if (i.type === 'segment' && own.has(i.id)) {
+            (mine ??= new Set()).add(i.id);
+        }
+    }
+    return mine ?? EMPTY_ID_SET;
+});
+
+/** ID da layer selecionada SE pertencer a esta shelf; senão null estável. */
+const selectedLayerId = computed<string | null>(() => {
+    if (selection.selectedType.value !== 'layer') {
+        return null;
+    }
+    const id = selection.selectedId.value;
+    return id && shelfLayerIdSet.value.has(id) ? id : null;
+});
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Verdadeiro quando a categoria do template_slot desta prateleira bate com a
  * categoria selecionada no CategoryConfigPanel.
  * Usado para destaque visual bidirecional (categoria ↔ prateleira).
+ *
+ * Lê `selectedTemplateCategoryId` direto do estado global (em vez de receber via
+ * prop drilada). Só as shelves cujo booleano vira re-renderizam ao trocar a
+ * categoria; Canvas/Sections/Section/Shelves não re-renderizam mais em cascata.
  */
 const isCategoryHighlighted = computed(
     () =>
-        props.highlightGroupingNormalized != null &&
+        selectedTemplateCategoryId.value != null &&
         !!props.shelf.template_slot?.category_id &&
-        props.shelf.template_slot.category_id === props.highlightGroupingNormalized,
+        props.shelf.template_slot.category_id === selectedTemplateCategoryId.value,
 );
 
 function handleFocusShelf() {

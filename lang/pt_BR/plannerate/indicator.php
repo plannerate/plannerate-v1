@@ -1,6 +1,6 @@
 <?php
 
 return [
-    'start_flow' => 'INICIO - Fluxo da Gondola',
+    'start_flow' => 'INÍCIO - Fluxo da Gôndola',
     'end' => 'Fim',
 ];

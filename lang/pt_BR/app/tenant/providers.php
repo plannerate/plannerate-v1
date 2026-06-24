@@ -10,12 +10,12 @@ return [
     ],
     'fields' => [
         'name' => 'Nome',
-        'code' => 'Codigo',
+        'code' => 'Código',
         'email' => 'E-mail',
         'phone' => 'Telefone',
         'cnpj' => 'CNPJ',
-        'is_default' => 'Padrao',
-        'description' => 'Descricao',
+        'is_default' => 'Padrão',
+        'description' => 'Descrição',
     ],
     'messages' => [
         'created' => 'Fornecedor criado com sucesso.',

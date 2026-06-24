@@ -29,7 +29,7 @@ return [
     'actions' => [
         'new' => 'Novo planograma',
         'edit' => 'Editar planograma',
-        'view_gondolas' => 'Gerenciar gondolas',
+        'view_gondolas' => 'Gerenciar gôndolas',
     ],
     'fields' => [
         'name' => 'Nome',
@@ -40,10 +40,10 @@ return [
         'category' => 'Categoria',
         'start_date' => 'Período inicial de vendas',
         'end_date' => 'Período final de vendas',
-        'period' => 'Periodo',
+        'period' => 'Período',
         'order' => 'Ordem',
         'status' => 'Status',
-        'description' => 'Descricao',
+        'description' => 'Descrição',
     ],
     'status_draft' => 'Rascunho',
     'status_published' => 'Publicado',

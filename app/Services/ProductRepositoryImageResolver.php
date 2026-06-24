@@ -225,6 +225,10 @@ class ProductRepositoryImageResolver
         // Fator para converter dimensoes de produto (cm) para pixels.
         $pixelMultiplier = 7;
         $quality = 90;
+        // Teto de dimensao (px) do lado maior — evita gerar WebP enormes quando
+        // o produto nao tem width/height e o calculo recai na resolucao original
+        // (decode lento no canvas). O canvas exibe a no maximo ~300px.
+        $maxSide = 512;
 
         try {
             $imageFile = Storage::disk('do')->get($sourcePath);
@@ -252,6 +256,15 @@ class ProductRepositoryImageResolver
 
             $targetWidth = (int) ($resolvedWidth * $pixelMultiplier);
             $targetHeight = (int) ($resolvedHeight * $pixelMultiplier);
+
+            // Teto de dimensao preservando a proporcao.
+            if ($targetWidth > $maxSide || $targetHeight > $maxSide) {
+                $clampScale = $maxSide / max($targetWidth, $targetHeight);
+                $targetWidth = (int) round($targetWidth * $clampScale);
+                $targetHeight = (int) round($targetHeight * $clampScale);
+            }
+            $targetWidth = max(1, $targetWidth);
+            $targetHeight = max(1, $targetHeight);
 
             $image->resize($targetWidth, $targetHeight);
             $encodedImage = $image->encode(new WebpEncoder($quality));
@@ -418,6 +431,8 @@ class ProductRepositoryImageResolver
     ): ?string {
         $pixelMultiplier = 7;
         $quality = 90;
+        // Teto de dimensao (px) do lado maior — ver justificativa no metodo acima.
+        $maxSide = 512;
 
         try {
             $image = Image::decodeBinary($imageBinary);
@@ -435,6 +450,15 @@ class ProductRepositoryImageResolver
 
             $targetWidth = (int) ($resolvedWidth * $pixelMultiplier);
             $targetHeight = (int) ($resolvedHeight * $pixelMultiplier);
+
+            // Teto de dimensao preservando a proporcao.
+            if ($targetWidth > $maxSide || $targetHeight > $maxSide) {
+                $clampScale = $maxSide / max($targetWidth, $targetHeight);
+                $targetWidth = (int) round($targetWidth * $clampScale);
+                $targetHeight = (int) round($targetHeight * $clampScale);
+            }
+            $targetWidth = max(1, $targetWidth);
+            $targetHeight = max(1, $targetHeight);
 
             $image->resize($targetWidth, $targetHeight);
             $encodedImage = $image->encode(new WebpEncoder($quality));

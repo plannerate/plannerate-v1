@@ -41,6 +41,18 @@ const sortedSections = computed(() => {
     return editor.sectionsOrdered.value;
 });
 
+/**
+ * Produtos rejeitados só existem em gôndolas geradas por template ou automático.
+ * Em planograma manual (ou legado, generation_mode null) o drawer não tem o que
+ * exibir — não montá-lo evita o fetch inicial e o custo dos seus watchers de
+ * seleção a cada clique na gôndola.
+ */
+const showRejectedDrawer = computed(() => {
+    const mode = props.record?.generation_mode;
+
+    return mode === 'template' || mode === 'automatic';
+});
+
 const canvasTopPadding = computed(() => {
     const scale = editor.scaleFactor.value;
     let maxOverflow = 48; // baseline matches pt-12
@@ -114,12 +126,14 @@ const flowDirection = computed(
     () => editor.currentGondola.value?.flow || 'left_to_right',
 );
 const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
-const selectedGroupingNormalized = selectedTemplateCategoryId;
 
+// Ao trocar de template, limpa o destaque de categoria. O highlight é lido
+// direto de `selectedTemplateCategoryId` dentro de Shelf/Segment (sem prop
+// drilada pela árvore), então o Canvas não precisa mais repassar nada.
 watch(
     () => props.record?.template_id,
     () => {
-        selectedGroupingNormalized.value = null;
+        selectedTemplateCategoryId.value = null;
     },
 );
 </script>
@@ -141,7 +155,6 @@ watch(
                 <Sections
                     :sections="sortedSections"
                     :scale="editor.scaleFactor.value"
-                    :highlightGroupingNormalized="selectedGroupingNormalized"
                 />
             </div>
 
@@ -162,7 +175,7 @@ watch(
             </div>
         </div>
 
-        <!-- Drawer de produtos rejeitados (overlay bottom) -->
-        <RejectedProductsDrawer v-if="record?.id" :gondola-id="record.id" />
+        <!-- Drawer de produtos rejeitados (overlay bottom) — só em template/automático -->
+        <RejectedProductsDrawer v-if="record?.id && showRejectedDrawer" :gondola-id="record.id" />
     </div>
 </template>

@@ -116,10 +116,6 @@ const getDimensionsTooltip = () => {
         : t('plannerate.sidebar.product_card.without_dimensions');
 };
 
-// Timer para detectar duplo-clique e evitar seleção indesejada
-let clickTimer: ReturnType<typeof setTimeout> | null = null;
-const clickDelay = 250; // ms para detectar duplo-clique
-
 // Estado de dragging
 const isDragging = ref(false);
 
@@ -169,27 +165,17 @@ const handleDragEnd = () => {
 };
 
 const handlerselectClick = (event: MouseEvent) => {
-    // Cancela timer anterior se existir
-    if (clickTimer) {
-        clearTimeout(clickTimer);
-        clickTimer = null;
-
-        return; // É um duplo-clique, não seleciona
+    // Seleção IMEDIATA — sem aguardar para detectar duplo-clique. O atraso de
+    // 250ms aplicava latência perceptível em todo clique. O duplo-clique
+    // (handlerDbClick) continua funcionando: o browser dispara click → click →
+    // dblclick; o primeiro click só seleciona (operação barata e idempotente).
+    if (event.ctrlKey || event.metaKey) {
+        // Ctrl/Cmd + Clique → Toggle seleção múltipla (adiciona/remove)
+        toggleSelection('product', props.product.id, props.product);
+    } else {
+        // Clique simples → Seleção única
+        selectItem('product', props.product.id, props.product);
     }
-
-    // Inicia timer para aguardar possível segundo clique
-    clickTimer = setTimeout(() => {
-        // Após o delay, executa a seleção (não foi duplo-clique)
-        if (event.ctrlKey || event.metaKey) {
-            // Ctrl/Cmd + Clique → Toggle seleção múltipla (adiciona/remove)
-            toggleSelection('product', props.product.id, props.product);
-        } else {
-            // Clique simples → Seleção única
-            selectItem('product', props.product.id, props.product);
-        }
-
-        clickTimer = null;
-    }, clickDelay);
 };
 
 const handlerDbClick = () => {

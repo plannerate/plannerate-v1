@@ -1,25 +1,26 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Package, Ruler, Tag } from 'lucide-vue-next'
+import { Ruler, Tag } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useT } from '@/composables/useT'
 import type { Product } from '@/types/planogram'
+import ProductDimensions from './ProductDimensions.vue'
+import ProductIdentification from './ProductIdentification.vue'
+import ProductPositioning from './ProductPositioning.vue'
 
 interface Props {
   open: boolean
   product?: Product | null
   segmentQuantity?: number
   layerQuantity?: number
+  shelfDepth?: number
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
 const { t } = useT()
-
-const totalQuantity = computed(() => (props.segmentQuantity ?? 1) * (props.layerQuantity ?? 1))
 
 function handleClose() {
   emit('update:open', false)
@@ -45,33 +46,7 @@ function handleClose() {
             />
           </div>
 
-          <div class="flex-1 min-w-0 space-y-2">
-            <div class="flex items-center gap-1.5">
-              <Package class="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                {{ t('plannerate.print.product_detail.identification') }}
-              </span>
-            </div>
-            <p class="text-sm font-bold leading-tight">{{ product.name || '—' }}</p>
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <p class="text-[10px] text-muted-foreground">{{ t('plannerate.analysis.results.ean') }}</p>
-                <p class="font-mono text-xs">{{ product.ean || '—' }}</p>
-              </div>
-              <div>
-                <p class="text-[10px] text-muted-foreground">{{ t('plannerate.print.product_detail.code') }}</p>
-                <p class="font-mono text-xs">{{ product.codigo_erp || '—' }}</p>
-              </div>
-            </div>
-            <div>
-              <p class="text-[10px] text-muted-foreground">{{ t('plannerate.print.product_detail.brand') }}</p>
-              <p class="text-xs font-medium">{{ product.brand || '—' }}</p>
-            </div>
-            <div>
-              <p class="text-[10px] text-muted-foreground">{{ t('plannerate.print.product_detail.category') }}</p>
-              <p class="text-xs leading-tight">{{ product.category_full_path ?? product.category ?? '—' }}</p>
-            </div>
-          </div>
+          <ProductIdentification :product="product" class="flex-1 min-w-0" />
         </div>
 
         <!-- Dimensões -->
@@ -82,28 +57,7 @@ function handleClose() {
               {{ t('plannerate.print.product_detail.dimensions') }}
             </span>
           </div>
-          <div class="flex items-end gap-3 rounded border bg-muted/20 px-3 py-2">
-            <div class="flex flex-col items-start">
-              <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.width') }}</span>
-              <span class="text-xl font-bold leading-none tabular-nums">
-                {{ product.width ?? '—' }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">cm</sup>
-              </span>
-            </div>
-            <span class="text-muted-foreground text-base pb-0.5">×</span>
-            <div class="flex flex-col items-start">
-              <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.height') }}</span>
-              <span class="text-xl font-bold leading-none tabular-nums">
-                {{ product.height ?? '—' }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">cm</sup>
-              </span>
-            </div>
-            <span class="text-muted-foreground text-base pb-0.5">×</span>
-            <div class="flex flex-col items-start">
-              <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.depth') }}</span>
-              <span class="text-xl font-bold leading-none tabular-nums">
-                {{ product.depth ?? '—' }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">cm</sup>
-              </span>
-            </div>
-          </div>
+          <ProductDimensions :product="product" />
         </div>
 
         <!-- Posicionamento -->
@@ -114,28 +68,12 @@ function handleClose() {
               {{ t('plannerate.print.product_detail.positioning') }}
             </span>
           </div>
-          <div class="flex items-end gap-3 rounded border bg-muted/20 px-3 py-2">
-            <div class="flex flex-col items-start">
-              <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.fronts') }}</span>
-              <span class="text-xl font-bold leading-none tabular-nums">
-                {{ segmentQuantity ?? 1 }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">un.</sup>
-              </span>
-            </div>
-            <span class="text-muted-foreground text-base pb-0.5">×</span>
-            <div class="flex flex-col items-start">
-              <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.stacking') }}</span>
-              <span class="text-xl font-bold leading-none tabular-nums">
-                {{ layerQuantity ?? 1 }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">un.</sup>
-              </span>
-            </div>
-            <span class="text-muted-foreground text-base pb-0.5">=</span>
-            <div class="flex flex-col items-start">
-              <span class="text-[9px] text-muted-foreground leading-none mb-0.5">Total</span>
-              <span class="text-xl font-bold leading-none tabular-nums text-primary">
-                {{ totalQuantity }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">un.</sup>
-              </span>
-            </div>
-          </div>
+          <ProductPositioning
+            :layer-quantity="layerQuantity"
+            :segment-quantity="segmentQuantity"
+            :product-depth="product.depth"
+            :shelf-depth="shelfDepth"
+          />
         </div>
 
       </div>

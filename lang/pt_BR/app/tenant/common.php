@@ -8,7 +8,7 @@ return [
     'type' => 'Tipo',
     'store' => 'Loja',
     'yes' => 'Sim',
-    'no' => 'Nao',
+    'no' => 'Não',
     'edit' => 'Editar',
     'delete' => 'Excluir',
     'create' => 'Criar',
