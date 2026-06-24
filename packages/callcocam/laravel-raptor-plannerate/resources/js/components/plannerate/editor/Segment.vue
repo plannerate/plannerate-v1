@@ -19,6 +19,7 @@
         @pointerdown="handlePointerDown"
         @focus="handleFocusSegment"
         @click="handleSegmentClick"
+        @dblclick="handleSegmentDoubleClick"
         @dragstart="handleDragStart"
         @dragend="handleDragEnd"
         @dragover.prevent="handleDragOver"
@@ -85,7 +86,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue';
 import {
     draggingSegmentId,
     draggingSegmentShelfId,
@@ -133,6 +134,9 @@ const props = defineProps<Props>();
 const layer = computed<Layer | undefined>(() => props.segment.layer);
 const selection = usePlanogramSelection();
 const editor = usePlanogramEditor();
+
+/** Abre o painel de propriedades (injetado pelo PlanogramEditor) */
+const openProperties = inject<() => void>('openProperties');
 const { getClassification } = useAbcClassification();
 const { getPaperRole } = usePaperAnalysis();
 
@@ -229,6 +233,16 @@ function handleSegmentClick(event: MouseEvent) {
     // A seleção já ocorreu no pointerdown; aqui só impedimos o clique de
     // borbulhar para a área da prateleira (que selecionaria a shelf).
     event.stopPropagation();
+}
+
+/**
+ * Duplo clique: garante que o segmento está selecionado e abre o painel
+ * de propriedades caso esteja fechado.
+ */
+function handleSegmentDoubleClick(event: MouseEvent) {
+    event.stopPropagation();
+    selectThisSegment();
+    openProperties?.();
 }
 
 function handleDragStart(event: DragEvent) {

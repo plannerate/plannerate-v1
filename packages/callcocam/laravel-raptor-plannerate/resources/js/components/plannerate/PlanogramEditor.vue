@@ -266,6 +266,9 @@ const toggleProperties = () => {
     }
 };
 
+// Disponibiliza openProperties para descendentes (ex.: Segment usa no duplo clique)
+provide('openProperties', openProperties);
+
 const openLeftPanel = () => {
     storedLeftPanel.value = true;
 

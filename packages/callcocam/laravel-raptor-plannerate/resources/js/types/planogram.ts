@@ -16,7 +16,7 @@ export interface Dimension {
 
 export interface Product {
     id: string;
-    name?: string; 
+    name?: string;
     code?: string;
     codigo_erp?: string;
     ean?: string;
@@ -35,11 +35,21 @@ export interface Product {
     depth?: number;
     weight?: number;
     volume?: number;
+    price?: number;
     brand?: string;
+    subbrand?: string;
+    type?: string;
+    reference?: string;
+    color?: string;
+    flavor?: string;
+    fragrance?: string;
+    packaging_type?: string;
+    packaging_content?: string;
+    measurement_unit?: string;
     grouping?: string;
     grouping_normalized?: string;
     category_id?: string | null;
-    category?: string;
+    category?: { id: string; name: string; category_id?: string | null } | string;
     status?: string;
     /** Indica se o produto tem dimensões (altura, largura e profundidade) preenchidas. */
     has_dimensions?: boolean;
