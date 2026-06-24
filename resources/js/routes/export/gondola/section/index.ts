@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaExportController::qrcode
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaExportController.php:27
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaExportController.php:28
 * @route '/export/gondola/section/{section}/qr-code'
 */
 export const qrcode = (args: { section: string | number } | [section: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ qrcode.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaExportController::qrcode
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaExportController.php:27
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaExportController.php:28
 * @route '/export/gondola/section/{section}/qr-code'
 */
 qrcode.url = (args: { section: string | number } | [section: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -43,7 +43,7 @@ qrcode.url = (args: { section: string | number } | [section: string | number ] |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaExportController::qrcode
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaExportController.php:27
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaExportController.php:28
 * @route '/export/gondola/section/{section}/qr-code'
 */
 qrcode.get = (args: { section: string | number } | [section: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -53,7 +53,7 @@ qrcode.get = (args: { section: string | number } | [section: string | number ] |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaExportController::qrcode
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaExportController.php:27
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaExportController.php:28
 * @route '/export/gondola/section/{section}/qr-code'
 */
 qrcode.head = (args: { section: string | number } | [section: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -63,7 +63,7 @@ qrcode.head = (args: { section: string | number } | [section: string | number ] 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaExportController::qrcode
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaExportController.php:27
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaExportController.php:28
 * @route '/export/gondola/section/{section}/qr-code'
 */
 const qrcodeForm = (args: { section: string | number } | [section: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -73,7 +73,7 @@ const qrcodeForm = (args: { section: string | number } | [section: string | numb
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaExportController::qrcode
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaExportController.php:27
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaExportController.php:28
 * @route '/export/gondola/section/{section}/qr-code'
 */
 qrcodeForm.get = (args: { section: string | number } | [section: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -83,7 +83,7 @@ qrcodeForm.get = (args: { section: string | number } | [section: string | number
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaExportController::qrcode
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaExportController.php:27
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaExportController.php:28
 * @route '/export/gondola/section/{section}/qr-code'
 */
 qrcodeForm.head = (args: { section: string | number } | [section: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
