@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Tenant;
 
+use App\Models\Gondola;
 use App\Models\Planogram;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -40,7 +41,7 @@ class PlanogramUpdateRequest extends FormRequest
 
         return [
             'template_id' => ['nullable', 'string', 'max:255'],
-            'store_id' => ['nullable', 'ulid', Rule::exists($storesTable, 'id')->where('tenant_id', $tenantId)],
+            'store_id' => ['nullable', 'ulid', Rule::exists($storesTable, 'id')->where('tenant_id', $tenantId), $this->storeChangeNotBlockedByMapLinksRule($planogram)],
             'cluster_id' => ['nullable', 'ulid', Rule::exists($clustersTable, 'id')->where('tenant_id', $tenantId)],
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique($planogramsTable, 'slug')->where('tenant_id', $tenantId)->ignore($planogram)],
@@ -52,5 +53,32 @@ class PlanogramUpdateRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:255'],
             'status' => ['required', Rule::in(['draft', 'published'])],
         ];
+    }
+
+    /**
+     * Impede trocar a loja do planograma enquanto houver gôndolas vinculadas ao mapa.
+     *
+     * Os vínculos (`gondolas.linked_map_gondola_id`) apontam para regiões da loja atual;
+     * trocar a loja os deixaria órfãos. O usuário deve desvincular as gôndolas antes.
+     */
+    private function storeChangeNotBlockedByMapLinksRule(Planogram $planogram): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($planogram): void {
+            $newStoreId = is_string($value) && $value !== '' ? $value : null;
+
+            // Sem mudança de loja ou sem loja atual (nenhum mapa para desvincular): nada a validar.
+            if ($newStoreId === $planogram->store_id || ! $planogram->store_id) {
+                return;
+            }
+
+            $hasLinkedGondolas = Gondola::query()
+                ->where('planogram_id', $planogram->getKey())
+                ->whereNotNull('linked_map_gondola_id')
+                ->exists();
+
+            if ($hasLinkedGondolas) {
+                $fail(__('plannerate.map_region.store_change_blocked'));
+            }
+        };
     }
 }

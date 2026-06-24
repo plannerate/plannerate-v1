@@ -111,6 +111,11 @@ const isLinkedToOther = (region: Region) => {
 }
 
 const selectRegion = (region: Region) => {
+  // Não permite vincular a um espaço já ocupado por outra gôndola
+  if (isLinkedToOther(region)) {
+    return
+  }
+
   if (isSelected(region)) {
     selectedRegionId.value = null
   } else {
@@ -287,16 +292,18 @@ watch(() => props.open, (newVal: boolean) => {
                     :stroke="isSelected(region) ? '#22c55e' : (region.color?.replace('0.3', '1') || '#3b82f6')"
                     :stroke-width="isSelected(region) ? 5 : 3"
                     :style="isSelected(region) ? 'filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.8))' : ''"
-                    class="pointer-events-auto cursor-pointer transition-all hover:opacity-80"
-                    :class="{ 'opacity-40': isLinkedToOther(region) }" @click="selectRegion(region)" />
+                    class="pointer-events-auto transition-all"
+                    :class="isLinkedToOther(region) ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:opacity-80'"
+                    @click="selectRegion(region)" />
                   <!-- Circle region -->
                   <ellipse v-else :cx="region.x + region.width / 2" :cy="region.y + region.height / 2"
                     :rx="region.width / 2" :ry="region.height / 2" :fill="region.color || 'rgba(59, 130, 246, 0.3)'"
                     :stroke="isSelected(region) ? '#22c55e' : (region.color?.replace('0.3', '1') || '#3b82f6')"
                     :stroke-width="isSelected(region) ? 5 : 3"
                     :style="isSelected(region) ? 'filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.8))' : ''"
-                    class="pointer-events-auto cursor-pointer transition-all hover:opacity-80"
-                    :class="{ 'opacity-40': isLinkedToOther(region) }" @click="selectRegion(region)" />
+                    class="pointer-events-auto transition-all"
+                    :class="isLinkedToOther(region) ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:opacity-80'"
+                    @click="selectRegion(region)" />
                   <!-- Label -->
                   <text :x="region.x + region.width / 2" :y="region.y + region.height / 2" text-anchor="middle"
                     dominant-baseline="middle"
