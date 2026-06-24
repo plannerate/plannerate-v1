@@ -1,13 +1,13 @@
 <template>
     <!-- Segment com drop direto (troca de posições) -->
     <div
-        class="relative flex flex-col items-start transition-shadow duration-75"
+        class="relative flex flex-col items-start"
         tabindex="0"
         :class="{
-            'ring-3 ring-primary ring-offset-2 bg-primary/20 shadow-xl z-50': isSegmentSelected,
-            'ring-2 ring-amber-500/70 ring-offset-1 bg-amber-100/50 shadow-lg z-40':
+            'ring-3 ring-primary ring-offset-2 bg-primary/20 z-50': isSegmentSelected,
+            'ring-2 ring-amber-500/70 ring-offset-1 bg-amber-100/50 z-40':
                 isEanMatch && !isSegmentSelected && !isDropTarget,
-            'ring-2 ring-emerald-500 ring-offset-1 bg-emerald-50/70 shadow-lg z-40':
+            'ring-2 ring-emerald-500 ring-offset-1 bg-emerald-50/70 z-40':
                 isGroupingMatch && !isSegmentSelected && !isDropTarget,
             'hover:opacity-90':
                 !isSegmentSelected && !isDragging && !isDropTarget,
@@ -28,6 +28,8 @@
         @drop.prevent="handleDrop"
         :data-segment-id="segment.id"
         :data-layer-id="layer?.id"
+        :data-module="moduleNumber"
+        :data-shelf="shelfNumber"
         data-segment="true"
     >
 
@@ -77,6 +79,8 @@
                     :scale="props.scale"
                     :is-selected="isLayerSelected"
                     :facing-gap="props.facingGap"
+                    :module-number="props.moduleNumber"
+                    :shelf-number="props.shelfNumber"
                 />
             </div>
         </div>
@@ -122,6 +126,10 @@ interface Props {
      */
     selectedFromParent?: boolean;
     layerSelectedFromParent?: boolean;
+    /** Diagnóstico: nº do módulo (section.ordering) e nº da prateleira ("Prat #N"),
+     *  repassados às imagens como data-attrs para correlacionar lentidão no profiling. */
+    moduleNumber?: number | string;
+    shelfNumber?: number | string;
 }
 
 const props = defineProps<Props>();

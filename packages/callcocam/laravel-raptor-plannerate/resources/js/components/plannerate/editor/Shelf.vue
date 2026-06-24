@@ -34,6 +34,7 @@
                 :isLastInShelf="index === segments.length - 1" :facing-gap="justifyGap ?? undefined"
                 :selected-from-parent="segment.id === selectedSegmentId || multiSelectedSegmentIds.has(segment.id)"
                 :layer-selected-from-parent="!!(segment.layer?.id && segment.layer.id === selectedLayerId)"
+                :module-number="section.ordering" :shelf-number="shelfDisplayNumber"
                 style="pointer-events: auto" />
         </div>
 

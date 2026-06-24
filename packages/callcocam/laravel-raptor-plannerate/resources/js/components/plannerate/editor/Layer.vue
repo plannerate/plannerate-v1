@@ -12,12 +12,19 @@
                 :alt="product?.name"
                 :style="style"
                 class="z-20 object-cover"
+                decoding="async"
+                loading="lazy"
+                :data-module="moduleNumber"
+                :data-shelf="shelfNumber"
+                :data-ean="product?.ean"
                 v-on:error="getDefaultImage"
             />
             <div
                 v-else
                 :style="style"
                 class="flex items-center justify-center border border-dashed bg-muted"
+                :data-module="moduleNumber"
+                :data-shelf="shelfNumber"
             >
                 <span class="text-xs text-muted-foreground">{{
                     product?.name || t('plannerate.sidebar.product_image_card.no_image')
@@ -44,6 +51,10 @@ interface Props {
      * com o mesmo vão usado entre os segmentos da prateleira.
      */
     facingGap?: number;
+    /** Diagnóstico: nº do módulo e da prateleira, expostos como data-attrs na imagem
+     *  para correlacionar a lentidão de clique (qual módulo/prateleira) no profiling. */
+    moduleNumber?: number | string;
+    shelfNumber?: number | string;
 }
 
 const props = defineProps<Props>();
