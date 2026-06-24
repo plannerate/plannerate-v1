@@ -14,15 +14,6 @@
 
         <div class="space-y-3">
             <div class="space-y-2">
-                <Label for="section-name">{{ t('plannerate.print.product_detail.name') }}</Label>
-                <Input
-                    id="section-name"
-                    :model-value="section.name.toString().replace('Sessão', 'Módulo')"
-                    @update:model-value="handleUpdate('name', $event)"
-                />
-            </div>
-
-            <div class="space-y-2">
                 <Label for="section-code">{{ t('plannerate.sidebar.section_details.code') }}</Label>
                 <Input
                     id="section-code"
@@ -31,19 +22,16 @@
                 />
             </div>
 
+            <div class="space-y-2">
+                <Label for="section-name">{{ t('plannerate.print.product_detail.name') }}</Label>
+                <Input
+                    id="section-name"
+                    :model-value="section.name.toString().replace('Sessão', 'Módulo')"
+                    @update:model-value="handleUpdate('name', $event)"
+                />
+            </div>
+
             <div class="grid grid-cols-2 gap-2">
-                <div class="space-y-2">
-                    <Label for="section-width">{{ t('plannerate.print.product_detail.width') }} (cm)</Label>
-                    <Input
-                        id="section-width"
-                        :model-value="section.width"
-                        @update:model-value="
-                            handleUpdate('width', Number($event))
-                        "
-                        type="number"
-                        step="0.1"
-                    />
-                </div>
                 <div class="space-y-2">
                     <Label for="section-height">{{ t('plannerate.print.product_detail.height') }} (cm)</Label>
                     <Input
@@ -56,21 +44,19 @@
                         step="0.1"
                     />
                 </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
-                    <Label for="base-width">{{ t('plannerate.sidebar.section_details.base_width') }}</Label>
+                    <Label for="section-width">{{ t('plannerate.print.product_detail.width') }} (cm)</Label>
                     <Input
-                        id="base-width"
-                        :model-value="section.base_width"
-                        @update:model-value="
-                            handleUpdate('base_width', Number($event))
-                        "
+                        id="section-width"
+                        :model-value="section.width"
+                        @update:model-value="handleUpdateWidth(Number($event))"
                         type="number"
                         step="0.1"
                     />
                 </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
                     <Label for="base-height">{{ t('plannerate.sidebar.section_details.base_height') }}</Label>
                     <Input
@@ -132,24 +118,24 @@
                         />
                     </div>
                     <div class="space-y-2">
-                        <Label for="hole-spacing">{{ t('plannerate.sidebar.section_details.hole_spacing') }}</Label>
-                        <Input
-                            id="hole-spacing"
-                            :model-value="section.hole_spacing"
-                            @update:model-value="
-                                handleUpdate('hole_spacing', Number($event))
-                            "
-                            type="number"
-                            step="0.01"
-                        />
-                    </div>
-                    <div class="space-y-2">
                         <Label for="hole-width">{{ t('plannerate.sidebar.section_details.hole_width') }}</Label>
                         <Input
                             id="hole-width"
                             :model-value="section.hole_width"
                             @update:model-value="
                                 handleUpdate('hole_width', Number($event))
+                            "
+                            type="number"
+                            step="0.01"
+                        />
+                    </div>
+                    <div class="space-y-2">
+                        <Label for="hole-spacing">{{ t('plannerate.sidebar.section_details.hole_spacing') }}</Label>
+                        <Input
+                            id="hole-spacing"
+                            :model-value="section.hole_spacing"
+                            @update:model-value="
+                                handleUpdate('hole_spacing', Number($event))
                             "
                             type="number"
                             step="0.01"
@@ -196,6 +182,17 @@
                         {{ t('plannerate.sidebar.section_details.invert_shelves') }}
                     </ButtonWithTooltip>
                     <ButtonWithTooltip
+                        variant="outline"
+                        size="sm"
+                        @click="handleApplyToAll"
+                        :disabled="otherSections.length === 0"
+                        class="col-span-2"
+                        :tooltip="t('plannerate.sidebar.section_details.apply_to_all_tooltip')"
+                    >
+                        <CopyCheck class="mr-2 size-4" />
+                        {{ t('plannerate.sidebar.section_details.apply_to_all') }}
+                    </ButtonWithTooltip>
+                    <ButtonWithTooltip
                         variant="destructive"
                         size="sm"
                         @click="handleDelete"
@@ -217,9 +214,11 @@ import {
     ArrowRight,
     ArrowUpDown,
     Box,
+    CopyCheck,
     Trash2,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { toast } from 'vue-sonner';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -237,7 +236,11 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const section = computed(() => props.item);
+// Busca sempre o valor mais atualizado do editor para garantir reatividade
+const section = computed(() => {
+    const found = editor.findSectionById(props.item.id);
+    return found || props.item;
+});
 const { t } = useT();
 const selection = usePlanogramSelection();
 const keyboard = usePlanogramKeyboard();
@@ -247,6 +250,22 @@ const keyboard = usePlanogramKeyboard();
 const sectionActions = useSectionActions(() => section.value);
 
 const editor = usePlanogramEditor();
+
+/** Demais seções da gôndola (excluindo a atual e deletadas) */
+const otherSections = computed(() =>
+    editor.sectionsOrdered.value.filter((s) => s.id !== section.value.id),
+);
+
+/**
+ * Atualiza largura e largura da base juntas (campo único)
+ */
+function handleUpdateWidth(value: number) {
+    if (!section.value?.id) {
+        return;
+    }
+
+    editor.updateSection(section.value.id, { width: value, base_width: value });
+}
 
 /**
  * Atualiza propriedade da seção de forma reativa
@@ -258,6 +277,40 @@ return;
 
     // Atualiza de forma reativa usando o editor
     editor.updateSection(section.value.id, { [field]: value });
+}
+
+/**
+ * Aplica as dimensões do módulo atual a todos os demais módulos da gôndola.
+ * Campos copiados: dimensões físicas e configuração de furos.
+ * Campos excluídos: code, name, ordering (únicos por módulo).
+ */
+function handleApplyToAll() {
+    const targets = otherSections.value;
+
+    if (targets.length === 0) {
+        return;
+    }
+
+    // Copia todas as dimensões físicas — name e code são únicos por módulo
+    const dimensionFields = {
+        height: section.value.height,
+        width: section.value.width,
+        base_height: section.value.base_height,
+        base_width: section.value.base_width,
+        base_depth: section.value.base_depth,
+        cremalheira_width: section.value.cremalheira_width,
+        hole_height: section.value.hole_height,
+        hole_width: section.value.hole_width,
+        hole_spacing: section.value.hole_spacing,
+    };
+
+    targets.forEach((s) => editor.updateSection(s.id, dimensionFields));
+
+    toast.success(
+        t('plannerate.sidebar.section_details.apply_to_all_success', {
+            count: targets.length,
+        }),
+    );
 }
 
 /**

@@ -51,6 +51,7 @@ import {
     DEFAULT_SECTION_FIELDS,
     toCamelCase,
 } from '../../../composables/plannerate/fields/useSectionFields';
+import { DEFAULT_SHELF_FIELDS } from '../../../composables/plannerate/fields/useShelfFields';
 import {
     calculateHoles,
     findNearestHole,
@@ -255,18 +256,34 @@ function handleDoubleClick(event: MouseEvent) {
     // Converte de volta para o sistema de coordenadas do topo total
     const nearestHole = baseHeightCm + nearestHoleInUsableArea;
 
-    const shelfHeight =
+    const lastShelf =
         sortedShelves.value.length > 0
-            ? sortedShelves.value[sortedShelves.value.length - 1].shelf_height
-            : 4;
-    editor.addShelf(props.section.id, {
-        id: ulid(),
-        shelf_height: shelfHeight,
+            ? sortedShelves.value[sortedShelves.value.length - 1]
+            : null;
+
+    const newShelfId = ulid();
+    const newShelf = {
+        id: newShelfId,
+        // Gera código no mesmo padrão do backend: SHELF-{timestamp_segundos}
+        code: `SHELF-${Math.floor(Date.now() / 1000)}`,
+        shelf_height: lastShelf?.shelf_height ?? DEFAULT_SHELF_FIELDS.shelfHeight,
+        // Herda largura da última prateleira ou usa a largura da seção como padrão
+        shelf_width: lastShelf?.shelf_width || props.section.width,
+        shelf_depth: lastShelf?.shelf_depth ?? DEFAULT_SHELF_FIELDS.shelfDepth,
         shelf_position: nearestHole, // Usa o furo mais próximo ao invés da posição exata do clique
         section_id: props.section.id,
-        product_type: 'normal',
+        product_type: lastShelf?.product_type ?? DEFAULT_SHELF_FIELDS.productType,
         segments: [],
-    });
+    };
+
+    const created = editor.addShelf(props.section.id, newShelf);
+
+    // Auto-seleciona a prateleira recém-criada para o painel já abrir preenchido
+    if (created) {
+        selection.selectItem('shelf', created.id, created, {
+            section: props.section,
+        });
+    }
 }
 </script>
 
