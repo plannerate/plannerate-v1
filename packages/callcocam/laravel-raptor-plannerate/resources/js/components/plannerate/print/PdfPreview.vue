@@ -14,6 +14,7 @@ import type {
 } from '@/types/planogram';
 import PdfFlowIndicator from './partials/PdfFlowIndicator.vue';
 import PdfGondolaCanvas from './partials/PdfGondolaCanvas.vue';
+import PdfGondolaHeader from './partials/PdfGondolaHeader.vue';
 import PdfPageFooter from './partials/PdfPageFooter.vue';
 import PdfPreviewToolbar from './partials/PdfPreviewToolbar.vue';
 import PdfModulePage from './PdfModulePage.vue';
@@ -157,6 +158,76 @@ function decreaseScale() {
     );
 }
 
+/**
+ * Aguarda o próximo frame de pintura após uma alteração de layout,
+ * garantindo que scrollWidth/clientWidth reflitam o novo `localScale`.
+ */
+function nextFrame(): Promise<void> {
+    return new Promise((resolve) =>
+        window.requestAnimationFrame(() => resolve()),
+    );
+}
+
+/**
+ * Reduz o zoom (`localScale`) do modo em linha até que o conteúdo da gôndola
+ * caiba sem barra de rolagem horizontal. Sem isso, a parte que ultrapassa o
+ * container (escondida atrás do scroll) é cortada na captura do PDF.
+ *
+ * Retorna a escala original para ser restaurada após a geração, ou `null`
+ * quando nenhum ajuste foi necessário.
+ */
+async function fitRowScaleForExport(): Promise<number | null> {
+    const scroller = document.querySelector<HTMLElement>(
+        '[data-pdf-page] [data-pdf-scroll]',
+    );
+
+    if (!scroller) {
+        return null;
+    }
+
+    const originalScale = localScale.value;
+    let adjusted = false;
+    let guard = 0;
+
+    // Itera porque padding e conteúdo escalam juntos; uma única razão
+    // costuma resolver, mas mantemos uma folga e um limite de segurança.
+    // Considera overflow horizontal e vertical (o que for mais restritivo),
+    // pois ambos seriam cortados na captura do container.
+    while (localScale.value > SCALE_MIN && guard < 12) {
+        const overflowsX = scroller.scrollWidth > scroller.clientWidth + 1;
+        const overflowsY = scroller.scrollHeight > scroller.clientHeight + 1;
+
+        if (!overflowsX && !overflowsY) {
+            break;
+        }
+
+        const ratioX = overflowsX
+            ? scroller.clientWidth / scroller.scrollWidth
+            : 1;
+        const ratioY = overflowsY
+            ? scroller.clientHeight / scroller.scrollHeight
+            : 1;
+        const ratio = Math.min(ratioX, ratioY);
+
+        const next = Math.max(
+            SCALE_MIN,
+            Math.floor(localScale.value * ratio * 100) / 100,
+        );
+
+        if (next >= localScale.value) {
+            break;
+        }
+
+        localScale.value = next;
+        adjusted = true;
+        guard += 1;
+        await nextTick();
+        await nextFrame();
+    }
+
+    return adjusted ? originalScale : null;
+}
+
 async function generatePDF(
     autoDownload = false,
     selectedSectionIds?: string[],
@@ -166,6 +237,7 @@ async function generatePDF(
         : pdfGenerator.isGenerating;
     const previousAbcVisibility = abcClassification.isVisible.value;
     const previousTargetStockVisibility = targetStockAnalysis.isVisible.value;
+    let scaleToRestore: number | null = null;
 
     try {
         isExportingRef.value = true;
@@ -175,6 +247,12 @@ async function generatePDF(
 
         const layoutMode =
             layoutDirection.value === 'row' ? 'single' : 'multiple';
+
+        // No modo em linha, garante que toda a gôndola caiba sem rolagem
+        // horizontal antes da captura, evitando corte no PDF.
+        if (layoutMode === 'single') {
+            scaleToRestore = await fitRowScaleForExport();
+        }
         const orientation =
             layoutDirection.value === 'row' ? 'landscape' : 'portrait';
         const filename = `gondola_${props.gondola.name}_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -227,6 +305,12 @@ async function generatePDF(
     } finally {
         abcClassification.setVisibility(previousAbcVisibility);
         targetStockAnalysis.setVisibility(previousTargetStockVisibility);
+
+        // Restaura o zoom original alterado para o ajuste de captura.
+        if (scaleToRestore !== null) {
+            localScale.value = scaleToRestore;
+        }
+
         await nextTick();
         isExportingRef.value = false;
     }
@@ -294,7 +378,14 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
             class="mt-28 flex flex-1 flex-col"
         >
             <!-- Página capturada para PDF single-page -->
-            <div data-pdf-page class="flex flex-1 flex-col shadow-sm">
+            <div data-pdf-page class="flex flex-1 flex-col bg-white shadow-sm">
+                <PdfGondolaHeader
+                    :gondola="gondola as any"
+                    :tenant-name="tenantName"
+                    :responsavel="responsavel"
+                    :flow-label="flowLabel"
+                    :sections-count="sections.length"
+                />
                 <PdfGondolaCanvas
                     :sections="sections"
                     :local-scale="localScale"

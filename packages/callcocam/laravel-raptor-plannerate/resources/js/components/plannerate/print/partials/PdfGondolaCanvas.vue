@@ -18,7 +18,7 @@ const footHeight = computed(() => {
 </script>
 
 <template>
-    <div class="flex-1 overflow-auto bg-slate-50 dark:bg-slate-800/50">
+    <div data-pdf-scroll class="flex-1 overflow-auto bg-slate-50 dark:bg-slate-800/50">
         <div
             class="w-max min-w-full"
             :style="{

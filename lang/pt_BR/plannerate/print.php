@@ -65,6 +65,7 @@ return [
         'download_pdf' => 'Baixar PDF',
         'info' => 'Informações',
         'client' => 'Cliente',
+        'modules' => 'Módulos',
     ],
     'share' => [
         'title' => 'Visualização da Gôndola',

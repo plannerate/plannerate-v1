@@ -100,7 +100,8 @@ function scrollToModule(anchorId: string): void {
         :id="moduleAnchorId"
         :data-pdf-module-page="section.id"
         :data-section-id="section.id"
-        class="w-full scroll-mt-28 overflow-hidden border border-slate-200 bg-white shadow-lg"
+        class="flex w-full scroll-mt-28 flex-col overflow-hidden border border-slate-200 bg-white shadow-lg"
+        style="aspect-ratio: 210 / 297"
     >
         <!-- HEADER -->
         <div class="border-b border-slate-200 px-6 py-4">
@@ -449,8 +450,8 @@ function scrollToModule(anchorId: string): void {
             </div>
         </div>
 
-        <!-- Observações -->
-        <div class="border-t border-slate-200 px-6 py-4">
+        <!-- Observações (ancorado ao fundo da página) -->
+        <div class="mt-auto border-t border-slate-200 px-6 py-4">
             <div class="mb-2 flex items-center gap-2">
                 <span
                     class="bg-primary px-3 py-1 text-[9px] font-bold tracking-widest text-primary-foreground uppercase"
@@ -518,6 +519,15 @@ function scrollToModule(anchorId: string): void {
                     <p class="text-sm leading-none font-black">V1.0</p>
                 </div>
             </div>
+        </div>
+
+        <!-- BARRA DECORATIVA (mesma do modo em linha) -->
+        <div
+            class="relative h-10 overflow-hidden bg-slate-900 dark:bg-slate-950"
+        >
+            <div
+                class="absolute right-0 bottom-0 h-20 w-20 rounded-tl-full bg-primary"
+            ></div>
         </div>
     </div>
 </template>
