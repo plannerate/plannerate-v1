@@ -86,3 +86,120 @@ test('sales summary returns per-unit average price and cost (divided by quantity
     // margem unitária = (6 + 12) / 5 = 3,60
     expect(round((float) $summary['avg_margin'], 2))->toBe(3.6);
 });
+
+test('sales summary filters by planogram period (start_date/end_date)', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenant('tenant-sales-period');
+    assignTenantAdminRole($user, $tenant->id);
+
+    $product = Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Produto Período',
+        'slug' => 'produto-periodo',
+        'status' => 'published',
+        'dimensions_status' => 'published',
+    ]);
+
+    // Dentro do período do planograma.
+    Sale::query()->create([
+        'tenant_id' => $tenant->id,
+        'product_id' => $product->id,
+        'sale_date' => '2026-02-10',
+        'total_sale_quantity' => '4.000',
+        'total_sale_value' => '40.00',
+        'sale_price' => '40.00',
+        'acquisition_cost' => '16.00',
+        'margem_contribuicao' => '10.00',
+    ]);
+
+    // Fora do período — não deve entrar no resumo.
+    Sale::query()->create([
+        'tenant_id' => $tenant->id,
+        'product_id' => $product->id,
+        'sale_date' => '2025-08-01',
+        'total_sale_quantity' => '10.000',
+        'total_sale_value' => '999.00',
+        'sale_price' => '999.00',
+        'acquisition_cost' => '500.00',
+        'margem_contribuicao' => '200.00',
+    ]);
+
+    $host = 'tenant-sales-period.'.config('app.landlord_domain');
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => $host])
+        ->getJson(route('api.plannerate.products.sales.summary', [
+            'subdomain' => 'tenant-sales-period',
+            'product' => $product->id,
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-03-31',
+        ], false));
+
+    $response->assertOk();
+
+    $summary = $response->json('summary');
+
+    // Apenas a venda dentro do período: qtd = 4, faturamento = 40, preço unit = 10,00
+    expect((int) $summary['total_quantity'])->toBe(4);
+    expect(round((float) $summary['total_revenue'], 2))->toBe(40.0);
+    expect(round((float) $summary['avg_price'], 2))->toBe(10.0);
+});
+
+test('sales summary includes sales linked only by codigo_erp or ean (product_id null)', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $tenant = makeTenant('tenant-sales-erp');
+    assignTenantAdminRole($user, $tenant->id);
+
+    $product = Product::query()->create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Produto ERP',
+        'slug' => 'produto-erp',
+        'ean' => '7891150095953',
+        'codigo_erp' => '95616',
+        'status' => 'published',
+        'dimensions_status' => 'published',
+    ]);
+
+    // Venda vinculada pelo product_id.
+    Sale::query()->create([
+        'tenant_id' => $tenant->id,
+        'product_id' => $product->id,
+        'ean' => '7891150095953',
+        'codigo_erp' => '95616',
+        'sale_date' => '2026-03-10',
+        'total_sale_quantity' => '1.000',
+        'total_sale_value' => '8.99',
+    ]);
+
+    // Venda da integração SEM product_id, vinculada apenas pelo codigo_erp.
+    Sale::query()->create([
+        'tenant_id' => $tenant->id,
+        'product_id' => null,
+        'codigo_erp' => '95616',
+        'sale_date' => '2026-05-29',
+        'total_sale_quantity' => '1.000',
+        'total_sale_value' => '8.99',
+    ]);
+
+    $host = 'tenant-sales-erp.'.config('app.landlord_domain');
+
+    $response = $this
+        ->withServerVariables(['HTTP_HOST' => $host])
+        ->getJson(route('api.plannerate.products.sales.summary', [
+            'subdomain' => 'tenant-sales-erp',
+            'product' => $product->id,
+        ], false));
+
+    $response->assertOk();
+
+    $summary = $response->json('summary');
+
+    // Ambas as vendas devem ser contadas (product_id + codigo_erp).
+    expect((int) $summary['total_sales'])->toBe(2);
+    expect((int) $summary['total_quantity'])->toBe(2);
+    expect(round((float) $summary['total_revenue'], 2))->toBe(17.98);
+});

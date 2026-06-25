@@ -432,7 +432,7 @@ class ProductRepositoryImageResolver
         $pixelMultiplier = 7;
         $quality = 90;
         // Teto de dimensao (px) do lado maior — ver justificativa no metodo acima.
-        $maxSide = 512;
+        $maxSide = 316;
 
         try {
             $image = Image::decodeBinary($imageBinary);

@@ -194,6 +194,10 @@ import { useT } from '@/composables/useT';
 
 interface Props {
     productId: string | null;
+    /** Data inicial do período do planograma (filtra as vendas) */
+    startDate?: string | null;
+    /** Data final do período do planograma (filtra as vendas) */
+    endDate?: string | null;
 }
 
 const props = defineProps<Props>();
@@ -202,12 +206,12 @@ const { t } = useT();
 const { salesData, isLoading, error, loadSales, clearSales } =
     useProductSales();
 
-// Watch productId changes
+// Recarrega quando o produto ou o período do planograma muda
 watch(
-    () => props.productId,
-    (newProductId) => {
+    () => [props.productId, props.startDate, props.endDate] as const,
+    ([newProductId, newStartDate, newEndDate]) => {
         if (newProductId) {
-            loadSales(newProductId);
+            loadSales(newProductId, newStartDate, newEndDate);
         } else {
             clearSales();
         }

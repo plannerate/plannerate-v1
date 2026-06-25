@@ -5,19 +5,67 @@ namespace Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Controller;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Sale;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ProductSalesController extends Controller
 {
     /**
-     * Retorna resumo agregado de vendas do produto
+     * Retorna resumo agregado de vendas do produto.
+     *
+     * Quando o planograma informa um período (start_date/end_date via query),
+     * as vendas são filtradas para considerar apenas o intervalo do planograma.
      */
-    public function summary(string $productId): JsonResponse
+    public function summary(Request $request, string $productId): JsonResponse
     {
         $product = Product::findOrFail($productId);
 
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        /**
+         * Casa as vendas do produto pela mesma regra da listagem (ProductController@sales):
+         * product_id OU ean OU codigo_erp. Muitas vendas chegam da integração sem product_id
+         * preenchido, vinculadas apenas pelo codigo_erp/ean — por isso o filtro só por
+         * product_id subcontava o resumo.
+         */
+        $matchProduct = function (Builder $query) use ($product): Builder {
+            return $query->where(function (Builder $q) use ($product): void {
+                $q->where('product_id', $product->id);
+
+                if (! empty($product->ean)) {
+                    $q->orWhere('ean', $product->ean);
+                }
+
+                if (! empty($product->codigo_erp)) {
+                    $q->orWhere('codigo_erp', $product->codigo_erp);
+                }
+            });
+        };
+
+        /**
+         * Aplica o filtro de período do planograma (quando informado) à query de vendas.
+         */
+        $applyPeriod = function (Builder $query) use ($startDate, $endDate): Builder {
+            if ($startDate) {
+                $query->whereDate('sale_date', '>=', $startDate);
+            }
+
+            if ($endDate) {
+                $query->whereDate('sale_date', '<=', $endDate);
+            }
+
+            return $query;
+        };
+
+        /**
+         * Query base de vendas do produto já com período aplicado.
+         */
+        $baseQuery = fn (): Builder => $applyPeriod($matchProduct(Sale::query()));
+
         // Busca vendas agregadas do produto
-        $salesSummary = Sale::where('product_id', $product->id)
+        $salesSummary = $baseQuery()
             ->selectRaw('
                 COUNT(*) as total_sales,
                 SUM(total_sale_quantity) as total_quantity,
@@ -36,15 +84,23 @@ class ProductSalesController extends Controller
             ? "TO_CHAR(sale_date, 'YYYY-MM')"
             : "DATE_FORMAT(sale_date, '%Y-%m')";
 
-        $salesByMonth = Sale::where('product_id', $product->id)
-            ->where('sale_date', '>=', now()->subMonths(12))
+        // Com período do planograma: respeita o intervalo; sem período: últimos 12 meses.
+        $salesByMonthQuery = $matchProduct(Sale::query());
+
+        if ($startDate || $endDate) {
+            $applyPeriod($salesByMonthQuery);
+        } else {
+            $salesByMonthQuery->where('sale_date', '>=', now()->subMonths(12));
+        }
+
+        $salesByMonth = $salesByMonthQuery
             ->selectRaw("{$monthExpr} as month, COUNT(*) as sales_count, SUM(total_sale_quantity) as quantity, SUM(total_sale_value) as revenue")
             ->groupByRaw($monthExpr)
             ->orderByRaw($monthExpr)
             ->get();
 
         // Top 5 lojas com mais vendas
-        $topStores = Sale::where('product_id', $product->id)
+        $topStores = $baseQuery()
             // Note: ->with('store:id,name') removed - use custom getter instead
             ->selectRaw('
                 store_id,

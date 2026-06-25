@@ -200,6 +200,8 @@ export interface Gondola {
     deleted_at?: string;
     planogram?: {
         gondolas?: Gondola[];
+        start_date?: string | null;
+        end_date?: string | null;
         store_id?: string;
         store?: {
             id: string;

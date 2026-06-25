@@ -46,7 +46,18 @@ export function useProductSales() {
     const isLoading = ref(false);
     const error: Ref<string | null> = ref(null);
 
-    async function loadSales(productId: string) {
+    /**
+     * Carrega o resumo de vendas do produto.
+     *
+     * @param productId ID do produto
+     * @param startDate Data inicial do período do planograma (opcional, YYYY-MM-DD)
+     * @param endDate Data final do período do planograma (opcional, YYYY-MM-DD)
+     */
+    async function loadSales(
+        productId: string,
+        startDate?: string | null,
+        endDate?: string | null,
+    ) {
         if (!productId) {
             error.value = t('plannerate.composables.product_sales.required_product_id');
 
@@ -58,8 +69,18 @@ export function useProductSales() {
         salesData.value = null;
 
         try {
+            // Filtra as vendas pelo período do planograma quando informado.
+            const params = new URLSearchParams();
+            if (startDate) {
+                params.set('start_date', startDate);
+            }
+            if (endDate) {
+                params.set('end_date', endDate);
+            }
+            const query = params.toString() ? `?${params.toString()}` : '';
+
             const response = await fetch(
-                `/api/plannerate/products/${productId}/sales/summary`,
+                `/api/plannerate/products/${productId}/sales/summary${query}`,
             );
 
             if (!response.ok) {

@@ -90,7 +90,11 @@
 
             <!-- Aba: Performance / Vendas -->
             <TabsContent value="performance" class="mt-3">
-                <TabPerformance :product="product" />
+                <TabPerformance
+                    :product="product"
+                    :start-date="planogramStartDate"
+                    :end-date="planogramEndDate"
+                />
             </TabsContent>
 
             <!-- Aba: Imagens -->
@@ -191,6 +195,17 @@ watch(activeTab, (tab) => {
     localStorage.setItem(STORAGE_KEY, tab);
 });
 const deleteImageAction = deleteImage;
+
+/**
+ * Período do planograma — usado para filtrar as vendas do produto na aba Performance,
+ * de modo que o resumo reflita apenas o intervalo do planograma.
+ */
+const planogramStartDate = computed(
+    () => editor.currentGondola.value?.planogram?.start_date ?? null,
+);
+const planogramEndDate = computed(
+    () => editor.currentGondola.value?.planogram?.end_date ?? null,
+);
 
 /**
  * Resolve segmento + prateleira em uma única travessia da árvore.

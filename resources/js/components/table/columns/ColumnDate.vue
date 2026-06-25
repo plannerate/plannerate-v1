@@ -13,7 +13,15 @@ function formatDate(value: string | null | undefined): string {
         return '-';
     }
 
-    const normalized = value.includes('T') ? value : value.replace(' ', 'T');
+    // Strings date-only (YYYY-MM-DD) são parseadas como UTC pelo construtor Date,
+    // o que provoca off-by-one em fusos negativos (ex.: UTC-3 mostra o dia anterior).
+    // Por isso adicionamos T00:00:00 para forçar interpretação no horário local.
+    const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+    const normalized = dateOnly
+        ? `${value}T00:00:00`
+        : value.includes('T')
+          ? value
+          : value.replace(' ', 'T');
     const parsed = new Date(normalized);
 
     if (Number.isNaN(parsed.getTime())) {

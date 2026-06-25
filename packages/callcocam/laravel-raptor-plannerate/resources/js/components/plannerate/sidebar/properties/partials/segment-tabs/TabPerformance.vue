@@ -13,7 +13,11 @@
         </div>
 
         <!-- Resumo de vendas (carrega via composable) -->
-        <ProductSalesSummary :product-id="productId" />
+        <ProductSalesSummary
+            :product-id="productId"
+            :start-date="startDate"
+            :end-date="endDate"
+        />
     </div>
 </template>
 
@@ -26,6 +30,10 @@ import ProductSalesSummary from '../ProductSalesSummary.vue';
 interface Props {
     /** Produto do segmento */
     product?: Product | null;
+    /** Data inicial do período do planograma */
+    startDate?: string | null;
+    /** Data final do período do planograma */
+    endDate?: string | null;
 }
 
 const props = defineProps<Props>();
