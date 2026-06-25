@@ -1,7 +1,7 @@
 <template>
     <div class="space-y-4">
         <!-- Frentes (editável) -->
-        <div v-if="segment?.layer" class="space-y-2">
+        <!-- <div v-if="segment?.layer" class="space-y-2">
             <Label for="tab-layer-quantity">
                 {{ t('plannerate.sidebar.segment_details.position.facings') }}
             </Label>
@@ -12,7 +12,7 @@
                 type="number"
                 min="1"
             />
-        </div>
+        </div> -->
 
         <!-- Posicionamento: frentes × empilhamento × profundidade = total -->
         <div class="space-y-2">
@@ -29,9 +29,7 @@
 
         <!-- Seção: Dimensões Físicas -->
         <div class="space-y-3">
-            <p class="text-xs font-semibold text-foreground">
-                {{ t('plannerate.sidebar.segment_details.position.physical_title') }}
-            </p>
+           
             <ProductDimensionsEditor
                 :height="Number(product?.height ?? 0)"
                 :width="Number(product?.width ?? 0)"

@@ -4,7 +4,7 @@
         <div class="flex items-center gap-2">
             <Box class="size-4 shrink-0 text-foreground" />
             <h3 class="text-base font-semibold leading-tight">
-                {{ product?.name || t('plannerate.sidebar.segment_details.layer_product') }}
+                {{  t('plannerate.sidebar.segment_details.layer_product') }}
             </h3>
         </div>
 

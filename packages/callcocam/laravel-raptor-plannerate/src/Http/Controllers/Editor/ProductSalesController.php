@@ -22,9 +22,9 @@ class ProductSalesController extends Controller
                 COUNT(*) as total_sales,
                 SUM(total_sale_quantity) as total_quantity,
                 SUM(total_sale_value) as total_revenue,
-                AVG(sale_price) as avg_price,
-                AVG(acquisition_cost) as avg_cost,
-                AVG(margem_contribuicao) as avg_margin,
+                SUM(total_sale_value) / NULLIF(SUM(total_sale_quantity), 0) as avg_price,
+                SUM(acquisition_cost) / NULLIF(SUM(total_sale_quantity), 0) as avg_cost,
+                SUM(margem_contribuicao) / NULLIF(SUM(total_sale_quantity), 0) as avg_margin,
                 MIN(sale_date) as first_sale_date,
                 MAX(sale_date) as last_sale_date
             ')

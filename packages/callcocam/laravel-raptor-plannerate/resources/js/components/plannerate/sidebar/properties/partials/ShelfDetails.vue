@@ -41,7 +41,7 @@
 
             <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
-                    <Label for="shelf-height">{{ t('plannerate.print.product_detail.height') }} (cm)</Label>
+                    <Label for="shelf-height">{{ t('plannerate.sidebar.shelf_details.height') }} (cm)</Label>
                     <Input
                         id="shelf-height"
                         :model-value="shelf.shelf_height"
@@ -53,7 +53,7 @@
                     />
                 </div>
                 <div class="space-y-2">
-                    <Label for="shelf-depth">{{ t('plannerate.print.product_detail.depth') }} (cm)</Label>
+                    <Label for="shelf-depth">{{ t('plannerate.sidebar.shelf_details.depth') }} (cm)</Label>
                     <Input
                         id="shelf-depth"
                         :model-value="shelf.shelf_depth"

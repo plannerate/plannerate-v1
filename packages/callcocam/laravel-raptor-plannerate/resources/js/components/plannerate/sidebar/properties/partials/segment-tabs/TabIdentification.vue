@@ -1,5 +1,18 @@
 <template>
     <div class="space-y-4">
+        <!-- Imagem principal do produto -->
+        <div class="flex justify-center">
+            <img v-if="!isFallback" :src="product?.image_url" :alt="product?.name"
+                class="h-28 w-28 rounded-md border object-contain" />
+            <div v-else class="flex h-28 w-28 items-center justify-center rounded-md border bg-muted">
+                <span class="text-xs text-muted-foreground">
+                    {{ t('plannerate.sidebar.product_image_card.no_image') }}
+                </span>
+            </div>
+        </div>
+
+        <Separator />
+
         <!-- Campos de identificação -->
         <div class="space-y-3">
             <div class="grid grid-cols-2 gap-3">
@@ -71,6 +84,13 @@ const props = defineProps<Props>();
 const { t } = useT();
 
 const additionalOpen = ref(false);
+
+/**
+ * Indica se o produto não tem imagem própria (usa fallback).
+ */
+const isFallback = computed(() =>
+    !props.product?.image_url || props.product.image_url.includes('fall4.jpg'),
+);
 
 /**
  * Campos de dados adicionais mapeados para exibição.
