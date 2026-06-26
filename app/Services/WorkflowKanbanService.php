@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\PlanogramLifecycleStatus;
 use App\Enums\WorkflowExecutionStatus;
 use App\Enums\WorkflowHistoryAction;
 use App\Models\Gondola;
+use App\Models\Planogram;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\WorkflowGondolaExecution;
@@ -12,6 +14,7 @@ use App\Models\WorkflowHistory;
 use App\Models\WorkflowPlanogramStep;
 use App\Models\WorkflowTemplate;
 use App\Notifications\AppNotification;
+use App\Support\Workflow\PeriodicReviewSchedule;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -62,14 +65,14 @@ class WorkflowKanbanService
                 'gondola.planogram:id,name,store_id',
                 'currentResponsible:id,name',
                 'startedBy:id,name',
-                'step:id,name,workflow_template_id,access_mode,planogram_id',
-                'step.template:id,access_mode,suggested_order',
+                'step:id,name,workflow_template_id,access_mode,stage_type,planogram_id',
+                'step.template:id,access_mode,stage_type,suggested_order',
                 // Pré-carrega o que as policies (start/complete) consultariam por
                 // execução, evitando N+1 ao montar can_start/can_complete do board.
                 'step.availableUsers:id',
                 'step.planogram:id',
-                'step.planogram.workflowSteps:id,planogram_id,workflow_template_id,is_skipped',
-                'step.planogram.workflowSteps.template:id,suggested_order',
+                'step.planogram.workflowSteps:id,planogram_id,workflow_template_id,is_skipped,stage_type',
+                'step.planogram.workflowSteps.template:id,suggested_order,stage_type',
             ])
             ->when($executionStatus, fn ($query) => $query->where('status', $executionStatus))
             ->when(
@@ -279,8 +282,90 @@ class WorkflowKanbanService
 
             $this->recordHistory($execution, WorkflowHistoryAction::Completed, $actor, $execution->workflow_planogram_step_id, null, $notes);
 
+            $this->maybeMarkPlanogramCompleted($execution);
+
             return $execution->fresh();
         });
+    }
+
+    /**
+     * Marca o planograma como concluído quando todas as gôndolas com execução
+     * finalizaram a etapa final de fluxo (`stage_type = flow`).
+     *
+     * Conclusão por planograma: exige que toda gôndola com execução tenha a
+     * execução da etapa final de fluxo com `completed` e que não reste nenhuma
+     * execução de fluxo em andamento (active/pending/paused). Idempotente: só
+     * atua enquanto o planograma estiver `in_progress`. Ao concluir, agenda o
+     * vencimento da Revisão Periódica (quando há datas válidas).
+     */
+    private function maybeMarkPlanogramCompleted(WorkflowGondolaExecution $execution): void
+    {
+        $execution->loadMissing('step.planogram.workflowSteps.template');
+
+        $planogram = $execution->step?->planogram;
+
+        if (! $planogram instanceof Planogram) {
+            return;
+        }
+
+        // Idempotência: só processa fluxo ainda em andamento.
+        if ($planogram->lifecycle_status !== PlanogramLifecycleStatus::InProgress) {
+            return;
+        }
+
+        $activeSteps = $planogram->workflowSteps->where('is_skipped', false);
+
+        $flowSteps = $activeSteps->filter(
+            fn (WorkflowPlanogramStep $step): bool => ! $step->stage_type->isPeriodicReview()
+        );
+
+        // Fallback: sem etapas de fluxo, usa as não puladas para definir a final.
+        $candidateSteps = $flowSteps->isNotEmpty() ? $flowSteps : $activeSteps;
+
+        if ($candidateSteps->isEmpty()) {
+            return;
+        }
+
+        $finalStep = $candidateSteps->sortBy('suggested_order')->last();
+        $flowStepIds = $candidateSteps->pluck('id')->all();
+
+        $executions = WorkflowGondolaExecution::query()
+            ->whereIn('workflow_planogram_step_id', $flowStepIds)
+            ->get(['id', 'gondola_id', 'workflow_planogram_step_id', 'status']);
+
+        if ($executions->isEmpty()) {
+            return;
+        }
+
+        // Alguma execução de fluxo ainda em andamento → planograma não concluído.
+        $hasUnfinished = $executions->contains(
+            fn (WorkflowGondolaExecution $exec): bool => in_array($exec->status, [
+                WorkflowExecutionStatus::Active,
+                WorkflowExecutionStatus::Pending,
+                WorkflowExecutionStatus::Paused,
+            ], true)
+        );
+
+        if ($hasUnfinished) {
+            return;
+        }
+
+        // Toda gôndola com execução precisa ter concluído a etapa final.
+        $allGondolasFinished = $executions
+            ->groupBy('gondola_id')
+            ->every(fn (Collection $gondolaExecutions): bool => $gondolaExecutions->contains(
+                fn (WorkflowGondolaExecution $exec): bool => (string) $exec->workflow_planogram_step_id === (string) $finalStep->id
+                    && $exec->status === WorkflowExecutionStatus::Completed
+            ));
+
+        if (! $allGondolasFinished) {
+            return;
+        }
+
+        $planogram->completed_at = now();
+        $planogram->lifecycle_status = PlanogramLifecycleStatus::Completed;
+        $planogram->periodic_review_due_at = PeriodicReviewSchedule::computeDueAt($planogram);
+        $planogram->save();
     }
 
     public function abandon(WorkflowGondolaExecution $execution, User $actor, ?string $notes = null): WorkflowGondolaExecution

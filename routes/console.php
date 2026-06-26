@@ -31,6 +31,11 @@ Schedule::command('sync:post-import')
     ->withoutOverlapping()
     ->name('sync-post-import');
 
+Schedule::command('planograms:trigger-periodic-review')
+    ->dailyAt('04:00')
+    ->withoutOverlapping()
+    ->name('planograms-trigger-periodic-review');
+
 Schedule::command('horizon:snapshot')
     ->everyFiveMinutes()
     ->name('horizon-snapshot');

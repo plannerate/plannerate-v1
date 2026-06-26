@@ -15,6 +15,7 @@ use App\Support\Modules\ModuleSlug;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -309,6 +310,24 @@ test('rota planograms.kanban redireciona para kanban.index', function (): void {
         ->assertRedirect(route('tenant.kanban.index'));
 });
 
+/**
+ * Garante o schema na conexão tenant (:memory:). Migra apenas quando ausente,
+ * evitando "table already exists" quando o banco já vem migrado/compartilhado.
+ */
+function migrateTenantSchema(): void
+{
+    if (Schema::connection('tenant')->hasTable('users')) {
+        return;
+    }
+
+    Artisan::call('migrate', [
+        '--database' => 'tenant',
+        '--path' => 'database/migrations',
+        '--force' => true,
+        '--no-interaction' => true,
+    ]);
+}
+
 function setupKanbanTenantCtx(string $subdomain): array
 {
     $user = User::factory()->create();
@@ -349,17 +368,4 @@ function setupKanbanTenantCtx(string $subdomain): array
         'tenant' => $tenant,
         'user' => $user,
     ];
-}
-
-function migrateTenantSchema(): void
-{
-    // migrate (não :fresh) é idempotente via tabela migrations: reaplica só o
-    // que falta, evitando "table already exists" quando a conexão tenant
-    // (:memory:) persiste entre os testes do mesmo processo.
-    Artisan::call('migrate', [
-        '--database' => 'tenant',
-        '--path' => 'database/migrations',
-        '--force' => true,
-        '--no-interaction' => true,
-    ]);
 }

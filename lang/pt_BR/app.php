@@ -203,6 +203,19 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'display_options' => 'Opções de exibição',
             'only_overdue' => 'Apenas atrasadas',
             'show_completed' => 'Mostrar concluídas',
+            'lifecycle_status' => 'Ciclo de vida',
+            'all_lifecycles' => 'Todos',
+            'lifecycle' => [
+                'in_progress' => 'Em andamento',
+                'completed' => 'Concluído',
+                'periodic_review' => 'Revisão periódica',
+            ],
+        ],
+        'lifecycle' => [
+            'awaiting_review' => 'Aguardando revisão periódica em :date',
+            'awaiting_review_no_date' => 'Concluído — revisão periódica não agendada',
+            'in_review' => 'Em revisão periódica',
+            'completed' => 'Concluído',
         ],
         'column' => [
             'empty' => 'Nenhuma gôndola encontrada',

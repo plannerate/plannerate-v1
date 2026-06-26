@@ -16,6 +16,7 @@ use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -82,7 +83,7 @@ test('workflow settings sync creates missing steps and copies template suggested
     $this->assertDatabaseHas('workflow_planogram_step_users', [
         'workflow_planogram_step_id' => $step->id,
         'user_id' => $templateUser->id,
-    ]);
+    ], 'tenant');
 });
 
 test('workflow settings update persists required skipped and allowed users', function (): void {
@@ -142,17 +143,17 @@ test('workflow settings update persists required skipped and allowed users', fun
         'estimated_duration_days' => 9,
         'is_required' => 0,
         'is_skipped' => 1,
-    ]);
+    ], 'tenant');
 
     $this->assertDatabaseHas('workflow_planogram_step_users', [
         'workflow_planogram_step_id' => $step->id,
         'user_id' => $allowedA->id,
-    ]);
+    ], 'tenant');
 
     $this->assertDatabaseHas('workflow_planogram_step_users', [
         'workflow_planogram_step_id' => $step->id,
         'user_id' => $allowedB->id,
-    ]);
+    ], 'tenant');
 });
 
 test('workflow settings expose template access_mode and persist per-step override', function (): void {
@@ -267,17 +268,17 @@ test('workflow settings load defaults resets settings based on tenant templates'
         'role_id' => $defaultRoleId,
         'is_required' => 1,
         'is_skipped' => 0,
-    ]);
+    ], 'tenant');
 
     $this->assertDatabaseHas('workflow_planogram_step_users', [
         'workflow_planogram_step_id' => $step->id,
         'user_id' => $templateSuggestedUser->id,
-    ]);
+    ], 'tenant');
 
     $this->assertDatabaseMissing('workflow_planogram_step_users', [
         'workflow_planogram_step_id' => $step->id,
         'user_id' => $oldUser->id,
-    ]);
+    ], 'tenant');
 });
 
 test('kanban board hides skipped steps for a planogram', function (): void {
@@ -485,7 +486,7 @@ test('execution details returns allowed users and assign only accepts users allo
     $this->assertDatabaseHas('workflow_gondola_executions', [
         'id' => $execution->id,
         'current_responsible_id' => $allowedUser->id,
-    ]);
+    ], 'tenant');
 });
 
 test('logged user can start and abandon a pending execution with notes', function (): void {
@@ -553,7 +554,7 @@ test('logged user can start and abandon a pending execution with notes', functio
         'status' => 'active',
         'current_responsible_id' => $executor->id,
         'execution_started_by' => $executor->id,
-    ]);
+    ], 'tenant');
 
     $detailsResponse = $this->get(route('tenant.kanban.executions.details', [
         'subdomain' => $context['subdomain'],
@@ -584,13 +585,13 @@ test('logged user can start and abandon a pending execution with notes', functio
         'current_responsible_id' => null,
         'execution_started_by' => null,
         'started_at' => null,
-    ]);
+    ], 'tenant');
 
     $this->assertDatabaseHas('workflow_histories', [
         'workflow_gondola_execution_id' => $execution->id,
         'action' => 'cancelled',
         'description' => 'Gondola indisponível para execução.',
-    ]);
+    ], 'tenant');
 });
 
 test('execution policy guards allowed users statuses and last step completion', function (): void {
@@ -678,7 +679,7 @@ test('execution policy guards allowed users statuses and last step completion', 
         'workflow_gondola_execution_id' => $pendingExecution->id,
         'action' => 'started',
         'description' => 'Iniciando com usuário permitido.',
-    ]);
+    ], 'tenant');
 
     $pendingForBlockedActions = WorkflowGondolaExecution::query()->create([
         'tenant_id' => $context['tenant']->id,
@@ -730,7 +731,7 @@ test('execution policy guards allowed users statuses and last step completion', 
 
     Notification::fake();
 
-    $this->patchJson(route('tenant.kanban.executions.request-abandonment', [
+    $this->postJson(route('tenant.kanban.executions.request-abandonment', [
         'subdomain' => $context['subdomain'],
         'execution' => $activeFirstStep->id,
     ]), [
@@ -746,7 +747,7 @@ test('execution policy guards allowed users statuses and last step completion', 
 
     $this->actingAs($executor);
 
-    $this->patchJson(route('tenant.kanban.executions.request-abandonment', [
+    $this->postJson(route('tenant.kanban.executions.request-abandonment', [
         'subdomain' => $context['subdomain'],
         'execution' => $activeFirstStep->id,
     ]))->assertForbidden();
@@ -762,7 +763,7 @@ test('execution policy guards allowed users statuses and last step completion', 
         'workflow_gondola_execution_id' => $activeFirstStep->id,
         'action' => 'paused',
         'description' => 'Pausa operacional.',
-    ]);
+    ], 'tenant');
 
     $activeToAbandon = WorkflowGondolaExecution::query()->create([
         'tenant_id' => $context['tenant']->id,
@@ -802,7 +803,7 @@ test('execution policy guards allowed users statuses and last step completion', 
         'workflow_gondola_execution_id' => $activeToAbandon->id,
         'action' => 'cancelled',
         'description' => 'Abandono autorizado.',
-    ]);
+    ], 'tenant');
 
     $activeLastStep = WorkflowGondolaExecution::query()->create([
         'tenant_id' => $context['tenant']->id,
@@ -825,7 +826,7 @@ test('execution policy guards allowed users statuses and last step completion', 
         'workflow_gondola_execution_id' => $activeLastStep->id,
         'action' => 'completed',
         'description' => 'Conclusão na última etapa.',
-    ]);
+    ], 'tenant');
 });
 
 test('execution move requires active status and blocks skipped target steps', function (): void {
@@ -939,7 +940,7 @@ test('execution move requires active status and blocks skipped target steps', fu
         'current_responsible_id' => null,
         'execution_started_by' => null,
         'started_at' => null,
-    ]);
+    ], 'tenant');
 
     $this->assertDatabaseHas('workflow_histories', [
         'workflow_gondola_execution_id' => $activeExecution->id,
@@ -947,7 +948,7 @@ test('execution move requires active status and blocks skipped target steps', fu
         'from_step_id' => $firstStep->id,
         'to_step_id' => $nextStep->id,
         'description' => 'Movido para a próxima etapa disponível.',
-    ]);
+    ], 'tenant');
 
     $this->patchJson(route('tenant.kanban.executions.start', [
         'subdomain' => $context['subdomain'],
@@ -962,7 +963,7 @@ test('execution move requires active status and blocks skipped target steps', fu
         'status' => 'active',
         'current_responsible_id' => $context['user']->id,
         'execution_started_by' => $context['user']->id,
-    ]);
+    ], 'tenant');
 });
 
 /**
@@ -987,6 +988,7 @@ function setupWorkflowTenantContext(string $subdomain): array
     ]);
 
     app()->instance((string) config('multitenancy.current_tenant_container_key', 'currentTenant'), $tenant);
+    ensureWorkflowTenantSchema();
 
     $kanban = Module::query()->firstOrCreate([
         'slug' => ModuleSlug::KANBAN,
@@ -1008,4 +1010,22 @@ function setupWorkflowTenantContext(string $subdomain): array
         'tenant' => $tenant,
         'user' => $user,
     ];
+}
+
+/**
+ * Garante o schema na conexão tenant (:memory:). Migra apenas quando ausente,
+ * evitando "table already exists" quando o banco já vem migrado/compartilhado.
+ */
+function ensureWorkflowTenantSchema(): void
+{
+    if (Schema::connection('tenant')->hasTable('users')) {
+        return;
+    }
+
+    Artisan::call('migrate', [
+        '--database' => 'tenant',
+        '--path' => 'database/migrations',
+        '--force' => true,
+        '--no-interaction' => true,
+    ]);
 }

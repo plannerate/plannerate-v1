@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
-import { Kanban, Plus } from 'lucide-vue-next';
+import { Kanban, Plus, RefreshCw } from 'lucide-vue-next';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import PlanogramController from '@/actions/App/Http/Controllers/Tenant/PlanogramController';
 import KanbanActionConfirmDialog from '@/components/kanban/KanbanActionConfirmDialog.vue';
@@ -110,6 +110,34 @@ onBeforeUnmount(() => {
     window.visualViewport?.removeEventListener('scroll', updateBoardRegionHeight);
 });
 
+// Badge do ciclo de vida do planograma selecionado: sinaliza conclusão
+// (aguardando revisão periódica) ou que já está em revisão periódica.
+const lifecycleBadge = computed(() => {
+    const planogram = props.selected_planogram;
+
+    if (!planogram) {
+        return null;
+    }
+
+    if (planogram.lifecycle_status === 'completed') {
+        return {
+            text: planogram.periodic_review_due_at
+                ? t('app.kanban.lifecycle.awaiting_review', { date: formatDate(planogram.periodic_review_due_at) })
+                : t('app.kanban.lifecycle.awaiting_review_no_date'),
+            class: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300',
+        };
+    }
+
+    if (planogram.lifecycle_status === 'periodic_review') {
+        return {
+            text: t('app.kanban.lifecycle.in_review'),
+            class: 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-300',
+        };
+    }
+
+    return null;
+});
+
 const confirmGondolaName = computed(() => (
     pendingFromDetail.value
         ? (detailPayload.value?.execution.gondola?.name ?? null)
@@ -214,6 +242,18 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
 
         <div class="flex h-full min-h-0 flex-col overflow-hidden">
             <div class="border-b border-border bg-background px-4 py-3">
+                <div v-if="lifecycleBadge" class="mb-2 flex">
+                    <span
+                        :class="[
+                            'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium',
+                            lifecycleBadge.class,
+                        ]"
+                    >
+                        <RefreshCw class="size-3.5" />
+                        {{ lifecycleBadge.text }}
+                    </span>
+                </div>
+
                 <KanbanFilters
                     :planograms="props.planograms"
                     :stores="props.stores"

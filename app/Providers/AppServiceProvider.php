@@ -22,6 +22,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Models\WorkflowGondolaExecution;
 use App\Models\WorkflowTemplate;
+use App\Observers\PlanogramObserver;
 use App\Observers\ProductDescriptionEmbeddingObserver;
 use App\Observers\TenantObserver;
 use App\Policies\CategoryPolicy;
@@ -104,6 +105,7 @@ class AppServiceProvider extends ServiceProvider
         $this->ensureRuntimeDirectories();
         Tenant::observe(TenantObserver::class);
         Product::observe(ProductDescriptionEmbeddingObserver::class);
+        Planogram::observe(PlanogramObserver::class);
         Event::listen(NotificationSent::class, UpdateNotificationTenantId::class);
         $this->registerPolicies();
         $this->configureDefaults();

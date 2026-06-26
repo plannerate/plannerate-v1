@@ -143,7 +143,7 @@ class WorkflowPlanogramStepService
     {
         return $planogram->workflowSteps()
             ->with([
-                'template:id,name,description,suggested_order,color,icon,status,access_mode',
+                'template:id,name,description,suggested_order,color,icon,status,access_mode,stage_type',
                 'availableUsers:id,name',
             ])
             ->get()

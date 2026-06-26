@@ -57,7 +57,7 @@ class WorkflowExecutionPolicy
     {
         return $this->canManageExecution($user)
             && $execution->status === WorkflowExecutionStatus::Active
-            && $this->isAtLastWorkflowStep($execution);
+            && $this->isAtFinalFlowStep($execution);
     }
 
     public function abandon(User $user, WorkflowGondolaExecution $execution): bool
@@ -114,7 +114,15 @@ class WorkflowExecutionPolicy
         return $step->availableUsers()->whereKey($user->id)->exists();
     }
 
-    private function isAtLastWorkflowStep(WorkflowGondolaExecution $execution): bool
+    /**
+     * Indica se a execução está na última etapa de fluxo (`stage_type = flow`)
+     * não pulada do planograma — ponto onde o fluxo pode ser concluído.
+     *
+     * A etapa de Revisão Periódica deixa de ser concluível manualmente: ela é
+     * pós-conclusão e disparada automaticamente. Se o planograma não tiver
+     * nenhuma etapa de fluxo (config atípica), cai para a última não pulada.
+     */
+    private function isAtFinalFlowStep(WorkflowGondolaExecution $execution): bool
     {
         $currentStep = $this->resolveCurrentStep($execution);
 
@@ -127,15 +135,22 @@ class WorkflowExecutionPolicy
             : $currentStep->planogram()->first();
 
         // Reaproveita as etapas já carregadas (board) quando disponíveis para
-        // evitar N+1; senão consulta uma vez com o template (ordem sugerida).
+        // evitar N+1; senão consulta uma vez com o template (ordem/stage_type).
         $steps = $planogram?->relationLoaded('workflowSteps')
             ? $planogram->workflowSteps
             : $planogram?->workflowSteps()->with('template')->get();
 
-        $lastStep = $steps
-            ?->where('is_skipped', false)
-            ->sortBy('suggested_order')
-            ->last();
+        $activeSteps = $steps?->where('is_skipped', false) ?? collect();
+
+        // Considera apenas etapas de fluxo; se não houver nenhuma (fallback),
+        // usa todas as não puladas para não travar a conclusão.
+        $flowSteps = $activeSteps->filter(
+            fn (WorkflowPlanogramStep $step): bool => ! $step->stage_type->isPeriodicReview()
+        );
+
+        $candidateSteps = $flowSteps->isNotEmpty() ? $flowSteps : $activeSteps;
+
+        $lastStep = $candidateSteps->sortBy('suggested_order')->last();
 
         return $lastStep instanceof WorkflowPlanogramStep
             && (string) $lastStep->id === (string) $currentStep->id;

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PlanogramLifecycleStatus;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
 use Callcocam\LaravelRaptorPlannerate\Models\Planogram as EditorPlanogram;
@@ -41,6 +42,10 @@ class Planogram extends EditorPlanogram
         'qr_code_generated_at',
         'description',
         'status',
+        'lifecycle_status',
+        'completed_at',
+        'periodic_review_due_at',
+        'periodic_review_started_at',
     ];
 
     /**
@@ -55,6 +60,10 @@ class Planogram extends EditorPlanogram
             'end_date' => 'date',
             'order' => 'integer',
             'qr_code_generated_at' => 'datetime',
+            'lifecycle_status' => PlanogramLifecycleStatus::class,
+            'completed_at' => 'datetime',
+            'periodic_review_due_at' => 'datetime',
+            'periodic_review_started_at' => 'datetime',
         ];
     }
 

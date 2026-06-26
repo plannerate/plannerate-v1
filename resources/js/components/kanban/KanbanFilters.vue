@@ -14,6 +14,7 @@ const props = defineProps<{
         gondola_search?: string;
         execution_status?: string;
         current_responsible_id?: string;
+        lifecycle_status?: string;
     };
     onlyOverdue: boolean;
     showCompleted: boolean;
@@ -100,6 +101,23 @@ const filteredPlanograms = computed(() => {
                 <option value="paused">{{ t('app.kanban.executions.status.paused') }}</option>
                 <option value="completed">{{ t('app.kanban.executions.status.completed') }}</option>
                 <option value="cancelled">{{ t('app.kanban.executions.status.cancelled') }}</option>
+            </select>
+        </div>
+
+        <div class="flex flex-col gap-1">
+            <label for="kanban-lifecycle-status" class="text-xs font-medium text-foreground">
+                {{ t('app.kanban.filters.lifecycle_status') }}
+            </label>
+            <select
+                id="kanban-lifecycle-status"
+                name="lifecycle_status"
+                :value="filters.lifecycle_status ?? ''"
+                class="h-9 min-w-44 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            >
+                <option value="">{{ t('app.kanban.filters.all_lifecycles') }}</option>
+                <option value="in_progress">{{ t('app.kanban.filters.lifecycle.in_progress') }}</option>
+                <option value="completed">{{ t('app.kanban.filters.lifecycle.completed') }}</option>
+                <option value="periodic_review">{{ t('app.kanban.filters.lifecycle.periodic_review') }}</option>
             </select>
         </div>
 
