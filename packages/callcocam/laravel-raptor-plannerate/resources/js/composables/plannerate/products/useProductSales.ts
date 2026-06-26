@@ -6,9 +6,15 @@ export interface ProductSalesSummary {
     total_sales: number;
     total_quantity: number;
     total_revenue: number;
+    /** Soma do custo de aquisição (origina o custo médio) */
+    total_cost: number;
+    /** Soma da margem de contribuição (origina a margem média) */
+    total_margin: number;
     avg_price: number;
     avg_cost: number;
     avg_margin: number;
+    /** Margem de contribuição como % do faturamento */
+    margin_percentage: number;
     first_sale_date: string | null;
     last_sale_date: string | null;
 }

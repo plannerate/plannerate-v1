@@ -43,75 +43,156 @@
 
         <!-- Sales Data -->
         <div v-else class="space-y-4">
-            <!-- KPIs Grid -->
-            <div class="grid grid-cols-2 gap-2">
-                <!-- Total Vendas -->
-                <div class="rounded-lg border bg-muted/50 p-3">
-                    <p class="text-xs font-medium text-muted-foreground">
-                        {{ t('plannerate.sidebar.product_sales_summary.total_sales') }}
-                    </p>
-                    <p class="text-xl font-bold text-foreground">
-                        {{ salesData.summary.total_sales }}
-                    </p>
+            <!-- Grupo 1: Resumo de Vendas -->
+            <div class="space-y-2 rounded-lg border p-3">
+                <div class="flex items-center gap-2">
+                    <BarChart3 class="h-4 w-4 text-blue-600 dark:text-blue-500" />
+                    <h5 class="text-sm font-semibold text-foreground">
+                        {{ t('plannerate.sidebar.product_sales_summary.sales_group') }}
+                    </h5>
                 </div>
-
-                <!-- Quantidade -->
-                <div class="rounded-lg border bg-muted/50 p-3">
-                    <p class="text-xs font-medium text-muted-foreground">
-                        {{ t('plannerate.sidebar.product_sales_summary.quantity') }}
-                    </p>
-                    <p class="text-xl font-bold text-foreground">
-                        {{ salesData.summary.total_quantity }}
-                    </p>
+                <div class="grid grid-cols-2 gap-2">
+                    <!-- Total Vendas -->
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('plannerate.sidebar.product_sales_summary.total_sales') }}
+                        </p>
+                        <p class="text-xl font-bold text-foreground">
+                            {{ salesData.summary.total_sales }}
+                        </p>
+                    </div>
+                    <!-- Quantidade Vendida -->
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('plannerate.sidebar.product_sales_summary.quantity') }}
+                        </p>
+                        <p class="text-xl font-bold text-foreground">
+                            {{ salesData.summary.total_quantity }}
+                        </p>
+                    </div>
+                    <!-- Valor de Venda -->
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('plannerate.sidebar.product_sales_summary.revenue') }}
+                        </p>
+                        <p class="text-lg font-bold text-green-600 dark:text-green-500">
+                            {{ formatCurrency(salesData.summary.total_revenue) }}
+                        </p>
+                    </div>
+                    <!-- Preço Médio de Venda -->
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('plannerate.sidebar.product_sales_summary.avg_sale_price') }}
+                        </p>
+                        <p class="text-lg font-bold text-foreground">
+                            {{ formatCurrency(salesData.summary.avg_price) }}
+                        </p>
+                    </div>
                 </div>
+            </div>
 
-                <!-- Faturamento -->
-                <div class="rounded-lg border bg-muted/50 p-3">
-                    <p class="text-xs font-medium text-muted-foreground">
-                        {{ t('plannerate.sidebar.product_sales_summary.revenue') }}
-                    </p>
-                    <p
-                        class="text-lg font-bold text-green-600 dark:text-green-500"
-                    >
-                        {{ formatCurrency(salesData.summary.total_revenue) }}
-                    </p>
+            <!-- Grupo 2: Custo e Lucro Bruto -->
+            <div class="space-y-2 rounded-lg border p-3">
+                <div class="flex items-center gap-2">
+                    <Coins class="h-4 w-4 text-purple-600 dark:text-purple-500" />
+                    <h5 class="text-sm font-semibold text-foreground">
+                        {{ t('plannerate.sidebar.product_sales_summary.cost_profit_group') }}
+                    </h5>
                 </div>
-
-                <!-- Margem Média -->
-                <div class="rounded-lg border bg-muted/50 p-3">
-                    <p class="text-xs font-medium text-muted-foreground">
-                        {{ t('plannerate.sidebar.product_sales_summary.avg_margin') }}
+                <div class="grid grid-cols-2 gap-2">
+                    <!-- Custo médio unitário -->
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('plannerate.sidebar.product_sales_summary.avg_cost_unit') }}
+                        </p>
+                        <p class="text-base font-bold text-foreground">
+                            {{ formatCurrency(salesData.summary.avg_cost) }}
+                        </p>
+                    </div>
+                    <!-- Custo total -->
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('plannerate.sidebar.product_sales_summary.total_cost') }}
+                        </p>
+                        <p class="text-base font-bold text-foreground">
+                            {{ formatCurrency(salesData.summary.total_cost) }}
+                        </p>
+                    </div>
+                    <!-- Lucro bruto unitário = preço − custo de aquisição -->
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('plannerate.sidebar.product_sales_summary.gross_profit_unit') }}
+                        </p>
+                        <p class="text-base font-bold text-green-600 dark:text-green-500">
+                            {{ formatCurrency(grossProfitPerUnit) }}
+                        </p>
+                    </div>
+                    <!-- Lucro bruto total = faturamento − custo total -->
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('plannerate.sidebar.product_sales_summary.gross_profit_total') }}
+                        </p>
+                        <p class="text-base font-bold text-green-600 dark:text-green-500">
+                            {{ formatCurrency(grossProfitTotal) }}
+                        </p>
+                    </div>
+                </div>
+                <!-- Margem bruta = lucro bruto / faturamento -->
+                <div class="rounded-md bg-muted/40 p-2.5">
+                    <p class="text-xs text-muted-foreground">
+                        {{ t('plannerate.sidebar.product_sales_summary.gross_margin') }}
                     </p>
-                    <p class="text-lg font-bold text-foreground">
-                        {{ formatCurrency(salesData.summary.avg_margin) }}
+                    <p class="text-base font-bold text-purple-600 dark:text-purple-500">
+                        {{ formatPercent(grossMarginPercentage) }}
                     </p>
                 </div>
             </div>
 
-            <Separator />
-
-            <!-- Preços -->
-            <div class="space-y-2">
-                <h5 class="text-xs font-semibold text-foreground">
-                    {{ t('plannerate.sidebar.product_sales_summary.avg_prices') }}
-                </h5>
-                <div class="grid grid-cols-2 gap-2">
-                    <div
-                        class="flex items-center justify-between rounded-md bg-muted/30 px-3 py-2"
-                    >
-                        <span class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.sale') }}</span>
-                        <span class="text-sm font-medium text-foreground">
-                            {{ formatCurrency(salesData.summary.avg_price) }}
-                        </span>
+            <!-- Grupo 3: Margem Real / Líquida -->
+            <div
+                class="space-y-2 rounded-lg border border-green-500/30 bg-green-500/5 p-3"
+            >
+                <div class="flex items-center gap-2">
+                    <BadgeCheck class="h-4 w-4 text-green-600 dark:text-green-500" />
+                    <h5 class="text-sm font-semibold text-foreground">
+                        {{ t('plannerate.sidebar.product_sales_summary.net_margin_group') }}
+                    </h5>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <!-- Margem unitária líquida -->
+                    <div class="rounded-md bg-background/60 p-2.5">
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('plannerate.sidebar.product_sales_summary.net_margin_unit') }}
+                        </p>
+                        <p class="text-sm font-bold text-green-600 dark:text-green-500">
+                            {{ formatCurrency(salesData.summary.avg_margin) }}
+                        </p>
                     </div>
-                    <div
-                        class="flex items-center justify-between rounded-md bg-muted/30 px-3 py-2"
-                    >
-                        <span class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.cost') }}</span>
-                        <span class="text-sm font-medium text-foreground">
-                            {{ formatCurrency(salesData.summary.avg_cost) }}
-                        </span>
+                    <!-- Margem total líquida -->
+                    <div class="rounded-md bg-background/60 p-2.5">
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('plannerate.sidebar.product_sales_summary.net_margin_total') }}
+                        </p>
+                        <p class="text-sm font-bold text-green-600 dark:text-green-500">
+                            {{ formatCurrency(salesData.summary.total_margin) }}
+                        </p>
                     </div>
+                    <!-- Margem líquida (%) -->
+                    <div class="rounded-md bg-background/60 p-2.5">
+                        <p class="text-xs text-muted-foreground">
+                            {{ t('plannerate.sidebar.product_sales_summary.net_margin_percentage') }}
+                        </p>
+                        <p class="text-sm font-bold text-green-600 dark:text-green-500">
+                            {{ formatPercent(salesData.summary.margin_percentage) }}
+                        </p>
+                    </div>
+                </div>
+                <!-- Nota: a margem líquida desconta impostos além do custo -->
+                <div class="flex gap-2 pt-1">
+                    <Info class="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <p class="text-xs text-muted-foreground">
+                        {{ t('plannerate.sidebar.product_sales_summary.net_margin_note') }}
+                    </p>
                 </div>
             </div>
 
@@ -185,8 +266,15 @@
 </template>
 
 <script setup lang="ts">
-import { Loader2, TrendingDown } from 'lucide-vue-next';
-import { watch } from 'vue';
+import {
+    BadgeCheck,
+    BarChart3,
+    Coins,
+    Info,
+    Loader2,
+    TrendingDown,
+} from 'lucide-vue-next';
+import { computed, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useProductSales } from '@/composables/plannerate/products/useProductSales';
@@ -206,6 +294,35 @@ const { t } = useT();
 const { salesData, isLoading, error, loadSales, clearSales } =
     useProductSales();
 
+/**
+ * Lucro bruto por unidade = preço de venda médio − custo de aquisição médio.
+ * Diferente da margem de contribuição (que ainda desconta impostos e usa o custo médio da loja).
+ */
+const grossProfitPerUnit = computed(
+    () =>
+        (salesData.value?.summary.avg_price ?? 0) -
+        (salesData.value?.summary.avg_cost ?? 0),
+);
+
+/**
+ * Lucro bruto total = faturamento − custo de aquisição total (sem descontar impostos).
+ */
+const grossProfitTotal = computed(
+    () =>
+        (salesData.value?.summary.total_revenue ?? 0) -
+        (salesData.value?.summary.total_cost ?? 0),
+);
+
+/**
+ * Margem bruta (%) = lucro bruto total ÷ faturamento × 100.
+ * Diferente da margem líquida (que também desconta impostos e usa o custo médio da loja).
+ */
+const grossMarginPercentage = computed(() => {
+    const revenue = salesData.value?.summary.total_revenue ?? 0;
+
+    return revenue > 0 ? (grossProfitTotal.value / revenue) * 100 : 0;
+});
+
 // Recarrega quando o produto ou o período do planograma muda
 watch(
     () => [props.productId, props.startDate, props.endDate] as const,
@@ -224,6 +341,13 @@ function formatCurrency(value: number): string {
         style: 'currency',
         currency: 'BRL',
     }).format(value);
+}
+
+function formatPercent(value: number): string {
+    return new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+    }).format(value) + '%';
 }
 
 function formatDate(date: string | null): string {

@@ -62,6 +62,30 @@ Em SQL usa-se `NULLIF(SUM(total_sale_quantity), 0)` no denominador para evitar d
 > Relação esperada: `avg_price − avg_cost ≥ avg_margin` (a diferença são os impostos embutidos na
 > margem de contribuição). Ex.: 10,23 − 6,22 = 4,01 bruto; margem 2,97; diferença ~1,04 = impostos.
 
+### 3.1 Dois conceitos de custo (por que "preço − custo" ≠ margem) — (2026-06-26)
+
+O card exibe **dois custos diferentes**, e isso confunde:
+
+- **Custo exibido (`avg_cost`)** = `acquisition_cost` = **custo de aquisição** da API (`custo_aquisicao`).
+- **Custo usado na margem** = `custo_medio` (custo médio da loja, `custo_medio_loja`), que é **mais alto**.
+
+A definição da coluna (migration `create_sales_table`) é explícita:
+
+```
+margem_contribuicao = total_sale_value − impostos − custo_medio
+```
+
+Ou seja, a margem desconta **(a)** impostos **e** **(b)** usa um custo (médio da loja) **diferente** do custo de
+aquisição exibido. Por isso `avg_price − avg_cost` (lucro bruto) **não** é igual à margem.
+
+Conferência real (EAN 7891150095953, período 01/01→31/05/2026):
+`107,88 (fat.) − 26,64 (impostos ~2,22/un) − 58,95 (custo médio ~4,91/un) ≈ 22,29` → ÷12 = **R$ 1,86/un**.
+Já o lucro bruto = `8,99 − 4,70 = R$ 4,29/un`.
+
+> **Limitação:** `impostos` e `custo_medio` **não estão persistidos** na tabela `sales` (coluna `extra_data`
+> está `null`) — só existem no payload bruto da API. Por isso o card só pode **derivar** valores das colunas
+> existentes; não exibe impostos/custo médio reais sem reprocessar a ingestão (decidido NÃO fazer em 2026-06-26).
+
 ---
 
 ## 4. Regra de vínculo venda → produto (matching)
@@ -117,12 +141,18 @@ O payload do editor (`GondolaPayloadService::buildEditorPayload`) já inclui `pl
   - Closures `$matchProduct` (product_id OR ean OR codigo_erp) e `$applyPeriod` (filtro de datas).
   - Helper `$baseQuery()` = matchProduct + applyPeriod, aplicado às 3 queries (resumo, por mês, top lojas).
   - Médias trocadas de `AVG(col)` para `SUM(valor)/NULLIF(SUM(quantidade),0)`.
+  - **(2026-06-26)** resumo agora também retorna `total_cost` (`SUM(acquisition_cost)`),
+    `total_margin` (`SUM(margem_contribuicao)`) e `margin_percentage`
+    (`SUM(margem_contribuicao)/SUM(total_sale_value)*100`).
 
 ### Frontend
 - `.../composables/plannerate/products/useProductSales.ts` — `loadSales(productId, startDate?, endDate?)`
   monta query string com os filtros.
+  - **(2026-06-26)** tipo `ProductSalesSummary` ganhou `total_cost`, `total_margin` e `margin_percentage`.
 - `.../sidebar/properties/partials/ProductSalesSummary.vue` — props `startDate`/`endDate`; recarrega
   quando produto **ou** período muda.
+  - **(2026-06-26)** novos campos exibidos: Margem %, Lucro bruto/un, seção "Totais do Período"
+    (custo total / margem total) e nota explicativa do cálculo da margem.
 - `.../sidebar/properties/partials/segment-tabs/TabPerformance.vue` — recebe e repassa as datas.
 - `.../sidebar/properties/partials/SegmentDetails.vue` — computeds `planogramStartDate`/`planogramEndDate`
   lidos de `editor.currentGondola.value?.planogram`.
