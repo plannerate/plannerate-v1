@@ -8,6 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Popover from '@/components/ui/popover/Popover.vue';
+import { useT } from '@/composables/useT';
+
+const { t } = useT();
 
 type PlanogramPayload = {
     id: string;
@@ -95,29 +98,35 @@ function toggleStepUser(step: WorkflowStepSetting, userId: string): void {
 
 function selectedUsersLabel(step: WorkflowStepSetting): string {
     if (step.selected_user_ids.length === 0) {
-        return 'Nenhum usuário selecionado';
+        return t('app.kanban.settings.no_user_selected');
     }
 
     if (step.selected_user_ids.length === 1) {
         const selectedUser = users.value.find((user) => user.id === step.selected_user_ids[0]);
 
-        return selectedUser?.name ?? '1 usuário selecionado';
+        return selectedUser?.name ?? t('app.kanban.settings.one_user_selected');
     }
 
-    return `${step.selected_user_ids.length} usuários selecionados`;
+    return t('app.kanban.settings.users_selected', { count: String(step.selected_user_ids.length) });
 }
 
 /** Opções do alternador de modo de acesso da etapa (abre editor x somente PDF). */
-const accessModeOptions = [
-    { value: 'edit', label: 'Editar' },
-    { value: 'view', label: 'Visualizar' },
-] satisfies { value: WorkflowAccessMode; label: string }[];
+const accessModeOptions = computed(
+    () =>
+        [
+            { value: 'edit', label: t('app.kanban.settings.access_mode.edit') },
+            { value: 'view', label: t('app.kanban.settings.access_mode.view') },
+        ] satisfies { value: WorkflowAccessMode; label: string }[],
+);
 
 /** Opções booleanas reutilizadas pelos alternadores Sim/Não. */
-const yesNoOptions = [
-    { value: true, label: 'Sim' },
-    { value: false, label: 'Não' },
-] satisfies { value: boolean; label: string }[];
+const yesNoOptions = computed(
+    () =>
+        [
+            { value: true, label: t('app.kanban.settings.yes') },
+            { value: false, label: t('app.kanban.settings.no') },
+        ] satisfies { value: boolean; label: string }[],
+);
 
 function updateEstimatedDurationDays(step: WorkflowStepSetting, rawValue: string): void {
     if (rawValue.trim() === '') {
@@ -146,7 +155,7 @@ async function loadSettings(): Promise<void> {
         steps.value = payload.steps ?? [];
     } catch (error) {
         console.error(error);
-        errorMessage.value = 'Não foi possível carregar as configurações do Kanban.';
+        errorMessage.value = t('app.kanban.settings.messages.load_failed');
     } finally {
         loading.value = false;
     }
@@ -175,10 +184,10 @@ async function saveSettings(): Promise<void> {
 
         users.value = payload.users ?? users.value;
         steps.value = payload.steps ?? steps.value;
-        successMessage.value = 'Configurações salvas com sucesso.';
+        successMessage.value = t('app.kanban.settings.messages.saved');
     } catch (error) {
         console.error(error);
-        errorMessage.value = 'Não foi possível salvar as configurações do Kanban.';
+        errorMessage.value = t('app.kanban.settings.messages.save_failed');
     } finally {
         saving.value = false;
     }
@@ -200,11 +209,11 @@ async function loadDefaultSettings(): Promise<void> {
         users.value = payload.users ?? users.value;
         steps.value = payload.steps ?? steps.value;
         successMessage.value = hadStepsBeforeLoading
-            ? 'Configuração padrão carregada com sucesso.'
-            : 'Configuração padrão criada com sucesso.';
+            ? t('app.kanban.settings.messages.defaults_loaded')
+            : t('app.kanban.settings.messages.defaults_created');
     } catch (error) {
         console.error(error);
-        errorMessage.value = 'Não foi possível carregar a configuração padrão.';
+        errorMessage.value = t('app.kanban.settings.messages.defaults_failed');
     } finally {
         loadingDefaults.value = false;
     }
@@ -220,24 +229,24 @@ onMounted(() => {
         <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4">
             <div>
                 <h3 class="text-sm font-semibold text-foreground">
-                    Configuração de etapas do Kanban
+                    {{ t('app.kanban.settings.title') }}
                 </h3>
                 <p class="text-xs text-muted-foreground">
-                    As etapas do tenant são fixas. Aqui você define obrigatório, pular etapa e usuários permitidos por planograma.
+                    {{ t('app.kanban.settings.description') }}
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <Button type="button" variant="outline" :disabled="loading || saving || loadingDefaults" @click="loadDefaultSettings">
                     {{
                         loadingDefaults
-                            ? 'Carregando...'
+                            ? t('app.kanban.settings.loading_defaults')
                             : hasSteps
-                              ? 'Carregar configuração padrão'
-                              : 'Criar configuração padrão'
+                              ? t('app.kanban.settings.load_defaults')
+                              : t('app.kanban.settings.create_defaults')
                     }}
                 </Button>
                 <Button type="button" variant="gradient" :disabled="loading || saving || loadingDefaults" @click="saveSettings">
-                    {{ saving ? 'Salvando...' : 'Salvar configurações' }}
+                    {{ saving ? t('app.kanban.settings.saving') : t('app.kanban.settings.save') }}
                 </Button>
             </div>
         </div>
@@ -251,11 +260,11 @@ onMounted(() => {
         </div>
 
         <div v-if="loading" class="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-            Carregando configurações...
+            {{ t('app.kanban.settings.loading') }}
         </div>
 
         <div v-else-if="!hasSteps" class="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-            Nenhuma etapa publicada foi encontrada para este tenant.
+            {{ t('app.kanban.settings.empty') }}
         </div>
 
         <div v-else class="space-y-3">
@@ -270,7 +279,7 @@ onMounted(() => {
                                 #{{ step.suggested_order }}
                             </Badge>
                             <Badge v-if="step.is_skipped" variant="secondary">
-                                Pulada
+                                {{ t('app.kanban.settings.skipped_badge') }}
                             </Badge>
                         </div>
                         <p v-if="step.description" class="mt-1 text-xs text-muted-foreground">
@@ -278,10 +287,10 @@ onMounted(() => {
                         </p>
                         <div class="mt-2 flex flex-wrap items-center gap-2">
                             <Badge v-if="step.estimated_duration_days !== null" variant="outline">
-                                {{ step.estimated_duration_days }} dia(s)
+                                {{ t('app.kanban.settings.days', { count: String(step.estimated_duration_days) }) }}
                             </Badge>
                             <Badge v-if="step.role_id" variant="outline">
-                                Perfil: {{ step.role_id }}
+                                {{ t('app.kanban.settings.role', { role: step.role_id }) }}
                             </Badge>
                         </div>
                     </div>
@@ -289,7 +298,7 @@ onMounted(() => {
                     <SegmentedToggle
                         v-model="step.access_mode"
                         :options="accessModeOptions"
-                        label="Acesso na etapa"
+                        :label="t('app.kanban.settings.access_mode_label')"
                         class="shrink-0"
                     />
                 </div>
@@ -298,25 +307,25 @@ onMounted(() => {
                     <SegmentedToggle
                         v-model="step.is_required"
                         :options="yesNoOptions"
-                        label="Obrigatória"
+                        :label="t('app.kanban.settings.required_label')"
                         class="md:col-span-3"
                     />
 
                     <SegmentedToggle
                         v-model="step.is_skipped"
                         :options="yesNoOptions"
-                        label="Pular etapa"
+                        :label="t('app.kanban.settings.skip_label')"
                         class="md:col-span-3"
                     />
 
                     <div class="md:col-span-3">
                         <label class="mb-1 block text-xs font-medium text-muted-foreground">
-                            Duração estimada (dias)
+                            {{ t('app.kanban.settings.estimated_duration') }}
                         </label>
                         <input
                             type="number"
                             min="0"
-                            placeholder="Ex.: 3"
+                            :placeholder="t('app.kanban.settings.estimated_duration_placeholder')"
                             :value="step.estimated_duration_days ?? ''"
                             class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                             @input="updateEstimatedDurationDays(step, ($event.target as HTMLInputElement).value)"
@@ -325,7 +334,7 @@ onMounted(() => {
 
                     <div class="md:col-span-3">
                         <p class="mb-1 text-xs font-medium text-transparent select-none">
-                            Usuários
+                            {{ t('app.kanban.settings.users_label') }}
                         </p>
                         <Popover>
                             <PopoverTrigger as-child>
@@ -338,7 +347,7 @@ onMounted(() => {
                                 <input
                                     v-model="userSearchByStep[step.id]"
                                     type="text"
-                                    placeholder="Buscar usuário..."
+                                    :placeholder="t('app.kanban.settings.search_user')"
                                     class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                 />
 
@@ -358,7 +367,7 @@ onMounted(() => {
                                     </label>
 
                                     <p v-if="filteredUsers(step.id).length === 0" class="px-2 py-1 text-xs text-muted-foreground">
-                                        Nenhum usuário encontrado.
+                                        {{ t('app.kanban.settings.no_users_found') }}
                                     </p>
                                 </div>
                             </PopoverContent>

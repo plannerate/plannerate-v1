@@ -165,7 +165,7 @@ test('kanban index filtra execucoes por current_responsible_id', function (): vo
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('filters.current_responsible_id', $responsavelSelecionado->id)
-            ->where('board', function (array $board) use ($execucaoFiltrada): bool {
+            ->where('board', function ($board) use ($execucaoFiltrada): bool {
                 $executionIds = collect($board)
                     ->flatMap(fn (array $column) => $column['executions'] ?? [])
                     ->pluck('id')
@@ -303,8 +303,10 @@ test('rota planograms.kanban redireciona para kanban.index', function (): void {
     $context = setupKanbanTenantCtx('kanban-ctrl-redirect');
     $this->actingAs($context['user']);
 
+    // O controller redireciona via to_route sem repassar o subdomain (resolvido
+    // por host), então o destino esperado é a rota sem o parâmetro de query.
     $this->get(route('tenant.planograms.kanban', ['subdomain' => $context['subdomain']]))
-        ->assertRedirect(route('tenant.kanban.index', ['subdomain' => $context['subdomain']]));
+        ->assertRedirect(route('tenant.kanban.index'));
 });
 
 function setupKanbanTenantCtx(string $subdomain): array
@@ -351,6 +353,9 @@ function setupKanbanTenantCtx(string $subdomain): array
 
 function migrateTenantSchema(): void
 {
+    // migrate (não :fresh) é idempotente via tabela migrations: reaplica só o
+    // que falta, evitando "table already exists" quando a conexão tenant
+    // (:memory:) persiste entre os testes do mesmo processo.
     Artisan::call('migrate', [
         '--database' => 'tenant',
         '--path' => 'database/migrations',

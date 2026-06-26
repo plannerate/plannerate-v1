@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\WorkflowExecutionAssignRequest;
+use App\Http\Requests\Tenant\WorkflowExecutionStoreRequest;
 use App\Models\Gondola;
 use App\Models\Planogram;
 use App\Models\User;
@@ -26,22 +27,19 @@ class WorkflowExecutionController extends Controller
         private readonly WorkflowPlanogramStepService $stepService,
     ) {}
 
-    public function store(Request $request, Planogram $planogram): JsonResponse
+    public function store(WorkflowExecutionStoreRequest $request, Planogram $planogram): JsonResponse
     {
-        $this->authorize('start', WorkflowGondolaExecution::class);
-
-        $request->validate([
-            'gondola_id' => ['required', 'string'],
-            'step_id' => ['required', 'string'],
-            'notes' => ['nullable', 'string', 'max:1000'],
-        ]);
-
         $gondola = Gondola::findOrFail($request->string('gondola_id'));
         $step = WorkflowPlanogramStep::findOrFail($request->string('step_id'));
 
         abort_if((string) $gondola->planogram_id !== (string) $planogram->id, 422, 'A gôndola não pertence ao planograma informado.');
         abort_if((string) $step->planogram_id !== (string) $planogram->id, 422, 'A etapa não pertence ao planograma informado.');
         abort_if((bool) $step->is_skipped, 422, 'A etapa está desativada para este planograma.');
+
+        // Coerência com o início de uma execução pendente: o executor precisa
+        // estar entre os usuários permitidos da etapa.
+        $isAllowedUser = $step->availableUsers()->whereKey($request->user()->id)->exists();
+        abort_unless($isAllowedUser, 422, 'Você não está entre os usuários permitidos para esta etapa.');
 
         $execution = $this->kanbanService->startExecution(
             $gondola,
@@ -214,8 +212,7 @@ class WorkflowExecutionController extends Controller
 
     public function assign(WorkflowExecutionAssignRequest $request, WorkflowGondolaExecution $execution): JsonResponse
     {
-        $this->authorize('manage', $execution);
-
+        // Autorização ('manage') já garantida por WorkflowExecutionAssignRequest::authorize().
         $validated = $request->validated();
 
         $assignee = User::findOrFail((string) data_get($validated, 'user_id'));

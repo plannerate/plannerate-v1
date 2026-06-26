@@ -97,30 +97,58 @@ class WorkflowExecutionPolicy
 
     private function userCanExecuteCurrentStep(User $user, WorkflowGondolaExecution $execution): bool
     {
-        return $execution->step()
-            ->first()
-            ?->availableUsers()
-            ->whereKey($user->id)
-            ->exists() ?? false;
+        $step = $this->resolveCurrentStep($execution);
+
+        if (! $step instanceof WorkflowPlanogramStep) {
+            return false;
+        }
+
+        // Reaproveita a relação já carregada (board) para evitar N+1; cai para
+        // consulta direta quando a etapa não foi pré-carregada.
+        if ($step->relationLoaded('availableUsers')) {
+            return $step->availableUsers->contains(
+                fn (User $available): bool => (string) $available->id === (string) $user->id
+            );
+        }
+
+        return $step->availableUsers()->whereKey($user->id)->exists();
     }
 
     private function isAtLastWorkflowStep(WorkflowGondolaExecution $execution): bool
     {
-        $currentStep = $execution->step()->first();
+        $currentStep = $this->resolveCurrentStep($execution);
 
         if (! $currentStep instanceof WorkflowPlanogramStep) {
             return false;
         }
 
-        $lastStep = $currentStep->planogram
-            ?->workflowSteps()
-            ->with('template')
-            ->where('is_skipped', false)
-            ->get()
+        $planogram = $currentStep->relationLoaded('planogram')
+            ? $currentStep->planogram
+            : $currentStep->planogram()->first();
+
+        // Reaproveita as etapas já carregadas (board) quando disponíveis para
+        // evitar N+1; senão consulta uma vez com o template (ordem sugerida).
+        $steps = $planogram?->relationLoaded('workflowSteps')
+            ? $planogram->workflowSteps
+            : $planogram?->workflowSteps()->with('template')->get();
+
+        $lastStep = $steps
+            ?->where('is_skipped', false)
             ->sortBy('suggested_order')
             ->last();
 
         return $lastStep instanceof WorkflowPlanogramStep
             && (string) $lastStep->id === (string) $currentStep->id;
+    }
+
+    /**
+     * Resolve a etapa atual da execução reaproveitando a relação carregada
+     * (board) quando possível, evitando consultas repetidas por execução.
+     */
+    private function resolveCurrentStep(WorkflowGondolaExecution $execution): ?WorkflowPlanogramStep
+    {
+        return $execution->relationLoaded('step')
+            ? $execution->step
+            : $execution->step()->first();
     }
 }

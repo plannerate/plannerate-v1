@@ -572,13 +572,18 @@ test('logged user can start and abandon a pending execution with notes', functio
         'notes' => 'Gondola indisponível para execução.',
     ]);
 
+    // Abandonar libera a execução de volta ao pool: status volta a 'pending'
+    // (com responsável/started_at zerados); a trilha registra a ação 'cancelled'.
     $abandonResponse
         ->assertOk()
-        ->assertJsonPath('execution.status', 'cancelled');
+        ->assertJsonPath('execution.status', 'pending');
 
     $this->assertDatabaseHas('workflow_gondola_executions', [
         'id' => $execution->id,
-        'status' => 'cancelled',
+        'status' => 'pending',
+        'current_responsible_id' => null,
+        'execution_started_by' => null,
+        'started_at' => null,
     ]);
 
     $this->assertDatabaseHas('workflow_histories', [
