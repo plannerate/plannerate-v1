@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\ProductSalesController::summary
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/ProductSalesController.php:15
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/ProductSalesController.php:20
 * @route '/api/plannerate/products/{product}/sales/summary'
 */
 export const summary = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ summary.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\ProductSalesController::summary
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/ProductSalesController.php:15
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/ProductSalesController.php:20
 * @route '/api/plannerate/products/{product}/sales/summary'
 */
 summary.url = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -43,7 +43,7 @@ summary.url = (args: { product: string | number } | [product: string | number ] 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\ProductSalesController::summary
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/ProductSalesController.php:15
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/ProductSalesController.php:20
 * @route '/api/plannerate/products/{product}/sales/summary'
 */
 summary.get = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -53,7 +53,7 @@ summary.get = (args: { product: string | number } | [product: string | number ] 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\ProductSalesController::summary
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/ProductSalesController.php:15
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/ProductSalesController.php:20
 * @route '/api/plannerate/products/{product}/sales/summary'
 */
 summary.head = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -63,7 +63,7 @@ summary.head = (args: { product: string | number } | [product: string | number ]
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\ProductSalesController::summary
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/ProductSalesController.php:15
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/ProductSalesController.php:20
 * @route '/api/plannerate/products/{product}/sales/summary'
 */
 const summaryForm = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -73,7 +73,7 @@ const summaryForm = (args: { product: string | number } | [product: string | num
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\ProductSalesController::summary
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/ProductSalesController.php:15
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/ProductSalesController.php:20
 * @route '/api/plannerate/products/{product}/sales/summary'
 */
 summaryForm.get = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -83,7 +83,7 @@ summaryForm.get = (args: { product: string | number } | [product: string | numbe
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\ProductSalesController::summary
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/ProductSalesController.php:15
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/ProductSalesController.php:20
 * @route '/api/plannerate/products/{product}/sales/summary'
 */
 summaryForm.head = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
