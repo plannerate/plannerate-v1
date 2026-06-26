@@ -259,6 +259,7 @@ class WorkflowTemplateController extends Controller
                     'estimated_duration_days' => $default['estimated_duration_days'],
                     'is_required_by_default' => $default['is_required_by_default'],
                     'access_mode' => $default['access_mode'],
+                    'stage_type' => $default['stage_type'],
                     'color' => $default['color'],
                     'icon' => $default['icon'],
                     'status' => 'published',

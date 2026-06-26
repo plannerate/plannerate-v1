@@ -15,6 +15,7 @@ use App\Support\Modules\ModuleSlug;
 use Database\Seeders\LandlordRbacSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -165,7 +166,7 @@ test('kanban index filtra execucoes por current_responsible_id', function (): vo
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('filters.current_responsible_id', $responsavelSelecionado->id)
-            ->where('board', function (array $board) use ($execucaoFiltrada): bool {
+            ->where('board', function ($board) use ($execucaoFiltrada): bool {
                 $executionIds = collect($board)
                     ->flatMap(fn (array $column) => $column['executions'] ?? [])
                     ->pluck('id')
@@ -303,9 +304,29 @@ test('rota planograms.kanban redireciona para kanban.index', function (): void {
     $context = setupKanbanTenantCtx('kanban-ctrl-redirect');
     $this->actingAs($context['user']);
 
+    // O controller redireciona via to_route sem repassar o subdomain (resolvido
+    // por host), então o destino esperado é a rota sem o parâmetro de query.
     $this->get(route('tenant.planograms.kanban', ['subdomain' => $context['subdomain']]))
-        ->assertRedirect(route('tenant.kanban.index', ['subdomain' => $context['subdomain']]));
+        ->assertRedirect(route('tenant.kanban.index'));
 });
+
+/**
+ * Garante o schema na conexão tenant (:memory:). Migra apenas quando ausente,
+ * evitando "table already exists" quando o banco já vem migrado/compartilhado.
+ */
+function migrateTenantSchema(): void
+{
+    if (Schema::connection('tenant')->hasTable('users')) {
+        return;
+    }
+
+    Artisan::call('migrate', [
+        '--database' => 'tenant',
+        '--path' => 'database/migrations',
+        '--force' => true,
+        '--no-interaction' => true,
+    ]);
+}
 
 function setupKanbanTenantCtx(string $subdomain): array
 {
@@ -347,14 +368,4 @@ function setupKanbanTenantCtx(string $subdomain): array
         'tenant' => $tenant,
         'user' => $user,
     ];
-}
-
-function migrateTenantSchema(): void
-{
-    Artisan::call('migrate', [
-        '--database' => 'tenant',
-        '--path' => 'database/migrations',
-        '--force' => true,
-        '--no-interaction' => true,
-    ]);
 }

@@ -80,8 +80,17 @@ export type WorkflowHistory = {
     performed_by: AssignedUser | null;
 };
 
+export type PlanogramLifecycleStatus = 'in_progress' | 'completed' | 'periodic_review';
+
 export type KanbanPageProps = {
-    planograms: Array<{ id: string; name: string; store: string | null; store_id: string | null }>;
+    planograms: Array<{
+        id: string;
+        name: string;
+        store: string | null;
+        store_id: string | null;
+        lifecycle_status: PlanogramLifecycleStatus | null;
+        periodic_review_due_at: string | null;
+    }>;
     stores: Array<{ id: string; name: string }>;
     users: Array<{ id: string; name: string }>;
     filters: {
@@ -90,6 +99,7 @@ export type KanbanPageProps = {
         gondola_search?: string;
         execution_status?: Execution['status'] | '';
         current_responsible_id?: string;
+        lifecycle_status?: PlanogramLifecycleStatus | '';
     };
     board: BoardColumn[] | null;
     selected_planogram: {
@@ -99,6 +109,9 @@ export type KanbanPageProps = {
         category_id: string | null;
         start_date: string | null;
         end_date: string | null;
+        lifecycle_status: PlanogramLifecycleStatus | null;
+        completed_at: string | null;
+        periodic_review_due_at: string | null;
     } | null;
     can_initiate: boolean;
     can_create_gondola: boolean;

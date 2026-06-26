@@ -60,7 +60,7 @@ class WorkflowPlanogramStepService
     }
 
     /**
-     * @param  array<int, array{step_id: string, is_required: bool, is_skipped: bool, estimated_duration_days?: int|null, user_ids?: array<int, string>}>  $stepsPayload
+     * @param  array<int, array{step_id: string, is_required: bool, is_skipped: bool, estimated_duration_days?: int|null, access_mode?: string|null, user_ids?: array<int, string>}>  $stepsPayload
      * @return EloquentCollection<int, WorkflowPlanogramStep>
      */
     public function updateSettings(Planogram $planogram, array $stepsPayload): EloquentCollection
@@ -84,6 +84,7 @@ class WorkflowPlanogramStepService
                     'is_required' => $payload['is_required'],
                     'is_skipped' => $payload['is_skipped'],
                     'estimated_duration_days' => $payload['estimated_duration_days'] ?? null,
+                    'access_mode' => $payload['access_mode'] ?? null,
                 ]);
 
                 $step->availableUsers()->sync($payload['user_ids'] ?? []);
@@ -142,7 +143,7 @@ class WorkflowPlanogramStepService
     {
         return $planogram->workflowSteps()
             ->with([
-                'template:id,name,description,suggested_order,color,icon,status',
+                'template:id,name,description,suggested_order,color,icon,status,access_mode,stage_type',
                 'availableUsers:id,name',
             ])
             ->get()

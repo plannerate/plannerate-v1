@@ -12,4 +12,5 @@ enum WorkflowHistoryAction: string
     case Completed = 'completed';
     case Cancelled = 'cancelled';
     case Restored = 'restored';
+    case PeriodicReviewTriggered = 'periodic_review_triggered';
 }

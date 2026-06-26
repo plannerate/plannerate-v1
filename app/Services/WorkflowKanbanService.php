@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\PlanogramLifecycleStatus;
 use App\Enums\WorkflowExecutionStatus;
 use App\Enums\WorkflowHistoryAction;
 use App\Models\Gondola;
@@ -13,7 +14,7 @@ use App\Models\WorkflowHistory;
 use App\Models\WorkflowPlanogramStep;
 use App\Models\WorkflowTemplate;
 use App\Notifications\AppNotification;
-use App\Support\Authorization\PermissionName;
+use App\Support\Workflow\PeriodicReviewSchedule;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -64,8 +65,14 @@ class WorkflowKanbanService
                 'gondola.planogram:id,name,store_id',
                 'currentResponsible:id,name',
                 'startedBy:id,name',
-                'step:id,name,workflow_template_id,access_mode',
-                'step.template:id,access_mode',
+                'step:id,name,workflow_template_id,access_mode,stage_type,planogram_id',
+                'step.template:id,access_mode,stage_type,suggested_order',
+                // Pré-carrega o que as policies (start/complete) consultariam por
+                // execução, evitando N+1 ao montar can_start/can_complete do board.
+                'step.availableUsers:id',
+                'step.planogram:id',
+                'step.planogram.workflowSteps:id,planogram_id,workflow_template_id,is_skipped,stage_type',
+                'step.planogram.workflowSteps.template:id,suggested_order,stage_type',
             ])
             ->when($executionStatus, fn ($query) => $query->where('status', $executionStatus))
             ->when(
@@ -102,35 +109,49 @@ class WorkflowKanbanService
                     'template_next_step_id' => $template->template_next_step_id,
                     'template_previous_step_id' => $template->template_previous_step_id,
                 ],
-                'executions' => $templateExecutions->map(fn (WorkflowGondolaExecution $exec) => [
-                    'id' => $exec->id,
-                    'gondola_id' => $exec->gondola_id,
-                    'gondola_name' => $exec->gondola?->name,
-                    'gondola_location' => $exec->gondola?->location,
-                    'planogram_name' => $exec->gondola?->planogram?->name,
-                    'step_name' => $exec->step?->name,
-                    'status' => $exec->status?->value,
-                    'assigned_to_user' => $exec->currentResponsible ? [
-                        'id' => $exec->currentResponsible->id,
-                        'name' => $exec->currentResponsible->name,
-                    ] : null,
-                    'started_by' => $exec->execution_started_by ? [
-                        'id' => $exec->execution_started_by,
-                        'name' => $exec->startedBy?->name,
-                    ] : null,
-                    'started_at' => $exec->started_at?->toIso8601String(),
-                    'sla_date' => $exec->sla_date?->toIso8601String(),
-                    'can_start' => $user?->can('start', $exec) ?? false,
-                    'can_pause' => $user?->can('pause', $exec) ?? false,
-                    'can_resume' => $user?->can('resume', $exec) ?? false,
-                    'can_complete' => $user?->can('complete', $exec) ?? false,
-                    'can_abandon' => $user?->can('abandon', $exec) ?? false,
-                    'can_request_abandonment' => $user?->can('requestAbandonment', $exec) ?? false,
-                    'can_move' => $user?->can('move', $exec) ?? false,
-                    'can_open_editor' => $this->canOpenEditor($user, $exec),
-                ])->values()->all(),
+                'executions' => $templateExecutions
+                    ->map(fn (WorkflowGondolaExecution $exec): array => $this->executionToArray($exec, $user))
+                    ->values()
+                    ->all(),
             ];
         })->values()->all();
+    }
+
+    /**
+     * Mapeia uma execução para o payload de card do board. Ponto único usado
+     * pela montagem do board para evitar divergência entre colunas.
+     *
+     * @return array<string, mixed>
+     */
+    private function executionToArray(WorkflowGondolaExecution $exec, ?User $user): array
+    {
+        return [
+            'id' => $exec->id,
+            'gondola_id' => $exec->gondola_id,
+            'gondola_name' => $exec->gondola?->name,
+            'gondola_location' => $exec->gondola?->location,
+            'planogram_name' => $exec->gondola?->planogram?->name,
+            'step_name' => $exec->step?->name,
+            'status' => $exec->status?->value,
+            'assigned_to_user' => $exec->currentResponsible ? [
+                'id' => $exec->currentResponsible->id,
+                'name' => $exec->currentResponsible->name,
+            ] : null,
+            'started_by' => $exec->execution_started_by ? [
+                'id' => $exec->execution_started_by,
+                'name' => $exec->startedBy?->name,
+            ] : null,
+            'started_at' => $exec->started_at?->toIso8601String(),
+            'sla_date' => $exec->sla_date?->toIso8601String(),
+            'can_start' => $user?->can('start', $exec) ?? false,
+            'can_pause' => $user?->can('pause', $exec) ?? false,
+            'can_resume' => $user?->can('resume', $exec) ?? false,
+            'can_complete' => $user?->can('complete', $exec) ?? false,
+            'can_abandon' => $user?->can('abandon', $exec) ?? false,
+            'can_request_abandonment' => $user?->can('requestAbandonment', $exec) ?? false,
+            'can_move' => $user?->can('move', $exec) ?? false,
+            'can_open_editor' => $exec->canOpenEditorBy($user),
+        ];
     }
 
     /**
@@ -261,8 +282,90 @@ class WorkflowKanbanService
 
             $this->recordHistory($execution, WorkflowHistoryAction::Completed, $actor, $execution->workflow_planogram_step_id, null, $notes);
 
+            $this->maybeMarkPlanogramCompleted($execution);
+
             return $execution->fresh();
         });
+    }
+
+    /**
+     * Marca o planograma como concluído quando todas as gôndolas com execução
+     * finalizaram a etapa final de fluxo (`stage_type = flow`).
+     *
+     * Conclusão por planograma: exige que toda gôndola com execução tenha a
+     * execução da etapa final de fluxo com `completed` e que não reste nenhuma
+     * execução de fluxo em andamento (active/pending/paused). Idempotente: só
+     * atua enquanto o planograma estiver `in_progress`. Ao concluir, agenda o
+     * vencimento da Revisão Periódica (quando há datas válidas).
+     */
+    private function maybeMarkPlanogramCompleted(WorkflowGondolaExecution $execution): void
+    {
+        $execution->loadMissing('step.planogram.workflowSteps.template');
+
+        $planogram = $execution->step?->planogram;
+
+        if (! $planogram instanceof Planogram) {
+            return;
+        }
+
+        // Idempotência: só processa fluxo ainda em andamento.
+        if ($planogram->lifecycle_status !== PlanogramLifecycleStatus::InProgress) {
+            return;
+        }
+
+        $activeSteps = $planogram->workflowSteps->where('is_skipped', false);
+
+        $flowSteps = $activeSteps->filter(
+            fn (WorkflowPlanogramStep $step): bool => ! $step->stage_type->isPeriodicReview()
+        );
+
+        // Fallback: sem etapas de fluxo, usa as não puladas para definir a final.
+        $candidateSteps = $flowSteps->isNotEmpty() ? $flowSteps : $activeSteps;
+
+        if ($candidateSteps->isEmpty()) {
+            return;
+        }
+
+        $finalStep = $candidateSteps->sortBy('suggested_order')->last();
+        $flowStepIds = $candidateSteps->pluck('id')->all();
+
+        $executions = WorkflowGondolaExecution::query()
+            ->whereIn('workflow_planogram_step_id', $flowStepIds)
+            ->get(['id', 'gondola_id', 'workflow_planogram_step_id', 'status']);
+
+        if ($executions->isEmpty()) {
+            return;
+        }
+
+        // Alguma execução de fluxo ainda em andamento → planograma não concluído.
+        $hasUnfinished = $executions->contains(
+            fn (WorkflowGondolaExecution $exec): bool => in_array($exec->status, [
+                WorkflowExecutionStatus::Active,
+                WorkflowExecutionStatus::Pending,
+                WorkflowExecutionStatus::Paused,
+            ], true)
+        );
+
+        if ($hasUnfinished) {
+            return;
+        }
+
+        // Toda gôndola com execução precisa ter concluído a etapa final.
+        $allGondolasFinished = $executions
+            ->groupBy('gondola_id')
+            ->every(fn (Collection $gondolaExecutions): bool => $gondolaExecutions->contains(
+                fn (WorkflowGondolaExecution $exec): bool => (string) $exec->workflow_planogram_step_id === (string) $finalStep->id
+                    && $exec->status === WorkflowExecutionStatus::Completed
+            ));
+
+        if (! $allGondolasFinished) {
+            return;
+        }
+
+        $planogram->completed_at = now();
+        $planogram->lifecycle_status = PlanogramLifecycleStatus::Completed;
+        $planogram->periodic_review_due_at = PeriodicReviewSchedule::computeDueAt($planogram);
+        $planogram->save();
     }
 
     public function abandon(WorkflowGondolaExecution $execution, User $actor, ?string $notes = null): WorkflowGondolaExecution
@@ -377,86 +480,6 @@ class WorkflowKanbanService
 
             return $execution->fresh();
         });
-    }
-
-    /**
-     * Build board data for all gondola executions in a planogram, grouped by step.
-     *
-     * @return array<int, array{step: array<string, mixed>, executions: array<int, array<string, mixed>>}>
-     */
-    public function buildBoardForPlanogram(Planogram $planogram, ?User $user = null): array
-    {
-        $steps = $planogram->workflowSteps()
-            ->with(['template', 'executions.gondola.planogram', 'executions.currentResponsible', 'executions.startedBy'])
-            ->where('is_skipped', false)
-            ->get()
-            ->sortBy('suggested_order');
-
-        return $steps->map(function (WorkflowPlanogramStep $step) use ($user) {
-            // Reaproveita o step (com template) já carregado para o cálculo de
-            // can_open_editor, evitando N+1 dentro de allowsEditing().
-            $step->executions->each(fn (WorkflowGondolaExecution $exec) => $exec->setRelation('step', $step));
-
-            return [
-                'step' => [
-                    'id' => $step->id,
-                    'name' => $step->name,
-                    'description' => $step->description,
-                    'color' => $step->color,
-                    'icon' => $step->icon,
-                    'suggested_order' => $step->suggested_order,
-                    'is_required' => $step->is_required,
-                    'is_skipped' => $step->is_skipped,
-                    'status' => $step->status,
-                ],
-                'executions' => $step->executions->map(fn (WorkflowGondolaExecution $exec) => [
-                    'id' => $exec->id,
-                    'gondola_id' => $exec->gondola_id,
-                    'gondola_name' => $exec->gondola?->name,
-                    'gondola_location' => $exec->gondola?->location,
-                    'planogram_name' => $exec->gondola?->planogram?->name,
-                    'step_name' => $step->name,
-                    'status' => $exec->status?->value,
-                    'assigned_to_user' => $exec->currentResponsible ? [
-                        'id' => $exec->currentResponsible->id,
-                        'name' => $exec->currentResponsible->name,
-                    ] : null,
-                    'started_by' => $exec->execution_started_by ? [
-                        'id' => $exec->execution_started_by,
-                        'name' => $exec->startedBy?->name,
-                    ] : null,
-                    'started_at' => $exec->started_at?->toIso8601String(),
-                    'sla_date' => $exec->sla_date?->toIso8601String(),
-                    'can_start' => $user?->can('start', $exec) ?? false,
-                    'can_pause' => $user?->can('pause', $exec) ?? false,
-                    'can_resume' => $user?->can('resume', $exec) ?? false,
-                    'can_complete' => $user?->can('complete', $exec) ?? false,
-                    'can_abandon' => $user?->can('abandon', $exec) ?? false,
-                    'can_request_abandonment' => $user?->can('requestAbandonment', $exec) ?? false,
-                    'can_move' => $user?->can('move', $exec) ?? false,
-                    'can_open_editor' => $this->canOpenEditor($user, $exec),
-                ])->values()->all(),
-            ];
-        })->values()->all();
-    }
-
-    /**
-     * Decide se o link "Abrir editor" deve aparecer para esta execução.
-     *
-     * Combina: permissão de editar gôndola + execução ativa + iniciada pelo
-     * próprio usuário + etapa atual em modo de edição (access_mode). Caso
-     * contrário, o front oferece apenas a visualização em PDF.
-     */
-    private function canOpenEditor(?User $user, WorkflowGondolaExecution $execution): bool
-    {
-        if ($user === null) {
-            return false;
-        }
-
-        return $user->can(PermissionName::TENANT_GONDOLAS_UPDATE)
-            && $execution->status === WorkflowExecutionStatus::Active
-            && (string) $execution->execution_started_by === (string) $user->id
-            && $execution->allowsEditing();
     }
 
     private function recordHistory(

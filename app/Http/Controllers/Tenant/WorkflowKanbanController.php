@@ -29,7 +29,7 @@ class WorkflowKanbanController extends Controller
     {
         $this->authorize('viewAny', WorkflowGondolaExecution::class);
 
-        $filters = $request->only(['planogram_id', 'store_id', 'gondola_search', 'execution_status', 'current_responsible_id']);
+        $filters = $request->only(['planogram_id', 'store_id', 'gondola_search', 'execution_status', 'current_responsible_id', 'lifecycle_status']);
         $selectedPlanogram = $this->selectedPlanogram($request);
 
         if ($selectedPlanogram !== null) {
@@ -56,6 +56,9 @@ class WorkflowKanbanController extends Controller
                 'category_id' => $selectedPlanogram->category_id,
                 'start_date' => $selectedPlanogram->start_date?->toDateString(),
                 'end_date' => $selectedPlanogram->end_date?->toDateString(),
+                'lifecycle_status' => $selectedPlanogram->lifecycle_status?->value,
+                'completed_at' => $selectedPlanogram->completed_at?->toIso8601String(),
+                'periodic_review_due_at' => $selectedPlanogram->periodic_review_due_at?->toIso8601String(),
             ] : null,
             'can_initiate' => $request->user()?->can('start', WorkflowGondolaExecution::class) ?? false,
             'can_create_gondola' => $request->user()?->can('create', Gondola::class) ?? false,
@@ -63,7 +66,7 @@ class WorkflowKanbanController extends Controller
     }
 
     /**
-     * @return array<int, array{id: string, name: string, store: ?string, store_id: ?string}>
+     * @return array<int, array{id: string, name: string, store: ?string, store_id: ?string, lifecycle_status: ?string, periodic_review_due_at: ?string}>
      */
     private function planograms(Request $request): array
     {
@@ -73,13 +76,19 @@ class WorkflowKanbanController extends Controller
                 $request->filled('store_id'),
                 fn (Builder $query): Builder => $query->where('store_id', $request->input('store_id'))
             )
+            ->when(
+                $request->filled('lifecycle_status'),
+                fn (Builder $query): Builder => $query->where('lifecycle_status', $request->input('lifecycle_status'))
+            )
             ->orderBy('name')
-            ->get(['id', 'name', 'store_id'])
+            ->get(['id', 'name', 'store_id', 'lifecycle_status', 'periodic_review_due_at'])
             ->map(fn (Planogram $planogram): array => [
                 'id' => $planogram->id,
                 'name' => $planogram->name,
                 'store' => $planogram->store?->name,
                 'store_id' => $planogram->store_id,
+                'lifecycle_status' => $planogram->lifecycle_status?->value,
+                'periodic_review_due_at' => $planogram->periodic_review_due_at?->toIso8601String(),
             ])
             ->all();
     }

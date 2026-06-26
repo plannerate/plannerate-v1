@@ -264,9 +264,10 @@ class PlanogramController extends Controller
                         $gondola = $regionId ? $gondolas->get($regionId) : null;
                         $execution = $gondola ? $activeExecutions->get($gondola->id) : null;
                         $user = request()->user();
-                        $canUpdateGondola = $gondola && $user ? $user->can('update', $gondola) : false;
                         $canViewGondola = $gondola && $user ? $user->can('view', $gondola) : false;
-                        $canOpenEditor = $canUpdateGondola && $execution !== null && $execution->allowsEditing();
+                        // Mesma regra do board (permissão + ativa + iniciada pelo próprio
+                        // usuário + access_mode), num único ponto de verdade no model.
+                        $canOpenEditor = $execution?->canOpenEditorBy($user) ?? false;
 
                         return [
                             'id' => (string) ($region['id'] ?? ''),

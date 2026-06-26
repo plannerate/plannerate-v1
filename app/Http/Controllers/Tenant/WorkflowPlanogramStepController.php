@@ -68,6 +68,7 @@ class WorkflowPlanogramStepController extends Controller
                 'description' => $step->description,
                 'estimated_duration_days' => $step->estimated_duration_days,
                 'role_id' => $step->role_id,
+                'access_mode' => $step->access_mode->value,
                 'is_required' => (bool) $step->is_required,
                 'is_skipped' => (bool) $step->is_skipped,
                 'status' => $step->status,

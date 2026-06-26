@@ -9,8 +9,6 @@ import { useT } from '@/composables/useT';
 
 export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>) {
     const { t } = useT();
-    const onlyOverdue = ref(false);
-    const showCompleted = ref(true);
     const detailHttp = useHttp();
     const historyHttp = useHttp();
     const actionHttp = useHttp<{ notes: string | null; target_step_id: string | null }>({
@@ -27,28 +25,7 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>) {
     const detailHistories = ref<WorkflowHistory[]>([]);
     const actionNotes = ref('');
 
-    const filteredBoard = computed((): BoardColumn[] => {
-        const columns = toValue(board);
-
-        if (!columns) {
-            return [];
-        }
-
-        return columns.map((column) => ({
-            ...column,
-            executions: column.executions.filter((execution) => {
-                if (!showCompleted.value && execution.status === 'completed') {
-                    return false;
-                }
-
-                if (onlyOverdue.value && !isOverdue(execution)) {
-                    return false;
-                }
-
-                return true;
-            }),
-        }));
-    });
+    const filteredBoard = computed((): BoardColumn[] => toValue(board) ?? []);
 
     function isOverdue(execution: Execution): boolean {
         if (!execution.sla_date) {
@@ -317,8 +294,6 @@ export function useKanban(board: MaybeRefOrGetter<BoardColumn[] | null>) {
     }
 
     return {
-        onlyOverdue,
-        showCompleted,
         filteredBoard,
         draggingExecutionId,
         dragOverStepId,

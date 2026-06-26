@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\WorkflowAccessMode;
+use App\Enums\WorkflowStageType;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -26,6 +27,7 @@ class WorkflowPlanogramStep extends Model
         'estimated_duration_days',
         'role_id',
         'access_mode',
+        'stage_type',
         'is_required',
         'is_skipped',
         'status',
@@ -102,5 +104,18 @@ class WorkflowPlanogramStep extends Model
         }
 
         return $this->template?->access_mode ?? WorkflowAccessMode::Edit;
+    }
+
+    /**
+     * Tipo de etapa efetivo: usa o override da etapa quando definido, senão
+     * herda do template (coluna do Kanban). Default: Flow.
+     */
+    public function getStageTypeAttribute(?string $value): WorkflowStageType
+    {
+        if ($value !== null) {
+            return WorkflowStageType::tryFrom($value) ?? WorkflowStageType::Flow;
+        }
+
+        return $this->template?->stage_type ?? WorkflowStageType::Flow;
     }
 }

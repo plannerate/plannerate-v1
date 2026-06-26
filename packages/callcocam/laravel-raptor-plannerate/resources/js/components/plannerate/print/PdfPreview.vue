@@ -386,6 +386,7 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
                     :flow-label="flowLabel"
                     :sections-count="sections.length"
                 />
+                <PdfFlowIndicator :is-left-to-right="isLeftToRight" />
                 <PdfGondolaCanvas
                     :sections="sections"
                     :local-scale="localScale"
