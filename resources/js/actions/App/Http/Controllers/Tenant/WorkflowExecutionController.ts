@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::store
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:29
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:30
 * @route '/kanban/{planogram}/executions'
 */
 export const store = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -16,7 +16,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::store
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:29
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:30
 * @route '/kanban/{planogram}/executions'
 */
 store.url = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -49,7 +49,7 @@ store.url = (args: { planogram: string | { id: string } } | [planogram: string |
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::store
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:29
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:30
 * @route '/kanban/{planogram}/executions'
 */
 store.post = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -59,7 +59,7 @@ store.post = (args: { planogram: string | { id: string } } | [planogram: string 
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::store
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:29
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:30
 * @route '/kanban/{planogram}/executions'
 */
 const storeForm = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -69,7 +69,7 @@ const storeForm = (args: { planogram: string | { id: string } } | [planogram: st
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::store
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:29
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:30
 * @route '/kanban/{planogram}/executions'
 */
 storeForm.post = (args: { planogram: string | { id: string } } | [planogram: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -81,7 +81,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::details
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:236
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:233
 * @route '/kanban/executions/{execution}/details'
 */
 export const details = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -96,7 +96,7 @@ details.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::details
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:236
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:233
 * @route '/kanban/executions/{execution}/details'
 */
 details.url = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -129,7 +129,7 @@ details.url = (args: { execution: string | { id: string } } | [execution: string
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::details
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:236
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:233
 * @route '/kanban/executions/{execution}/details'
 */
 details.get = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -139,7 +139,7 @@ details.get = (args: { execution: string | { id: string } } | [execution: string
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::details
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:236
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:233
 * @route '/kanban/executions/{execution}/details'
 */
 details.head = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -149,7 +149,7 @@ details.head = (args: { execution: string | { id: string } } | [execution: strin
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::details
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:236
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:233
 * @route '/kanban/executions/{execution}/details'
 */
 const detailsForm = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -159,7 +159,7 @@ const detailsForm = (args: { execution: string | { id: string } } | [execution: 
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::details
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:236
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:233
 * @route '/kanban/executions/{execution}/details'
 */
 detailsForm.get = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -169,7 +169,7 @@ detailsForm.get = (args: { execution: string | { id: string } } | [execution: st
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::details
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:236
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:233
 * @route '/kanban/executions/{execution}/details'
 */
 detailsForm.head = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -186,7 +186,7 @@ details.form = detailsForm
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::start
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:121
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:119
 * @route '/kanban/executions/{execution}/start'
 */
 export const start = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -201,7 +201,7 @@ start.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::start
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:121
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:119
 * @route '/kanban/executions/{execution}/start'
 */
 start.url = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -234,7 +234,7 @@ start.url = (args: { execution: string | { id: string } } | [execution: string |
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::start
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:121
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:119
 * @route '/kanban/executions/{execution}/start'
 */
 start.patch = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -244,7 +244,7 @@ start.patch = (args: { execution: string | { id: string } } | [execution: string
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::start
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:121
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:119
 * @route '/kanban/executions/{execution}/start'
 */
 const startForm = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -259,7 +259,7 @@ const startForm = (args: { execution: string | { id: string } } | [execution: st
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::start
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:121
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:119
 * @route '/kanban/executions/{execution}/start'
 */
 startForm.patch = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -276,7 +276,7 @@ start.form = startForm
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::move
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:56
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:54
 * @route '/kanban/executions/{execution}/move'
 */
 export const move = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -291,7 +291,7 @@ move.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::move
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:56
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:54
 * @route '/kanban/executions/{execution}/move'
 */
 move.url = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -324,7 +324,7 @@ move.url = (args: { execution: string | { id: string } } | [execution: string | 
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::move
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:56
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:54
 * @route '/kanban/executions/{execution}/move'
 */
 move.patch = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -334,7 +334,7 @@ move.patch = (args: { execution: string | { id: string } } | [execution: string 
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::move
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:56
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:54
 * @route '/kanban/executions/{execution}/move'
 */
 const moveForm = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -349,7 +349,7 @@ const moveForm = (args: { execution: string | { id: string } } | [execution: str
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::move
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:56
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:54
 * @route '/kanban/executions/{execution}/move'
 */
 moveForm.patch = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -366,7 +366,7 @@ move.form = moveForm
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::pause
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:136
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:134
 * @route '/kanban/executions/{execution}/pause'
 */
 export const pause = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -381,7 +381,7 @@ pause.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::pause
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:136
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:134
 * @route '/kanban/executions/{execution}/pause'
 */
 pause.url = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -414,7 +414,7 @@ pause.url = (args: { execution: string | { id: string } } | [execution: string |
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::pause
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:136
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:134
 * @route '/kanban/executions/{execution}/pause'
 */
 pause.patch = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -424,7 +424,7 @@ pause.patch = (args: { execution: string | { id: string } } | [execution: string
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::pause
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:136
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:134
 * @route '/kanban/executions/{execution}/pause'
 */
 const pauseForm = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -439,7 +439,7 @@ const pauseForm = (args: { execution: string | { id: string } } | [execution: st
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::pause
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:136
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:134
 * @route '/kanban/executions/{execution}/pause'
 */
 pauseForm.patch = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -456,7 +456,7 @@ pause.form = pauseForm
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::resume
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:185
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:183
 * @route '/kanban/executions/{execution}/resume'
 */
 export const resume = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -471,7 +471,7 @@ resume.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::resume
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:185
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:183
 * @route '/kanban/executions/{execution}/resume'
 */
 resume.url = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -504,7 +504,7 @@ resume.url = (args: { execution: string | { id: string } } | [execution: string 
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::resume
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:185
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:183
 * @route '/kanban/executions/{execution}/resume'
 */
 resume.patch = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -514,7 +514,7 @@ resume.patch = (args: { execution: string | { id: string } } | [execution: strin
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::resume
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:185
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:183
 * @route '/kanban/executions/{execution}/resume'
 */
 const resumeForm = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -529,7 +529,7 @@ const resumeForm = (args: { execution: string | { id: string } } | [execution: s
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::resume
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:185
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:183
 * @route '/kanban/executions/{execution}/resume'
 */
 resumeForm.patch = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -546,7 +546,7 @@ resume.form = resumeForm
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::complete
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:200
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:198
 * @route '/kanban/executions/{execution}/complete'
 */
 export const complete = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -561,7 +561,7 @@ complete.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::complete
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:200
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:198
 * @route '/kanban/executions/{execution}/complete'
 */
 complete.url = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -594,7 +594,7 @@ complete.url = (args: { execution: string | { id: string } } | [execution: strin
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::complete
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:200
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:198
 * @route '/kanban/executions/{execution}/complete'
 */
 complete.patch = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -604,7 +604,7 @@ complete.patch = (args: { execution: string | { id: string } } | [execution: str
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::complete
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:200
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:198
 * @route '/kanban/executions/{execution}/complete'
 */
 const completeForm = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -619,7 +619,7 @@ const completeForm = (args: { execution: string | { id: string } } | [execution:
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::complete
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:200
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:198
 * @route '/kanban/executions/{execution}/complete'
 */
 completeForm.patch = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -636,7 +636,7 @@ complete.form = completeForm
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::abandon
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:151
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:149
 * @route '/kanban/executions/{execution}/abandon'
 */
 export const abandon = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -651,7 +651,7 @@ abandon.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::abandon
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:151
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:149
 * @route '/kanban/executions/{execution}/abandon'
 */
 abandon.url = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -684,7 +684,7 @@ abandon.url = (args: { execution: string | { id: string } } | [execution: string
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::abandon
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:151
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:149
 * @route '/kanban/executions/{execution}/abandon'
 */
 abandon.patch = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -694,7 +694,7 @@ abandon.patch = (args: { execution: string | { id: string } } | [execution: stri
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::abandon
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:151
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:149
 * @route '/kanban/executions/{execution}/abandon'
 */
 const abandonForm = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -709,7 +709,7 @@ const abandonForm = (args: { execution: string | { id: string } } | [execution: 
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::abandon
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:151
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:149
 * @route '/kanban/executions/{execution}/abandon'
 */
 abandonForm.patch = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -726,7 +726,7 @@ abandon.form = abandonForm
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::requestAbandonment
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:166
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:164
 * @route '/kanban/executions/{execution}/request-abandonment'
 */
 export const requestAbandonment = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -741,7 +741,7 @@ requestAbandonment.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::requestAbandonment
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:166
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:164
 * @route '/kanban/executions/{execution}/request-abandonment'
 */
 requestAbandonment.url = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -774,7 +774,7 @@ requestAbandonment.url = (args: { execution: string | { id: string } } | [execut
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::requestAbandonment
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:166
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:164
 * @route '/kanban/executions/{execution}/request-abandonment'
 */
 requestAbandonment.post = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -784,7 +784,7 @@ requestAbandonment.post = (args: { execution: string | { id: string } } | [execu
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::requestAbandonment
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:166
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:164
 * @route '/kanban/executions/{execution}/request-abandonment'
 */
 const requestAbandonmentForm = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -794,7 +794,7 @@ const requestAbandonmentForm = (args: { execution: string | { id: string } } | [
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::requestAbandonment
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:166
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:164
 * @route '/kanban/executions/{execution}/request-abandonment'
 */
 requestAbandonmentForm.post = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -806,7 +806,7 @@ requestAbandonment.form = requestAbandonmentForm
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::assign
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:215
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:213
 * @route '/kanban/executions/{execution}/assign'
 */
 export const assign = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -821,7 +821,7 @@ assign.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::assign
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:215
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:213
 * @route '/kanban/executions/{execution}/assign'
 */
 assign.url = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -854,7 +854,7 @@ assign.url = (args: { execution: string | { id: string } } | [execution: string 
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::assign
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:215
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:213
 * @route '/kanban/executions/{execution}/assign'
 */
 assign.patch = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -864,7 +864,7 @@ assign.patch = (args: { execution: string | { id: string } } | [execution: strin
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::assign
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:215
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:213
 * @route '/kanban/executions/{execution}/assign'
 */
 const assignForm = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -879,7 +879,7 @@ const assignForm = (args: { execution: string | { id: string } } | [execution: s
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::assign
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:215
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:213
 * @route '/kanban/executions/{execution}/assign'
 */
 assignForm.patch = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -896,7 +896,7 @@ assign.form = assignForm
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::history
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:292
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:289
 * @route '/kanban/executions/{execution}/history'
 */
 export const history = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -911,7 +911,7 @@ history.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::history
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:292
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:289
 * @route '/kanban/executions/{execution}/history'
 */
 history.url = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -944,7 +944,7 @@ history.url = (args: { execution: string | { id: string } } | [execution: string
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::history
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:292
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:289
 * @route '/kanban/executions/{execution}/history'
 */
 history.get = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -954,7 +954,7 @@ history.get = (args: { execution: string | { id: string } } | [execution: string
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::history
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:292
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:289
 * @route '/kanban/executions/{execution}/history'
 */
 history.head = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -964,7 +964,7 @@ history.head = (args: { execution: string | { id: string } } | [execution: strin
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::history
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:292
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:289
 * @route '/kanban/executions/{execution}/history'
 */
 const historyForm = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -974,7 +974,7 @@ const historyForm = (args: { execution: string | { id: string } } | [execution: 
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::history
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:292
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:289
 * @route '/kanban/executions/{execution}/history'
 */
 historyForm.get = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -984,7 +984,7 @@ historyForm.get = (args: { execution: string | { id: string } } | [execution: st
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::history
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:292
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:289
 * @route '/kanban/executions/{execution}/history'
 */
 historyForm.head = (args: { execution: string | { id: string } } | [execution: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1001,7 +1001,7 @@ history.form = historyForm
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::restore
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:334
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:331
 * @route '/kanban/histories/{history}/restore'
 */
 export const restore = (args: { history: string | { id: string } } | [history: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1016,7 +1016,7 @@ restore.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::restore
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:334
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:331
 * @route '/kanban/histories/{history}/restore'
 */
 restore.url = (args: { history: string | { id: string } } | [history: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -1049,7 +1049,7 @@ restore.url = (args: { history: string | { id: string } } | [history: string | {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::restore
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:334
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:331
 * @route '/kanban/histories/{history}/restore'
 */
 restore.post = (args: { history: string | { id: string } } | [history: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1059,7 +1059,7 @@ restore.post = (args: { history: string | { id: string } } | [history: string | 
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::restore
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:334
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:331
 * @route '/kanban/histories/{history}/restore'
 */
 const restoreForm = (args: { history: string | { id: string } } | [history: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1069,7 +1069,7 @@ const restoreForm = (args: { history: string | { id: string } } | [history: stri
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::restore
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:334
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:331
 * @route '/kanban/histories/{history}/restore'
 */
 restoreForm.post = (args: { history: string | { id: string } } | [history: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

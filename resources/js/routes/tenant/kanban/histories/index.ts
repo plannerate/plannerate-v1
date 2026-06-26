@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::restore
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:334
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:331
 * @route '/kanban/histories/{history}/restore'
 */
 export const restore = (args: { history: string | { id: string } } | [history: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -16,7 +16,7 @@ restore.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::restore
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:334
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:331
 * @route '/kanban/histories/{history}/restore'
 */
 restore.url = (args: { history: string | { id: string } } | [history: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
@@ -49,7 +49,7 @@ restore.url = (args: { history: string | { id: string } } | [history: string | {
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::restore
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:334
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:331
 * @route '/kanban/histories/{history}/restore'
 */
 restore.post = (args: { history: string | { id: string } } | [history: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -59,7 +59,7 @@ restore.post = (args: { history: string | { id: string } } | [history: string | 
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::restore
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:334
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:331
 * @route '/kanban/histories/{history}/restore'
 */
 const restoreForm = (args: { history: string | { id: string } } | [history: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -69,7 +69,7 @@ const restoreForm = (args: { history: string | { id: string } } | [history: stri
 
 /**
 * @see \App\Http\Controllers\Tenant\WorkflowExecutionController::restore
-* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:334
+* @see app/Http/Controllers/Tenant/WorkflowExecutionController.php:331
 * @route '/kanban/histories/{history}/restore'
 */
 restoreForm.post = (args: { history: string | { id: string } } | [history: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
