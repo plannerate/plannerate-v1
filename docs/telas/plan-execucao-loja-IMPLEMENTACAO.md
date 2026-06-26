@@ -60,10 +60,52 @@ Passar a, **por padrão, ocultar** planogramas com `lifecycle_status = completed
 
 ---
 
-## 2. Escopo desta tela
+## 1.5 Arquitetura (DECIDIDA — não reabrir)
 
-Tela de execução em loja, acessível quando o card está na etapa **Execução em
-Loja**. Regras de acesso por visualização (do export, seção topo):
+A etapa **Execução em Loja** é `access_mode = View` (`stage_type = flow`). Quem
+está nela **já** é redirecionado para a **tela de print/visualização** read-only
+([EditorPlanogramController::edit](../../packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/EditorPlanogramController.php)
+→ `export.gondola.view`; render em
+`packages/callcocam/laravel-raptor-plannerate/resources/js/components/plannerate/print/`).
+**Não abrir o editor pesado.**
+
+**A tela de print atual já cobre toda a VISUALIZAÇÃO que o executor precisa**
+(cabeçalho do planograma, fluxo da gôndola, render das prateleiras/produtos,
+botões de zoom/PDF). **Não recriar nada disso.** O trabalho desta tarefa é
+**apenas** acoplar, por cima dessa tela, a **camada de execução**:
+
+1. a **barra de execução** (status / responsável / iniciado em / SLA / evidências X/Y / divergências) — ver imagem de referência no card PLAN-145;
+2. os **3 botões** (Adicionar evidência, Apontar divergência, Concluir execução) e seus modais.
+
+### Onde e como
+- **Nova feature irmã** de `print/`: `packages/callcocam/laravel-raptor-plannerate/resources/js/components/plannerate/execution/`. **Não** colocar dentro de `print/` (print é presentacional puro → vira PDF; não sujar).
+- Montar essa camada na página da tela de print (`tenant/editor/pdfPrintview.vue`), **gateada por `canExecute`**.
+
+### Gating (objetivo: não gastar recurso à toa, back e front)
+- **Front** — chunk só baixa para quem executa:
+  ```ts
+  const ExecutionLayer = defineAsyncComponent(() => import('../execution/ExecutionLayer.vue'));
+  // <ExecutionLayer v-if="canExecute" ... />
+  ```
+- **Backend** — `canExecute` é um check **barato** (execução existe + etapa é Execução em Loja + `user === current_responsible_id` ou role com permissão). Os dados pesados de execução (evidências, divergências, regras de obrigatoriedade, SLA) só são consultados/enviados quando `canExecute === true`, via `Inertia::optional()`:
+  ```php
+  'canExecute' => $canExecute,
+  'execution' => $canExecute
+      ? Inertia::optional(fn () => $this->buildExecutionPayload($execution))
+      : null,
+  ```
+  Para quem não tem a responsabilidade, o controller **não roda** as queries de execução.
+
+Controller alvo: o que já renderiza a view de print
+([GondolaPdfPreviewController](../../packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaPdfPreviewController.php)
+ou o destino de `export.gondola.view`) — estender para emitir `canExecute` +
+payload opcional, **sem** alterar o caminho de quem só visualiza.
+
+---
+
+## 2. Escopo desta tarefa
+
+Acesso por visualização (do export, seção topo):
 - **Lista** e **Kanban**: abrir apenas quando estiver na etapa Execução em Loja.
 - **Mapa**: abrir somente depois de concluído (`lifecycle_status = completed`).
 
@@ -71,27 +113,30 @@ A loja **não edita** o planograma (sem trocar produto, frente, posição,
 dimensão, módulo ou layout). Só registra execução. Ver permissões na seção 28 do
 export e em [WorkflowExecutionPolicy.php](../../app/Policies/WorkflowExecutionPolicy.php).
 
-### 2.1 Layout da tela (export §7–§12)
-- Cabeçalho com dados do planograma (código, status, loja/corredor, categoria, nº módulos, data publicação, responsável, fluxo, versão).
-- Bloco resumido de execução (status, responsável, início, SLA, evidências X/Y, divergências) — só resumo + ações; detalhe nos modais.
-- Fluxo da gôndola acima da prateleira (somente leitura): início, sentido, fim.
-- Botões de execução (3, à direita do bloco): **Adicionar evidência**, **Apontar divergência**, **Concluir execução** — cada um abre um modal.
-- Botões de visualização já existentes (zoom, performance, colunas, baixar PDF) — preservar, separados visualmente.
-- **Início automático**: ao abrir o planograma pela 1ª vez na etapa Execução em Loja, registrar `status = active`, usuário e data/hora de início (export §12, opção recomendada).
+### 2.1 O que JÁ EXISTE na tela de print (reusar, NÃO recriar)
+- Cabeçalho com dados do planograma (código, status, loja/corredor, categoria, nº módulos, data, responsável, fluxo, versão).
+- Fluxo da gôndola acima da prateleira (somente leitura).
+- Render read-only da gôndola/prateleiras/produtos.
+- Botões de visualização (zoom, PDF, etc.).
 
-### 2.2 Modal "Adicionar evidência" (export §13–§15)
+### 2.2 O que CRIAR (a camada de execução — itens da imagem)
+- **Barra de execução** (bloco-resumo, export §8) com: status (ex.: "Em execução"), responsável, iniciado em, SLA (dias restantes), evidências `X/Y`, divergências (qtd). Só resumo + ações; detalhe nos modais.
+- **3 botões** (export §9): **Adicionar evidência**, **Apontar divergência**, **Concluir execução** — cada um abre um modal (seções 2.3–2.6 abaixo).
+- **Início automático** (export §12): ao abrir pela 1ª vez na etapa Execução em Loja, registrar `status = active`, usuário e data/hora de início.
+
+### 2.3 Modal "Adicionar evidência" (export §13–§15)
 - Tipos: Foto geral, Módulo, Produto, Outro (regras de obrigatoriedade por tipo no §13).
 - Upload múltiplo (drag-and-drop + seleção), miniaturas, remover antes de salvar, observação opcional, indicador de progresso X/Y.
 - Sugestão técnica: JPG/PNG/HEIC, 10 MB/arquivo, 10 fotos/envio.
 - Evidências obrigatórias **configuráveis** (§14): padrão = 1 foto geral + 1 por módulo.
 
-### 2.3 Modal "Apontar divergência" (export §16–§19)
+### 2.4 Modal "Apontar divergência" (export §16–§19)
 - Tipos: ruptura, divergente, falta de espaço, embalagem diferente, não localizado, sem cadastro, quantidade insuficiente, outro.
 - Campos: tipo, módulo, prateleira, posição/facing, produto, observação, fotos opcionais (obrigatoriedade por tipo no §17).
 - Status da divergência (§18): estruturar banco para `Aberta/Justificada/Em análise/Resolvida/Rejeitada`; na 1ª versão usar ao menos `Aberta` e `Resolvida`.
 - Lista de divergências já registradas dentro do modal (§19).
 
-### 2.4 Modal "Concluir execução" (export §20–§24)
+### 2.5 Modal "Concluir execução" (export §20–§24)
 - Resumo: evidências, divergências, SLA, responsável, validações.
 - **Validações antes de concluir** (§21–§22):
   - evidências obrigatórias presentes (senão bloqueia, com atalho p/ adicionar);
@@ -103,7 +148,7 @@ export e em [WorkflowExecutionPolicy.php](../../app/Policies/WorkflowExecutionPo
 - Texto do modal (§24) deve deixar claro: encerra a execução e a revisão
   periódica será gerada conforme o prazo cadastrado — sem prometer coluna nova.
 
-### 2.5 Histórico / auditoria / SLA / notificações (export §29–§31)
+### 2.6 Histórico / auditoria / SLA / notificações (export §29–§31)
 - Registrar eventos em [WorkflowHistory](../../app/Models/WorkflowHistory.php) (entrou em execução, iniciada, evidência +/-, divergência registrada/atualizada/resolvida, execução concluída).
 - **Não** registrar evento "card movido para Concluídos" como mudança de coluna — registrar como mudança de status para concluído.
 - SLA conta a partir da entrada na etapa Execução em Loja (§30).
