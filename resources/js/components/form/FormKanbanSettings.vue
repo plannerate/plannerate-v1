@@ -322,13 +322,31 @@ onMounted(() => {
                     </div>
 
                     <div class="md:col-span-3">
-                        <p class="mb-1 text-xs font-medium text-transparent select-none">
-                            Ação
-                        </p>
-                        <label class="flex h-9 items-center gap-2 text-sm text-foreground">
-                            <input v-model="step.is_skipped" type="checkbox" class="size-4 rounded border-input accent-primary" />
+                        <p class="mb-1 text-xs font-medium text-muted-foreground">
                             Pular etapa
-                        </label>
+                        </p>
+                        <div class="inline-flex h-9 items-center rounded-lg border border-input bg-background p-0.5">
+                            <button
+                                type="button"
+                                class="rounded-md px-3 py-1 text-xs font-medium transition"
+                                :class="!step.is_skipped
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground'"
+                                @click="step.is_skipped = false"
+                            >
+                                Não
+                            </button>
+                            <button
+                                type="button"
+                                class="rounded-md px-3 py-1 text-xs font-medium transition"
+                                :class="step.is_skipped
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground'"
+                                @click="step.is_skipped = true"
+                            >
+                                Sim
+                            </button>
+                        </div>
                     </div>
 
                     <div class="md:col-span-3">
