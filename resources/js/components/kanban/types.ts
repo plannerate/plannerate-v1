@@ -24,6 +24,7 @@ export type Execution = {
     can_abandon: boolean;
     can_request_abandonment: boolean;
     can_move: boolean;
+    can_open_editor: boolean;
 };
 
 export type BoardStep = {

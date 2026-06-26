@@ -13,6 +13,7 @@ use App\Models\WorkflowHistory;
 use App\Models\WorkflowPlanogramStep;
 use App\Models\WorkflowTemplate;
 use App\Notifications\AppNotification;
+use App\Support\Authorization\PermissionName;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -63,7 +64,8 @@ class WorkflowKanbanService
                 'gondola.planogram:id,name,store_id',
                 'currentResponsible:id,name',
                 'startedBy:id,name',
-                'step:id,name,workflow_template_id',
+                'step:id,name,workflow_template_id,access_mode',
+                'step.template:id,access_mode',
             ])
             ->when($executionStatus, fn ($query) => $query->where('status', $executionStatus))
             ->when(
@@ -125,6 +127,7 @@ class WorkflowKanbanService
                     'can_abandon' => $user?->can('abandon', $exec) ?? false,
                     'can_request_abandonment' => $user?->can('requestAbandonment', $exec) ?? false,
                     'can_move' => $user?->can('move', $exec) ?? false,
+                    'can_open_editor' => $this->canOpenEditor($user, $exec),
                 ])->values()->all(),
             ];
         })->values()->all();
@@ -390,6 +393,10 @@ class WorkflowKanbanService
             ->sortBy('suggested_order');
 
         return $steps->map(function (WorkflowPlanogramStep $step) use ($user) {
+            // Reaproveita o step (com template) já carregado para o cálculo de
+            // can_open_editor, evitando N+1 dentro de allowsEditing().
+            $step->executions->each(fn (WorkflowGondolaExecution $exec) => $exec->setRelation('step', $step));
+
             return [
                 'step' => [
                     'id' => $step->id,
@@ -427,9 +434,29 @@ class WorkflowKanbanService
                     'can_abandon' => $user?->can('abandon', $exec) ?? false,
                     'can_request_abandonment' => $user?->can('requestAbandonment', $exec) ?? false,
                     'can_move' => $user?->can('move', $exec) ?? false,
+                    'can_open_editor' => $this->canOpenEditor($user, $exec),
                 ])->values()->all(),
             ];
         })->values()->all();
+    }
+
+    /**
+     * Decide se o link "Abrir editor" deve aparecer para esta execução.
+     *
+     * Combina: permissão de editar gôndola + execução ativa + iniciada pelo
+     * próprio usuário + etapa atual em modo de edição (access_mode). Caso
+     * contrário, o front oferece apenas a visualização em PDF.
+     */
+    private function canOpenEditor(?User $user, WorkflowGondolaExecution $execution): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+
+        return $user->can(PermissionName::TENANT_GONDOLAS_UPDATE)
+            && $execution->status === WorkflowExecutionStatus::Active
+            && (string) $execution->execution_started_by === (string) $user->id
+            && $execution->allowsEditing();
     }
 
     private function recordHistory(

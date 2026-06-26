@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\WorkflowAccessMode;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -28,6 +29,7 @@ class WorkflowTemplate extends Model
         'suggested_order',
         'estimated_duration_days',
         'default_role_id',
+        'access_mode',
         'color',
         'icon',
         'is_required_by_default',
@@ -40,6 +42,7 @@ class WorkflowTemplate extends Model
             'suggested_order' => 'integer',
             'estimated_duration_days' => 'integer',
             'is_required_by_default' => 'boolean',
+            'access_mode' => WorkflowAccessMode::class,
         ];
     }
 
@@ -80,7 +83,7 @@ class WorkflowTemplate extends Model
      * Retorna os templates padrão (ex.: planograma).
      * Use flow:seed-templates para criar no banco.
      *
-     * @return array<int, array{name: string, slug: string, description: string, instructions: string, category: string, suggested_order: int, estimated_duration_days: int, is_required_by_default: bool, color: string, icon: string, tags: array}>
+     * @return array<int, array{name: string, slug: string, description: string, instructions: string, category: string, suggested_order: int, estimated_duration_days: int, is_required_by_default: bool, access_mode: string, color: string, icon: string, tags: array}>
      */
     public static function getDefaultTemplates(): array
     {
@@ -92,6 +95,7 @@ class WorkflowTemplate extends Model
                 'suggested_order' => 1,
                 'estimated_duration_days' => 2,
                 'is_required_by_default' => true,
+                'access_mode' => 'edit',
                 'color' => 'blue',
                 'icon' => 'layout-grid',
                 'tags' => ['inicial', 'obrigatoria'],
@@ -103,6 +107,7 @@ class WorkflowTemplate extends Model
                 'suggested_order' => 2,
                 'estimated_duration_days' => 1,
                 'is_required_by_default' => true,
+                'access_mode' => 'edit',
                 'color' => 'indigo',
                 'icon' => 'image',
                 'tags' => ['revisao', 'imagens'],
@@ -114,6 +119,7 @@ class WorkflowTemplate extends Model
                 'suggested_order' => 3,
                 'estimated_duration_days' => 1,
                 'is_required_by_default' => true,
+                'access_mode' => 'edit',
                 'color' => 'gray',
                 'icon' => 'ruler',
                 'tags' => ['revisao', 'dimensoes'],
@@ -125,6 +131,7 @@ class WorkflowTemplate extends Model
                 'suggested_order' => 4,
                 'estimated_duration_days' => 2,
                 'is_required_by_default' => true,
+                'access_mode' => 'view',
                 'color' => 'yellow',
                 'icon' => 'trending-up',
                 'tags' => ['aprovacao', 'comercial'],
@@ -136,6 +143,7 @@ class WorkflowTemplate extends Model
                 'suggested_order' => 5,
                 'estimated_duration_days' => 2,
                 'is_required_by_default' => true,
+                'access_mode' => 'view',
                 'color' => 'purple',
                 'icon' => 'check-circle',
                 'tags' => ['aprovacao', 'gc'],
@@ -147,6 +155,7 @@ class WorkflowTemplate extends Model
                 'suggested_order' => 6,
                 'estimated_duration_days' => 1,
                 'is_required_by_default' => true,
+                'access_mode' => 'view',
                 'color' => 'red',
                 'icon' => 'store',
                 'tags' => ['execucao', 'loja'],
@@ -158,6 +167,7 @@ class WorkflowTemplate extends Model
                 'suggested_order' => 7,
                 'estimated_duration_days' => 1,
                 'is_required_by_default' => true,
+                'access_mode' => 'view',
                 'color' => 'blue',
                 'icon' => 'refresh-cw',
                 'tags' => ['revisao', 'periodica'],

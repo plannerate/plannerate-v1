@@ -45,12 +45,17 @@ const wasStartedByCurrentUser = computed(
 const canPause = computed(() => props.execution.can_pause && wasStartedByCurrentUser.value);
 const canAbandon = computed(() => props.execution.can_abandon && wasStartedByCurrentUser.value);
 const canRequestAbandonment = computed(() => props.execution.can_request_abandonment && !wasStartedByCurrentUser.value);
+/**
+ * Decide o link da execução ativa. O backend (can_open_editor) já combina
+ * permissão de editar + execução iniciada pelo usuário + etapa em modo de
+ * edição (access_mode). Quando a etapa é somente leitura, oferece só o PDF.
+ */
 const executionLinkHref = computed(() => {
     if (!isActive.value || !props.execution.started_by?.id || !props.currentUserId) {
         return null;
     }
 
-    if (wasStartedByCurrentUser.value) {
+    if (props.execution.can_open_editor) {
         return tenantEditorPlanogramGondolas.url({
             record: props.execution.gondola_id,
         });
@@ -59,7 +64,7 @@ const executionLinkHref = computed(() => {
     return gondolaView.url(props.execution.gondola_id);
 });
 const executionLinkLabel = computed(() => (
-    wasStartedByCurrentUser.value
+    props.execution.can_open_editor
         ? t('app.kanban.links.open_editor')
         : t('app.kanban.links.view_pdf')
 ));

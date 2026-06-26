@@ -243,8 +243,12 @@ class PlanogramController extends Controller
         $activeExecutions = WorkflowGondolaExecution::query()
             ->whereIn('gondola_id', $gondolaIds->all())
             ->where('status', 'active')
+            ->with([
+                'step:id,workflow_template_id,access_mode',
+                'step.template:id,access_mode',
+            ])
             ->orderByDesc('started_at')
-            ->get(['id', 'gondola_id', 'execution_started_by', 'status'])
+            ->get(['id', 'gondola_id', 'workflow_planogram_step_id', 'execution_started_by', 'status'])
             ->groupBy('gondola_id')
             ->map(fn ($executions) => $executions->first());
 
@@ -262,7 +266,7 @@ class PlanogramController extends Controller
                         $user = request()->user();
                         $canUpdateGondola = $gondola && $user ? $user->can('update', $gondola) : false;
                         $canViewGondola = $gondola && $user ? $user->can('view', $gondola) : false;
-                        $canOpenEditor = $canUpdateGondola && $execution !== null;
+                        $canOpenEditor = $canUpdateGondola && $execution !== null && $execution->allowsEditing();
 
                         return [
                             'id' => (string) ($region['id'] ?? ''),

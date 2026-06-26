@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\WorkflowAccessMode;
 use App\Models\Traits\BelongsToTenant;
 use App\Models\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -24,6 +25,7 @@ class WorkflowPlanogramStep extends Model
         'description',
         'estimated_duration_days',
         'role_id',
+        'access_mode',
         'is_required',
         'is_skipped',
         'status',
@@ -87,5 +89,18 @@ class WorkflowPlanogramStep extends Model
     public function getSuggestedOrderAttribute(): int
     {
         return $this->template?->suggested_order ?? 0;
+    }
+
+    /**
+     * Modo de acesso efetivo da etapa: usa o override da etapa quando
+     * definido, senão herda do template (coluna do Kanban). Default: Edit.
+     */
+    public function getAccessModeAttribute(?string $value): WorkflowAccessMode
+    {
+        if ($value !== null) {
+            return WorkflowAccessMode::tryFrom($value) ?? WorkflowAccessMode::Edit;
+        }
+
+        return $this->template?->access_mode ?? WorkflowAccessMode::Edit;
     }
 }

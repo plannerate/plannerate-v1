@@ -84,4 +84,16 @@ class WorkflowGondolaExecution extends Model
     {
         return $query->where('current_responsible_id', $responsibleId);
     }
+
+    /**
+     * Indica se a etapa atual da execução permite abrir o editor para edição.
+     * Ponto único de decisão reutilizado pelo board, pelo mapa e pela entrada
+     * do editor. Etapa não resolvida é tratada como editável (legado).
+     */
+    public function allowsEditing(): bool
+    {
+        $step = $this->relationLoaded('step') ? $this->step : $this->step()->first();
+
+        return $step?->access_mode?->allowsEditing() ?? true;
+    }
 }

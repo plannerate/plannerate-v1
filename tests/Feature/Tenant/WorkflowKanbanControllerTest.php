@@ -177,6 +177,128 @@ test('kanban index filtra execucoes por current_responsible_id', function (): vo
         );
 });
 
+test('board expõe can_open_editor conforme access_mode da etapa', function (): void {
+    $context = setupKanbanTenantCtx('kanban-access-mode');
+    $this->actingAs($context['user']);
+
+    $planogram = Planogram::factory()->create(['tenant_id' => $context['tenant']->id]);
+
+    $gondolaEdit = Gondola::factory()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+    ]);
+    $gondolaView = Gondola::factory()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+    ]);
+
+    $templateEdit = WorkflowTemplate::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'name' => 'Criação',
+        'slug' => 'criacao-'.Str::lower(Str::random(8)),
+        'suggested_order' => 1,
+        'access_mode' => 'edit',
+        'status' => 'published',
+    ]);
+    $templateView = WorkflowTemplate::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'name' => 'Aprovação comercial',
+        'slug' => 'aprovacao-'.Str::lower(Str::random(8)),
+        'suggested_order' => 4,
+        'access_mode' => 'view',
+        'status' => 'published',
+    ]);
+
+    $stepEdit = WorkflowPlanogramStep::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+        'workflow_template_id' => $templateEdit->id,
+        'status' => 'published',
+    ]);
+    $stepView = WorkflowPlanogramStep::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+        'workflow_template_id' => $templateView->id,
+        'status' => 'published',
+    ]);
+
+    $execEdit = WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondolaEdit->id,
+        'workflow_planogram_step_id' => $stepEdit->id,
+        'status' => 'active',
+        'execution_started_by' => $context['user']->id,
+        'current_responsible_id' => $context['user']->id,
+        'started_at' => now(),
+    ]);
+    $execView = WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondolaView->id,
+        'workflow_planogram_step_id' => $stepView->id,
+        'status' => 'active',
+        'execution_started_by' => $context['user']->id,
+        'current_responsible_id' => $context['user']->id,
+        'started_at' => now(),
+    ]);
+
+    $this->get(route('tenant.kanban.index', [
+        'subdomain' => $context['subdomain'],
+        'planogram_id' => $planogram->id,
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('board', function ($board) use ($execEdit, $execView): bool {
+                $byId = collect($board)
+                    ->flatMap(fn ($column) => $column['executions'] ?? [])
+                    ->keyBy('id');
+
+                return $byId[$execEdit->id]['can_open_editor'] === true
+                    && $byId[$execView->id]['can_open_editor'] === false;
+            })
+        );
+});
+
+test('editor de etapa somente leitura redireciona para o PDF', function (): void {
+    $context = setupKanbanTenantCtx('kanban-editor-block');
+    $this->actingAs($context['user']);
+
+    $planogram = Planogram::factory()->create(['tenant_id' => $context['tenant']->id]);
+    $gondola = Gondola::factory()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+    ]);
+
+    $template = WorkflowTemplate::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'name' => 'Aprovação comercial',
+        'slug' => 'aprovacao-'.Str::lower(Str::random(8)),
+        'suggested_order' => 4,
+        'access_mode' => 'view',
+        'status' => 'published',
+    ]);
+    $step = WorkflowPlanogramStep::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'planogram_id' => $planogram->id,
+        'workflow_template_id' => $template->id,
+        'status' => 'published',
+    ]);
+    WorkflowGondolaExecution::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'gondola_id' => $gondola->id,
+        'workflow_planogram_step_id' => $step->id,
+        'status' => 'active',
+        'execution_started_by' => $context['user']->id,
+        'current_responsible_id' => $context['user']->id,
+        'started_at' => now(),
+    ]);
+
+    $this->get(route('tenant.planograms.gondolas.editor', [
+        'subdomain' => $context['subdomain'],
+        'record' => $gondola->id,
+    ]))
+        ->assertRedirect(route('export.gondola.view', ['gondola' => $gondola->id]));
+});
+
 test('rota planograms.kanban redireciona para kanban.index', function (): void {
     $context = setupKanbanTenantCtx('kanban-ctrl-redirect');
     $this->actingAs($context['user']);
