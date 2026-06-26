@@ -3,6 +3,7 @@ import { useHttp } from '@inertiajs/vue3';
 import { Users } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import WorkflowPlanogramStepController from '@/actions/App/Http/Controllers/Tenant/WorkflowPlanogramStepController';
+import SegmentedToggle from '@/components/form/SegmentedToggle.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -106,13 +107,17 @@ function selectedUsersLabel(step: WorkflowStepSetting): string {
     return `${step.selected_user_ids.length} usuários selecionados`;
 }
 
-/**
- * Define o modo de acesso da etapa: 'edit' abre o editor do planograma,
- * 'view' deixa a etapa somente leitura (apenas visualizar o PDF).
- */
-function setStepAccessMode(step: WorkflowStepSetting, mode: WorkflowAccessMode): void {
-    step.access_mode = mode;
-}
+/** Opções do alternador de modo de acesso da etapa (abre editor x somente PDF). */
+const accessModeOptions = [
+    { value: 'edit', label: 'Editar' },
+    { value: 'view', label: 'Visualizar' },
+] satisfies { value: WorkflowAccessMode; label: string }[];
+
+/** Opções booleanas reutilizadas pelos alternadores Sim/Não. */
+const yesNoOptions = [
+    { value: true, label: 'Sim' },
+    { value: false, label: 'Não' },
+] satisfies { value: boolean; label: string }[];
 
 function updateEstimatedDurationDays(step: WorkflowStepSetting, rawValue: string): void {
     if (rawValue.trim() === '') {
@@ -281,73 +286,28 @@ onMounted(() => {
                         </div>
                     </div>
 
-                    <div class="shrink-0">
-                        <p class="mb-1 text-right text-xs font-medium text-muted-foreground">
-                            Acesso na etapa
-                        </p>
-                        <div class="inline-flex items-center rounded-lg border border-input bg-background p-0.5">
-                            <button
-                                type="button"
-                                class="rounded-md px-3 py-1 text-xs font-medium transition"
-                                :class="step.access_mode === 'edit'
-                                    ? 'bg-primary text-primary-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'"
-                                @click="setStepAccessMode(step, 'edit')"
-                            >
-                                Editar
-                            </button>
-                            <button
-                                type="button"
-                                class="rounded-md px-3 py-1 text-xs font-medium transition"
-                                :class="step.access_mode === 'view'
-                                    ? 'bg-primary text-primary-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'"
-                                @click="setStepAccessMode(step, 'view')"
-                            >
-                                Visualizar
-                            </button>
-                        </div>
-                    </div>
+                    <SegmentedToggle
+                        v-model="step.access_mode"
+                        :options="accessModeOptions"
+                        label="Acesso na etapa"
+                        class="shrink-0"
+                    />
                 </div>
 
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
-                    <div class="md:col-span-3">
-                        <p class="mb-1 text-xs font-medium text-transparent select-none">
-                            Ação
-                        </p>
-                        <label class="flex h-9 items-center gap-2 text-sm text-foreground">
-                            <input v-model="step.is_required" type="checkbox" class="size-4 rounded border-input accent-primary" />
-                            Obrigatória
-                        </label>
-                    </div>
+                    <SegmentedToggle
+                        v-model="step.is_required"
+                        :options="yesNoOptions"
+                        label="Obrigatória"
+                        class="md:col-span-3"
+                    />
 
-                    <div class="md:col-span-3">
-                        <p class="mb-1 text-xs font-medium text-muted-foreground">
-                            Pular etapa
-                        </p>
-                        <div class="inline-flex h-9 items-center rounded-lg border border-input bg-background p-0.5">
-                            <button
-                                type="button"
-                                class="rounded-md px-3 py-1 text-xs font-medium transition"
-                                :class="!step.is_skipped
-                                    ? 'bg-primary text-primary-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'"
-                                @click="step.is_skipped = false"
-                            >
-                                Não
-                            </button>
-                            <button
-                                type="button"
-                                class="rounded-md px-3 py-1 text-xs font-medium transition"
-                                :class="step.is_skipped
-                                    ? 'bg-primary text-primary-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'"
-                                @click="step.is_skipped = true"
-                            >
-                                Sim
-                            </button>
-                        </div>
-                    </div>
+                    <SegmentedToggle
+                        v-model="step.is_skipped"
+                        :options="yesNoOptions"
+                        label="Pular etapa"
+                        class="md:col-span-3"
+                    />
 
                     <div class="md:col-span-3">
                         <label class="mb-1 block text-xs font-medium text-muted-foreground">
