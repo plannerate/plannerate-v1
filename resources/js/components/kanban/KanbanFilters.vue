@@ -14,15 +14,7 @@ const props = defineProps<{
         gondola_search?: string;
         execution_status?: string;
         current_responsible_id?: string;
-        lifecycle_status?: string;
     };
-    onlyOverdue: boolean;
-    showCompleted: boolean;
-}>();
-
-const emit = defineEmits<{
-    'update:onlyOverdue': [value: boolean];
-    'update:showCompleted': [value: boolean];
 }>();
 
 const { t } = useT();
@@ -105,23 +97,6 @@ const filteredPlanograms = computed(() => {
         </div>
 
         <div class="flex flex-col gap-1">
-            <label for="kanban-lifecycle-status" class="text-xs font-medium text-foreground">
-                {{ t('app.kanban.filters.lifecycle_status') }}
-            </label>
-            <select
-                id="kanban-lifecycle-status"
-                name="lifecycle_status"
-                :value="filters.lifecycle_status ?? ''"
-                class="h-9 min-w-44 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-            >
-                <option value="">{{ t('app.kanban.filters.all_lifecycles') }}</option>
-                <option value="in_progress">{{ t('app.kanban.filters.lifecycle.in_progress') }}</option>
-                <option value="completed">{{ t('app.kanban.filters.lifecycle.completed') }}</option>
-                <option value="periodic_review">{{ t('app.kanban.filters.lifecycle.periodic_review') }}</option>
-            </select>
-        </div>
-
-        <div class="flex flex-col gap-1">
             <label for="kanban-responsible" class="text-xs font-medium text-foreground">
                 {{ t('app.kanban.filters.responsible') }}
             </label>
@@ -137,31 +112,5 @@ const filteredPlanograms = computed(() => {
                 </option>
             </select>
         </div>
-
-        <details class="min-w-44 rounded-lg border border-input bg-background px-3 py-2">
-            <summary class="cursor-pointer text-xs font-medium text-foreground">
-                {{ t('app.kanban.filters.display_options') }}
-            </summary>
-            <div class="mt-2 flex flex-col gap-1.5">
-                <label class="flex cursor-pointer items-center gap-2 text-xs text-foreground">
-                    <input
-                        type="checkbox"
-                        :checked="onlyOverdue"
-                        class="h-4 w-4 rounded border-input"
-                        @change="emit('update:onlyOverdue', ($event.target as HTMLInputElement).checked)"
-                    />
-                    {{ t('app.kanban.filters.only_overdue') }}
-                </label>
-                <label class="flex cursor-pointer items-center gap-2 text-xs text-foreground">
-                    <input
-                        type="checkbox"
-                        :checked="showCompleted"
-                        class="h-4 w-4 rounded border-input"
-                        @change="emit('update:showCompleted', ($event.target as HTMLInputElement).checked)"
-                    />
-                    {{ t('app.kanban.filters.show_completed') }}
-                </label>
-            </div>
-        </details>
     </ListFiltersBar>
 </template>

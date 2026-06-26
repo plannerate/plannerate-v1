@@ -42,8 +42,6 @@ const pageMeta = useCrudPageMeta({
 });
 
 const {
-    onlyOverdue,
-    showCompleted,
     filteredBoard,
     draggingExecutionId,
     dragOverStepId,
@@ -259,10 +257,6 @@ async function runCardAction(action: KanbanExecutionAction, execution: Execution
                     :stores="props.stores"
                     :users="props.users"
                     :filters="props.filters"
-                    :only-overdue="onlyOverdue"
-                    :show-completed="showCompleted"
-                    @update:only-overdue="onlyOverdue = $event"
-                    @update:show-completed="showCompleted = $event"
                 />
             </div>
 
