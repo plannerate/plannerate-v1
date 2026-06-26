@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Tenant\Editor\EditorPlanogramController::editor
-* @see app/Http/Controllers/Tenant/Editor/EditorPlanogramController.php:58
+* @see app/Http/Controllers/Tenant/Editor/EditorPlanogramController.php:24
 * @route '/editor/planograms/{record}/gondolas/editor'
 */
 export const editor = (args: { record: string | number } | [record: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ editor.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\Editor\EditorPlanogramController::editor
-* @see app/Http/Controllers/Tenant/Editor/EditorPlanogramController.php:58
+* @see app/Http/Controllers/Tenant/Editor/EditorPlanogramController.php:24
 * @route '/editor/planograms/{record}/gondolas/editor'
 */
 editor.url = (args: { record: string | number } | [record: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -43,7 +43,7 @@ editor.url = (args: { record: string | number } | [record: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\Tenant\Editor\EditorPlanogramController::editor
-* @see app/Http/Controllers/Tenant/Editor/EditorPlanogramController.php:58
+* @see app/Http/Controllers/Tenant/Editor/EditorPlanogramController.php:24
 * @route '/editor/planograms/{record}/gondolas/editor'
 */
 editor.get = (args: { record: string | number } | [record: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -53,7 +53,7 @@ editor.get = (args: { record: string | number } | [record: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\Tenant\Editor\EditorPlanogramController::editor
-* @see app/Http/Controllers/Tenant/Editor/EditorPlanogramController.php:58
+* @see app/Http/Controllers/Tenant/Editor/EditorPlanogramController.php:24
 * @route '/editor/planograms/{record}/gondolas/editor'
 */
 editor.head = (args: { record: string | number } | [record: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -63,7 +63,7 @@ editor.head = (args: { record: string | number } | [record: string | number ] | 
 
 /**
 * @see \App\Http\Controllers\Tenant\Editor\EditorPlanogramController::editor
-* @see app/Http/Controllers/Tenant/Editor/EditorPlanogramController.php:58
+* @see app/Http/Controllers/Tenant/Editor/EditorPlanogramController.php:24
 * @route '/editor/planograms/{record}/gondolas/editor'
 */
 const editorForm = (args: { record: string | number } | [record: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -73,7 +73,7 @@ const editorForm = (args: { record: string | number } | [record: string | number
 
 /**
 * @see \App\Http\Controllers\Tenant\Editor\EditorPlanogramController::editor
-* @see app/Http/Controllers/Tenant/Editor/EditorPlanogramController.php:58
+* @see app/Http/Controllers/Tenant/Editor/EditorPlanogramController.php:24
 * @route '/editor/planograms/{record}/gondolas/editor'
 */
 editorForm.get = (args: { record: string | number } | [record: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -83,7 +83,7 @@ editorForm.get = (args: { record: string | number } | [record: string | number ]
 
 /**
 * @see \App\Http\Controllers\Tenant\Editor\EditorPlanogramController::editor
-* @see app/Http/Controllers/Tenant/Editor/EditorPlanogramController.php:58
+* @see app/Http/Controllers/Tenant/Editor/EditorPlanogramController.php:24
 * @route '/editor/planograms/{record}/gondolas/editor'
 */
 editorForm.head = (args: { record: string | number } | [record: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Tenant;
 
+use App\Enums\WorkflowAccessMode;
 use App\Models\Planogram;
 use App\Support\Tenancy\InteractsWithTenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -42,6 +43,7 @@ class WorkflowPlanogramSettingsUpdateRequest extends FormRequest
             'steps.*.is_required' => ['required', 'boolean'],
             'steps.*.is_skipped' => ['required', 'boolean'],
             'steps.*.estimated_duration_days' => ['nullable', 'integer', 'min:0'],
+            'steps.*.access_mode' => ['nullable', Rule::enum(WorkflowAccessMode::class)],
             'steps.*.user_ids' => ['nullable', 'array'],
             'steps.*.user_ids.*' => ['ulid', Rule::exists($usersTable, 'id')],
         ];

@@ -17,6 +17,8 @@ type UserOption = {
     name: string;
 };
 
+type WorkflowAccessMode = 'edit' | 'view';
+
 type WorkflowStepSetting = {
     id: string;
     workflow_template_id: string;
@@ -24,6 +26,7 @@ type WorkflowStepSetting = {
     description: string | null;
     estimated_duration_days: number | null;
     role_id: string | null;
+    access_mode: WorkflowAccessMode;
     is_required: boolean;
     is_skipped: boolean;
     status: string;
@@ -41,6 +44,7 @@ type WorkflowSettingsSaveStepPayload = {
     is_required: boolean;
     is_skipped: boolean;
     estimated_duration_days: number | null;
+    access_mode: WorkflowAccessMode;
     user_ids: string[];
 };
 
@@ -102,6 +106,14 @@ function selectedUsersLabel(step: WorkflowStepSetting): string {
     return `${step.selected_user_ids.length} usuários selecionados`;
 }
 
+/**
+ * Define o modo de acesso da etapa: 'edit' abre o editor do planograma,
+ * 'view' deixa a etapa somente leitura (apenas visualizar o PDF).
+ */
+function setStepAccessMode(step: WorkflowStepSetting, mode: WorkflowAccessMode): void {
+    step.access_mode = mode;
+}
+
 function updateEstimatedDurationDays(step: WorkflowStepSetting, rawValue: string): void {
     if (rawValue.trim() === '') {
         step.estimated_duration_days = null;
@@ -146,6 +158,7 @@ async function saveSettings(): Promise<void> {
             is_required: step.is_required,
             is_skipped: step.is_skipped,
             estimated_duration_days: step.estimated_duration_days,
+            access_mode: step.access_mode,
             user_ids: step.selected_user_ids,
         }));
 
@@ -265,6 +278,34 @@ onMounted(() => {
                             <Badge v-if="step.role_id" variant="outline">
                                 Perfil: {{ step.role_id }}
                             </Badge>
+                        </div>
+                    </div>
+
+                    <div class="shrink-0">
+                        <p class="mb-1 text-right text-xs font-medium text-muted-foreground">
+                            Acesso na etapa
+                        </p>
+                        <div class="inline-flex items-center rounded-lg border border-input bg-background p-0.5">
+                            <button
+                                type="button"
+                                class="rounded-md px-3 py-1 text-xs font-medium transition"
+                                :class="step.access_mode === 'edit'
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground'"
+                                @click="setStepAccessMode(step, 'edit')"
+                            >
+                                Editar
+                            </button>
+                            <button
+                                type="button"
+                                class="rounded-md px-3 py-1 text-xs font-medium transition"
+                                :class="step.access_mode === 'view'
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground'"
+                                @click="setStepAccessMode(step, 'view')"
+                            >
+                                Visualizar
+                            </button>
                         </div>
                     </div>
                 </div>

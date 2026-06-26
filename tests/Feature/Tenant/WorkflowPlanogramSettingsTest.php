@@ -155,6 +155,58 @@ test('workflow settings update persists required skipped and allowed users', fun
     ]);
 });
 
+test('workflow settings expose template access_mode and persist per-step override', function (): void {
+    $context = setupWorkflowTenantContext('tenant-workflow-access-mode');
+    $this->actingAs($context['user']);
+
+    // Template em modo somente leitura — a etapa deve herdar 'view' por fallback.
+    $template = WorkflowTemplate::query()->create([
+        'name' => 'Aprovação comercial',
+        'slug' => 'aprovacao-comercial-'.Str::lower(Str::random(8)),
+        'suggested_order' => 4,
+        'access_mode' => 'view',
+        'is_required_by_default' => true,
+        'status' => 'published',
+    ]);
+
+    $planogram = Planogram::query()->create([
+        'tenant_id' => $context['tenant']->id,
+        'name' => 'Planograma Access Mode',
+        'slug' => 'planograma-access-mode',
+        'type' => 'planograma',
+        'status' => 'draft',
+    ]);
+
+    // Index: herda o modo do template (view) já que a etapa não tem override.
+    $this->get(route('tenant.planograms.workflow-settings.index', [
+        'subdomain' => $context['subdomain'],
+        'planogram' => $planogram->id,
+    ]))
+        ->assertOk()
+        ->assertJsonPath('steps.0.access_mode', 'view');
+
+    $step = WorkflowPlanogramStep::query()->where('planogram_id', $planogram->id)->firstOrFail();
+
+    // Update: sobrescreve a etapa para 'edit'.
+    $this->putJson(route('tenant.planograms.workflow-settings.update', [
+        'subdomain' => $context['subdomain'],
+        'planogram' => $planogram->id,
+    ]), [
+        'steps' => [
+            [
+                'step_id' => $step->id,
+                'is_required' => true,
+                'is_skipped' => false,
+                'estimated_duration_days' => null,
+                'access_mode' => 'edit',
+                'user_ids' => [],
+            ],
+        ],
+    ])
+        ->assertOk()
+        ->assertJsonPath('steps.0.access_mode', 'edit');
+});
+
 test('workflow settings load defaults resets settings based on tenant templates', function (): void {
     $context = setupWorkflowTenantContext('tenant-workflow-load-defaults');
     $this->actingAs($context['user']);
