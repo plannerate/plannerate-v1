@@ -17,6 +17,7 @@
             :product-id="productId"
             :start-date="startDate"
             :end-date="endDate"
+            :current-stock="product?.current_stock ?? null"
         />
     </div>
 </template>

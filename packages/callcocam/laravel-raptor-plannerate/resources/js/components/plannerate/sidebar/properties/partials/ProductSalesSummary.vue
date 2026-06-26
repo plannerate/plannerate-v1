@@ -220,46 +220,33 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Top Stores -->
-            <div v-if="salesData.top_stores.length > 0" class="space-y-2">
-                <Separator />
-                <h5 class="text-xs font-semibold text-foreground">
-                    {{ t('plannerate.sidebar.product_sales_summary.top_stores') }}
+        <!-- Estoque (sempre visível, mesmo sem vendas) -->
+        <div v-if="!isLoading && !error" class="space-y-2 rounded-lg border p-3">
+            <div class="flex items-center gap-2">
+                <Package class="h-4 w-4 text-blue-600 dark:text-blue-500" />
+                <h5 class="text-sm font-semibold text-foreground">
+                    {{ t('plannerate.sidebar.product_sales_summary.stock_group') }}
                 </h5>
-                <div class="space-y-1">
-                    <div
-                        v-for="(store, index) in salesData.top_stores"
-                        :key="store.store_id"
-                        class="rounded-md bg-muted/30 px-3 py-2"
-                    >
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <Badge
-                                    variant="outline"
-                                    class="h-5 w-5 justify-center p-0 text-xs"
-                                >
-                                    {{ index + 1 }}
-                                </Badge>
-                                <span
-                                    class="text-xs font-medium text-foreground"
-                                    >{{ store.store_name }}</span
-                                >
-                            </div>
-                            <span
-                                class="text-xs font-semibold text-green-600 dark:text-green-500"
-                            >
-                                {{ formatCurrency(store.revenue) }}
-                            </span>
-                        </div>
-                        <div
-                            class="mt-1 flex items-center gap-3 text-xs text-muted-foreground"
-                        >
-                            <span>{{ store.sales_count }} {{ t('plannerate.sidebar.product_sales_summary.sales') }}</span>
-                            <span>{{ store.quantity }} {{ t('plannerate.sidebar.product_sales_summary.units') }}</span>
-                        </div>
-                    </div>
-                </div>
+            </div>
+            <div class="rounded-md bg-muted/40 p-2.5">
+                <p class="text-xs text-muted-foreground">
+                    {{ t('plannerate.sidebar.product_sales_summary.current_stock') }}
+                </p>
+                <!-- Mostra o valor quando há estoque; senão, indica "Sem estoque" -->
+                <p
+                    v-if="hasStock"
+                    class="text-xl font-bold text-foreground"
+                >
+                    {{ formatStock(currentStock ?? 0) }}
+                </p>
+                <p
+                    v-else
+                    class="text-sm font-medium text-muted-foreground"
+                >
+                    {{ t('plannerate.sidebar.product_sales_summary.no_stock') }}
+                </p>
             </div>
         </div>
     </div>
@@ -272,10 +259,10 @@ import {
     Coins,
     Info,
     Loader2,
+    Package,
     TrendingDown,
 } from 'lucide-vue-next';
 import { computed, watch } from 'vue';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useProductSales } from '@/composables/plannerate/products/useProductSales';
 import { useT } from '@/composables/useT';
@@ -286,6 +273,8 @@ interface Props {
     startDate?: string | null;
     /** Data final do período do planograma (filtra as vendas) */
     endDate?: string | null;
+    /** Estoque atual do produto (unidades) — exibido no card de Estoque */
+    currentStock?: number | null;
 }
 
 const props = defineProps<Props>();
@@ -323,6 +312,14 @@ const grossMarginPercentage = computed(() => {
     return revenue > 0 ? (grossProfitTotal.value / revenue) * 100 : 0;
 });
 
+/**
+ * Há estoque quando o valor está definido e é maior que zero.
+ * Caso contrário, o card mostra "Sem estoque".
+ */
+const hasStock = computed(
+    () => props.currentStock != null && props.currentStock > 0,
+);
+
 // Recarrega quando o produto ou o período do planograma muda
 watch(
     () => [props.productId, props.startDate, props.endDate] as const,
@@ -348,6 +345,16 @@ function formatPercent(value: number): string {
         minimumFractionDigits: 1,
         maximumFractionDigits: 1,
     }).format(value) + '%';
+}
+
+/**
+ * Formata o estoque: inteiro quando não há fração, senão com até 2 casas decimais.
+ */
+function formatStock(value: number): string {
+    return new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+    }).format(value);
 }
 
 function formatDate(date: string | null): string {

@@ -164,6 +164,7 @@ class GondolaPayloadService
                                             'height' => $segment->layer->product->height,
                                             'depth' => $segment->layer->product->depth,
                                             'weight' => $segment->layer->product->weight,
+                                            'current_stock' => $segment->layer->product->current_stock,
                                             'brand' => $segment->layer->product->brand,
                                             'status' => $segment->layer->product->status,
                                             'category_id' => $segment->layer->product->category_id,

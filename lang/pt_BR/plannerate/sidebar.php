@@ -281,6 +281,10 @@ return [
         'net_margin_total' => 'Margem total líquida',
         'net_margin_percentage' => 'Margem líquida',
         'net_margin_note' => 'A margem líquida considera os impostos aplicáveis além do custo do produto.',
+        // Grupo 4 — Estoque
+        'stock_group' => 'Estoque',
+        'current_stock' => 'Estoque Atual',
+        'no_stock' => 'Sem estoque',
         'sales_period' => 'Período de Vendas',
         'first_sale' => 'Primeira Venda',
         'last_sale' => 'Última Venda',
