@@ -13,4 +13,9 @@ enum WorkflowHistoryAction: string
     case Cancelled = 'cancelled';
     case Restored = 'restored';
     case PeriodicReviewTriggered = 'periodic_review_triggered';
+    case EvidenceAdded = 'evidence_added';
+    case EvidenceRemoved = 'evidence_removed';
+    case DivergenceRegistered = 'divergence_registered';
+    case DivergenceUpdated = 'divergence_updated';
+    case DivergenceResolved = 'divergence_resolved';
 }

@@ -200,6 +200,7 @@ Crie layouts otimizados, melhore a exposição dos produtos e impulsione os resu
             'all_statuses' => 'Todos os status',
             'responsible' => 'Responsável',
             'all_responsibles' => 'Todos os responsáveis',
+            'show_completed' => 'Exibir concluídos',
             'lifecycle_status' => 'Ciclo de vida',
             'all_lifecycles' => 'Todos',
             'lifecycle' => [

@@ -80,6 +80,40 @@ class WorkflowExecutionPolicy
         return $this->allowByContext($user, PermissionName::TENANT_KANBAN_EXECUTIONS_MANAGE);
     }
 
+    /**
+     * Decide se o usuário pode operar a camada de Execução em Loja desta
+     * execução (registrar evidências/divergências e concluir).
+     *
+     * Gate barato e reutilizado pela tela de print: exige que a execução esteja
+     * na etapa final de fluxo (Execução em Loja), em estado operável
+     * (pending/active/paused) e que o usuário seja o responsável atual, um
+     * usuário permitido da etapa (para o início automático) ou um gestor.
+     */
+    public function execute(User $user, WorkflowGondolaExecution $execution): bool
+    {
+        if (! $this->isAtFinalFlowStep($execution)) {
+            return false;
+        }
+
+        if (! in_array($execution->status, [
+            WorkflowExecutionStatus::Pending,
+            WorkflowExecutionStatus::Active,
+            WorkflowExecutionStatus::Paused,
+        ], true)) {
+            return false;
+        }
+
+        if ((string) $execution->current_responsible_id === (string) $user->id) {
+            return true;
+        }
+
+        if ($this->userCanExecuteCurrentStep($user, $execution)) {
+            return true;
+        }
+
+        return $this->canManageExecution($user);
+    }
+
     public function restore(User $user, WorkflowGondolaExecution $execution): bool
     {
         return $this->allowByContext($user, PermissionName::TENANT_KANBAN_EXECUTIONS_RESTORE);

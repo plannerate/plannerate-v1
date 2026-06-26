@@ -61,6 +61,18 @@ class WorkflowGondolaExecution extends Model
             ->orderByDesc('performed_at');
     }
 
+    public function evidences(): HasMany
+    {
+        return $this->hasMany(WorkflowExecutionEvidence::class, 'workflow_gondola_execution_id')
+            ->latest();
+    }
+
+    public function divergences(): HasMany
+    {
+        return $this->hasMany(WorkflowExecutionDivergence::class, 'workflow_gondola_execution_id')
+            ->latest();
+    }
+
     public function currentResponsible(): BelongsTo
     {
         return $this->belongsTo(User::class, 'current_responsible_id');

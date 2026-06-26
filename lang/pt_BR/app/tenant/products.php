@@ -77,6 +77,15 @@ return [
             'regular_value' => 'Receita fora de promoção',
             'total_profit_margin' => 'Margem de lucro total',
             'total_margem_contribuicao' => 'Margem de contribuição total',
+            // Indicadores espelhados do card lateral (Custo e Lucro Bruto / Margem Líquida)
+            'avg_cost_unit' => 'Custo médio unitário',
+            'total_cost' => 'Custo total',
+            'gross_profit_unit' => 'Lucro bruto unitário',
+            'gross_profit_total' => 'Lucro bruto total',
+            'gross_margin' => 'Margem bruta',
+            'net_margin_unit' => 'Margem unit. líquida',
+            'net_margin_total' => 'Margem total líquida',
+            'net_margin_percentage' => 'Margem líquida',
         ],
         'filters' => [
             'promotion_all' => 'Todas as vendas',

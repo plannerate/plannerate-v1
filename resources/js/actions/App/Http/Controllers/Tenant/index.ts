@@ -17,6 +17,7 @@ import NotificationController from './NotificationController'
 import SystemLogController from './SystemLogController'
 import WorkflowKanbanController from './WorkflowKanbanController'
 import WorkflowExecutionController from './WorkflowExecutionController'
+import GondolaExecutionLayerController from './GondolaExecutionLayerController'
 import WorkflowPlanogramStepController from './WorkflowPlanogramStepController'
 import ReverbTestController from './ReverbTestController'
 
@@ -40,6 +41,7 @@ const Tenant = {
     SystemLogController: Object.assign(SystemLogController, SystemLogController),
     WorkflowKanbanController: Object.assign(WorkflowKanbanController, WorkflowKanbanController),
     WorkflowExecutionController: Object.assign(WorkflowExecutionController, WorkflowExecutionController),
+    GondolaExecutionLayerController: Object.assign(GondolaExecutionLayerController, GondolaExecutionLayerController),
     WorkflowPlanogramStepController: Object.assign(WorkflowPlanogramStepController, WorkflowPlanogramStepController),
     ReverbTestController: Object.assign(ReverbTestController, ReverbTestController),
 }

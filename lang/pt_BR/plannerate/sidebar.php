@@ -264,7 +264,7 @@ return [
         'no_data_description' => 'Este produto ainda não possui vendas registradas',
         // Grupo 1 — Resumo de Vendas
         'sales_group' => 'Resumo de Vendas',
-        'total_sales' => 'Total Vendas',
+        'total_sales' => 'Registros de venda',
         'quantity' => 'Quantidade Vendida',
         'revenue' => 'Valor de Venda',
         'avg_sale_price' => 'Preço Médio de Venda',
