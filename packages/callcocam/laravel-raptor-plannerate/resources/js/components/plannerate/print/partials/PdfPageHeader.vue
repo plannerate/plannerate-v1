@@ -118,7 +118,7 @@ const popoverItems = computed<Array<{ icon: Component; label: string; value: str
 <template>
     <div class="flex items-center gap-5">
         <!-- Metadados inline: somente em telas grandes -->
-        <div class="hidden items-center gap-5 2xl:flex">
+        <!-- <div class="hidden items-center gap-5 2xl:flex">
             <div
                 v-for="(item, idx) in metaItems"
                 :key="idx"
@@ -136,7 +136,7 @@ const popoverItems = computed<Array<{ icon: Component; label: string; value: str
                     {{ item.value }}
                 </span>
             </div>
-        </div>
+        </div> -->
 
         <!-- Metadados em popover: telas menores p/ não esconder/sobrepor os botões -->
         <Popover>
@@ -174,7 +174,7 @@ const popoverItems = computed<Array<{ icon: Component; label: string; value: str
         </Popover>
 
         <!-- Badge de versão: sempre visível -->
-        <div
+        <!-- <div
             class="flex shrink-0 flex-col items-center justify-center rounded-lg bg-primary px-3 py-2 text-primary-foreground"
         >
             <span
@@ -182,6 +182,6 @@ const popoverItems = computed<Array<{ icon: Component; label: string; value: str
                 >{{ t('plannerate.print.labels.version') }}</span
             >
             <span class="mt-0.5 text-base leading-none font-black">V1.0</span>
-        </div>
+        </div> -->
     </div>
 </template>
