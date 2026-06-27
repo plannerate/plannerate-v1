@@ -1,50 +1,105 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, toRef, watch } from 'vue';
+import type { Section } from '@/types/planogram';
 import ExecutionBar from './ExecutionBar.vue';
 import AddDivergenceModal from './modals/AddDivergenceModal.vue';
 import AddEvidenceModal from './modals/AddEvidenceModal.vue';
 import CompleteExecutionModal from './modals/CompleteExecutionModal.vue';
 import type { ExecutionPayload } from './types';
+import { useExecutionStructure } from './useExecutionStructure';
 
 /**
  * Camada de Execução em Loja acoplada à tela de print read-only.
  *
- * O payload pesado (`execution`) chega via Inertia::optional: na montagem
- * dispara um partial reload que também inicia automaticamente a execução
- * pendente (export §12). Após cada mutação, refaz o partial reload para
- * atualizar a barra-resumo e os modais.
+ * O `execution` já vem montado no carregamento (prop normal, montado só quando
+ * `canExecute`). As mutações usam `back()` recarregando apenas `execution`
+ * (`only`), então a barra/modais refletem o estado novo sem reset. A barra fica
+ * fixa no topo (mockup 1.png) e a toolbar de print é deslocada para baixo dela.
  */
 const props = defineProps<{
     execution: ExecutionPayload | null;
+    sections?: Section[];
 }>();
 
-const loadingPayload = ref(false);
+const { modules } = useExecutionStructure(toRef(props, 'sections'));
 
 const showEvidence = ref(false);
 const showDivergence = ref(false);
 const showComplete = ref(false);
+// Quando o usuário sai do modal de Concluir para Adicionar/Resolver, reabrimos
+// o Concluir ao fechar o modal intermediário.
+const returnToComplete = ref(false);
 
 const execution = computed(() => props.execution);
 
-/** Recarrega apenas o payload de execução (partial reload). */
-function refresh(): void {
-    loadingPayload.value = true;
-    router.reload({
-        only: ['execution'],
-        preserveScroll: true,
-        preserveState: true,
-        onFinish: () => {
-            loadingPayload.value = false;
-        },
-    });
+/** Vai do Concluir para o modal de evidência, marcando para retornar. */
+function openEvidenceFromComplete(): void {
+    showComplete.value = false;
+    returnToComplete.value = true;
+    showEvidence.value = true;
+}
+
+/** Vai do Concluir para o modal de divergência, marcando para retornar. */
+function openDivergenceFromComplete(): void {
+    showComplete.value = false;
+    returnToComplete.value = true;
+    showDivergence.value = true;
+}
+
+// Ao fechar o modal intermediário, reabre o Concluir (se viemos de lá).
+watch([showEvidence, showDivergence], ([evidenceOpen, divergenceOpen]) => {
+    if (!evidenceOpen && !divergenceOpen && returnToComplete.value) {
+        returnToComplete.value = false;
+        showComplete.value = true;
+    }
+});
+
+// ── Deslocamento da toolbar de print para caber sob a barra de execução ──
+let barObserver: ResizeObserver | null = null;
+
+/** Empurra a toolbar/conteúdo de print para baixo da barra de execução fixa. */
+function applyToolbarOffset(): void {
+    const bar = document.querySelector('[data-execution-bar]') as HTMLElement | null;
+    const root = document.querySelector('.force-light.min-h-screen') as HTMLElement | null;
+    if (!bar || !root) {
+        return;
+    }
+    const height = bar.offsetHeight;
+    const toolbar = root.querySelector(':scope > .fixed.top-0') as HTMLElement | null;
+    root.style.paddingTop = `${height}px`;
+    if (toolbar) {
+        toolbar.style.top = `${height}px`;
+    }
+}
+
+/** Desfaz o deslocamento aplicado à toolbar/conteúdo de print. */
+function clearToolbarOffset(): void {
+    const root = document.querySelector('.force-light.min-h-screen') as HTMLElement | null;
+    if (!root) {
+        return;
+    }
+    root.style.paddingTop = '';
+    const toolbar = root.querySelector(':scope > .fixed.top-0') as HTMLElement | null;
+    if (toolbar) {
+        toolbar.style.top = '';
+    }
 }
 
 onMounted(() => {
-    // Carrega o payload sob demanda (e dispara o início automático no backend).
-    if (!props.execution) {
-        refresh();
-    }
+    void nextTick(() => {
+        applyToolbarOffset();
+        const bar = document.querySelector('[data-execution-bar]') as HTMLElement | null;
+        if (bar && 'ResizeObserver' in window) {
+            barObserver = new ResizeObserver(() => applyToolbarOffset());
+            barObserver.observe(bar);
+        }
+    });
+});
+
+onBeforeUnmount(() => {
+    barObserver?.disconnect();
+    clearToolbarOffset();
 });
 
 /** Conclusão bem-sucedida: navega para o board (o card sai da listagem). */
@@ -57,8 +112,9 @@ function onCompleted(): void {
 <template>
     <div>
         <ExecutionBar
+            data-execution-bar
             :execution="execution"
-            :loading="loadingPayload && !execution"
+            :loading="!execution"
             @add-evidence="showEvidence = true"
             @add-divergence="showDivergence = true"
             @complete="showComplete = true"
@@ -69,7 +125,8 @@ function onCompleted(): void {
             v-model:open="showEvidence"
             :execution-id="execution.id"
             :summary="execution.evidence_summary"
-            @saved="refresh"
+            :evidences="execution.evidences"
+            :modules="modules"
         />
 
         <AddDivergenceModal
@@ -77,7 +134,7 @@ function onCompleted(): void {
             v-model:open="showDivergence"
             :execution-id="execution.id"
             :divergences="execution.divergences"
-            @saved="refresh"
+            :sections="props.sections ?? []"
         />
 
         <CompleteExecutionModal
@@ -85,8 +142,8 @@ function onCompleted(): void {
             v-model:open="showComplete"
             :execution="execution"
             @completed="onCompleted"
-            @go-evidence="showComplete = false; showEvidence = true"
-            @go-divergence="showComplete = false; showDivergence = true"
+            @go-evidence="openEvidenceFromComplete"
+            @go-divergence="openDivergenceFromComplete"
         />
     </div>
 </template>

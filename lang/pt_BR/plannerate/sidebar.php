@@ -92,6 +92,17 @@ return [
         'updating_products' => 'Atualizando :count produtos selecionados',
         'dimension_update' => ':dimension: :value cm',
         'updated_success' => ':count produtos atualizados com sucesso!',
+        'tab_details' => 'Detalhes',
+        'tab_execution' => 'Execução',
+    ],
+    'product_execution' => [
+        'title' => 'Execução em loja',
+        'subtitle' => 'Retorno da loja registrado para este produto.',
+        'load_error' => 'Falha ao carregar o retorno da execução.',
+        'empty_title' => 'Sem registros',
+        'empty_description' => 'Nenhuma divergência ou evidência deste produto na execução.',
+        'divergences' => 'Divergências (:count)',
+        'evidences' => 'Evidências do produto (:count)',
     ],
     'no_selection' => [
         'title' => 'Nenhum item selecionado',

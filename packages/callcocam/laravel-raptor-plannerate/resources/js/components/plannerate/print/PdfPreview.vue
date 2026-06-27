@@ -47,6 +47,8 @@ interface Props {
         [key: string]: any;
     };
     responsavel?: string;
+    /** Modo Execução em Loja: enxuga a toolbar (sem duplicar o cabeçalho). */
+    executionMode?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -361,6 +363,7 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
             :tenant-name="tenantName"
             :responsavel="responsavel"
             :analysis="analysis"
+            :compact="executionMode"
             @increase-scale="increaseScale"
             @decrease-scale="decreaseScale"
             @toggle-layout="toggleLayout"

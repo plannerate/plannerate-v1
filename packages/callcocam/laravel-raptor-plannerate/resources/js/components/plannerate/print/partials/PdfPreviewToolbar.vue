@@ -47,6 +47,11 @@ interface Props {
         stock?: StockAnalysis;
         [key: string]: any;
     };
+    /**
+     * Modo enxuto: oculta logo/título/metadados/fluxo da toolbar (que duplicam o
+     * cabeçalho da gôndola), mantendo só os controles. Usado na Execução em Loja.
+     */
+    compact?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -67,46 +72,49 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`);
     >
         <!-- Linha 1: logo + metadados + ações (faz wrap em telas menores p/ não esconder botões) -->
         <div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2">
-            <!-- Logo -->
-            <div class="shrink-0">
-                <img
-                    src="/img/marca-claro.png"
-                    alt="Logo"
-                    class="block h-8 w-auto dark:hidden"
-                />
-                <img
-                    src="/img/marcadark.png"
-                    alt="Logo"
-                    class="hidden h-8 w-auto dark:block"
-                />
-            </div>
+            <!-- Branding + metadados (ocultos no modo enxuto p/ não duplicar o cabeçalho da gôndola) -->
+            <template v-if="!compact">
+                <!-- Logo -->
+                <div class="shrink-0">
+                    <img
+                        src="/img/marca-claro.png"
+                        alt="Logo"
+                        class="block h-8 w-auto dark:hidden"
+                    />
+                    <img
+                        src="/img/marcadark.png"
+                        alt="Logo"
+                        class="hidden h-8 w-auto dark:block"
+                    />
+                </div>
 
-            <!-- Separador + título -->
-            <div class="h-8 w-px shrink-0 bg-slate-200 dark:bg-slate-700"></div>
-            <div class="shrink-0">
-                <p
-                    v-if="tenantName"
-                    class="text-[9px] leading-none font-bold tracking-widest text-slate-500 uppercase dark:text-slate-400"
-                >
-                    {{ tenantName }}
-                </p>
-                <h1
-                    class="text-sm leading-none font-black tracking-wide text-slate-900 uppercase dark:text-slate-100"
-                >
-                    {{ t('plannerate.print.preview.exposure_planogram') }}
-                </h1>
-            </div>
+                <!-- Separador + título -->
+                <div class="h-8 w-px shrink-0 bg-slate-200 dark:bg-slate-700"></div>
+                <div class="shrink-0">
+                    <p
+                        v-if="tenantName"
+                        class="text-[9px] leading-none font-bold tracking-widest text-slate-500 uppercase dark:text-slate-400"
+                    >
+                        {{ tenantName }}
+                    </p>
+                    <h1
+                        class="text-sm leading-none font-black tracking-wide text-slate-900 uppercase dark:text-slate-100"
+                    >
+                        {{ t('plannerate.print.preview.exposure_planogram') }}
+                    </h1>
+                </div>
 
-            <!-- Separador + metadados compactos -->
-            <div class="h-8 w-px shrink-0 bg-slate-200 dark:bg-slate-700"></div>
-            <div class="min-w-0 flex-1">
-                <PdfPageHeader
-                    :gondola="gondola"
-                    :tenant-name="tenantName"
-                    :responsavel="responsavel"
-                    :flow-label="flowLabel"
-                />
-            </div>
+                <!-- Separador + metadados compactos -->
+                <div class="h-8 w-px shrink-0 bg-slate-200 dark:bg-slate-700"></div>
+                <div class="min-w-0 flex-1">
+                    <PdfPageHeader
+                        :gondola="gondola"
+                        :tenant-name="tenantName"
+                        :responsavel="responsavel"
+                        :flow-label="flowLabel"
+                    />
+                </div>
+            </template>
 
             <!-- Ações -->
             <div class="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5">
@@ -196,7 +204,7 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`);
             </div>
         </div>
 
-        <!-- Slot: indicador de fluxo -->
-        <slot />
+        <!-- Slot: indicador de fluxo (oculto no modo enxuto p/ não duplicar) -->
+        <slot v-if="!compact" />
     </div>
 </template>

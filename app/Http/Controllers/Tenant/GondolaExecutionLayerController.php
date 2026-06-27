@@ -129,7 +129,9 @@ class GondolaExecutionLayerController extends Controller
      */
     public function complete(Request $request, WorkflowGondolaExecution $execution): RedirectResponse
     {
-        $this->authorize('complete', $execution);
+        // A conclusão da Execução em Loja é do executor responsável (não exige
+        // a permissão de gestor); o gate `execute` cobre responsável/permitido/gestor.
+        $this->authorize('execute', $execution);
 
         $request->validate(['notes' => ['nullable', 'string', 'max:1000']]);
 

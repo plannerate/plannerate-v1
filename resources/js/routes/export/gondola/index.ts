@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 import section from './section'
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaPdfPreviewController::view
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaPdfPreviewController.php:28
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaPdfPreviewController.php:30
 * @route '/export/gondola/{gondola}/view'
 */
 export const view = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -17,7 +17,7 @@ view.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaPdfPreviewController::view
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaPdfPreviewController.php:28
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaPdfPreviewController.php:30
 * @route '/export/gondola/{gondola}/view'
 */
 view.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ view.url = (args: { gondola: string | number } | [gondola: string | number ] | s
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaPdfPreviewController::view
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaPdfPreviewController.php:28
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaPdfPreviewController.php:30
 * @route '/export/gondola/{gondola}/view'
 */
 view.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -54,7 +54,7 @@ view.get = (args: { gondola: string | number } | [gondola: string | number ] | s
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaPdfPreviewController::view
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaPdfPreviewController.php:28
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaPdfPreviewController.php:30
 * @route '/export/gondola/{gondola}/view'
 */
 view.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -64,7 +64,7 @@ view.head = (args: { gondola: string | number } | [gondola: string | number ] | 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaPdfPreviewController::view
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaPdfPreviewController.php:28
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaPdfPreviewController.php:30
 * @route '/export/gondola/{gondola}/view'
 */
 const viewForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -74,7 +74,7 @@ const viewForm = (args: { gondola: string | number } | [gondola: string | number
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaPdfPreviewController::view
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaPdfPreviewController.php:28
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaPdfPreviewController.php:30
 * @route '/export/gondola/{gondola}/view'
 */
 viewForm.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -84,7 +84,7 @@ viewForm.get = (args: { gondola: string | number } | [gondola: string | number ]
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\GondolaPdfPreviewController::view
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaPdfPreviewController.php:28
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/GondolaPdfPreviewController.php:30
 * @route '/export/gondola/{gondola}/view'
 */
 viewForm.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

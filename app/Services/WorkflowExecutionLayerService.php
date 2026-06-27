@@ -265,7 +265,7 @@ class WorkflowExecutionLayerService
             'pending_divergences_count' => $pendingDivergences,
             'can_complete' => $summary['satisfied']
                 && $pendingDivergences === 0
-                && $user->can('complete', $execution),
+                && $user->can('execute', $execution),
         ];
     }
 

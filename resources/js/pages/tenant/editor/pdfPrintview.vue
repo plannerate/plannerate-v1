@@ -40,6 +40,6 @@ defineProps<Props>()
 </script>
 
 <template>
-    <PdfPreview :gondola="gondola" :sections="sections" :analysis="analysis" :responsavel="responsavel" />
-    <ExecutionLayer v-if="canExecute" :execution="execution ?? null" />
+    <PdfPreview :gondola="gondola" :sections="sections" :analysis="analysis" :responsavel="responsavel" :execution-mode="canExecute" />
+    <ExecutionLayer v-if="canExecute" :execution="execution ?? null" :sections="sections" />
 </template>

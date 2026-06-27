@@ -9,6 +9,7 @@ import LayerController from './LayerController'
 import SaveChangesController from './SaveChangesController'
 import ProductDimensionController from './ProductDimensionController'
 import ProductSalesController from './ProductSalesController'
+import ProductExecutionController from './ProductExecutionController'
 
 const Editor = {
     SegmentNoteController: Object.assign(SegmentNoteController, SegmentNoteController),
@@ -22,6 +23,7 @@ const Editor = {
     SaveChangesController: Object.assign(SaveChangesController, SaveChangesController),
     ProductDimensionController: Object.assign(ProductDimensionController, ProductDimensionController),
     ProductSalesController: Object.assign(ProductSalesController, ProductSalesController),
+    ProductExecutionController: Object.assign(ProductExecutionController, ProductExecutionController),
 }
 
 export default Editor

@@ -21,9 +21,11 @@ class GondolaPdfPreviewController extends Controller
      * Exibe preview da gôndola usando componentes Vue.
      *
      * Sobre a tela read-only acopla a camada de Execução em Loja apenas para
-     * quem tem a responsabilidade (`canExecute`). O payload pesado de execução
-     * (evidências, divergências, SLA) só é consultado sob demanda, via
-     * Inertia::optional, sem onerar quem apenas visualiza.
+     * quem tem a responsabilidade (`canExecute` — gate barato). O payload de
+     * execução (evidências, divergências, SLA) só é montado quando esse gate é
+     * verdadeiro, sem onerar quem apenas visualiza. Não usa Inertia::optional
+     * porque a barra precisa do payload já no carregamento e após cada `back()`
+     * de mutação (props optional não são reenviados em visitas completas).
      */
     public function show(string $gondolaId): Response
     {
@@ -49,7 +51,7 @@ class GondolaPdfPreviewController extends Controller
             'responsavel' => $user?->name,
             'canExecute' => $canExecute,
             'execution' => $canExecute
-                ? Inertia::optional(fn () => $this->buildExecutionPayload($execution, $user))
+                ? $this->buildExecutionPayload($execution, $user)
                 : null,
         ]);
     }

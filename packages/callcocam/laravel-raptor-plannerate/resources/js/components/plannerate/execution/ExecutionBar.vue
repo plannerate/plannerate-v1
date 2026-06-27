@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { Camera, AlertTriangle, CheckCircle2, Clock, User as UserIcon, Loader2 } from 'lucide-vue-next';
+import { Play, AlertTriangle, CheckCircle2, Camera, Clock, CalendarClock, Loader2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/composables/useT';
 import type { ExecutionPayload } from './types';
 
 /**
- * Barra-resumo da execução em loja (export §8): status, responsável, início,
- * SLA, evidências X/Y e divergências — apenas resumo + as 3 ações. Os detalhes
- * vivem nos modais.
+ * Barra-resumo da execução em loja (export §8, mockup 1.png): fixada no topo,
+ * exibe status, responsável, início, SLA, evidências X/Y com barra de progresso
+ * e divergências, além das 3 ações. Detalhes ficam nos modais.
  */
 const props = defineProps<{
     execution: ExecutionPayload | null;
@@ -23,14 +23,12 @@ const emit = defineEmits<{
 
 const { t } = useT();
 
-/** Rótulo traduzido do status da execução. */
 const statusLabel = computed(() =>
     props.execution?.status
         ? t(`app.kanban.executions.status.${props.execution.status}`)
         : '—',
 );
 
-/** Texto do SLA: dias restantes ou "vencido". */
 const slaLabel = computed(() => {
     const days = props.execution?.sla_days_remaining;
     if (days === null || days === undefined) {
@@ -44,72 +42,102 @@ const slaLabel = computed(() => {
 
 const slaOverdue = computed(() => (props.execution?.sla_days_remaining ?? 0) < 0);
 
-/** Data de início formatada (pt-BR), quando disponível. */
-const startedAtLabel = computed(() => {
-    if (!props.execution?.started_at) {
-        return '—';
+const startedAtLabel = computed(() =>
+    props.execution?.started_at ? new Date(props.execution.started_at).toLocaleString('pt-BR') : '—',
+);
+
+/** Percentual de evidências obrigatórias já enviadas (0–100). */
+const evidenceProgress = computed(() => {
+    const summary = props.execution?.evidence_summary;
+    if (!summary || summary.required === 0) {
+        return 100;
     }
-    return new Date(props.execution.started_at).toLocaleString('pt-BR');
+    return Math.min(100, Math.round((summary.provided / summary.required) * 100));
 });
+
+const divergenceCount = computed(() => props.execution?.divergences.length ?? 0);
 </script>
 
 <template>
     <div
-        class="fixed inset-x-0 bottom-0 z-[600] border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] backdrop-blur"
+        class="force-light fixed inset-x-0 top-0 z-[600] border-b-2 border-emerald-500 bg-white/95 shadow-sm backdrop-blur"
     >
-        <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2">
-            <!-- Resumo -->
+        <div class="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5">
             <div v-if="loading" class="flex items-center gap-2 text-sm text-slate-500">
                 <Loader2 class="size-4 animate-spin" />
                 {{ t('plannerate.execution.bar.loading') }}
             </div>
 
             <template v-else>
+                <!-- Status -->
                 <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                        {{ t('plannerate.execution.bar.status') }}
+                    <span class="flex size-8 items-center justify-center rounded-full bg-emerald-500 text-white">
+                        <Play class="size-4" fill="currentColor" />
                     </span>
-                    <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                        {{ statusLabel }}
-                    </span>
+                    <div class="leading-tight">
+                        <p class="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                            {{ t('plannerate.execution.bar.stage') }}
+                        </p>
+                        <p class="text-sm font-semibold text-emerald-600">{{ statusLabel }}</p>
+                    </div>
                 </div>
 
-                <div class="flex items-center gap-1.5 text-sm text-slate-600">
-                    <UserIcon class="size-4 text-slate-400" />
-                    <span>{{ execution?.responsible ?? '—' }}</span>
+                <div class="h-8 w-px bg-slate-200"></div>
+
+                <!-- Iniciado em (Responsável fica no cabeçalho do planograma) -->
+                <div class="leading-tight">
+                    <p class="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                        <CalendarClock class="size-3" /> {{ t('plannerate.execution.bar.started_at') }}
+                    </p>
+                    <p class="text-sm font-medium text-slate-700">{{ startedAtLabel }}</p>
                 </div>
 
-                <div class="flex items-center gap-1.5 text-sm text-slate-600">
-                    <Clock class="size-4 text-slate-400" />
-                    <span>{{ startedAtLabel }}</span>
+                <div class="h-8 w-px bg-slate-200"></div>
+
+                <!-- SLA -->
+                <div class="leading-tight">
+                    <p class="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                        <Clock class="size-3" /> {{ t('plannerate.execution.bar.sla') }}
+                    </p>
+                    <p class="text-sm font-medium" :class="slaOverdue ? 'text-red-600' : 'text-slate-700'">
+                        {{ slaLabel }}
+                    </p>
                 </div>
 
-                <div
-                    class="flex items-center gap-1.5 text-sm font-medium"
-                    :class="slaOverdue ? 'text-red-600' : 'text-slate-600'"
-                >
-                    <Clock class="size-4" :class="slaOverdue ? 'text-red-500' : 'text-slate-400'" />
-                    <span>{{ slaLabel }}</span>
+                <div class="h-8 w-px bg-slate-200"></div>
+
+                <!-- Evidências + progresso -->
+                <div class="leading-tight">
+                    <p class="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                        <Camera class="size-3" /> {{ t('plannerate.execution.bar.evidences') }}
+                    </p>
+                    <div class="flex items-center gap-2">
+                        <span
+                            class="text-sm font-semibold"
+                            :class="execution?.evidence_summary.satisfied ? 'text-emerald-600' : 'text-amber-600'"
+                        >
+                            {{ execution?.evidence_summary.provided ?? 0 }}/{{ execution?.evidence_summary.required ?? 0 }}
+                        </span>
+                        <span class="h-1.5 w-20 overflow-hidden rounded-full bg-slate-200">
+                            <span
+                                class="block h-full rounded-full transition-all"
+                                :class="execution?.evidence_summary.satisfied ? 'bg-emerald-500' : 'bg-amber-500'"
+                                :style="{ width: `${evidenceProgress}%` }"
+                            ></span>
+                        </span>
+                    </div>
                 </div>
 
-                <div class="flex items-center gap-1.5 text-sm">
-                    <Camera class="size-4 text-slate-400" />
-                    <span
-                        class="font-semibold"
-                        :class="execution?.evidence_summary.satisfied ? 'text-emerald-600' : 'text-amber-600'"
-                    >
-                        {{ execution?.evidence_summary.provided ?? 0 }}/{{ execution?.evidence_summary.required ?? 0 }}
-                    </span>
-                    <span class="text-slate-400">{{ t('plannerate.execution.bar.evidences') }}</span>
-                </div>
+                <div class="h-8 w-px bg-slate-200"></div>
 
-                <div class="flex items-center gap-1.5 text-sm">
-                    <AlertTriangle
-                        class="size-4"
-                        :class="(execution?.pending_divergences_count ?? 0) > 0 ? 'text-red-500' : 'text-slate-400'"
-                    />
-                    <span class="font-semibold text-slate-700">{{ execution?.divergences.length ?? 0 }}</span>
-                    <span class="text-slate-400">{{ t('plannerate.execution.bar.divergences') }}</span>
+                <!-- Divergências -->
+                <div class="leading-tight">
+                    <p class="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                        <AlertTriangle class="size-3" /> {{ t('plannerate.execution.bar.divergences') }}
+                    </p>
+                    <p class="text-sm font-medium" :class="divergenceCount > 0 ? 'text-red-600' : 'text-slate-700'">
+                        {{ t('plannerate.execution.bar.divergences_count', { count: String(divergenceCount) }) }}
+                    </p>
                 </div>
             </template>
 
@@ -119,11 +147,17 @@ const startedAtLabel = computed(() => {
                     <Camera class="mr-1.5 size-4" />
                     {{ t('plannerate.execution.actions.add_evidence') }}
                 </Button>
-                <Button variant="outline" size="sm" :disabled="loading" @click="emit('add-divergence')">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="border-amber-300 text-amber-700 hover:bg-amber-50"
+                    :disabled="loading"
+                    @click="emit('add-divergence')"
+                >
                     <AlertTriangle class="mr-1.5 size-4" />
                     {{ t('plannerate.execution.actions.add_divergence') }}
                 </Button>
-                <Button size="sm" :disabled="loading" @click="emit('complete')">
+                <Button size="sm" class="bg-emerald-600 hover:bg-emerald-700" :disabled="loading" @click="emit('complete')">
                     <CheckCircle2 class="mr-1.5 size-4" />
                     {{ t('plannerate.execution.actions.complete') }}
                 </Button>
