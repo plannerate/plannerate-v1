@@ -223,6 +223,18 @@ Route::middleware(['web', 'auth', NeedsTenant::class, SetPermissionTeamContext::
             Route::post('kanban/histories/{history}/restore', [Tenant\WorkflowExecutionController::class, 'restore'])
                 ->name('kanban.histories.restore');
 
+            // ── Execução em Loja (camada sobre a tela de print) ────
+            Route::post('executions/{execution}/evidences', [Tenant\GondolaExecutionLayerController::class, 'storeEvidence'])
+                ->name('executions.evidences.store');
+            Route::delete('executions/{execution}/evidences/{evidence}', [Tenant\GondolaExecutionLayerController::class, 'destroyEvidence'])
+                ->name('executions.evidences.destroy');
+            Route::post('executions/{execution}/divergences', [Tenant\GondolaExecutionLayerController::class, 'storeDivergence'])
+                ->name('executions.divergences.store');
+            Route::patch('executions/{execution}/divergences/{divergence}', [Tenant\GondolaExecutionLayerController::class, 'updateDivergence'])
+                ->name('executions.divergences.update');
+            Route::post('executions/{execution}/complete', [Tenant\GondolaExecutionLayerController::class, 'complete'])
+                ->name('executions.complete');
+
             Route::get('planograms/{planogram}/workflow-settings', [Tenant\WorkflowPlanogramStepController::class, 'index'])
                 ->name('planograms.workflow-settings.index');
             Route::put('planograms/{planogram}/workflow-settings', [Tenant\WorkflowPlanogramStepController::class, 'update'])

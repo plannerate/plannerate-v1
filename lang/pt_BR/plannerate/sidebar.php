@@ -92,6 +92,17 @@ return [
         'updating_products' => 'Atualizando :count produtos selecionados',
         'dimension_update' => ':dimension: :value cm',
         'updated_success' => ':count produtos atualizados com sucesso!',
+        'tab_details' => 'Detalhes',
+        'tab_execution' => 'Execução',
+    ],
+    'product_execution' => [
+        'title' => 'Execução em loja',
+        'subtitle' => 'Retorno da loja registrado para este produto.',
+        'load_error' => 'Falha ao carregar o retorno da execução.',
+        'empty_title' => 'Sem registros',
+        'empty_description' => 'Nenhuma divergência ou evidência deste produto na execução.',
+        'divergences' => 'Divergências (:count)',
+        'evidences' => 'Evidências do produto (:count)',
     ],
     'no_selection' => [
         'title' => 'Nenhum item selecionado',
@@ -264,7 +275,7 @@ return [
         'no_data_description' => 'Este produto ainda não possui vendas registradas',
         // Grupo 1 — Resumo de Vendas
         'sales_group' => 'Resumo de Vendas',
-        'total_sales' => 'Total Vendas',
+        'total_sales' => 'Registros de venda',
         'quantity' => 'Quantidade Vendida',
         'revenue' => 'Valor de Venda',
         'avg_sale_price' => 'Preço Médio de Venda',

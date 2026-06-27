@@ -14,6 +14,7 @@ const props = defineProps<{
         gondola_search?: string;
         execution_status?: string;
         current_responsible_id?: string;
+        lifecycle_status?: string;
     };
 }>();
 
@@ -111,6 +112,24 @@ const filteredPlanograms = computed(() => {
                     {{ user.name }}
                 </option>
             </select>
+        </div>
+
+        <!-- Concluídos ficam ocultos por padrão; marcar exibe-os (lifecycle_status=completed). -->
+        <div class="flex flex-col justify-end gap-1">
+            <label
+                for="kanban-show-completed"
+                class="flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-input bg-background px-3 text-sm text-foreground"
+            >
+                <input
+                    id="kanban-show-completed"
+                    type="checkbox"
+                    name="lifecycle_status"
+                    value="completed"
+                    :checked="filters.lifecycle_status === 'completed'"
+                    class="size-4 rounded border-input text-primary focus:ring-primary/30"
+                />
+                {{ t('app.kanban.filters.show_completed') }}
+            </label>
         </div>
     </ListFiltersBar>
 </template>
