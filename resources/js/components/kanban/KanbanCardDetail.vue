@@ -41,6 +41,27 @@ const emit = defineEmits<{
 
 const execution = computed(() => props.payload?.execution ?? null);
 const allowedUsers = computed(() => props.payload?.allowed_users ?? []);
+// Camada de Execução em Loja (evidências/divergências); só exibida quando há dados.
+const executionLayer = computed(() => props.payload?.execution_layer ?? null);
+const hasExecutionData = computed(
+    () => !!executionLayer.value && (executionLayer.value.evidences.length > 0 || executionLayer.value.divergences.length > 0),
+);
+
+/** Cor do badge conforme o estado da divergência. */
+function divergenceStatusClass(status: string | null): string {
+    switch (status) {
+        case 'resolvida':
+            return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300';
+        case 'justificada':
+            return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300';
+        case 'rejeitada':
+            return 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
+        case 'em_analise':
+            return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300';
+        default:
+            return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+    }
+}
 // BoardStep.id = WorkflowTemplate.id; execution.step.template_id também é WorkflowTemplate.id
 const currentStepId = computed(() => execution.value?.step?.template_id ?? null);
 const currentStepIndex = computed(() => props.steps.findIndex((step) => step.id === currentStepId.value));
@@ -263,6 +284,60 @@ function toggleHistory(historyId: string): void {
                             <span v-if="allowedUsers.length === 0" class="text-xs text-muted-foreground">
                                 {{ t('app.kanban.detail.no_allowed_users') }}
                             </span>
+                        </div>
+                    </section>
+
+                    <!-- Execução em loja: evidências + divergências -->
+                    <section v-if="hasExecutionData && executionLayer" class="rounded-lg border bg-card p-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-semibold text-foreground">{{ t('app.kanban.detail.execution_section') }}</h3>
+                            <div class="flex items-center gap-3 text-xs">
+                                <span class="font-medium" :class="executionLayer.evidence_summary.satisfied ? 'text-emerald-600' : 'text-amber-600'">
+                                    {{ t('plannerate.execution.bar.evidences') }}: {{ executionLayer.evidence_summary.provided }}/{{ executionLayer.evidence_summary.required }}
+                                </span>
+                                <span class="font-medium" :class="executionLayer.pending_divergences_count > 0 ? 'text-red-600' : 'text-muted-foreground'">
+                                    {{ t('plannerate.execution.bar.divergences') }}: {{ executionLayer.divergences.length }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Evidências (miniaturas) -->
+                        <div v-if="executionLayer.evidences.length" class="mt-3 grid grid-cols-6 gap-2">
+                            <a
+                                v-for="evidence in executionLayer.evidences"
+                                :key="evidence.id"
+                                :href="evidence.file_url ?? '#'"
+                                target="_blank"
+                                rel="noopener"
+                                class="block"
+                                :title="evidence.notes ?? ''"
+                            >
+                                <img
+                                    v-if="evidence.file_url"
+                                    :src="evidence.file_url"
+                                    :alt="evidence.file_name ?? ''"
+                                    class="aspect-square w-full rounded-md object-cover ring-1 ring-border"
+                                />
+                            </a>
+                        </div>
+
+                        <!-- Divergências (lista) -->
+                        <div v-if="executionLayer.divergences.length" class="mt-3 space-y-1.5">
+                            <div
+                                v-for="divergence in executionLayer.divergences"
+                                :key="divergence.id"
+                                class="flex items-center justify-between gap-2 rounded-md border border-border/70 px-2.5 py-1.5 text-xs"
+                            >
+                                <div class="min-w-0">
+                                    <span class="font-medium text-foreground">
+                                        {{ t(`plannerate.execution.divergence.types.${divergence.type}`) }}
+                                    </span>
+                                    <span v-if="divergence.notes" class="ml-1 truncate text-muted-foreground">— {{ divergence.notes }}</span>
+                                </div>
+                                <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold" :class="divergenceStatusClass(divergence.status)">
+                                    {{ t(`plannerate.execution.divergence.status.${divergence.status}`) }}
+                                </span>
+                            </div>
                         </div>
                     </section>
 

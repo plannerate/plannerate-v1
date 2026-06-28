@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, toRef, watch } from 'vue';
+import { computed, ref, toRef, watch } from 'vue';
 import type { Section } from '@/types/planogram';
 import ExecutionBar from './ExecutionBar.vue';
 import AddDivergenceModal from './modals/AddDivergenceModal.vue';
@@ -14,8 +14,9 @@ import { useExecutionStructure } from './useExecutionStructure';
  *
  * O `execution` já vem montado no carregamento (prop normal, montado só quando
  * `canExecute`). As mutações usam `back()` recarregando apenas `execution`
- * (`only`), então a barra/modais refletem o estado novo sem reset. A barra fica
- * fixa no topo (mockup 1.png) e a toolbar de print é deslocada para baixo dela.
+ * (`only`), então a barra/modais refletem o estado novo sem reset. A barra-resumo
+ * é teleportada para dentro da toolbar de print (ver ExecutionBar), formando uma
+ * única linha — por isso não há mais deslocamento manual da toolbar aqui.
  */
 const props = defineProps<{
     execution: ExecutionPayload | null;
@@ -55,53 +56,6 @@ watch([showEvidence, showDivergence], ([evidenceOpen, divergenceOpen]) => {
     }
 });
 
-// ── Deslocamento da toolbar de print para caber sob a barra de execução ──
-let barObserver: ResizeObserver | null = null;
-
-/** Empurra a toolbar/conteúdo de print para baixo da barra de execução fixa. */
-function applyToolbarOffset(): void {
-    const bar = document.querySelector('[data-execution-bar]') as HTMLElement | null;
-    const root = document.querySelector('.force-light.min-h-screen') as HTMLElement | null;
-    if (!bar || !root) {
-        return;
-    }
-    const height = bar.offsetHeight;
-    const toolbar = root.querySelector(':scope > .fixed.top-0') as HTMLElement | null;
-    root.style.paddingTop = `${height}px`;
-    if (toolbar) {
-        toolbar.style.top = `${height}px`;
-    }
-}
-
-/** Desfaz o deslocamento aplicado à toolbar/conteúdo de print. */
-function clearToolbarOffset(): void {
-    const root = document.querySelector('.force-light.min-h-screen') as HTMLElement | null;
-    if (!root) {
-        return;
-    }
-    root.style.paddingTop = '';
-    const toolbar = root.querySelector(':scope > .fixed.top-0') as HTMLElement | null;
-    if (toolbar) {
-        toolbar.style.top = '';
-    }
-}
-
-onMounted(() => {
-    void nextTick(() => {
-        applyToolbarOffset();
-        const bar = document.querySelector('[data-execution-bar]') as HTMLElement | null;
-        if (bar && 'ResizeObserver' in window) {
-            barObserver = new ResizeObserver(() => applyToolbarOffset());
-            barObserver.observe(bar);
-        }
-    });
-});
-
-onBeforeUnmount(() => {
-    barObserver?.disconnect();
-    clearToolbarOffset();
-});
-
 /** Conclusão bem-sucedida: navega para o board (o card sai da listagem). */
 function onCompleted(): void {
     showComplete.value = false;
@@ -112,7 +66,6 @@ function onCompleted(): void {
 <template>
     <div>
         <ExecutionBar
-            data-execution-bar
             :execution="execution"
             :loading="!execution"
             @add-evidence="showEvidence = true"

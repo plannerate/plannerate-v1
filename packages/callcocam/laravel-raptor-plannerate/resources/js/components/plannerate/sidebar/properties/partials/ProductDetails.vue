@@ -7,15 +7,8 @@
             </h3>
         </div>
         <Separator />
-        <!-- Abas: Detalhes (conteúdo atual) | Execução (retorno da loja) -->
-        <Tabs v-if="product" default-value="details" class="w-full">
-            <TabsList class="grid w-full grid-cols-2">
-                <TabsTrigger value="details">{{ t('plannerate.sidebar.product_details.tab_details') }}</TabsTrigger>
-                <TabsTrigger value="execution">{{ t('plannerate.sidebar.product_details.tab_execution') }}</TabsTrigger>
-            </TabsList>
-
-            <!-- Aba Detalhes -->
-            <TabsContent value="details" class="space-y-3 pt-3">
+        <!-- Product Info -->
+        <div v-if="product" class="w-full space-y-3">
             <ProductImageCard :product="product" :show-upload-button="true" @upload="showImageUploadDialog = true" />
 
             <Separator />
@@ -114,16 +107,10 @@
 
             <!-- Product Sales Summary -->
             <ProductSalesSummary :product-id="product.id" />
-            </TabsContent>
-
-            <!-- Aba Execução (retorno da loja: divergências + evidências) -->
-            <TabsContent value="execution" class="pt-3">
-                <ProductExecutionFeedback :product-id="product.id" :gondola-id="gondolaId" />
-            </TabsContent>
-        </Tabs>
+        </div>
 
         <!-- Dialog de Upload de Imagem -->
-        <ProductImageUpload v-if="product" v-model:open="showImageUploadDialog" :product="product" />
+        <ProductImageUpload v-model:open="showImageUploadDialog" :product="product" />
     </div>
 </template>
 
@@ -133,13 +120,11 @@ import { Package, Users } from 'lucide-vue-next';
 import { computed, inject, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
 import { useT } from '@/composables/useT';
 import type { Product } from '@/types/planogram';
 import ProductDimensionsEditor from './ProductDimensionsEditor.vue';
-import ProductExecutionFeedback from './ProductExecutionFeedback.vue';
 import ProductImageCard from './ProductImageCard.vue';
 import ProductImageUpload from './ProductImageUpload.vue';
 import ProductSalesSummary from './ProductSalesSummary.vue';
@@ -239,9 +224,6 @@ interface Props {
 
 const props = defineProps<Props>();
 const product = computed(() => props.item);
-
-// Gôndola aberta no editor — usada para buscar o retorno da loja do produto.
-const gondolaId = computed(() => ((page.props as any)?.record?.id as string | undefined) ?? null);
 
 /**
  * Atualiza dimensão do produto de forma reativa e persistente

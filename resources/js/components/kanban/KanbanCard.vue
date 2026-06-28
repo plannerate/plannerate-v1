@@ -69,6 +69,15 @@ const executionLinkLabel = computed(() => (
         : t('app.kanban.links.view_pdf')
 ));
 
+/**
+ * "Concluir execução": leva à tela de execução (mesma rota do Visualizar PDF),
+ * onde a conclusão acontece com as validações de evidência/divergência. Aparece
+ * apenas quando a execução pode ser concluída (etapa Execução em Loja).
+ */
+const completeExecutionHref = computed(() =>
+    canComplete.value ? gondolaView.url(props.execution.gondola_id) : null,
+);
+
 /** Visualizar PDF — disponível quando concluído */
 const completedPdfHref = computed(() =>
     isCompleted.value ? gondolaView.url(props.execution.gondola_id) : null,
@@ -133,6 +142,20 @@ const completedShareHref = computed(() =>
         </div>
 
         <div class="mt-3 flex flex-wrap items-center gap-1.5">
+            <Button v-if="completeExecutionHref" size="sm" variant="outline" class="h-7 px-2 text-xs" as-child>
+                <a :href="completeExecutionHref" target="_blank" rel="noopener noreferrer">
+                    <CheckCircle2 class="mr-1 size-3.5" />
+                    {{ t('app.kanban.actions.complete_execution') }}
+                </a>
+            </Button>
+
+            <Button v-if="executionLinkHref && !canComplete" size="sm" variant="outline" class="h-7 px-2 text-xs" as-child>
+                <a :href="executionLinkHref" target="_blank" rel="noopener noreferrer">
+                    <ExternalLink class="mr-1 size-3.5" />
+                    {{ executionLinkLabel }}
+                </a>
+            </Button>
+
             <Button size="sm" variant="outline" class="h-7 px-2 text-xs" @click="emit('details', execution)">
                 {{ t('app.kanban.actions.details') }}
             </Button>
@@ -148,13 +171,6 @@ const completedShareHref = computed(() =>
                 <a :href="completedPdfHref" target="_blank" rel="noopener noreferrer">
                     <ExternalLink class="mr-1 size-3.5" />
                     {{ t('app.kanban.links.view_pdf') }}
-                </a>
-            </Button>
-
-            <Button v-if="executionLinkHref" size="sm" variant="outline" class="h-7 px-2 text-xs" as-child>
-                <a :href="executionLinkHref" target="_blank" rel="noopener noreferrer">
-                    <ExternalLink class="mr-1 size-3.5" />
-                    {{ executionLinkLabel }}
                 </a>
             </Button>
 
@@ -192,18 +208,6 @@ const completedShareHref = computed(() =>
             >
                 <Play class="mr-1 size-3.5" />
                 {{ t('app.kanban.actions.resume') }}
-            </Button>
-
-            <Button
-                v-if="canComplete"
-                size="sm"
-                variant="ghost"
-                class="h-7 px-2 text-xs"
-                :disabled="isBusy"
-                @click="emit('complete', execution)"
-            >
-                <CheckCircle2 class="mr-1 size-3.5" />
-                {{ t('app.kanban.actions.complete') }}
             </Button>
 
             <Button

@@ -68,10 +68,23 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`);
 
 <template>
     <div
-        class="fixed top-0 right-0 left-0 z-[500] border-b-2 border-primary bg-white/95 shadow-sm backdrop-blur dark:bg-slate-900/95"
+        class="fixed top-0 right-0 left-0 z-[500] bg-white/95 shadow-sm backdrop-blur dark:bg-slate-900/95"
+        :class="
+            compact
+                ? 'border-b border-slate-200 dark:border-slate-700'
+                : 'border-b-2 border-primary'
+        "
     >
-        <!-- Linha 1: logo + metadados + ações (faz wrap em telas menores p/ não esconder botões) -->
+        <!-- Linha única: infos de execução (teleport) + controles + ações (teleport) -->
         <div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2">
+            <!-- Modo execução: alvo p/ as infos da barra (status, SLA, evidências…)
+                 teleportadas de ExecutionBar, na mesma linha dos controles. -->
+            <div
+                v-if="compact"
+                id="execution-bar-info"
+                class="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-2"
+            ></div>
+
             <!-- Branding + metadados (ocultos no modo enxuto p/ não duplicar o cabeçalho da gôndola) -->
             <template v-if="!compact">
                 <!-- Logo -->
@@ -201,6 +214,16 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`);
                             : t('plannerate.print.preview.download_pdf')
                     }}
                 </ButtonWithTooltip>
+
+                <!-- Modo execução: separador + alvo p/ os 3 botões de ação
+                     (Adicionar evidência, Apontar divergência, Concluir). -->
+                <template v-if="compact">
+                    <Separator orientation="vertical" class="h-7" />
+                    <div
+                        id="execution-bar-actions"
+                        class="flex items-center gap-2"
+                    ></div>
+                </template>
             </div>
         </div>
 

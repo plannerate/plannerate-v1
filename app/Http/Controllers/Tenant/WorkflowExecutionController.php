@@ -12,6 +12,7 @@ use App\Models\WorkflowGondolaExecution;
 use App\Models\WorkflowHistory;
 use App\Models\WorkflowPlanogramStep;
 use App\Models\WorkflowTemplate;
+use App\Services\WorkflowExecutionLayerService;
 use App\Services\WorkflowKanbanService;
 use App\Services\WorkflowPlanogramStepService;
 use App\Support\Tenancy\InteractsWithTenantContext;
@@ -283,7 +284,28 @@ class WorkflowExecutionController extends Controller
                 ])
                 ->values()
                 ->all() ?? [],
+            'execution_layer' => $this->executionLayerSummary($execution, $request->user()),
         ]);
+    }
+
+    /**
+     * Resumo da camada de Execução em Loja (evidências + divergências) para
+     * exibir no modal de detalhes. Reaproveita o payload do serviço; devolve
+     * apenas os campos relevantes ao modal.
+     *
+     * @return array<string, mixed>
+     */
+    private function executionLayerSummary(WorkflowGondolaExecution $execution, User $user): array
+    {
+        $payload = app(WorkflowExecutionLayerService::class)
+            ->buildPayload($execution, $user);
+
+        return [
+            'evidence_summary' => $payload['evidence_summary'],
+            'pending_divergences_count' => $payload['pending_divergences_count'],
+            'evidences' => $payload['evidences'],
+            'divergences' => $payload['divergences'],
+        ];
     }
 
     public function history(WorkflowGondolaExecution $execution): JsonResponse

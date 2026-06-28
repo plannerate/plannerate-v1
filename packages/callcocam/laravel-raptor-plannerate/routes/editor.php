@@ -14,7 +14,6 @@ use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\LayerController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\PlanogramApiController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\ProductDimensionController;
-use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\ProductExecutionController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\ProductSalesController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\SaveChangesController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\SectionController;
@@ -140,8 +139,4 @@ Route::prefix('api')->name('api.')
         // Product Sales Summary API
         Route::get('plannerate/products/{product}/sales/summary', [ProductSalesController::class, 'summary'])
             ->name('plannerate.products.sales.summary');
-
-        // Retorno da loja (divergências/evidências) do produto na execução
-        Route::get('plannerate/products/{product}/execution-feedback', [ProductExecutionController::class, 'feedback'])
-            ->name('plannerate.products.execution-feedback');
     });

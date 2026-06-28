@@ -1,18 +1,44 @@
 <template>
     <div class="space-y-4">
-        <div>
-            <h3 class="text-lg font-semibold">
-                <Box class="mr-2 inline size-5 text-foreground" />
-                {{ t('plannerate.sidebar.section_details.section') }}
-            </h3>
-            <p class="text-sm text-muted-foreground">
-                {{ section.name.toString().replace('Sessão', 'Módulo') }}
-            </p>
+        <!-- Cabeçalho: ícone do módulo + nome + botão fechar -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div
+                    class="flex size-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+                >
+                    <Box class="size-5" />
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold leading-tight text-foreground">
+                        {{ t('plannerate.sidebar.section_details.section') }}
+                    </h3>
+                    <p class="text-sm text-muted-foreground">
+                        {{ section.name.toString().replace('Sessão', 'Módulo') }}
+                    </p>
+                </div>
+            </div>
+            <button
+                type="button"
+                class="rounded-lg border border-border p-2 text-muted-foreground transition-colors hover:bg-accent"
+                @click="handleClose"
+            >
+                <X class="size-4" />
+            </button>
         </div>
 
-        <Separator />
+        <!-- Card: Informações do Módulo -->
+        <div class="space-y-3 rounded-xl border border-border bg-card p-4">
+            <div class="flex items-center gap-2">
+                <div
+                    class="flex size-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+                >
+                    <Info class="size-4" />
+                </div>
+                <h4 class="font-semibold text-foreground">
+                    {{ t('plannerate.sidebar.section_details.info_title') }}
+                </h4>
+            </div>
 
-        <div class="space-y-3">
             <div class="space-y-2">
                 <Label for="section-code">{{ t('plannerate.sidebar.section_details.code') }}</Label>
                 <Input
@@ -23,29 +49,41 @@
             </div>
 
             <div class="space-y-2">
-                <Label for="section-name">{{ t('plannerate.print.product_detail.name') }}</Label>
+                <Label for="section-name">{{ t('plannerate.sidebar.section_details.name') }}</Label>
                 <Input
                     id="section-name"
                     :model-value="section.name.toString().replace('Sessão', 'Módulo')"
                     @update:model-value="handleUpdate('name', $event)"
                 />
             </div>
+        </div>
 
-            <div class="grid grid-cols-2 gap-2">
+        <!-- Card: Dimensões do Módulo -->
+        <div class="space-y-3 rounded-xl border border-border bg-card p-4">
+            <div class="flex items-center gap-2">
+                <div
+                    class="flex size-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+                >
+                    <Ruler class="size-4" />
+                </div>
+                <h4 class="font-semibold text-foreground">
+                    {{ t('plannerate.sidebar.section_details.dimensions_title') }}
+                </h4>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
                 <div class="space-y-2">
-                    <Label for="section-height">{{ t('plannerate.print.product_detail.height') }} (cm)</Label>
+                    <Label for="section-height">{{ t('plannerate.sidebar.section_details.height') }}</Label>
                     <Input
                         id="section-height"
                         :model-value="section.height"
-                        @update:model-value="
-                            handleUpdate('height', Number($event))
-                        "
+                        @update:model-value="handleUpdate('height', Number($event))"
                         type="number"
                         step="0.1"
                     />
                 </div>
                 <div class="space-y-2">
-                    <Label for="section-width">{{ t('plannerate.print.product_detail.width') }} (cm)</Label>
+                    <Label for="section-width">{{ t('plannerate.sidebar.section_details.width') }}</Label>
                     <Input
                         id="section-width"
                         :model-value="section.width"
@@ -54,155 +92,152 @@
                         step="0.1"
                     />
                 </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
                     <Label for="base-height">{{ t('plannerate.sidebar.section_details.base_height') }}</Label>
                     <Input
                         id="base-height"
                         :model-value="section.base_height"
-                        @update:model-value="
-                            handleUpdate('base_height', Number($event))
-                        "
+                        @update:model-value="handleUpdate('base_height', Number($event))"
                         type="number"
                         step="0.1"
                     />
                 </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
                 <div class="space-y-2">
                     <Label for="base-depth">{{ t('plannerate.sidebar.section_details.base_depth') }}</Label>
                     <Input
                         id="base-depth"
                         :model-value="section.base_depth"
-                        @update:model-value="
-                            handleUpdate('base_depth', Number($event))
-                        "
+                        @update:model-value="handleUpdate('base_depth', Number($event))"
                         type="number"
                         step="0.1"
                     />
                 </div>
+            </div>
+        </div>
+
+        <!-- Card: Configuração Cremalheira -->
+        <div class="space-y-3 rounded-xl border border-border bg-card p-4">
+            <div class="flex items-center gap-2">
+                <div
+                    class="flex size-7 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400"
+                >
+                    <Grip class="size-4" />
+                </div>
+                <h4 class="font-semibold text-foreground">
+                    {{ t('plannerate.sidebar.section_details.rack_config_title') }}
+                </h4>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
                 <div class="space-y-2">
-                    <Label for="cremalheira-width"
-                        >{{ t('plannerate.sidebar.section_details.rack_width') }}</Label
-                    >
+                    <Label for="cremalheira-width">{{ t('plannerate.sidebar.section_details.rack_width') }}</Label>
                     <Input
                         id="cremalheira-width"
                         :model-value="section.cremalheira_width"
-                        @update:model-value="
-                            handleUpdate('cremalheira_width', Number($event))
-                        "
+                        @update:model-value="handleUpdate('cremalheira_width', Number($event))"
+                        type="number"
+                        step="0.01"
+                    />
+                </div>
+                <div class="space-y-2">
+                    <Label for="hole-height">{{ t('plannerate.sidebar.section_details.hole_height') }}</Label>
+                    <Input
+                        id="hole-height"
+                        :model-value="section.hole_height"
+                        @update:model-value="handleUpdate('hole_height', Number($event))"
+                        type="number"
+                        step="0.01"
+                    />
+                </div>
+                <div class="space-y-2">
+                    <Label for="hole-width">{{ t('plannerate.sidebar.section_details.hole_width') }}</Label>
+                    <Input
+                        id="hole-width"
+                        :model-value="section.hole_width"
+                        @update:model-value="handleUpdate('hole_width', Number($event))"
+                        type="number"
+                        step="0.01"
+                    />
+                </div>
+                <div class="space-y-2">
+                    <Label for="hole-spacing">{{ t('plannerate.sidebar.section_details.hole_spacing') }}</Label>
+                    <Input
+                        id="hole-spacing"
+                        :model-value="section.hole_spacing"
+                        @update:model-value="handleUpdate('hole_spacing', Number($event))"
                         type="number"
                         step="0.01"
                     />
                 </div>
             </div>
+        </div>
 
-            <Separator />
-
-            <div>
-                <h4 class="mb-2 font-medium">{{ t('plannerate.sidebar.section_details.holes_config') }}</h4>
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="space-y-2">
-                        <Label for="hole-height">{{ t('plannerate.sidebar.section_details.hole_height') }}</Label>
-                        <Input
-                            id="hole-height"
-                            :model-value="section.hole_height"
-                            @update:model-value="
-                                handleUpdate('hole_height', Number($event))
-                            "
-                            type="number"
-                            step="0.01"
-                        />
-                    </div>
-                    <div class="space-y-2">
-                        <Label for="hole-width">{{ t('plannerate.sidebar.section_details.hole_width') }}</Label>
-                        <Input
-                            id="hole-width"
-                            :model-value="section.hole_width"
-                            @update:model-value="
-                                handleUpdate('hole_width', Number($event))
-                            "
-                            type="number"
-                            step="0.01"
-                        />
-                    </div>
-                    <div class="space-y-2">
-                        <Label for="hole-spacing">{{ t('plannerate.sidebar.section_details.hole_spacing') }}</Label>
-                        <Input
-                            id="hole-spacing"
-                            :model-value="section.hole_spacing"
-                            @update:model-value="
-                                handleUpdate('hole_spacing', Number($event))
-                            "
-                            type="number"
-                            step="0.01"
-                        />
-                    </div>
+        <!-- Card: Ações do Módulo -->
+        <div class="space-y-3 rounded-xl border border-border bg-card p-4">
+            <div class="flex items-center gap-2">
+                <div
+                    class="flex size-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
+                >
+                    <Zap class="size-4" />
                 </div>
+                <h4 class="font-semibold text-foreground">
+                    {{ t('plannerate.sidebar.section_details.actions_title') }}
+                </h4>
             </div>
 
-            <Separator />
-
-            <!-- Botões de ação -->
-            <div class="space-y-2">
-                <Label>{{ t('plannerate.sidebar.section_details.actions') }}</Label>
-                <div class="grid grid-cols-2 gap-2">
-                    <ButtonWithTooltip
-                        variant="outline"
-                        size="sm"
-                        @click="handleMoveLeft"
-                        :disabled="!sectionActions.canMoveLeft"
-                        :tooltip="t('plannerate.sidebar.section_details.move_left_tooltip')"
-                    >
-                        <ArrowLeft class="mr-2 size-4" />
-                        {{ t('plannerate.sidebar.section_details.move') }}
-                    </ButtonWithTooltip>
-                    <ButtonWithTooltip
-                        variant="outline"
-                        size="sm"
-                        @click="handleMoveRight"
-                        :disabled="!sectionActions.canMoveRight"
-                        :tooltip="t('plannerate.sidebar.section_details.move_right_tooltip')"
-                    >
-                        <ArrowRight class="mr-2 size-4" />
-                        {{ t('plannerate.sidebar.section_details.move') }}
-                    </ButtonWithTooltip>
-                    <ButtonWithTooltip
-                        variant="outline"
-                        size="sm"
-                        @click="handleInvertShelves"
-                        :disabled="!sectionActions.canInvertShelves"
-                        class="col-span-2"
-                        :tooltip="t('plannerate.sidebar.section_details.invert_shelves_tooltip')"
-                    >
-                        <ArrowUpDown class="mr-2 size-4" />
-                        {{ t('plannerate.sidebar.section_details.invert_shelves') }}
-                    </ButtonWithTooltip>
-                    <ButtonWithTooltip
-                        variant="outline"
-                        size="sm"
-                        @click="handleApplyToAll"
-                        :disabled="otherSections.length === 0"
-                        class="col-span-2"
-                        :tooltip="t('plannerate.sidebar.section_details.apply_to_all_tooltip')"
-                    >
-                        <CopyCheck class="mr-2 size-4" />
-                        {{ t('plannerate.sidebar.section_details.apply_to_all') }}
-                    </ButtonWithTooltip>
-                    <ButtonWithTooltip
-                        variant="destructive"
-                        size="sm"
-                        @click="handleDelete"
-                        class="col-span-2"
-                        :tooltip="t('plannerate.sidebar.section_details.delete_tooltip')"
-                    >
-                        <Trash2 class="mr-2 size-4" />
-                        {{ t('plannerate.sidebar.section_details.delete') }}
-                    </ButtonWithTooltip>
-                </div>
+            <div class="grid grid-cols-2 gap-2">
+                <ButtonWithTooltip
+                    variant="outline"
+                    size="sm"
+                    @click="handleMoveLeft"
+                    :disabled="!sectionActions.canMoveLeft"
+                    :tooltip="t('plannerate.sidebar.section_details.move_left_tooltip')"
+                >
+                    <ArrowLeft class="mr-2 size-4" />
+                    {{ t('plannerate.sidebar.section_details.move_left') }}
+                </ButtonWithTooltip>
+                <ButtonWithTooltip
+                    variant="outline"
+                    size="sm"
+                    @click="handleMoveRight"
+                    :disabled="!sectionActions.canMoveRight"
+                    :tooltip="t('plannerate.sidebar.section_details.move_right_tooltip')"
+                >
+                    <ArrowRight class="mr-2 size-4" />
+                    {{ t('plannerate.sidebar.section_details.move_right') }}
+                </ButtonWithTooltip>
+                <ButtonWithTooltip
+                    variant="outline"
+                    size="sm"
+                    @click="handleInvertShelves"
+                    :disabled="!sectionActions.canInvertShelves"
+                    class="col-span-2"
+                    :tooltip="t('plannerate.sidebar.section_details.invert_shelves_tooltip')"
+                >
+                    <ArrowUpDown class="mr-2 size-4" />
+                    {{ t('plannerate.sidebar.section_details.invert_shelves') }}
+                </ButtonWithTooltip>
+                <ButtonWithTooltip
+                    variant="outline"
+                    size="sm"
+                    @click="handleApplyToAll"
+                    :disabled="otherSections.length === 0"
+                    class="col-span-2"
+                    :tooltip="t('plannerate.sidebar.section_details.apply_to_all_tooltip')"
+                >
+                    <CopyCheck class="mr-2 size-4" />
+                    {{ t('plannerate.sidebar.section_details.apply_to_all') }}
+                </ButtonWithTooltip>
+                <ButtonWithTooltip
+                    variant="destructive"
+                    size="sm"
+                    @click="handleDelete"
+                    class="col-span-2"
+                    :tooltip="t('plannerate.sidebar.section_details.delete_tooltip')"
+                >
+                    <Trash2 class="mr-2 size-4" />
+                    {{ t('plannerate.sidebar.section_details.remove') }}
+                </ButtonWithTooltip>
             </div>
         </div>
     </div>
@@ -215,14 +250,18 @@ import {
     ArrowUpDown,
     Box,
     CopyCheck,
+    Grip,
+    Info,
+    Ruler,
     Trash2,
+    X,
+    Zap,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { toast } from 'vue-sonner';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramKeyboard } from '@/composables/plannerate/interactions/usePlanogramKeyboard';
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
@@ -311,6 +350,13 @@ function handleApplyToAll() {
             count: targets.length,
         }),
     );
+}
+
+/**
+ * Fecha o painel de detalhes limpando a seleção atual
+ */
+function handleClose() {
+    selection.clearSelection();
 }
 
 /**

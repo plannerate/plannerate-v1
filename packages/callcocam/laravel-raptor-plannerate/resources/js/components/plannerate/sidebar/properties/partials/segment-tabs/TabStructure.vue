@@ -1,55 +1,82 @@
 <template>
-    <div class="space-y-3">
-        <p class="text-xs font-semibold text-foreground">
-            {{ t('plannerate.sidebar.segment_details.structure.title') }}
-        </p>
-
-        <!-- Sem categoria vinculada -->
-        <div v-if="!categoryName" class="rounded-md border bg-muted/30 p-4 text-center">
+    <div class="space-y-4">
+        <!-- Cabeçalho da aba -->
+        <div>
+            <h3 class="text-xl font-bold leading-tight text-foreground">
+                {{ t('plannerate.sidebar.segment_details.headers.structure_title') }}
+            </h3>
             <p class="text-sm text-muted-foreground">
-                {{ t('plannerate.sidebar.segment_details.structure.no_category') }}
+                {{ t('plannerate.sidebar.segment_details.headers.structure_subtitle') }}
             </p>
         </div>
 
-        <!-- Hierarquia mercadológica -->
-        <div v-else class="space-y-1.5">
-            <div
-                v-for="level in hierarchyLevels"
-                :key="level.key"
-                class="flex items-start justify-between rounded-md px-3 py-1.5"
-                :class="level.value ? 'bg-muted/40' : 'bg-muted/10'"
-            >
-                <div class="flex items-center gap-2">
-                    <!-- Indicador de nível de hierarquia -->
-                    <div
-                        class="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full"
-                        :class="level.value ? 'bg-primary' : 'bg-muted-foreground/30'"
-                    />
-                    <span class="text-xs text-muted-foreground">{{ level.label }}</span>
-                </div>
-                <span
-                    class="ml-2 text-right text-xs font-medium"
-                    :class="level.value ? 'text-foreground' : 'text-muted-foreground/50'"
+        <!-- Card: Classificação Principal -->
+        <SegmentCard
+            :icon="Network"
+            color="blue"
+            :title="t('plannerate.sidebar.segment_details.cards.main_classification')"
+        >
+            <div class="divide-y divide-border/60">
+                <div
+                    v-for="level in mainLevels"
+                    :key="level.key"
+                    class="flex items-center justify-between gap-2 py-2.5 text-sm"
                 >
-                    {{ level.value || '—' }}
-                </span>
+                    <span class="text-muted-foreground">{{ level.label }}</span>
+                    <span
+                        class="text-right font-semibold"
+                        :class="level.value ? 'text-foreground' : 'text-muted-foreground/60'"
+                    >
+                        {{ level.value || '—' }}
+                    </span>
+                </div>
             </div>
-        </div>
+        </SegmentCard>
 
-        <!-- Caminho completo (se disponível) -->
-        <div v-if="product?.category_full_path" class="rounded-md border bg-primary/5 px-3 py-2">
-            <p class="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                Caminho completo
-            </p>
-            <p class="mt-1 text-xs text-foreground">{{ product.category_full_path }}</p>
-        </div>
+        <!-- Card: Níveis Complementares -->
+        <SegmentCard
+            :icon="Layers"
+            color="purple"
+            :title="t('plannerate.sidebar.segment_details.cards.complementary_levels')"
+        >
+            <div class="divide-y divide-border/60">
+                <div
+                    v-for="level in complementaryLevels"
+                    :key="level.key"
+                    class="flex items-center justify-between gap-2 py-2.5 text-sm"
+                >
+                    <span class="text-muted-foreground">{{ level.label }}</span>
+                    <span
+                        class="text-right font-semibold"
+                        :class="level.value ? 'text-foreground' : 'text-muted-foreground/60'"
+                    >
+                        {{ level.value || '—' }}
+                    </span>
+                </div>
+            </div>
+        </SegmentCard>
+
+        <!-- Card: Caminho Completo -->
+        <SegmentCard
+            :icon="Route"
+            color="emerald"
+            :title="t('plannerate.sidebar.segment_details.cards.full_path')"
+        >
+            <div class="rounded-lg bg-emerald-50/70 px-3 py-2.5 dark:bg-emerald-950/20">
+                <p class="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                    {{ fullPathLabel }}
+                </p>
+            </div>
+        </SegmentCard>
     </div>
 </template>
 
 <script setup lang="ts">
+import { Layers, Network, Route } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useT } from '@/composables/useT';
 import type { Product } from '@/types/planogram';
+import SegmentCard from './SegmentCard.vue';
 
 interface Props {
     /** Produto do segmento */
@@ -61,7 +88,6 @@ const { t } = useT();
 
 /**
  * Nome da categoria folha do produto (carregada via relação eager).
- * A relação `category` é eager-loaded no GondolaController com id, name, category_id.
  */
 const categoryName = computed(() => {
     const cat = props.product?.category;
@@ -73,10 +99,6 @@ const categoryName = computed(() => {
 /**
  * Hierarquia mercadológica derivada do category_full_path (se disponível)
  * ou mostrando apenas a categoria folha carregada pela relação.
- *
- * O category_full_path é desabilitado pelo GondolaController (setAppends([]))
- * para performance, portanto a hierarquia completa pode não estar disponível —
- * nesse caso exibe o nome da categoria na posição mais próxima da raiz.
  */
 const hierarchyLevels = computed(() => {
     const levels = [
@@ -92,7 +114,6 @@ const hierarchyLevels = computed(() => {
     const fullPath = props.product?.category_full_path;
 
     if (fullPath) {
-        // Preenche os níveis a partir da esquerda (raiz → folha)
         const parts = fullPath.split(' > ').map((s: string) => s.trim());
         parts.forEach((part: string, index: number) => {
             if (index < levels.length) {
@@ -100,10 +121,25 @@ const hierarchyLevels = computed(() => {
             }
         });
     } else if (categoryName.value) {
-        // Sem caminho completo: mostra apenas a categoria carregada na posição de Categoria (nível 4)
         levels[3].value = categoryName.value;
     }
 
     return levels;
+});
+
+/** Níveis principais: do segmento varejista até a subcategoria */
+const mainLevels = computed(() => hierarchyLevels.value.slice(0, 5));
+
+/** Níveis complementares: segmento e subsegmento */
+const complementaryLevels = computed(() => hierarchyLevels.value.slice(5));
+
+/**
+ * Rótulo do caminho completo: usa o category_full_path ou a categoria folha.
+ */
+const fullPathLabel = computed(() => {
+    if (props.product?.category_full_path) {
+        return props.product.category_full_path;
+    }
+    return categoryName.value || t('plannerate.sidebar.segment_details.structure.no_category');
 });
 </script>
