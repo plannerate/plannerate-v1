@@ -12,6 +12,7 @@ use App\Models\Traits\BelongsToTenant;
 use Callcocam\LaravelRaptorPlannerate\Models\Traits\UsesPlannerateTenantConnection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Sale extends Model
@@ -56,5 +57,13 @@ class Sale extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Loja onde a venda foi registrada.
+     */
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
     }
 }

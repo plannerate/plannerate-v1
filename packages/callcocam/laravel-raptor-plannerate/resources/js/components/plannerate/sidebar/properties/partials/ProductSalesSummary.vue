@@ -118,32 +118,32 @@
                             {{ formatCurrency(salesData.summary.total_cost) }}
                         </p>
                     </div>
-                    <!-- Lucro bruto unitário = preço − custo de aquisição -->
+                    <!-- Lucro bruto unitário = preço − custo de aquisição (backend) -->
                     <div class="rounded-md bg-muted/40 p-2.5">
                         <p class="text-xs text-muted-foreground">
                             {{ t('plannerate.sidebar.product_sales_summary.gross_profit_unit') }}
                         </p>
                         <p class="text-base font-bold text-green-600 dark:text-green-500">
-                            {{ formatCurrency(grossProfitPerUnit) }}
+                            {{ formatCurrency(salesData.summary.gross_profit_unit) }}
                         </p>
                     </div>
-                    <!-- Lucro bruto total = faturamento − custo total -->
+                    <!-- Lucro bruto total = faturamento − custo total (backend) -->
                     <div class="rounded-md bg-muted/40 p-2.5">
                         <p class="text-xs text-muted-foreground">
                             {{ t('plannerate.sidebar.product_sales_summary.gross_profit_total') }}
                         </p>
                         <p class="text-base font-bold text-green-600 dark:text-green-500">
-                            {{ formatCurrency(grossProfitTotal) }}
+                            {{ formatCurrency(salesData.summary.gross_profit_total) }}
                         </p>
                     </div>
                 </div>
-                <!-- Margem bruta = lucro bruto / faturamento -->
+                <!-- Margem bruta = lucro bruto / faturamento (backend) -->
                 <div class="rounded-md bg-muted/40 p-2.5">
                     <p class="text-xs text-muted-foreground">
                         {{ t('plannerate.sidebar.product_sales_summary.gross_margin') }}
                     </p>
                     <p class="text-base font-bold text-purple-600 dark:text-purple-500">
-                        {{ formatPercent(grossMarginPercentage) }}
+                        {{ formatPercent(salesData.summary.gross_margin_pct) }}
                     </p>
                 </div>
             </div>
@@ -282,35 +282,6 @@ const { t } = useT();
 
 const { salesData, isLoading, error, loadSales, clearSales } =
     useProductSales();
-
-/**
- * Lucro bruto por unidade = preço de venda médio − custo de aquisição médio.
- * Diferente da margem de contribuição (que ainda desconta impostos e usa o custo médio da loja).
- */
-const grossProfitPerUnit = computed(
-    () =>
-        (salesData.value?.summary.avg_price ?? 0) -
-        (salesData.value?.summary.avg_cost ?? 0),
-);
-
-/**
- * Lucro bruto total = faturamento − custo de aquisição total (sem descontar impostos).
- */
-const grossProfitTotal = computed(
-    () =>
-        (salesData.value?.summary.total_revenue ?? 0) -
-        (salesData.value?.summary.total_cost ?? 0),
-);
-
-/**
- * Margem bruta (%) = lucro bruto total ÷ faturamento × 100.
- * Diferente da margem líquida (que também desconta impostos e usa o custo médio da loja).
- */
-const grossMarginPercentage = computed(() => {
-    const revenue = salesData.value?.summary.total_revenue ?? 0;
-
-    return revenue > 0 ? (grossProfitTotal.value / revenue) * 100 : 0;
-});
 
 /**
  * Há estoque quando o valor está definido e é maior que zero.

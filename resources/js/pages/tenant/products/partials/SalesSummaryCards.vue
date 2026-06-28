@@ -22,45 +22,24 @@ const props = defineProps<{
 const { t } = useT();
 
 /**
- * Métricas derivadas das somas brutas, calculadas exatamente como o card lateral
- * do editor (`ProductSalesSummary`):
- *
- * - avg_price  = total_value / total_quantity            (preço médio por unidade)
- * - avg_cost   = total_acquisition_cost / total_quantity (custo médio por unidade)
- * - avg_margin = total_margem_contribuicao / total_quantity (margem líquida por unidade)
- * - margin_pct = total_margem_contribuicao / total_value * 100 (margem líquida %)
- * - lucro bruto = preço − custo de aquisição (não desconta impostos)
- * - margem bruta % = lucro bruto total / total_value * 100
- *
- * NÃO usa `avg_sale_price` do backend (que é AVG por transação, não por unidade).
+ * Métricas exibidas nos cards. Todas as fórmulas (preço médio, custo médio, lucro
+ * bruto, percentuais) são calculadas no backend (SalesSummary) — aqui apenas lemos
+ * os valores prontos e os repassamos aos formatadores.
  */
-const metrics = computed(() => {
-    const quantity = Number(props.totals.total_quantity) || 0;
-    const revenue = Number(props.totals.total_value) || 0;
-    const cost = Number(props.totals.total_acquisition_cost) || 0;
-    const netMargin = Number(props.totals.total_margem_contribuicao) || 0;
-
-    const avgPrice = quantity > 0 ? revenue / quantity : 0;
-    const avgCost = quantity > 0 ? cost / quantity : 0;
-    const avgMargin = quantity > 0 ? netMargin / quantity : 0;
-    const grossProfitTotal = revenue - cost;
-    const grossProfitUnit = avgPrice - avgCost;
-
-    return {
-        totalRecords: props.totals.total_records,
-        quantity,
-        revenue,
-        cost,
-        netMargin,
-        avgPrice,
-        avgCost,
-        avgMargin,
-        grossProfitUnit,
-        grossProfitTotal,
-        grossMarginPct: revenue > 0 ? (grossProfitTotal / revenue) * 100 : 0,
-        netMarginPct: revenue > 0 ? (netMargin / revenue) * 100 : 0,
-    };
-});
+const metrics = computed(() => ({
+    totalRecords: props.totals.total_records,
+    quantity: Number(props.totals.total_quantity) || 0,
+    revenue: Number(props.totals.total_value) || 0,
+    cost: Number(props.totals.total_acquisition_cost) || 0,
+    netMargin: Number(props.totals.total_margem_contribuicao) || 0,
+    avgPrice: props.totals.avg_price,
+    avgCost: props.totals.avg_cost,
+    avgMargin: props.totals.avg_margin,
+    grossProfitUnit: props.totals.gross_profit_unit,
+    grossProfitTotal: props.totals.gross_profit_total,
+    grossMarginPct: props.totals.gross_margin_pct,
+    netMarginPct: props.totals.net_margin_pct,
+}));
 
 /** Define cada card da grade de indicadores */
 type DashCard = {

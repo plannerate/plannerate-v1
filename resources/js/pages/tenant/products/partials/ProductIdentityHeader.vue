@@ -12,18 +12,12 @@ const props = defineProps<{
 const { t } = useT();
 
 /**
- * Percentual de registros em promoção sobre o total de registros.
- * Retorna '0,0%' quando não há registros.
+ * Percentual de registros em promoção, calculado no backend (SalesSummary).
+ * Aqui apenas formatamos o valor pronto para exibição em pt-BR.
  */
-const promoPercent = computed<string>(() => {
-    if (!props.totals.total_records) {
-        return '0,0%';
-    }
-
-    const pct = (props.totals.promo_records / props.totals.total_records) * 100;
-
-    return `${pct.toFixed(1).replace('.', ',')}%`;
-});
+const promoPercent = computed<string>(
+    () => `${(props.totals.promo_percent ?? 0).toFixed(1).replace('.', ',')}%`,
+);
 </script>
 
 <template>

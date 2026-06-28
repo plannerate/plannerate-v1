@@ -25,13 +25,15 @@ export interface SaleRow {
 }
 
 /**
- * Totalizadores (somas brutas) calculados pelo backend para o período/filtro atual.
+ * Totalizadores e métricas derivadas calculados pelo backend (SalesSummary) para o
+ * período/filtro atual. O frontend apenas formata — todas as fórmulas (preço médio,
+ * custo médio, lucro bruto, percentuais) vêm prontas da fonte única de verdade.
  *
- * Observação: `avg_sale_price` vem do backend como `AVG(sale_price)` (média por
- * transação). Os cards do resumo NÃO usam esse campo — eles derivam o preço médio
- * por unidade (`total_value / total_quantity`) para bater com o card lateral do editor.
+ * Observação: `avg_sale_price` é o legado `AVG(sale_price)` (média por transação) e
+ * NÃO deve ser usado; o preço médio canônico por unidade é `avg_price`.
  */
 export interface SalesTotals {
+    // ── Somas brutas ──
     total_records: number;
     total_quantity: string;
     total_value: string;
@@ -44,6 +46,23 @@ export interface SalesTotals {
     promo_value: string;
     regular_quantity: string;
     regular_value: string;
+    // ── Métricas derivadas (fonte única no backend) ──
+    /** Preço médio por unidade = total_value / total_quantity */
+    avg_price: number;
+    /** Custo médio por unidade = total_acquisition_cost / total_quantity */
+    avg_cost: number;
+    /** Margem líquida média por unidade = total_margem_contribuicao / total_quantity */
+    avg_margin: number;
+    /** Lucro bruto por unidade = avg_price − avg_cost */
+    gross_profit_unit: number;
+    /** Lucro bruto total = total_value − total_acquisition_cost */
+    gross_profit_total: number;
+    /** Margem bruta (%) = gross_profit_total / total_value × 100 */
+    gross_margin_pct: number;
+    /** Margem líquida (%) = total_margem_contribuicao / total_value × 100 */
+    net_margin_pct: number;
+    /** Percentual de registros em promoção = promo_records / total_records × 100 */
+    promo_percent: number;
 }
 
 /** Filtros ativos da página de vendas */

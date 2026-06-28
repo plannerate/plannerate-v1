@@ -15,6 +15,12 @@ export interface ProductSalesSummary {
     avg_margin: number;
     /** Margem de contribuição como % do faturamento */
     margin_percentage: number;
+    /** Lucro bruto por unidade = avg_price − avg_cost (calculado no backend) */
+    gross_profit_unit: number;
+    /** Lucro bruto total = total_revenue − total_cost (calculado no backend) */
+    gross_profit_total: number;
+    /** Margem bruta (%) = gross_profit_total / total_revenue × 100 (calculado no backend) */
+    gross_margin_pct: number;
     first_sale_date: string | null;
     last_sale_date: string | null;
 }
