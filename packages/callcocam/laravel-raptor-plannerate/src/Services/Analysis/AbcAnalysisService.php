@@ -7,6 +7,7 @@ use Callcocam\LaravelRaptorPlannerate\Models\Layer;
 use Callcocam\LaravelRaptorPlannerate\Models\MonthlySalesSummary;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Sale;
+use Callcocam\LaravelRaptorPlannerate\Sales\SalesStatistics;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -502,9 +503,8 @@ class AbcAnalysisService
             $margem = (float) ($item->margem ?? 0);
 
             $somaPesos = 0;
-            $mediaPonderada = 0;
 
-            // Contribuição individual de cada métrica para o cálculo (para auditoria)
+            // Contribuição individual de cada métrica (apenas para a amostra de diagnóstico)
             $contribQtde = 0.0;
             $contribValor = 0.0;
             $contribMargem = 0.0;
@@ -512,22 +512,27 @@ class AbcAnalysisService
             if ($qtde != 0) {
                 $somaPesos += $this->pesoQtde;
                 $contribQtde = $qtde * $this->pesoQtde;
-                $mediaPonderada += $contribQtde;
             }
 
             if ($valor != 0) {
                 $somaPesos += $this->pesoValor;
                 $contribValor = $valor * $this->pesoValor;
-                $mediaPonderada += $contribValor;
             }
 
             if ($margem != 0) {
                 $somaPesos += $this->pesoMargem;
                 $contribMargem = $margem * $this->pesoMargem;
-                $mediaPonderada += $contribMargem;
             }
 
-            $mediaPonderadaFinal = $somaPesos != 0 ? ($mediaPonderada / $somaPesos) : 0;
+            // Média ponderada centralizada em SalesStatistics (fonte única da fórmula)
+            $mediaPonderadaFinal = SalesStatistics::weightedAverage(
+                $qtde,
+                $valor,
+                $margem,
+                $this->pesoQtde,
+                $this->pesoValor,
+                $this->pesoMargem,
+            );
 
             $totalQtde += $qtde;
             $totalValor += $valor;

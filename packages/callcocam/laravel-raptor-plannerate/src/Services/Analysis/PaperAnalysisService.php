@@ -12,6 +12,7 @@ use Callcocam\LaravelRaptorPlannerate\Models\Layer;
 use Callcocam\LaravelRaptorPlannerate\Models\MonthlySalesSummary;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Sale;
+use Callcocam\LaravelRaptorPlannerate\Sales\SalesStatistics;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -219,17 +220,13 @@ class PaperAnalysisService
         $withMetrics = $combined->map(function ($item) use ($categoryTotals) {
             $categoryTotal = (float) ($categoryTotals->get($item->category_id) ?? 0);
 
-            $marketShare = $categoryTotal > 0
-                ? ($item->valor_atual / $categoryTotal) * 100
-                : 0.0;
+            $marketShare = SalesStatistics::marketShare((float) $item->valor_atual, $categoryTotal);
 
             // Produto novo: vendeu no período atual sem histórico anterior — não há
             // base para calcular crescimento (growth_rate = null, tratado à parte)
             $isNew = $item->valor_anterior <= 0 && $item->valor_atual > 0;
 
-            $growthRate = $item->valor_anterior > 0
-                ? round((($item->valor_atual - $item->valor_anterior) / $item->valor_anterior) * 100, 4)
-                : null;
+            $growthRate = SalesStatistics::growthRate((float) $item->valor_atual, (float) $item->valor_anterior);
 
             return (object) [
                 'product_id' => $item->product_id,
@@ -244,13 +241,13 @@ class PaperAnalysisService
 
         // Mediana do market_share por categoria — divisor entre alto e baixo share
         $shareThresholds = $withMetrics->groupBy('category_id')->map(
-            fn ($items) => $this->median($items->pluck('market_share')) ?? 0.0
+            fn ($items) => SalesStatistics::median($items->pluck('market_share')) ?? 0.0
         );
 
         // Mediana do growth_rate por categoria (produtos sem base de comparação ficam
         // fora) — divisor entre alto e baixo crescimento quando não há limiar fixo
         $growthThresholds = $withMetrics->groupBy('category_id')->map(
-            fn ($items) => $this->median($items->pluck('growth_rate')->filter(fn ($g) => $g !== null)) ?? 0.0
+            fn ($items) => SalesStatistics::median($items->pluck('growth_rate')->filter(fn ($g) => $g !== null)) ?? 0.0
         );
 
         // Classifica cada produto
@@ -278,24 +275,7 @@ class PaperAnalysisService
         })->values();
     }
 
-    /**
-     * Mediana de uma coleção de números. Retorna null para coleção vazia.
-     */
-    private function median(Collection $values): ?float
-    {
-        $sorted = $values->sort()->values();
-        $count = $sorted->count();
-
-        if ($count === 0) {
-            return null;
-        }
-
-        $mid = intdiv($count, 2);
-
-        return $count % 2 === 0
-            ? ((float) $sorted[$mid - 1] + (float) $sorted[$mid]) / 2
-            : (float) $sorted[$mid];
-    }
+    // Mediana centralizada em SalesStatistics::median().
 
     /**
      * Retorna os IDs dos produtos fisicamente alocados em uma gôndola.
