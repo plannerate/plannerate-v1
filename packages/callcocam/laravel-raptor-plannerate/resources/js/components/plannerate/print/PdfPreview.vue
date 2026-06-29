@@ -163,68 +163,6 @@ function decreaseScale() {
     );
 }
 
-/**
- * Aguarda o próximo frame de pintura após uma alteração de layout,
- * garantindo que scrollWidth/clientWidth reflitam o novo `localScale`.
- */
-function nextFrame(): Promise<void> {
-    return new Promise((resolve) =>
-        window.requestAnimationFrame(() => resolve()),
-    );
-}
-
-/**
- * Prepara o modo em linha para a captura do PDF deixando a página e o container
- * de rolagem dimensionarem-se ao CONTEÚDO, em vez de ficarem presos à altura do
- * viewport com rolagem (que o html2canvas recorta — gerando metade vazia ou um
- * "filete" vertical da gôndola larga).
- *
- * Usa apenas sizing intrínseco (`flex: none` + `align-self: flex-start` +
- * `height/overflow` naturais) — NUNCA largura fixa em px, que colapsa o layout.
- * Assim a fila de módulos ocupa a largura real e o html2canvas captura a gôndola
- * inteira; o `generateSinglePagePdf` depois reduz a imagem para caber no A4.
- *
- * Retorna uma função que restaura os estilos originais, ou `null` se os
- * elementos não forem encontrados.
- */
-function relaxRowLayoutForCapture(): (() => void) | null {
-    const page = document.querySelector<HTMLElement>('[data-pdf-page]');
-    const scroller = page?.querySelector<HTMLElement>('[data-pdf-scroll]');
-
-    if (!page || !scroller) {
-        return null;
-    }
-
-    const previousPage = {
-        flex: page.style.flex,
-        alignSelf: page.style.alignSelf,
-        height: page.style.height,
-        maxWidth: page.style.maxWidth,
-    };
-    const previousScroller = {
-        flex: scroller.style.flex,
-        overflow: scroller.style.overflow,
-        height: scroller.style.height,
-    };
-
-    // Scroller: para de esticar (flex-1) e de rolar — encolhe ao conteúdo.
-    scroller.style.flex = 'none';
-    scroller.style.overflow = 'visible';
-    scroller.style.height = 'auto';
-
-    // Página: para de esticar à altura do viewport e encolhe à largura/altura
-    // do conteúdo (a fila de módulos define a largura).
-    page.style.flex = 'none';
-    page.style.alignSelf = 'flex-start';
-    page.style.height = 'auto';
-    page.style.maxWidth = 'none';
-
-    return () => {
-        Object.assign(page.style, previousPage);
-        Object.assign(scroller.style, previousScroller);
-    };
-}
-
 async function generatePDF(
     autoDownload = false,
     selectedSectionIds?: string[],
@@ -234,7 +172,6 @@ async function generatePDF(
         : pdfGenerator.isGenerating;
     const previousAbcVisibility = abcClassification.isVisible.value;
     const previousTargetStockVisibility = targetStockAnalysis.isVisible.value;
-    let restoreRowLayout: (() => void) | null = null;
 
     try {
         isExportingRef.value = true;
@@ -245,13 +182,10 @@ async function generatePDF(
         const layoutMode =
             layoutDirection.value === 'row' ? 'single' : 'multiple';
 
-        // No modo em linha, deixa a gôndola dimensionar ao conteúdo (sem rolagem
-        // nem altura travada) para a captura não cortar nada.
-        if (layoutMode === 'single') {
-            restoreRowLayout = relaxRowLayoutForCapture();
-            await nextTick();
-            await nextFrame();
-        }
+        // No modo em linha, o PDF é montado capturando cada módulo isolado
+        // (`generateSinglePagePdf` faz o tiling), então NÃO é preciso reduzir o
+        // zoom para caber: cada módulo é capturado no seu tamanho natural e
+        // reposicionado em mm na página. Por isso não há mais ajuste de escala.
         const orientation =
             layoutDirection.value === 'row' ? 'landscape' : 'portrait';
         const filename = `gondola_${props.gondola.name}_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -302,11 +236,6 @@ async function generatePDF(
                     : t('plannerate.header.auto_generate.unknown_error')),
         );
     } finally {
-        // Restaura o layout original alterado para a captura.
-        if (restoreRowLayout) {
-            restoreRowLayout();
-        }
-
         abcClassification.setVisibility(previousAbcVisibility);
         targetStockAnalysis.setVisibility(previousTargetStockVisibility);
 
@@ -396,22 +325,28 @@ const orderedSections = computed<Section[]>(() => {
             v-if="layoutDirection === 'row'"
             class="mt-28 flex flex-1 flex-col"
         >
-            <!-- Página capturada para PDF single-page -->
+            <!--
+                Página de visualização. Para o PDF, o gerador captura cada
+                faixa isoladamente (cabeçalho, indicador de fluxo, cada módulo
+                `data-module-section` e rodapé) e remonta em mm na página A4 —
+                evita a captura única e larga que o html2canvas renderiza mal.
+            -->
             <div data-pdf-page class="flex flex-1 flex-col bg-white shadow-sm">
                 <PdfGondolaHeader
+                    data-pdf-header
                     :gondola="gondola as any"
                     :tenant-name="tenantName"
                     :responsavel="responsavel"
                     :flow-label="flowLabel"
                     :sections-count="orderedSections.length"
                 />
-                <PdfFlowIndicator :is-left-to-right="isLeftToRight" />
+                <PdfFlowIndicator data-pdf-flow :is-left-to-right="isLeftToRight" />
                 <PdfGondolaCanvas
                     :sections="orderedSections"
                     :local-scale="localScale"
                     :alignment="gondola.alignment ?? 'justify'"
                 />
-                <PdfPageFooter :observacoes="observacoes" />
+                <PdfPageFooter data-pdf-footer :observacoes="observacoes" />
             </div>
         </div>
 
