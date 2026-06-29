@@ -3,9 +3,10 @@
 namespace Callcocam\LaravelRaptorPlannerate\Services\Export;
 
 use Callcocam\LaravelRaptorPlannerate\Models\Gondola;
-use Callcocam\LaravelRaptorPlannerate\Services\Export\QRCodeService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -48,12 +49,16 @@ class GondolaPrintService
                     return 'data:'.$mime.';base64,'.base64_encode($content);
                 }
 
-                return config('app.url').$imageUrl;
+                // Arquivo não está no disco público: tenta via URL absoluta e
+                // embute em base64 (nunca devolve URL crua, que sumiria no PDF).
+                return $this->fetchRemoteImageAsBase64(config('app.url').$imageUrl);
             }
 
-            // Se já é URL absoluta, retorna como está
+            // Se já é URL absoluta (http/https), precisa ser BAIXADA e embutida
+            // em base64. Devolver a URL crua quebra a exportação por html2canvas
+            // (imagem externa não é capturada → produto sai em branco no PDF).
             if (str_starts_with($imageUrl, 'http')) {
-                return $imageUrl;
+                return $this->fetchRemoteImageAsBase64($imageUrl);
             }
 
             // Fallback: trata como caminho em storage/public
@@ -73,6 +78,46 @@ class GondolaPrintService
 
             return $this->getPlaceholderImage();
         }
+    }
+
+    /**
+     * Baixa uma imagem remota (http/https) e devolve em data URI base64.
+     *
+     * O resultado é cacheado por URL (24h) porque a mesma imagem costuma
+     * repetir em vários produtos/aberturas da tela de impressão e o download
+     * remoto é o trecho mais lento de `processProductImages`. Em qualquer falha
+     * (timeout, status != 2xx, exceção) cai no placeholder base64, garantindo
+     * que o html2canvas sempre tenha uma imagem embutida para renderizar.
+     */
+    protected function fetchRemoteImageAsBase64(string $imageUrl): string
+    {
+        $cacheKey = 'plannerate:pdf:img:'.md5($imageUrl);
+
+        return Cache::remember($cacheKey, now()->addDay(), function () use ($imageUrl) {
+            try {
+                $response = Http::timeout(8)->retry(2, 200)->get($imageUrl);
+
+                if ($response->successful()) {
+                    // Content-Type pode vir com charset (ex.: "image/jpeg; ...").
+                    $mime = trim(explode(';', (string) $response->header('Content-Type'))[0]);
+                    $mime = $mime !== '' ? $mime : 'image/jpeg';
+
+                    return 'data:'.$mime.';base64,'.base64_encode($response->body());
+                }
+
+                Log::warning('Imagem remota retornou status não-2xx para PDF', [
+                    'url' => $imageUrl,
+                    'status' => $response->status(),
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('Erro ao baixar imagem remota para PDF', [
+                    'url' => $imageUrl,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            return $this->getPlaceholderImage();
+        });
     }
 
     /**

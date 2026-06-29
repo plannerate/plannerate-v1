@@ -1,7 +1,7 @@
 <template>
     <div class="flex items-center" :style="containerStyle">
         <div v-for="(_, index) in getQuantity" :key="index" class="z-20 cursor-pointer transition-all">
-            <img v-if="product?.image_url_encoded" :src="product.image_url_encoded" :alt="product.name" :style="style"
+            <img v-if="displayImageUrl" :src="displayImageUrl" :alt="product?.name" :style="style"
                 class="z-20 object-cover" />
             <div v-else :style="style" class="flex items-center justify-center border border-dashed bg-muted">
                 <span class="text-xs text-muted-foreground">{{
@@ -45,7 +45,29 @@ const containerStyle = computed(() => {
 });
 
 
-const getQuantity = computed(() => props.layer?.quantity || 1);
+/**
+ * Imagem exibida no PDF: usa EXCLUSIVAMENTE a versão embutida/base64
+ * (`image_url_encoded`). URLs externas (`image_url`) não são embarcadas na
+ * captura para PDF — cairiam em branco —, por isso, na ausência do base64,
+ * renderizamos o placeholder de fallback em vez de tentar a URL remota.
+ */
+const displayImageUrl = computed<string | null>(
+    () => product.value?.image_url_encoded ?? null,
+);
+
+/**
+ * Quantidade de frentes (facings) deste layer, normalizada igual ao editor:
+ * inteiro, no mínimo 1 e no máximo 500.
+ */
+const getQuantity = computed<number>(() => {
+    const quantity = Number(props.layer?.quantity ?? 1);
+
+    if (!Number.isFinite(quantity)) {
+        return 1;
+    }
+
+    return Math.max(1, Math.min(500, Math.trunc(quantity)));
+});
 
 const scale = computed(() => props.scale || 3);
 
@@ -57,14 +79,18 @@ const productHeight = computed(
 );
 
 const style = computed(() => {
-    //  Verifica se a imagem do produto está disponível
-    // Se ele tem no caminho a palavra 'fallback', então não é uma imagem real
-    if (!product.value?.image_url || product.value.image_url.includes('fallback')) {
+    const imageUrl = displayImageUrl.value;
+
+    //  Verifica se a imagem do produto está disponível.
+    // Se não houver imagem ou o caminho contiver 'fallback', renderiza o
+    // placeholder com altura e largura padrão iguais às do editor.
+    if (!imageUrl || imageUrl.includes('fallback')) {
+        // Placeholder (caixa tracejada via classe bg-muted). NÃO usa imagem de
+        // fundo externa para não depender de carregamento na captura do PDF;
+        // mantém apenas as dimensões iguais às do editor.
         return {
-            width: `${productWidth.value || 10}px`,
-            backgroundPosition: 'center',
-            backgroundSize: 'cover',
-            backgroundRepeat: 'no-repeat',
+            width: `${productWidth.value || 20}px`,
+            height: `${productHeight.value || 20}px`,
         };
     }
 

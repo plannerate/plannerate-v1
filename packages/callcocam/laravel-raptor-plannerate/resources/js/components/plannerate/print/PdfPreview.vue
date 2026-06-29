@@ -72,6 +72,9 @@ const SCALE_MAX = 5;
 const PDF_EXPORT_SCALE = 4;
 const PDF_EXPORT_QUALITY = 1;
 
+// Escala inicial do PDF. Mantém fallback 1 (não o 3 do editor): como `scale` é
+// um multiplicador uniforme, a PROPORÇÃO é idêntica em qualquer valor — partir
+// de um valor maior só aumentaria o overflow e o risco de corte na captura.
 const localScale = ref(props.gondola.scale_factor ?? 1);
 
 const tenantName = computed(() => page.props.tenant?.name ?? '');
@@ -171,63 +174,55 @@ function nextFrame(): Promise<void> {
 }
 
 /**
- * Reduz o zoom (`localScale`) do modo em linha até que o conteúdo da gôndola
- * caiba sem barra de rolagem horizontal. Sem isso, a parte que ultrapassa o
- * container (escondida atrás do scroll) é cortada na captura do PDF.
+ * Prepara o modo em linha para a captura do PDF deixando a página e o container
+ * de rolagem dimensionarem-se ao CONTEÚDO, em vez de ficarem presos à altura do
+ * viewport com rolagem (que o html2canvas recorta — gerando metade vazia ou um
+ * "filete" vertical da gôndola larga).
  *
- * Retorna a escala original para ser restaurada após a geração, ou `null`
- * quando nenhum ajuste foi necessário.
+ * Usa apenas sizing intrínseco (`flex: none` + `align-self: flex-start` +
+ * `height/overflow` naturais) — NUNCA largura fixa em px, que colapsa o layout.
+ * Assim a fila de módulos ocupa a largura real e o html2canvas captura a gôndola
+ * inteira; o `generateSinglePagePdf` depois reduz a imagem para caber no A4.
+ *
+ * Retorna uma função que restaura os estilos originais, ou `null` se os
+ * elementos não forem encontrados.
  */
-async function fitRowScaleForExport(): Promise<number | null> {
-    const scroller = document.querySelector<HTMLElement>(
-        '[data-pdf-page] [data-pdf-scroll]',
-    );
+function relaxRowLayoutForCapture(): (() => void) | null {
+    const page = document.querySelector<HTMLElement>('[data-pdf-page]');
+    const scroller = page?.querySelector<HTMLElement>('[data-pdf-scroll]');
 
-    if (!scroller) {
+    if (!page || !scroller) {
         return null;
     }
 
-    const originalScale = localScale.value;
-    let adjusted = false;
-    let guard = 0;
+    const previousPage = {
+        flex: page.style.flex,
+        alignSelf: page.style.alignSelf,
+        height: page.style.height,
+        maxWidth: page.style.maxWidth,
+    };
+    const previousScroller = {
+        flex: scroller.style.flex,
+        overflow: scroller.style.overflow,
+        height: scroller.style.height,
+    };
 
-    // Itera porque padding e conteúdo escalam juntos; uma única razão
-    // costuma resolver, mas mantemos uma folga e um limite de segurança.
-    // Considera overflow horizontal e vertical (o que for mais restritivo),
-    // pois ambos seriam cortados na captura do container.
-    while (localScale.value > SCALE_MIN && guard < 12) {
-        const overflowsX = scroller.scrollWidth > scroller.clientWidth + 1;
-        const overflowsY = scroller.scrollHeight > scroller.clientHeight + 1;
+    // Scroller: para de esticar (flex-1) e de rolar — encolhe ao conteúdo.
+    scroller.style.flex = 'none';
+    scroller.style.overflow = 'visible';
+    scroller.style.height = 'auto';
 
-        if (!overflowsX && !overflowsY) {
-            break;
-        }
+    // Página: para de esticar à altura do viewport e encolhe à largura/altura
+    // do conteúdo (a fila de módulos define a largura).
+    page.style.flex = 'none';
+    page.style.alignSelf = 'flex-start';
+    page.style.height = 'auto';
+    page.style.maxWidth = 'none';
 
-        const ratioX = overflowsX
-            ? scroller.clientWidth / scroller.scrollWidth
-            : 1;
-        const ratioY = overflowsY
-            ? scroller.clientHeight / scroller.scrollHeight
-            : 1;
-        const ratio = Math.min(ratioX, ratioY);
-
-        const next = Math.max(
-            SCALE_MIN,
-            Math.floor(localScale.value * ratio * 100) / 100,
-        );
-
-        if (next >= localScale.value) {
-            break;
-        }
-
-        localScale.value = next;
-        adjusted = true;
-        guard += 1;
-        await nextTick();
-        await nextFrame();
-    }
-
-    return adjusted ? originalScale : null;
+    return () => {
+        Object.assign(page.style, previousPage);
+        Object.assign(scroller.style, previousScroller);
+    };
 }
 
 async function generatePDF(
@@ -239,7 +234,7 @@ async function generatePDF(
         : pdfGenerator.isGenerating;
     const previousAbcVisibility = abcClassification.isVisible.value;
     const previousTargetStockVisibility = targetStockAnalysis.isVisible.value;
-    let scaleToRestore: number | null = null;
+    let restoreRowLayout: (() => void) | null = null;
 
     try {
         isExportingRef.value = true;
@@ -250,10 +245,12 @@ async function generatePDF(
         const layoutMode =
             layoutDirection.value === 'row' ? 'single' : 'multiple';
 
-        // No modo em linha, garante que toda a gôndola caiba sem rolagem
-        // horizontal antes da captura, evitando corte no PDF.
+        // No modo em linha, deixa a gôndola dimensionar ao conteúdo (sem rolagem
+        // nem altura travada) para a captura não cortar nada.
         if (layoutMode === 'single') {
-            scaleToRestore = await fitRowScaleForExport();
+            restoreRowLayout = relaxRowLayoutForCapture();
+            await nextTick();
+            await nextFrame();
         }
         const orientation =
             layoutDirection.value === 'row' ? 'landscape' : 'portrait';
@@ -305,13 +302,13 @@ async function generatePDF(
                     : t('plannerate.header.auto_generate.unknown_error')),
         );
     } finally {
+        // Restaura o layout original alterado para a captura.
+        if (restoreRowLayout) {
+            restoreRowLayout();
+        }
+
         abcClassification.setVisibility(previousAbcVisibility);
         targetStockAnalysis.setVisibility(previousTargetStockVisibility);
-
-        // Restaura o zoom original alterado para o ajuste de captura.
-        if (scaleToRestore !== null) {
-            localScale.value = scaleToRestore;
-        }
 
         await nextTick();
         isExportingRef.value = false;
@@ -339,10 +336,29 @@ function toggleLayout() {
         layoutDirection.value === 'column' ? 'row' : 'column';
 }
 
+// Usa a MESMA fonte do flowLabel e do orderedSections (props.gondola.flow).
+// Antes lia editor.currentGondola, que na tela de print pode não estar
+// populado → caía em 'left_to_right' e o indicador de fluxo não invertia.
 const flowDirection = computed(
-    () => editor.currentGondola.value?.flow || 'left_to_right',
+    () => props.gondola.flow || 'left_to_right',
 );
 const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
+
+/**
+ * Módulos ordenados na MESMA ordem visual do editor (usePlanogramEditor →
+ * sectionsOrdered): ordena por `ordering` e, quando o fluxo é da direita para a
+ * esquerda, inverte o array. Sem isso, o print/PDF exibia os módulos em ordem
+ * espelhada em relação ao editor.
+ */
+const orderedSections = computed<Section[]>(() => {
+    const flow = props.gondola.flow || 'left_to_right';
+    const filtered = props.sections.filter((s) => !s.deleted_at);
+    const ordered = [...filtered].sort(
+        (a, b) => (a.ordering || 0) - (b.ordering || 0),
+    );
+
+    return flow === 'right_to_left' ? ordered.reverse() : ordered;
+});
 </script>
 
 <template>
@@ -352,7 +368,7 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
         <!-- Toolbar fixo -->
         <PdfPreviewToolbar
             :gondola="gondola as any"
-            :sections-count="sections.length"
+            :sections-count="orderedSections.length"
             :flow-label="flowLabel"
             :local-scale="localScale"
             :scale-min="SCALE_MIN"
@@ -387,11 +403,11 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
                     :tenant-name="tenantName"
                     :responsavel="responsavel"
                     :flow-label="flowLabel"
-                    :sections-count="sections.length"
+                    :sections-count="orderedSections.length"
                 />
                 <PdfFlowIndicator :is-left-to-right="isLeftToRight" />
                 <PdfGondolaCanvas
-                    :sections="sections"
+                    :sections="orderedSections"
                     :local-scale="localScale"
                     :alignment="gondola.alignment ?? 'justify'"
                 />
@@ -403,14 +419,14 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
         <div v-else class="mt-14 pt-6 pb-12">
             <div class="mx-auto flex w-full flex-col gap-10 px-4 lg:max-w-7xl">
                 <PdfModulePage
-                    v-for="(section, index) in sections"
+                    v-for="(section, index) in orderedSections"
                     :key="section.id"
                     :section="section"
                     :gondola="gondola as any"
                     :scale-factor="localScale"
                     :alignment="gondola.alignment ?? 'justify'"
                     :index="index"
-                    :total="sections.length"
+                    :total="orderedSections.length"
                     :responsavel="responsavel"
                     :tenant-name="tenantName"
                 />
@@ -420,7 +436,7 @@ const isLeftToRight = computed(() => flowDirection.value === 'left_to_right');
         <!-- Modal de seleção de módulos -->
         <PdfModuleSelector
             v-model:open="showModuleSelector"
-            :sections="sections"
+            :sections="orderedSections"
             @generate="handleGenerateFromSelector"
         />
     </div>
