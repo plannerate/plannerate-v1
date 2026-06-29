@@ -172,6 +172,7 @@ async function generatePDF(
         : pdfGenerator.isGenerating;
     const previousAbcVisibility = abcClassification.isVisible.value;
     const previousTargetStockVisibility = targetStockAnalysis.isVisible.value;
+    let generatedWithDownload = false;
 
     try {
         isExportingRef.value = true;
@@ -228,6 +229,10 @@ async function generatePDF(
             autoDownload,
             specificElements,
         );
+
+        // Marca sucesso só quando houve download (pdf.save já disparou o
+        // arquivo antes do reload abaixo — nada se perde).
+        generatedWithDownload = autoDownload;
     } catch (error) {
         alert(
             t('plannerate.print.preview.error_prefix') +
@@ -241,6 +246,17 @@ async function generatePDF(
 
         await nextTick();
         isExportingRef.value = false;
+
+        // O PDF é montado capturando cada faixa/módulo em sequência com o
+        // html2canvas. Esse processo deixa a página num estado levemente
+        // diferente a cada execução (scroll/reflow internos da captura), então
+        // gerações seguidas SEM recarregar saem inconsistentes (cabeçalho em
+        // coluna, módulos faltando/deslocados). Como a página recém-carregada
+        // sempre gera o resultado correto, recarregamos após um download
+        // bem-sucedido — o arquivo já foi salvo, nada se perde.
+        if (generatedWithDownload) {
+            window.setTimeout(() => window.location.reload(), 700);
+        }
     }
 }
 
