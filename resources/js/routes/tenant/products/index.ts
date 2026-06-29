@@ -3,7 +3,7 @@ import image from './image'
 import dimensions from './dimensions'
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::index
-* @see app/Http/Controllers/Tenant/ProductController.php:54
+* @see app/Http/Controllers/Tenant/ProductController.php:57
 * @route '/products'
 */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -18,7 +18,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::index
-* @see app/Http/Controllers/Tenant/ProductController.php:54
+* @see app/Http/Controllers/Tenant/ProductController.php:57
 * @route '/products'
 */
 index.url = (options?: RouteQueryOptions) => {
@@ -27,7 +27,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::index
-* @see app/Http/Controllers/Tenant/ProductController.php:54
+* @see app/Http/Controllers/Tenant/ProductController.php:57
 * @route '/products'
 */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -37,7 +37,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::index
-* @see app/Http/Controllers/Tenant/ProductController.php:54
+* @see app/Http/Controllers/Tenant/ProductController.php:57
 * @route '/products'
 */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -47,7 +47,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::index
-* @see app/Http/Controllers/Tenant/ProductController.php:54
+* @see app/Http/Controllers/Tenant/ProductController.php:57
 * @route '/products'
 */
 const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -57,7 +57,7 @@ const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => (
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::index
-* @see app/Http/Controllers/Tenant/ProductController.php:54
+* @see app/Http/Controllers/Tenant/ProductController.php:57
 * @route '/products'
 */
 indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -67,7 +67,7 @@ indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::index
-* @see app/Http/Controllers/Tenant/ProductController.php:54
+* @see app/Http/Controllers/Tenant/ProductController.php:57
 * @route '/products'
 */
 indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -84,7 +84,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::create
-* @see app/Http/Controllers/Tenant/ProductController.php:317
+* @see app/Http/Controllers/Tenant/ProductController.php:288
 * @route '/products/create'
 */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -99,7 +99,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::create
-* @see app/Http/Controllers/Tenant/ProductController.php:317
+* @see app/Http/Controllers/Tenant/ProductController.php:288
 * @route '/products/create'
 */
 create.url = (options?: RouteQueryOptions) => {
@@ -108,7 +108,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::create
-* @see app/Http/Controllers/Tenant/ProductController.php:317
+* @see app/Http/Controllers/Tenant/ProductController.php:288
 * @route '/products/create'
 */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -118,7 +118,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::create
-* @see app/Http/Controllers/Tenant/ProductController.php:317
+* @see app/Http/Controllers/Tenant/ProductController.php:288
 * @route '/products/create'
 */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -128,7 +128,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::create
-* @see app/Http/Controllers/Tenant/ProductController.php:317
+* @see app/Http/Controllers/Tenant/ProductController.php:288
 * @route '/products/create'
 */
 const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -138,7 +138,7 @@ const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => 
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::create
-* @see app/Http/Controllers/Tenant/ProductController.php:317
+* @see app/Http/Controllers/Tenant/ProductController.php:288
 * @route '/products/create'
 */
 createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -148,7 +148,7 @@ createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::create
-* @see app/Http/Controllers/Tenant/ProductController.php:317
+* @see app/Http/Controllers/Tenant/ProductController.php:288
 * @route '/products/create'
 */
 createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -165,7 +165,7 @@ create.form = createForm
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::store
-* @see app/Http/Controllers/Tenant/ProductController.php:327
+* @see app/Http/Controllers/Tenant/ProductController.php:298
 * @route '/products'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -180,7 +180,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::store
-* @see app/Http/Controllers/Tenant/ProductController.php:327
+* @see app/Http/Controllers/Tenant/ProductController.php:298
 * @route '/products'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -189,7 +189,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::store
-* @see app/Http/Controllers/Tenant/ProductController.php:327
+* @see app/Http/Controllers/Tenant/ProductController.php:298
 * @route '/products'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -199,7 +199,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::store
-* @see app/Http/Controllers/Tenant/ProductController.php:327
+* @see app/Http/Controllers/Tenant/ProductController.php:298
 * @route '/products'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -209,7 +209,7 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::store
-* @see app/Http/Controllers/Tenant/ProductController.php:327
+* @see app/Http/Controllers/Tenant/ProductController.php:298
 * @route '/products'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -221,7 +221,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::edit
-* @see app/Http/Controllers/Tenant/ProductController.php:370
+* @see app/Http/Controllers/Tenant/ProductController.php:341
 * @route '/products/{product}/edit'
 */
 export const edit = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -236,7 +236,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::edit
-* @see app/Http/Controllers/Tenant/ProductController.php:370
+* @see app/Http/Controllers/Tenant/ProductController.php:341
 * @route '/products/{product}/edit'
 */
 edit.url = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -263,7 +263,7 @@ edit.url = (args: { product: string | number } | [product: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::edit
-* @see app/Http/Controllers/Tenant/ProductController.php:370
+* @see app/Http/Controllers/Tenant/ProductController.php:341
 * @route '/products/{product}/edit'
 */
 edit.get = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -273,7 +273,7 @@ edit.get = (args: { product: string | number } | [product: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::edit
-* @see app/Http/Controllers/Tenant/ProductController.php:370
+* @see app/Http/Controllers/Tenant/ProductController.php:341
 * @route '/products/{product}/edit'
 */
 edit.head = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -283,7 +283,7 @@ edit.head = (args: { product: string | number } | [product: string | number ] | 
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::edit
-* @see app/Http/Controllers/Tenant/ProductController.php:370
+* @see app/Http/Controllers/Tenant/ProductController.php:341
 * @route '/products/{product}/edit'
 */
 const editForm = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -293,7 +293,7 @@ const editForm = (args: { product: string | number } | [product: string | number
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::edit
-* @see app/Http/Controllers/Tenant/ProductController.php:370
+* @see app/Http/Controllers/Tenant/ProductController.php:341
 * @route '/products/{product}/edit'
 */
 editForm.get = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -303,7 +303,7 @@ editForm.get = (args: { product: string | number } | [product: string | number ]
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::edit
-* @see app/Http/Controllers/Tenant/ProductController.php:370
+* @see app/Http/Controllers/Tenant/ProductController.php:341
 * @route '/products/{product}/edit'
 */
 editForm.head = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -320,7 +320,7 @@ edit.form = editForm
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::update
-* @see app/Http/Controllers/Tenant/ProductController.php:381
+* @see app/Http/Controllers/Tenant/ProductController.php:352
 * @route '/products/{product}'
 */
 export const update = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -335,7 +335,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::update
-* @see app/Http/Controllers/Tenant/ProductController.php:381
+* @see app/Http/Controllers/Tenant/ProductController.php:352
 * @route '/products/{product}'
 */
 update.url = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -362,7 +362,7 @@ update.url = (args: { product: string | number } | [product: string | number ] |
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::update
-* @see app/Http/Controllers/Tenant/ProductController.php:381
+* @see app/Http/Controllers/Tenant/ProductController.php:352
 * @route '/products/{product}'
 */
 update.put = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -372,7 +372,7 @@ update.put = (args: { product: string | number } | [product: string | number ] |
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::update
-* @see app/Http/Controllers/Tenant/ProductController.php:381
+* @see app/Http/Controllers/Tenant/ProductController.php:352
 * @route '/products/{product}'
 */
 update.patch = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -382,7 +382,7 @@ update.patch = (args: { product: string | number } | [product: string | number ]
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::update
-* @see app/Http/Controllers/Tenant/ProductController.php:381
+* @see app/Http/Controllers/Tenant/ProductController.php:352
 * @route '/products/{product}'
 */
 const updateForm = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -397,7 +397,7 @@ const updateForm = (args: { product: string | number } | [product: string | numb
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::update
-* @see app/Http/Controllers/Tenant/ProductController.php:381
+* @see app/Http/Controllers/Tenant/ProductController.php:352
 * @route '/products/{product}'
 */
 updateForm.put = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -412,7 +412,7 @@ updateForm.put = (args: { product: string | number } | [product: string | number
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::update
-* @see app/Http/Controllers/Tenant/ProductController.php:381
+* @see app/Http/Controllers/Tenant/ProductController.php:352
 * @route '/products/{product}'
 */
 updateForm.patch = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -429,7 +429,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::destroy
-* @see app/Http/Controllers/Tenant/ProductController.php:422
+* @see app/Http/Controllers/Tenant/ProductController.php:393
 * @route '/products/{product}'
 */
 export const destroy = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -444,7 +444,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::destroy
-* @see app/Http/Controllers/Tenant/ProductController.php:422
+* @see app/Http/Controllers/Tenant/ProductController.php:393
 * @route '/products/{product}'
 */
 destroy.url = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -471,7 +471,7 @@ destroy.url = (args: { product: string | number } | [product: string | number ] 
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::destroy
-* @see app/Http/Controllers/Tenant/ProductController.php:422
+* @see app/Http/Controllers/Tenant/ProductController.php:393
 * @route '/products/{product}'
 */
 destroy.delete = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -481,7 +481,7 @@ destroy.delete = (args: { product: string | number } | [product: string | number
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::destroy
-* @see app/Http/Controllers/Tenant/ProductController.php:422
+* @see app/Http/Controllers/Tenant/ProductController.php:393
 * @route '/products/{product}'
 */
 const destroyForm = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -496,7 +496,7 @@ const destroyForm = (args: { product: string | number } | [product: string | num
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::destroy
-* @see app/Http/Controllers/Tenant/ProductController.php:422
+* @see app/Http/Controllers/Tenant/ProductController.php:393
 * @route '/products/{product}'
 */
 destroyForm.delete = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -513,7 +513,7 @@ destroy.form = destroyForm
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::sales
-* @see app/Http/Controllers/Tenant/ProductController.php:203
+* @see app/Http/Controllers/Tenant/ProductController.php:206
 * @route '/products/{product}/sales'
 */
 export const sales = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -528,7 +528,7 @@ sales.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::sales
-* @see app/Http/Controllers/Tenant/ProductController.php:203
+* @see app/Http/Controllers/Tenant/ProductController.php:206
 * @route '/products/{product}/sales'
 */
 sales.url = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -555,7 +555,7 @@ sales.url = (args: { product: string | number } | [product: string | number ] | 
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::sales
-* @see app/Http/Controllers/Tenant/ProductController.php:203
+* @see app/Http/Controllers/Tenant/ProductController.php:206
 * @route '/products/{product}/sales'
 */
 sales.get = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -565,7 +565,7 @@ sales.get = (args: { product: string | number } | [product: string | number ] | 
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::sales
-* @see app/Http/Controllers/Tenant/ProductController.php:203
+* @see app/Http/Controllers/Tenant/ProductController.php:206
 * @route '/products/{product}/sales'
 */
 sales.head = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -575,7 +575,7 @@ sales.head = (args: { product: string | number } | [product: string | number ] |
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::sales
-* @see app/Http/Controllers/Tenant/ProductController.php:203
+* @see app/Http/Controllers/Tenant/ProductController.php:206
 * @route '/products/{product}/sales'
 */
 const salesForm = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -585,7 +585,7 @@ const salesForm = (args: { product: string | number } | [product: string | numbe
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::sales
-* @see app/Http/Controllers/Tenant/ProductController.php:203
+* @see app/Http/Controllers/Tenant/ProductController.php:206
 * @route '/products/{product}/sales'
 */
 salesForm.get = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -595,7 +595,7 @@ salesForm.get = (args: { product: string | number } | [product: string | number 
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::sales
-* @see app/Http/Controllers/Tenant/ProductController.php:203
+* @see app/Http/Controllers/Tenant/ProductController.php:206
 * @route '/products/{product}/sales'
 */
 salesForm.head = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -612,7 +612,7 @@ sales.form = salesForm
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::sortimentAttributes
-* @see app/Http/Controllers/Tenant/ProductController.php:93
+* @see app/Http/Controllers/Tenant/ProductController.php:96
 * @route '/products/sortiment-attributes'
 */
 export const sortimentAttributes = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -627,7 +627,7 @@ sortimentAttributes.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::sortimentAttributes
-* @see app/Http/Controllers/Tenant/ProductController.php:93
+* @see app/Http/Controllers/Tenant/ProductController.php:96
 * @route '/products/sortiment-attributes'
 */
 sortimentAttributes.url = (options?: RouteQueryOptions) => {
@@ -636,7 +636,7 @@ sortimentAttributes.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::sortimentAttributes
-* @see app/Http/Controllers/Tenant/ProductController.php:93
+* @see app/Http/Controllers/Tenant/ProductController.php:96
 * @route '/products/sortiment-attributes'
 */
 sortimentAttributes.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -646,7 +646,7 @@ sortimentAttributes.get = (options?: RouteQueryOptions): RouteDefinition<'get'> 
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::sortimentAttributes
-* @see app/Http/Controllers/Tenant/ProductController.php:93
+* @see app/Http/Controllers/Tenant/ProductController.php:96
 * @route '/products/sortiment-attributes'
 */
 sortimentAttributes.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -656,7 +656,7 @@ sortimentAttributes.head = (options?: RouteQueryOptions): RouteDefinition<'head'
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::sortimentAttributes
-* @see app/Http/Controllers/Tenant/ProductController.php:93
+* @see app/Http/Controllers/Tenant/ProductController.php:96
 * @route '/products/sortiment-attributes'
 */
 const sortimentAttributesForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -666,7 +666,7 @@ const sortimentAttributesForm = (options?: RouteQueryOptions): RouteFormDefiniti
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::sortimentAttributes
-* @see app/Http/Controllers/Tenant/ProductController.php:93
+* @see app/Http/Controllers/Tenant/ProductController.php:96
 * @route '/products/sortiment-attributes'
 */
 sortimentAttributesForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -676,7 +676,7 @@ sortimentAttributesForm.get = (options?: RouteQueryOptions): RouteFormDefinition
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::sortimentAttributes
-* @see app/Http/Controllers/Tenant/ProductController.php:93
+* @see app/Http/Controllers/Tenant/ProductController.php:96
 * @route '/products/sortiment-attributes'
 */
 sortimentAttributesForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -693,7 +693,7 @@ sortimentAttributes.form = sortimentAttributesForm
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::syncSingle
-* @see app/Http/Controllers/Tenant/ProductController.php:35
+* @see app/Http/Controllers/Tenant/ProductController.php:38
 * @route '/products/sync-single'
 */
 export const syncSingle = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -708,7 +708,7 @@ syncSingle.definition = {
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::syncSingle
-* @see app/Http/Controllers/Tenant/ProductController.php:35
+* @see app/Http/Controllers/Tenant/ProductController.php:38
 * @route '/products/sync-single'
 */
 syncSingle.url = (options?: RouteQueryOptions) => {
@@ -717,7 +717,7 @@ syncSingle.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::syncSingle
-* @see app/Http/Controllers/Tenant/ProductController.php:35
+* @see app/Http/Controllers/Tenant/ProductController.php:38
 * @route '/products/sync-single'
 */
 syncSingle.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -727,7 +727,7 @@ syncSingle.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::syncSingle
-* @see app/Http/Controllers/Tenant/ProductController.php:35
+* @see app/Http/Controllers/Tenant/ProductController.php:38
 * @route '/products/sync-single'
 */
 const syncSingleForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -737,7 +737,7 @@ const syncSingleForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'
 
 /**
 * @see \App\Http\Controllers\Tenant\ProductController::syncSingle
-* @see app/Http/Controllers/Tenant/ProductController.php:35
+* @see app/Http/Controllers/Tenant/ProductController.php:38
 * @route '/products/sync-single'
 */
 syncSingleForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

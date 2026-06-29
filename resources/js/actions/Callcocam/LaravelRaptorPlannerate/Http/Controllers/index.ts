@@ -3,8 +3,8 @@ import GondolaAnalysisController from './GondolaAnalysisController'
 import GondolaPdfPreviewController from './GondolaPdfPreviewController'
 import GondolaExportController from './GondolaExportController'
 import GondolaShareController from './GondolaShareController'
-import AnalysisExportController from './AnalysisExportController'
 import Editor from './Editor'
+import AnalysisExportController from './AnalysisExportController'
 import Api from './Api'
 import Generation from './Generation'
 import Templates from './Templates'
@@ -15,8 +15,8 @@ const Controllers = {
     GondolaPdfPreviewController: Object.assign(GondolaPdfPreviewController, GondolaPdfPreviewController),
     GondolaExportController: Object.assign(GondolaExportController, GondolaExportController),
     GondolaShareController: Object.assign(GondolaShareController, GondolaShareController),
-    AnalysisExportController: Object.assign(AnalysisExportController, AnalysisExportController),
     Editor: Object.assign(Editor, Editor),
+    AnalysisExportController: Object.assign(AnalysisExportController, AnalysisExportController),
     Api: Object.assign(Api, Api),
     Generation: Object.assign(Generation, Generation),
     Templates: Object.assign(Templates, Templates),

@@ -1,3 +1,4 @@
+import GondolaSalesIndicatorController from './GondolaSalesIndicatorController'
 import SegmentNoteController from './SegmentNoteController'
 import GondolaController from './GondolaController'
 import CategoryController from './CategoryController'
@@ -11,6 +12,7 @@ import ProductDimensionController from './ProductDimensionController'
 import ProductSalesController from './ProductSalesController'
 
 const Editor = {
+    GondolaSalesIndicatorController: Object.assign(GondolaSalesIndicatorController, GondolaSalesIndicatorController),
     SegmentNoteController: Object.assign(SegmentNoteController, SegmentNoteController),
     GondolaController: Object.assign(GondolaController, GondolaController),
     CategoryController: Object.assign(CategoryController, CategoryController),

@@ -23,6 +23,7 @@ import adjacencyMatrix from './adjacency-matrix'
 import planogramSettings from './planogram-settings'
 import shelfLevelPreferences from './shelf-level-preferences'
 import kanban from './kanban'
+import executions from './executions'
 import reverbTest from './reverb-test'
 /**
 * @see \App\Http\Controllers\Tenant\DashboardController::dashboard
@@ -131,6 +132,7 @@ const tenant = {
     planogramSettings: Object.assign(planogramSettings, planogramSettings),
     shelfLevelPreferences: Object.assign(shelfLevelPreferences, shelfLevelPreferences),
     kanban: Object.assign(kanban, kanban),
+    executions: Object.assign(executions, executions),
     reverbTest: Object.assign(reverbTest, reverbTest),
 }
 
