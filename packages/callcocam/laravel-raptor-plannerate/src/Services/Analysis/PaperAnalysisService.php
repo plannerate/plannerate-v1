@@ -9,14 +9,12 @@
 namespace Callcocam\LaravelRaptorPlannerate\Services\Analysis;
 
 use Callcocam\LaravelRaptorPlannerate\Models\Layer;
-use Callcocam\LaravelRaptorPlannerate\Models\MonthlySalesSummary;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
-use Callcocam\LaravelRaptorPlannerate\Models\Sale;
+use Callcocam\LaravelRaptorPlannerate\Sales\ProductSalesAggregateQuery;
 use Callcocam\LaravelRaptorPlannerate\Sales\SalesStatistics;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -377,64 +375,35 @@ class PaperAnalysisService
      */
     private function getSalesQuery(array $codigosErp, array $productIds, array $filters): Builder
     {
-        $query = Sale::query()
-            ->withoutGlobalScopes()
-            ->join('products', 'products.codigo_erp', '=', 'sales.codigo_erp')
-            ->select([
-                'products.id as product_id',
-                'products.category_id',
-                DB::raw('SUM(sales.total_sale_value) as valor'),
-            ])
-            ->whereIn('sales.codigo_erp', $codigosErp)
-            ->whereIn('products.id', $productIds)
-            ->groupBy('products.id', 'products.category_id');
+        // Plumbing dual-source centralizado; Paper agrega apenas o valor de venda.
+        $agg = ProductSalesAggregateQuery::for('sales');
 
-        if (isset($filters['store_id'])) {
-            $query->where('sales.store_id', $filters['store_id']);
-        }
+        $query = $agg->groupedByProduct($codigosErp, $productIds, $filters)
+            ->addSelect([$agg->sum('total_sale_value', 'valor')]);
 
-        if (isset($filters['date_from'])) {
-            $query->where('sales.sale_date', '>=', $filters['date_from']);
-        }
-
-        if (isset($filters['date_to'])) {
-            $query->where('sales.sale_date', '<=', $filters['date_to']);
-        }
+        $agg->applyPeriod($query, $filters['date_from'] ?? null, $filters['date_to'] ?? null);
 
         return $query;
     }
 
     /**
      * Query para tabela de sumários mensais (monthly_sales_summaries).
-     * Agrega por produto filtrando por intervalo de meses.
+     * Mesmo plumbing da query de sales; o período usa start_month/end_month, com o
+     * início no 1º dia do mês e o fim no último dia (para incluir o mês inteiro).
      */
     private function getMonthlySummariesQuery(array $codigosErp, array $productIds, array $filters): Builder
     {
-        $query = MonthlySalesSummary::query()
-            ->withoutGlobalScopes()
-            ->join('products', 'products.codigo_erp', '=', 'monthly_sales_summaries.codigo_erp')
-            ->select([
-                'products.id as product_id',
-                'products.category_id',
-                DB::raw('SUM(monthly_sales_summaries.total_sale_value) as valor'),
-            ])
-            ->whereIn('monthly_sales_summaries.codigo_erp', $codigosErp)
-            ->whereIn('products.id', $productIds)
-            ->groupBy('products.id', 'products.category_id');
+        $agg = ProductSalesAggregateQuery::for('monthly_summaries');
 
-        if (isset($filters['store_id'])) {
-            $query->where('monthly_sales_summaries.store_id', $filters['store_id']);
-        }
+        $query = $agg->groupedByProduct($codigosErp, $productIds, $filters)
+            ->addSelect([$agg->sum('total_sale_value', 'valor')]);
 
-        if (isset($filters['start_month'])) {
-            $query->where('monthly_sales_summaries.sale_month', '>=', $filters['start_month'].'-01');
-        }
+        $from = isset($filters['start_month']) ? $filters['start_month'].'-01' : null;
+        $to = isset($filters['end_month'])
+            ? Carbon::createFromFormat('Y-m', $filters['end_month'])->endOfMonth()->format('Y-m-d')
+            : null;
 
-        if (isset($filters['end_month'])) {
-            // Usa o último dia do mês para garantir que o mês inteiro seja incluído
-            $endDate = Carbon::createFromFormat('Y-m', $filters['end_month'])->endOfMonth()->format('Y-m-d');
-            $query->where('monthly_sales_summaries.sale_month', '<=', $endDate);
-        }
+        $agg->applyPeriod($query, $from, $to);
 
         return $query;
     }

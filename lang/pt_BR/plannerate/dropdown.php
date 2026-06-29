@@ -23,6 +23,14 @@ return [
         'restock_excel' => 'Reposição (Excel)',
         'restock_pdf' => 'Reposição (PDF)',
     ],
+    'indicators' => [
+        'title' => 'Indicadores',
+        'none' => 'Nenhum',
+        'price' => 'Preço',
+        'margin' => 'Margem',
+        'stock' => 'Estoque',
+        'rupture' => 'Ruptura',
+    ],
     'performance' => [
         'title' => 'Performance',
         'open_analyses' => 'Abrir Análises',

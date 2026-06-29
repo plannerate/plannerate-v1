@@ -11,6 +11,7 @@ use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Api\ProductDetailsControl
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Api\ProductImageController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\CategoryController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController;
+use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaSalesIndicatorController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\LayerController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\PlanogramApiController;
 use Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\ProductDimensionController;
@@ -36,6 +37,10 @@ Route::prefix('api')->name('api.')
             ->name('editor.gondolas.analysis.paper');
         Route::delete('editor/gondolas/{gondola}/analysis', [GondolaAnalysisController::class, 'clearAnalysisApi'])
             ->name('editor.gondolas.analysis.clear');
+
+        // Sales Indicators API - preço/margem por produto (selos na frente do produto)
+        Route::get('editor/gondolas/{gondola}/sales/indicators', [GondolaSalesIndicatorController::class, 'index'])
+            ->name('editor.gondolas.sales.indicators');
 
         // Analysis Export API - Relatórios CSV
         Route::get('editor/gondolas/{gondola}/analysis/abc/export', [AnalysisExportController::class, 'exportAbcCsv'])

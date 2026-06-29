@@ -67,6 +67,7 @@ import { useT } from '@/composables/useT';
 import type { Gondola } from '@/types/planogram';
 import DropdownActions from '../DropdownActions.vue';
 import DropdownDistribution from '../DropdownDistribution.vue';
+import DropdownIndicators from '../DropdownIndicators.vue';
 import DropdownReports from '../DropdownReports.vue';
 import DropdownPerformance from '../DropdownPerformance.vue';
 import AutomaticGenerateModal from './AutomaticGenerateModal.vue';
@@ -704,6 +705,8 @@ function gondolaHref(gondola: Gondola): string {
                 <DropdownDistribution />
 
                 <DropdownPerformance :analysis="analysis" :gondola="currentGondola as Gondola" />
+
+                <DropdownIndicators />
 
                 <Performance :open="showPerformanceModal" :gondola-id="currentGondolaId" :planogram="currentGondola?.planogram
                     ? (currentGondola.planogram as any)

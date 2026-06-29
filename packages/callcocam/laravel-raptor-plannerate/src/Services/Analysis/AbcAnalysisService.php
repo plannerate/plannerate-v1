@@ -4,9 +4,9 @@ namespace Callcocam\LaravelRaptorPlannerate\Services\Analysis;
 
 use Callcocam\LaravelRaptorPlannerate\Models\Category;
 use Callcocam\LaravelRaptorPlannerate\Models\Layer;
-use Callcocam\LaravelRaptorPlannerate\Models\MonthlySalesSummary;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Sale;
+use Callcocam\LaravelRaptorPlannerate\Sales\ProductSalesAggregateQuery;
 use Callcocam\LaravelRaptorPlannerate\Sales\SalesStatistics;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -405,83 +405,39 @@ class AbcAnalysisService
      */
     private function getSalesQueryByCodigoErp(array $codigosErp, array $productIds, array $filters): Builder
     {
-        // No banco tenant, products e sales já pertencem ao tenant
-        // Usa codigo_erp para fazer o join entre products e sales
-        $query = Sale::query()
-            ->withoutGlobalScopes()
-            ->join('products', 'products.codigo_erp', '=', 'sales.codigo_erp')
-            ->select([
-                'products.id as product_id',
-                'products.category_id',
-                DB::raw('SUM(sales.total_sale_quantity) as qtde'),
-                DB::raw('SUM(sales.total_sale_value) as valor'),
-                DB::raw('SUM(sales.margem_contribuicao) as margem'),
-            ])
-            ->whereIn('sales.codigo_erp', $codigosErp)
-            ->groupBy('products.id', 'products.category_id');
-        // Filtro crítico: garante que retorna vendas apenas dos produtos da gôndola/filtro
-        $query->whereIn('products.id', $productIds);
+        // Plumbing dual-source (join products on codigo_erp + filtros + agrupamento)
+        // centralizado em ProductSalesAggregateQuery; aqui ficam só os agregados do
+        // ABC (qtde/valor/margem) e o período por data de venda (date_from/date_to).
+        $agg = ProductSalesAggregateQuery::for('sales');
 
-        // Aplica filtros adicionais
-        Log::info('ABC Analysis - Applying filters to sales query', [
-            'filters_keys' => array_keys($filters),
-            'filters' => $filters,
-        ]);
+        $query = $agg->groupedByProduct($codigosErp, $productIds, $filters)
+            ->addSelect([
+                $agg->sum('total_sale_quantity', 'qtde'),
+                $agg->sum('total_sale_value', 'valor'),
+                $agg->sum('margem_contribuicao', 'margem'),
+            ]);
 
-        if (isset($filters['store_id'])) {
-            $query->where('sales.store_id', $filters['store_id']);
-        }
-
-        if (isset($filters['date_from'])) {
-            $query->where('sales.sale_date', '>=', $filters['date_from']);
-            Log::info('ABC Analysis - Applied date_from filter', ['date_from' => $filters['date_from']]);
-        }
-
-        if (isset($filters['date_to'])) {
-            $query->where('sales.sale_date', '<=', $filters['date_to']);
-            Log::info('ABC Analysis - Applied date_to filter', ['date_to' => $filters['date_to']]);
-        }
+        $agg->applyPeriod($query, $filters['date_from'] ?? null, $filters['date_to'] ?? null);
 
         return $query;
     }
 
     /**
-     * Query para tabela monthly_sales_summaries usando codigo_erp
-     *
-     * No contexto tenant, as tabelas products e monthly_sales_summaries já estão no banco do tenant,
-     * então não precisamos filtrar por tenant_id (a conexão já isola o tenant)
+     * Query para tabela monthly_sales_summaries usando codigo_erp.
+     * Mesmo plumbing da query de sales; período por mês (month_from/month_to).
      */
     private function getMonthlySummariesQueryByCodigoErp(array $codigosErp, array $productIds, array $filters): Builder
     {
-        // No banco tenant, products e monthly_sales_summaries já pertencem ao tenant
-        // Usa codigo_erp para fazer o join entre products e monthly_sales_summaries
-        $query = MonthlySalesSummary::query()
-            ->withoutGlobalScopes()
-            ->join('products', 'products.codigo_erp', '=', 'monthly_sales_summaries.codigo_erp')
-            ->select([
-                'products.id as product_id',
-                'products.category_id',
-                DB::raw('SUM(monthly_sales_summaries.total_sale_quantity) as qtde'),
-                DB::raw('SUM(monthly_sales_summaries.total_sale_value) as valor'),
-                DB::raw('SUM(monthly_sales_summaries.margem_contribuicao) as margem'),
-            ])
-            ->whereIn('monthly_sales_summaries.codigo_erp', $codigosErp)
-            ->whereIn('products.id', $productIds)
-            ->groupBy('products.id', 'products.category_id');
+        $agg = ProductSalesAggregateQuery::for('monthly_summaries');
 
-        // Aplica filtros adicionais
+        $query = $agg->groupedByProduct($codigosErp, $productIds, $filters)
+            ->addSelect([
+                $agg->sum('total_sale_quantity', 'qtde'),
+                $agg->sum('total_sale_value', 'valor'),
+                $agg->sum('margem_contribuicao', 'margem'),
+            ]);
 
-        if (isset($filters['store_id'])) {
-            $query->where('monthly_sales_summaries.store_id', $filters['store_id']);
-        }
-
-        if (isset($filters['month_from'])) {
-            $query->where('monthly_sales_summaries.sale_month', '>=', $filters['month_from']);
-        }
-
-        if (isset($filters['month_to'])) {
-            $query->where('monthly_sales_summaries.sale_month', '<=', $filters['month_to']);
-        }
+        $agg->applyPeriod($query, $filters['month_from'] ?? null, $filters['month_to'] ?? null);
 
         return $query;
     }

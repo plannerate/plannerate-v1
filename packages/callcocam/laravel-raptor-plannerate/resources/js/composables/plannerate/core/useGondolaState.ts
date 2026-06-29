@@ -9,6 +9,21 @@ import type { Gondola } from '@/types/planogram';
 /** Chave de persistência do estado de exibição das zonas de exposição */
 const STORAGE_KEY_ZONE_INDICATORS = 'plannerate:showZoneIndicators';
 
+/** Chave de persistência do indicador de produto selecionado (Preço, Margem, etc.) */
+const STORAGE_KEY_PRODUCT_INDICATOR = 'plannerate:selectedIndicator';
+
+/**
+ * Lê o indicador de produto selecionado do localStorage.
+ * Retorna `'none'` (nenhum) quando não há valor salvo ou fora do browser.
+ */
+function readSelectedIndicatorFromStorage(): string {
+    if (typeof window === 'undefined') {
+        return 'none';
+    }
+
+    return window.localStorage.getItem(STORAGE_KEY_PRODUCT_INDICATOR) ?? 'none';
+}
+
 /**
  * Lê o estado inicial das zonas de exposição do localStorage.
  * Retorna `true` (default) quando não há valor salvo ou fora do browser.
@@ -65,6 +80,20 @@ export const showZoneIndicators = ref(readZoneIndicatorsFromStorage());
 watch(showZoneIndicators, (value) => {
     if (typeof window !== 'undefined') {
         window.localStorage.setItem(STORAGE_KEY_ZONE_INDICATORS, String(value));
+    }
+});
+
+/**
+ * Indicador de produto exibido na frente de cada item da gôndola.
+ * Guarda a `key` do indicador ativo (ex.: 'price', 'margin', 'stock', 'rupture')
+ * ou 'none' quando nenhum está selecionado. Veja `editor/indicators.ts`.
+ */
+export const selectedIndicator = ref<string>(readSelectedIndicatorFromStorage());
+
+// Persiste no localStorage sempre que o indicador selecionado mudar
+watch(selectedIndicator, (value) => {
+    if (typeof window !== 'undefined') {
+        window.localStorage.setItem(STORAGE_KEY_PRODUCT_INDICATOR, value);
     }
 });
 
