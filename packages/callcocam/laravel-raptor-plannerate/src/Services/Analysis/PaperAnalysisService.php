@@ -9,13 +9,12 @@
 namespace Callcocam\LaravelRaptorPlannerate\Services\Analysis;
 
 use Callcocam\LaravelRaptorPlannerate\Models\Layer;
-use Callcocam\LaravelRaptorPlannerate\Models\MonthlySalesSummary;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
-use Callcocam\LaravelRaptorPlannerate\Models\Sale;
+use Callcocam\LaravelRaptorPlannerate\Sales\ProductSalesAggregateQuery;
+use Callcocam\LaravelRaptorPlannerate\Sales\SalesStatistics;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -219,17 +218,13 @@ class PaperAnalysisService
         $withMetrics = $combined->map(function ($item) use ($categoryTotals) {
             $categoryTotal = (float) ($categoryTotals->get($item->category_id) ?? 0);
 
-            $marketShare = $categoryTotal > 0
-                ? ($item->valor_atual / $categoryTotal) * 100
-                : 0.0;
+            $marketShare = SalesStatistics::marketShare((float) $item->valor_atual, $categoryTotal);
 
             // Produto novo: vendeu no período atual sem histórico anterior — não há
             // base para calcular crescimento (growth_rate = null, tratado à parte)
             $isNew = $item->valor_anterior <= 0 && $item->valor_atual > 0;
 
-            $growthRate = $item->valor_anterior > 0
-                ? round((($item->valor_atual - $item->valor_anterior) / $item->valor_anterior) * 100, 4)
-                : null;
+            $growthRate = SalesStatistics::growthRate((float) $item->valor_atual, (float) $item->valor_anterior);
 
             return (object) [
                 'product_id' => $item->product_id,
@@ -244,13 +239,13 @@ class PaperAnalysisService
 
         // Mediana do market_share por categoria — divisor entre alto e baixo share
         $shareThresholds = $withMetrics->groupBy('category_id')->map(
-            fn ($items) => $this->median($items->pluck('market_share')) ?? 0.0
+            fn ($items) => SalesStatistics::median($items->pluck('market_share')) ?? 0.0
         );
 
         // Mediana do growth_rate por categoria (produtos sem base de comparação ficam
         // fora) — divisor entre alto e baixo crescimento quando não há limiar fixo
         $growthThresholds = $withMetrics->groupBy('category_id')->map(
-            fn ($items) => $this->median($items->pluck('growth_rate')->filter(fn ($g) => $g !== null)) ?? 0.0
+            fn ($items) => SalesStatistics::median($items->pluck('growth_rate')->filter(fn ($g) => $g !== null)) ?? 0.0
         );
 
         // Classifica cada produto
@@ -278,24 +273,7 @@ class PaperAnalysisService
         })->values();
     }
 
-    /**
-     * Mediana de uma coleção de números. Retorna null para coleção vazia.
-     */
-    private function median(Collection $values): ?float
-    {
-        $sorted = $values->sort()->values();
-        $count = $sorted->count();
-
-        if ($count === 0) {
-            return null;
-        }
-
-        $mid = intdiv($count, 2);
-
-        return $count % 2 === 0
-            ? ((float) $sorted[$mid - 1] + (float) $sorted[$mid]) / 2
-            : (float) $sorted[$mid];
-    }
+    // Mediana centralizada em SalesStatistics::median().
 
     /**
      * Retorna os IDs dos produtos fisicamente alocados em uma gôndola.
@@ -397,64 +375,35 @@ class PaperAnalysisService
      */
     private function getSalesQuery(array $codigosErp, array $productIds, array $filters): Builder
     {
-        $query = Sale::query()
-            ->withoutGlobalScopes()
-            ->join('products', 'products.codigo_erp', '=', 'sales.codigo_erp')
-            ->select([
-                'products.id as product_id',
-                'products.category_id',
-                DB::raw('SUM(sales.total_sale_value) as valor'),
-            ])
-            ->whereIn('sales.codigo_erp', $codigosErp)
-            ->whereIn('products.id', $productIds)
-            ->groupBy('products.id', 'products.category_id');
+        // Plumbing dual-source centralizado; Paper agrega apenas o valor de venda.
+        $agg = ProductSalesAggregateQuery::for('sales');
 
-        if (isset($filters['store_id'])) {
-            $query->where('sales.store_id', $filters['store_id']);
-        }
+        $query = $agg->groupedByProduct($codigosErp, $productIds, $filters)
+            ->addSelect([$agg->sum('total_sale_value', 'valor')]);
 
-        if (isset($filters['date_from'])) {
-            $query->where('sales.sale_date', '>=', $filters['date_from']);
-        }
-
-        if (isset($filters['date_to'])) {
-            $query->where('sales.sale_date', '<=', $filters['date_to']);
-        }
+        $agg->applyPeriod($query, $filters['date_from'] ?? null, $filters['date_to'] ?? null);
 
         return $query;
     }
 
     /**
      * Query para tabela de sumários mensais (monthly_sales_summaries).
-     * Agrega por produto filtrando por intervalo de meses.
+     * Mesmo plumbing da query de sales; o período usa start_month/end_month, com o
+     * início no 1º dia do mês e o fim no último dia (para incluir o mês inteiro).
      */
     private function getMonthlySummariesQuery(array $codigosErp, array $productIds, array $filters): Builder
     {
-        $query = MonthlySalesSummary::query()
-            ->withoutGlobalScopes()
-            ->join('products', 'products.codigo_erp', '=', 'monthly_sales_summaries.codigo_erp')
-            ->select([
-                'products.id as product_id',
-                'products.category_id',
-                DB::raw('SUM(monthly_sales_summaries.total_sale_value) as valor'),
-            ])
-            ->whereIn('monthly_sales_summaries.codigo_erp', $codigosErp)
-            ->whereIn('products.id', $productIds)
-            ->groupBy('products.id', 'products.category_id');
+        $agg = ProductSalesAggregateQuery::for('monthly_summaries');
 
-        if (isset($filters['store_id'])) {
-            $query->where('monthly_sales_summaries.store_id', $filters['store_id']);
-        }
+        $query = $agg->groupedByProduct($codigosErp, $productIds, $filters)
+            ->addSelect([$agg->sum('total_sale_value', 'valor')]);
 
-        if (isset($filters['start_month'])) {
-            $query->where('monthly_sales_summaries.sale_month', '>=', $filters['start_month'].'-01');
-        }
+        $from = isset($filters['start_month']) ? $filters['start_month'].'-01' : null;
+        $to = isset($filters['end_month'])
+            ? Carbon::createFromFormat('Y-m', $filters['end_month'])->endOfMonth()->format('Y-m-d')
+            : null;
 
-        if (isset($filters['end_month'])) {
-            // Usa o último dia do mês para garantir que o mês inteiro seja incluído
-            $endDate = Carbon::createFromFormat('Y-m', $filters['end_month'])->endOfMonth()->format('Y-m-d');
-            $query->where('monthly_sales_summaries.sale_month', '<=', $endDate);
-        }
+        $agg->applyPeriod($query, $from, $to);
 
         return $query;
     }

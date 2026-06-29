@@ -45,8 +45,8 @@ const { getPrevious: previousShelf } = useArrayNavigation(sortedShelves)
 </script>
 
 <template>
-    <div :data-module-section="section.id" :data-section-id="section.id" :data-module-order="section.ordering" 
-        class="relative bg-slate-100 transition-colors dark:bg-[#020d1d]"
+    <div :data-module-section="section.id" :data-section-id="section.id" :data-module-order="section.ordering"
+        class="relative transition-[box-shadow,background-color]"
         :class="props.layoutDirection === 'row' ? 'mt-0' : 'mt-12'"
         :style="{
             width: `${totalWidth}px`,
@@ -89,7 +89,7 @@ const { getPrevious: previousShelf } = useArrayNavigation(sortedShelves)
 
         <!-- Label do módulo -->
         <div class="absolute bottom-0 left-0 flex w-full items-center justify-center">
-            <div class="text-sm text-slate-600 dark:text-slate-300 font-bold">Módulo #{{ section.ordering }}</div>
+            <div class="text-xs text-muted-foreground">Módulo #{{ section.ordering }}</div>
         </div>
     </div>
 </template>

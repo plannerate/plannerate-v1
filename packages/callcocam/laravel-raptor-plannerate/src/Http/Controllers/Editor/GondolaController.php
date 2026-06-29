@@ -64,7 +64,7 @@ class GondolaController extends Controller
             'planogram.gondolas:id,planogram_id,name,slug',
             'planogram.category',
             'sections.gondola:id,scale_factor',
-            'sections.shelves.segments.layer.product:id,name,ean,codigo_erp,url,width,height,depth,weight,brand,status,category_id,type,reference,color,flavor,fragrance,subbrand,packaging_type,packaging_content,measurement_unit,price',
+            'sections.shelves.segments.layer.product:id,name,ean,codigo_erp,url,width,height,depth,weight,current_stock,brand,status,category_id,type,reference,color,flavor,fragrance,subbrand,packaging_type,packaging_content,measurement_unit,price',
             'sections.shelves.segments.layer.product.category:id,name,category_id',
         ]);
 

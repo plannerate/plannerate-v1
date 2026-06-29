@@ -1,19 +1,45 @@
 <template>
     <div class="space-y-4">
-        <div>
-            <h3 class="text-lg font-semibold">
-                <Box class="mr-2 inline size-5 text-foreground" />
-                {{ t('plannerate.sidebar.shelf_details.shelf') }}
-            </h3>
-            <p class="text-sm text-muted-foreground">
-                {{ shelf.code || `${t('plannerate.sidebar.shelf_details.shelf')} #${shelf.ordering}` }}
-            </p>
+        <!-- Cabeçalho: ícone da prateleira + código + botão fechar -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div
+                    class="flex size-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+                >
+                    <Box class="size-5" />
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold leading-tight text-foreground">
+                        {{ t('plannerate.sidebar.shelf_details.shelf') }}
+                    </h3>
+                    <p class="text-sm text-muted-foreground">
+                        {{ shelf.code || `${t('plannerate.sidebar.shelf_details.shelf')} #${shelf.ordering}` }}
+                    </p>
+                </div>
+            </div>
+            <button
+                type="button"
+                class="rounded-lg border border-border p-2 text-muted-foreground transition-colors hover:bg-accent"
+                @click="handleClose"
+            >
+                <X class="size-4" />
+            </button>
         </div>
 
-        <Separator />
+        <!-- Card: Informações da Prateleira -->
+        <div class="space-y-3 rounded-xl border border-border bg-card p-4">
+            <div class="flex items-center gap-2">
+                <div
+                    class="flex size-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+                >
+                    <Info class="size-4" />
+                </div>
+                <h4 class="font-semibold text-foreground">
+                    {{ t('plannerate.sidebar.shelf_details.info_title') }}
+                </h4>
+            </div>
 
-        <div class="space-y-3">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-3">
                 <div class="space-y-2">
                     <Label for="shelf-code">{{ t('plannerate.sidebar.section_details.code') }}</Label>
                     <Input
@@ -24,7 +50,7 @@
                 </div>
 
                 <div class="space-y-2">
-                    <Label for="shelf-product-type">{{ t('plannerate.performance.common.type') }}</Label>
+                    <Label for="shelf-product-type">{{ t('plannerate.sidebar.shelf_details.type') }}</Label>
                     <select
                         id="shelf-product-type"
                         :value="
@@ -38,10 +64,24 @@
                     </select>
                 </div>
             </div>
+        </div>
 
-            <div class="grid grid-cols-2 gap-2">
+        <!-- Card: Configuração Física -->
+        <div class="space-y-3 rounded-xl border border-border bg-card p-4">
+            <div class="flex items-center gap-2">
+                <div
+                    class="flex size-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+                >
+                    <Pencil class="size-4" />
+                </div>
+                <h4 class="font-semibold text-foreground">
+                    {{ t('plannerate.sidebar.shelf_details.physical_config_title') }}
+                </h4>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
                 <div class="space-y-2">
-                    <Label for="shelf-height">{{ t('plannerate.sidebar.shelf_details.height') }} (cm)</Label>
+                    <Label for="shelf-height">{{ t('plannerate.sidebar.shelf_details.height') }}</Label>
                     <Input
                         id="shelf-height"
                         :model-value="shelf.shelf_height"
@@ -53,7 +93,7 @@
                     />
                 </div>
                 <div class="space-y-2">
-                    <Label for="shelf-depth">{{ t('plannerate.sidebar.shelf_details.depth') }} (cm)</Label>
+                    <Label for="shelf-depth">{{ t('plannerate.sidebar.shelf_details.depth') }}</Label>
                     <Input
                         id="shelf-depth"
                         :model-value="shelf.shelf_depth"
@@ -66,23 +106,21 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-2">
-                <div class="space-y-2">
-                    <Label for="shelf-position">{{ t('plannerate.sidebar.shelf_details.position') }} (cm)</Label>
-                    <Input
-                        id="shelf-position"
-                        :model-value="shelf.shelf_position"
-                        @update:model-value="
-                            handleUpdate('shelf_position', Number($event))
-                        "
-                        type="number"
-                        step="0.1"
-                    />
-                </div>
+            <div class="space-y-2">
+                <Label for="shelf-position">{{ t('plannerate.sidebar.shelf_details.position_cm') }}</Label>
+                <Input
+                    id="shelf-position"
+                    :model-value="shelf.shelf_position"
+                    @update:model-value="
+                        handleUpdate('shelf_position', Number($event))
+                    "
+                    type="number"
+                    step="0.1"
+                />
             </div>
+        </div>
 
-            <Separator />
-
+        <div class="space-y-3">
             <div
                 v-if="shelf.template_slot"
                 class="space-y-3 rounded-lg border border-border/70 bg-muted/40 p-3"
@@ -131,87 +169,98 @@
                 </p>
             </div>
 
-            <Separator />
+        </div>
 
-            <!-- Botões de ação -->
-            <div class="space-y-2">
-                <Label>{{ t('plannerate.sidebar.section_details.actions') }}</Label>
-                <div class="grid grid-cols-2 gap-2">
-                    <ButtonWithTooltip
-                        variant="outline"
-                        size="sm"
-                        @click="handleMoveUp"
-                        :disabled="!shelfActions.canMoveUp"
-                        :tooltip="t('plannerate.sidebar.shelf_details.move_up_tooltip')"
-                    >
-                        <ArrowUp class="mr-2 size-4" />
-                        {{ t('plannerate.sidebar.shelf_details.up') }}
-                    </ButtonWithTooltip>
-                    <ButtonWithTooltip
-                        variant="outline"
-                        size="sm"
-                        @click="handleMoveDown"
-                        :disabled="!shelfActions.canMoveDown"
-                        :tooltip="t('plannerate.sidebar.shelf_details.move_down_tooltip')"
-                    >
-                        <ArrowDown class="mr-2 size-4" />
-                        {{ t('plannerate.sidebar.shelf_details.down') }}
-                    </ButtonWithTooltip>
-                    <ButtonWithTooltip
-                        variant="outline"
-                        size="sm"
-                        @click="handleMoveLeft"
-                        :disabled="!shelfActions.canMoveLeft"
-                        :tooltip="t('plannerate.sidebar.shelf_details.move_left_tooltip')"
-                    >
-                        <ArrowLeft class="mr-2 size-4" />
-                        {{ t('plannerate.sidebar.shelf_details.left') }}
-                    </ButtonWithTooltip>
-                    <ButtonWithTooltip
-                        variant="outline"
-                        size="sm"
-                        @click="handleMoveRight"
-                        :disabled="!shelfActions.canMoveRight"
-                        :tooltip="t('plannerate.sidebar.shelf_details.move_right_tooltip')"
-                    >
-                        <ArrowRight class="mr-2 size-4" />
-                        {{ t('plannerate.sidebar.shelf_details.right') }}
-                    </ButtonWithTooltip>
-                    <ButtonWithTooltip
-                        variant="outline"
-                        size="sm"
-                        @click="handleInvertSegments"
-                        :disabled="!canInvertSegments"
-                        class="col-span-2"
-                        :tooltip="t('plannerate.sidebar.shelf_details.invert_products_tooltip')"
-                    >
-                        <ArrowUpDown class="mr-2 size-4" />
-                        {{ t('plannerate.sidebar.shelf_details.invert_products') }}
-                    </ButtonWithTooltip>
-                    <ButtonWithTooltip
-                        variant="outline"
-                        size="sm"
-                        @click="handleApplyToAllShelves"
-                        :disabled="otherShelves.length === 0"
-                        class="col-span-2"
-                        :tooltip="t('plannerate.sidebar.shelf_details.apply_to_all_tooltip')"
-                    >
-                        <CopyCheck class="mr-2 size-4" />
-                        {{ t('plannerate.sidebar.shelf_details.apply_to_all') }}
-                    </ButtonWithTooltip>
-                    <ButtonWithTooltip
-                        variant="destructive"
-                        size="sm"
-                        @click="handleDelete"
-                        class="col-span-2"
-                        :tooltip="t('plannerate.sidebar.shelf_details.delete_tooltip')"
-                    >
-                        <Trash2 class="mr-2 size-4" />
-                        {{ t('plannerate.sidebar.section_details.delete') }}
-                    </ButtonWithTooltip>
+        <!-- Card: Ações da Prateleira -->
+        <div class="space-y-3 rounded-xl border border-border bg-card p-4">
+            <div class="flex items-center gap-2">
+                <div
+                    class="flex size-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+                >
+                    <Zap class="size-4" />
                 </div>
+                <h4 class="font-semibold text-foreground">
+                    {{ t('plannerate.sidebar.shelf_details.actions_title') }}
+                </h4>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <ButtonWithTooltip
+                    variant="outline"
+                    size="sm"
+                    @click="handleMoveUp"
+                    :disabled="!shelfActions.canMoveUp"
+                    :tooltip="t('plannerate.sidebar.shelf_details.move_up_tooltip')"
+                >
+                    <ArrowUp class="mr-2 size-4" />
+                    {{ t('plannerate.sidebar.shelf_details.up') }}
+                </ButtonWithTooltip>
+                <ButtonWithTooltip
+                    variant="outline"
+                    size="sm"
+                    @click="handleMoveDown"
+                    :disabled="!shelfActions.canMoveDown"
+                    :tooltip="t('plannerate.sidebar.shelf_details.move_down_tooltip')"
+                >
+                    <ArrowDown class="mr-2 size-4" />
+                    {{ t('plannerate.sidebar.shelf_details.down') }}
+                </ButtonWithTooltip>
+                <ButtonWithTooltip
+                    variant="outline"
+                    size="sm"
+                    @click="handleMoveLeft"
+                    :disabled="!shelfActions.canMoveLeft"
+                    :tooltip="t('plannerate.sidebar.shelf_details.move_left_tooltip')"
+                >
+                    <ArrowLeft class="mr-2 size-4" />
+                    {{ t('plannerate.sidebar.shelf_details.left') }}
+                </ButtonWithTooltip>
+                <ButtonWithTooltip
+                    variant="outline"
+                    size="sm"
+                    @click="handleMoveRight"
+                    :disabled="!shelfActions.canMoveRight"
+                    :tooltip="t('plannerate.sidebar.shelf_details.move_right_tooltip')"
+                >
+                    <ArrowRight class="mr-2 size-4" />
+                    {{ t('plannerate.sidebar.shelf_details.right') }}
+                </ButtonWithTooltip>
+                <ButtonWithTooltip
+                    variant="outline"
+                    size="sm"
+                    @click="handleInvertSegments"
+                    :disabled="!canInvertSegments"
+                    class="col-span-2"
+                    :tooltip="t('plannerate.sidebar.shelf_details.invert_products_tooltip')"
+                >
+                    <ArrowUpDown class="mr-2 size-4" />
+                    {{ t('plannerate.sidebar.shelf_details.invert_products') }}
+                </ButtonWithTooltip>
+                <ButtonWithTooltip
+                    variant="outline"
+                    size="sm"
+                    @click="handleApplyToAllShelves"
+                    :disabled="otherShelves.length === 0"
+                    class="col-span-2"
+                    :tooltip="t('plannerate.sidebar.shelf_details.apply_to_all_tooltip')"
+                >
+                    <CopyCheck class="mr-2 size-4" />
+                    {{ t('plannerate.sidebar.shelf_details.apply_to_all') }}
+                </ButtonWithTooltip>
             </div>
         </div>
+
+        <!-- Botão de remoção (fora dos cards, destaque em vermelho) -->
+        <ButtonWithTooltip
+            variant="destructive"
+            size="sm"
+            @click="handleDelete"
+            class="w-full"
+            :tooltip="t('plannerate.sidebar.shelf_details.delete_tooltip')"
+        >
+            <Trash2 class="mr-2 size-4" />
+            {{ t('plannerate.sidebar.shelf_details.remove') }}
+        </ButtonWithTooltip>
     </div>
 </template>
 
@@ -224,14 +273,17 @@ import {
     ArrowUpDown,
     Box,
     CopyCheck,
+    Info,
+    Pencil,
     Trash2,
+    X,
+    Zap,
 } from 'lucide-vue-next';
 import { computed, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramKeyboard } from '@/composables/plannerate/interactions/usePlanogramKeyboard';
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
@@ -369,6 +421,13 @@ return;
 }
 
     handleUpdate('product_type', target.value);
+}
+
+/**
+ * Fecha o painel de detalhes limpando a seleção atual
+ */
+function handleClose() {
+    selection.clearSelection();
 }
 
 /**

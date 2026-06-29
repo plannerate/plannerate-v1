@@ -35,6 +35,8 @@ export interface Product {
     depth?: number;
     weight?: number;
     volume?: number;
+    /** Estoque atual do produto (unidades) */
+    current_stock?: number | null;
     price?: number;
     brand?: string;
     subbrand?: string;

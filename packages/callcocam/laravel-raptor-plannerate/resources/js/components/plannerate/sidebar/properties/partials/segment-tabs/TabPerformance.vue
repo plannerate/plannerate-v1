@@ -1,5 +1,15 @@
 <template>
     <div class="space-y-4">
+        <!-- Cabeçalho da aba -->
+        <div>
+            <h3 class="text-xl font-bold leading-tight text-foreground">
+                {{ t('plannerate.sidebar.segment_details.headers.performance_title') }}
+            </h3>
+            <p class="text-sm text-muted-foreground">
+                {{ t('plannerate.sidebar.segment_details.headers.performance_subtitle') }}
+            </p>
+        </div>
+
         <!-- Preço de venda cadastrado no produto -->
         <div v-if="product?.price != null" class="rounded-md border bg-muted/40 px-3 py-2">
             <div class="flex items-center justify-between">
@@ -17,6 +27,7 @@
             :product-id="productId"
             :start-date="startDate"
             :end-date="endDate"
+            :current-stock="product?.current_stock ?? null"
         />
     </div>
 </template>

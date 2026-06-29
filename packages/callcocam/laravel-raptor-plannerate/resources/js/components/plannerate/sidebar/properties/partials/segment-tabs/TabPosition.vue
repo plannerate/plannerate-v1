@@ -1,62 +1,117 @@
 <template>
     <div class="space-y-4">
-        <!-- Frentes (editável) -->
-        <!-- <div v-if="segment?.layer" class="space-y-2">
-            <Label for="tab-layer-quantity">
-                {{ t('plannerate.sidebar.segment_details.position.facings') }}
-            </Label>
-            <Input
-                id="tab-layer-quantity"
-                :model-value="segment.layer.quantity"
-                @update:model-value="$emit('update:layer-field', 'quantity', Number($event))"
-                type="number"
-                min="1"
-            />
-        </div> -->
-
-        <!-- Posicionamento: frentes × empilhamento × profundidade = total -->
-        <div class="space-y-2">
-            <Label>{{ t('plannerate.print.product_detail.positioning') }}</Label>
-            <ProductPositioning
-                :layer-quantity="segment?.layer?.quantity"
-                :segment-quantity="segment?.quantity"
-                :product-depth="product?.depth"
-                :shelf-depth="shelf?.shelf_depth"
-            />
+        <!-- Cabeçalho da aba -->
+        <div>
+            <h3 class="text-xl font-bold leading-tight text-foreground">
+                {{ t('plannerate.sidebar.segment_details.headers.position_title') }}
+            </h3>
+            <p class="text-sm text-muted-foreground">
+                {{ t('plannerate.sidebar.segment_details.headers.position_subtitle') }}
+            </p>
         </div>
 
-        <Separator />
+        <!-- Card: Ocupação no Planograma -->
+        <SegmentCard
+            :icon="LayoutGrid"
+            color="blue"
+            :title="t('plannerate.sidebar.segment_details.cards.occupation')"
+        >
+            <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-1 rounded-lg border border-border p-3">
+                    <p class="text-xs text-muted-foreground">
+                        {{ t('plannerate.sidebar.segment_details.position.facings') }}
+                    </p>
+                    <p class="text-2xl font-bold tabular-nums text-foreground">{{ facings }}</p>
+                </div>
+                <div class="space-y-1 rounded-lg border border-border p-3">
+                    <p class="text-xs text-muted-foreground">
+                        {{ t('plannerate.sidebar.segment_details.position.stacking') }}
+                    </p>
+                    <p class="text-2xl font-bold tabular-nums text-foreground">{{ stacking }}</p>
+                </div>
+                <div class="space-y-1 rounded-lg border border-border p-3">
+                    <p class="text-xs text-muted-foreground">
+                        {{ t('plannerate.sidebar.segment_details.position.depth_units') }}
+                    </p>
+                    <p class="text-2xl font-bold tabular-nums text-foreground">{{ itemsInDepth }}</p>
+                </div>
+                <div class="space-y-1 rounded-lg border border-border p-3">
+                    <p class="text-xs text-muted-foreground">
+                        {{ t('plannerate.sidebar.segment_details.position.total_units') }}
+                    </p>
+                    <p class="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                        {{ totalUnits }}
+                    </p>
+                </div>
+            </div>
+        </SegmentCard>
 
-        <!-- Seção: Dimensões Físicas -->
-        <div class="space-y-3">
-           
-            <ProductDimensionsEditor
-                :height="Number(product?.height ?? 0)"
-                :width="Number(product?.width ?? 0)"
-                :depth="Number(product?.depth ?? 0)"
-                @update:height="$emit('update:dimension', 'height', $event)"
-                @update:width="$emit('update:dimension', 'width', $event)"
-                @update:depth="$emit('update:dimension', 'depth', $event)"
-            />
+        <!-- Card: Dimensões do Produto -->
+        <SegmentCard
+            :icon="Ruler"
+            color="blue"
+            :title="t('plannerate.sidebar.segment_details.cards.product_dimensions')"
+        >
+            <div class="grid grid-cols-3 gap-2">
+                <div class="space-y-1">
+                    <Label class="text-xs text-muted-foreground">
+                        {{ t('plannerate.sidebar.segment_details.position.dim_height') }}
+                    </Label>
+                    <Input
+                        type="number"
+                        step="0.01"
+                        :model-value="Number(product?.height ?? 0)"
+                        @update:model-value="$emit('update:dimension', 'height', Number($event))"
+                    />
+                </div>
+                <div class="space-y-1">
+                    <Label class="text-xs text-muted-foreground">
+                        {{ t('plannerate.sidebar.segment_details.position.dim_width') }}
+                    </Label>
+                    <Input
+                        type="number"
+                        step="0.01"
+                        :model-value="Number(product?.width ?? 0)"
+                        @update:model-value="$emit('update:dimension', 'width', Number($event))"
+                    />
+                </div>
+                <div class="space-y-1">
+                    <Label class="text-xs text-muted-foreground">
+                        {{ t('plannerate.sidebar.segment_details.position.dim_depth') }}
+                    </Label>
+                    <Input
+                        type="number"
+                        step="0.01"
+                        :model-value="Number(product?.depth ?? 0)"
+                        @update:model-value="$emit('update:dimension', 'depth', Number($event))"
+                    />
+                </div>
+            </div>
+
             <!-- Orientação (campo sem suporte ainda) -->
-            <div class="flex items-center justify-between rounded-md bg-muted/30 px-3 py-1.5">
-                <span class="text-xs text-muted-foreground">
+            <div class="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+                <span class="text-sm text-muted-foreground">
                     {{ t('plannerate.sidebar.segment_details.position.orientation') }}
                 </span>
-                <span class="text-xs font-medium text-muted-foreground">—</span>
+                <span class="text-sm font-medium text-muted-foreground">—</span>
             </div>
-        </div>
+
+            <p class="flex items-start gap-1.5 text-xs text-muted-foreground">
+                <Info class="mt-0.5 size-3.5 shrink-0" />
+                {{ t('plannerate.sidebar.segment_details.position.dimensions_note') }}
+            </p>
+        </SegmentCard>
     </div>
 </template>
 
 <script setup lang="ts">
+import { Info, LayoutGrid, Ruler } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { useT } from '@/composables/useT';
 import type { Product, Segment, Shelf } from '@/types/planogram';
-import ProductPositioning from '../../../../print/partials/ProductPositioning.vue';
-import ProductDimensionsEditor from '../ProductDimensionsEditor.vue';
+import SegmentCard from './SegmentCard.vue';
 
 interface Props {
     /** Produto do segmento */
@@ -67,7 +122,7 @@ interface Props {
     shelf?: Shelf | null;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 const { t } = useT();
 
 defineEmits<{
@@ -76,4 +131,28 @@ defineEmits<{
     /** Atualiza dimensão do produto (height, width, depth) */
     'update:dimension': [dimension: 'height' | 'width' | 'depth', value: number];
 }>();
+
+/** Frentes lado a lado (layer.quantity) */
+const facings = computed(() => props.segment?.layer?.quantity ?? 1);
+
+/** Empilhamento vertical (segment.quantity) */
+const stacking = computed(() => props.segment?.quantity ?? 1);
+
+/**
+ * Quantos produtos cabem na profundidade da prateleira:
+ * profundidade da prateleira ÷ profundidade do produto (arredondado p/ baixo).
+ */
+const itemsInDepth = computed(() => {
+    const depth = Number(props.product?.depth ?? 0);
+    const shelfDepth = Number(props.shelf?.shelf_depth ?? 0);
+    if (!shelfDepth || !depth) {
+        return 1;
+    }
+    return Math.max(1, Math.floor(shelfDepth / depth));
+});
+
+/** Total de unidades = frentes × empilhamento × profundidade */
+const totalUnits = computed(
+    () => facings.value * stacking.value * itemsInDepth.value,
+);
 </script>

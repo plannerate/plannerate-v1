@@ -1,79 +1,106 @@
 <template>
     <div class="space-y-4">
-        <!-- Imagem principal do produto -->
-        <div class="flex justify-center">
-            <img v-if="!isFallback" :src="product?.image_url" :alt="product?.name"
-                class="h-28 w-28 rounded-md border object-contain" />
-            <div v-else class="flex h-28 w-28 items-center justify-center rounded-md border bg-muted">
-                <span class="text-xs text-muted-foreground">
-                    {{ t('plannerate.sidebar.product_image_card.no_image') }}
-                </span>
-            </div>
+        <!-- Cabeçalho da aba -->
+        <div>
+            <h3 class="text-xl font-bold leading-tight text-foreground">
+                {{ t('plannerate.sidebar.segment_details.headers.identification_title') }}
+            </h3>
+            <p class="text-sm text-muted-foreground">
+                {{ t('plannerate.sidebar.segment_details.headers.identification_subtitle') }}
+            </p>
         </div>
 
-        <Separator />
+        <!-- Card: imagem + nome + códigos -->
+        <div class="space-y-4 rounded-xl border border-border bg-card p-4">
+            <div class="flex justify-center">
+                <img
+                    v-if="!isFallback"
+                    :src="product?.image_url"
+                    :alt="product?.name"
+                    class="h-32 w-32 rounded-md border object-contain"
+                />
+                <div
+                    v-else
+                    class="flex h-32 w-32 items-center justify-center rounded-md border bg-muted"
+                >
+                    <span class="text-xs text-muted-foreground">
+                        {{ t('plannerate.sidebar.product_image_card.no_image') }}
+                    </span>
+                </div>
+            </div>
 
-        <!-- Campos de identificação -->
-        <div class="space-y-3">
-            <div class="grid grid-cols-2 gap-3">
-                <!-- Código Interno -->
+            <p class="text-center text-base font-bold leading-snug text-foreground">
+                {{ product?.name || '—' }}
+            </p>
+
+            <div class="grid grid-cols-2 gap-3 rounded-lg border border-border p-3">
                 <div class="space-y-1">
-                    <p class="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    <p class="text-xs text-muted-foreground">
                         {{ t('plannerate.sidebar.segment_details.identification.internal_code') }}
                     </p>
-                    <p class="font-mono text-sm">{{ product?.codigo_erp || '—' }}</p>
+                    <p class="font-mono text-base font-semibold text-foreground">
+                        {{ product?.codigo_erp || '—' }}
+                    </p>
                 </div>
-                <!-- EAN -->
                 <div class="space-y-1">
-                    <p class="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    <p class="text-xs text-muted-foreground">
                         {{ t('plannerate.sidebar.segment_details.identification.ean') }}
                     </p>
-                    <p class="font-mono text-sm">{{ product?.ean || '—' }}</p>
+                    <p class="font-mono text-base font-semibold text-foreground">
+                        {{ product?.ean || '—' }}
+                    </p>
                 </div>
-            </div>
-            <!-- Descrição / Nome -->
-            <div class="space-y-1">
-                <p class="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                    {{ t('plannerate.sidebar.segment_details.identification.description') }}
-                </p>
-                <p class="text-sm font-medium leading-snug">{{ product?.name || '—' }}</p>
             </div>
         </div>
 
-        <Separator />
+        <!-- Card: Resumo Rápido -->
+        <SegmentCard
+            :icon="Tag"
+            color="purple"
+            :title="t('plannerate.sidebar.segment_details.cards.quick_summary')"
+        >
+            <div class="grid grid-cols-2 gap-2">
+                <div
+                    v-for="field in summaryFields"
+                    :key="field.key"
+                    class="space-y-1 rounded-lg border border-border p-3"
+                >
+                    <p class="text-xs text-muted-foreground">{{ field.label }}</p>
+                    <p class="truncate text-sm font-semibold text-foreground">
+                        {{ field.value || '—' }}
+                    </p>
+                </div>
+            </div>
+        </SegmentCard>
 
-        <!-- Seção: Dados Adicionais (colapsável) -->
-        <Collapsible v-model:open="additionalOpen">
-            <CollapsibleTrigger class="flex w-full items-center justify-between text-sm font-semibold text-foreground">
-                {{ t('plannerate.sidebar.segment_details.additional_data.title') }}
-                <ChevronDown
-                    class="size-4 text-muted-foreground transition-transform duration-200"
-                    :class="{ 'rotate-180': additionalOpen }"
-                />
-            </CollapsibleTrigger>
-            <CollapsibleContent class="mt-3 space-y-2">
+        <!-- Card: Dados Adicionais -->
+        <SegmentCard
+            :icon="List"
+            color="blue"
+            :title="t('plannerate.sidebar.segment_details.additional_data.title')"
+        >
+            <div class="divide-y divide-border/60">
                 <div
                     v-for="field in additionalFields"
                     :key="field.key"
-                    class="flex items-center justify-between rounded-md bg-muted/30 px-3 py-1.5"
+                    class="flex items-center justify-between gap-2 py-2 text-sm"
                 >
-                    <span class="text-xs text-muted-foreground">{{ field.label }}</span>
-                    <span class="text-xs font-medium text-foreground">
+                    <span class="text-muted-foreground">{{ field.label }}</span>
+                    <span class="text-right font-medium text-foreground">
                         {{ field.value || '—' }}
                     </span>
                 </div>
-            </CollapsibleContent>
-        </Collapsible>
+            </div>
+        </SegmentCard>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ChevronDown } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Separator } from '@/components/ui/separator';
+import { List, Tag } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { useT } from '@/composables/useT';
 import type { Product } from '@/types/planogram';
+import SegmentCard from './SegmentCard.vue';
 
 interface Props {
     /** Produto do segmento selecionado */
@@ -83,8 +110,6 @@ interface Props {
 const props = defineProps<Props>();
 const { t } = useT();
 
-const additionalOpen = ref(false);
-
 /**
  * Indica se o produto não tem imagem própria (usa fallback).
  */
@@ -93,19 +118,25 @@ const isFallback = computed(() =>
 );
 
 /**
+ * Campos do resumo rápido — atributos principais exibidos em destaque.
+ */
+const summaryFields = computed(() => [
+    { key: 'brand', label: t('plannerate.sidebar.segment_details.additional_data.brand'), value: props.product?.brand },
+    { key: 'subbrand', label: t('plannerate.sidebar.segment_details.additional_data.subbrand'), value: props.product?.subbrand },
+    { key: 'packaging_type', label: t('plannerate.sidebar.segment_details.additional_data.packaging_type'), value: props.product?.packaging_type },
+    { key: 'measurement_unit', label: t('plannerate.sidebar.segment_details.additional_data.measurement_unit'), value: props.product?.measurement_unit },
+]);
+
+/**
  * Campos de dados adicionais mapeados para exibição.
  * Campos não preenchidos exibem "—".
  */
 const additionalFields = computed(() => [
     { key: 'type', label: t('plannerate.sidebar.segment_details.additional_data.type'), value: props.product?.type },
     { key: 'reference', label: t('plannerate.sidebar.segment_details.additional_data.reference'), value: props.product?.reference },
-    { key: 'brand', label: t('plannerate.sidebar.segment_details.additional_data.brand'), value: props.product?.brand },
-    { key: 'subbrand', label: t('plannerate.sidebar.segment_details.additional_data.subbrand'), value: props.product?.subbrand },
     { key: 'color', label: t('plannerate.sidebar.segment_details.additional_data.color'), value: props.product?.color },
     { key: 'flavor', label: t('plannerate.sidebar.segment_details.additional_data.flavor'), value: props.product?.flavor },
     { key: 'fragrance', label: t('plannerate.sidebar.segment_details.additional_data.fragrance'), value: props.product?.fragrance },
-    { key: 'packaging_type', label: t('plannerate.sidebar.segment_details.additional_data.packaging_type'), value: props.product?.packaging_type },
     { key: 'packaging_content', label: t('plannerate.sidebar.segment_details.additional_data.packaging_content'), value: props.product?.packaging_content },
-    { key: 'measurement_unit', label: t('plannerate.sidebar.segment_details.additional_data.measurement_unit'), value: props.product?.measurement_unit },
 ]);
 </script>

@@ -32,6 +32,7 @@ class WorkflowKanbanService
         ?string $executionStatus = null,
         ?string $gondolaSearch = null,
         ?string $currentResponsibleId = null,
+        ?string $lifecycleStatus = null,
     ): array {
         $templates = WorkflowTemplate::query()
             ->where('status', 'published')
@@ -62,7 +63,7 @@ class WorkflowKanbanService
             ->whereIn('workflow_planogram_step_id', $stepIds)
             ->with([
                 'gondola:id,name,location,planogram_id',
-                'gondola.planogram:id,name,store_id',
+                'gondola.planogram:id,name,store_id,lifecycle_status',
                 'currentResponsible:id,name',
                 'startedBy:id,name',
                 'step:id,name,workflow_template_id,access_mode,stage_type,planogram_id',
@@ -75,6 +76,24 @@ class WorkflowKanbanService
                 'step.planogram.workflowSteps.template:id,suggested_order,stage_type',
             ])
             ->when($executionStatus, fn ($query) => $query->where('status', $executionStatus))
+            // Concluídos (lifecycle_status = completed) ficam ocultos por padrão;
+            // só aparecem quando o usuário pede explicitamente esse status.
+            // `periodic_review` segue suas próprias regras e não é ocultado.
+            ->when(
+                $lifecycleStatus !== null && $lifecycleStatus !== '',
+                fn ($query) => $query->whereHas(
+                    'gondola.planogram',
+                    fn ($planogramQuery) => $planogramQuery->where('lifecycle_status', $lifecycleStatus)
+                ),
+                fn ($query) => $query->whereHas(
+                    'gondola.planogram',
+                    fn ($planogramQuery) => $planogramQuery->where(
+                        fn ($conditions) => $conditions
+                            ->where('lifecycle_status', '!=', PlanogramLifecycleStatus::Completed->value)
+                            ->orWhereNull('lifecycle_status')
+                    )
+                )
+            )
             ->when(
                 $currentResponsibleId,
                 fn ($query) => $query->forResponsible($currentResponsibleId)
@@ -147,6 +166,9 @@ class WorkflowKanbanService
             'can_pause' => $user?->can('pause', $exec) ?? false,
             'can_resume' => $user?->can('resume', $exec) ?? false,
             'can_complete' => $user?->can('complete', $exec) ?? false,
+            // Habilita a tela de Execução em Loja (responsável/permitido/gestor
+            // na etapa final de fluxo) — gate do botão "Concluir execução".
+            'can_execute' => $user?->can('execute', $exec) ?? false,
             'can_abandon' => $user?->can('abandon', $exec) ?? false,
             'can_request_abandonment' => $user?->can('requestAbandonment', $exec) ?? false,
             'can_move' => $user?->can('move', $exec) ?? false,

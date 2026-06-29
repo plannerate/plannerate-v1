@@ -148,24 +148,12 @@ const popoverItems = computed<Array<{ icon: Component; label: string; value: str
             </PopoverTrigger>
             <PopoverContent align="start" class="max-h-[70vh] w-64 overflow-y-auto">
                 <div class="flex flex-col gap-3">
-                    <div
-                        v-for="(item, idx) in popoverItems"
-                        :key="idx"
-                        class="flex flex-col gap-0.5"
-                    >
+                    <div v-for="(item, idx) in popoverItems" :key="idx" class="flex flex-col gap-0.5">
                         <div class="flex items-center gap-1">
-                            <component
-                                :is="item.icon"
-                                class="h-3 w-3 shrink-0 text-primary"
-                            />
-                            <span
-                                class="text-[9px] tracking-wider text-slate-400 uppercase"
-                                >{{ item.label }}</span
-                            >
+                            <component :is="item.icon" class="h-3 w-3 shrink-0 text-primary" />
+                            <span class="text-[9px] tracking-wider text-slate-400 uppercase">{{ item.label }}</span>
                         </div>
-                        <span
-                            class="text-sm font-semibold text-slate-700 dark:text-slate-200"
-                        >
+                        <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">
                             {{ item.value }}
                         </span>
                     </div>

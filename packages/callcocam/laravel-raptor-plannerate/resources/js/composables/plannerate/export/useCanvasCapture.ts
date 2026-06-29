@@ -6,7 +6,13 @@
 import html2canvas from 'html2canvas-pro';
 
 const MAX_CAPTURE_SCALE = 5;
-const MAX_CANVAS_SIDE = 16000;
+// Limite de lado do canvas. Mantido em 8192 (limite seguro de textura de GPU na
+// maioria dos navegadores), NÃO nos ~16384px máximos: perto desse teto, ao
+// rasterizar uma gôndola larga com centenas de imagens de produto, o navegador
+// descarta SILENCIOSAMENTE parte dos desenhos de `<img>` (estouro de
+// memória/textura) — molduras das prateleiras ficam, mas metade dos produtos
+// some no PDF. 8192px ainda gera resolução de sobra após o downscale para A4.
+const MAX_CANVAS_SIDE = 8192;
 const MAX_CANVAS_PIXELS = 120_000_000;
 const CAPTURE_DELAY_MS = 120;
 const IMAGE_READY_TIMEOUT_MS = 12000;

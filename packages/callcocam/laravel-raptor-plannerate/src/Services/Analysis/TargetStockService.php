@@ -5,6 +5,7 @@ namespace Callcocam\LaravelRaptorPlannerate\Services\Analysis;
 use Callcocam\LaravelRaptorPlannerate\Models\MonthlySalesSummary;
 use Callcocam\LaravelRaptorPlannerate\Models\Product;
 use Callcocam\LaravelRaptorPlannerate\Models\Sale;
+use Callcocam\LaravelRaptorPlannerate\Sales\SalesStatistics;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -147,7 +148,7 @@ class TargetStockService
             $stats = $statsByEan->get($ean);
             $media = $stats ? (float) $stats->media : 0.0;
             $desvioPadrao = $stats ? (float) $stats->desvio_padrao : 0.0;
-            $variabilidade = $media > 0 ? $desvioPadrao / $media : 0.0;
+            $variabilidade = SalesStatistics::variability($media, $desvioPadrao);
 
             if (! $stats) {
                 $semEstatistica++;
@@ -165,12 +166,12 @@ class TargetStockService
             }
 
             // Calcula Z-score (inverso da distribuição normal padrão)
-            $zScore = $this->calculateZScore($nivelServico);
+            $zScore = SalesStatistics::zScore($nivelServico);
 
-            // Calcula estoques
-            $estoqueSeguranca = round($zScore * $desvioPadrao, 0);
-            $estoqueMinimo = round($media * $coberturaDias, 0);
-            $estoqueAlvo = round($estoqueMinimo + $estoqueSeguranca, 0);
+            // Calcula estoques (fórmulas centralizadas em SalesStatistics)
+            $estoqueSeguranca = SalesStatistics::safetyStock($zScore, $desvioPadrao);
+            $estoqueMinimo = SalesStatistics::minimumStock($media, $coberturaDias);
+            $estoqueAlvo = SalesStatistics::targetStock($estoqueMinimo, $estoqueSeguranca);
 
             // Estoque atual (padrão: 0 se não fornecido)
             $estoqueAtual = $currentStock[$ean] ?? 0;
@@ -318,57 +319,5 @@ class TargetStockService
         }
 
         return $query;
-    }
-
-    /**
-     * Calcula o Z-score (inverso da distribuição normal padrão)
-     * Equivalente ao NormSInv do Excel/VBA
-     *
-     * @param  float  $probability  Probabilidade (0.5 a 0.999...)
-     * @return float Z-score
-     */
-    private function calculateZScore(float $probability): float
-    {
-        // Validação
-        if ($probability <= 0 || $probability >= 1) {
-            return 0.0;
-        }
-
-        // Aproximação usando método de Abramowitz e Stegun
-        // Para valores comuns de nível de serviço (0.7, 0.8, 0.9, 0.95, etc)
-
-        // Valores exatos para casos comuns.
-        // IMPORTANTE: as chaves são STRING — chaves float em arrays PHP são truncadas
-        // para int (0.70, 0.80, 0.90... viram todas 0), o que colapsaria a tabela.
-        $commonValues = [
-            '0.70' => 0.5244,
-            '0.75' => 0.6745,
-            '0.80' => 0.8416,
-            '0.85' => 1.0364,
-            '0.90' => 1.2816,
-            '0.95' => 1.6449,
-            '0.99' => 2.3263,
-        ];
-
-        // Normaliza a probabilidade para 2 casas decimais como string ("0.70")
-        $key = number_format($probability, 2, '.', '');
-
-        if (isset($commonValues[$key])) {
-            return $commonValues[$key];
-        }
-
-        // Aproximação usando método de Abramowitz e Stegun
-        // Para outros valores, usa aproximação numérica
-        $t = sqrt(-2.0 * log(1.0 - $probability));
-        $c0 = 2.515517;
-        $c1 = 0.802853;
-        $c2 = 0.010328;
-        $d1 = 1.432788;
-        $d2 = 0.189269;
-        $d3 = 0.001308;
-
-        $z = $t - ($c0 + $c1 * $t + $c2 * $t * $t) / (1.0 + $d1 * $t + $d2 * $t * $t + $d3 * $t * $t * $t);
-
-        return $z;
     }
 }

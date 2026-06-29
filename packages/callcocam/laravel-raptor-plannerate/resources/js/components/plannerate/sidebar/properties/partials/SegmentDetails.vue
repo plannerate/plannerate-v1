@@ -1,10 +1,14 @@
 <template>
-    <div class="space-y-3">
-        <!-- Cabeçalho + imagem compacta do produto -->
-        <div class="flex items-center gap-2">
-            <Box class="size-4 shrink-0 text-foreground" />
-            <h3 class="text-base font-semibold leading-tight">
-                {{  t('plannerate.sidebar.segment_details.layer_product') }}
+    <div class="space-y-4">
+        <!-- Cabeçalho: ícone do produto + título -->
+        <div class="flex items-center gap-3">
+            <div
+                class="flex size-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+            >
+                <Box class="size-5" />
+            </div>
+            <h3 class="text-2xl font-bold leading-tight text-foreground">
+                {{ t('plannerate.sidebar.segment_details.layer_product') }}
             </h3>
         </div>
 
@@ -108,11 +112,12 @@
             </TabsContent>
         </Tabs>
 
-        <Separator />
-
-        <!-- Botões de ação -->
-        <div class="space-y-2">
-            <Label>{{ t('plannerate.sidebar.section_details.actions') }}</Label>
+        <!-- Card: Ações do Produto -->
+        <SegmentCard
+            :icon="Zap"
+            color="emerald"
+            :title="t('plannerate.sidebar.segment_details.cards.actions')"
+        >
             <div class="grid grid-cols-2 gap-2">
                 <ButtonWithTooltip
                     variant="outline"
@@ -122,7 +127,7 @@
                     :tooltip="t('plannerate.sidebar.segment_details.move_left_tooltip')"
                 >
                     <ArrowLeft class="mr-2 size-4" />
-                    {{ t('plannerate.sidebar.shelf_details.left') }}
+                    {{ t('plannerate.sidebar.segment_details.product_actions.move_left') }}
                 </ButtonWithTooltip>
                 <ButtonWithTooltip
                     variant="outline"
@@ -132,7 +137,7 @@
                     :tooltip="t('plannerate.sidebar.segment_details.move_right_tooltip')"
                 >
                     <ArrowRight class="mr-2 size-4" />
-                    {{ t('plannerate.sidebar.shelf_details.right') }}
+                    {{ t('plannerate.sidebar.segment_details.product_actions.move_right') }}
                 </ButtonWithTooltip>
                 <ButtonWithTooltip
                     variant="destructive"
@@ -142,10 +147,10 @@
                     :tooltip="t('plannerate.sidebar.segment_details.delete_tooltip')"
                 >
                     <Trash2 class="mr-2 size-4" />
-                    {{ t('plannerate.sidebar.section_details.delete') }}
+                    {{ t('plannerate.sidebar.segment_details.product_actions.remove') }}
                 </ButtonWithTooltip>
             </div>
-        </div>
+        </SegmentCard>
 
         <!-- Dialog de Upload de Imagem -->
         <ProductImageUpload v-model:open="showImageUploadDialog" :product="product" />
@@ -154,13 +159,11 @@
 
 <script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3';
-import { ArrowLeft, ArrowRight, Box, Trash2 } from 'lucide-vue-next';
+import { ArrowLeft, ArrowRight, Box, Trash2, Zap } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { deleteImage } from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Api/ProductImageController';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
 import { usePlanogramSelection } from '@/composables/plannerate/core/usePlanogramSelection';
@@ -169,6 +172,7 @@ import { useT } from '@/composables/useT';
 import type { Segment } from '@/types/planogram';
 import { wayfinderPath } from '../../../../../libs/wayfinderPath';
 import ProductImageUpload from './ProductImageUpload.vue';
+import SegmentCard from './segment-tabs/SegmentCard.vue';
 import TabIdentification from './segment-tabs/TabIdentification.vue';
 import TabImages from './segment-tabs/TabImages.vue';
 import TabPerformance from './segment-tabs/TabPerformance.vue';
@@ -272,7 +276,7 @@ function handleUpdateProductDimension(
 /**
  * Atualiza campo da layer via editor (registra change e força reatividade).
  */
-function handleUpdateLayer(field: 'quantity' | 'height' | 'spacing' | 'alignment', value: any) {
+function handleUpdateLayer(field: string, value: any) {
     if (!segment.value?.layer?.id) {
         return;
     }

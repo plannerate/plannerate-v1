@@ -44,6 +44,9 @@
         <!-- Indicador visual de estoque alvo -->
         <StockIndicator :segment="segment" :shelf-depth="shelfDepth" :scale="props.scale" @click="handleSegmentClick" />
 
+        <!-- Selo configurável de indicador (Preço, Margem, Estoque, Ruptura) -->
+        <ProductIndicatorBadge :product="layer?.product" />
+
         <!-- Indicador visual de drop -->
         <div
             v-if="isDropTarget"
@@ -101,6 +104,7 @@ import type { Layer, Segment } from '../../../types/planogram';
 import AbcBadge from './AbcBadge.vue';
 import PaperRoleBadge from './PaperRoleBadge.vue';
 import LayerRenderer from './Layer.vue';
+import ProductIndicatorBadge from './ProductIndicatorBadge.vue';
 import StockIndicator from './StockIndicator.vue';
 
 interface Props {

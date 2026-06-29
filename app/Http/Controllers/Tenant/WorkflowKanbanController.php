@@ -48,6 +48,7 @@ class WorkflowKanbanController extends Controller
                 $request->input('execution_status'),
                 $request->input('gondola_search'),
                 $request->input('current_responsible_id'),
+                $request->input('lifecycle_status'),
             ),
             'selected_planogram' => $selectedPlanogram ? [
                 'id' => $selectedPlanogram->id,

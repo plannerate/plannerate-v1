@@ -21,6 +21,7 @@ export type Execution = {
     can_pause: boolean;
     can_resume: boolean;
     can_complete: boolean;
+    can_execute: boolean;
     can_abandon: boolean;
     can_request_abandonment: boolean;
     can_move: boolean;
@@ -63,11 +64,56 @@ export type ExecutionDetails = {
         can_move: boolean;
     };
     allowed_users: AssignedUser[];
+    execution_layer?: ExecutionLayerSummary;
+};
+
+export type ExecutionLayerEvidence = {
+    id: string;
+    type: string | null;
+    module_label: string | null;
+    file_url: string | null;
+    file_name: string | null;
+    notes: string | null;
+    created_by: string | null;
+    created_at: string | null;
+};
+
+export type ExecutionLayerDivergence = {
+    id: string;
+    type: string | null;
+    module_label: string | null;
+    shelf_label: string | null;
+    position_label: string | null;
+    status: string | null;
+    notes: string | null;
+    created_by: string | null;
+    created_at: string | null;
+};
+
+export type ExecutionLayerSummary = {
+    evidence_summary: { required: number; provided: number; satisfied: boolean };
+    pending_divergences_count: number;
+    evidences: ExecutionLayerEvidence[];
+    divergences: ExecutionLayerDivergence[];
 };
 
 export type WorkflowHistory = {
     id: string;
-    action: 'started' | 'moved' | 'paused' | 'resumed' | 'assigned' | 'completed' | 'cancelled' | 'restored';
+    action:
+        | 'started'
+        | 'moved'
+        | 'paused'
+        | 'resumed'
+        | 'assigned'
+        | 'completed'
+        | 'cancelled'
+        | 'restored'
+        | 'periodic_review_triggered'
+        | 'evidence_added'
+        | 'evidence_removed'
+        | 'divergence_registered'
+        | 'divergence_updated'
+        | 'divergence_resolved';
     description: string | null;
     from_step_id: string | null;
     from_step_name: string | null;
