@@ -1,5 +1,6 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 import analysis from './analysis'
+import sales from './sales'
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Editor\GondolaController::store
 * @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Editor/GondolaController.php:112
@@ -589,6 +590,7 @@ saveChanges.form = saveChangesForm
 
 const gondolas = {
     analysis: Object.assign(analysis, analysis),
+    sales: Object.assign(sales, sales),
     store: Object.assign(store, store),
     update: Object.assign(update, update),
     destroy: Object.assign(destroy, destroy),

@@ -21,6 +21,7 @@ export type Execution = {
     can_pause: boolean;
     can_resume: boolean;
     can_complete: boolean;
+    can_execute: boolean;
     can_abandon: boolean;
     can_request_abandonment: boolean;
     can_move: boolean;

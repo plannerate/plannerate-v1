@@ -1,3 +1,4 @@
+import GondolaSalesIndicatorController from './GondolaSalesIndicatorController'
 import SegmentNoteController from './SegmentNoteController'
 import GondolaController from './GondolaController'
 import CategoryController from './CategoryController'
@@ -9,9 +10,9 @@ import LayerController from './LayerController'
 import SaveChangesController from './SaveChangesController'
 import ProductDimensionController from './ProductDimensionController'
 import ProductSalesController from './ProductSalesController'
-import ProductExecutionController from './ProductExecutionController'
 
 const Editor = {
+    GondolaSalesIndicatorController: Object.assign(GondolaSalesIndicatorController, GondolaSalesIndicatorController),
     SegmentNoteController: Object.assign(SegmentNoteController, SegmentNoteController),
     GondolaController: Object.assign(GondolaController, GondolaController),
     CategoryController: Object.assign(CategoryController, CategoryController),
@@ -23,7 +24,6 @@ const Editor = {
     SaveChangesController: Object.assign(SaveChangesController, SaveChangesController),
     ProductDimensionController: Object.assign(ProductDimensionController, ProductDimensionController),
     ProductSalesController: Object.assign(ProductSalesController, ProductSalesController),
-    ProductExecutionController: Object.assign(ProductExecutionController, ProductExecutionController),
 }
 
 export default Editor

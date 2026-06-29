@@ -35,7 +35,8 @@ const { t } = useT();
 
 const canStart = computed(() => props.execution.can_start);
 const canResume = computed(() => props.execution.can_resume);
-const canComplete = computed(() => props.execution.can_complete);
+// Gate da tela de Execução em Loja (responsável/permitido/gestor na etapa final).
+const canExecuteLayer = computed(() => props.execution.can_execute);
 const canMove = computed(() => props.execution.can_move && props.execution.status === 'active');
 const isActive = computed(() => props.execution.status === 'active');
 const isCompleted = computed(() => props.execution.status === 'completed');
@@ -75,7 +76,7 @@ const executionLinkLabel = computed(() => (
  * apenas quando a execução pode ser concluída (etapa Execução em Loja).
  */
 const completeExecutionHref = computed(() =>
-    canComplete.value ? gondolaView.url(props.execution.gondola_id) : null,
+    canExecuteLayer.value ? gondolaView.url(props.execution.gondola_id) : null,
 );
 
 /** Visualizar PDF — disponível quando concluído */
@@ -149,7 +150,7 @@ const completedShareHref = computed(() =>
                 </a>
             </Button>
 
-            <Button v-if="executionLinkHref && !canComplete" size="sm" variant="outline" class="h-7 px-2 text-xs" as-child>
+            <Button v-if="executionLinkHref && !canExecuteLayer" size="sm" variant="outline" class="h-7 px-2 text-xs" as-child>
                 <a :href="executionLinkHref" target="_blank" rel="noopener noreferrer">
                     <ExternalLink class="mr-1 size-3.5" />
                     {{ executionLinkLabel }}

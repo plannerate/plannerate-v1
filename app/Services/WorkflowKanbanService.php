@@ -166,6 +166,9 @@ class WorkflowKanbanService
             'can_pause' => $user?->can('pause', $exec) ?? false,
             'can_resume' => $user?->can('resume', $exec) ?? false,
             'can_complete' => $user?->can('complete', $exec) ?? false,
+            // Habilita a tela de Execução em Loja (responsável/permitido/gestor
+            // na etapa final de fluxo) — gate do botão "Concluir execução".
+            'can_execute' => $user?->can('execute', $exec) ?? false,
             'can_abandon' => $user?->can('abandon', $exec) ?? false,
             'can_request_abandonment' => $user?->can('requestAbandonment', $exec) ?? false,
             'can_move' => $user?->can('move', $exec) ?? false,
