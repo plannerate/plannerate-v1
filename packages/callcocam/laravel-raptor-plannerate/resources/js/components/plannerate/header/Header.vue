@@ -261,11 +261,11 @@ function handleMapRegionSelect(regionId: string | null) {
                     {{ t('plannerate.header.add_gondola') }}
                 </Button>
 
-                <Button variant="outline" size="sm" class="gap-2" @click="openGondolaEdit"
+                <!-- <Button variant="outline" size="sm" class="gap-2" @click="openGondolaEdit"
                     v-if="permissions.can_update_gondola">
                     <Edit />
                     {{ t('plannerate.header.edit_gondola') }}
-                </Button>
+                </Button> -->
 
 
                 <!-- Remover gôndola atual -->

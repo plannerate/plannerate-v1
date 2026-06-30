@@ -46,4 +46,12 @@ return [
     'auto_generate' => 'Gerar Automaticamente',
     'clear_selection' => 'Seleção',
     'gondolas' => 'Gôndolas',
+    'edit_gondola_name' => 'Editar nome da gôndola',
+    'rename_modal' => [
+        'title' => 'Editar nome da gôndola',
+        'description' => 'Altere o nome de exibição desta gôndola.',
+        'label' => 'Nome',
+        'placeholder' => 'Digite o nome da gôndola',
+        'success' => 'Nome da gôndola atualizado.',
+    ],
 ];

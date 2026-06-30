@@ -9,7 +9,7 @@
     >
         <div
             v-if="open"
-            class="z-20 flex h-full w-full sm:w-80 2xl:w-96  flex-col overflow-hidden border-l border-border bg-background"
+            class="z-20 flex h-full w-full sm:w-96 2xl:w-md  flex-col overflow-hidden border-l border-border bg-background"
             data-properties-panel
         >
             <!-- Header -->

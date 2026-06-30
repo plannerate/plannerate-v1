@@ -3,6 +3,12 @@
 return [
     'abc_badge' => [
         'title' => 'Sortimento: Classe :classification',
+        'recommendation' => [
+            'proteger' => 'Proteger',
+            'potencializar' => 'Potencializar',
+            'monitorar' => 'Monitorar',
+            'retirar' => 'Retirar',
+        ],
     ],
     'product_does_not_fit_selected_shelf' => 'O produto não cabe na prateleira selecionada.',
     'product_does_not_fit_destination_shelf' => 'O produto não cabe na prateleira de destino.',

@@ -37,7 +37,7 @@
             v-if="abcClassification || paperRole"
             class="absolute -top-2.5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5"
         >
-            <AbcBadge :classification="abcClassification" />
+            <AbcBadge :classification="abcClassification" :recommendation="abcRecommendation" />
             <PaperRoleBadge :role="paperRole" />
         </div>
 
@@ -141,13 +141,16 @@ const editor = usePlanogramEditor();
 
 /** Abre o painel de propriedades (injetado pelo PlanogramEditor) */
 const openProperties = inject<() => void>('openProperties');
-const { getClassification } = useAbcClassification();
+const { getClassification, getRecommendation } = useAbcClassification();
 const { getPaperRole } = usePaperAnalysis();
 
 const getQuantity = computed(() => props.segment.quantity || 1);
 
 // Busca classificação ABC do produto pelo EAN
 const abcClassification = computed(() => getClassification(layer.value?.product?.ean));
+
+// Recomendação de sortimento (proteger/potencializar/monitorar/retirar) do produto pelo EAN
+const abcRecommendation = computed(() => getRecommendation(layer.value?.product?.ean));
 
 // Busca papel estratégico do produto pelo EAN
 const paperRole = computed(() => getPaperRole(layer.value?.product?.ean));

@@ -17,6 +17,7 @@ import {
     Grid3x3,
     LayoutGrid,
     Minus,
+    Pencil,
     Plus,
     Redo2,
     Save,
@@ -29,6 +30,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import AddModuleSheet from '@/components/plannerate/form/AddModuleSheet.vue';
+import GondolaRenameModal from '@/components/plannerate/header/GondolaRenameModal.vue';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
@@ -323,6 +325,11 @@ const showTemplateModal = ref(false);
 const showAutomaticModal = ref(false);
 
 /**
+ * Estado do modal de edição do nome da gôndola
+ */
+const showRenameModal = ref(false);
+
+/**
  * Estado do modal de compartilhamento/QR code
  */
 // const _showShareQRModal = ref(false);
@@ -545,6 +552,13 @@ function gondolaHref(gondola: Gondola): string {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
+                <!-- Editar nome da gôndola -->
+                <ButtonWithTooltip variant="outline" size="icon-sm" class="size-8"
+                    :disabled="!editor.currentGondola.value"
+                    :tooltip="t('plannerate.toolbar.edit_gondola_name')" @click="showRenameModal = true">
+                    <Pencil class="size-4" />
+                </ButtonWithTooltip>
+
                 <!-- Busca por EAN -->
                 <div class="flex h-8 items-center gap-1 rounded-md border bg-background px-2">
                     <Search class="size-3.5 text-muted-foreground" />
@@ -745,6 +759,11 @@ function gondolaHref(gondola: Gondola): string {
          MODAL DE TRANSFERÊNCIA DE SEÇÃO
          ============================================================ -->
         <TransferSectionDialog v-model:open="showTransferSectionDialog" :section="selectedSection" />
+
+        <!-- ============================================================
+         MODAL DE EDIÇÃO DO NOME DA GÔNDOLA
+         ============================================================ -->
+        <GondolaRenameModal v-model:open="showRenameModal" />
 
         <!-- MODAL DE SELEÇÃO DE REGIÃO DO MAPA movido para header/Header.vue -->
     </div>
