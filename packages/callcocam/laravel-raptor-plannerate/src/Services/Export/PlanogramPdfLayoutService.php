@@ -358,6 +358,15 @@ class PlanogramPdfLayoutService
         $freeSpaceCm = $sectionWidthCm - $totalProductsWidthCm;
         $align = $alignment ?: 'justify';
 
+        // Encaixe horizontal (overflow): quando as frentes somam mais que a
+        // largura da seção (permitido no editor via Shift), encolhe SÓ na
+        // horizontal para a fileira caber exatamente em $sectionWidthCm. A
+        // altura física do produto é preservada (apenas "achata" a largura).
+        $fit = 1.0;
+        if ($totalProductsWidthCm > $sectionWidthCm && $sectionWidthCm > 0) {
+            $fit = $sectionWidthCm / $totalProductsWidthCm;
+        }
+
         // Define gap entre frentes e o x inicial conforme o alinhamento.
         [$gapCm, $startXCm] = $this->resolveDistribution(
             $align,
@@ -382,6 +391,10 @@ class PlanogramPdfLayoutService
             $product = $segment['layer']['product'];
             $productWidthCm = (float) ($product['width'] ?? 10);
             $productHeightCm = (float) ($product['height'] ?? 15);
+            // Largura desenhada após o encaixe horizontal (overflow). Quando
+            // não há overflow ($fit == 1) é igual à largura física. A altura
+            // nunca é afetada por $fit.
+            $drawWidthCm = $productWidthCm * $fit;
             $image = $product['image_url_encoded'] ?? null;
             $name = $product['name'] ?? '';
 
@@ -389,7 +402,7 @@ class PlanogramPdfLayoutService
                 for ($r = 0; $r < $rows; $r++) {
                     $cell = [
                         'left' => round($xCm * $pxPerCm, 2),
-                        'width' => round($productWidthCm * $pxPerCm, 2),
+                        'width' => round($drawWidthCm * $pxPerCm, 2),
                         'height' => round($productHeightCm * $pxPerCm, 2),
                         'image' => $image,
                         'name' => $name,
@@ -406,7 +419,9 @@ class PlanogramPdfLayoutService
                 }
 
                 // Avança para a próxima frente (gap uniforme em justify/evenly).
-                $xCm += $productWidthCm + $gapCm;
+                // Em overflow ($fit < 1) o gap já é 0 e a largura encolhida faz
+                // a fileira somar exatamente $sectionWidthCm.
+                $xCm += $drawWidthCm + $gapCm;
             }
         }
 

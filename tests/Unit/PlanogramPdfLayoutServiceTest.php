@@ -149,6 +149,46 @@ it('filters modules by sectionIds in column layout', function (): void {
         ->and($pages[0]['rawWidthCm'])->toBe(100.0);
 });
 
+it('shrinks facings horizontally to fit the section width on overflow', function (): void {
+    $service = new PlanogramPdfLayoutService;
+
+    // Seção de 100cm, produto de 10cm: 15 frentes = 150cm somados (> 100 = overflow).
+    $data = pdfFakeGondolaData([pdfFakeSection('a', 1, facings: 15)]);
+
+    $layout = $service->buildRowLayout($data);
+    $shelf = $layout['modules'][0]['shelves'][0];
+    $cells = $shelf['cells'];
+    $areaWidth = $shelf['areaWidth'];
+
+    // 15 células, todas encolhidas para caber: a borda direita da última
+    // célula coincide com a largura da área (não transborda).
+    $last = $cells[count($cells) - 1];
+    $rightEdge = $last['left'] + $last['width'];
+
+    expect($cells)->toHaveCount(15)
+        ->and($rightEdge)->toBeLessThanOrEqual($areaWidth + 0.5)
+        ->and($rightEdge)->toBeGreaterThan($areaWidth - 0.5)
+        // Largura encolhida ≈ areaWidth/15 (fit = 100/150 aplicado só na largura).
+        ->and($cells[0]['width'])->toEqualWithDelta($areaWidth / 15, 0.5)
+        // Altura preservada: 15cm físicos, independente do encaixe horizontal.
+        ->and($cells[0]['height'])->toEqualWithDelta($areaWidth / 100 * 15, 0.5);
+});
+
+it('does not shrink facings when they fit within the section width', function (): void {
+    $service = new PlanogramPdfLayoutService;
+
+    // 2 frentes = 20cm somados em 100cm: sem overflow, largura física preservada.
+    $data = pdfFakeGondolaData([pdfFakeSection('a', 1, facings: 2)]);
+
+    $layout = $service->buildRowLayout($data);
+    $shelf = $layout['modules'][0]['shelves'][0];
+    $cells = $shelf['cells'];
+    $areaWidth = $shelf['areaWidth'];
+
+    // Largura física de 10cm preservada (≈ areaWidth/10), sem encaixe.
+    expect($cells[0]['width'])->toEqualWithDelta($areaWidth / 100 * 10, 0.5);
+});
+
 it('computes hole positions consistent with the section geometry', function (): void {
     $service = new PlanogramPdfLayoutService;
 
