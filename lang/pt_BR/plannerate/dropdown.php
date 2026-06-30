@@ -19,7 +19,6 @@ return [
     'reports' => [
         'title' => 'Relatórios',
         'purchase_excel' => 'Relatório de Compra (Excel)',
-        'purchase_pdf' => 'Relatório de Compra (PDF)',
         'restock_excel' => 'Reposição (Excel)',
         'restock_pdf' => 'Reposição (PDF)',
     ],

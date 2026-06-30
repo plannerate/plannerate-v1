@@ -39,6 +39,7 @@ class LaravelRaptorPlannerateServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-raptor-plannerate')
             ->hasConfigFile('plannerate')
+            ->hasViews('plannerate')
             ->hasCommand(SyncPlannerateMigrationsCommand::class);
     }
 

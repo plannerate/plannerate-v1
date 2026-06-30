@@ -12,10 +12,6 @@
                 <FileSpreadsheet class="mr-2 size-4" />
                 {{ t('plannerate.dropdown.reports.purchase_excel') }}
             </DropdownMenuItem>
-            <DropdownMenuItem @click="handlePurchasePdf">
-                <FileText class="mr-2 size-4" />
-                {{ t('plannerate.dropdown.reports.purchase_pdf') }}
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem @click="handleRestockExcel">
                 <FileSpreadsheet class="mr-2 size-4" />
@@ -31,6 +27,11 @@
 <script setup lang="ts">
 import { ChevronDown, FileSpreadsheet, FileText } from 'lucide-vue-next';
 
+import {
+    generateCompraReport,
+    generateExcelReport,
+    generatePdfReport,
+} from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Export/GondolaReportController';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -39,45 +40,51 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { currentGondola } from '@/composables/plannerate/core/useGondolaState';
 import { useT } from '@/composables/useT';
 
 const { t } = useT();
 
-// ============================================================================
-// REPORT HANDLERS (PLACEHOLDER)
-// Endpoints de backend ainda não implementados — funções stub para serem
-// ligadas às rotas de exportação quando o backend existir.
-// ============================================================================
+/**
+ * Tipo das actions de relatório: recebem o id da gôndola e devolvem a rota.
+ */
+type ReportAction = (gondola: string) => { url: string };
 
 /**
- * Gera o Relatório de Compra em formato Excel.
- * TODO: ligar à rota de exportação quando o backend estiver disponível.
+ * Resolve a rota da action para a gôndola atual e abre em nova aba (download).
+ * Retorna sem efeito se não houver gôndola selecionada.
  */
-function handlePurchaseExcel(): void {
-    // TODO: implementar exportação do relatório de compra (Excel)
+function openReport(action: ReportAction): void {
+    const gondolaId = currentGondola.value?.id;
+
+    if (!gondolaId) {
+        return;
+    }
+
+    window.open(action(gondolaId).url, '_blank');
 }
 
 /**
- * Gera o Relatório de Compra em formato PDF.
- * TODO: ligar à rota de exportação quando o backend estiver disponível.
+ * Gera o Relatório de Compra em formato Excel.
+ * Rota: export/gondola-report/{gondola}/compra
  */
-function handlePurchasePdf(): void {
-    // TODO: implementar exportação do relatório de compra (PDF)
+function handlePurchaseExcel(): void {
+    openReport(generateCompraReport);
 }
 
 /**
  * Gera o Relatório de Reposição em formato Excel.
- * TODO: ligar à rota de exportação quando o backend estiver disponível.
+ * Rota: export/gondola-report/{gondola}/excel
  */
 function handleRestockExcel(): void {
-    // TODO: implementar exportação do relatório de reposição (Excel)
+    openReport(generateExcelReport);
 }
 
 /**
  * Gera o Relatório de Reposição em formato PDF.
- * TODO: ligar à rota de exportação quando o backend estiver disponível.
+ * Rota: export/gondola-report/{gondola}/pdf
  */
 function handleRestockPdf(): void {
-    // TODO: implementar exportação do relatório de reposição (PDF)
+    openReport(generatePdfReport);
 }
 </script>

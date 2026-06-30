@@ -14,7 +14,7 @@
     -->
     <div
         v-if="config && isVisible"
-        class="pointer-events-none absolute bottom-1 left-1/2 z-[90] flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10px] font-bold shadow-md ring-1 ring-black/10"
+        class="pointer-events-none absolute bottom-5 left-1/2 z-[90] rotate-45 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-md px-1 py-0.5 text-[10px] font-bold shadow-md ring-1 ring-black/10"
         :class="config.badgeClass"
         :title="displayValue"
     >
