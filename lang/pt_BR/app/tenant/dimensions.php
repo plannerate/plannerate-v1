@@ -5,7 +5,7 @@ return [
     'title' => 'Dimensões',
     'description' => 'Gerencie as dimensões dos produtos diretamente na lista.',
     'product_label' => 'produto',
-    'ai_research_label' => 'Pesquisa AI',
+    'ai_research_label' => 'Pesquisa IA',
     'actions' => [
         'edit_dimensions' => 'Editar dimensões',
         'pending_approval' => 'Aguardando aprovação',

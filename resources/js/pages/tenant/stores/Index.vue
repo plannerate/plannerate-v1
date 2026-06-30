@@ -85,11 +85,11 @@ const pageMeta = useCrudPageMeta({
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.stores.fields.name') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.stores.fields.code') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.stores.fields.document') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.stores.fields.status') }}</th>
-                        <th class="px-4 py-3 font-medium ">{{ t('app.tenant.common.actions') }}</th>
+                        <th class="whitespace-nowrap px-4 py-3 text-left font-medium">{{ t('app.tenant.stores.fields.code') }}</th>
+                        <th class="whitespace-nowrap px-4 py-3 text-left font-medium">{{ t('app.tenant.stores.fields.document') }}</th>
+                        <th class="whitespace-nowrap px-4 py-3 text-left font-medium">{{ t('app.tenant.stores.fields.name') }}</th>
+                        <th class="whitespace-nowrap px-4 py-3 text-left font-medium">{{ t('app.tenant.stores.fields.status') }}</th>
+                        <th class="whitespace-nowrap px-4 py-3 text-left font-medium">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -106,11 +106,11 @@ const pageMeta = useCrudPageMeta({
                         :key="store.id"
                         class="border-t border-sidebar-border/60 transition-colors odd:bg-transparent even:bg-muted/30 hover:bg-muted/50 dark:border-sidebar-border"
                     >
+                        <td class="px-4 py-3">{{ store.code ?? '-' }}</td>
+                        <td class="px-4 py-3">{{ store.document ?? '-' }}</td>
                         <td class="px-4 py-3">
                             <ColumnLabel :label="store.name ?? '-'" :description="store.slug" />
                         </td>
-                        <td class="px-4 py-3">{{ store.code ?? '-' }}</td>
-                        <td class="px-4 py-3">{{ store.document ?? '-' }}</td>
                         <td class="px-4 py-3">
                             <ColumnStatusBadge :status="store.status" />
                         </td>

@@ -301,16 +301,16 @@ const pageMeta = useCrudPageMeta({
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
-                        <ColumnHeader field="name">{{ t('app.tenant.products.fields.name') }}</ColumnHeader>
                         <ColumnHeader field="codigo_erp">{{ t('app.tenant.products.fields.codigo_erp') }}</ColumnHeader>
                         <ColumnHeader field="ean">{{ t('app.tenant.products.fields.ean') }}</ColumnHeader>
+                        <ColumnHeader field="name">{{ t('app.tenant.products.fields.description') }}</ColumnHeader>
                         <ColumnHeader field="height">{{ t('app.tenant.products.fields.height') }}</ColumnHeader>
                         <ColumnHeader field="width">{{ t('app.tenant.products.fields.width') }}</ColumnHeader>
                         <ColumnHeader field="depth">{{ t('app.tenant.products.fields.depth') }}</ColumnHeader>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.products.fields.unit') }}</th>
+                        <th class="whitespace-nowrap px-4 py-3 text-left font-medium">{{ t('app.tenant.products.fields.unit') }}</th>
                         <ColumnHeader field="dimension_publish_status">{{ t('app.tenant.common.status') }}</ColumnHeader>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.dimensions.ai_research_label') }}</th>
-                        <th class="w-28 px-4 py-3 text-center font-medium">{{ t('app.tenant.common.actions') }}</th>
+                        <th class="whitespace-nowrap px-4 py-3 text-left font-medium">{{ t('app.tenant.dimensions.ai_research_label') }}</th>
+                        <th class="w-28 whitespace-nowrap px-4 py-3 text-left font-medium">{{ t('app.tenant.common.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -326,13 +326,13 @@ const pageMeta = useCrudPageMeta({
                         class="border-t border-sidebar-border/60 transition-colors odd:bg-transparent even:bg-muted/30 hover:bg-muted/50 dark:border-sidebar-border"
                         :class="{ 'bg-primary/5 even:bg-primary/5': editingId === row.id }">
 
-                        <!-- Nome do produto -->
+                        <td class="px-4 py-2">{{ row.codigo_erp ?? '—' }}</td>
+                        <td class="px-4 py-2 font-mono text-xs">{{ row.ean ?? '—' }}</td>
+
+                        <!-- Descrição do produto -->
                         <td class="max-w-48 px-4 py-2">
                             <span class="block truncate" :title="row.name ?? ''">{{ row.name ?? '—' }}</span>
                         </td>
-
-                        <td class="px-4 py-2">{{ row.codigo_erp ?? '—' }}</td>
-                        <td class="px-4 py-2 font-mono text-xs">{{ row.ean ?? '—' }}</td>
 
                         <!-- Dimensões (editável ou somente leitura) -->
                         <template v-if="editingId === row.id && editingData">
@@ -434,9 +434,9 @@ const pageMeta = useCrudPageMeta({
                         </td>
 
                         <!-- Ações -->
-                        <td class="px-4 py-2 text-center">
+                        <td class="px-4 py-2">
                             <template v-if="editingId === row.id">
-                                <div class="flex items-center justify-center gap-1">
+                                <div class="flex items-center justify-start gap-1">
                                     <button type="button" :disabled="savingId === row.id"
                                         class="flex size-7 items-center justify-center rounded bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
                                         :title="t('app.actions.save')" @click="saveEdit(row.id)">
@@ -451,7 +451,7 @@ const pageMeta = useCrudPageMeta({
                                 </div>
                             </template>
                             <template v-else>
-                                <div class="flex items-center justify-center gap-1">
+                                <div class="flex items-center justify-start gap-1">
                                     <button type="button" :disabled="syncingRowId === row.id || syncingPage"
                                         class="flex size-7 items-center justify-center rounded border border-border bg-background transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                                         :title="t('app.tenant.dimensions.actions.sync_from_reference')"

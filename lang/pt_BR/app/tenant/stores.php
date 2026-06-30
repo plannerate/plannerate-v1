@@ -15,7 +15,7 @@ return [
     ],
     'fields' => [
         'name' => 'Nome',
-        'document' => 'Documento',
+        'document' => 'CNPJ',
         'code' => 'Código',
         'phone' => 'Telefone',
         'email' => 'E-mail',

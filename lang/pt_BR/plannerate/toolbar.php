@@ -45,4 +45,5 @@ return [
     'auto_generate_tooltip' => 'Gerar planograma automaticamente',
     'auto_generate' => 'Gerar Automaticamente',
     'clear_selection' => 'Seleção',
+    'gondolas' => 'Gôndolas',
 ];

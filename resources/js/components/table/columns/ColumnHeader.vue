@@ -28,10 +28,10 @@ function sort() {
 </script>
 
 <template>
-    <th class="px-4 py-3 font-medium">
+    <th class="whitespace-nowrap px-4 py-3 text-left font-medium">
         <button
             type="button"
-            class="inline-flex items-center gap-1 transition-colors hover:text-foreground"
+            class="inline-flex items-center gap-1 whitespace-nowrap transition-colors hover:text-foreground"
             :class="isActive ? 'text-foreground' : ''"
             @click="sort"
         >

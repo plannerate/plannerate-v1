@@ -239,7 +239,7 @@ const pageMeta = useCrudPageMeta({
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
-                        <th class="w-16 px-4 py-3 font-medium">
+                        <th class="w-16 whitespace-nowrap px-4 py-3 text-left font-medium">
                             {{ t('app.tenant.products.fields.image') }}
                         </th>
                         <ColumnHeader field="codigo_erp">{{
@@ -257,7 +257,7 @@ const pageMeta = useCrudPageMeta({
                         <ColumnHeader field="created_at">{{
                             t('app.tenant.products.fields.created_at')
                             }}</ColumnHeader>
-                        <th class="text-center font-medium ">
+                        <th class="whitespace-nowrap px-4 py-3 text-left font-medium">
                             {{ t('app.tenant.common.actions') }}
                         </th>
                     </tr>

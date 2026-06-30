@@ -230,7 +230,18 @@ function handleMapRegionSelect(regionId: string | null) {
         <div :class="sidebar ? 'flex flex-col gap-3 p-4' : 'flex h-16 items-center justify-between px-6'">
             <!-- Title & Status -->
             <div class="flex items-center gap-2 flex-wrap">
-                <h1 :class="sidebar ? 'text-base font-semibold truncate' : 'text-xl font-semibold'">{{ titleDisplay }}
+                <!-- Marca Plannerate (somente no top bar completo) -->
+                <template v-if="!sidebar">
+                    <!-- Versão escura do texto para fundo claro; troca no modo escuro -->
+                    <img src="/img/marca-claro.png" alt="Plannerate"
+                        class="h-7 w-auto shrink-0 object-contain dark:hidden" />
+                    <img src="/img/marcadark.png" alt="Plannerate"
+                        class="hidden h-7 w-auto shrink-0 object-contain dark:block" />
+                    <div class="mx-1 h-6 w-px shrink-0 bg-border" aria-hidden="true"></div>
+                </template>
+                <h1 :title="titleDisplay"
+                    :class="sidebar ? 'text-base font-semibold truncate' : 'text-xl font-semibold truncate max-w-[160px] sm:max-w-[240px] xl:max-w-[360px]'">
+                    {{ titleDisplay }}
                 </h1>
                 <Badge :class="getStatusColor(status)" variant="outline">
                     {{ status }}
