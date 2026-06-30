@@ -59,6 +59,7 @@ WORKDIR /var/www
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     --mount=type=cache,target=/tmp/pear/cache,sharing=locked \
+    _pecl_retry() { i=1; while [ "$i" -le 5 ]; do "$@" && return 0; echo "[pecl retry $i/5] $*"; rm -rf /tmp/pear/download/* /tmp/pear/temp/* 2>/dev/null || true; sleep 5; i=$((i+1)); done; return 1; }; \
     apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         git unzip curl \
@@ -74,13 +75,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         pdo_mysql pdo_pgsql pdo_sqlite \
         bcmath pcntl zip gd \
         intl soap mbstring xml curl ldap \
-    && pecl install igbinary \
-    && pecl install msgpack \
-    && pecl install -D 'enable-igbinary="yes" enable-lzf="no" enable-zstd="no"' redis \
-    && pecl install imagick \
-    && pecl install memcached \
-    && pecl install swoole \
-    && pecl install pcov \
+    && pecl channel-update pecl.php.net \
+    && _pecl_retry pecl install igbinary \
+    && _pecl_retry pecl install msgpack \
+    && _pecl_retry pecl install -D 'enable-igbinary="yes" enable-lzf="no" enable-zstd="no"' redis \
+    && _pecl_retry pecl install imagick \
+    && _pecl_retry pecl install memcached \
+    && _pecl_retry pecl install swoole \
+    && _pecl_retry pecl install pcov \
     && docker-php-ext-enable igbinary msgpack redis imagick memcached swoole pcov \
     && rm -rf /var/lib/apt/lists/* /tmp/pear/temp \
     && echo "memory_limit = 512M" > /usr/local/etc/php/conf.d/memory-limit.ini
