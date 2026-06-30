@@ -11,6 +11,18 @@ interface Props {
 
 const props = defineProps<Props>()
 
+/**
+ * Folga (em cm) adicionada ao topo de cada módulo. No PDF em linha cada módulo
+ * é capturado isoladamente pelo seletor `[data-module-section]`, e o
+ * html2canvas recorta tudo que ultrapassa a caixa do elemento. Produtos da
+ * prateleira de cima crescem para cima e podem passar do topo da seção
+ * (`section.height`), sendo cortados na captura. O `extraHeight` aumenta a
+ * caixa da seção e empurra as prateleiras para baixo, criando o espaço livre
+ * no topo — o mesmo efeito do `paddingTop` usado no modo coluna
+ * (PdfModulePage).
+ */
+const TOP_HEADROOM_CM = 50
+
 const footHeight = computed(() => {
     const baseHeight = props.sections[0]?.base_height ?? 20
     return Math.round(baseHeight * props.localScale)
@@ -53,7 +65,7 @@ const footHeight = computed(() => {
                         :alignment="alignment"
                         :index="index"
                         layout-direction="row"
-                        :extra-height="0"
+                        :extra-height="TOP_HEADROOM_CM"
                         :data-section-id="section.id"
                     />
                 </div>

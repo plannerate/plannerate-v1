@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { usePage } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import SaveChangesController from '@/actions/Callcocam/LaravelRaptorPlannerate/Http/Controllers/Editor/SaveChangesController';
 import { useAbcClassification } from '@/composables/plannerate/analysis/useAbcClassification';
 import { usePdfGenerator } from '@/composables/plannerate/export/usePdfGenerator';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
@@ -64,6 +65,12 @@ type LayoutDirection = 'column' | 'row';
 const isDownloading = ref(false);
 const layoutDirection = ref<LayoutDirection>('row');
 const showModuleSelector = ref(false);
+
+// Marca se a última geração resultou em download bem-sucedido. Usado no
+// `finally` de generatePDF para decidir se recarrega a página (a captura por
+// tiling deixa o DOM num estado que faz gerações seguintes saírem
+// inconsistentes — ver comentário no finally). Não precisa ser reativo.
+let generatedWithDownload = false;
 
 const LAYOUT_DIRECTION_STORAGE_KEY = 'plannerate:pdf-preview:layout-direction';
 const SCALE_STEP = 0.5;
@@ -149,11 +156,55 @@ watch(layoutDirection, (value) => {
     saveLayoutDirection(value);
 });
 
+// Debounce da persistência do zoom: o usuário pode clicar +/- várias vezes
+// seguidas; só gravamos o valor final, evitando uma requisição por clique.
+let scaleSaveTimeout: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * Persiste o fator de escala (zoom) atual na gôndola. Reutiliza o mesmo
+ * endpoint de deltas do editor (`save-changes`) com uma mudança do tipo
+ * `gondola_scale`, que atualiza apenas a coluna `scale_factor` — sem mexer nos
+ * demais campos da gôndola. A escrita é debounced e preserva o estado local
+ * (não recarrega as seções) para não interferir no preview/captura do PDF.
+ */
+function persistScale(): void {
+    const gondolaId = props.gondola.id;
+
+    if (!gondolaId) {
+        return;
+    }
+
+    clearTimeout(scaleSaveTimeout);
+
+    scaleSaveTimeout = setTimeout(() => {
+        const timestamp = Date.now();
+
+        router.post(
+            SaveChangesController.url(gondolaId),
+            {
+                gondola_id: gondolaId,
+                changes: [
+                    {
+                        type: 'gondola_scale',
+                        entityType: 'gondola',
+                        entityId: gondolaId,
+                        data: { scale_factor: localScale.value },
+                        timestamp,
+                    },
+                ],
+                metadata: { total_changes: 1, last_modified: timestamp },
+            },
+            { preserveScroll: true, preserveState: true, only: [] },
+        );
+    }, 600);
+}
+
 function increaseScale() {
     localScale.value = Math.min(
         SCALE_MAX,
         Math.round((localScale.value + SCALE_STEP) * 10) / 10,
     );
+    persistScale();
 }
 
 function decreaseScale() {
@@ -161,6 +212,7 @@ function decreaseScale() {
         SCALE_MIN,
         Math.round((localScale.value - SCALE_STEP) * 10) / 10,
     );
+    persistScale();
 }
 
 async function generatePDF(
@@ -175,6 +227,7 @@ async function generatePDF(
     let scaleToRestore: number | null = null;
 
     try {
+        generatedWithDownload = false;
         isExportingRef.value = true;
         abcClassification.setVisibility(false);
         targetStockAnalysis.setVisibility(false);
