@@ -66,6 +66,7 @@ return [
         'info' => 'Informações',
         'client' => 'Cliente',
         'modules' => 'Módulos',
+        'shelf_short' => 'Prat',
     ],
     'share' => [
         'title' => 'Visualização da Gôndola',

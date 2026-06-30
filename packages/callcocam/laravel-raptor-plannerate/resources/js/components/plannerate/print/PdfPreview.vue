@@ -20,6 +20,7 @@ import PdfPageFooter from './partials/PdfPageFooter.vue';
 import PdfPreviewToolbar from './partials/PdfPreviewToolbar.vue';
 import PdfModulePage from './PdfModulePage.vue';
 import PdfModuleSelector from './PdfModuleSelector.vue';
+import { planogramModulesPdfUrl, planogramRowPdfUrl } from './pdfRoutes';
 
 interface GondolaPdf {
     id: string;
@@ -313,20 +314,33 @@ async function generatePDF(
     }
 }
 
+// O PDF agora é gerado no servidor (dompdf). O botão abre a rota correspondente
+// em nova aba: `download=1` baixa o arquivo, sem o parâmetro abre inline para
+// visualização. O pipeline html2canvas (generatePDF) permanece no código como
+// fallback, apenas desconectado do botão.
 function handleDownloadPdf() {
     if (layoutDirection.value === 'row') {
-        generatePDF(true);
+        window.open(
+            planogramRowPdfUrl(props.gondola.id, { download: true }),
+            '_blank',
+        );
     } else {
         showModuleSelector.value = true;
     }
 }
 
-async function handleGenerateFromSelector(data: {
+function handleGenerateFromSelector(data: {
     sectionIds: string[];
     autoDownload: boolean;
 }) {
     showModuleSelector.value = false;
-    await generatePDF(data.autoDownload, data.sectionIds);
+    window.open(
+        planogramModulesPdfUrl(props.gondola.id, {
+            download: data.autoDownload,
+            sectionIds: data.sectionIds,
+        }),
+        '_blank',
+    );
 }
 
 function toggleLayout() {

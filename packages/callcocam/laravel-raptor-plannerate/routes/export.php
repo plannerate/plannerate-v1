@@ -37,4 +37,6 @@ Route::controller(GondolaReportController::class)
         Route::get('{gondola}/dimensao', 'generateDimensaoReport')->name('dimensao');
         Route::get('{gondola}/image', 'generateImageReport')->name('image');
         Route::get('{gondola}/data', 'getReportData')->name('data');
+        Route::get('{gondola}/planogram-pdf', 'generatePlanogramRowPdf')->name('planogram');
+        Route::get('{gondola}/planogram-modules-pdf', 'generatePlanogramModulesPdf')->name('planogram-modules');
     });
