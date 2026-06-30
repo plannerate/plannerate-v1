@@ -12,6 +12,27 @@ const STORAGE_KEY_ZONE_INDICATORS = 'plannerate:showZoneIndicators';
 /** Chave de persistência do indicador de produto selecionado (Preço, Margem, etc.) */
 const STORAGE_KEY_PRODUCT_INDICATOR = 'plannerate:selectedIndicator';
 
+/** Chave de persistência da orientação do selo de indicador (vertical/horizontal) */
+const STORAGE_KEY_INDICATOR_ORIENTATION = 'plannerate:indicatorOrientation';
+
+/** Orientações possíveis do selo de indicador exibido na frente do produto. */
+export type IndicatorOrientation = 'vertical' | 'horizontal';
+
+/**
+ * Lê a orientação do selo de indicador do localStorage.
+ * Retorna `'vertical'` (default, comportamento legado com rotate-90) quando não
+ * há valor salvo ou fora do browser.
+ */
+function readIndicatorOrientationFromStorage(): IndicatorOrientation {
+    if (typeof window === 'undefined') {
+        return 'vertical';
+    }
+
+    return window.localStorage.getItem(STORAGE_KEY_INDICATOR_ORIENTATION) === 'horizontal'
+        ? 'horizontal'
+        : 'vertical';
+}
+
 /**
  * Lê o indicador de produto selecionado do localStorage.
  * Retorna `'none'` (nenhum) quando não há valor salvo ou fora do browser.
@@ -94,6 +115,20 @@ export const selectedIndicator = ref<string>(readSelectedIndicatorFromStorage())
 watch(selectedIndicator, (value) => {
     if (typeof window !== 'undefined') {
         window.localStorage.setItem(STORAGE_KEY_PRODUCT_INDICATOR, value);
+    }
+});
+
+/**
+ * Orientação do selo de indicador na frente do produto:
+ * - `'vertical'`: selo rotacionado 90° (padrão legado), economiza largura.
+ * - `'horizontal'`: selo na horizontal, mais legível.
+ */
+export const indicatorOrientation = ref<IndicatorOrientation>(readIndicatorOrientationFromStorage());
+
+// Persiste no localStorage sempre que a orientação do selo mudar
+watch(indicatorOrientation, (value) => {
+    if (typeof window !== 'undefined') {
+        window.localStorage.setItem(STORAGE_KEY_INDICATOR_ORIENTATION, value);
     }
 });
 

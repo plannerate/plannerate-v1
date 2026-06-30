@@ -14,11 +14,11 @@
     -->
     <div
         v-if="config && isVisible"
-        class="pointer-events-none absolute bottom-5 left-1/2 z-[90] rotate-45 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-md px-1 py-0.5 text-[10px] font-bold shadow-md ring-1 ring-black/10"
-        :class="config.badgeClass"
+        class="pointer-events-none absolute bottom-5 left-1/2 z-[90] flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-md px-1 py-0.5 text-[10px] font-bold shadow-md"
+        :class="[config.badgeClass, orientation === 'vertical' ? 'rotate-90' : '']"
         :title="displayValue"
     >
-        <component :is="config.icon" class="size-3 shrink-0" :class="config.iconClass" />
+        <!-- <component :is="config.icon" class="size-3 shrink-0" :class="config.iconClass" /> -->
         <span>{{ displayValue }}</span>
     </div>
 </template>
@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useSalesIndicators } from '../../../composables/plannerate/analysis/useSalesIndicators';
-import { selectedIndicator } from '../../../composables/plannerate/core/useGondolaState';
+import { indicatorOrientation, selectedIndicator } from '../../../composables/plannerate/core/useGondolaState';
 import { getIndicatorConfig, type IndicatorContext } from '../../../composables/plannerate/editor/indicators';
 import type { Product } from '../../../types/planogram';
 
@@ -40,6 +40,9 @@ const { getIndicators } = useSalesIndicators();
 
 /** Configuração do indicador atualmente selecionado (ou undefined se 'none'). */
 const config = computed(() => getIndicatorConfig(selectedIndicator.value));
+
+/** Orientação atual do selo (vertical = rotacionado 90°, horizontal = normal). */
+const orientation = computed(() => indicatorOrientation.value);
 
 /**
  * Contexto entregue aos callbacks do indicador. Para indicadores de vendas,

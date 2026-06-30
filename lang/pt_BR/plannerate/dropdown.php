@@ -29,6 +29,9 @@ return [
         'margin' => 'Margem',
         'stock' => 'Estoque',
         'rupture' => 'Ruptura',
+        'orientation' => 'Orientação',
+        'orientation_vertical' => 'Vertical',
+        'orientation_horizontal' => 'Horizontal',
     ],
     'performance' => [
         'title' => 'Performance',

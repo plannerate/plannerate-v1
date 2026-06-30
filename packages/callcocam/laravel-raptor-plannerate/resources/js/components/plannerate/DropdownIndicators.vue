@@ -40,12 +40,35 @@
                 <span class="flex-1">{{ t('plannerate.dropdown.indicators.none') }}</span>
                 <Check v-if="selectedIndicator === INDICATOR_NONE" class="size-4 text-primary" />
             </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <!-- Orientação do selo: vertical (rotacionado) ou horizontal -->
+            <DropdownMenuLabel class="text-xs text-muted-foreground">
+                {{ t('plannerate.dropdown.indicators.orientation') }}
+            </DropdownMenuLabel>
+
+            <DropdownMenuItem class="gap-2" @click="setOrientation('vertical')">
+                <span class="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground">
+                    <GalleryVertical class="size-3" />
+                </span>
+                <span class="flex-1">{{ t('plannerate.dropdown.indicators.orientation_vertical') }}</span>
+                <Check v-if="indicatorOrientation === 'vertical'" class="size-4 text-primary" />
+            </DropdownMenuItem>
+
+            <DropdownMenuItem class="gap-2" @click="setOrientation('horizontal')">
+                <span class="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground">
+                    <GalleryHorizontal class="size-3" />
+                </span>
+                <span class="flex-1">{{ t('plannerate.dropdown.indicators.orientation_horizontal') }}</span>
+                <Check v-if="indicatorOrientation === 'horizontal'" class="size-4 text-primary" />
+            </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
 </template>
 
 <script setup lang="ts">
-import { Ban, Check, ChevronDown, Eye } from 'lucide-vue-next';
+import { Ban, Check, ChevronDown, Eye, GalleryHorizontal, GalleryVertical } from 'lucide-vue-next';
 import { computed, onMounted } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -57,7 +80,12 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useSalesIndicators } from '@/composables/plannerate/analysis/useSalesIndicators';
-import { currentGondola, selectedIndicator } from '@/composables/plannerate/core/useGondolaState';
+import {
+    currentGondola,
+    indicatorOrientation,
+    selectedIndicator,
+    type IndicatorOrientation,
+} from '@/composables/plannerate/core/useGondolaState';
 import {
     getIndicatorConfig,
     INDICATOR_NONE,
@@ -103,6 +131,11 @@ function select(key: string) {
     if (indicatorNeedsSales(key)) {
         ensureSalesData();
     }
+}
+
+/** Define a orientação do selo de indicador (persistida via estado global). */
+function setOrientation(orientation: IndicatorOrientation) {
+    indicatorOrientation.value = orientation;
 }
 
 // Se o indicador persistido (localStorage) depende de vendas, carrega ao montar.
