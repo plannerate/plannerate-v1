@@ -203,7 +203,7 @@ const segmentsContainerStyle = computed(() => {
         height: `${shelfHeight}px`,
       }">
       <span class="font-medium" :style="{ fontSize: `${Math.max(8, Math.min(16, (10 * scaleFactor) / 3))}px` }">
-        Prat #{{ shelfDisplayNumber }}
+        Prat - {{ shelfDisplayNumber }}
       </span>
     </div>
   </div>

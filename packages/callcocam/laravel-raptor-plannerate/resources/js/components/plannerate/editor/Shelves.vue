@@ -47,7 +47,7 @@ const {
 } = useArrayNavigation(shelvesRef);
 
 /**
- * Mapa `shelfId → número de exibição` ("Prat #N"), calculado UMA vez por seção.
+ * Mapa `shelfId → número de exibição` ("Prat - N"), calculado UMA vez por seção.
  *
  * Antes cada instância de Shelf recalculava seu próprio número ordenando TODAS
  * as prateleiras da seção (sort O(S) por shelf → O(S²) na seção), e isso

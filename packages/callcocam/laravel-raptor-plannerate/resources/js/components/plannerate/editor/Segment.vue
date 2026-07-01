@@ -136,7 +136,7 @@ interface Props {
      */
     selectedFromParent?: boolean;
     layerSelectedFromParent?: boolean;
-    /** Diagnóstico: nº do módulo (section.ordering) e nº da prateleira ("Prat #N"),
+    /** Diagnóstico: nº do módulo (section.ordering) e nº da prateleira ("Prat -N"),
      *  repassados às imagens como data-attrs para correlacionar lentidão no profiling. */
     moduleNumber?: number | string;
     shelfNumber?: number | string;

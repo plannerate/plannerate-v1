@@ -148,7 +148,7 @@ return [
     'slot_editor' => [
         'title' => 'Configurar slot',
         'module' => 'Módulo - ',
-        'shelf' => 'Prat #',
+        'shelf' => 'Prat - ',
         'grouping_label' => 'Agrupamento de exposição',
         'grouping_required' => '*',
         'grouping_hint' => 'Chave que vincula o slot aos produtos',

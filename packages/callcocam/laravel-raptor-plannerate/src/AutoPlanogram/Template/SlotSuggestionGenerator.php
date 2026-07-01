@@ -63,7 +63,7 @@ final class SlotSuggestionGenerator
                 'tipo' => 'espaco_disponivel',
                 'prioridade' => $prioridade,
                 'slot_id' => $slot['slot_id'],
-                'mensagem' => "Prat #{$slot['shelf_order']} ({$slot['category_name']}) tem {$slot['largura_livre']}cm livres ({$slot['percentual_uso']}% usado).",
+                'mensagem' => "Prat - {$slot['shelf_order']} ({$slot['category_name']}) tem {$slot['largura_livre']}cm livres ({$slot['percentual_uso']}% usado).",
                 'acao' => "Considere adicionar mais produtos à categoria \"{$slot['category_name']}\" no template.",
                 'dados' => [
                     'largura_livre' => $slot['largura_livre'],

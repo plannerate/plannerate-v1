@@ -59,7 +59,7 @@
         </div>
     @endforeach
 
-    {{-- Barras + rótulo "Prat #N" das prateleiras.
+    {{-- Barras + rótulo "Prat - N" das prateleiras.
          Renderizadas no nível do MÓDULO (não dentro da área da prateleira) e por
          ÚLTIMO, em coordenada absoluta (areaTop + barTop). Assim a barra pode
          crescer para baixo (altura mínima de 9px para o texto caber direto nela,
@@ -67,10 +67,10 @@
          nem coberta pela área da prateleira vizinha no dompdf. O topo da barra
          permanece na linha onde os produtos se apoiam. --}}
     @foreach ($module['shelves'] as $shelf)
-        @php $barH = max($shelf['barHeight'], 10); @endphp
-        <div style="position:absolute; top:{{ $shelf['areaTop'] + $shelf['barTop'] }}px; left:{{ $shelf['areaLeft'] }}px; width:{{ $shelf['areaWidth'] }}px; height:{{ $barH }}px; background:#1e293b; border-top:2px solid #334155;">
+        @php $barH = max($shelf['barHeight'], 6); @endphp
+        <div style="position:absolute; top:{{ $shelf['areaTop'] + $shelf['barTop'] }}px; left:{{ $shelf['areaLeft'] }}px; width:{{ $shelf['areaWidth'] }}px; height:{{ $barH }}px; background:#1e293b;  ">
             <table cellpadding="0" cellspacing="0" style="width:100%; height:{{ $barH }}px;"><tr>
-                <td style="text-align:center; vertical-align:middle; font-size:7px; color:#cbd5e1;">{{ __('plannerate.print.preview.shelf_short') }} #{{ $shelf['displayNumber'] }}</td>
+                <td style="text-align:center; vertical-align:middle; font-size:7px; color:#cbd5e1;margin-bottom: 2px;">{{ __('plannerate.print.preview.shelf_short') }} - {{ $shelf['displayNumber'] }}</td>
             </tr></table>
         </div>
     @endforeach

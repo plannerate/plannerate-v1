@@ -15,7 +15,7 @@ interface UseShelfLayoutOptions {
     cremalheiraWidth: Ref<number | undefined>;
     alignment: Ref<string | undefined>;
     /**
-     * Número de exibição da prateleira ("Prat #N"), pré-calculado UMA vez pelo
+     * Número de exibição da prateleira ("Prat - N"), pré-calculado UMA vez pelo
      * pai (Shelves.vue) e passado por prop. Quando fornecido, evita o sort O(S)
      * por instância de Shelf — ver `shelfDisplayNumber`. Opcional para manter
      * compatibilidade com callers que não fornecem o mapa (ex.: PDF).

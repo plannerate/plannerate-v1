@@ -52,7 +52,7 @@ const label = t('planogram-templates.product_table.columns.ean');
 ```vue
 <!-- Antes (hardcoded) -->
 <div>Módulo - {{ m }}</div>
-<div>Prat #{{ shelf }}</div>
+<div>Prat -{{ shelf }}</div>
 <button>Adicionar</button>
 
 <!-- Depois (com traduções) -->
@@ -77,7 +77,7 @@ const label = t('planogram-templates.product_table.columns.ean');
 ### SlotEditorModal.vue
 ```vue
 <!-- Antes (hardcoded) -->
-<DialogTitle>Configurar slot — Módulo - {{ moduleNumber }}, Prat #{{ shelfOrder }}</DialogTitle>
+<DialogTitle>Configurar slot — Módulo - {{ moduleNumber }}, Prat - {{ shelfOrder }}</DialogTitle>
 
 <!-- Depois (com traduções) -->
 <DialogTitle>

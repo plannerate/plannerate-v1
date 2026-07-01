@@ -87,7 +87,7 @@
                     zIndex: 1,
                 }">
                 <span class="flex items-center px-2 font-medium text-slate-300">
-                    Prat #{{ shelfDisplayNumber }}
+                    Prat - {{ shelfDisplayNumber }}
                 </span>
             </div>
 
@@ -120,7 +120,7 @@ interface Props {
     firstShelf?: ShelfType;
     lastShelf?: ShelfType;
     isLast?: boolean;
-    /** Número de exibição ("Prat #N") pré-calculado por Shelves.vue (evita sort O(S) por shelf) */
+    /** Número de exibição ("Prat - N") pré-calculado por Shelves.vue (evita sort O(S) por shelf) */
     displayNumber?: number;
 }
 
