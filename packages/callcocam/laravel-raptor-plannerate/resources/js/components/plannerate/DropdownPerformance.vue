@@ -26,6 +26,31 @@
                 </span>
             </DropdownMenuItem>
 
+            <!-- Filtro por classe (A/B/C): mostra só os selos das classes marcadas -->
+            <DropdownMenuLabel class="pl-8 text-xs text-muted-foreground">
+                {{ t('plannerate.dropdown.performance.filter_by_class') }}
+            </DropdownMenuLabel>
+
+            <DropdownMenuItem
+                v-for="cls in abcClasses"
+                :key="cls.value"
+                :disabled="!performance.abc.hasData.value"
+                :class="{ 'opacity-50': !performance.abc.isClassActive(cls.value) }"
+                @select.prevent="performance.abc.toggleClassFilter(cls.value)"
+            >
+                <span
+                    class="mr-2 flex size-4 items-center justify-center rounded-full text-[10px] font-bold leading-none"
+                    :class="cls.badgeClass"
+                >
+                    {{ cls.value }}
+                </span>
+                {{ t('plannerate.dropdown.performance.class') }} {{ cls.value }}
+                <span class="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+                    ({{ cls.count }})
+                    <Check v-if="performance.abc.isClassActive(cls.value)" class="size-4 text-primary" />
+                </span>
+            </DropdownMenuItem>
+
             <DropdownMenuItem @click="performance.targetStock.toggleVisibility()" :disabled="!performance.targetStock.hasData.value">
                 <Eye v-if="!performance.targetStock.isVisible.value" class="mr-2 size-4 text-blue-600" />
                 <EyeOff v-else class="mr-2 size-4 text-blue-600" />
@@ -54,6 +79,25 @@
                 <EyeOff v-else class="mr-2 size-4" />
                 {{ performance.anyVisible.value ? t('plannerate.dropdown.performance.hide') : t('plannerate.dropdown.performance.show') }}
                 {{ t('plannerate.dropdown.performance.all') }}
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <!-- Orientação dos selos: vertical (rotacionado) ou horizontal -->
+            <DropdownMenuLabel class="text-xs text-muted-foreground">
+                {{ t('plannerate.dropdown.indicators.orientation') }}
+            </DropdownMenuLabel>
+
+            <DropdownMenuItem @click="setOrientation('vertical')">
+                <GalleryVertical class="mr-2 size-4 text-muted-foreground" />
+                {{ t('plannerate.dropdown.indicators.orientation_vertical') }}
+                <Check v-if="indicatorOrientation === 'vertical'" class="ml-auto size-4 text-primary" />
+            </DropdownMenuItem>
+
+            <DropdownMenuItem @click="setOrientation('horizontal')">
+                <GalleryHorizontal class="mr-2 size-4 text-muted-foreground" />
+                {{ t('plannerate.dropdown.indicators.orientation_horizontal') }}
+                <Check v-if="indicatorOrientation === 'horizontal'" class="ml-auto size-4 text-primary" />
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
@@ -88,7 +132,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, Download, Eye, EyeOff, Gauge, Trash2 } from 'lucide-vue-next';
+import { Check, ChevronDown, Download, Eye, EyeOff, GalleryHorizontal, GalleryVertical, Gauge, Trash2 } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import Performance from '@/components/plannerate/header/Performance.vue';
 import type { AbcResult } from '@/components/plannerate/analysis/abc/types';
@@ -99,11 +143,13 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAnalysisExport } from '@/composables/plannerate/analysis/useAnalysisExport';
 import { usePerformanceIndicators } from '@/composables/plannerate/analysis/usePerformanceIndicators';
+import { indicatorOrientation, type IndicatorOrientation } from '@/composables/plannerate/core/useGondolaState';
 import { useT } from '@/composables/useT';
 import type { AbcAnalysis, Gondola, StockAnalysis } from '@/types/planogram';
 
@@ -122,6 +168,20 @@ const { t } = useT();
 const { exportAbcToCsv, exportStockToCsv, exportPaperToCsv } = useAnalysisExport();
 
 const performance = usePerformanceIndicators();
+
+/**
+ * Classes ABC disponíveis para o filtro, com a contagem de produtos por classe
+ * e a cor do badge (alinhada às cores usadas no AbcBadge).
+ */
+const abcClasses = computed(() => {
+    const stats = performance.abc.stats.value;
+
+    return [
+        { value: 'A' as const, count: stats.classA, badgeClass: 'bg-green-500 text-white' },
+        { value: 'B' as const, count: stats.classB, badgeClass: 'bg-yellow-500 text-gray-900' },
+        { value: 'C' as const, count: stats.classC, badgeClass: 'bg-red-500 text-white' },
+    ];
+});
 
 const getStorageKey = (gondolaId: string) => `plannerate:performance:visibility:${gondolaId}`;
 
@@ -226,6 +286,11 @@ const planogram = computed(() => {
     if (pg && 'id' in pg && 'name' in pg) return pg as any;
     return null;
 });
+
+/** Define a orientação dos selos de performance (persistida via estado global). */
+function setOrientation(orientation: IndicatorOrientation): void {
+    indicatorOrientation.value = orientation;
+}
 
 function handleExportAbc(): void {
     const results = props.analysis?.abc?.results;

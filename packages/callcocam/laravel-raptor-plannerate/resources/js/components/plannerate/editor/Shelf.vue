@@ -57,7 +57,7 @@
                     Solte aqui
                 </span>
                 <span class="text-xs font-medium text-primary/80 drop-shadow">
-                    Prat #{{ shelfDisplayNumber }}
+                    Prat  - {{ shelfDisplayNumber }}
                 </span>
                 <span class="mt-1 text-[10px] font-light text-primary/70">
                     Ctrl para copiar

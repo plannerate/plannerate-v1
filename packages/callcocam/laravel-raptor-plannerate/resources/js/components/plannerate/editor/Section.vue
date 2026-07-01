@@ -27,9 +27,10 @@
         />
         <div
             class="absolute bottom-0 left-0 flex w-full items-center justify-center"
+            :style="moduleLabelStyle"
         >
-            <div class="text-xs text-muted-foreground">
-                Modulo #{{ section.ordering }}
+            <div class="text-muted-foreground">
+                Modulo - {{ section.ordering }}
             </div>
         </div>
         <Cremalheira :section="section" side="right" :scale="scale" />
@@ -197,6 +198,16 @@ function handleSectionDrop(event: DragEvent) {
     draggingShelfSectionId.value = null;
     draggingShelfOffset.value = 0;
 }
+
+/**
+ * Estilo do rótulo "Modulo #N" no rodapé da seção.
+ * O tamanho da fonte acompanha a escala do planograma (mesma proporção
+ * das demais medidas), para não ficar desproporcional ao dar zoom in/out.
+ */
+const moduleLabelStyle = computed(() => ({
+    fontSize: `${scale.value * 4}px`,
+    lineHeight: '1',
+}));
 
 const sectionStyle = computed(() => ({
     width: `${totalWidth.value}px`,

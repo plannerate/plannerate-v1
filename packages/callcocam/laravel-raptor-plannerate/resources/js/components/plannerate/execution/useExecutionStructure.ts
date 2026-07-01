@@ -25,17 +25,17 @@ export interface StructureProduct {
  * os selects e a busca dos modais de evidência/divergência sem novas queries.
  */
 export function useExecutionStructure(sections: Ref<Section[] | undefined>) {
-    /** Módulos = seções, rotuladas "Módulo #N" pela ordem física. */
+    /** Módulos = seções, rotuladas "Módulo - N" pela ordem física. */
     const modules = computed<StructureOption[]>(() =>
         [...(sections.value ?? [])]
             .sort((a, b) => (a.ordering ?? 0) - (b.ordering ?? 0))
             .map((section, index) => ({
                 value: section.id,
-                label: `Módulo #${index + 1}`,
+                label: `Módulo - ${index + 1}`,
             })),
     );
 
-    /** Prateleiras do módulo informado, rotuladas "Prateleira #N". */
+    /** Prateleiras do módulo informado, rotuladas "Prateleira - N". */
     function shelvesFor(moduleId: string | null): StructureOption[] {
         if (!moduleId) {
             return [];
@@ -45,11 +45,11 @@ export function useExecutionStructure(sections: Ref<Section[] | undefined>) {
             .sort((a, b) => (a.ordering ?? 0) - (b.ordering ?? 0))
             .map((shelf, index) => ({
                 value: shelf.id,
-                label: `Prateleira #${index + 1}`,
+                label: `Prateleira - ${index + 1}`,
             }));
     }
 
-    /** Posições (facings) da prateleira informada, rotuladas "Posição #N". */
+    /** Posições (facings) da prateleira informada, rotuladas "Posição - N". */
     function positionsFor(moduleId: string | null, shelfId: string | null): StructureOption[] {
         if (!moduleId || !shelfId) {
             return [];
@@ -60,7 +60,7 @@ export function useExecutionStructure(sections: Ref<Section[] | undefined>) {
             .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
             .map((segment, index) => ({
                 value: String(segment.position ?? index + 1),
-                label: `Posição #${index + 1}`,
+                label: `Posição - ${index + 1}`,
             }));
     }
 

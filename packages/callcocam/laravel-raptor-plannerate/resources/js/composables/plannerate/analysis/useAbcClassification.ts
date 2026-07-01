@@ -1,9 +1,20 @@
+import { computed, shallowRef } from 'vue';
 import { createEanAnalysisStore } from './useEanAnalysisStore';
 
 /**
  * Classificação ABC de um produto.
  */
 export type AbcClass = 'A' | 'B' | 'C';
+
+/**
+ * Filtro de classes ativas para exibição dos selos ABC.
+ * Estado singleton no nível do módulo — compartilhado entre todos os
+ * componentes que consomem `useAbcClassification()` (dropdown e selos).
+ *
+ * Por padrão todas as classes (A/B/C) estão ativas. Ao desmarcar uma classe,
+ * os selos daquela classe deixam de ser renderizados no planograma.
+ */
+const _activeClasses = shallowRef<Set<AbcClass>>(new Set<AbcClass>(['A', 'B', 'C']));
 
 /**
  * Recomendação de sortimento derivada da classificação ABC e da decisão de
@@ -138,6 +149,46 @@ export function useAbcClassification() {
         store.remove(ean);
     }
 
+    /**
+     * Verifica se a classe informada está ativa no filtro de exibição.
+     * Retorna false para EANs sem classificação (classe undefined).
+     */
+    function isClassActive(classification: AbcClass | undefined): boolean {
+        if (!classification) {
+            return false;
+        }
+
+        return _activeClasses.value.has(classification);
+    }
+
+    /**
+     * Alterna (liga/desliga) a exibição dos selos de uma classe específica.
+     * Cria um novo Set para disparar a reatividade do shallowRef.
+     */
+    function toggleClassFilter(classification: AbcClass): void {
+        const next = new Set(_activeClasses.value);
+        if (next.has(classification)) {
+            next.delete(classification);
+        } else {
+            next.add(classification);
+        }
+        _activeClasses.value = next;
+    }
+
+    /**
+     * Define explicitamente o conjunto de classes ativas no filtro.
+     */
+    function setClassFilter(classes: AbcClass[]): void {
+        _activeClasses.value = new Set(classes);
+    }
+
+    /**
+     * Reseta o filtro para exibir todas as classes (A/B/C).
+     */
+    function resetClassFilter(): void {
+        _activeClasses.value = new Set<AbcClass>(['A', 'B', 'C']);
+    }
+
     return {
         // Métodos
         setClassification,
@@ -151,10 +202,17 @@ export function useAbcClassification() {
         toggleVisibility: store.toggleVisibility,
         setVisibility: store.setVisibility,
 
+        // Filtro por classe (A/B/C)
+        isClassActive,
+        toggleClassFilter,
+        setClassFilter,
+        resetClassFilter,
+
         // Computed
         stats: store.stats,
         hasData: store.hasData,
         isVisible: store.isVisible,
         lastAnalysisDate: store.lastAnalysisDate,
+        activeClasses: computed(() => _activeClasses.value),
     };
 }

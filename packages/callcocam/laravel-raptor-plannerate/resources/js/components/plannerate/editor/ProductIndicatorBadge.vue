@@ -15,7 +15,7 @@
     <div
         v-if="config && isVisible"
         class="pointer-events-none absolute bottom-5 left-1/2 z-[90] flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-md px-1 py-0.5 text-[10px] font-bold shadow-md"
-        :class="[config.badgeClass, orientation === 'vertical' ? 'rotate-90' : '']"
+        :class="[config.badgeClass, orientation === 'vertical' ? '-rotate-90' : '']"
         :title="displayValue"
     >
         <!-- <component :is="config.icon" class="size-3 shrink-0" :class="config.iconClass" /> -->

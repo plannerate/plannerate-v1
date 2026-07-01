@@ -39,6 +39,8 @@ return [
         'show' => 'Mostrar',
         'hide' => 'Esconder',
         'assortment_analysis' => 'Análise de Sortimento',
+        'filter_by_class' => 'Filtrar por classe',
+        'class' => 'Classe',
         'target_stock' => 'Estoque Alvo',
         'all' => 'Todos',
         'clear_all' => 'Limpar Todas as Análises',

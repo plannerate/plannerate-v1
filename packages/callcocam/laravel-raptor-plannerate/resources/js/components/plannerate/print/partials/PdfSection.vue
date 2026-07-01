@@ -89,7 +89,7 @@ const { getPrevious: previousShelf } = useArrayNavigation(sortedShelves)
 
         <!-- Label do módulo -->
         <div class="absolute bottom-0 left-0 flex w-full items-center justify-center">
-            <div class="text-xs text-muted-foreground">Módulo #{{ section.ordering }}</div>
+            <div class="text-xs text-muted-foreground">Módulo - {{ section.ordering }}</div>
         </div>
     </div>
 </template>

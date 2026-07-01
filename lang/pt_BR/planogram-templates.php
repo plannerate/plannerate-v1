@@ -60,8 +60,8 @@ return [
 
     // Grid labels (GondolaGrid.vue)
     'grid' => [
-        'module_label' => 'Módulo #',
-        'shelf_label' => 'Prat #',
+        'module_label' => 'Módulo -',
+        'shelf_label' => 'Prat -',
         'add_button' => 'Adicionar',
     ],
 
@@ -147,7 +147,7 @@ return [
     // Slot editor modal (SlotEditorModal.vue)
     'slot_editor' => [
         'title' => 'Configurar slot',
-        'module' => 'Módulo #',
+        'module' => 'Módulo - ',
         'shelf' => 'Prat #',
         'grouping_label' => 'Agrupamento de exposição',
         'grouping_required' => '*',

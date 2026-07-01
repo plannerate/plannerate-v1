@@ -1,30 +1,34 @@
 <template>
+    <!--
+        Badge de sortimento da curva ABC: mostra a classe (A/B/C) e, ao lado,
+        a recomendação sempre visível (Proteger / Potencializar / Monitorar / Retirar),
+        colorida conforme a classe:
+        - A → Proteger | B → Potencializar | C (manter) → Monitorar | C (retirar) → Retirar
+        As dimensões (círculo, fonte, padding) escalam com o `scale` do planograma.
+    -->
     <div
-        v-if="classification && isVisible"
-        class="group relative flex items-center justify-center rounded-lg px-1 py-0.5 text-[10px] font-bold shadow-md"
-        :class="badgeClasses"
+        v-if="classification && isVisible && isClassActive(classification)"
+        class="flex items-center rounded-full bg-white/95 shadow-md"
+        :style="pillStyle"
     >
-        {{ classification }}
+        <!-- Letra da classe -->
+        <span
+            class="flex items-center justify-center rounded-full font-bold leading-none"
+            :class="letterClasses"
+            :style="letterStyle"
+        >
+            {{ classification }}
+        </span>
 
-        <!--
-            Tooltip customizado com a recomendação de sortimento da curva ABC.
-            Aparece no hover, posicionado acima do badge e colorido conforme a
-            classe (mesma família de cores do badge):
-            - A → Proteger | B → Potencializar | C (manter) → Monitorar | C (retirar) → Retirar
-        -->
-        <div
+        <!-- Recomendação de sortimento -->
+        <span
             v-if="recommendationLabel"
-            role="tooltip"
-            class="pointer-events-none absolute bottom-full left-1/2 z-200 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-1 text-[10px] font-semibold opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100"
-            :class="[tooltipBgClass, tooltipTextClass]"
+            class="font-bold whitespace-nowrap leading-none"
+            :class="labelTextClass"
+            :style="labelStyle"
         >
             {{ recommendationLabel }}
-            <!-- Seta apontando para o badge -->
-            <span
-                class="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[1px]"
-                :class="tooltipBgClass"
-            ></span>
-        </div>
+        </span>
     </div>
 </template>
 
@@ -32,6 +36,7 @@
 import { computed } from 'vue';
 import { useAbcClassification } from '@/composables/plannerate/analysis/useAbcClassification';
 import type { AbcRecommendation } from '@/composables/plannerate/analysis/useAbcClassification';
+import { indicatorOrientation } from '@/composables/plannerate/core/useGondolaState';
 import { useT } from '@/composables/useT';
 
 interface Props {
@@ -41,35 +46,25 @@ interface Props {
      * (assumindo "monitorar" para produtos C, ou seja, manter no mix).
      */
     recommendation?: AbcRecommendation;
+    /** Fator de escala do planograma (mesma base das demais medidas). */
+    scale?: number;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+    scale: 3,
+});
 
-const { isVisible } = useAbcClassification();
+const { isVisible, isClassActive } = useAbcClassification();
 const { t } = useT();
 
-/**
- * Classes CSS do badge baseadas na classificação ABC e na recomendação.
- * - A (Verde): Alta performance - produtos premium
- * - B (Amarelo): Média performance - produtos intermediários
- * - C Monitorar (Vermelho): baixa performance, manter e monitorar
- * - C Retirar (Vermelho intenso): baixa performance, retirar do mix
- */
-const badgeClasses = computed(() => {
-    switch (props.classification) {
-        case 'A':
-            return 'bg-green-500 text-white';
-        case 'B':
-            return 'bg-yellow-500 text-gray-900';
-        case 'C':
-            // Diferencia levemente "retirar" (vermelho mais intenso) de "monitorar"
-            return effectiveRecommendation.value === 'retirar'
-                ? 'bg-red-700 text-white'
-                : 'bg-red-500 text-white';
-        default:
-            return 'bg-red-500 text-white';
-    }
-});
+/** Orientação atual do selo (vertical = rotacionado 90°, horizontal = normal). */
+const orientation = computed(() => indicatorOrientation.value);
+
+/** Diâmetro do círculo da letra, escalonado pelo planograma (mesma fórmula do PDF). */
+const letterSize = computed(() => Math.max(7 * props.scale, 13));
+
+/** Tamanho da fonte (letra e label), escalonado como no PDF. */
+const fontSize = computed(() => Math.max(4 * props.scale, 7));
 
 /**
  * Recomendação efetiva: usa a prop quando fornecida; caso contrário, deriva
@@ -93,7 +88,82 @@ const effectiveRecommendation = computed<AbcRecommendation | undefined>(() => {
 });
 
 /**
- * Texto traduzido exibido no tooltip (ex.: "Proteger", "Retirar").
+ * Estilo do pill: padding/gap escalonados e transform de posicionamento.
+ * - Horizontal: centraliza o pill (translateX(-50%)).
+ * - Vertical: pivota a rotação no CENTRO DA LETRA (translateX(-half) + origin
+ *   na letra), alinhando todas as bolinhas A/B/C na mesma base; a label cresce
+ *   para cima, independente do comprimento (Proteger, Potencializar, etc.).
+ * O componente pai posiciona o selo com a borda esquerda em left-1/2.
+ */
+const pillStyle = computed(() => {
+    const half = letterSize.value / 2;
+    const base: Record<string, string> = {
+        gap: `${Math.max(1 * props.scale, 2)}px`,
+        padding: `${Math.max(0.5 * props.scale, 1)}px ${Math.max(2 * props.scale, 4)}px ${Math.max(0.5 * props.scale, 1)}px ${Math.max(0.5 * props.scale, 1)}px`,
+    };
+
+    if (orientation.value === 'vertical') {
+        base.transformOrigin = `${half}px center`;
+        base.transform = `translateX(-${half}px) rotate(-90deg)`;
+    } else {
+        base.transform = 'translateX(-50%)';
+    }
+
+    return base;
+});
+
+/** Dimensões do círculo da letra (fonte escalonada como no PDF). */
+const letterStyle = computed(() => ({
+    fontSize: `${fontSize.value}px`,
+    width: `${letterSize.value}px`,
+    height: `${letterSize.value}px`,
+}));
+
+/** Tamanho da fonte da label de recomendação, alinhado à letra da classe. */
+const labelStyle = computed(() => ({
+    fontSize: `${fontSize.value}px`,
+}));
+
+/**
+ * Cor de fundo da letra da classe, alinhada à família de cores do badge.
+ * "Retirar" usa um vermelho mais intenso para reforçar a ação.
+ */
+const letterClasses = computed(() => {
+    switch (props.classification) {
+        case 'A':
+            return 'bg-green-500 text-white';
+        case 'B':
+            return 'bg-yellow-500 text-gray-900';
+        case 'C':
+            return effectiveRecommendation.value === 'retirar'
+                ? 'bg-red-700 text-white'
+                : 'bg-red-500 text-white';
+        default:
+            return 'bg-red-500 text-white';
+    }
+});
+
+/**
+ * Cor do texto da recomendação, tingida com a cor da classe para manter a
+ * identidade visual do badge sobre o fundo claro do pill.
+ */
+const labelTextClass = computed(() => {
+    switch (effectiveRecommendation.value) {
+        case 'proteger':
+            return 'text-green-700';
+        case 'potencializar':
+            return 'text-yellow-700';
+        case 'monitorar':
+            return 'text-red-600';
+        case 'retirar':
+            return 'text-red-700';
+        default:
+            return 'text-red-600';
+    }
+});
+
+/**
+ * Texto traduzido da recomendação (ex.: "Proteger", "Retirar").
  */
 const recommendationLabel = computed(() => {
     if (!effectiveRecommendation.value) {
@@ -102,30 +172,4 @@ const recommendationLabel = computed(() => {
 
     return t(`plannerate.editor.abc_badge.recommendation.${effectiveRecommendation.value}`);
 });
-
-/**
- * Cor de fundo do tooltip, alinhada à família de cores do badge.
- * "Retirar" usa um vermelho mais intenso para reforçar a ação.
- */
-const tooltipBgClass = computed(() => {
-    switch (effectiveRecommendation.value) {
-        case 'proteger':
-            return 'bg-green-600';
-        case 'potencializar':
-            return 'bg-yellow-500';
-        case 'monitorar':
-            return 'bg-red-500';
-        case 'retirar':
-            return 'bg-red-700';
-        default:
-            return 'bg-red-500';
-    }
-});
-
-/**
- * Cor do texto do tooltip, garantindo contraste com o fundo.
- */
-const tooltipTextClass = computed(() =>
-    effectiveRecommendation.value === 'potencializar' ? 'text-gray-900' : 'text-white',
-);
 </script>

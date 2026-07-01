@@ -32,13 +32,21 @@
         data-segment="true"
     >
 
-        <!-- Badges ABC + Papel lado a lado, centralizados no topo do segmento -->
+        <!-- Badge de papel estratégico, centralizado no topo do segmento -->
         <div
-            v-if="abcClassification || paperRole"
+            v-if="paperRole"
             class="absolute -top-2.5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5"
         >
-            <AbcBadge :classification="abcClassification" :recommendation="abcRecommendation" />
             <PaperRoleBadge :role="paperRole" />
+        </div>
+
+        <!-- Badge de sortimento ABC, na base do segmento -->
+        <div
+            v-if="abcClassification"
+            class="pointer-events-none absolute left-1/2 z-90 flex items-center"
+            :style="abcBadgeWrapperStyle"
+        >
+            <AbcBadge :classification="abcClassification" :recommendation="abcRecommendation" :scale="props.scale" />
         </div>
 
         <!-- Indicador visual de estoque alvo -->
@@ -151,6 +159,15 @@ const abcClassification = computed(() => getClassification(layer.value?.product?
 
 // Recomendação de sortimento (proteger/potencializar/monitorar/retirar) do produto pelo EAN
 const abcRecommendation = computed(() => getRecommendation(layer.value?.product?.ean));
+
+/**
+ * Distância da base do selo ABC ao rodapé do segmento, proporcional à escala
+ * do planograma (como o restante das medidas), com piso mínimo para não colar
+ * na prateleira em escalas pequenas.
+ */
+const abcBadgeWrapperStyle = computed(() => ({
+    bottom: `${Math.max((props.scale || 3) * 2, 4)}px`,
+}));
 
 // Busca papel estratégico do produto pelo EAN
 const paperRole = computed(() => getPaperRole(layer.value?.product?.ean));

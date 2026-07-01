@@ -26,7 +26,7 @@ const props = defineProps<Props>()
 const isHovered = ref(false)
 const showModal = ref(false)
 
-const { getClassification } = useAbcClassification()
+const { getClassification, getRecommendation } = useAbcClassification()
 
 // Busca classificação ABC do produto pelo EAN
 const abcClassification = computed(() => {
@@ -37,6 +37,18 @@ return undefined
 }
 
   return getClassification(ean)
+})
+
+// Busca a recomendação de sortimento (proteger/potencializar/monitorar/retirar)
+// pelo EAN, para exibir a label ao lado da classe (mesmo padrão do editor)
+const abcRecommendation = computed(() => {
+  const ean = props.segment.layer?.product?.ean
+
+  if (!ean) {
+return undefined
+}
+
+  return getRecommendation(ean)
 })
 
 function handleClick() {
@@ -57,7 +69,7 @@ function handleClick() {
     @click="handleClick">
 
     <!-- Indicador visual de performance A, B, C -->
-    <PdfAbcBadge :classification="abcClassification" :scale="scaleFactor" />
+    <PdfAbcBadge :classification="abcClassification" :recommendation="abcRecommendation" :scale="scaleFactor" />
     
     <!-- Indicador visual de estoque alvo -->
     <PdfStockIndicator :segment="segment" :shelf-depth="shelfDepth" :scale="scaleFactor" />
