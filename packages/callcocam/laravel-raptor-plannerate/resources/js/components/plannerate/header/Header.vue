@@ -4,6 +4,7 @@ import { ArrowLeft, Edit, MapPin, Plus, RefreshCcw, Trash2, Upload } from 'lucid
 import { computed, ref } from 'vue';
 import GondolaCreateStepper from '@/components/plannerate/form/GondolaCreateStepper.vue';
 import GondolaEditForm from '@/components/plannerate/form/GondolaEditForm.vue';
+import NotificationsDropdown from '@/components/NotificationsDropdown.vue';
 import MapRegionSelectorModal from './MapRegionSelectorModal.vue';
 import ConfirmDeleteGondolaDialog from './ConfirmDeleteGondolaDialog.vue';
 import { usePlanogramEditor } from '@/composables/plannerate/core/usePlanogramEditor';
@@ -311,6 +312,9 @@ function handleMapRegionSelect(regionId: string | null) {
                     <ArrowLeft class="size-4" />
                     {{ t('app.actions.back') }}
                 </Link>
+
+                <!-- Sino de notificações (mesmo componente da topbar principal) -->
+                <NotificationsDropdown />
             </div>
         </div>
     </div>

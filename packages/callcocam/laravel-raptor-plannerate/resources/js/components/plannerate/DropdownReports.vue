@@ -25,7 +25,9 @@
     </DropdownMenu>
 </template>
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
 import { ChevronDown, FileSpreadsheet, FileText } from 'lucide-vue-next';
+import { toast } from 'vue-sonner';
 
 import {
     generateCompraReport,
@@ -51,40 +53,48 @@ const { t } = useT();
 type ReportAction = (gondola: string) => { url: string };
 
 /**
- * Resolve a rota da action para a gôndola atual e abre em nova aba (download).
- * Retorna sem efeito se não houver gôndola selecionada.
+ * Enfileira a geração do relatório (POST via router do Inertia).
+ *
+ * A geração roda em fila no backend; ao concluir, o usuário recebe uma
+ * notificação em tela e no sino com o link de download. Aqui só disparamos e
+ * confirmamos o enfileiramento com um toast. Sem efeito se não houver gôndola.
  */
-function openReport(action: ReportAction): void {
+function queueReport(action: ReportAction): void {
     const gondolaId = currentGondola.value?.id;
 
     if (!gondolaId) {
         return;
     }
 
-    window.open(action(gondolaId).url, '_blank');
+    router.post(action(gondolaId).url, {}, {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => toast.success(t('plannerate.reports.queued')),
+        onError: () => toast.error(t('plannerate.reports.queue_failed')),
+    });
 }
 
 /**
- * Gera o Relatório de Compra em formato Excel.
+ * Enfileira o Relatório de Compra em formato Excel.
  * Rota: export/gondola-report/{gondola}/compra
  */
 function handlePurchaseExcel(): void {
-    openReport(generateCompraReport);
+    queueReport(generateCompraReport);
 }
 
 /**
- * Gera o Relatório de Reposição em formato Excel.
+ * Enfileira o Relatório de Reposição em formato Excel.
  * Rota: export/gondola-report/{gondola}/excel
  */
 function handleRestockExcel(): void {
-    openReport(generateExcelReport);
+    queueReport(generateExcelReport);
 }
 
 /**
- * Gera o Relatório de Reposição em formato PDF.
+ * Enfileira o Relatório de Reposição em formato PDF.
  * Rota: export/gondola-report/{gondola}/pdf
  */
 function handleRestockPdf(): void {
-    openReport(generatePdfReport);
+    queueReport(generatePdfReport);
 }
 </script>

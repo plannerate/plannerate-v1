@@ -12,6 +12,7 @@ import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Separator } from '@/components/ui/separator';
 import { useT } from '@/composables/useT';
 import type { AbcAnalysis, StockAnalysis } from '@/types/planogram';
+import NotificationsDropdown from '@/components/NotificationsDropdown.vue';
 import DropdownIndicators from '../../DropdownIndicators.vue';
 import DropdownPerformance from '../../DropdownPerformance.vue';
 import PdfPageHeader from './PdfPageHeader.vue';
@@ -221,6 +222,11 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`);
                             : t('plannerate.print.preview.download_pdf')
                     }}
                 </ButtonWithTooltip>
+
+                <Separator orientation="vertical" class="h-7" />
+
+                <!-- Sino de notificações (mesmo componente da topbar principal) -->
+                <NotificationsDropdown />
 
                 <!-- Modo execução: separador + alvo p/ os 3 botões de ação
                      (Adicionar evidência, Apontar divergência, Concluir). -->

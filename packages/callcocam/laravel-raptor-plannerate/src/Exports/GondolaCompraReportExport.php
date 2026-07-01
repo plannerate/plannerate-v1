@@ -37,6 +37,19 @@ class GondolaCompraReportExport
     }
 
     /**
+     * Grava a planilha em um caminho absoluto do filesystem.
+     *
+     * Usado pela geração em fila: o writer do PhpSpreadsheet exige um caminho
+     * físico (não escreve em disco abstrato do Laravel). O job resolve o caminho
+     * absoluto a partir do disco `local` antes de chamar este método.
+     */
+    public function store(string $absolutePath): void
+    {
+        $writer = new Xlsx($this->createSpreadsheet());
+        $writer->save($absolutePath);
+    }
+
+    /**
      * Cria a planilha com todos os dados e formatações
      */
     private function createSpreadsheet(): Spreadsheet

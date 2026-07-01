@@ -321,7 +321,7 @@ async function generatePDF(
 function handleDownloadPdf() {
     if (layoutDirection.value === 'row') {
         window.open(
-            planogramRowPdfUrl(props.gondola.id, { download: true }),
+            planogramRowPdfUrl(props.gondola.id, { download: false }),
             '_blank',
         );
     } else {

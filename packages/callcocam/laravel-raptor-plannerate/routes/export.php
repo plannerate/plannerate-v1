@@ -31,11 +31,13 @@ Route::controller(GondolaReportController::class)
     ->name('export.gondola-report.')
     ->middleware(['auth', 'tenant.client.redirect'])
     ->group(function () {
-        Route::get('{gondola}/excel', 'generateExcelReport')->name('excel');
-        Route::get('{gondola}/pdf', 'generatePdfReport')->name('pdf');
-        Route::get('{gondola}/compra', 'generateCompraReport')->name('compra');
-        Route::get('{gondola}/dimensao', 'generateDimensaoReport')->name('dimensao');
-        Route::get('{gondola}/image', 'generateImageReport')->name('image');
+        // Geração enfileirada (mutação) → POST. O job notifica com link ao concluir.
+        Route::post('{gondola}/excel', 'generateExcelReport')->name('excel');
+        Route::post('{gondola}/pdf', 'generatePdfReport')->name('pdf');
+        Route::post('{gondola}/compra', 'generateCompraReport')->name('compra');
+        Route::post('{gondola}/dimensao', 'generateDimensaoReport')->name('dimensao');
+        Route::post('{gondola}/image', 'generateImageReport')->name('image');
+        // Preview de dados (leitura) → permanece GET.
         Route::get('{gondola}/data', 'getReportData')->name('data');
         Route::get('{gondola}/planogram-pdf', 'generatePlanogramRowPdf')->name('planogram');
         Route::get('{gondola}/planogram-modules-pdf', 'generatePlanogramModulesPdf')->name('planogram-modules');
