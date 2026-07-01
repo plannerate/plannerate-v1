@@ -776,7 +776,7 @@ const handleSubmit = () => {
 
                     <StepGeneration
                         v-if="currentStepKey === 'generation'"
-                        :form="form.data()"
+                        :form="form"
                         :errors="form.errors"
                         :root-category-id="resolvedPlanogramCategoryId"
                     />
