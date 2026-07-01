@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TrendingDown,  Loader2, Tag, Ruler, BarChart3, ShoppingCart, MessageSquare, Send, StickyNote } from 'lucide-vue-next'
+import { TrendingDown, Loader2, Tag, Ruler, BarChart3, ShoppingCart, MessageSquare, Send, StickyNote, Box, Star, Target, CircleDollarSign, Weight, Coins, BadgeCheck, CalendarDays, Store } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { Badge } from '@/components/ui/badge'
@@ -95,6 +95,11 @@ function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 }
 
+/** Formata um valor percentual já em escala 0–100 (ex.: 40.9 → "40,9%"). */
+function formatPercent(value: number): string {
+  return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value ?? 0) + '%'
+}
+
 function formatDate(date: string | null): string {
   if (!date) return '-'
   return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(date))
@@ -164,19 +169,30 @@ function handleClose() {
 
 <template>
   <Dialog :open="open" @update:open="handleClose" :style="{ zIndex: 1000 }">
-    <DialogContent class="force-light sm:max-w-4xl max-h-[90vh] flex flex-col z-1000">
+    <DialogContent class="force-light sm:max-w-5xl max-h-[90vh] flex flex-col z-1000">
       <DialogHeader class="shrink-0 pb-2">
-        <DialogTitle>{{ t('plannerate.print.product_detail.title') }}</DialogTitle>
-        <DialogDescription v-if="product">
-          {{ t('plannerate.print.product_detail.description') }} 
-        </DialogDescription>
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600/10 text-blue-600">
+            <Box class="h-5 w-5" />
+          </div>
+          <div class="min-w-0">
+            <DialogTitle>{{ t('plannerate.print.product_detail.title') }}</DialogTitle>
+            <DialogDescription v-if="product">
+              {{ t('plannerate.print.product_detail.description') }}
+            </DialogDescription>
+          </div>
+        </div>
       </DialogHeader>
 
       <div v-if="product" class="flex-1 overflow-y-auto space-y-4 pr-1">
 
         <!-- Resumo rápido (Summary strip) -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <div class="rounded-lg border bg-muted/40 p-2 flex items-center gap-2">
+          <!-- Classificação ABC -->
+          <div class="rounded-lg border bg-muted/40 p-2.5 flex items-center gap-2.5">
+            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-background text-muted-foreground">
+              <Star class="h-4 w-4" />
+            </div>
             <div class="flex-1 min-w-0">
               <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.classification') }}</p>
               <div class="flex items-center gap-1 mt-0.5">
@@ -188,7 +204,11 @@ function handleClose() {
             </div>
           </div>
 
-          <div class="rounded-lg border bg-muted/40 p-2 flex items-center gap-2">
+          <!-- Status do espaço -->
+          <div class="rounded-lg border bg-muted/40 p-2.5 flex items-center gap-2.5">
+            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-background text-blue-600">
+              <MessageSquare class="h-4 w-4" />
+            </div>
             <div class="flex-1 min-w-0">
               <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.space_status') }}</p>
               <div class="flex items-center gap-1 mt-0.5">
@@ -200,28 +220,40 @@ function handleClose() {
             </div>
           </div>
 
-          <div class="rounded-lg border bg-muted/40 p-2">
-            <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.capacity_target') }}</p>
-            <p class="text-sm font-bold mt-0.5" :class="stockStatusInfo?.color ?? 'text-foreground'">
-              <template v-if="targetStockData">
-                {{ segmentCapacity }} / {{ targetStockData.estoque_alvo }} un.
-                <span v-if="capacityPercent !== null" class="text-[10px] font-normal text-muted-foreground ml-1">({{ capacityPercent }}%)</span>
-              </template>
-              <span v-else class="text-muted-foreground text-xs">{{ totalQuantity }} un.</span>
-            </p>
+          <!-- Capacidade / Alvo -->
+          <div class="rounded-lg border bg-muted/40 p-2.5 flex items-center gap-2.5">
+            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-background text-blue-600">
+              <Target class="h-4 w-4" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.capacity_target') }}</p>
+              <p class="text-sm font-bold mt-0.5" :class="stockStatusInfo?.color ?? 'text-foreground'">
+                <template v-if="targetStockData">
+                  {{ segmentCapacity }} / {{ targetStockData.estoque_alvo }} un.
+                  <span v-if="capacityPercent !== null" class="text-[10px] font-normal text-muted-foreground ml-1">({{ capacityPercent }}%)</span>
+                </template>
+                <span v-else class="text-muted-foreground text-xs">{{ totalQuantity }} un.</span>
+              </p>
+            </div>
           </div>
 
-          <div class="rounded-lg border bg-muted/40 p-2">
-            <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.revenue') }}</p>
-            <p class="text-sm font-bold mt-0.5 text-green-600 dark:text-green-500">
-              <template v-if="salesLoading">
-                <Loader2 class="h-3 w-3 animate-spin inline" />
-              </template>
-              <template v-else-if="salesData?.summary.total_revenue">
-                {{ formatCurrency(salesData.summary.total_revenue) }}
-              </template>
-              <span v-else class="text-muted-foreground text-xs">—</span>
-            </p>
+          <!-- Faturamento -->
+          <div class="rounded-lg border bg-muted/40 p-2.5 flex items-center gap-2.5">
+            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-background text-green-600">
+              <CircleDollarSign class="h-4 w-4" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.revenue') }}</p>
+              <p class="text-sm font-bold mt-0.5 text-green-600 dark:text-green-500">
+                <template v-if="salesLoading">
+                  <Loader2 class="h-3 w-3 animate-spin inline" />
+                </template>
+                <template v-else-if="salesData?.summary.total_revenue">
+                  {{ formatCurrency(salesData.summary.total_revenue) }}
+                </template>
+                <span v-else class="text-muted-foreground text-xs">—</span>
+              </p>
+            </div>
           </div>
         </div>
 
@@ -240,51 +272,67 @@ function handleClose() {
           </div>
 
           <!-- Identidade do produto -->
-          <ProductIdentification :product="product" />
+          <div class="rounded-lg border p-3">
+            <ProductIdentification :product="product" />
+          </div>
 
           <!-- Especificações técnicas + posicionamento -->
-          <div class="space-y-2">
-            <div class="flex items-center gap-1.5 mb-2">
-              <Ruler class="h-3.5 w-3.5 text-muted-foreground" />
-              <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.dimensions') }}</span>
+          <div class="space-y-3">
+            <!-- Dimensões -->
+            <div class="space-y-2 rounded-lg border p-3">
+              <div class="flex items-center gap-2">
+                <Ruler class="h-4 w-4 text-blue-600" />
+                <span class="text-sm font-semibold text-foreground">{{ t('plannerate.print.product_detail.dimensions') }}</span>
+              </div>
+              <ProductDimensions :product="product" />
             </div>
-            <ProductDimensions :product="product" />
 
-            <div class="flex items-center gap-1.5 mt-3 mb-2">
-              <Tag class="h-3.5 w-3.5 text-muted-foreground" />
-              <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{{ t('plannerate.print.product_detail.positioning') }}</span>
-            </div>
             <!-- Posicionamento: frentes × empilhamento × profundidade = total -->
-            <ProductPositioning
-              :layer-quantity="layerQuantity"
-              :segment-quantity="segmentQuantity"
-              :product-depth="product.depth"
-              :shelf-depth="shelfDepth"
-            />
-
-            <!-- Peso / Volume se disponíveis -->
-            <div v-if="product.weight || product.volume" class="flex items-end gap-3 rounded border bg-muted/20 px-3 py-2 mt-2">
-              <div v-if="product.weight" class="flex flex-col items-start">
-                <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.weight') }}</span>
-                <span class="text-xl font-bold leading-none tabular-nums">
-                  {{ product.weight }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">kg</sup>
-                </span>
+            <div class="space-y-2 rounded-lg border p-3">
+              <div class="flex items-center gap-2">
+                <Tag class="h-4 w-4 text-blue-600" />
+                <span class="text-sm font-semibold text-foreground">{{ t('plannerate.print.product_detail.positioning') }}</span>
               </div>
-              <div v-if="product.volume" class="flex flex-col items-start">
-                <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.volume') }}</span>
-                <span class="text-xl font-bold leading-none tabular-nums">
-                  {{ product.volume }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">L</sup>
-                </span>
-              </div>
+              <ProductPositioning
+                :layer-quantity="layerQuantity"
+                :segment-quantity="segmentQuantity"
+                :product-depth="product.depth"
+                :shelf-depth="shelfDepth"
+              />
             </div>
+
+            <!-- Peso / Volume -->
+            <!-- <div class="space-y-2 rounded-lg border p-3">
+              <div class="flex items-center gap-2">
+                <Weight class="h-4 w-4 text-blue-600" />
+                <span class="text-sm font-semibold text-foreground">{{ t('plannerate.print.product_detail.weight') }}</span>
+              </div>
+              <div class="flex items-end gap-4">
+                <div class="flex flex-col items-start">
+                  <span class="text-xl font-bold leading-none tabular-nums">
+                    {{ product.weight ?? '0.00' }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">kg</sup>
+                  </span>
+                </div>
+                <div v-if="product.volume" class="flex flex-col items-start">
+                  <span class="text-[9px] text-muted-foreground leading-none mb-0.5">{{ t('plannerate.print.product_detail.volume') }}</span>
+                  <span class="text-xl font-bold leading-none tabular-nums">
+                    {{ product.volume }}<sup class="text-[10px] font-normal text-muted-foreground ml-0.5 align-super">L</sup>
+                  </span>
+                </div>
+              </div>
+            </div> -->
           </div>
         </div>
 
         <Separator />
 
-        <!-- Tabs de análise -->
-        <Tabs default-value="notes" class="w-full">
+        <!-- Tabs de análise (Vendas primeiro e ativa por padrão) -->
+        <Tabs default-value="sales" class="w-full">
           <TabsList class="w-full grid grid-cols-3 h-8">
+            <TabsTrigger value="sales" class="text-xs gap-1">
+              <ShoppingCart class="h-3 w-3" />
+              {{ t('plannerate.print.product_detail.sales') }}
+            </TabsTrigger>
             <TabsTrigger value="notes" class="text-xs gap-1">
               <MessageSquare class="h-3 w-3" />
               {{ t('plannerate.print.product_detail.notes') }}
@@ -293,10 +341,6 @@ function handleClose() {
             <TabsTrigger value="stock" class="text-xs gap-1">
               <BarChart3 class="h-3 w-3" />
               {{ t('plannerate.print.product_detail.stock_analysis') }}
-            </TabsTrigger>
-            <TabsTrigger value="sales" class="text-xs gap-1">
-              <ShoppingCart class="h-3 w-3" />
-              {{ t('plannerate.print.product_detail.sales') }}
             </TabsTrigger>
           </TabsList>
 
@@ -445,66 +489,125 @@ function handleClose() {
             </div>
 
             <div v-else class="space-y-3">
-              <!-- KPIs principais -->
-              <div class="grid grid-cols-4 gap-2">
-                <div class="rounded border bg-muted/30 p-2 text-center">
-                  <p class="text-[10px] text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.total_sales') }}</p>
-                  <p class="text-base font-bold">{{ salesData.summary.total_sales }}</p>
+              <!-- Três grupos lado a lado: Resumo · Custo/Lucro · Margem Líquida -->
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+
+                <!-- Grupo 1: Resumo de Vendas -->
+                <div class="space-y-2 rounded-lg border p-3">
+                  <div class="flex items-center gap-2">
+                    <BarChart3 class="h-4 w-4 text-blue-600 dark:text-blue-500" />
+                    <h5 class="text-sm font-semibold text-foreground">{{ t('plannerate.sidebar.product_sales_summary.sales_group') }}</h5>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                      <p class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.total_sales') }}</p>
+                      <p class="text-xl font-bold text-foreground">{{ salesData.summary.total_sales }}</p>
+                    </div>
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                      <p class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.quantity') }}</p>
+                      <p class="text-xl font-bold text-foreground">{{ salesData.summary.total_quantity }}</p>
+                    </div>
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                      <p class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.revenue') }}</p>
+                      <p class="text-lg font-bold text-green-600 dark:text-green-500">{{ formatCurrency(salesData.summary.total_revenue) }}</p>
+                    </div>
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                      <p class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.avg_sale_price') }}</p>
+                      <p class="text-lg font-bold text-foreground">{{ formatCurrency(salesData.summary.avg_price) }}</p>
+                    </div>
+                  </div>
                 </div>
-                <div class="rounded border bg-muted/30 p-2 text-center">
-                  <p class="text-[10px] text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.quantity') }}</p>
-                  <p class="text-base font-bold">{{ salesData.summary.total_quantity }}</p>
+
+                <!-- Grupo 2: Custo e Lucro Bruto -->
+                <div class="space-y-2 rounded-lg border p-3">
+                  <div class="flex items-center gap-2">
+                    <Coins class="h-4 w-4 text-purple-600 dark:text-purple-500" />
+                    <h5 class="text-sm font-semibold text-foreground">{{ t('plannerate.sidebar.product_sales_summary.cost_profit_group') }}</h5>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                      <p class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.avg_cost_unit') }}</p>
+                      <p class="text-base font-bold text-foreground">{{ formatCurrency(salesData.summary.avg_cost) }}</p>
+                    </div>
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                      <p class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.total_cost') }}</p>
+                      <p class="text-base font-bold text-foreground">{{ formatCurrency(salesData.summary.total_cost) }}</p>
+                    </div>
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                      <p class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.gross_profit_unit') }}</p>
+                      <p class="text-base font-bold text-green-600 dark:text-green-500">{{ formatCurrency(salesData.summary.gross_profit_unit) }}</p>
+                    </div>
+                    <div class="rounded-md bg-muted/40 p-2.5">
+                      <p class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.gross_profit_total') }}</p>
+                      <p class="text-base font-bold text-green-600 dark:text-green-500">{{ formatCurrency(salesData.summary.gross_profit_total) }}</p>
+                    </div>
+                  </div>
+                  <div class="rounded-md bg-muted/40 p-2.5">
+                    <p class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.gross_margin') }}</p>
+                    <p class="text-base font-bold text-purple-600 dark:text-purple-500">{{ formatPercent(salesData.summary.gross_margin_pct) }}</p>
+                  </div>
                 </div>
-                <div class="rounded border bg-muted/30 p-2 text-center">
-                  <p class="text-[10px] text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.revenue') }}</p>
-                  <p class="text-sm font-bold text-green-600 dark:text-green-500">{{ formatCurrency(salesData.summary.total_revenue) }}</p>
-                </div>
-                <div class="rounded border bg-muted/30 p-2 text-center">
-                  <p class="text-[10px] text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.avg_margin') }}</p>
-                  <p class="text-sm font-bold">{{ formatCurrency(salesData.summary.avg_margin) }}</p>
+
+                <!-- Grupo 3: Margem Real / Líquida -->
+                <div class="space-y-2 rounded-lg border border-green-500/30 bg-green-500/5 p-3">
+                  <div class="flex items-center gap-2">
+                    <BadgeCheck class="h-4 w-4 text-green-600 dark:text-green-500" />
+                    <h5 class="text-sm font-semibold text-foreground">{{ t('plannerate.sidebar.product_sales_summary.net_margin_group') }}</h5>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="rounded-md bg-background/60 p-2.5">
+                      <p class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.net_margin_unit') }}</p>
+                      <p class="text-sm font-bold text-green-600 dark:text-green-500">{{ formatCurrency(salesData.summary.avg_margin) }}</p>
+                    </div>
+                    <div class="rounded-md bg-background/60 p-2.5">
+                      <p class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.net_margin_total') }}</p>
+                      <p class="text-sm font-bold text-green-600 dark:text-green-500">{{ formatCurrency(salesData.summary.total_margin) }}</p>
+                    </div>
+                    <div class="rounded-md bg-background/60 p-2.5">
+                      <p class="text-xs text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.net_margin_percentage') }}</p>
+                      <p class="text-sm font-bold text-green-600 dark:text-green-500">{{ formatPercent(salesData.summary.margin_percentage) }}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <!-- Preços + Período -->
-              <div class="grid grid-cols-2 gap-3">
-                <div class="space-y-1">
-                  <p class="text-[10px] font-semibold text-foreground uppercase tracking-wide">{{ t('plannerate.sidebar.product_sales_summary.avg_prices') }}</p>
-                  <div class="flex items-center justify-between rounded bg-muted/30 px-2.5 py-1.5 text-xs">
-                    <span class="text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.sale') }}</span>
-                    <span class="font-medium">{{ formatCurrency(salesData.summary.avg_price) }}</span>
+              <!-- Período de vendas + Top 5 Lojas -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Período -->
+                <div class="space-y-2 rounded-lg border p-3">
+                  <div class="flex items-center gap-2">
+                    <CalendarDays class="h-4 w-4 text-blue-600 dark:text-blue-500" />
+                    <h5 class="text-sm font-semibold text-foreground">{{ t('plannerate.sidebar.product_sales_summary.sales_period') }}</h5>
                   </div>
-                  <div class="flex items-center justify-between rounded bg-muted/30 px-2.5 py-1.5 text-xs">
-                    <span class="text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.cost') }}</span>
-                    <span class="font-medium">{{ formatCurrency(salesData.summary.avg_cost) }}</span>
+                  <div class="rounded-md bg-muted/30 px-3 py-2">
+                    <div class="flex items-center justify-between text-xs">
+                      <span class="text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.first_sale') }}</span>
+                      <span class="font-medium text-foreground">{{ formatDate(salesData.summary.first_sale_date) }}</span>
+                    </div>
+                    <div class="mt-1 flex items-center justify-between text-xs">
+                      <span class="text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.last_sale') }}</span>
+                      <span class="font-medium text-foreground">{{ formatDate(salesData.summary.last_sale_date) }}</span>
+                    </div>
                   </div>
                 </div>
 
-                <div class="space-y-1">
-                  <p class="text-[10px] font-semibold text-foreground uppercase tracking-wide">{{ t('plannerate.sidebar.product_sales_summary.sales_period') }}</p>
-                  <div class="flex items-center justify-between rounded bg-muted/30 px-2.5 py-1.5 text-xs">
-                    <span class="text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.first_sale') }}</span>
-                    <span class="font-medium">{{ formatDate(salesData.summary.first_sale_date) }}</span>
+                <!-- Top 5 Lojas -->
+                <div v-if="salesData.top_stores.length > 0" class="space-y-2 rounded-lg border p-3">
+                  <div class="flex items-center gap-2">
+                    <Store class="h-4 w-4 text-blue-600 dark:text-blue-500" />
+                    <h5 class="text-sm font-semibold text-foreground">{{ t('plannerate.sidebar.product_sales_summary.top_stores') }}</h5>
                   </div>
-                  <div class="flex items-center justify-between rounded bg-muted/30 px-2.5 py-1.5 text-xs">
-                    <span class="text-muted-foreground">{{ t('plannerate.sidebar.product_sales_summary.last_sale') }}</span>
-                    <span class="font-medium">{{ formatDate(salesData.summary.last_sale_date) }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Top Lojas -->
-              <div v-if="salesData.top_stores.length > 0" class="space-y-1">
-                <p class="text-[10px] font-semibold text-foreground uppercase tracking-wide">{{ t('plannerate.sidebar.product_sales_summary.top_stores') }}</p>
-                <div class="space-y-1">
-                  <div
-                    v-for="(store, index) in salesData.top_stores.slice(0, 3)"
-                    :key="store.store_id"
-                    class="flex items-center gap-2 rounded bg-muted/30 px-2.5 py-1.5"
-                  >
-                    <Badge variant="outline" class="h-4 w-4 justify-center p-0 text-[10px] shrink-0">{{ index + 1 }}</Badge>
-                    <span class="text-xs font-medium flex-1 truncate">{{ store.store_name }}</span>
-                    <span class="text-xs text-muted-foreground">{{ store.quantity }} un.</span>
-                    <span class="text-xs font-semibold text-green-600 dark:text-green-500 shrink-0">{{ formatCurrency(store.revenue) }}</span>
+                  <div class="space-y-1">
+                    <div
+                      v-for="(store, index) in salesData.top_stores.slice(0, 5)"
+                      :key="store.store_id"
+                      class="flex items-center gap-2 rounded bg-muted/30 px-2.5 py-1.5"
+                    >
+                      <Badge variant="outline" class="h-4 w-4 justify-center p-0 text-[10px] shrink-0">{{ index + 1 }}</Badge>
+                      <span class="text-xs font-medium flex-1 truncate">{{ store.store_name }}</span>
+                      <span class="text-xs text-muted-foreground">{{ store.quantity }} un.</span>
+                      <span class="text-xs font-semibold text-green-600 dark:text-green-500 shrink-0">{{ formatCurrency(store.revenue) }}</span>
+                    </div>
                   </div>
                 </div>
               </div>

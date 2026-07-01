@@ -14,7 +14,7 @@
 //                backend e keyed por EAN (veja `useSalesIndicators`).
 // ============================================================================
 
-import { AlertTriangle, Package, Percent, Tag, type LucideIcon } from 'lucide-vue-next';
+import { AlertTriangle, Banknote, Coins, Package, Percent, Tag, type LucideIcon } from 'lucide-vue-next';
 import type { SalesIndicatorData } from '@/composables/plannerate/analysis/useSalesIndicators';
 import type { Product } from '@/types/planogram';
 
@@ -121,6 +121,18 @@ export const PRODUCT_INDICATORS: IndicatorConfig[] = [
         iconClass: 'text-white/90',
     },
     {
+        key: 'cost',
+        labelKey: 'plannerate.dropdown.indicators.cost',
+        icon: Coins,
+        source: 'sales',
+        // Custo médio por unidade (custo de aquisição ÷ quantidade) vindo das vendas.
+        accessor: (ctx) => ctx.sales?.avgCost,
+        format: (value) => formatCurrency(value),
+        shouldShow: (value) => isPositiveNumber(value),
+        badgeClass: 'bg-amber-600 text-white',
+        iconClass: 'text-white/90',
+    },
+    {
         key: 'margin',
         labelKey: 'plannerate.dropdown.indicators.margin',
         icon: Percent,
@@ -130,6 +142,18 @@ export const PRODUCT_INDICATORS: IndicatorConfig[] = [
         format: (value) => formatPercent(value),
         shouldShow: (value) => Number.isFinite(Number(value)) && Number(value) !== 0,
         badgeClass: 'bg-purple-600 text-white',
+        iconClass: 'text-white/90',
+    },
+    {
+        key: 'margin_unit',
+        labelKey: 'plannerate.dropdown.indicators.margin_unit',
+        icon: Banknote,
+        source: 'sales',
+        // Margem líquida por unidade (margem de contribuição ÷ quantidade), em R$.
+        accessor: (ctx) => ctx.sales?.avgMargin,
+        format: (value) => formatCurrency(value),
+        shouldShow: (value) => Number.isFinite(Number(value)) && Number(value) !== 0,
+        badgeClass: 'bg-indigo-600 text-white',
         iconClass: 'text-white/90',
     },
     {

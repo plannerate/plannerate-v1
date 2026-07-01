@@ -105,6 +105,9 @@ test('indicadores agregam preço e margem por unidade keyed por EAN', function (
 
     expect($byEan)->toHaveKey('7890000000017')
         ->and($byEan['7890000000017']['avg_price'])->toBe(10.0)
+        // avg_cost = 600/100 = 6; avg_margin = 200/100 = 2 (por unidade).
+        ->and($byEan['7890000000017']['avg_cost'])->toBe(6.0)
+        ->and($byEan['7890000000017']['avg_margin'])->toBe(2.0)
         ->and($byEan['7890000000017']['net_margin_pct'])->toBe(20.0)
         ->and($byEan['7890000000017']['gross_margin_pct'])->toBe(40.0);
 });

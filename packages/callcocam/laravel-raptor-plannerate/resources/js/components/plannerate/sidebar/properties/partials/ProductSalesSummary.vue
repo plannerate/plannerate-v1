@@ -234,10 +234,15 @@
                 <p class="text-xs text-muted-foreground">
                     {{ t('plannerate.sidebar.product_sales_summary.current_stock') }}
                 </p>
-                <!-- Mostra o valor quando há estoque; senão, indica "Sem estoque" -->
+                <!--
+                    Mostra o valor sempre que houver dado de estoque (inclusive zero
+                    ou negativo, ex.: -15 destacado em vermelho). Só exibe "Sem estoque"
+                    quando o valor é nulo/indefinido (sem informação).
+                -->
                 <p
-                    v-if="hasStock"
-                    class="text-xl font-bold text-foreground"
+                    v-if="hasStockValue"
+                    class="text-xl font-bold"
+                    :class="isNegativeStock ? 'text-red-600 dark:text-red-500' : 'text-foreground'"
                 >
                     {{ formatStock(currentStock ?? 0) }}
                 </p>
@@ -284,11 +289,17 @@ const { salesData, isLoading, error, loadSales, clearSales } =
     useProductSales();
 
 /**
- * Há estoque quando o valor está definido e é maior que zero.
- * Caso contrário, o card mostra "Sem estoque".
+ * Há dado de estoque sempre que o valor estiver definido — inclusive zero ou
+ * negativo (ex.: -15). Só quando o valor é nulo/indefinido o card mostra
+ * "Sem estoque".
  */
-const hasStock = computed(
-    () => props.currentStock != null && props.currentStock > 0,
+const hasStockValue = computed(() => props.currentStock != null);
+
+/**
+ * Estoque negativo é destacado em vermelho para chamar atenção (ex.: -15).
+ */
+const isNegativeStock = computed(
+    () => props.currentStock != null && props.currentStock < 0,
 );
 
 // Recarrega quando o produto ou o período do planograma muda

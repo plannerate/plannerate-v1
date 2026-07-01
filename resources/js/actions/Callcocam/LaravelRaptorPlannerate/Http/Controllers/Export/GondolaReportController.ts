@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateExcelReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:162
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:194
 * @route '/export/gondola-report/{gondola}/excel'
 */
 export const generateExcelReport = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ generateExcelReport.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateExcelReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:162
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:194
 * @route '/export/gondola-report/{gondola}/excel'
 */
 generateExcelReport.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -43,7 +43,7 @@ generateExcelReport.url = (args: { gondola: string | number } | [gondola: string
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateExcelReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:162
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:194
 * @route '/export/gondola-report/{gondola}/excel'
 */
 generateExcelReport.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -53,7 +53,7 @@ generateExcelReport.get = (args: { gondola: string | number } | [gondola: string
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateExcelReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:162
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:194
 * @route '/export/gondola-report/{gondola}/excel'
 */
 generateExcelReport.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -63,7 +63,7 @@ generateExcelReport.head = (args: { gondola: string | number } | [gondola: strin
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateExcelReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:162
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:194
 * @route '/export/gondola-report/{gondola}/excel'
 */
 const generateExcelReportForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -73,7 +73,7 @@ const generateExcelReportForm = (args: { gondola: string | number } | [gondola: 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateExcelReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:162
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:194
 * @route '/export/gondola-report/{gondola}/excel'
 */
 generateExcelReportForm.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -83,7 +83,7 @@ generateExcelReportForm.get = (args: { gondola: string | number } | [gondola: st
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateExcelReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:162
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:194
 * @route '/export/gondola-report/{gondola}/excel'
 */
 generateExcelReportForm.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -100,7 +100,7 @@ generateExcelReport.form = generateExcelReportForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generatePdfReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:207
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:239
 * @route '/export/gondola-report/{gondola}/pdf'
 */
 export const generatePdfReport = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -115,7 +115,7 @@ generatePdfReport.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generatePdfReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:207
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:239
 * @route '/export/gondola-report/{gondola}/pdf'
 */
 generatePdfReport.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -142,7 +142,7 @@ generatePdfReport.url = (args: { gondola: string | number } | [gondola: string |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generatePdfReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:207
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:239
 * @route '/export/gondola-report/{gondola}/pdf'
 */
 generatePdfReport.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -152,7 +152,7 @@ generatePdfReport.get = (args: { gondola: string | number } | [gondola: string |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generatePdfReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:207
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:239
 * @route '/export/gondola-report/{gondola}/pdf'
 */
 generatePdfReport.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -162,7 +162,7 @@ generatePdfReport.head = (args: { gondola: string | number } | [gondola: string 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generatePdfReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:207
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:239
 * @route '/export/gondola-report/{gondola}/pdf'
 */
 const generatePdfReportForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -172,7 +172,7 @@ const generatePdfReportForm = (args: { gondola: string | number } | [gondola: st
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generatePdfReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:207
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:239
 * @route '/export/gondola-report/{gondola}/pdf'
 */
 generatePdfReportForm.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -182,7 +182,7 @@ generatePdfReportForm.get = (args: { gondola: string | number } | [gondola: stri
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generatePdfReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:207
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:239
 * @route '/export/gondola-report/{gondola}/pdf'
 */
 generatePdfReportForm.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -199,7 +199,7 @@ generatePdfReport.form = generatePdfReportForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateCompraReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:258
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:290
 * @route '/export/gondola-report/{gondola}/compra'
 */
 export const generateCompraReport = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -214,7 +214,7 @@ generateCompraReport.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateCompraReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:258
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:290
 * @route '/export/gondola-report/{gondola}/compra'
 */
 generateCompraReport.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -241,7 +241,7 @@ generateCompraReport.url = (args: { gondola: string | number } | [gondola: strin
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateCompraReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:258
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:290
 * @route '/export/gondola-report/{gondola}/compra'
 */
 generateCompraReport.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -251,7 +251,7 @@ generateCompraReport.get = (args: { gondola: string | number } | [gondola: strin
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateCompraReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:258
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:290
 * @route '/export/gondola-report/{gondola}/compra'
 */
 generateCompraReport.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -261,7 +261,7 @@ generateCompraReport.head = (args: { gondola: string | number } | [gondola: stri
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateCompraReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:258
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:290
 * @route '/export/gondola-report/{gondola}/compra'
 */
 const generateCompraReportForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -271,7 +271,7 @@ const generateCompraReportForm = (args: { gondola: string | number } | [gondola:
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateCompraReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:258
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:290
 * @route '/export/gondola-report/{gondola}/compra'
 */
 generateCompraReportForm.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -281,7 +281,7 @@ generateCompraReportForm.get = (args: { gondola: string | number } | [gondola: s
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateCompraReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:258
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:290
 * @route '/export/gondola-report/{gondola}/compra'
 */
 generateCompraReportForm.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -298,7 +298,7 @@ generateCompraReport.form = generateCompraReportForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateDimensaoReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:303
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:335
 * @route '/export/gondola-report/{gondola}/dimensao'
 */
 export const generateDimensaoReport = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -313,7 +313,7 @@ generateDimensaoReport.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateDimensaoReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:303
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:335
 * @route '/export/gondola-report/{gondola}/dimensao'
 */
 generateDimensaoReport.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -340,7 +340,7 @@ generateDimensaoReport.url = (args: { gondola: string | number } | [gondola: str
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateDimensaoReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:303
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:335
 * @route '/export/gondola-report/{gondola}/dimensao'
 */
 generateDimensaoReport.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -350,7 +350,7 @@ generateDimensaoReport.get = (args: { gondola: string | number } | [gondola: str
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateDimensaoReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:303
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:335
 * @route '/export/gondola-report/{gondola}/dimensao'
 */
 generateDimensaoReport.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -360,7 +360,7 @@ generateDimensaoReport.head = (args: { gondola: string | number } | [gondola: st
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateDimensaoReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:303
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:335
 * @route '/export/gondola-report/{gondola}/dimensao'
 */
 const generateDimensaoReportForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -370,7 +370,7 @@ const generateDimensaoReportForm = (args: { gondola: string | number } | [gondol
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateDimensaoReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:303
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:335
 * @route '/export/gondola-report/{gondola}/dimensao'
 */
 generateDimensaoReportForm.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -380,7 +380,7 @@ generateDimensaoReportForm.get = (args: { gondola: string | number } | [gondola:
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateDimensaoReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:303
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:335
 * @route '/export/gondola-report/{gondola}/dimensao'
 */
 generateDimensaoReportForm.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -397,7 +397,7 @@ generateDimensaoReport.form = generateDimensaoReportForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateImageReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:361
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:393
 * @route '/export/gondola-report/{gondola}/image'
 */
 export const generateImageReport = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -412,7 +412,7 @@ generateImageReport.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateImageReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:361
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:393
 * @route '/export/gondola-report/{gondola}/image'
 */
 generateImageReport.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -439,7 +439,7 @@ generateImageReport.url = (args: { gondola: string | number } | [gondola: string
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateImageReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:361
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:393
 * @route '/export/gondola-report/{gondola}/image'
 */
 generateImageReport.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -449,7 +449,7 @@ generateImageReport.get = (args: { gondola: string | number } | [gondola: string
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateImageReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:361
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:393
 * @route '/export/gondola-report/{gondola}/image'
 */
 generateImageReport.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -459,7 +459,7 @@ generateImageReport.head = (args: { gondola: string | number } | [gondola: strin
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateImageReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:361
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:393
 * @route '/export/gondola-report/{gondola}/image'
 */
 const generateImageReportForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -469,7 +469,7 @@ const generateImageReportForm = (args: { gondola: string | number } | [gondola: 
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateImageReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:361
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:393
 * @route '/export/gondola-report/{gondola}/image'
 */
 generateImageReportForm.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -479,7 +479,7 @@ generateImageReportForm.get = (args: { gondola: string | number } | [gondola: st
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::generateImageReport
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:361
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:393
 * @route '/export/gondola-report/{gondola}/image'
 */
 generateImageReportForm.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -496,7 +496,7 @@ generateImageReport.form = generateImageReportForm
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::getReportData
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:406
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:438
 * @route '/export/gondola-report/{gondola}/data'
 */
 export const getReportData = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -511,7 +511,7 @@ getReportData.definition = {
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::getReportData
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:406
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:438
 * @route '/export/gondola-report/{gondola}/data'
 */
 getReportData.url = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -538,7 +538,7 @@ getReportData.url = (args: { gondola: string | number } | [gondola: string | num
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::getReportData
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:406
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:438
 * @route '/export/gondola-report/{gondola}/data'
 */
 getReportData.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -548,7 +548,7 @@ getReportData.get = (args: { gondola: string | number } | [gondola: string | num
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::getReportData
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:406
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:438
 * @route '/export/gondola-report/{gondola}/data'
 */
 getReportData.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -558,7 +558,7 @@ getReportData.head = (args: { gondola: string | number } | [gondola: string | nu
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::getReportData
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:406
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:438
 * @route '/export/gondola-report/{gondola}/data'
 */
 const getReportDataForm = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -568,7 +568,7 @@ const getReportDataForm = (args: { gondola: string | number } | [gondola: string
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::getReportData
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:406
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:438
 * @route '/export/gondola-report/{gondola}/data'
 */
 getReportDataForm.get = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -578,7 +578,7 @@ getReportDataForm.get = (args: { gondola: string | number } | [gondola: string |
 
 /**
 * @see \Callcocam\LaravelRaptorPlannerate\Http\Controllers\Export\GondolaReportController::getReportData
-* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:406
+* @see packages/callcocam/laravel-raptor-plannerate/src/Http/Controllers/Export/GondolaReportController.php:438
 * @route '/export/gondola-report/{gondola}/data'
 */
 getReportDataForm.head = (args: { gondola: string | number } | [gondola: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

@@ -7,6 +7,8 @@ import { createEanAnalysisStore } from './useEanAnalysisStore';
 export interface SalesIndicatorData {
     /** Preço médio por unidade (faturamento ÷ quantidade) */
     avgPrice: number;
+    /** Custo médio por unidade (custo de aquisição ÷ quantidade) */
+    avgCost: number;
     /** Margem líquida média por unidade (margem de contribuição ÷ quantidade) */
     avgMargin: number;
     /** Margem bruta (%) */
@@ -20,6 +22,7 @@ interface SalesIndicatorResult {
     ean: string | null;
     product_id: string;
     avg_price: number;
+    avg_cost: number;
     avg_margin: number;
     gross_margin_pct: number;
     net_margin_pct: number;
@@ -88,6 +91,7 @@ export function useSalesIndicators() {
                         ean: item.ean as string,
                         value: {
                             avgPrice: Number(item.avg_price) || 0,
+                            avgCost: Number(item.avg_cost) || 0,
                             avgMargin: Number(item.avg_margin) || 0,
                             grossMarginPct: Number(item.gross_margin_pct) || 0,
                             netMarginPct: Number(item.net_margin_pct) || 0,

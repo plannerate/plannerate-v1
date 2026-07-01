@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Package } from 'lucide-vue-next'
+import { Box } from 'lucide-vue-next'
 import { useT } from '@/composables/useT'
 import type { Product } from '@/types/planogram'
 
@@ -14,9 +14,9 @@ const { t } = useT()
 
 <template>
   <div class="space-y-2">
-    <div class="flex items-center gap-1.5">
-      <Package class="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-      <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+    <div class="flex items-center gap-2">
+      <Box class="h-4 w-4 shrink-0 text-blue-600" />
+      <span class="text-sm font-semibold text-foreground">
         {{ t('plannerate.print.product_detail.identification') }}
       </span>
     </div>

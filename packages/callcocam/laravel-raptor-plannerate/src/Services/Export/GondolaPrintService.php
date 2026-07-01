@@ -274,6 +274,9 @@ class GondolaPrintService
                                             'height' => $product->height ?? 15,
                                             'depth' => $product->depth ?? 0,
                                             'weight' => $product->weight,
+                                            // Estoque atual: necessário para os selos de
+                                            // Estoque e Ruptura (indicadores source 'product').
+                                            'current_stock' => $product->current_stock,
                                             'image_url' => $product->image_url,
                                             'image_url_encoded' => $product->image_url_encoded ?? null,
                                         ] : null,

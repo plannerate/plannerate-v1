@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useAbcClassification } from '@/composables/plannerate/analysis/useAbcClassification'
 import type { Segment } from '@/types/planogram'
+import ProductIndicatorBadge from '../../editor/ProductIndicatorBadge.vue'
 import PdfAbcBadge from './PdfAbcBadge.vue'
 import PdfLayer from './PdfLayer.vue'
 import PdfStockIndicator from './PdfStockIndicator.vue'
@@ -73,6 +74,9 @@ function handleClick() {
     
     <!-- Indicador visual de estoque alvo -->
     <PdfStockIndicator :segment="segment" :shelf-depth="shelfDepth" :scale="scaleFactor" />
+
+    <!-- Selo configurável de indicador (Preço, Custo, Margem, Estoque, Ruptura) -->
+    <ProductIndicatorBadge :product="segment.layer?.product" :scale="scaleFactor" />
 
     <div v-for="i in segment.quantity" :key="i" class="flex flex-col">
       <div class="flex items-center relative transition-shadow duration-200"

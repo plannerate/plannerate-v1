@@ -12,6 +12,7 @@ import ButtonWithTooltip from '@/components/ui/ButtonWithTooltip.vue';
 import { Separator } from '@/components/ui/separator';
 import { useT } from '@/composables/useT';
 import type { AbcAnalysis, StockAnalysis } from '@/types/planogram';
+import DropdownIndicators from '../../DropdownIndicators.vue';
 import DropdownPerformance from '../../DropdownPerformance.vue';
 import PdfPageHeader from './PdfPageHeader.vue';
 
@@ -167,6 +168,12 @@ const scaleDisplay = computed(() => `${props.localScale.toFixed(1)}x`);
                     :gondola="gondola as any"
                     :analysis="analysis"
                 />
+
+                <Separator orientation="vertical" class="h-7" />
+
+                <!-- Selos de indicador (Preço, Custo, Margem, Estoque, Ruptura)
+                     na frente dos produtos — mesma seleção do editor. -->
+                <DropdownIndicators :gondola="gondola as any" />
 
                 <Separator orientation="vertical" class="h-7" />
 

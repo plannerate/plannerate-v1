@@ -33,7 +33,7 @@ class SaleController extends Controller
         $saleDateFrom = $this->requestString($request, 'sale_date_from');
         $saleDateTo = $this->requestString($request, 'sale_date_to');
         $requestedSort = trim((string) $request->query('sort', ''));
-        $sort = in_array($requestedSort, ['codigo_erp', 'store', 'sale_date', 'total_sale_quantity', 'total_sale_value'], true)
+        $sort = in_array($requestedSort, ['codigo_erp', 'ean', 'store', 'sale_date', 'total_sale_quantity', 'total_sale_value'], true)
             ? $requestedSort
             : null;
         $requestedDirection = strtolower((string) $request->query('direction', 'desc'));

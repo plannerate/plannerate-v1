@@ -90,7 +90,8 @@ function handleDelete(id: string): void {
             <table class="w-full text-sm">
                 <thead class="bg-muted/30 text-left text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.code_name') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.code') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.name') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.department') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.subtemplates') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('app.tenant.planogram_templates.fields.status') }}</th>
@@ -100,10 +101,10 @@ function handleDelete(id: string): void {
                 </thead>
                 <tbody>
                     <template v-if="templatesLoading">
-                        <TableLoadingSkeleton :columns="6" :rows="6" />
+                        <TableLoadingSkeleton :columns="7" :rows="6" />
                     </template>
                     <tr v-else-if="templatesRows.length === 0">
-                        <td class="px-4 py-8 text-center text-muted-foreground" colspan="6">
+                        <td class="px-4 py-8 text-center text-muted-foreground" colspan="7">
                             {{ t('app.tenant.planogram_templates.empty') }}
                             <a :href="PlanogramTemplateController.create.url()" class="ml-1 text-primary underline">
                                 {{ t('app.tenant.planogram_templates.empty_action') }}
@@ -116,7 +117,10 @@ function handleDelete(id: string): void {
                         class="border-t border-sidebar-border/60 transition-colors odd:bg-transparent even:bg-muted/30 hover:bg-muted/50 dark:border-sidebar-border"
                     >
                         <td class="px-4 py-3">
-                            <ColumnLabel :label="template.name" :description="template.code" />
+                            <ColumnLabel :label="template.code" />
+                        </td>
+                        <td class="px-4 py-3">
+                            <ColumnLabel :label="template.name" />
                         </td>
                         <td class="px-4 py-3 text-muted-foreground">{{ template.department }}</td>
                         <td class="px-4 py-3">{{ template.subtemplates_count }}</td>

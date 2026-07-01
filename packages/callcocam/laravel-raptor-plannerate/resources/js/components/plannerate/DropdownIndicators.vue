@@ -94,11 +94,30 @@ import {
 } from '@/composables/plannerate/editor/indicators';
 import { useT } from '@/composables/useT';
 
+/**
+ * Gôndola de contexto opcional. No editor, o componente lê a gôndola atual do
+ * estado global (`currentGondola`); na área de print esse estado pode não estar
+ * populado, então a tela passa a gôndola explicitamente via prop.
+ */
+interface Props {
+    gondola?: {
+        id: string;
+        planogram?: { start_date?: string | null; end_date?: string | null } | null;
+    } | null;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+    gondola: null,
+});
+
 const { t } = useT();
 const { loadForGondola, hasData } = useSalesIndicators();
 
 /** Lista completa de indicadores disponíveis (define a ordem do menu). */
 const indicators = PRODUCT_INDICATORS;
+
+/** Gôndola efetiva: a prop tem prioridade; senão, cai no estado global. */
+const effectiveGondola = computed(() => props.gondola ?? currentGondola.value);
 
 /** Configuração do indicador ativo — usada para destacar o botão da toolbar. */
 const activeConfig = computed(() => getIndicatorConfig(selectedIndicator.value));
@@ -112,7 +131,7 @@ function ensureSalesData(force = false) {
     if (!force && hasData.value) {
         return;
     }
-    const gondola = currentGondola.value;
+    const gondola = effectiveGondola.value;
     if (!gondola?.id) {
         return;
     }

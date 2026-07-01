@@ -5,7 +5,7 @@
         tabindex="0"
         :class="{
             'ring-2 ring-primary/70 ring-offset-1 bg-primary/10 z-50': isSegmentSelected,
-            'ring-2 ring-amber-500/70 ring-offset-1 bg-amber-100/50 z-40':
+            'ring-2 ring-amber-500/70 ring-offset-1 bg-amber-100/50 z-40 animate-pulse':
                 isEanMatch && !isSegmentSelected && !isDropTarget,
             'hover:opacity-90':
                 !isSegmentSelected && !isDragging && !isDropTarget,

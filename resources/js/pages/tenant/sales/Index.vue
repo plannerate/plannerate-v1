@@ -2,6 +2,7 @@
 import { Head } from '@inertiajs/vue3';
 import {
     BadgeDollarSign,
+    Barcode,
     CalendarDays,
     Hash,
     Package,
@@ -201,6 +202,12 @@ const pageMeta = useCrudPageMeta({
                                 {{ t('app.tenant.sales.fields.codigo_erp') }}
                             </span>
                         </ColumnHeader>
+                        <ColumnHeader field="ean">
+                            <span class="inline-flex items-center gap-1.5">
+                                <Barcode class="size-3.5" />
+                                {{ t('app.tenant.sales.fields.ean') }}
+                            </span>
+                        </ColumnHeader>
                         <ColumnHeader field="store">
                             <span class="inline-flex items-center gap-1.5">
                                 <Store class="size-3.5" />
@@ -240,10 +247,10 @@ const pageMeta = useCrudPageMeta({
                 </thead>
                 <tbody>
                     <template v-if="!props.sales">
-                        <TableLoadingSkeleton :columns="6" :rows="6" />
+                        <TableLoadingSkeleton :columns="7" :rows="6" />
                     </template>
                     <tr v-else-if="salesData.length === 0">
-                        <td class="px-4 py-6 text-muted-foreground" colspan="6">
+                        <td class="px-4 py-6 text-muted-foreground" colspan="7">
                             {{ t('app.tenant.common.empty') }}
                         </td>
                     </tr>
@@ -254,12 +261,7 @@ const pageMeta = useCrudPageMeta({
                     >
                         <td class="px-4 py-3">
                             <div class="space-y-1">
-                                <ColumnLabel
-                                    :label="sale.codigo_erp ?? '-'"
-                                    :description="
-                                        sale.ean ? `EAN ${sale.ean}` : null
-                                    "
-                                />
+                                <ColumnLabel :label="sale.codigo_erp ?? '-'" />
                                 <span
                                     v-if="sale.promotion"
                                     class="inline-flex max-w-full truncate rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-900/30 dark:text-emerald-300"
@@ -268,6 +270,9 @@ const pageMeta = useCrudPageMeta({
                                     Promo: {{ sale.promotion }}
                                 </span>
                             </div>
+                        </td>
+                        <td class="px-4 py-3 font-mono text-muted-foreground">
+                            {{ sale.ean ?? '-' }}
                         </td>
                         <td class="px-4 py-3">{{ sale.store ?? '-' }}</td>
                         <td class="px-4 py-3">

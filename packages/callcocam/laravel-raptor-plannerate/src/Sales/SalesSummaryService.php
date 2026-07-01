@@ -46,6 +46,7 @@ class SalesSummaryService
      *     product_id: string,
      *     ean: string|null,
      *     avg_price: float,
+     *     avg_cost: float,
      *     avg_margin: float,
      *     gross_margin_pct: float,
      *     net_margin_pct: float
@@ -82,6 +83,7 @@ class SalesSummaryService
      *     product_id: string,
      *     ean: string|null,
      *     avg_price: float,
+     *     avg_cost: float,
      *     avg_margin: float,
      *     gross_margin_pct: float,
      *     net_margin_pct: float
@@ -135,6 +137,7 @@ class SalesSummaryService
                     'product_id' => (string) $row->product_id,
                     'ean' => $eansById[$row->product_id] ?? null,
                     'avg_price' => $summary->avgPrice(),
+                    'avg_cost' => $summary->avgCost(),
                     'avg_margin' => $summary->avgMargin(),
                     'gross_margin_pct' => $summary->grossMarginPct(),
                     'net_margin_pct' => $summary->netMarginPct(),
