@@ -216,6 +216,51 @@ it('does not let tall top-shelf products overflow above the module top', functio
     }
 });
 
+it('builds a per-shelf products list with erp code, ean and aggregated facings', function (): void {
+    $service = new PlanogramPdfLayoutService;
+
+    // Seção com dois segmentos: o mesmo produto (3 frentes) e outro (2 frentes).
+    $section = pdfFakeSection('a', 1);
+    $section['shelves'][0]['segments'] = [
+        [
+            'id' => 'seg1',
+            'quantity' => 1,
+            'layer' => [
+                'quantity' => 3,
+                'product' => ['id' => 'p1', 'name' => 'Produto X', 'codigo_erp' => '25750', 'ean' => '7897520100401', 'brand' => 'DIVERSAS', 'width' => 10, 'height' => 15],
+            ],
+        ],
+        [
+            'id' => 'seg2',
+            'quantity' => 1,
+            'layer' => [
+                'quantity' => 2,
+                'product' => ['id' => 'p1', 'name' => 'Produto X', 'codigo_erp' => '25750', 'ean' => '7897520100401', 'brand' => 'DIVERSAS', 'width' => 10, 'height' => 15],
+            ],
+        ],
+        [
+            'id' => 'seg3',
+            'quantity' => 1,
+            'layer' => [
+                'quantity' => 4,
+                'product' => ['id' => 'p2', 'name' => 'Produto Y', 'codigo_erp' => '88959', 'ean' => '7898645221811', 'brand' => 'DIVERSAS', 'width' => 10, 'height' => 15],
+            ],
+        ],
+    ];
+
+    $data = pdfFakeGondolaData([$section]);
+    $pages = $service->buildModulesLayout($data);
+    $products = $pages[0]['shelves'][0]['products'];
+
+    // Dois produtos distintos; o primeiro soma as frentes dos dois segmentos.
+    expect($products)->toHaveCount(2)
+        ->and($products[0]['codigo_erp'])->toBe('25750')
+        ->and($products[0]['ean'])->toBe('7897520100401')
+        ->and($products[0]['frentes'])->toBe(5)
+        ->and($products[1]['codigo_erp'])->toBe('88959')
+        ->and($products[1]['frentes'])->toBe(4);
+});
+
 it('computes hole positions consistent with the section geometry', function (): void {
     $service = new PlanogramPdfLayoutService;
 

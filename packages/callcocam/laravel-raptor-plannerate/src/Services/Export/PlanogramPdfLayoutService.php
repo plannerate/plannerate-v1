@@ -59,10 +59,11 @@ class PlanogramPdfLayoutService
     private const ROW_BAND_HEIGHT = 470;
 
     /**
-     * Largura útil do módulo no modo "por módulo" (A4 portrait). O módulo ocupa
-     * quase toda a largura da página (só o indicador de altura fica ao lado).
+     * Largura útil do módulo no modo "por módulo" (A4 portrait). O módulo é
+     * empurrado para a esquerda e encolhido para abrir espaço à direita para a
+     * tabela de produtos da prateleira (código ERP, EAN, frentes).
      */
-    private const COL_CONTENT_WIDTH = 700;
+    private const COL_CONTENT_WIDTH = 340;
 
     /**
      * Altura útil da área do módulo no modo "por módulo". Grande para o módulo
@@ -424,8 +425,53 @@ class PlanogramPdfLayoutService
             'barTop' => round($basePositionCm * $pxPerCm, 2),
             'barHeight' => round($shelfHeightCm * $pxPerCm, 2),
             'displayNumber' => $displayNumber,
+            'shelfPositionCm' => (float) ($shelf['shelf_position'] ?? 0),
             'cells' => $cells,
+            'products' => $this->buildShelfProducts($shelf),
         ];
+    }
+
+    /**
+     * Monta a lista de produtos de UMA prateleira para a tabela lateral do PDF
+     * (código ERP, EAN, marca, nome e nº de frentes). As frentes são somadas
+     * por produto distinto: o mesmo produto em vários segmentos/camadas soma
+     * suas facings (layer.quantity), reproduzindo a coluna "FRENTES" da tabela
+     * de produtos da prateleira.
+     *
+     * @param  array<string, mixed>  $shelf
+     * @return array<int, array{codigo_erp: string, ean: string, name: string, brand: string, frentes: int}>
+     */
+    private function buildShelfProducts(array $shelf): array
+    {
+        $products = [];
+
+        foreach ($shelf['segments'] ?? [] as $segment) {
+            if (! empty($segment['deleted_at']) || empty($segment['layer']['product'])) {
+                continue;
+            }
+
+            $product = $segment['layer']['product'];
+            $facings = max(1, (int) ($segment['layer']['quantity'] ?? 1));
+
+            // Chave de agregação: id do produto (fallback para EAN/código).
+            $key = $product['id'] ?? ($product['ean'] ?? ($product['codigo_erp'] ?? $product['name'] ?? ''));
+
+            if (isset($products[$key])) {
+                $products[$key]['frentes'] += $facings;
+
+                continue;
+            }
+
+            $products[$key] = [
+                'codigo_erp' => (string) ($product['codigo_erp'] ?? ''),
+                'ean' => (string) ($product['ean'] ?? ''),
+                'name' => (string) ($product['name'] ?? ''),
+                'brand' => (string) ($product['brand'] ?? ''),
+                'frentes' => $facings,
+            ];
+        }
+
+        return array_values($products);
     }
 
     /**
